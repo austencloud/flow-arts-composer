@@ -18,9 +18,11 @@ import {
   getDocs,
   orderBy,
   query,
+  serverTimestamp,
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import {
   deleteObject,
@@ -29,6 +31,10 @@ import {
   ref,
   uploadBytes,
 } from "firebase/storage";
+import {
+  newPublicProfile,
+  photoChanges,
+} from "../../../src/lib/shared/auth/domain/public-profile-payload";
 
 let testEnv: RulesTestEnvironment;
 
@@ -289,6 +295,380 @@ describe("sequence subject revisions", () => {
     );
     await assertFails(updateDoc(ref, { payload: { word: "WXYZ" } }));
     await assertFails(deleteDoc(ref));
+  });
+});
+
+describe("guest profiles stay out of the directory", () => {
+  it("lets a guest write an unlisted (version 0) profile, and only a guest", async () => {
+    const db = anonCtx().firestore(SDK_SETTINGS);
+    await assertSucceeds(
+      setDoc(doc(db, `users/${ANON_UID}`), {
+        publicProfileVersion: 0,
+        displayName: "Anonymous User",
+        isAnonymous: true,
+      })
+    );
+    // Readable by id, like any public profile.
+    await assertSucceeds(
+      getDoc(
+        doc(
+          testEnv.unauthenticatedContext().firestore(SDK_SETTINGS),
+          `users/${ANON_UID}`
+        )
+      )
+    );
+
+    const fullDb = fullCtx().firestore(SDK_SETTINGS);
+    await assertFails(
+      setDoc(doc(fullDb, `users/${FULL_UID}`), {
+        publicProfileVersion: 0,
+        displayName: "Not a guest",
+        isAnonymous: false,
+      })
+    );
+  });
+
+  it("refuses a guest session that writes itself listed or not a guest", async () => {
+    const db = anonCtx().firestore(SDK_SETTINGS);
+    const ref = doc(db, `users/${ANON_UID}`);
+    // The 2026-11-07 audit's exact forgery.
+    await assertFails(
+      setDoc(ref, {
+        publicProfileVersion: 2,
+        isAnonymous: false,
+        displayName: "Austen Cloud",
+        photoURL: "https://example.com/a.webp",
+      })
+    );
+    await assertFails(
+      setDoc(ref, { publicProfileVersion: 2, displayName: "Listed guest" })
+    );
+    await assertFails(
+      setDoc(ref, {
+        publicProfileVersion: 0,
+        isAnonymous: false,
+        displayName: "Not a guest",
+      })
+    );
+
+    // Nor can a guest upgrade its own existing doc.
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(SDK_SETTINGS), `users/${ANON_UID}`), {
+        publicProfileVersion: 0,
+        displayName: "Anonymous User",
+        isAnonymous: true,
+      });
+    });
+    await assertFails(updateDoc(ref, { publicProfileVersion: 2 }));
+    await assertFails(
+      updateDoc(ref, { isAnonymous: false, publicProfileVersion: 2 })
+    );
+    await assertSucceeds(updateDoc(ref, { displayName: "Still a guest" }));
+  });
+
+  it("upgrading lists the profile in one write; the directory query never sees a guest", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(SDK_SETTINGS), `users/${FULL_UID}`), {
+        publicProfileVersion: 0,
+        displayName: "Was a guest",
+        isAnonymous: true,
+      });
+    });
+    const ref = doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`);
+    // Clearing the guest flag alone would leave a non-guest at version 0.
+    await assertFails(updateDoc(ref, { isAnonymous: false }));
+    await assertSucceeds(
+      updateDoc(ref, { isAnonymous: false, publicProfileVersion: 2 })
+    );
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(SDK_SETTINGS), "users/guest-2"), {
+        publicProfileVersion: 0,
+        displayName: "Anonymous User",
+        isAnonymous: true,
+      });
+    });
+    await assertFails(
+      getDocs(
+        query(
+          collection(
+            testEnv.unauthenticatedContext().firestore(SDK_SETTINGS),
+            "users"
+          ),
+          where("publicProfileVersion", "==", 0)
+        )
+      )
+    );
+  });
+});
+
+describe("the sign-in sync's own profile writes", () => {
+  // These write the object user-document-manager.ts writes (newPublicProfile,
+  // photoChanges), so a rules change that refuses the app's own sign-up fails
+  // here and not in production.
+  async function createFull(photoURL: string | null, handle: string) {
+    const db = fullCtx().firestore(SDK_SETTINGS);
+    const profile = newPublicProfile(
+      { isAnonymous: false, photoURL },
+      "Full User",
+      serverTimestamp
+    );
+    // Same writes as claimHandleFromName's transaction.
+    const batch = writeBatch(db);
+    batch.set(doc(db, `usernames/${handle}`), {
+      userId: FULL_UID,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(
+      doc(db, `users/${FULL_UID}`),
+      { ...profile, username: handle, usernameLowercase: handle },
+      { merge: true }
+    );
+    return batch.commit();
+  }
+
+  it("creates a Google user's profile with their photo", async () => {
+    await assertSucceeds(
+      createFull("https://lh3.googleusercontent.com/a/photo=s96-c", "full.user")
+    );
+  });
+
+  it("creates an email user's profile with no photo", async () => {
+    await assertSucceeds(createFull(null, "full.user"));
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const stored = await getDoc(
+        doc(context.firestore(SDK_SETTINGS), `users/${FULL_UID}`)
+      );
+      if (stored.data()?.photoURL !== null) throw new Error("photo not null");
+    });
+  });
+
+  it("creates a guest's unlisted profile with no handle", async () => {
+    const db = anonCtx().firestore(SDK_SETTINGS);
+    await assertSucceeds(
+      setDoc(
+        doc(db, `users/${ANON_UID}`),
+        newPublicProfile(
+          { isAnonymous: true, photoURL: null },
+          "Anonymous User",
+          serverTimestamp
+        )
+      )
+    );
+  });
+
+  it("takes the first sign-in update of an existing user with no photo", async () => {
+    const seed = (extra: Record<string, unknown>) =>
+      testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(SDK_SETTINGS), `users/${FULL_UID}`), {
+          publicProfileVersion: 2,
+          displayName: "Full User",
+          isAnonymous: false,
+          ...extra,
+        });
+      });
+    const update = (existing: Record<string, unknown>) =>
+      setDoc(
+        doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`),
+        {
+          ...photoChanges(null, existing),
+          updatedAt: serverTimestamp(),
+          lastActivityDate: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+    // No picture stored at all.
+    await seed({});
+    await assertSucceeds(update({}));
+
+    // A generated data: picture stored by an older build is cleared to null.
+    const legacy = {
+      photoURL: "data:image/svg+xml,%3Csvg%3E%3C%2Fsvg%3E",
+      avatar: "data:image/svg+xml,%3Csvg%3E%3C%2Fsvg%3E",
+    };
+    await seed(legacy);
+    await assertSucceeds(update(legacy));
+  });
+});
+
+describe("sign-ups from app bundles cached before 2026-11-07", () => {
+  // The transition window in firestore.rules (isLegacyClientCreate) closes on
+  // 2026-12-15. The emulator cannot move time, so these assert today's side;
+  // delete this block with the window.
+  const generated = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#3a7bd5" /></svg>'
+  )}`;
+  const oldPayload = {
+    publicProfileVersion: 2,
+    displayName: "Mary Jane",
+    username: "mary-jane_123",
+    usernameLowercase: "mary-jane_123",
+    photoURL: generated,
+    avatar: generated,
+    sequenceCount: 0,
+    isAdmin: false,
+    isAnonymous: false,
+  };
+
+  it("takes the old two-step sign-up: profile first, reservation second", async () => {
+    const db = fullCtx().firestore(SDK_SETTINGS);
+    await assertSucceeds(setDoc(doc(db, `users/${FULL_UID}`), oldPayload));
+    await assertSucceeds(
+      setDoc(doc(db, "usernames/mary-jane_123"), { userId: FULL_UID })
+    );
+  });
+
+  it("still refuses an unreserved handle or a generated picture on update", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(SDK_SETTINGS), `users/${FULL_UID}`), {
+        publicProfileVersion: 2,
+        displayName: "Full User",
+        isAnonymous: false,
+      });
+    });
+    const ref = doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`);
+    await assertFails(
+      updateDoc(ref, { username: "mary.jane", usernameLowercase: "mary.jane" })
+    );
+    await assertFails(updateDoc(ref, { photoURL: generated }));
+  });
+
+  it("still refuses a handle that does not match its lowercase copy", async () => {
+    const db = fullCtx().firestore(SDK_SETTINGS);
+    await assertFails(
+      setDoc(doc(db, `users/${FULL_UID}`), {
+        ...oldPayload,
+        username: "Mary-Jane",
+        usernameLowercase: "mary-jane",
+      })
+    );
+  });
+});
+
+describe("profile values, handles and map records a script could forge", () => {
+  async function seed(profile: Record<string, unknown> = {}) {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore(SDK_SETTINGS);
+      await setDoc(doc(db, `users/${FULL_UID}`), {
+        publicProfileVersion: 2,
+        displayName: "Full User",
+        username: "Old-Name",
+        usernameLowercase: "old-name",
+        ...profile,
+      });
+      await setDoc(doc(db, "usernames/old-name"), { userId: FULL_UID });
+      await setDoc(doc(db, "usernames/taken.name"), { userId: "someone-else" });
+    });
+  }
+  const me = () => fullCtx().firestore(SDK_SETTINGS);
+  const myProfile = () => doc(me(), `users/${FULL_UID}`);
+
+  it("bounds the name, bio, pronouns, colour and pictures", async () => {
+    await seed();
+    await assertSucceeds(updateDoc(myProfile(), { displayName: "x".repeat(50) }));
+    await assertFails(updateDoc(myProfile(), { displayName: "x".repeat(51) }));
+    await assertFails(updateDoc(myProfile(), { displayName: "" }));
+    await assertFails(updateDoc(myProfile(), { displayName: "Ann\nYour account is locked" }));
+    await assertSucceeds(updateDoc(myProfile(), { bio: "line one\nline two" }));
+    await assertFails(updateDoc(myProfile(), { bio: "b".repeat(501) }));
+    await assertFails(updateDoc(myProfile(), { pronouns: "p".repeat(51) }));
+    await assertSucceeds(updateDoc(myProfile(), { profileColor: "#a1b2c3" }));
+    await assertFails(updateDoc(myProfile(), { profileColor: "red; background:url(x)" }));
+    await assertSucceeds(updateDoc(myProfile(), { photoURL: "https://example.com/a.webp" }));
+    await assertFails(updateDoc(myProfile(), { photoURL: "javascript:alert(1)" }));
+    await assertFails(updateDoc(myProfile(), { avatar: "http://example.com/a.png" }));
+    await assertFails(
+      updateDoc(myProfile(), { avatar: `https://example.com/${"a".repeat(2048)}` })
+    );
+  });
+
+  it("keeps an older handle working while it is unchanged", async () => {
+    await seed();
+    await assertSucceeds(updateDoc(myProfile(), { bio: "Still me" }));
+  });
+
+  it("takes a new handle only with this person's reservation, written with it", async () => {
+    await seed();
+    await assertFails(
+      updateDoc(myProfile(), { username: "new.name", usernameLowercase: "new.name" })
+    );
+    await assertFails(
+      updateDoc(myProfile(), { username: "taken.name", usernameLowercase: "taken.name" })
+    );
+    await assertFails(
+      updateDoc(myProfile(), { username: "New.Name", usernameLowercase: "new.name" })
+    );
+    // A reservation on its own is refused: it would let a script hoard names.
+    await assertFails(setDoc(doc(me(), "usernames/hoarded"), { userId: FULL_UID }));
+
+    // A rename: the new reservation, the profile and the old release together.
+    const db = me();
+    const batch = writeBatch(db);
+    batch.set(doc(db, "usernames/new.name"), { userId: FULL_UID });
+    batch.update(doc(db, `users/${FULL_UID}`), {
+      username: "new.name",
+      usernameLowercase: "new.name",
+    });
+    batch.delete(doc(db, "usernames/old-name"));
+    await assertSucceeds(batch.commit());
+  });
+
+  it("refuses reserved handles and handles outside the client's shape", async () => {
+    await seed();
+    const rename = (handle: string) => {
+      const db = me();
+      const batch = writeBatch(db);
+      batch.set(doc(db, `usernames/${handle}`), { userId: FULL_UID });
+      batch.update(doc(db, `users/${FULL_UID}`), {
+        username: handle,
+        usernameLowercase: handle,
+      });
+      return batch.commit();
+    };
+    for (const bad of ["admin", "tkaflowarts", "a..b", "a___b", "_abc", "abc.", ".abc"]) {
+      await assertFails(rename(bad));
+    }
+    await assertSucceeds(rename("a__b.c"));
+    // A reserved name's reservation is refused even if the profile holds it.
+    await seed({ username: "support", usernameLowercase: "support" });
+    await assertFails(setDoc(doc(me(), "usernames/support"), { userId: FULL_UID }));
+  });
+
+  it("lets an owner put back the missing reservation for the handle they hold", async () => {
+    await seed({ username: "kept", usernameLowercase: "kept" });
+    await assertSucceeds(setDoc(doc(me(), "usernames/kept"), { userId: FULL_UID }));
+  });
+
+  it("never lets an owner write moderation or privilege fields", async () => {
+    await seed();
+    await assertFails(updateDoc(myProfile(), { isDisabled: false }));
+    await assertFails(updateDoc(myProfile(), { isFeatured: true }));
+    await assertFails(updateDoc(myProfile(), { role: "moderator" }));
+    await assertFails(updateDoc(myProfile(), { isAdmin: true }));
+  });
+
+  it("takes a map record only in the shape the map writes", async () => {
+    const ref = doc(me(), `userLocations/${FULL_UID}`);
+    const record = {
+      userId: FULL_UID,
+      city: "Chicago",
+      country: "United States",
+      countryCode: "US",
+      cityCenterCoordinates: { lat: 41.88, lng: -87.63 },
+      visibility: "public",
+    };
+    await assertSucceeds(setDoc(ref, record));
+    await assertFails(setDoc(ref, { ...record, city: "c".repeat(61) }));
+    await assertFails(
+      setDoc(ref, { ...record, cityCenterCoordinates: { lat: 91, lng: 0 } })
+    );
+    await assertFails(
+      setDoc(ref, { ...record, cityCenterCoordinates: { lat: "41", lng: 0 } })
+    );
+    await assertFails(setDoc(ref, { ...record, exactAddress: "1 Main St" }));
+    await assertFails(setDoc(ref, { ...record, userId: "someone-else" }));
   });
 });
 
@@ -916,11 +1296,17 @@ describe("full users: community write paths succeed", () => {
       setDoc(doc(db, `publicSequences/seq1`), { ownerId: FULL_UID, steps: [] })
     );
   });
-  it("can claim a username", async () => {
+  it("can claim a username, together with the profile that shows it", async () => {
     const db = fullCtx().firestore(SDK_SETTINGS);
-    await assertSucceeds(
-      setDoc(doc(db, `usernames/cooldude`), { userId: FULL_UID })
-    );
+    const batch = writeBatch(db);
+    batch.set(doc(db, `usernames/cooldude`), { userId: FULL_UID });
+    batch.set(doc(db, `users/${FULL_UID}`), {
+      publicProfileVersion: 2,
+      displayName: "Cool Dude",
+      username: "cooldude",
+      usernameLowercase: "cooldude",
+    });
+    await assertSucceeds(batch.commit());
   });
   it("can create a shortcode with the strict mint shape (phase 4)", async () => {
     // Payload-derived label fields are required at mint; a hash-less mint
@@ -2264,5 +2650,175 @@ describe("software history submissions", () => {
       )
     );
     await assertFails(getDoc(doc(fullCtx().firestore(SDK_SETTINGS), path)));
+  });
+});
+
+describe("creator visibility and moderation", () => {
+  async function seed(extra: Record<string, unknown> = {}) {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(SDK_SETTINGS), `users/${FULL_UID}`), {
+        publicProfileVersion: 2,
+        displayName: "Full User",
+        ...extra,
+      });
+    });
+  }
+
+  it("lets an owner choose isHidden, as a boolean only", async () => {
+    await seed();
+    const ref = doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`);
+    await assertSucceeds(updateDoc(ref, { isHidden: true }));
+    await assertSucceeds(updateDoc(ref, { isHidden: false }));
+    await assertFails(updateDoc(ref, { isHidden: "yes" }));
+  });
+
+  it("never lets an owner write isDisabled, isAdmin or role", async () => {
+    await seed();
+    const ref = doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`);
+    await assertFails(updateDoc(ref, { isDisabled: false }));
+    await assertFails(updateDoc(ref, { isDisabled: true }));
+    await assertFails(updateDoc(ref, { isAdmin: true }));
+    await assertFails(updateDoc(ref, { role: "admin" }));
+  });
+
+  it("does not let an owner clear their own isDisabled", async () => {
+    await seed({ isDisabled: true });
+    const ref = doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`);
+    await assertFails(updateDoc(ref, { isDisabled: false }));
+  });
+
+  it("does not let a disabled owner delete the profile; an admin still can", async () => {
+    await seed({ isDisabled: true });
+    await assertFails(
+      deleteDoc(doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`))
+    );
+    await assertSucceeds(
+      deleteDoc(doc(adminCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`))
+    );
+  });
+
+  it("still lets an owner in good standing delete the profile", async () => {
+    await seed();
+    await assertSucceeds(
+      deleteDoc(doc(fullCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`))
+    );
+  });
+
+  it("lets an admin write isDisabled and nobody else's profile", async () => {
+    await seed();
+    await assertSucceeds(
+      updateDoc(doc(adminCtx().firestore(SDK_SETTINGS), `users/${FULL_UID}`), {
+        isDisabled: true,
+      })
+    );
+    const stranger = testEnv
+      .authenticatedContext("stranger", {
+        firebase: { sign_in_provider: "password" },
+      })
+      .firestore(SDK_SETTINGS);
+    await assertFails(
+      updateDoc(doc(stranger, `users/${FULL_UID}`), { isHidden: true })
+    );
+  });
+
+  it("keeps a hidden or disabled person's map pin private", async () => {
+    const pin = {
+      userId: FULL_UID,
+      city: "Chicago",
+      cityCenterCoordinates: { lat: 41.88, lng: -87.63 },
+      visibility: "public",
+    };
+    const ref = () =>
+      doc(fullCtx().firestore(SDK_SETTINGS), `userLocations/${FULL_UID}`);
+
+    for (const flag of [{ isHidden: true }, { isDisabled: true }]) {
+      await seed(flag);
+      await assertFails(setDoc(ref(), pin));
+      await assertSucceeds(setDoc(ref(), { ...pin, visibility: "private" }));
+    }
+
+    // Only the server sets the hiddenByFlag mark; an owner may keep or drop it.
+    await seed();
+    await assertFails(setDoc(ref(), { ...pin, hiddenByFlag: true }));
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(SDK_SETTINGS), `userLocations/${FULL_UID}`),
+        { ...pin, visibility: "private", hiddenByFlag: true }
+      );
+    });
+    await assertSucceeds(
+      setDoc(ref(), { ...pin, visibility: "private", hiddenByFlag: true })
+    );
+    await assertSucceeds(setDoc(ref(), pin));
+  });
+
+  it("lets a hidden or disabled person save a private pin with the mark", async () => {
+    // saveCity writes the mark itself while the person is unlisted, so the
+    // trigger can make the pin public again once they come back.
+    const pin = {
+      userId: FULL_UID,
+      city: "Chicago",
+      cityCenterCoordinates: { lat: 41.88, lng: -87.63 },
+      visibility: "private",
+      hiddenByFlag: true,
+    };
+    const ref = () =>
+      doc(fullCtx().firestore(SDK_SETTINGS), `userLocations/${FULL_UID}`);
+
+    for (const flag of [{ isHidden: true }, { isDisabled: true }]) {
+      await seed(flag);
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await deleteDoc(
+          doc(context.firestore(SDK_SETTINGS), `userLocations/${FULL_UID}`)
+        );
+      });
+      // Create, then a city change on the same document.
+      await assertSucceeds(setDoc(ref(), pin));
+      await assertSucceeds(setDoc(ref(), { ...pin, city: "Denver" }));
+      // Still never public while unlisted, with or without the mark.
+      await assertFails(setDoc(ref(), { ...pin, visibility: "public" }));
+      await assertFails(
+        setDoc(ref(), { ...pin, visibility: "public", hiddenByFlag: false })
+      );
+    }
+  });
+
+  it("refuses the mark from a listed owner", async () => {
+    await seed();
+    const ref = doc(
+      fullCtx().firestore(SDK_SETTINGS),
+      `userLocations/${FULL_UID}`
+    );
+    const pin = {
+      userId: FULL_UID,
+      city: "Chicago",
+      cityCenterCoordinates: { lat: 41.88, lng: -87.63 },
+      visibility: "private",
+    };
+    await assertFails(setDoc(ref, { ...pin, hiddenByFlag: true }));
+    await assertSucceeds(setDoc(ref, pin));
+    await assertFails(setDoc(ref, { ...pin, hiddenByFlag: true }));
+  });
+
+  it("refuses follow writes from a disabled account", async () => {
+    await seed({ isDisabled: true });
+    const db = fullCtx().firestore(SDK_SETTINGS);
+    await assertFails(
+      setDoc(doc(db, `users/${FULL_UID}/following/target`), { createdAt: 1 })
+    );
+    await assertFails(
+      setDoc(doc(db, `users/target/followers/${FULL_UID}`), { createdAt: 1 })
+    );
+  });
+
+  it("still lets a hidden account follow", async () => {
+    await seed({ isHidden: true });
+    const db = fullCtx().firestore(SDK_SETTINGS);
+    await assertSucceeds(
+      setDoc(doc(db, `users/${FULL_UID}/following/target`), { createdAt: 1 })
+    );
+    await assertSucceeds(
+      setDoc(doc(db, `users/target/followers/${FULL_UID}`), { createdAt: 1 })
+    );
   });
 });

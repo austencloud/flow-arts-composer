@@ -263,6 +263,7 @@
           onScanMarkerClick={selectEvent}
           showEmptyState={false}
           size="full"
+          gestures="own"
         />
 
         {#if scanState.loading}

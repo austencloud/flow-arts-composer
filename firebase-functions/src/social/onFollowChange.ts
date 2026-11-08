@@ -30,6 +30,7 @@ import {
   onDocumentDeleted,
 } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
+import { cleanPushName } from "../push/pushText";
 
 const FOLLOW_PATH = "users/{userId}/followers/{followerUserId}";
 
@@ -93,10 +94,10 @@ async function notifyOfNewFollower(
   const db = admin.firestore();
   const followerSnap = await db.collection("users").doc(followerUserId).get();
   const followerData = followerSnap.data();
-  const followerName =
-    (followerData?.displayName as string | undefined) ||
-    (followerData?.name as string | undefined) ||
-    "Someone";
+  // The follower wrote this name, and it lands on the target's lock screen.
+  const followerName = cleanPushName(
+    followerData?.displayName || followerData?.name
+  );
 
   await db
     .collection("users")

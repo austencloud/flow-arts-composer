@@ -38,7 +38,7 @@ import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { isPreviewReadOnly } from "#lib/shared/debug/state/user-preview-state.svelte.js";
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
-import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
+import { profileVersionFor } from "#lib/shared/community/domain/models/public-profile-contract.js";
 import {
   hydrate,
   ensureComposition,
@@ -791,13 +791,19 @@ export class LibraryRepository {
     // The sequence and its profile count describe the same save. Committing
     // them together prevents a successful sequence write from leaving the
     // creator profile at zero when the second write loses auth or connectivity.
+    const guestFlag = await this.guestFlagPatch();
     const saveBatch = writeBatch(firestore);
     saveBatch.set(sequenceDocRef, writeData);
     saveBatch.set(
       userDocRef,
       {
+        // A guest's new doc is unlisted, like the one the profile sync writes.
         ...(!userProfileDoc.exists()
-          ? { publicProfileVersion: PUBLIC_PROFILE_VERSION }
+          ? {
+              publicProfileVersion: profileVersionFor(
+                guestFlag.isAnonymous === true
+              ),
+            }
           : {}),
         lastActivityDate: serverTimestamp(),
         // Carry the guest flag. This merge CREATES users/{uid} when
@@ -808,7 +814,7 @@ export class LibraryRepository {
         // an authState snapshot: an in-place anonymous upgrade mutates the User
         // object without re-firing onAuthStateChanged. Omit the field entirely
         // when there is no current user rather than guess `false`.
-        ...(await this.guestFlagPatch()),
+        ...guestFlag,
       },
       { merge: true }
     );

@@ -11,6 +11,7 @@
     profileColor: string;
     googlePhotoUrl: string | null;
     instagramLinked: boolean;
+    hiddenFromCreators?: boolean;
   } | null = null;
 </script>
 
@@ -55,6 +56,7 @@
   import GuestAccountCard from "./profile/GuestAccountCard.svelte";
   import ProfilePhotoPicker from "../ProfilePhotoPicker.svelte";
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
+  import SettingToggleButton from "../SettingToggleButton.svelte";
   import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
   import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
   import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
@@ -131,6 +133,12 @@
   );
   let instagramLinked = $state(knownDetails?.instagramLinked ?? false);
   let detailsLoadedFor = $state<string | null>(knownDetails?.userId ?? null);
+  let hiddenFromCreators = $state(
+    accountDetailsCache?.userId === authState.user?.uid
+      ? (accountDetailsCache?.hiddenFromCreators ?? false)
+      : false
+  );
+  let savingCreatorVisibility = $state(false);
   let manageSignInMethods = $state(false);
   let loadedAccountUserId = $state<string | null>(null);
   let setupWasIncomplete = $state(false);
@@ -216,6 +224,7 @@
       profileColor,
       googlePhotoUrl: savedGooglePhotoUrl,
       instagramLinked,
+      hiddenFromCreators,
     };
   });
 
@@ -242,6 +251,7 @@
         userUsername = data?.username || "";
         instagramUsername = data?.instagramUsername || "";
         if (data?.profileColor) profileColor = data.profileColor;
+        hiddenFromCreators = data?.isHidden === true;
       }
       if (privateDoc.exists()) {
         savedGooglePhotoUrl = privateDoc.data()?.googlePhotoURL ?? null;
@@ -354,6 +364,44 @@
       console.error("Failed to save profile color:", error);
       profileColor = previousColor;
       toast.error(t("settings_profile_color_save_failed"));
+    }
+  }
+
+  async function handleToggleCreatorVisibility() {
+    const user = authState.user;
+    if (!user || savingCreatorVisibility) return;
+    const previous = hiddenFromCreators;
+    hiddenFromCreators = !previous;
+    savingCreatorVisibility = true;
+    hapticService?.trigger("selection");
+    const hidden = hiddenFromCreators;
+    try {
+      await getUserDocumentManager().setHiddenFromCreators(user.uid, hidden);
+    } catch (error) {
+      console.error("Failed to save Creators visibility:", error);
+      hiddenFromCreators = previous;
+      toast.error(t("settings_show_in_creators_failed"));
+      return;
+    } finally {
+      savingCreatorVisibility = false;
+    }
+    // The roster and the map pins already loaded this session hold the old
+    // value until a reload; bring them up to date. Loaded on demand so
+    // Settings does not pull in the Creators and map modules. The save has
+    // landed, so a failure here only leaves the old view until a reload.
+    try {
+      const [{ applyOwnCreatorVisibility }, { creatorsDataState }, map] =
+        await Promise.all([
+          import("#lib/features/creators/state/own-creator-visibility.js"),
+          import("#lib/features/creators/state/creators-data-state.svelte.js"),
+          import("#lib/features/community/services/community-map-port.js"),
+        ]);
+      applyOwnCreatorVisibility(user.uid, hidden, {
+        patchUser: (id, patch) => creatorsDataState.patchUser(id, patch),
+        invalidatePins: map.invalidatePublicLocations,
+      });
+    } catch (error) {
+      console.warn("Could not refresh Creators after the visibility change:", error);
     }
   }
 
@@ -589,6 +637,13 @@
               onInstagramUsernameChanged={(username) =>
                 (instagramUsername = username)}
               {displayNameEditRequest}
+            />
+            <SettingToggleButton
+              label={t("settings_show_in_creators")}
+              description={t("settings_show_in_creators_desc")}
+              checked={!hiddenFromCreators}
+              busy={savingCreatorVisibility}
+              onToggle={handleToggleCreatorVisibility}
             />
           </div>
         </section>

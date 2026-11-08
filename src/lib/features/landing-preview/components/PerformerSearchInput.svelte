@@ -223,7 +223,7 @@
           <div class="result-info">
             <span class="result-name">{user.displayName || "No name"}</span>
             <span class="result-username"
-              >@{user.username || user.uid.slice(0, 8)}</span
+              >{user.username ? `@${user.username}` : ""}</span
             >
           </div>
           <i class="fas fa-check result-action" aria-hidden="true"></i>

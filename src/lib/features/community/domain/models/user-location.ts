@@ -26,6 +26,12 @@ export interface UserLocation {
   };
 
   visibility: "public" | "private";
+  /**
+   * Set on a private pin whose owner is hidden or disabled, by
+   * syncMapPinVisibility or by a save made while hidden. The trigger makes
+   * such a pin public again when the person is listed again.
+   */
+  hiddenByFlag?: boolean;
   updatedAt: Timestamp;
 }
 

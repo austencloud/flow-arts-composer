@@ -111,7 +111,7 @@ Displays:
     <!-- Creator Info -->
     <div class="creator-info">
       <h3 class="display-name">{profile.displayName}</h3>
-      <p class="username">@{profile.username}</p>
+      {#if profile.username}<p class="username">@{profile.username}</p>{/if}
       <div class="stats">
         <span class="stat" title={t("tab_browse_sequences")}>
           <i class="fas fa-list" aria-hidden="true"></i>

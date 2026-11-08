@@ -139,8 +139,9 @@ describe("LibraryRepository profile write carries the guest flag", () => {
   it("tags a guest's save so the minted doc is never identity-less", async () => {
     firestoreMocks.currentUser.value = { uid: "user-1", isAnonymous: true };
 
+    // Unlisted: the Creators directory query asks for version 2.
     expect(await profileWrite()).toEqual({
-      publicProfileVersion: 2,
+      publicProfileVersion: 0,
       lastActivityDate: "server-timestamp",
       isAnonymous: true,
     });

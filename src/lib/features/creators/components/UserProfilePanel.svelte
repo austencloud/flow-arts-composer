@@ -1,17 +1,23 @@
 <script lang="ts">
   import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import {
     getUserProfile,
     followUser,
     unfollowUser,
+    setCreatorDisabled,
     getFollowers,
     getFollowing,
   } from "#lib/shared/community/services/user-repository.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { profileActionsFor } from "../domain/profile-viewer";
+  import { creatorsDataState } from "../state/creators-data-state.svelte";
+  import { createProfileSession } from "../state/profile-session.svelte";
   import { hasProfileWork } from "../domain/profile-tenure";
   import { scene3dCollectionState } from "#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js";
   import { tunnelCollectionState } from "#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js";
@@ -32,7 +38,6 @@
   import ProfileConnectionSection from "./profile/ProfileConnectionSection.svelte";
   import FollowersModal from "./profile/FollowersModal.svelte";
   import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
-  import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 
   interface Props {
     userId: string;
@@ -40,11 +45,30 @@
 
   let { userId }: Props = $props();
 
-  let userProfile = $state<EnhancedUserProfile | null>(null);
-  let userSequences = $state<LibrarySequence[]>([]);
-  let isLoading = $state(true);
-  let error = $state<string | null>(null);
-  let followInProgress = $state(false);
+  // The host keys this panel by userId, so one panel only ever shows one person.
+  const session = createProfileSession(
+    untrack(() => userId),
+    {
+      fetchProfile: (id, viewerId) => getUserProfile(id, viewerId),
+      fetchSequences: (id, isOwn) =>
+        getLibraryRepository().getUserSequences(id, {
+          visibility: isOwn ? undefined : "public",
+        }),
+      follow: (viewerId, id) => followUser(viewerId, id, "creator_profile"),
+      unfollow: (viewerId, id) => unfollowUser(viewerId, id, "creator_profile"),
+      setDisabled: setCreatorDisabled,
+      startOwnStores: (id) => {
+        scene3dCollectionState.ensureStarted(id);
+        tunnelCollectionState.ensureStarted(id);
+        mandalaCollectionState.ensureStarted(id);
+      },
+    }
+  );
+  const userProfile = $derived<EnhancedUserProfile | null>(session.profile);
+  const userSequences = $derived<LibrarySequence[]>(session.sequences);
+  const isLoading = $derived(session.isLoading);
+  const failure = $derived(session.failure);
+  const followInProgress = $derived(session.followInProgress);
 
   // Followers/Following modal state
   let followersModalOpen = $state(false);
@@ -57,11 +81,34 @@
   let followingLoaded = $state(false);
 
   // Services
-  let libraryService: LibraryRepository;
   let hapticService: HapticFeedback;
 
   const currentUserId = $derived(authState.user?.uid);
   const isOwnProfile = $derived(currentUserId === userId);
+  const actions = $derived(
+    profileActionsFor({
+      viewerId: currentUserId,
+      isFullAccount: authState.isFullAccount,
+      isOwnProfile,
+    })
+  );
+  const failureTitle = $derived(
+    failure === "not-found" || !failure
+      ? t("creators_profile_not_found_title")
+      : t("creators_profile_load_failed_title")
+  );
+  const failureMessage = $derived.by(() => {
+    switch (failure) {
+      case "denied":
+        return t("creators_profile_load_denied");
+      case "offline":
+        return t("creators_profile_load_offline");
+      case "unknown":
+        return t("creators_profile_load_unknown");
+      default:
+        return t("creators_profile_not_found_body");
+    }
+  });
 
   /**
    * The composition is decided HERE, before anything paints.
@@ -117,46 +164,16 @@
     followersModalType === "followers" ? followersLoading : followingLoading
   );
 
-  onMount(async () => {
-    try {
-      libraryService = getLibraryRepository();
-      hapticService = getHapticFeedback();
+  onMount(() => {
+    hapticService = getHapticFeedback();
+  });
 
-      userProfile = await getUserProfile(userId, currentUserId);
-
-      if (!userProfile) {
-        error = "User not found";
-        isLoading = false;
-        return;
-      }
-
-      // Started here, not only in the stage, because the layout decision needs
-      // these counts and the stage does not mount until that decision is made —
-      // leaving it to the stage would deadlock an own profile whose only content
-      // is saved art. ONLY ever for your own uid: `ensureStarted` repoints these
-      // singletons' writes as well as their reads, and another creator's saved
-      // art is unreadable by rule. Idempotent, so the stage's own call is free.
-      if (isOwnProfile) {
-        scene3dCollectionState.ensureStarted(userId);
-        tunnelCollectionState.ensureStarted(userId);
-        mandalaCollectionState.ensureStarted(userId);
-      }
-
-      userSequences = await libraryService.getUserSequences(userId, {
-        visibility: isOwnProfile ? undefined : "public",
-      });
-
-      const actualCount = userSequences.length;
-      if (userProfile.sequenceCount !== actualCount) {
-        userProfile = { ...userProfile, sequenceCount: actualCount };
-      }
-
-      isLoading = false;
-    } catch (err) {
-      console.error(`[UserProfilePanel] Error loading profile:`, err);
-      error = err instanceof Error ? err.message : "Failed to load profile";
-      isLoading = false;
-    }
+  // Loads on mount, and again when the viewer changes after it: on a warm
+  // reload auth restores after the shell renders, and without this the Follow
+  // button and own-profile view stayed as they were for a signed-out visitor.
+  $effect(() => {
+    const viewerId = currentUserId;
+    void untrack(() => session.syncViewer(viewerId));
   });
 
   function handleBack() {
@@ -167,36 +184,40 @@
     backToCreatorsList();
   }
 
-  async function handleFollowToggle() {
-    if (!currentUserId || !userProfile) return;
-    if (isOwnProfile || followInProgress) return;
-
-    followInProgress = true;
-    hapticService?.trigger("selection");
-
-    try {
-      if (userProfile.isFollowing) {
-        await unfollowUser(currentUserId, userId, "creator_profile");
-        userProfile = {
-          ...userProfile,
-          isFollowing: false,
-          followerCount: Math.max(0, userProfile.followerCount - 1),
-        };
-      } else {
-        await followUser(currentUserId, userId, "creator_profile");
-        userProfile = {
-          ...userProfile,
-          isFollowing: true,
-          followerCount: userProfile.followerCount + 1,
-        };
-      }
-    } catch (err) {
-      console.error("[UserProfilePanel] Error toggling follow:", err);
-      error = "Failed to update follow status";
-      userProfile = await getUserProfile(userId, currentUserId);
-    } finally {
-      followInProgress = false;
+  async function handleFollowPress() {
+    if (actions.follow === "gate") {
+      authDrawerState.show("signup", "follow");
+      return;
     }
+    if (actions.follow !== "toggle" || !currentUserId) return;
+
+    hapticService?.trigger("selection");
+    const nowFollowing = await session.toggleFollow(currentUserId);
+    if (nowFollowing === null) return;
+    // The roster, its Following tab and this profile describe one relationship.
+    creatorsDataState.applyFollowChange(userId, nowFollowing);
+    // A loaded follower list no longer includes (or still includes) the viewer.
+    followersLoaded = false;
+  }
+
+  let moderationInProgress = $state(false);
+
+  async function handleToggleDisabled() {
+    if (!userProfile || moderationInProgress) return;
+    const disabling = !userProfile.isDisabled;
+    moderationInProgress = true;
+    const saved = await session.setDisabled(disabling);
+    moderationInProgress = false;
+    if (!saved) {
+      toast.error(t("creators_moderation_failed"));
+      return;
+    }
+    creatorsDataState.patchUser(userId, { isDisabled: disabling });
+    toast.success(
+      disabling
+        ? t("creators_profile_disabled_done")
+        : t("creators_profile_restored_done")
+    );
   }
 
   function handleSequenceClick(sequence: LibrarySequence) {
@@ -258,17 +279,13 @@
        the layout is chosen from these counts, so painting before they are known
        is what produced the empty-column flash. -->
   {#if isLoading || !collectionsSettled}
-    <PanelState type="loading" message="Loading profile..." />
-  {:else if error || !userProfile}
+    <PanelState type="loading" message={t("creators_profile_loading")} />
+  {:else if failure || !userProfile}
     <div class="error-with-action">
-      <PanelState
-        type="error"
-        title="Profile Not Found"
-        message={error || "User not found"}
-      />
+      <PanelState type="error" title={failureTitle} message={failureMessage} />
       <PanelButton variant="secondary" onclick={handleBack}>
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        Go Back
+        {t("creators_go_back")}
       </PanelButton>
     </div>
   {:else}
@@ -285,16 +302,19 @@
         <div class="rail-area">
           <ProfileHeroSection
             {userProfile}
-            {currentUserId}
-            {isOwnProfile}
+            followMode={actions.follow}
+            showReport={actions.showReport}
+            viewerIsAdmin={authState.isEffectiveAdmin}
+            {moderationInProgress}
+            onToggleDisabled={handleToggleDisabled}
             {followInProgress}
             collectionsCount={savedTotal}
-            onFollowToggle={handleFollowToggle}
+            onFollowToggle={handleFollowPress}
             onFollowersClick={() => openFollowersModal("followers")}
             onFollowingClick={() => openFollowersModal("following")}
           />
 
-          {#if currentUserId && !isOwnProfile}
+          {#if actions.showConnection}
             <ProfileConnectionSection
               targetUserId={userId}
               targetUserName={userProfile.displayName}

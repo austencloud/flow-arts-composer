@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
+import { isListedCreator } from "#lib/shared/community/domain/listed-creator.js";
 import type { UserSearchResult, UserSearchOptions } from "./types";
 
 function fuzzyMatch(text: string, queryTerms: string[]): boolean {
@@ -58,6 +59,7 @@ export async function searchUsers(
       if (excludeUserIds.includes(uid) || addedUids.has(uid)) continue;
 
       const data = docSnap.data();
+      if (!isListedCreator(data, { viewerIsAdmin: false })) continue;
       results.push({
         uid,
         displayName: data.displayName || data.name || "",
@@ -82,6 +84,7 @@ export async function searchUsers(
         if (excludeUserIds.includes(uid) || addedUids.has(uid)) continue;
 
         const data = docSnap.data();
+        if (!isListedCreator(data, { viewerIsAdmin: false })) continue;
         const displayName = data.displayName || data.name || "";
         const username = data.username || "";
 

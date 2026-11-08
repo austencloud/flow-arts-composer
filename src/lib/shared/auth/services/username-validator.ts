@@ -13,6 +13,7 @@ import {
 import { getFirestoreInstance } from '../firebase';
 import type { UsernameValidationResult } from '../domain/models/username-validation';
 import { validateUsernameFormat, formatUsername } from '../domain/models/username-validation';
+import { handleCandidates } from '../domain/models/handle-rule';
 
 const USERNAMES_COLLECTION = 'usernames';
 const USERS_COLLECTION = 'users';
@@ -25,8 +26,9 @@ async function generateSuggestions(base: string): Promise<string[]> {
 	const suggestions: string[] = [];
 	const cleanBase = base
 		.toLowerCase()
-		.replace(/[^a-z0-9]/g, '')
-		.substring(0, 17);
+		.replace(/[^a-z0-9._]/g, '')
+		.replace(/^[._]+|[._]+$/g, '')
+		.substring(0, 28);
 
 	const usedSuffixes = new Set<number>();
 	while (suggestions.length < 3 && usedSuffixes.size < 90) {
@@ -82,27 +84,55 @@ export async function checkUsernameAvailability(
 	}
 }
 
-export async function generateUniqueUsername(base: string): Promise<string> {
-	let cleanBase = base
-		.toLowerCase()
-		.replace(/[^a-z0-9_-]/g, '')
-		.substring(0, 15);
+/**
+ * Take the first free handle the name gives, and write it with the rest of the
+ * profile in one transaction, so a profile can never hold a handle whose
+ * reservation failed. Two people with the same name cannot both win: the loser's
+ * transaction sees the reservation and moves to the next candidate. `previous`
+ * is a handle this person is giving up; its reservation goes in the same write.
+ */
+export async function claimHandleFromName(
+	userId: string,
+	name: string | null | undefined,
+	profileFields: Record<string, unknown>,
+	previous?: string | null,
+): Promise<string> {
+	const firestore = await getFirestoreInstance();
+	const userDocRef = doc(firestore, USERS_COLLECTION, userId);
 
-	if (cleanBase.length < 3) cleanBase = 'user';
+	for (const candidate of handleCandidates(name)) {
+		const usernameDocRef = doc(firestore, USERNAMES_COLLECTION, candidate);
+		const previousRef =
+			previous && formatUsername(previous) !== candidate
+				? doc(firestore, USERNAMES_COLLECTION, formatUsername(previous))
+				: null;
+		const won = await runTransaction(firestore, async (transaction) => {
+			const reservation = await transaction.get(usernameDocRef);
+			if (reservation.exists() && reservation.data().userId !== userId) {
+				return false;
+			}
+			const previousClaim = previousRef ? await transaction.get(previousRef) : null;
 
-	cleanBase = cleanBase.replace(/^[-_]+|[-_]+$/g, '');
-
-	const baseResult = await checkUsernameAvailability(cleanBase);
-	if (baseResult.isValid) return cleanBase;
-
-	for (let i = 0; i < 10; i++) {
-		const suffix = Math.floor(100 + Math.random() * 900);
-		const candidate = `${cleanBase}_${suffix}`;
-		const result = await checkUsernameAvailability(candidate);
-		if (result.isValid) return candidate;
+			if (!reservation.exists()) {
+				transaction.set(usernameDocRef, {
+					userId,
+					createdAt: serverTimestamp(),
+					updatedAt: serverTimestamp(),
+				});
+			}
+			transaction.set(
+				userDocRef,
+				{ ...profileFields, username: candidate, usernameLowercase: candidate },
+				{ merge: true },
+			);
+			if (previousRef && previousClaim?.exists() && previousClaim.data().userId === userId) {
+				transaction.delete(previousRef);
+			}
+			return true;
+		});
+		if (won) return candidate;
 	}
-
-	return `${cleanBase}_${Date.now().toString().slice(-6)}`;
+	throw new Error('Could not find a free username');
 }
 
 /** The user id holding this username's claim, or null when nobody has claimed it. */
@@ -117,17 +147,18 @@ export async function getUsernameOwner(username: string): Promise<string | null>
 /**
  * Claiming a name the user already holds writes nothing. The claim's createdAt
  * records when the name was first taken, so it is only set on a new claim, and
- * the profile is only updated when its stored spelling differs (a rename that
- * changes only capitalization keeps the claim and updates the profile).
+ * the profile is only updated when its stored spelling differs.
  */
-export async function claimUsername(userId: string, username: string): Promise<void> {
-	const formatResult = validateUsernameFormat(username);
+export async function claimUsername(userId: string, requested: string): Promise<void> {
+	const formatResult = validateUsernameFormat(requested);
 	if (!formatResult.isValid) {
 		throw new Error(formatResult.error || 'Invalid username format');
 	}
 
 	const firestore = await getFirestoreInstance();
-	const usernameLowercase = formatUsername(username);
+	// Handles are stored in lowercase; typing capitals changes nothing.
+	const username = formatUsername(requested);
+	const usernameLowercase = username;
 
 	await runTransaction(firestore, async (transaction) => {
 		const usernameDocRef = doc(firestore, USERNAMES_COLLECTION, usernameLowercase);
@@ -139,6 +170,17 @@ export async function claimUsername(userId: string, username: string): Promise<v
 
 		const userDocRef = doc(firestore, USERS_COLLECTION, userId);
 		const profile = (await transaction.get(userDocRef)).data();
+
+		// The handle being given up is released in the same write, so a rename
+		// never leaves a reservation behind or a profile without one. The rules
+		// require the new reservation to be written with (or before) the profile.
+		const previous =
+			typeof profile?.username === 'string' ? formatUsername(profile.username) : null;
+		const previousRef =
+			previous && previous !== usernameLowercase
+				? doc(firestore, USERNAMES_COLLECTION, previous)
+				: null;
+		const previousClaim = previousRef ? await transaction.get(previousRef) : null;
 
 		if (!usernameDoc.exists()) {
 			transaction.set(usernameDocRef, {
@@ -155,6 +197,34 @@ export async function claimUsername(userId: string, username: string): Promise<v
 				updatedAt: serverTimestamp(),
 			});
 		}
+
+		if (previousRef && previousClaim?.exists() && previousClaim.data().userId === userId) {
+			transaction.delete(previousRef);
+		}
+	});
+}
+
+/**
+ * Put back a reservation that is missing for a handle the profile already holds.
+ * Separate from claimUsername because older handles (hyphens, capitals) stay
+ * valid while unchanged and would fail today's format check.
+ */
+export async function repairUsernameClaim(userId: string, username: string): Promise<void> {
+	const firestore = await getFirestoreInstance();
+	const usernameDocRef = doc(firestore, USERNAMES_COLLECTION, formatUsername(username));
+	await runTransaction(firestore, async (transaction) => {
+		const reservation = await transaction.get(usernameDocRef);
+		if (reservation.exists()) {
+			if (reservation.data().userId !== userId) {
+				throw new Error('Username is already taken');
+			}
+			return;
+		}
+		transaction.set(usernameDocRef, {
+			userId,
+			createdAt: serverTimestamp(),
+			updatedAt: serverTimestamp(),
+		});
 	});
 }
 

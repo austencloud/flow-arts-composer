@@ -298,8 +298,10 @@
               </div>
             </div>
             <div class="identity-meta">
-              <span>@{userProfile.username}</span>
-              <span class="meta-divider" aria-hidden="true"></span>
+              {#if userProfile.username}
+                <span>@{userProfile.username}</span>
+                <span class="meta-divider" aria-hidden="true"></span>
+              {/if}
               <span>{authData.email ?? "No email"}</span>
             </div>
           </div>

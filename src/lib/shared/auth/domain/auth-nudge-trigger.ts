@@ -30,6 +30,7 @@ export type AuthNudgeTrigger =
   | "viewer-signin-account"
   | "guest-first-save"
   | "prop-collection"
+  | "follow"
   | "share-image-signin";
 
 export type AuthMode = "signin" | "signup";
@@ -123,6 +124,8 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
     "Keep your sequences on every phone and laptop. Free, about ten seconds.",
   "prop-collection":
     "Keep the props you earned on every device. Free, about ten seconds.",
+  follow:
+    "Follow creators and keep up with what they make, with an account. Free, about ten seconds.",
   // Share intake, trace 3: the user shared an image while signed out.
   // services/implementations/MessageImageSender.ts:32-34 rejects anonymous/guest
   // uploads outright, so this is a hard requirement, not a nudge. Phrased as
@@ -280,6 +283,11 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     key: "prop-collection",
     title: "Keep your prop collection",
     body: "Keep the props you earn, on every device. Free, about ten seconds.",
+  },
+  follow: {
+    key: "follow",
+    title: "Follow this creator",
+    body: AUTH_NUDGE_TEXTS.follow,
   },
   "share-image-signin": {
     key: "share-image-signin",

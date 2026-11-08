@@ -59,6 +59,7 @@ const keys: Partial<Record<string, TranslationKey>> = {
   "Keep the props you earn, on every device. Free, about ten seconds.":
     "auth_prompt_earned_props",
   "Send this image": "auth_prompt_send_image",
+  "Follow this creator": "auth_prompt_follow_creator",
   "Create your account": "auth_prompt_create_account",
   "Save your sequences and open them on any device.":
     "auth_prompt_save_any_device",
@@ -98,6 +99,7 @@ const nudgeKeys = {
   "viewer-signin-account": "auth_nudge_viewer_signin_account",
   "guest-first-save": "auth_nudge_guest_first_save",
   "prop-collection": "auth_nudge_prop_collection",
+  follow: "auth_nudge_follow",
   "share-image-signin": "auth_nudge_share_image_signin",
 } satisfies Record<AuthNudgeTrigger, TranslationKey>;
 

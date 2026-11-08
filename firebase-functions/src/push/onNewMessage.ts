@@ -11,6 +11,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { sendPushToUser, getUnreadCount } from "./pushDispatcher";
 import type { PushPayload } from "./types";
+import { cleanPushName, cleanPushText, PUSH_BODY_MAX, PUSH_NAME_MAX } from "./pushText";
 
 const db = admin.firestore();
 
@@ -27,8 +28,8 @@ export const onNewMessage = onDocumentCreated(
     const { conversationId } = event.params;
 
     const senderId: string = messageData.senderId;
-    const senderName: string = messageData.senderName || "Someone";
-    const content: string = messageData.content || "";
+    const senderName = cleanPushName(messageData.senderName);
+    const content = cleanPushText(messageData.content, PUSH_BODY_MAX);
     const attachmentType: string | undefined =
       messageData.attachments?.[0]?.type;
 
@@ -58,7 +59,9 @@ export const onNewMessage = onDocumentCreated(
     const conversationData = conversationDoc.data()!;
     const participants: string[] = conversationData.participants || [];
     const conversationType: string = conversationData.type || "direct";
-    const groupName: string | undefined = conversationData.groupMetadata?.name;
+    const groupName =
+      cleanPushText(conversationData.groupMetadata?.name, PUSH_NAME_MAX) ||
+      undefined;
 
     // Build recipient list (everyone except sender)
     const recipients = participants.filter((uid) => uid !== senderId);

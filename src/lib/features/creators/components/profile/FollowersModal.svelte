@@ -71,7 +71,7 @@
             </div>
             <div class="user-info">
               <h4 class="user-name">{user.displayName}</h4>
-              <p class="user-username">@{user.username}</p>
+              {#if user.username}<p class="user-username">@{user.username}</p>{/if}
             </div>
             <div class="user-stats">
               <span class="user-stat">

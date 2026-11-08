@@ -6,8 +6,8 @@ import {
   EmailAuthProvider,
   type User,
 } from "firebase/auth";
-import { claimUsername, releaseUsername } from "./username-validator";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { claimUsername } from "./username-validator";
+import { doc, setDoc } from "firebase/firestore";
 import { getFirestoreInstance } from "../firebase";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
 
@@ -84,19 +84,8 @@ export async function updateUsername(
   newUsername: string
 ): Promise<{ success: true; message: string }> {
   await retryAuthenticatedFirestoreOperation(user, async () => {
-    const firestore = await getFirestoreInstance();
-    const userDocRef = doc(firestore, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-    const currentUsername = userDoc.data()?.username;
-
+    // One transaction takes the new handle and releases the old one.
     await claimUsername(user.uid, newUsername.trim());
-
-    if (
-      currentUsername &&
-      currentUsername.toLowerCase() !== newUsername.toLowerCase()
-    ) {
-      await releaseUsername(currentUsername);
-    }
   });
 
   return { success: true, message: "Username updated successfully." };

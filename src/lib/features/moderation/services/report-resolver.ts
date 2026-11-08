@@ -4,7 +4,7 @@
  * Handles admin actions on reports (resolution, status changes).
  */
 
-import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
 import { authState } from '#lib/shared/auth/state/auth-state.svelte.js';
 interface ReportQuerier {
@@ -122,12 +122,16 @@ export class ReportResolver {
 		const firestore = await getFirestoreInstance();
 		const userRef = doc(firestore, USERS_COLLECTION, userId);
 
-		await updateDoc(userRef, {
-			isDisabled: true,
-			disabledReason: reason,
+		// The public profile may only hold public fields (firestore.rules
+		// isSafePublicProfile), so the reason lives in the moderation record.
+		const batch = writeBatch(firestore);
+		batch.update(userRef, { isDisabled: true });
+		batch.set(doc(firestore, USERS_COLLECTION, userId, 'moderation', 'account-disabled'), {
+			reason,
 			disabledAt: serverTimestamp(),
 			disabledBy: authState.user?.uid || 'unknown'
 		});
+		await batch.commit();
 	}
 
 	/**

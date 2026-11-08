@@ -192,7 +192,7 @@
           bind:value={editedUsername}
           oninput={handleInput}
           onkeydown={handleKeydown}
-          maxlength="20"
+          maxlength="30"
           placeholder={t("nav_ui_your_username")}
           disabled={isSaving}
           aria-invalid={feedbackError ? "true" : "false"}

@@ -31,6 +31,8 @@
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { creatorListingStatus } from "#lib/shared/community/domain/listed-creator.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
   import type { BandKey } from "../domain/creator-recency";
   import { ringToneFor } from "../domain/creator-recency";
@@ -82,6 +84,11 @@
       : t("browse_verified_never_returned")
   );
 
+  // Only an admin ever receives these people, so only an admin sees this.
+  const listingStatus = $derived(
+    authState.isEffectiveAdmin ? creatorListingStatus(creator) : null
+  );
+
   const isPortrait = $derived(density === "portrait");
   const avatarSize = $derived(Math.round((isPortrait ? 5.5 : 2.5) * unitPx));
 </script>
@@ -112,6 +119,14 @@
 
     <span class="text">
       <span class="name">{creator.displayName}</span>
+
+      {#if listingStatus}
+        <span class="listing-status">
+          {listingStatus === "disabled"
+            ? t("creators_label_disabled")
+            : t("creators_label_hidden")}
+        </span>
+      {/if}
 
       {#if isPortrait}
         <!-- ONE evidence line. Prop identity plus when they were last here —
@@ -277,6 +292,16 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--theme-text, rgba(255, 255, 255, 0.94));
+  }
+
+  .listing-status {
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 0.05em 0.45em;
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    border-radius: 999px;
+    font-size: 0.6875em;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
   }
 
   .evidence {

@@ -39,10 +39,18 @@ describe("public user query migration marker", () => {
   });
 
   it("stamps the marker only in the two browser profile creation paths", () => {
+    // user-document-manager writes it on create, and re-stamps an existing doc
+    // whose version disagrees with its account kind (a guest upgrading to 2, an
+    // old guest doc moving to 0): the re-stamp write plus the read it compares
+    // against. The create payload lives in public-profile-payload.ts so the
+    // rules tests write the same object.
     expect(
       occurrences(
         source("src/lib/shared/auth/services/user-document-manager.ts")
       )
+    ).toBe(2);
+    expect(
+      occurrences(source("src/lib/shared/auth/domain/public-profile-payload.ts"))
     ).toBe(1);
     expect(
       occurrences(

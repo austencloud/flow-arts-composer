@@ -24,6 +24,7 @@ import {
   updateProfile,
   type AuthError,
 } from "firebase/auth";
+import { syncNamedProfile } from "./sync-named-profile";
 import { auth, configureAuthPersistence, getAuthInstance } from "../firebase";
 import {
   captureAnonymousDrafts,
@@ -271,6 +272,7 @@ export async function signUpWithEmail(
 
   if (name?.trim()) {
     await updateProfile(userCredential.user, { displayName: name.trim() });
+    await syncNamedProfile(userCredential.user);
   }
 
   recordLastAuthMethod("password");

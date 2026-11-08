@@ -83,7 +83,7 @@
             <span class="pronouns">{user.pronouns}</span>
           {/if}
         </div>
-        <span class="username">@{user.username}</span>
+        {#if user.username}<span class="username">@{user.username}</span>{/if}
         <span class="activity">{activityCopy}</span>
       </div>
     </header>

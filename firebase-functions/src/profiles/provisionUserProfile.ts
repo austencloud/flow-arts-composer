@@ -22,77 +22,13 @@
 
 import * as admin from "firebase-admin";
 import type { UserRecord } from "firebase-admin/auth";
+import { handleBaseFromName, handleCandidates } from "./handleFromName";
 
 /** Matches PUBLIC_PROFILE_VERSION in src/lib/shared/community/domain/models/public-profile-contract.ts */
 const PUBLIC_PROFILE_VERSION = 2;
 const USERNAMES_COLLECTION = "usernames";
 
 export type ProvisionOutcome = "created" | "already-exists" | "skipped-anonymous";
-
-/** Port of src/lib/shared/foundation/utils/avatar-generator.ts — byte-identical output. */
-function generateAvatarUrl(name: string | undefined | null, size = 64): string {
-  const displayName = name || "Anonymous";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() || "")
-    .join("");
-  const backgroundColor = generateColorFromString(displayName);
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <rect width="${size}" height="${size}" fill="${backgroundColor}" />
-      <text
-        x="50%"
-        y="50%"
-        dominant-baseline="central"
-        text-anchor="middle"
-        fill="#ffffff"
-        font-family="system-ui, -apple-system, sans-serif"
-        font-size="${size * 0.4}"
-        font-weight="500"
-      >${initials}</text>
-    </svg>
-  `.trim();
-
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
-
-function generateColorFromString(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    hash = hash & hash;
-  }
-  const h = Math.abs(hash % 360);
-  const s = 65 + (Math.abs(hash) % 20);
-  const l = 45 + (Math.abs(hash >> 8) % 15);
-  return hslToHex(h, s, l);
-}
-
-function hslToHex(h: number, s: number, l: number): string {
-  const sD = s / 100;
-  const lD = l / 100;
-  const c = (1 - Math.abs(2 * lD - 1)) * sD;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = lD - c / 2;
-
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  if (h < 60) [r, g, b] = [c, x, 0];
-  else if (h < 120) [r, g, b] = [x, c, 0];
-  else if (h < 180) [r, g, b] = [0, c, x];
-  else if (h < 240) [r, g, b] = [0, x, c];
-  else if (h < 300) [r, g, b] = [x, 0, c];
-  else [r, g, b] = [c, 0, x];
-
-  const toHex = (n: number) => {
-    const hex = Math.round((n + m) * 255).toString(16);
-    return hex.length === 1 ? `0${hex}` : hex;
-  };
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
 
 /** Port of capitalizeName in user-document-manager.ts. */
 function capitalizeName(name: string): string {
@@ -111,29 +47,32 @@ function capitalizeName(name: string): string {
 }
 
 /**
- * Claim the first free username derived from `base`, transactionally.
- *
- * The client version checks availability and claims in two steps, which can
- * race. Here the read and the write share one transaction, so two concurrent
- * signups on the same base can never both win.
+ * Same cleaning as the client's displayName in user-document-manager.ts:
+ * control characters become spaces, trimmed, at most 50 characters, and
+ * "Creator" when nothing is left. The Admin SDK skips the rules, so the server
+ * must not write a name the rules (1 to 50 plain characters) would refuse.
+ */
+export function cleanDisplayName(name: string): string {
+  return (
+    name
+      .replace(/[\u0000-\u001F\u007F]+/g, " ")
+      .trim()
+      .slice(0, 50)
+      .trim() || "Creator"
+  );
+}
+
+/**
+ * Claim the first free handle the name gives, transactionally. Never from the
+ * email. The read and the write share one transaction, so two concurrent signups
+ * on the same name can never both win.
  */
 async function claimAvailableUsername(
   db: admin.firestore.Firestore,
-  base: string,
+  name: string | null,
   uid: string
 ): Promise<string> {
-  let cleanBase = base
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "")
-    .substring(0, 15)
-    .replace(/^[-_]+|[-_]+$/g, "");
-  if (cleanBase.length < 3) cleanBase = "user";
-
-  const candidates = [cleanBase];
-  for (let i = 0; i < 10; i++) {
-    candidates.push(`${cleanBase}_${Math.floor(100 + Math.random() * 900)}`);
-  }
-  candidates.push(`${cleanBase}_${Date.now().toString().slice(-6)}`);
+  const candidates = handleCandidates(name);
 
   for (const candidate of candidates) {
     const lower = candidate.toLowerCase().trim();
@@ -151,8 +90,13 @@ async function claimAvailableUsername(
     if (won) return candidate;
   }
 
-  // Every candidate collided — fall back to something that cannot.
-  return `${cleanBase}_${uid.substring(0, 6).toLowerCase()}`;
+  // Every candidate collided — fall back to something that cannot: the same
+  // cleaned base the candidates came from plus a slice of the uid, kept inside
+  // the 30-character handle limit.
+  const stem = (handleBaseFromName(name) ?? "creator")
+    .slice(0, 23)
+    .replace(/[._]+$/, "");
+  return `${stem}_${uid.substring(0, 6).toLowerCase()}`;
 }
 
 /**
@@ -172,23 +116,19 @@ export async function provisionUserProfile(
   if ((await userDocRef.get()).exists) return "already-exists";
 
   // Google sign-ins routinely land with an empty top-level displayName and the
-  // real name only on the provider record. Reading the email local-part before
-  // checking providerData is what named two real users "Jasminehartart" and
-  // "Hairbykevin127" in the admin panel. Provider name first.
-  const rawName =
+  // real name only on the provider record. Same order as the client, and never
+  // the email: the part before the @ named two real users "Jasminehartart" and
+  // "Hairbykevin127" in public.
+  const authName =
     user.displayName ||
     user.providerData.find((p) => p.displayName)?.displayName ||
-    user.email?.split("@")[0] ||
-    "Anonymous User";
-  const displayName = capitalizeName(rawName);
-  const fallbackAvatar = generateAvatarUrl(displayName, 256);
-  const photo = user.photoURL || fallbackAvatar;
+    null;
+  const displayName = cleanDisplayName(capitalizeName(authName || "Creator"));
+  // No photo stores null, as the client does: the generated picture is a
+  // data: URL the rules refuse, and avatars draw it at render time.
+  const photo = user.photoURL ?? null;
 
-  const username = await claimAvailableUsername(
-    db,
-    user.email?.split("@")[0] || user.uid.substring(0, 8),
-    user.uid
-  );
+  const username = await claimAvailableUsername(db, authName, user.uid);
 
   // `create` (not `set`) so a client write that lands in the same instant wins
   // the race and this one aborts, rather than both writing and the loser

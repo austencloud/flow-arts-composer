@@ -13,7 +13,10 @@ import {
   getFeaturedCreators,
 } from "#lib/shared/community/services/user-repository.js";
 import { isEffectiveAdmin } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isListedCreator } from "#lib/shared/community/domain/listed-creator.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { matchesCreatorQuery } from "../domain/creator-search";
+import { classifyLoadFailure } from "../domain/profile-viewer";
 import {
   bandOf,
   mergeSmallBands,
@@ -21,23 +24,11 @@ import {
   type RecencyBand,
 } from "../domain/creator-recency";
 
-// Moderated accounts: suppressed from the public directory, visible to admins.
-// Only two of these currently resolve to real docs (verified against
-// production 2026-07-25) - the other three are stale entries kept because
-// removing a name from this list is a moderation decision, not a cleanup.
-const HIDDEN_USERNAMES = [
-  "netsua07",
-  "flowtacocat",
-  "tka.flowarts",
-  "cirqueaflame_603",
-  "tkascribe.review",
-];
-
 // The directory is 56-58 people (verified production census, 2026-07-25).
 // 200 is ample headroom while keeping the read bounded, so the default load
 // fetches the whole directory in one page and pagination stops being
-// load-bearing for the common case. loadMoreCreators/hasMore stay live as a
-// growth valve if the directory ever exceeds this.
+// load-bearing for the common case. Past that, the roster's Show more button
+// calls loadMoreCreators.
 const DEFAULT_PAGE_SIZE = 200;
 
 // No band is ever shown with fewer than this many creators - mergeSmallBands
@@ -122,7 +113,20 @@ export function computePublicCounts(
   };
 }
 
-function createCreatorsDataState() {
+/** A sentence for the page; `err.message` is English and written for us. */
+function listFailureMessage(err: unknown): string {
+  switch (classifyLoadFailure(err)) {
+    case "denied":
+      return t("creators_list_load_denied");
+    case "offline":
+      return t("creators_list_load_offline");
+    default:
+      return t("creators_list_load_unknown");
+  }
+}
+
+/** Exported for tests; the app uses the `creatorsDataState` singleton below. */
+export function createCreatorsDataState() {
   // Main user list (paginated)
   let users = $state<EnhancedUserProfile[]>([]);
 
@@ -153,10 +157,14 @@ function createCreatorsDataState() {
   // Track if initial load has happened
   let isInitialized = $state(false);
 
-  // Track whether the cached data includes follow state (loaded with a userId).
-  // When the prefetch runs before auth is ready, this stays false and the
-  // CreatorsPanel knows to reload with the real userId once auth is available.
-  let hasFollowState = $state(false);
+  // Whose follows the loaded isFollowing flags describe: the viewer the last
+  // load ran for, or null when it ran signed out. Follow flags are per viewer,
+  // so after a sign-out or an account switch they belong to someone else and
+  // must not be shown or pressed (a press would send the opposite write).
+  let followStateFor = $state<string | null>(null);
+  // The viewer the roster should describe. Differs from followStateFor while a
+  // load for a new viewer is in flight.
+  let wantedViewer: string | null = null;
 
   // The set of ownerIds with at least one public sequence. Fed in from
   // whichever host loads the public-work query (this state module owns no
@@ -170,18 +178,18 @@ function createCreatorsDataState() {
   // the filter, `bandedRoster` and `publicCounts` were computed from the
   // unfiltered list, so a visitor saw band totals of 58 on a 56-person page.
   const visibleUsers = $derived(
-    isEffectiveAdmin()
-      ? users
-      : users.filter((user) => !HIDDEN_USERNAMES.includes(user.username))
+    users.filter((user) =>
+      isListedCreator(user, { viewerIsAdmin: isEffectiveAdmin() })
+    )
   );
 
-  const visibleSearchResults = $derived.by(() => {
-    if (searchResults === null) return null;
-    if (isEffectiveAdmin()) return searchResults;
-    return searchResults.filter(
-      (user) => !HIDDEN_USERNAMES.includes(user.username)
-    );
-  });
+  const visibleSearchResults = $derived(
+    searchResults === null
+      ? null
+      : searchResults.filter((user) =>
+          isListedCreator(user, { viewerIsAdmin: isEffectiveAdmin() })
+        )
+  );
 
   const bandedRoster = $derived(computeBandedRoster(visibleUsers));
   const publicCounts = $derived(
@@ -202,11 +210,14 @@ function createCreatorsDataState() {
    * until Phase 2 removes CreatorsSortBar entirely.
    */
   async function loadCreators(currentUserId?: string): Promise<void> {
-    // If already loading, skip
+    wantedViewer = currentUserId ?? null;
+    // One load at a time. A viewer change during a load is picked up below,
+    // once this one lands.
     if (isLoading) return;
 
     isLoading = true;
     error = null;
+    const viewer = wantedViewer;
 
     try {
       const result = await getUsersPaginated(
@@ -216,7 +227,7 @@ function createCreatorsDataState() {
           limit: pageSize,
           cursor: null,
         },
-        currentUserId
+        viewer ?? undefined
       );
 
       users = result.users;
@@ -224,16 +235,45 @@ function createCreatorsDataState() {
       hasMore = result.hasMore;
 
       isInitialized = true;
-      hasFollowState = !!currentUserId;
+      followStateFor = viewer;
     } catch (err) {
       console.error("[CreatorsDataState] Failed to load creators:", err);
-      error =
-        err instanceof Error
-          ? err.message
-          : "Failed to load creators. Please try again.";
+      error = listFailureMessage(err);
     } finally {
       isLoading = false;
     }
+
+    if (error === null && wantedViewer !== followStateFor) {
+      clearFollowFlags();
+      await loadCreators(wantedViewer ?? undefined);
+    }
+  }
+
+  function clearFollowFlags() {
+    const clear = (user: EnhancedUserProfile) =>
+      user.isFollowing ? { ...user, isFollowing: false } : user;
+    users = users.map(clear);
+    featuredUsers = featuredUsers.map(clear);
+    if (searchResults) searchResults = searchResults.map(clear);
+  }
+
+  /**
+   * Point the roster's follow state at this viewer (null when signed out).
+   * Sign-in, sign-out and an account switch in the same tab all come through
+   * here. The old viewer's flags are dropped at once, then a signed-in viewer's
+   * are loaded; signed out there is nothing to load.
+   */
+  async function syncViewer(viewerId: string | null): Promise<void> {
+    if (!isInitialized && !isLoading) return; // the first load records it
+    const current = isLoading ? wantedViewer : followStateFor;
+    if (viewerId === current) return;
+    clearFollowFlags();
+    if (viewerId === null) {
+      wantedViewer = null;
+      if (!isLoading) followStateFor = null;
+      return;
+    }
+    await loadCreators(viewerId);
   }
 
   /**
@@ -253,11 +293,16 @@ function createCreatorsDataState() {
           limit: pageSize,
           cursor: lastDocSnapshot,
         },
-        currentUserId
+        followStateFor ?? currentUserId
       );
 
-      // Append new users to existing list
-      users = [...users, ...result.users];
+      // Append, skipping anyone already loaded: a follow or a new signup can
+      // move a doc across the cursor between pages.
+      const loaded = new Set(users.map((user) => user.id));
+      users = [
+        ...users,
+        ...result.users.filter((user) => !loaded.has(user.id)),
+      ];
       lastDocSnapshot = result.lastDocSnapshot;
       hasMore = result.hasMore;
     } catch (err) {
@@ -366,47 +411,27 @@ function createCreatorsDataState() {
   }
 
   /**
-   * Update a user's follow status (for optimistic updates)
+   * A follow or unfollow that landed, from anywhere (the roster, a profile).
+   * Updates the row's button and count in every list, and so the Following
+   * tab, which is derived from the flags. Idempotent: a row already showing
+   * this state is left alone, so a second press on a stale button (the server
+   * write is a no-op) cannot count the same follow twice.
    */
-  function updateUserFollowStatus(
-    userId: string,
-    isFollowing: boolean,
-    followerCountDelta: number
-  ) {
-    // Update in main list
-    users = users.map((u) =>
-      u.id === userId
+  function applyFollowChange(targetUserId: string, isFollowing: boolean) {
+    const apply = (user: EnhancedUserProfile) =>
+      user.id === targetUserId && user.isFollowing !== isFollowing
         ? {
-            ...u,
+            ...user,
             isFollowing,
-            followerCount: Math.max(0, u.followerCount + followerCountDelta),
+            followerCount: Math.max(
+              0,
+              user.followerCount + (isFollowing ? 1 : -1)
+            ),
           }
-        : u
-    );
-
-    // Update in featured list
-    featuredUsers = featuredUsers.map((u) =>
-      u.id === userId
-        ? {
-            ...u,
-            isFollowing,
-            followerCount: Math.max(0, u.followerCount + followerCountDelta),
-          }
-        : u
-    );
-
-    // Update in search results if active
-    if (searchResults) {
-      searchResults = searchResults.map((u) =>
-        u.id === userId
-          ? {
-              ...u,
-              isFollowing,
-              followerCount: Math.max(0, u.followerCount + followerCountDelta),
-            }
-          : u
-      );
-    }
+        : user;
+    users = users.map(apply);
+    featuredUsers = featuredUsers.map(apply);
+    if (searchResults) searchResults = searchResults.map(apply);
   }
 
   /**
@@ -473,8 +498,8 @@ function createCreatorsDataState() {
     get isInitialized() {
       return isInitialized;
     },
-    get hasFollowState() {
-      return hasFollowState;
+    get followStateFor() {
+      return followStateFor;
     },
 
     // Pagination
@@ -512,21 +537,20 @@ function createCreatorsDataState() {
     setSearchQuery,
     clearSearch,
     refreshCreators,
-    updateUserFollowStatus,
+    syncViewer,
+    applyFollowChange,
     patchUser,
     setPublicWorkOwnerIds,
   };
 }
 
-// Module singleton instance
-let creatorsDataStateInstance: ReturnType<
-  typeof createCreatorsDataState
-> | null = null;
+// The singleton is made when the module loads, outside any component. Made
+// lazily, it was created inside whichever $derived first read it; Svelte then
+// owned the state's derived values by that reader, so they detached when it
+// recomputed and the panel stopped seeing search results.
+const creatorsDataStateInstance = createCreatorsDataState();
 
 function getCreatorsDataState() {
-  if (!creatorsDataStateInstance) {
-    creatorsDataStateInstance = createCreatorsDataState();
-  }
   return creatorsDataStateInstance;
 }
 
@@ -568,8 +592,8 @@ export const creatorsDataState = {
   get isInitialized() {
     return getCreatorsDataState().isInitialized;
   },
-  get hasFollowState() {
-    return getCreatorsDataState().hasFollowState;
+  get followStateFor() {
+    return getCreatorsDataState().followStateFor;
   },
 
   // Pagination
@@ -628,16 +652,11 @@ export const creatorsDataState = {
   refreshCreators(currentUserId?: string) {
     return getCreatorsDataState().refreshCreators(currentUserId);
   },
-  updateUserFollowStatus(
-    userId: string,
-    isFollowing: boolean,
-    followerCountDelta: number
-  ) {
-    getCreatorsDataState().updateUserFollowStatus(
-      userId,
-      isFollowing,
-      followerCountDelta
-    );
+  syncViewer(viewerId: string | null) {
+    return getCreatorsDataState().syncViewer(viewerId);
+  },
+  applyFollowChange(targetUserId: string, isFollowing: boolean) {
+    getCreatorsDataState().applyFollowChange(targetUserId, isFollowing);
   },
   patchUser(userId: string, patch: Partial<EnhancedUserProfile>) {
     getCreatorsDataState().patchUser(userId, patch);

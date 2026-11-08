@@ -18,6 +18,7 @@ import {
   onSnapshot,
   runTransaction,
   serverTimestamp,
+  updateDoc,
   documentId,
   startAfter,
 } from "firebase/firestore";
@@ -30,6 +31,14 @@ import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
 import { firestoreGet, firestoreList } from "#lib/shared/firestore/index.js";
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { isEffectiveAdmin } from "#lib/shared/auth/state/auth-state.svelte.js";
+import {
+  canCreditCreator,
+  canOpenProfile,
+  isListedCreator,
+  type ListingViewer,
+} from "../domain/listed-creator";
 import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import type { PaginatedUsersResult, PaginatedQueryOptions } from "./types";
 import type {
@@ -77,20 +86,8 @@ interface FirestoreUserData extends DocumentData {
   isAnonymous?: boolean;
 }
 
-/**
- * A guest (anonymous Firebase session) is not a real creator and must never
- * appear in Browse Creators until they upgrade to a full account. The
- * `isAnonymous` flag is the canonical signal (written on doc create, cleared on
- * upgrade). The displayName fallback catches legacy/pre-deploy guest docs that
- * predate the flag, and it's safe because createOrUpdateUserDocument always derives
- * a real name from the provider on upgrade, so a full account is never literally
- * named "Anonymous User".
- */
-function isAnonymousGuest(data: {
-  isAnonymous?: boolean | null;
-  displayName?: string | null;
-}): boolean {
-  return data.isAnonymous === true || data.displayName === "Anonymous User";
+function currentViewer(): ListingViewer {
+  return { viewerIsAdmin: isEffectiveAdmin() };
 }
 
 interface FollowDocument {
@@ -164,7 +161,8 @@ async function mapFirestoreToEnhancedProfile(
 ): Promise<EnhancedUserProfile | null> {
   try {
     const displayName = data.displayName ?? data.name ?? "Anonymous User";
-    const username = data.username ?? userId.substring(0, 8);
+    // No handle shows no handle. A slice of the uid is not a name.
+    const username = data.username ?? "";
     const avatar = data.photoURL ?? data.avatar ?? undefined;
 
     const sequenceCount = data.sequenceCount ?? 0;
@@ -262,6 +260,7 @@ async function batchFetchUserProfiles(
 
     for (const docSnap of batchSnapshot.docs) {
       const data = docSnap.data() as FirestoreUserData;
+      if (!isListedCreator(data, currentViewer())) continue;
       const user = await mapFirestoreToEnhancedProfile(docSnap.id, data, false);
       if (user) {
         users.push(user);
@@ -342,6 +341,16 @@ export async function getUserProfile(
       return null;
     }
 
+    // The same "not found" a missing profile gets: no detail about why.
+    if (
+      !canOpenProfile(userData, {
+        ...currentViewer(),
+        isSelf: currentUserId === userId,
+      })
+    ) {
+      return null;
+    }
+
     const [isFollowing, exactSocialCounts] = await Promise.all([
       currentUserId && currentUserId !== userId
         ? checkIsFollowing(currentUserId, userId)
@@ -407,11 +416,10 @@ export interface VisibleOwnerProfile {
  * Display name and avatar for owners eligible to appear in a public
  * discovery surface. Like getUserDisplayNames, but moderated (isHidden)
  * accounts and anonymous guests are omitted from the returned map. Callers
- * filter their items to owners the map still contains, so hiding a creator
- * also removes their public collections from discovery, matching the Browse
- * Creators listing which already skips these accounts (getUsersPaginated /
- * getFeaturedCreators). Owners whose user doc is missing entirely (deleted
- * account) are also omitted.
+ * filter their items to owners the map still contains, so disabling a creator
+ * also removes their public collections from discovery. Someone who chose to
+ * stay out of the directory (`isHidden`) keeps their credit. Owners whose user
+ * doc is missing entirely (deleted account) are also omitted.
  */
 export async function getVisibleOwnerProfiles(
   userIds: string[]
@@ -433,8 +441,7 @@ export async function getVisibleOwnerProfiles(
     const snapshot = await getDocs(q);
     snapshot.forEach((docSnap) => {
       const data = docSnap.data() as FirestoreUserData;
-      if (data.isHidden === true) return; // moderated, suppress from discovery
-      if (isAnonymousGuest(data)) return; // guests aren't creators yet
+      if (!canCreditCreator(data)) return;
       profiles.set(docSnap.id, {
         displayName: data.displayName ?? data.name ?? "Someone",
         photoURL: data.photoURL ?? data.avatar ?? undefined,
@@ -480,8 +487,7 @@ export async function getUsers(
 
     for (const docSnap of querySnapshot.docs) {
       const data = docSnap.data() as FirestoreUserData;
-      if (data.isHidden) continue;
-      if (isAnonymousGuest(data)) continue; // guests aren't real creators yet
+      if (!isListedCreator(data, currentViewer())) continue;
       const isFollowing =
         currentUserId !== docSnap.id && followingSet.has(docSnap.id);
       const user = await mapFirestoreToEnhancedProfile(
@@ -551,8 +557,7 @@ export async function getUsersPaginated(
 
     for (const docSnap of resultDocs) {
       const data = docSnap.data() as FirestoreUserData;
-      if (data.isHidden) continue;
-      if (isAnonymousGuest(data)) continue; // guests aren't real creators yet
+      if (!isListedCreator(data, currentViewer())) continue;
       const isFollowing =
         currentUserId !== docSnap.id && followingSet.has(docSnap.id);
       const user = await mapFirestoreToEnhancedProfile(
@@ -597,8 +602,7 @@ export async function getFeaturedCreators(
     const users: EnhancedUserProfile[] = [];
 
     for (const data of results) {
-      if (data.isHidden) continue;
-      if (isAnonymousGuest(data)) continue; // guests aren't real creators yet
+      if (!isListedCreator(data, currentViewer())) continue;
       const user = await mapFirestoreToEnhancedProfile(data.id, data, false);
       if (user) {
         users.push(user);
@@ -645,8 +649,7 @@ export function subscribeToUsers(
 
               for (const docSnap of querySnapshot.docs) {
                 const data = docSnap.data() as FirestoreUserData;
-                if (data.isHidden) continue;
-                if (isAnonymousGuest(data)) continue; // guests aren't real creators yet
+                if (!isListedCreator(data, currentViewer())) continue;
                 const isFollowing =
                   currentUserId !== docSnap.id && followingSet.has(docSnap.id);
                 const user = await mapFirestoreToEnhancedProfile(
@@ -694,6 +697,17 @@ export function subscribeToUsers(
       unsubscribe();
     }
   };
+}
+
+/** Admin moderation. The rules refuse this write from anyone else. */
+export async function setCreatorDisabled(
+  userId: string,
+  disabled: boolean
+): Promise<void> {
+  const firestore = await getFirestoreInstance();
+  await updateDoc(doc(firestore, USERS_COLLECTION, userId), {
+    isDisabled: disabled,
+  });
 }
 
 export async function followUser(
@@ -759,7 +773,7 @@ export async function followUser(
     if (changed) trackUserFollowChanged("follow", source, targetUserId);
   } catch (error) {
     console.error(`[UserRepository] Error following user:`, error);
-    toast.error("Failed to follow user. Please try again.");
+    toast.error(t("creators_follow_failed"));
     throw new Error("Failed to follow user");
   }
 }
@@ -814,7 +828,7 @@ export async function unfollowUser(
     if (changed) trackUserFollowChanged("unfollow", source, targetUserId);
   } catch (error) {
     console.error(`[UserRepository] Error unfollowing user:`, error);
-    toast.error("Failed to unfollow user. Please try again.");
+    toast.error(t("creators_unfollow_failed"));
     throw new Error("Failed to unfollow user");
   }
 }

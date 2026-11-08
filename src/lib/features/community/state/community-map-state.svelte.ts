@@ -42,6 +42,12 @@ export type AuthIdentity =
 export interface MemberCity {
   city: string;
   country: string;
+  /**
+   * The pin is kept off the public map because the person is hidden from
+   * Creators or disabled. Known from the save that wrote it, or from the
+   * hiddenByFlag mark on the stored pin.
+   */
+  private?: boolean;
 }
 
 type ConfirmedMembership =
@@ -239,7 +245,11 @@ export function createCommunityMapState(options: CommunityMapStateOptions) {
     if (result.status === "found") {
       confirmed = {
         status: "member",
-        city: { city: result.location.city, country: result.location.country },
+        city: {
+          city: result.location.city,
+          country: result.location.country,
+          ...(result.location.hiddenByFlag === true ? { private: true } : {}),
+        },
       };
     } else if (result.status === "absent") {
       confirmed = { status: "absent" };
@@ -356,13 +366,12 @@ export function createCommunityMapState(options: CommunityMapStateOptions) {
         return outcome;
       }
 
-      const applied: ConfirmedMembership = {
-        status: "member",
-        city: { city: canonical.city, country: canonical.country },
-      };
-      const outcome = await queue.submit(intent, () =>
-        port.saveCity(intent.uid, canonical),
-      );
+      const city: MemberCity = { city: canonical.city, country: canonical.country };
+      const applied: ConfirmedMembership = { status: "member", city };
+      const outcome = await queue.submit(intent, async () => {
+        const wrote = await port.saveCity(intent.uid, canonical);
+        if (wrote === "private") city.private = true;
+      });
       settle(session, outcome, applied);
       return outcome;
     },

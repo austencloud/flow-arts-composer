@@ -40,7 +40,7 @@
     />
     <div class="profile-info">
       <h3>{user.displayName}</h3>
-      <p class="username">@{user.username}</p>
+      {#if user.username}<p class="username">@{user.username}</p>{/if}
     </div>
   </div>
 

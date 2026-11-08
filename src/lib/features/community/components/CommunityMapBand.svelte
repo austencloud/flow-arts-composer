@@ -81,6 +81,7 @@
           size="full"
           frame="markers"
           controls="minimal"
+          keepMapAs="creators-map-band"
         />
       {/if}
     </div>

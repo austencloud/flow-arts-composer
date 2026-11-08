@@ -98,7 +98,9 @@ describe("Auth account deletion cleanup", () => {
       publicSequences: { path: "publicSequences/public-1" },
       publicSequenceHashes: { path: "publicSequenceHashes/hash-1" },
       contributors: { path: "contributors/contributor-1" },
+      usernames: { path: "usernames/deleted.user" },
     };
+    const locationDelete = jest.fn().mockResolvedValue(undefined);
     const deleteFromBatch = jest.fn();
     const commit = jest.fn().mockResolvedValue(undefined);
     const collection = jest.fn((name: keyof typeof deletedRefs) => {
@@ -121,7 +123,11 @@ describe("Auth account deletion cleanup", () => {
     };
     const db = {
       collection,
-      doc: jest.fn(() => userRef),
+      doc: jest.fn((path: string) =>
+        path === "userLocations/deleted-user"
+          ? { path, delete: locationDelete }
+          : userRef
+      ),
       batch: jest.fn(() => ({ delete: deleteFromBatch, commit })),
       recursiveDelete: jest.fn().mockResolvedValue(undefined),
     };
@@ -139,6 +145,9 @@ describe("Auth account deletion cleanup", () => {
       deletedRefs.publicSequenceHashes
     );
     expect(deleteFromBatch).toHaveBeenCalledWith(deletedRefs.contributors);
+    expect(collection).toHaveBeenCalledWith("usernames");
+    expect(deleteFromBatch).toHaveBeenCalledWith(deletedRefs.usernames);
+    expect(locationDelete).toHaveBeenCalled();
     expect(db.recursiveDelete).toHaveBeenCalledWith(userRef);
   });
 

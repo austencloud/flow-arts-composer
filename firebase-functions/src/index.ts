@@ -37,6 +37,7 @@ export {
 } from "./profiles/syncLibraryCounts";
 export { onAuthUserCreated } from "./profiles/onAuthUserCreated";
 export { reconcileMissingProfiles } from "./profiles/reconcileMissingProfiles";
+export { syncMapPinVisibility } from "./profiles/syncMapPinVisibility";
 export {
   syncPublicPerformanceMetadataOnVideoWrite,
   syncPublicPerformanceMetadataOnSequencePublish,

@@ -21,6 +21,7 @@
   import { promptAnonymousImport } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
   import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import { recordLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
+  import { syncNamedProfile } from "#lib/shared/auth/services/sync-named-profile.js";
   import { trackAuthProviderResult } from "#lib/shared/analytics/auth-events.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
@@ -133,6 +134,7 @@
               await updateProfile(auth.currentUser, {
                 displayName: name.trim(),
               });
+              await syncNamedProfile(auth.currentUser);
             }
             if (auth.currentUser && !auth.currentUser.emailVerified) {
               await sendEmailVerification(auth.currentUser);
@@ -154,6 +156,7 @@
           recordLastAuthMethod("password");
           if (name.trim()) {
             await updateProfile(result.user, { displayName: name.trim() });
+            await syncNamedProfile(result.user);
           }
           await sendEmailVerification(result.user);
         }

@@ -18,6 +18,7 @@ import {
 } from "./pushDispatcher";
 import type { PushPayload } from "./types";
 import { safeInternalActionUrl } from "./internalActionUrl";
+import { cleanPushText, PUSH_BODY_MAX, PUSH_NAME_MAX } from "./pushText";
 
 export const onNewNotification = onDocumentCreated(
   "users/{userId}/notifications/{notificationId}",
@@ -32,8 +33,11 @@ export const onNewNotification = onDocumentCreated(
     const { userId, notificationId } = event.params;
 
     const type: string = notificationData.type;
-    const message: string = notificationData.message || "";
-    const fromUserName: string | undefined = notificationData.fromUserName;
+    // Both can carry text another person wrote (a name, a comment); keep each
+    // to one bounded line before it reaches a lock screen.
+    const message = cleanPushText(notificationData.message, PUSH_BODY_MAX);
+    const fromUserName =
+      cleanPushText(notificationData.fromUserName, PUSH_NAME_MAX) || undefined;
     const actionUrl = safeInternalActionUrl(notificationData.actionUrl);
 
     // Skip message-received notifications - handled by onNewMessage

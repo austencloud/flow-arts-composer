@@ -81,8 +81,13 @@ vi.mock("firebase/firestore", () => ({
       const queued: RecordedWrite[] = [];
       const tx = {
         get: vi.fn(async (ref: { path: string }) => fake.snapshot(ref.path)),
-        set: vi.fn((ref: { path: string }, data: Record<string, unknown>) => {
-          queued.push({ path: ref.path, op: "set", data });
+        set: vi.fn(
+          (
+            ref: { path: string },
+            data: Record<string, unknown>,
+            options?: { merge?: boolean }
+          ) => {
+          queued.push({ path: ref.path, op: options?.merge ? "merge" : "set", data });
           return tx;
         }),
         update: vi.fn(
@@ -92,8 +97,16 @@ vi.mock("firebase/firestore", () => ({
           }
         ),
       };
+      const deleted: string[] = [];
+      Object.assign(tx, {
+        delete: vi.fn((ref: { path: string }) => {
+          deleted.push(ref.path);
+          return tx;
+        }),
+      });
       const result = await body(tx);
       queued.forEach(fake.record);
+      deleted.forEach((path) => fake.docs.delete(path));
       return result;
     }
   ),
@@ -313,23 +326,13 @@ describe("claimUsername", () => {
     expect(fake.writes).toEqual([]);
   });
 
-  it("applies a capitalization-only rename to the profile and leaves the claim alone", async () => {
+  it("stores a handle in lowercase, so typing capitals changes nothing", async () => {
     holdClaim(UID);
     fake.docs.set(`users/${UID}`, storedProfile());
 
     await claimUsername(UID, "Matty");
 
-    expect(fake.writes).toEqual([
-      {
-        path: `users/${UID}`,
-        op: "update",
-        data: {
-          username: "Matty",
-          usernameLowercase: "matty",
-          updatedAt: "SERVER_TIME",
-        },
-      },
-    ]);
+    expect(fake.writes).toEqual([]);
   });
 });
 
@@ -383,9 +386,14 @@ describe("a signed-in page load for an existing profile", () => {
           isAnonymous: false,
           updatedAt: "SERVER_TIME",
           lastActivityDate: "SERVER_TIME",
+          // An upgrading guest takes its handle from its name in the same write.
+          username: "matty.mover",
+          usernameLowercase: "matty.mover",
         },
       },
     ]);
+    // The handle the guest doc held is given up in that write.
+    expect(fake.docs.has("usernames/matty")).toBe(false);
   });
 
   it("repairs a username claim that was never created", async () => {
@@ -568,6 +576,68 @@ describe("syncing onboarding progress on a signed-in page load", () => {
           updatedAt: "SERVER_TIME",
         }),
       },
+    ]);
+  });
+});
+
+describe("guest profiles stay out of the directory query", () => {
+  function guestUser(): User {
+    return { ...signedInUser(), isAnonymous: true } as User;
+  }
+
+  it("writes a new guest's profile unlisted (version 0) in production", async () => {
+    vi.stubEnv("PROD", true);
+    try {
+      await new UserDocumentManager().createOrUpdateUserDocument(guestUser());
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    const [profile] = writesUnder("users/");
+    expect(profile?.data).toMatchObject({
+      publicProfileVersion: 0,
+      isAnonymous: true,
+    });
+    expect(profile?.data).not.toHaveProperty("username");
+  });
+
+  it("moves a guest doc written listed (version 2) back out on its next visit", async () => {
+    vi.stubEnv("PROD", true);
+    fake.docs.set(
+      `users/${UID}`,
+      storedProfile({ isAnonymous: true, publicProfileVersion: 2 })
+    );
+    try {
+      await new UserDocumentManager().createOrUpdateUserDocument(guestUser());
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    expect(writesUnder("users/")).toEqual([
+      expect.objectContaining({
+        path: `users/${UID}`,
+        data: expect.objectContaining({ publicProfileVersion: 0 }),
+      }),
+    ]);
+  });
+
+  it("lists the profile (version 2) in the same write that upgrades the guest", async () => {
+    fake.docs.set(
+      `users/${UID}`,
+      storedProfile({ isAnonymous: true, publicProfileVersion: 0 })
+    );
+
+    await new UserDocumentManager().createOrUpdateUserDocument(signedInUser());
+
+    expect(writesUnder("users/")).toEqual([
+      expect.objectContaining({
+        path: `users/${UID}`,
+        data: expect.objectContaining({
+          publicProfileVersion: 2,
+          isAnonymous: false,
+          username: "matty.mover",
+        }),
+      }),
     ]);
   });
 });

@@ -74,7 +74,8 @@ describe("getVisibleOwnerProfiles", () => {
           id: "shown",
           data: { displayName: "Austen", photoURL: "https://x/a.png" },
         },
-        { id: "hidden", data: { displayName: "Moderated", isHidden: true } },
+        { id: "hidden", data: { displayName: "Private", isHidden: true } },
+        { id: "disabled", data: { displayName: "Bad", isDisabled: true } },
         { id: "guest", data: { displayName: "Guest", isAnonymous: true } },
         { id: "nameless", data: {} },
         { id: "nullphoto", data: { displayName: "N", photoURL: null } },
@@ -92,6 +93,7 @@ describe("getVisibleOwnerProfiles", () => {
     const profiles = await getVisibleOwnerProfiles([
       "shown",
       "hidden",
+      "disabled",
       "guest",
       "nameless",
       "nullphoto",
@@ -115,7 +117,9 @@ describe("getVisibleOwnerProfiles", () => {
       displayName: "L",
       photoURL: "https://x/legacy.png",
     });
-    expect(profiles.has("hidden")).toBe(false);
+    // Hiding is about the directory; a hidden person's work keeps its credit.
+    expect(profiles.get("hidden")?.displayName).toBe("Private");
+    expect(profiles.has("disabled")).toBe(false);
     expect(profiles.has("guest")).toBe(false);
     expect(profiles.has("missing")).toBe(false);
   });

@@ -241,7 +241,7 @@
                   <div class="user-info">
                     <span class="user-name">{user.displayName}</span>
                     {#if user.username}
-                      <span class="user-username">@{user.username}</span>
+                      {#if user.username}<span class="user-username">@{user.username}</span>{/if}
                     {/if}
                   </div>
                   <button

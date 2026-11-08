@@ -1,5 +1,18 @@
 export const PUBLIC_PROFILE_VERSION = 2;
 
+/**
+ * A guest's profile. Readable by direct id, like any public profile, but the
+ * directory query and the list rule ask for PUBLIC_PROFILE_VERSION, so guests
+ * never take a place in the Creators roster. Upgrading to a full account sets
+ * PUBLIC_PROFILE_VERSION in the same write that clears isAnonymous.
+ */
+export const GUEST_PROFILE_VERSION = 0;
+
+/** The version a profile write should carry for this kind of account. */
+export function profileVersionFor(isAnonymous: boolean): number {
+  return isAnonymous ? GUEST_PROFILE_VERSION : PUBLIC_PROFILE_VERSION;
+}
+
 export const PUBLIC_PROFILE_FIELDS = new Set([
   "publicProfileVersion",
   "displayName",

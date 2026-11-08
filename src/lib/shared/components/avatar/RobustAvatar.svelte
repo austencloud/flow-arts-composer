@@ -91,11 +91,13 @@
   // Generated initials avatar as final fallback
   const initialsAvatar = $derived(generateAvatarUrl(name, dimension));
 
-  // Try primary first, then Google fallback if primary fails
+  // Try primary first, then Google fallback if primary fails. A profile with
+  // no photo stores null (the rules refuse the generated data URL), so the
+  // generated picture is made here, at render time, whenever a name is known.
   const displayUrl = $derived.by(() => {
     if (primaryUrl && !primaryFailed) return primaryUrl;
     if (googleFallbackUrl && !fallbackFailed) return googleFallbackUrl;
-    return null;
+    return name ? initialsAvatar : null;
   });
 
   // Get initials for the placeholder

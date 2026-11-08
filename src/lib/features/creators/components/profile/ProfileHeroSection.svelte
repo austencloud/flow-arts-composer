@@ -26,6 +26,8 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
   import AvatarImage from "#lib/shared/browse/components/AvatarImage.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { creatorListingStatus } from "#lib/shared/community/domain/listed-creator.js";
   import { reportModalState } from "#lib/features/moderation/state/report-modal-state.svelte.js";
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
@@ -40,8 +42,11 @@
 
   let {
     userProfile,
-    currentUserId,
-    isOwnProfile,
+    followMode,
+    showReport,
+    viewerIsAdmin = false,
+    moderationInProgress = false,
+    onToggleDisabled,
     followInProgress,
     onFollowToggle,
     onFollowersClick,
@@ -49,8 +54,13 @@
     collectionsCount,
   }: {
     userProfile: EnhancedUserProfile;
-    currentUserId?: string | null;
-    isOwnProfile: boolean;
+    /** `gate` keeps the button; pressing it asks a guest for an account. */
+    followMode: "toggle" | "gate" | "none";
+    showReport: boolean;
+    /** Admins get the moderation control and the Hidden/Disabled label. */
+    viewerIsAdmin?: boolean;
+    moderationInProgress?: boolean;
+    onToggleDisabled?: () => void;
     followInProgress: boolean;
     onFollowToggle: () => void;
     onFollowersClick?: () => void;
@@ -68,6 +78,10 @@
      */
     collectionsCount?: number;
   } = $props();
+
+  const listingStatus = $derived(
+    viewerIsAdmin ? creatorListingStatus(userProfile) : null
+  );
 
   const accentColor = $derived(
     userProfile.profileColor || "var(--theme-accent)"
@@ -129,9 +143,16 @@
       <div class="naming">
         <h1 class="display-name">{userProfile.displayName}</h1>
         <p class="handle">
-          <span class="username">@{userProfile.username}</span>
+          {#if userProfile.username}<span class="username">@{userProfile.username}</span>{/if}
           {#if userProfile.pronouns}
             <span class="pronouns">{userProfile.pronouns}</span>
+          {/if}
+          {#if listingStatus}
+            <span class="listing-status">
+              {listingStatus === "disabled"
+                ? t("creators_label_disabled")
+                : t("creators_label_hidden")}
+            </span>
           {/if}
         </p>
       </div>
@@ -262,7 +283,7 @@
       </div>
     </dl>
 
-    {#if currentUserId && !isOwnProfile}
+    {#if followMode !== "none"}
       <div class="actions">
         <button
           class="follow-button"
@@ -287,16 +308,30 @@
           {/if}
         </button>
 
-        <button
-          class="report-button"
-          onclick={handleReportUser}
-          aria-label={t("browse_verified_report_person", {
-            name: userProfile.displayName,
-          })}
-          title={t("browse_verified_report_user")}
-        >
-          <i class="fas fa-flag" aria-hidden="true"></i>
-        </button>
+        {#if showReport}
+          <button
+            class="report-button"
+            onclick={handleReportUser}
+            aria-label={t("browse_verified_report_person", {
+              name: userProfile.displayName,
+            })}
+            title={t("browse_verified_report_user")}
+          >
+            <i class="fas fa-flag" aria-hidden="true"></i>
+          </button>
+        {/if}
+        {#if viewerIsAdmin}
+          <PanelButton
+            variant="secondary"
+            disabled={moderationInProgress}
+            ariaBusy={moderationInProgress}
+            onclick={() => onToggleDisabled?.()}
+          >
+            {userProfile.isDisabled
+              ? t("creators_restore_profile")
+              : t("creators_disable_profile")}
+          </PanelButton>
+        {/if}
       </div>
     {/if}
   </div>
@@ -574,6 +609,14 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--theme-text, white);
+  }
+
+  .listing-status {
+    padding: 0.1em 0.5em;
+    border: 1px solid var(--theme-stroke-strong);
+    border-radius: 999px;
+    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--theme-text);
   }
 
   .actions {

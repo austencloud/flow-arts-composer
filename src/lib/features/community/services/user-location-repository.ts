@@ -11,7 +11,12 @@ import type {
   OwnLocationResult,
 } from "../domain/models/user-location";
 
+import type { ListingFlags } from "../domain/pin-write";
 import { z } from "zod";
+import {
+  isListedCreator,
+  type ListingViewer,
+} from "#lib/shared/community/domain/listed-creator.js";
 
 const LOCATIONS_COLLECTION = "userLocations";
 
@@ -22,6 +27,9 @@ const UserProfileJoinSchema = z
     displayName: z.string().nullish(),
     avatar: z.string().nullish(),
     sequenceCount: z.number().nullish(),
+    isAnonymous: z.boolean().nullish(),
+    isHidden: z.boolean().nullish(),
+    isDisabled: z.boolean().nullish(),
   })
   .passthrough();
 
@@ -38,6 +46,16 @@ export async function saveLocation(
     console.error("❌ [UserLocationRepository] Failed to save location:", error);
     throw new Error("Failed to save location. Please try again.");
   }
+}
+
+/**
+ * Read whether the signed-in user's own profile is hidden or disabled, through
+ * the same profile read the map's join uses. A failed read throws, so a save
+ * that depends on it fails visibly instead of guessing "public".
+ */
+export async function readOwnListingFlags(userId: string): Promise<ListingFlags | null> {
+  const profile = await firestoreGet("users", userId, UserProfileJoinSchema);
+  return profile ? { isHidden: profile.isHidden, isDisabled: profile.isDisabled } : null;
 }
 
 /**
@@ -72,6 +90,13 @@ export async function deleteLocation(userId: string): Promise<void> {
   }
 }
 
+/**
+ * The map is one shared picture, cached for the whole session, so it is drawn
+ * for an ordinary visitor even when an admin is looking: an admin's view would
+ * otherwise leak hidden people into the cache a later session reuses.
+ */
+const MAP_VIEWER: ListingViewer = { viewerIsAdmin: false };
+
 export async function getPublicLocations(
   limit: number = 1000,
 ): Promise<UserLocationWithProfile[]> {
@@ -83,11 +108,14 @@ export async function getPublicLocations(
 
     if (locations.length === 0) return [];
 
-    // Join with user profiles
-    const locationsWithProfiles = await Promise.all(
+    // Join with user profiles. Each pin stands alone: one deleted, denied or
+    // malformed profile drops that pin, never the whole map.
+    const joined = await Promise.allSettled(
       locations.map(async (location): Promise<UserLocationWithProfile | null> => {
         const profile = await firestoreGet("users", location.userId, UserProfileJoinSchema);
         if (!profile) return null;
+        // Hidden, disabled and guest people are off the map like every list.
+        if (!isListedCreator(profile, MAP_VIEWER)) return null;
 
         // The list schema parses Firestore timestamps to Date; the domain model
         // types updatedAt as Timestamp. Markers never read it, so map the field
@@ -115,9 +143,16 @@ export async function getPublicLocations(
       }),
     );
 
-    return locationsWithProfiles.filter(
-      (loc): loc is UserLocationWithProfile => loc !== null,
-    );
+    const pins: UserLocationWithProfile[] = [];
+    for (const result of joined) {
+      if (result.status === "fulfilled" && result.value) pins.push(result.value);
+    }
+    if (import.meta.env.DEV && pins.length < locations.length) {
+      console.debug(
+        `[UserLocationRepository] Skipped ${locations.length - pins.length} of ${locations.length} map pins (missing, unreadable, unlisted or guest).`,
+      );
+    }
+    return pins;
   } catch (error) {
     console.error("❌ [UserLocationRepository] Failed to get public locations:", error);
     // Rethrow so the caller can distinguish a load failure from a genuine

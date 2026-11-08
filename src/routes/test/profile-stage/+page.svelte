@@ -81,8 +81,8 @@
       <div class="hero-slot">
         <ProfileHeroSection
           {userProfile}
-          currentUserId={uid}
-          isOwnProfile={true}
+          followMode="none"
+          showReport={false}
           followInProgress={false}
           onFollowToggle={() => {}}
         />

@@ -8,6 +8,7 @@
   import type { UserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
   import { ROLE_DISPLAY } from "#lib/shared/auth/domain/models/user-role.js";
   import FollowButton from "./FollowButton.svelte";
+  import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
 
   interface Props {
     user: UserProfile;
@@ -35,6 +36,12 @@
     onFollowToggle,
   }: Props = $props();
 
+  // Profiles with no photo store null; the generated picture is made here.
+  const avatarSrc = $derived(
+    user.avatar ||
+      (user.displayName ? generateAvatarUrl(user.displayName, 256) : null)
+  );
+
   function getRoleColor(role: string): string {
     return ROLE_DISPLAY[role as keyof typeof ROLE_DISPLAY]?.color || "#666";
   }
@@ -60,9 +67,9 @@
 >
   <!-- Avatar with color ring -->
   <div class="user-avatar">
-    {#if user.avatar}
+    {#if avatarSrc}
       <img
-        src={user.avatar}
+        src={avatarSrc}
         alt={user.displayName}
         crossorigin="anonymous"
         referrerpolicy="no-referrer"
@@ -93,7 +100,7 @@
   <!-- User info -->
   <div class="user-info">
     <h3 class="display-name">{user.displayName}</h3>
-    <p class="username">@{user.username}</p>
+    {#if user.username}<p class="username">@{user.username}</p>{/if}
 
     <!-- Stats -->
     <div class="user-stats">

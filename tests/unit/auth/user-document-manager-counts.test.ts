@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { User } from "firebase/auth";
 
 const h = vi.hoisted(() => ({
-  claimUsername: vi.fn(async () => undefined),
+  claimHandleFromName: vi.fn(async () => "matty.mover"),
+  repairUsernameClaim: vi.fn(async () => undefined),
   captureWhenReady: vi.fn(),
   collection: vi.fn((_firestore: unknown, ...segments: string[]) =>
     segments.join("/")
   ),
   doc: vi.fn((_firestore: unknown, path: string) => path),
   generateAvatarUrl: vi.fn(() => "generated-avatar"),
-  generateUniqueUsername: vi.fn(async () => "matty"),
   getCurrentPostHogSessionId: vi.fn(() => null),
   getCountFromServer: vi.fn(),
   getDoc: vi.fn(),
@@ -52,8 +52,8 @@ vi.mock("#lib/shared/auth/services/profile-picture-manager.js", () => ({
 }));
 
 vi.mock("#lib/shared/auth/services/username-validator.js", () => ({
-  claimUsername: h.claimUsername,
-  generateUniqueUsername: h.generateUniqueUsername,
+  claimHandleFromName: h.claimHandleFromName,
+  repairUsernameClaim: h.repairUsernameClaim,
   getUsernameOwner: h.getUsernameOwner,
 }));
 
@@ -115,14 +115,18 @@ describe("UserDocumentManager parent reconstruction", () => {
 
     expect(h.getCountFromServer).not.toHaveBeenCalled();
     expect(h.getDocs).not.toHaveBeenCalled();
-    expect(h.setDoc).toHaveBeenCalledTimes(2);
-    expect(h.setDoc.mock.calls[0][1]).toMatchObject({
-      publicProfileVersion: 2,
-      displayName: "Matty Mover",
-      sequenceCount: 0,
-      collectionCount: 0,
-    });
-    expect(h.claimUsername).toHaveBeenCalledWith("user-1", "matty");
+    // The handle comes from the name, never matty@example.com, and arrives in
+    // the same write as the profile.
+    expect(h.claimHandleFromName).toHaveBeenCalledWith(
+      "user-1",
+      "matty mover",
+      expect.objectContaining({
+        publicProfileVersion: 2,
+        displayName: "Matty Mover",
+        sequenceCount: 0,
+        collectionCount: 0,
+      })
+    );
     expect(h.captureWhenReady).toHaveBeenCalledWith(
       "profile_document_read_completed",
       expect.objectContaining({
@@ -167,17 +171,16 @@ describe("UserDocumentManager parent reconstruction", () => {
       new Error("Missing or insufficient permissions"),
       { code: "permission-denied" }
     );
-    h.setDoc
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(error)
-      .mockResolvedValueOnce(undefined);
+    // The public profile and handle land through claimHandleFromName, so the
+    // first setDoc is the private profile.
+    h.setDoc.mockRejectedValueOnce(error).mockResolvedValueOnce(undefined);
 
     await new UserDocumentManager().createOrUpdateUserDocument(user);
 
-    expect(h.setDoc).toHaveBeenCalledTimes(3);
+    expect(h.setDoc).toHaveBeenCalledTimes(2);
     expect(user.getIdToken).toHaveBeenCalledWith(true);
     expect(h.reportErrorTelemetry).not.toHaveBeenCalled();
-    expect(h.claimUsername).toHaveBeenCalledWith("user-1", "matty");
+    expect(h.claimHandleFromName).toHaveBeenCalledTimes(1);
   });
 
   it("reports the exact private-profile step after its retry is denied", async () => {
@@ -188,10 +191,7 @@ describe("UserDocumentManager parent reconstruction", () => {
       new Error("Missing or insufficient permissions"),
       { code: "permission-denied" }
     );
-    h.setDoc
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(error)
-      .mockRejectedValueOnce(error);
+    h.setDoc.mockRejectedValueOnce(error).mockRejectedValueOnce(error);
 
     await new UserDocumentManager().createOrUpdateUserDocument(fullUser());
 
@@ -208,7 +208,6 @@ describe("UserDocumentManager parent reconstruction", () => {
       "[UserDocumentManager] Could not update the signed-in user's private profile:",
       error
     );
-    expect(h.claimUsername).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 
@@ -223,7 +222,7 @@ describe("UserDocumentManager parent reconstruction", () => {
     // Local tests exercise the development guard, which skips anonymous
     // production-profile writes altogether.
     expect(h.setDoc).not.toHaveBeenCalled();
-    expect(h.claimUsername).not.toHaveBeenCalled();
+    expect(h.claimHandleFromName).not.toHaveBeenCalled();
   });
 
   it("refreshes public sequence projections when sign-in rotates the avatar", async () => {

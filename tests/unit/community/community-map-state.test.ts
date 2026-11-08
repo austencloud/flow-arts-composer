@@ -468,4 +468,46 @@ describe("community map state", () => {
       expect(controls.state.slot.kind).toBe("member");
     });
   });
+
+  describe("a hidden person's pin", () => {
+    it("marks the member city private when the save went in private", async () => {
+      const controls = setup();
+      await resolveOwnRead(controls, { status: "absent" });
+      controls.port.saveCity = async () => "private";
+
+      await controls.state.addCity(immediate("Denver"));
+      const slot = controls.state.slot;
+      if (slot.kind !== "member") throw new Error("expected member");
+      expect(slot.city.city).toBe("Denver");
+      expect(slot.city.private).toBe(true);
+    });
+
+    it("leaves a public save, or a port that returns nothing, public", async () => {
+      for (const wrote of ["public", undefined] as const) {
+        const controls = setup();
+        await resolveOwnRead(controls, { status: "absent" });
+        controls.port.saveCity = async () => wrote;
+
+        await controls.state.addCity(immediate("Denver"));
+        const slot = controls.state.slot;
+        if (slot.kind !== "member") throw new Error("expected member");
+        expect(slot.city.private).toBeUndefined();
+      }
+    });
+
+    it("reads the mark on the stored pin as private", async () => {
+      const controls = setup();
+      await resolveOwnRead(controls, {
+        status: "found",
+        location: {
+          ...locationDoc("Chicago"),
+          visibility: "private",
+          hiddenByFlag: true,
+        },
+      });
+      const slot = controls.state.slot;
+      if (slot.kind !== "member") throw new Error("expected member");
+      expect(slot.city.private).toBe(true);
+    });
+  });
 });

@@ -46,7 +46,12 @@
 
   const status = $derived.by(() => {
     const error = mapState.mutationError;
-    if (!error) return "";
+    if (!error) {
+      const slot = mapState.slot;
+      return slot.kind === "member" && !slot.pending && slot.city.private
+        ? "Your pin stays private while you're hidden from Creators."
+        : "";
+    }
     // Only a CityResolutionError carries copy written for a person. Anything
     // else is a Firestore or network object whose message is a diagnostic, not
     // a sentence to show someone.

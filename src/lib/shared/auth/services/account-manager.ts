@@ -198,6 +198,11 @@ export class AccountManager {
     // and all subcollections) — this is belt and suspenders.
     try {
       const firestore = await getFirestoreInstance();
+      // The map pin first: once the profile is gone, a pin left behind points
+      // at nobody until the trigger catches up.
+      await deleteDoc(
+        doc(firestore, "userLocations", reauthenticatedUser.uid)
+      ).catch(() => console.warn("Could not delete map location"));
       const userDocRef = doc(firestore, "users", reauthenticatedUser.uid);
       await deleteDoc(userDocRef);
     } catch {

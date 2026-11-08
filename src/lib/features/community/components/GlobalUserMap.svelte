@@ -3,6 +3,20 @@
 
   Google Maps display with clustered user location markers
 -->
+<script lang="ts" module>
+  /**
+   * Maps kept alive across unmounts, by the host's `keepMapAs` name. Every
+   * `new google.maps.Map` is a billed map load, and opening a profile from
+   * Creators unmounts the map band that coming back mounts again. The map and
+   * the element it draws into are kept; the new mount moves that element into
+   * its own container. Markers are per mount and are rebuilt, which is free.
+   */
+  const keptMaps = new Map<
+    string,
+    { canvas: HTMLDivElement; map: google.maps.Map }
+  >();
+</script>
+
 <script lang="ts">
   import { MarkerClusterer } from "@googlemaps/markerclusterer";
   import { onMount, untrack } from "svelte";
@@ -23,6 +37,8 @@
     size = "full",
     frame = "world",
     controls = "default",
+    keepMapAs,
+    gestures = "auto",
   }: {
     locations: UserLocationWithProfile[];
     userLocation: { lat: number; lng: number } | null;
@@ -58,6 +74,22 @@
      * buttons go. Default keeps the historical full set.
      */
     controls?: "default" | "minimal";
+    /**
+     * Keep this map for the rest of the page load under this name, and reuse
+     * it on the next mount instead of creating (and paying for) a new one.
+     * One mounted host per name.
+     */
+    keepMapAs?: string;
+    /**
+     * `"own"` gives every one-finger drag and wheel turn to the map and tells
+     * the browser not to start a page pan from it. Use it where the map is a
+     * workspace panel rather than a picture in a scrolling page: Google's
+     * `"auto"` mode decides from the document, which never scrolls in the app
+     * shell, so it leaves touch-action alone and a phone drag both pans the
+     * map and scrolls whatever container sits around it. `"auto"` keeps
+     * Google's default for maps inside scrolling pages.
+     */
+    gestures?: "auto" | "own";
   } = $props();
 
   let mapContainer: HTMLDivElement;
@@ -109,6 +141,9 @@
       mounted = false;
       userClusterer?.clearMarkers();
       scanClusterer?.clearMarkers();
+      // A kept map outlives this mount; its clusterers must not pile up on it.
+      userClusterer?.setMap(null);
+      scanClusterer?.setMap(null);
       for (const handle of userMarkerHandles.values()) handle.marker.map = null;
       for (const handle of scanMarkerHandles.values()) handle.marker.map = null;
       userMarkerHandles.clear();
@@ -129,6 +164,20 @@
   }
 
   function initializeMap(): void {
+    const kept = keepMapAs ? keptMaps.get(keepMapAs) : undefined;
+    if (kept) {
+      mapContainer.appendChild(kept.canvas);
+      map = kept.map;
+      mapReady = true;
+      onMapReady();
+      return;
+    }
+
+    // The map draws into its own element so a kept map can move between mounts.
+    const canvas = document.createElement("div");
+    canvas.className = "map-canvas";
+    mapContainer.appendChild(canvas);
+
     // Default center (world view)
     const center = userLocation || { lat: 20, lng: 0 };
     // A framed map re-frames the moment markers exist. Opening at the no-repeat
@@ -136,7 +185,7 @@
     // then snaps.
     const zoom = userLocation ? 4 : frame === "markers" ? noRepeatMinZoom() : 2;
 
-    map = new google.maps.Map(mapContainer, {
+    map = new google.maps.Map(canvas, {
       center,
       zoom,
       mapId: "tka-community-map", // Required for AdvancedMarkerElement
@@ -147,7 +196,9 @@
       fullscreenControl: controls !== "minimal",
       cameraControl: controls !== "minimal",
       keyboardShortcuts: controls !== "minimal",
+      gestureHandling: gestures === "own" ? "greedy" : "auto",
     });
+    if (keepMapAs) keptMaps.set(keepMapAs, { canvas, map });
 
     mapReady = true;
     onMapReady();
@@ -407,7 +458,11 @@
   });
 </script>
 
-<div class="map-wrapper" class:embedded={size === "embedded"}>
+<div
+  class="map-wrapper"
+  class:embedded={size === "embedded"}
+  class:owns-gestures={gestures === "own"}
+>
   <div bind:this={mapContainer} class="map-container"></div>
 
   {#if mapError}
@@ -459,6 +514,19 @@
   .map-container {
     width: 100%;
     height: 100%;
+  }
+
+  /* Created in script, so outside this component's scoped class names. */
+  .map-container :global(.map-canvas) {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The app shell allows vertical pans everywhere; without this a drag on
+     the map starts a native scroll alongside the map's own pan. */
+  .owns-gestures .map-container {
+    touch-action: none;
+    overscroll-behavior: contain;
   }
 
   :global(.scan-pin) {

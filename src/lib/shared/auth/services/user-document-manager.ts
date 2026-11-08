@@ -10,19 +10,26 @@ import { type User } from "firebase/auth";
 import { getAuthInstance, getFirestoreInstance } from "../firebase";
 import { getProviderIds } from "./profile-picture-manager";
 import {
-  generateUniqueUsername,
-  claimUsername,
+  claimHandleFromName,
   getUsernameOwner,
+  repairUsernameClaim,
 } from "./username-validator";
 import { formatUsername } from "../domain/models/username-validation";
+import {
+  handleBaseFromName,
+  isPlaceholderHandle,
+} from "../domain/models/handle-rule";
 import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
 import { runProfileSyncExclusively } from "./profile-sync-lock";
 import { isPermissionDeniedError } from "../utils/is-permission-denied-error";
 import { rememberAccountProfile } from "../state/account-profile-snapshot";
 
-import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
-import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
+import {
+  newPublicProfile,
+  photoChanges,
+} from "../domain/public-profile-payload";
+import { profileVersionFor } from "#lib/shared/community/domain/models/public-profile-contract.js";
 import {
   captureWhenReady,
   getCurrentPostHogSessionId,
@@ -155,14 +162,22 @@ export class UserDocumentManager {
       const providerName = user.providerData.find(
         (p) => p?.displayName
       )?.displayName;
+      //
+      // Never the email: a name is public, and the part before the @ is close
+      // enough to the address to count as publishing it.
+      const authName = user.displayName || providerName || null;
       const rawName =
-        user.displayName ||
-        providerName ||
-        user.email?.split("@")[0] ||
-        "Anonymous User";
-      const displayName = capitalizeName(rawName);
-      /** Did Auth actually give us a name, or did we fall back to the email? */
-      const hasRealAuthName = Boolean(user.displayName || providerName);
+        authName || (user.isAnonymous ? "Anonymous User" : "Creator");
+      // The rules take 1 to 50 printable characters; a provider name past
+      // that must not stop the account from being made.
+      const displayName =
+        capitalizeName(rawName)
+          .replace(/[\u0000-\u001F\u007F]+/g, " ")
+          .trim()
+          .slice(0, 50)
+          .trim() || "Creator";
+      /** Did Auth actually give us a name? */
+      const hasRealAuthName = Boolean(authName);
 
       // Get provider IDs for reliable profile picture URLs
       const providerIds = getProviderIds(user);
@@ -177,53 +192,21 @@ export class UserDocumentManager {
       const googlePhotoURL = googleProvider?.photoURL || null;
 
       if (!userDoc.exists()) {
-        // NEW USER: Generate unique username and claim it
-        const baseUsername =
-          user.email?.split("@")[0] || user.uid.substring(0, 8);
-        const username = await generateUniqueUsername(baseUsername);
-        const usernameLowercase = formatUsername(username);
-
-        // Create user document first
+        // NEW USER. A full account takes its handle and its profile in one write.
+        // A guest gets no handle: it could not reserve one, and it gets one from
+        // its name when it upgrades (the existing-user branch below).
         // NOTE: Email deliberately NOT stored here - user documents are publicly readable
         // Email is available via Firebase Auth for the user themselves
-        const fallbackAvatar = generateAvatarUrl(displayName, 256);
-
         currentStep = {
           action: "create-public-profile",
           message: "Could not create the signed-in user's public profile",
           path: `users/${user.uid}`,
         };
-        await retryAuthenticatedFirestoreOperation(user, () =>
-          setDoc(userDocRef, {
-            publicProfileVersion: PUBLIC_PROFILE_VERSION,
-            displayName,
-            username,
-            usernameLowercase,
-            photoURL: user.photoURL || fallbackAvatar,
-            avatar: user.photoURL || fallbackAvatar,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            lastActivityDate: serverTimestamp(),
-            // Cloud Functions reconcile these from the actual subcollections,
-            // including guest saves that predate this full profile document.
-            sequenceCount: 0,
-            collectionCount: 0,
-            followerCount: 0,
-            // Initialize gamification fields (denormalized for leaderboards)
-            totalXP: 0,
-            currentLevel: 1,
-            achievementCount: 0,
-            currentStreak: 0,
-            longestStreak: 0,
-            // Optional profile fields
-            pronouns: null,
-            // Admin status (default false)
-            isAdmin: false,
-            // Guest flag — anonymous sessions are excluded from Browse Creators
-            // until they upgrade to a full account (see anonymous-upgrade.ts).
-            isAnonymous: user.isAnonymous,
-          })
-        );
+        const newProfile = newPublicProfile(user, displayName, serverTimestamp);
+        await retryAuthenticatedFirestoreOperation(user, async () => {
+          if (user.isAnonymous) await setDoc(userDocRef, newProfile);
+          else await claimHandleFromName(user.uid, authName, newProfile);
+        });
 
         await mergePrivateProfile({
           email: user.email ?? null,
@@ -237,17 +220,6 @@ export class UserDocumentManager {
               }
             : {}),
         });
-
-        if (!user.isAnonymous) {
-          currentStep = {
-            action: "claim-username",
-            message: "Could not claim the signed-in user's username",
-            path: `usernames/${usernameLowercase}`,
-          };
-          await retryAuthenticatedFirestoreOperation(user, () =>
-            claimUsername(user.uid, username)
-          );
-        }
 
         // Admin signup notifications are handled server-side by the
         // pulseUserActivity cloud function (fires on this doc create).
@@ -272,6 +244,19 @@ export class UserDocumentManager {
         if (existingData?.isAnonymous !== user.isAnonymous) {
           profileChanges.isAnonymous = user.isAnonymous;
         }
+        // A guest's doc is unlisted and an upgrade makes it listed, in the same
+        // write. Also moves guest docs written listed before this rule (version
+        // 2) back out of the directory on their next visit. Only these two
+        // versions are touched; a legacy doc with no version is the admin
+        // migration's business.
+        const storedVersion = existingData?.publicProfileVersion;
+        const wantedVersion = profileVersionFor(user.isAnonymous);
+        if (
+          (storedVersion === 0 || storedVersion === 2) &&
+          storedVersion !== wantedVersion
+        ) {
+          profileChanges.publicProfileVersion = wantedVersion;
+        }
 
         // Same rule the avatar below follows: only overwrite the stored name
         // when Auth actually has one. This branch runs on EVERY sign-in, so
@@ -287,15 +272,20 @@ export class UserDocumentManager {
 
         // Only overwrite avatar fields when Auth provides a real URL.
         // Prevents nulling out a generated or custom avatar on re-login.
-        const avatarUrl =
-          user.photoURL ||
-          (existingData?.photoURL ? null : generateAvatarUrl(displayName, 256));
-        if (avatarUrl && existingData?.photoURL !== avatarUrl) {
-          profileChanges.photoURL = avatarUrl;
-        }
-        if (avatarUrl && existingData?.avatar !== avatarUrl) {
-          profileChanges.avatar = avatarUrl;
-        }
+        // A person with no photo stores null; avatars draw the generated
+        // picture at render time (see public-profile-payload.ts).
+        Object.assign(profileChanges, photoChanges(user.photoURL, existingData));
+
+        // A full account with no real handle gets one from its name. That is a
+        // guest upgrading (an old guest doc may hold a uid fragment nobody ever
+        // reserved) or a nameless account whose name has now arrived: an email
+        // signup's first sync runs before its name is saved.
+        const needsHandle =
+          !user.isAnonymous &&
+          (!existingUsername ||
+            existingData?.isAnonymous === true ||
+            (isPlaceholderHandle(existingUsername) &&
+              handleBaseFromName(authName) !== null));
 
         // Add usernameLowercase if missing (backfill for existing users)
         if (existingUsername && !existingData?.usernameLowercase) {
@@ -321,7 +311,7 @@ export class UserDocumentManager {
           ? privateProfileDoc.data()
           : undefined;
 
-        rememberAccountProfile({
+        const accountProfile = {
           userId: user.uid,
           username: existingUsername || "",
           instagramUsername: existingData?.instagramUsername || "",
@@ -329,7 +319,8 @@ export class UserDocumentManager {
           profileColor: existingData?.profileColor || null,
           googlePhotoUrl:
             googlePhotoURL ?? storedPrivateProfile?.googlePhotoURL ?? null,
-        });
+        };
+        rememberAccountProfile(accountProfile);
 
         // Only update googlePhotoURL if we have a fresh one from the provider.
         // Don't null it out - the provider's photoURL becomes null after the
@@ -361,7 +352,29 @@ export class UserDocumentManager {
           await mergePrivateProfile(privateProfileChanges);
         }
 
-        if (writesPublicProfile) {
+        if (needsHandle) {
+          // In one write with the guest flag, so a failure leaves the account
+          // a guest that tries again, not a listed person with no handle.
+          currentStep = {
+            action: "claim-username",
+            message: "Could not claim the signed-in user's username",
+            path: "usernames/{handle}",
+          };
+          const handle = await retryAuthenticatedFirestoreOperation(user, () =>
+            claimHandleFromName(
+              user.uid,
+              authName,
+              {
+                ...profileChanges,
+                updatedAt: serverTimestamp(),
+                lastActivityDate: serverTimestamp(),
+              },
+              // Whatever it held before is released, if this person owns it.
+              existingUsername || null
+            )
+          );
+          rememberAccountProfile({ ...accountProfile, username: handle });
+        } else if (writesPublicProfile) {
           currentStep = {
             action: "update-public-profile",
             message: "Could not update the signed-in user's public profile",
@@ -385,7 +398,7 @@ export class UserDocumentManager {
         // consequently denied. A plain read comes first so an intact claim
         // costs one read per page load: even a transaction that changes
         // nothing sends a commit.
-        if (existingUsername && !user.isAnonymous) {
+        if (existingUsername && !user.isAnonymous && !needsHandle) {
           const usernameClaimPath = `usernames/${formatUsername(existingUsername)}`;
           currentStep = {
             action: "get-username-claim",
@@ -403,7 +416,7 @@ export class UserDocumentManager {
               path: usernameClaimPath,
             };
             await retryAuthenticatedFirestoreOperation(user, () =>
-              claimUsername(user.uid, existingUsername)
+              repairUsernameClaim(user.uid, existingUsername)
             );
           }
         }
@@ -526,6 +539,16 @@ export class UserDocumentManager {
    * Update the user's profile accent color in Firestore.
    * This color appears as the ring around the avatar and on profile cards.
    */
+  /** "Show me in Creators". Throws so the switch can put itself back. */
+  async setHiddenFromCreators(userId: string, hidden: boolean): Promise<void> {
+    const firestore = await getFirestoreInstance();
+    await setDoc(
+      doc(firestore, `users/${userId}`),
+      { isHidden: hidden, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  }
+
   async updateProfileColor(userId: string, color: string): Promise<void> {
     try {
       const firestore = await getFirestoreInstance();

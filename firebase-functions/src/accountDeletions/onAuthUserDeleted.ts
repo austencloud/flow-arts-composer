@@ -99,6 +99,10 @@ export async function _cascadeDeleteFirestore(
       db
     ),
     deleteQuery(db.collection("contributors").where("userId", "==", uid), db),
+    // The handle is free again, and the map pin goes with the person. A pin
+    // left behind joined to a missing profile and could break the map.
+    deleteQuery(db.collection("usernames").where("userId", "==", uid), db),
+    db.doc(`userLocations/${uid}`).delete(),
   ]);
 
   // Removes the profile and every current or future user subcollection.

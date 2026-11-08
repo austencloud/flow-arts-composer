@@ -12,11 +12,41 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Handles nobody may take. A copy of RESERVED_HANDLES in
+    // src/lib/shared/auth/domain/models/handle-rule.ts; the test
+    // tests/unit/auth/handle-rule.test.ts fails when the two lists differ.
+    function isReservedHandle(handle) {
+      return handle in [
+        'admin', 'administrator', 'support', 'help', 'system', 'root',
+        'moderator', 'mod', 'staff', 'official', 'bot', 'tka',
+        'thekineticalphabet', 'kinetic', 'alphabet', 'scribe', 'tkascribe',
+        'composer', 'tkacomposer', 'tkaflowarts', 'api', 'null', 'undefined',
+        'deleted', 'anonymous', 'guest', 'user', 'users', 'test', 'demo',
+        'example', 'info', 'contact', 'team', 'service', 'account', 'settings',
+        'profile', 'login', 'signup', 'register'
+      ];
+    }
+
+    // The client's handle shape (validateUsernameFormat): lowercase letters,
+    // digits, dots and underscores, 3 to 30, starting and ending with a
+    // letter or digit, with no ".." and no "___".
+    function isHandleShape(handle) {
+      return handle.matches('[a-z0-9][a-z0-9._]{1,28}[a-z0-9]')
+        && !handle.matches('.*[.][.].*')
+        && !handle.matches('.*___.*');
+    }
+
     // A "full" user has a permanent credential (not an anonymous session).
     // Free check — no document read, unlike the role helpers.
     function isFullUser() {
       return request.auth != null
         && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // A moderated account keeps its data but its follow actions are refused.
+    function isDisabledAccount() {
+      let profile = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(profile) && get(profile).data.get('isDisabled', false) == true;
     }
 
     // Check if user owns the document (based on userId field)
@@ -277,9 +307,15 @@ service cloud.firestore {
       // Anyone authenticated can check username availability
       allow read: if isAuthenticated();
 
-      // Create: User can claim an unclaimed username for themselves
+      // Create: a full account reserves an unclaimed handle for itself, in the
+      // same write that puts the handle on its profile (or for the handle its
+      // profile already holds, to repair a missing reservation). A reservation
+      // on its own would let a script hoard names.
       allow create: if isFullUser()
-        && request.resource.data.userId == request.auth.uid;
+        && !isReservedHandle(usernameLowercase)
+        && request.resource.data.userId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid))
+          .data.get('username', '').lower() == usernameLowercase;
 
       // Update: Only the owner can update their username claim
       // (e.g., to update timestamps or reclaim after releasing)
@@ -337,7 +373,8 @@ service cloud.firestore {
       // Fields an account owner may maintain directly as part of their public
       // profile or client-auth synchronization. Privilege, moderation,
       // counters owned by server workflows, and private admin metadata are
-      // deliberately absent.
+      // deliberately absent. `isHidden` is here because it is the owner's own
+      // choice ("Show me in Creators"); `isDisabled` is an admin's and is not.
       function ownerProfileFields() {
         return [
           'displayName', 'name', 'username', 'usernameLowercase',
@@ -346,7 +383,7 @@ service cloud.firestore {
           'bio', 'instagramUsername', 'pronouns', 'profileColor',
           'propsISpinWith', 'favoriteProp', 'favoriteCatdog', 'activeProp',
           'pinnedItems', 'favoriteConfig',
-          'publicProfileVersion'
+          'publicProfileVersion', 'isHidden'
         ];
       }
 
@@ -366,9 +403,116 @@ service cloud.firestore {
         ];
       }
 
+      // Version 2 is a listed profile. Version 0 is a guest's: readable by id
+      // like any public profile, but `allow list` and the directory query ask
+      // for 2, so guests never fill the Creators roster. Only a doc that says
+      // it is a guest may carry 0; the upgrade write sets 2 with isAnonymous
+      // false.
       function isSafePublicProfile(data) {
-        return data.publicProfileVersion == 2
+        return (data.publicProfileVersion == 2
+            || (data.publicProfileVersion == 0
+              && data.get('isAnonymous', false) == true))
           && data.keys().hasOnly(publicProfileFields());
+      }
+
+      // A listed profile (version 2) or one that says it is not a guest
+      // belongs to a full account. Without this a guest session could write
+      // version 2 with isAnonymous false and appear in Creators. The upgrade
+      // write runs after linking and a forced token refresh
+      // (anonymous-upgrade.ts notifyUpgradeSignup), so its token already
+      // carries the real provider.
+      function isGuestShapedOrFullUser(data) {
+        return isFullUser()
+          || (data.get('publicProfileVersion', null) != 2
+            && data.get('isAnonymous', null) != false);
+      }
+
+      // The keys this write sets or changes. On create, every key.
+      function changedProfileKeys() {
+        return resource == null
+          ? request.resource.data.keys()
+          : request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      // Printable text: no control characters (newline included).
+      function isPlainText(value, minSize, maxSize) {
+        return value is string
+          && value.size() >= minSize
+          && value.size() <= maxSize
+          && !value.matches('(?s).*[\\x00-\\x1F\\x7F].*');
+      }
+
+      function isOptionalPlainText(field, maxSize) {
+        let value = request.resource.data.get(field, null);
+        return value == null || isPlainText(value, 0, maxSize);
+      }
+
+      // TRANSITION WINDOW, remove after 2026-12-15. App bundles built before
+      // 2026-11-07 stay cached in browsers and installed apps. Their sign-up
+      // writes users/{uid} with username + usernameLowercase FIRST and creates
+      // usernames/{handle} in a second write, and stores a generated
+      // data:image/svg+xml picture for anyone without a photo. Until the date
+      // below, a profile CREATE may carry an unreserved handle in the old shape
+      // and that generated picture, so those sign-ups still work. Updates get
+      // no leniency. Once the date passes this is always false; delete it and
+      // its two uses (isImageUrl, hasValidHandle) then.
+      function isLegacyClientCreate() {
+        return resource == null
+          && request.time < timestamp.date(2026, 12, 15);
+      }
+
+      function isImageUrl(field) {
+        let value = request.resource.data.get(field, null);
+        return value == null
+          || (value is string
+            && value.size() <= 2048
+            && value.matches('https://.+'))
+          || (isLegacyClientCreate()
+            && value is string
+            && value.size() <= 4096
+            && value.matches('data:image/svg[+]xml,.+'));
+      }
+
+      // Bounds on what an owner writes about themselves, checked only on the
+      // fields a write changes, so older profiles keep saving untouched fields.
+      function hasValidProfileValues() {
+        let data = request.resource.data;
+        let changed = changedProfileKeys();
+        return (!('displayName' in changed)
+            || isPlainText(data.get('displayName', null), 1, 50))
+          && (!('name' in changed) || isOptionalPlainText('name', 50))
+          && (!('bio' in changed)
+            || data.get('bio', null) == null
+            || (data.bio is string && data.bio.size() <= 500))
+          && (!('pronouns' in changed) || isOptionalPlainText('pronouns', 50))
+          && (!('profileColor' in changed)
+            || data.get('profileColor', null) == null
+            || (data.profileColor is string
+              && data.profileColor.matches('#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})')))
+          && (!('photoURL' in changed) || isImageUrl('photoURL'))
+          && (!('avatar' in changed) || isImageUrl('avatar'))
+          && hasValidHandle(userId);
+      }
+
+      // A new or changed handle is lowercase letters, digits, dots and
+      // underscores, 3 to 30, and its usernames/ reservation belongs to this
+      // person after the write. An unchanged handle needs no reservation, so
+      // existing profiles keep working; backfilling usernameLowercase for one
+      // must match it.
+      function hasValidHandle(userId) {
+        let data = request.resource.data;
+        let changed = changedProfileKeys();
+        return !('username' in changed)
+          ? (!('usernameLowercase' in changed)
+            || data.get('usernameLowercase', null) == data.get('username', '').lower())
+          : (data.get('username', null) is string
+            && data.get('usernameLowercase', null) == data.username
+            && !isReservedHandle(data.username)
+            && ((isLegacyClientCreate()
+                && data.username.matches('[a-z0-9._-]{3,30}'))
+              || (isHandleShape(data.username)
+                && getAfter(/databases/$(database)/documents/usernames/$(data.username))
+                  .data.userId == userId)));
       }
 
       function hasSafeInitialPrivileges() {
@@ -406,7 +550,10 @@ service cloud.firestore {
       allow list: if isAdmin() || resource.data.publicProfileVersion == 2;
 
       // Users can only update their own profile
-      allow create: if isOwner(userId) && hasSafeInitialPrivileges();
+      allow create: if isOwner(userId)
+        && isGuestShapedOrFullUser(request.resource.data)
+        && hasSafeInitialPrivileges()
+        && hasValidProfileValues();
 
       // Allow updates for:
       // 1. Owner updating their own profile
@@ -416,12 +563,22 @@ service cloud.firestore {
       // to prevent arbitrary count manipulation by any authenticated user.
       allow update: if (isAdmin() && isSafePublicProfile(request.resource.data))
         || (isOwner(userId)
+          && isGuestShapedOrFullUser(request.resource.data)
           && isSafePublicProfile(request.resource.data)
+          && hasValidProfileValues()
+          && request.resource.data.get('isHidden', false) is bool
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(ownerProfileFields()));
 
-      // Users can delete their own profile, admins can delete any user (for testing)
-      allow delete: if isOwner(userId) || isAdmin();
+      // Users can delete their own profile, admins can delete any user (for
+      // testing). A disabled account cannot: deleting the doc would clear
+      // isDisabled, and the next sign-in would mint a clean profile. Account
+      // deletion still works for them: the client delete is best-effort, and
+      // the Auth onDelete trigger (onAuthUserDeleted.ts) removes the profile
+      // with the Admin SDK once the Auth account, and so the uid, is gone.
+      allow delete: if (isOwner(userId)
+          && resource.data.get('isDisabled', false) != true)
+        || isAdmin();
 
       // -------------------------------------------------------------------------
       // DEVICE LINKAGE (Scan Activity) — DeviceIdService writes here on sign-in
@@ -562,7 +719,7 @@ service cloud.firestore {
         // Anyone can read follow relationships (for "is following" checks)
         allow read: if isAuthenticated();
         // Only the owner can add/remove follows, admins can delete
-        allow create, update: if isOwner(userId) && isFullUser();
+        allow create, update: if isOwner(userId) && isFullUser() && !isDisabledAccount();
         allow delete: if isOwner(userId) || isAdmin();
       }
 
@@ -572,7 +729,8 @@ service cloud.firestore {
         allow read: if isAuthenticated();
         // Written via transaction when someone follows/unfollows
         // The follower (followerUserId) writes to the target user's followers list
-        allow create: if isFullUser() && request.auth.uid == followerUserId;
+        allow create: if isFullUser() && request.auth.uid == followerUserId
+          && !isDisabledAccount();
         allow update: if false; // No updates needed
         allow delete: if (isAuthenticated() && request.auth.uid == followerUserId) || isAdmin();
       }
@@ -2084,8 +2242,57 @@ service cloud.firestore {
         || isOwner(userId)
         || isAdmin();
 
-      // Only the user can create or update their own location
-      allow create, update: if isOwner(userId) && isFullUser();
+      // Only the user can create or update their own location, and only in the
+      // shape the map writes: a short city label and in-range city-centre
+      // coordinates. Everything here is shown on a public map.
+      function isValidLocation(data) {
+        return data.keys().hasOnly([
+            'userId', 'city', 'country', 'countryCode',
+            'cityCenterCoordinates', 'visibility', 'updatedAt', 'hiddenByFlag'
+          ])
+          && data.keys().hasAll(['userId', 'city', 'cityCenterCoordinates', 'visibility'])
+          && data.userId == userId
+          && data.city is string && data.city.size() >= 1 && data.city.size() <= 60
+          && (data.get('country', null) == null
+            || (data.country is string && data.country.size() <= 60))
+          && (data.get('countryCode', null) == null
+            || (data.countryCode is string && data.countryCode.matches('([A-Za-z]{2})?')))
+          && data.cityCenterCoordinates is map
+          && data.cityCenterCoordinates.keys().hasOnly(['lat', 'lng'])
+          && data.cityCenterCoordinates.lat is number
+          && data.cityCenterCoordinates.lng is number
+          && data.cityCenterCoordinates.lat >= -90 && data.cityCenterCoordinates.lat <= 90
+          && data.cityCenterCoordinates.lng >= -180 && data.cityCenterCoordinates.lng <= 180
+          && data.visibility in ['public', 'private']
+          && (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
+      }
+
+      // syncMapPinVisibility (Cloud Functions) makes a hidden or disabled
+      // person's pin private and marks it hiddenByFlag. The owner may keep or
+      // drop that mark, and may set it only on a private pin while their own
+      // profile is unlisted (saving a city while hidden), so the trigger can
+      // make that pin public again when they come back. The owner may not make
+      // the pin public while the profile is unlisted, or a re-save would undo
+      // the hiding.
+      function isUnlistedProfile(userId) {
+        let profile = /databases/$(database)/documents/users/$(userId);
+        return exists(profile)
+          && (get(profile).data.get('isHidden', false) == true
+            || get(profile).data.get('isDisabled', false) == true);
+      }
+
+      allow create, update: if isOwner(userId)
+        && isFullUser()
+        && isValidLocation(request.resource.data)
+        && (request.resource.data.get('hiddenByFlag', false) == false
+          || (request.resource.data.hiddenByFlag == true
+            && resource != null
+            && resource.data.get('hiddenByFlag', false) == true)
+          || (request.resource.data.hiddenByFlag == true
+            && request.resource.data.visibility == 'private'
+            && isUnlistedProfile(userId)))
+        && (request.resource.data.visibility == 'private'
+          || !isUnlistedProfile(userId));
 
       // Users can delete their own location, admins can delete any
       allow delete: if isOwner(userId) || isAdmin();

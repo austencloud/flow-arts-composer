@@ -3,7 +3,7 @@
      spacing, and avatars proportional at 4K without imposing a content cap. -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { browser } from "$app/env";
   import { page } from "$app/state";
   import { PUBLIC_GOOGLE_MAPS_API_KEY } from "#lib/shared/maps/google-maps-api-key.js";
@@ -16,7 +16,7 @@
     unfollowUser,
   } from "#lib/shared/community/services/user-repository.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { setCommunityMapContext } from "#lib/features/community/context/community-map-context.js";
   import { createCommunityMapState } from "#lib/features/community/state/community-map-state.svelte.js";
@@ -94,6 +94,11 @@
   const isLoading = $derived(creatorsDataState.isLoading);
   const error = $derived(creatorsDataState.error);
   const publicCounts = $derived(creatorsDataState.publicCounts);
+  // Search filters what is loaded, so "more" only means more of the directory.
+  const canShowMore = $derived(
+    searchResults === null && creatorsDataState.hasMore && !isLoading
+  );
+  const isLoadingMore = $derived(creatorsDataState.isLoadingMore);
 
   // Counts follow the visitor-filtered roster, including moderation visibility.
   const roster = $derived(searchResults !== null ? searchResults : users);
@@ -376,20 +381,13 @@
     }
   });
 
-  /** Auth can resolve after mount, so follow state must react to viewer identity. */
-  let followStateLoadedFor: string | null = null;
+  // Auth can resolve after mount, and the viewer can sign out or switch account
+  // in the same tab. The state drops follow flags that belong to someone else
+  // and loads the new viewer's.
   $effect(() => {
-    const viewerId = currentUserId;
-    if (!viewerId) return;
+    const viewerId = currentUserId ?? null;
     if (!creatorsDataState.isInitialized) return;
-    if (creatorsDataState.hasFollowState) return;
-    if (followStateLoadedFor === viewerId) return;
-
-    followStateLoadedFor = viewerId;
-    void creatorsDataState.refreshCreators(viewerId).catch((refreshError) => {
-      console.error("[CreatorsPanel] Follow state unavailable:", refreshError);
-      followStateLoadedFor = null;
-    });
+    void untrack(() => creatorsDataState.syncViewer(viewerId));
   });
 
   onDestroy(() => {
@@ -409,6 +407,9 @@
   async function handleFollow(creator: EnhancedUserProfile) {
     const viewerId = currentUserId;
     if (!viewerId || followPending.has(creator.id)) return;
+    // The flags still describe another viewer while theirs load; a press now
+    // would send the opposite of what this viewer sees.
+    if (creatorsDataState.followStateFor !== viewerId) return;
 
     hapticService?.trigger("selection");
     followPending = new Set(followPending).add(creator.id);
@@ -418,11 +419,7 @@
       if (wasFollowing)
         await unfollowUser(viewerId, creator.id, "creator_directory");
       else await followUser(viewerId, creator.id, "creator_directory");
-      creatorsDataState.updateUserFollowStatus(
-        creator.id,
-        !wasFollowing,
-        wasFollowing ? -1 : 1
-      );
+      creatorsDataState.applyFollowChange(creator.id, !wasFollowing);
     } catch (followError) {
       console.error("[CreatorsPanel] Follow toggle failed:", followError);
     } finally {
@@ -574,6 +571,26 @@
                 />
               {/each}
             </div>
+
+            {#if canShowMore}
+              <div class="show-more" transition:growFade>
+                <button
+                  type="button"
+                  class="show-more-button"
+                  disabled={isLoadingMore}
+                  aria-busy={isLoadingMore}
+                  onclick={() => creatorsDataState.loadMoreCreators(currentUserId)}
+                >
+                  <!-- Both labels share one grid cell, so the button keeps its width. -->
+                  <span class="show-more-label" class:hidden={isLoadingMore}>
+                    {t("creators_show_more")}
+                  </span>
+                  <span class="show-more-label" class:hidden={!isLoadingMore}>
+                    {t("creators_loading_more")}
+                  </span>
+                </button>
+              </div>
+            {/if}
 
             {#if publicCounts.creatorsWithWork > 0}
               <p class="denominator">
@@ -750,6 +767,52 @@
     display: flex;
     flex-direction: column;
     gap: 1.75em;
+  }
+
+  .show-more {
+    display: flex;
+    justify-content: center;
+    padding-top: 1.5em;
+  }
+
+  .show-more-button {
+    display: grid;
+    min-height: 44px;
+    padding: 0.625em 1.75em;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 999px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font: inherit;
+    font-size: 0.9375em;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast);
+  }
+
+  .show-more-button:hover:not(:disabled) {
+    background: var(--theme-card-hover-bg, var(--theme-card-bg));
+    border-color: var(--theme-stroke-strong, var(--theme-stroke));
+  }
+
+  .show-more-button:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  .show-more-button:disabled {
+    cursor: progress;
+  }
+
+  .show-more-label {
+    grid-area: 1 / 1;
+    transition: opacity var(--transition-fast);
+  }
+
+  .show-more-label.hidden {
+    opacity: 0;
   }
 
   .denominator {

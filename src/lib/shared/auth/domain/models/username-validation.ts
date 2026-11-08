@@ -5,6 +5,12 @@
  * for enforcing unique usernames across Flow Arts Composer.
  */
 
+import {
+	HANDLE_MAX_LENGTH,
+	HANDLE_MIN_LENGTH,
+	RESERVED_HANDLES
+} from './handle-rule';
+
 export interface UsernameValidationResult {
 	isValid: boolean;
 	error?: string;
@@ -12,58 +18,11 @@ export interface UsernameValidationResult {
 }
 
 export const USERNAME_RULES = {
-	MIN_LENGTH: 3,
-	MAX_LENGTH: 20,
-	/** Allowed: letters, numbers, underscore, hyphen */
-	PATTERN: /^[a-zA-Z0-9_-]+$/,
-	/** Reserved system usernames (lowercase) */
-	RESERVED: [
-		// System accounts
-		'admin',
-		'administrator',
-		'support',
-		'help',
-		'system',
-		'root',
-		'moderator',
-		'mod',
-		'staff',
-		'official',
-		'bot',
-		// Brand-related
-		'tka',
-		'thekineticalphabet',
-		'kinetic',
-		'alphabet',
-		'scribe',
-		'tkascribe',
-		'composer',
-		'tkacomposer',
-		'tkaflowarts',
-		// Technical
-		'api',
-		'null',
-		'undefined',
-		'deleted',
-		'anonymous',
-		'guest',
-		'user',
-		'users',
-		// Common
-		'test',
-		'demo',
-		'example',
-		'info',
-		'contact',
-		'team',
-		'service',
-		'account',
-		'settings',
-		'profile',
-		'login',
-		'signup',
-		'register'
-	]
+	MIN_LENGTH: HANDLE_MIN_LENGTH,
+	MAX_LENGTH: HANDLE_MAX_LENGTH,
+	/** Allowed: letters, numbers, dots, underscores. Stored in lowercase. */
+	PATTERN: /^[a-zA-Z0-9._]+$/,
+	RESERVED: RESERVED_HANDLES
 } as const;
 
 /**
@@ -103,7 +62,7 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
 	if (!USERNAME_RULES.PATTERN.test(trimmed)) {
 		return {
 			isValid: false,
-			error: 'Username can only contain letters, numbers, underscores, and hyphens'
+			error: 'Username can only contain letters, numbers, dots, and underscores'
 		};
 	}
 
@@ -116,18 +75,26 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
 		};
 	}
 
-	// Check doesn't start/end with special chars
-	if (trimmed.startsWith('-') || trimmed.startsWith('_')) {
+	// Check doesn't start/end with a separator
+	if (trimmed.startsWith('.') || trimmed.startsWith('_')) {
 		return {
 			isValid: false,
-			error: 'Username cannot start with a hyphen or underscore'
+			error: 'Username cannot start with a dot or underscore'
 		};
 	}
 
-	if (trimmed.endsWith('-') || trimmed.endsWith('_')) {
+	if (trimmed.endsWith('.') || trimmed.endsWith('_')) {
 		return {
 			isValid: false,
-			error: 'Username cannot end with a hyphen or underscore'
+			error: 'Username cannot end with a dot or underscore'
+		};
+	}
+
+	// The rules (isHandleShape in firestore.rules) refuse these too.
+	if (trimmed.includes('..') || trimmed.includes('___')) {
+		return {
+			isValid: false,
+			error: 'Username cannot contain ".." or "___"'
 		};
 	}
 
