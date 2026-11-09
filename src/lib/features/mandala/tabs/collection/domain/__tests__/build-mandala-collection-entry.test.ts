@@ -32,6 +32,31 @@ describe("buildMandalaCollectionEntry", () => {
     expect(entry.steps).not.toBe(steps);
   });
 
+  it("records the colors on screen, and records nothing when none were chosen", () => {
+    const input = {
+      steps: [],
+      variant: "both" as const,
+      leftPropType: "staff",
+      rightPropType: "staff",
+      pathShape: "arc" as const,
+      sequenceWord: "A",
+    };
+    const colors = { left: "#d4af37", right: "#b8722c" };
+
+    const chosen = buildMandalaCollectionEntry({ ...input, colors }, 0);
+    expect(chosen.colors).toEqual(colors);
+    expect(chosen.colors).not.toBe(colors);
+
+    const none = buildMandalaCollectionEntry({ ...input, colors: null }, 0);
+    expect("colors" in none).toBe(false);
+
+    const unusable = buildMandalaCollectionEntry(
+      { ...input, colors: { left: "rgb(1, 2, 3)", right: "#b8722c" } },
+      0
+    );
+    expect("colors" in unusable).toBe(false);
+  });
+
   it("numbers an unnamed mandala from the current collection count", () => {
     const entry = buildMandalaCollectionEntry(
       {

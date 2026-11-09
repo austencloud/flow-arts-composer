@@ -56,8 +56,15 @@ export function getStageCoordinateFrame(
   backgroundType: BackgroundType,
   stageEnabled: boolean
 ): StageCoordinateFrame {
-  const nativeSurfaceY = getNativeStageSurfaceY(backgroundType, stageEnabled);
+  return stageCoordinateFrameForSurface(
+    getNativeStageSurfaceY(backgroundType, stageEnabled)
+  );
+}
 
+/** The frame for a scene whose performer surface sits at `nativeSurfaceY`. */
+export function stageCoordinateFrameForSurface(
+  nativeSurfaceY: number
+): StageCoordinateFrame {
   return {
     performerAnchorY: CANONICAL_PERFORMER_ANCHOR_Y,
     nativeSurfaceY,

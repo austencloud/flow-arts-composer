@@ -17,6 +17,7 @@ import type { TimeSignatureKey } from "../../foundation/domain/models/time-signa
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
 import type { FanAppearance } from "../../pictograph/prop/domain/fan-appearance";
 import type { TriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";
+import type { BuugengStyle } from "../../pictograph/prop/domain/buugeng-appearance";
 import { resolveViewerCustomColorPair, type ViewerCustomColorPair } from "../../sequence-viewer/domain/viewer-custom-colors";
 
 /**
@@ -46,6 +47,8 @@ export interface AppSettings {
   fanAppearance?: FanAppearance;
   /** Where the hand holds the triangle: the printed elbow or a side's bow point. */
   triangleGrip?: TriangleGrip;
+  /** The cut of buugeng and big buugeng blades. A look only, never notation. */
+  buugengStyle?: BuugengStyle;
   catDogMode?: boolean; // Whether CatDog Mode is enabled in prop type settings
   leftBuugengFlipped?: boolean; // Flip buugeng for blue hand (asymmetric prop)
   rightBuugengFlipped?: boolean; // Flip buugeng for red hand (asymmetric prop)

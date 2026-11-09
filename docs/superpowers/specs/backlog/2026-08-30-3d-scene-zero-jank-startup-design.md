@@ -3,18 +3,18 @@ status: backlog
 value: null
 effort: null
 work_state: ready
-remaining: "Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. scene-effects-manager-3d.ts still statically imports renderers and initializes every pool at lines 154–166, SceneControlWorkspace imports closed controls eagerly, and scene-effect-task-scheduler-3d.ts is absent despite later startup work (7d1dfff785)."
+remaining: "Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. Re-checked 2026-11-07: scene-effects-manager-3d.ts still statically imports every renderer (Bubble, Petal, Sparkle, Smoke, Fire, Goo, Ink, Silk), SceneControlWorkspace.svelte still imports its closed controls eagerly, and scene-effect-task-scheduler-3d.ts does not exist. Later startup work (7d1dfff785, 2b7ee392ea) did not change that."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 ---
 
 # 3D Scene Zero-Jank Startup
 
-> 2026-10-14 triage: Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. scene-effects-manager-3d.ts still statically imports renderers and initializes every pool at lines 154–166, SceneControlWorkspace imports closed controls eagerly, and scene-effect-task-scheduler-3d.ts is absent despite later startup work (7d1dfff785). Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage: Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. Re-checked 2026-11-07: scene-effects-manager-3d.ts still statically imports every renderer (Bubble, Petal, Sparkle, Smoke, Fire, Goo, Ink, Silk), SceneControlWorkspace.svelte still imports its closed controls eagerly, and scene-effect-task-scheduler-3d.ts does not exist. Later startup work (7d1dfff785, 2b7ee392ea) did not change that. Earlier status banners and execution instructions are historical where they conflict with this review.
 
-**Status:** Backlog
+**Status:** Backlog; implementation gap confirmed 2026-11-07 (see the triage line above)
 **Date:** 2026-08-30
 **Owners:** `Viewer3DCanvas`, `Viewer3DScene`, `SceneEffectsManager3D`, and the existing scene-control workspace
 

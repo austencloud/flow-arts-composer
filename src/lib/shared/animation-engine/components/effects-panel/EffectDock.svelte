@@ -30,7 +30,11 @@
     primaryValue: number;
     onSelectPreset: (presetId: string) => void;
     onPrimaryInput: (value: number) => void;
-    onTune: () => void;
+    /** Omitted where deep tuning has no place: the dock is its whole page. */
+    onTune?: () => void;
+    /** The way back, in the head row, for a dock with no room for a row of its own. */
+    onBack?: () => void;
+    backLabel?: string;
     tuneLoading?: boolean;
     tuneError?: boolean;
     /** Sidebar opens the full inspector; the popover opens deep tuning. */
@@ -52,8 +56,11 @@
      * The roster above the dock holds still either way and the panel footer is
      * the only thing that moves, which is the arrangement no-layout-shift.md
      * already settled on for this panel.
+     *
+     * - `fit`   every chip in a grid sharing the height the host gives the dock.
+     *           Nothing scrolls, whatever the effect's look count.
      */
-    looks?: "rail" | "wrap" | "tiles";
+    looks?: "rail" | "wrap" | "tiles" | "fit";
   }
 
   const {
@@ -68,6 +75,8 @@
     onSelectPreset,
     onPrimaryInput,
     onTune,
+    onBack,
+    backLabel = "",
     tuneLoading = false,
     tuneError = false,
     tuneLabel = "",
@@ -83,29 +92,43 @@
 
 <section
   class="effect-dock"
+  class:fit={looks === "fit"}
   style:--effect-accent={accent}
   aria-label={t("effect_deep_effect_controls", {
     effect: effectUiLabel(registration.meta.label),
   })}
 >
   <div class="dock-head">
+    {#if onBack}
+      <button
+        type="button"
+        class="dock-back"
+        onclick={onBack}
+        aria-label={backLabel}
+        title={backLabel}
+      >
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      </button>
+    {/if}
     <span class="dock-identity">
       <i class="fas {registration.meta.icon} dock-icon" aria-hidden="true"></i>
       <span class="dock-name">{effectUiLabel(registration.meta.label)}</span>
     </span>
-    <button
-      type="button"
-      class="tune-btn"
-      onclick={onTune}
-      disabled={tuneLoading}
-    >
-      <i class="fas fa-sliders" aria-hidden="true"></i>
-      <span
-        >{tuneLoading
-          ? t("effect_deep_tune_loading")
-          : tuneLabel || t("effect_deep_tune")}</span
+    {#if onTune}
+      <button
+        type="button"
+        class="tune-btn"
+        onclick={onTune}
+        disabled={tuneLoading}
       >
-    </button>
+        <i class="fas fa-sliders" aria-hidden="true"></i>
+        <span
+          >{tuneLoading
+            ? t("effect_deep_tune_loading")
+            : tuneLabel || t("effect_deep_tune")}</span
+        >
+      </button>
+    {/if}
   </div>
   {#if tuneError}
     <p class="tune-error" role="alert">{t("effect_deep_tune_load_failed")}</p>
@@ -143,6 +166,7 @@
       effectLabel={registration.meta.label}
       onSelect={onSelectPreset}
       wrap={looks === "wrap"}
+      fit={looks === "fit"}
     />
   {/if}
 
@@ -184,6 +208,42 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
+  }
+
+  /* The whole page: the head and slider keep their heights, and the looks
+     share what is left. */
+  .effect-dock.fit {
+    flex: 1 1 0;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    gap: 0.25rem;
+    padding: 0.25rem 0.375rem;
+    overflow: hidden;
+  }
+
+  .dock-back {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
+    color: var(--theme-text, white);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--duration-fast) var(--ease-standard);
+  }
+
+  .dock-back:hover {
+    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07));
+  }
+
+  .dock-back:focus-visible {
+    outline: 2px solid var(--effect-accent);
+    outline-offset: 2px;
   }
 
   .dock-identity {
@@ -330,7 +390,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tune-btn {
+    .tune-btn,
+    .dock-back {
       transition: none;
     }
   }

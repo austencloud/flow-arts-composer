@@ -19,6 +19,7 @@ export interface MandalaRevisionPayload {
   readonly leftPropType: string;
   readonly rightPropType: string;
   readonly pathShape?: CollectedMandala["pathShape"];
+  readonly colors?: CollectedMandala["colors"];
   readonly source?: CollectedMandala["source"];
   readonly sourceWord?: string;
   readonly sourceSequenceId?: string;
@@ -38,6 +39,7 @@ export function mandalaRevisionPayload(
     | "leftPropType"
     | "rightPropType"
     | "pathShape"
+    | "colors"
     | "source"
     | "sourceWord"
     | "sourceSequenceId"
@@ -49,6 +51,7 @@ export function mandalaRevisionPayload(
     leftPropType: mandala.leftPropType,
     rightPropType: mandala.rightPropType,
     ...(mandala.pathShape !== undefined && { pathShape: mandala.pathShape }),
+    ...(mandala.colors !== undefined && { colors: mandala.colors }),
     ...(mandala.source !== undefined && { source: mandala.source }),
     ...(mandala.sourceWord !== undefined && { sourceWord: mandala.sourceWord }),
     ...(mandala.sourceSequenceId !== undefined && {

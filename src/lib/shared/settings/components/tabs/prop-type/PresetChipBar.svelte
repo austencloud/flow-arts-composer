@@ -17,6 +17,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
   import type { PropPreset } from "../../../domain/app-settings";
   import {
     presetLabel,
@@ -34,6 +35,7 @@
     darkMode = true,
     fanAppearance,
     triangleGrip,
+    buugengStyle,
     showShortcuts = false,
     onApply,
     onSave,
@@ -51,6 +53,7 @@
     /** Current fan build and triangle grip, drawn the same on every chip. */
     fanAppearance?: FanAppearance | null;
     triangleGrip?: TriangleGrip | null;
+    buugengStyle?: BuugengStyle | null;
     /** Show Alt-key slot marks and the shortcut hint. */
     showShortcuts?: boolean;
     onApply: (index: number) => void;
@@ -161,6 +164,7 @@
         {darkMode}
         {fanAppearance}
         {triangleGrip}
+        {buugengStyle}
         onclick={() => handleChip(index)}
       />
     {/each}

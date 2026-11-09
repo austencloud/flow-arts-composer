@@ -23,7 +23,9 @@
   import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { withResultsMorph } from "#lib/shared/transitions/results-morph.js";
-  import { createDestinationFade } from "#lib/shared/transitions/motion.js";
+  import { createDestinationFade, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { tryGetBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
 
   interface Props {
     collectionPropType?: PropType | null;
@@ -50,6 +52,10 @@
     /** Bottom-sheet filter pattern: Filters pill in the toolbar, applied-only
      * chips in the filter bar. The host owns the sheet. */
     onOpenFilters?: () => void;
+    /** A Browse grid, not a picker: on a phone or tablet the bands above the
+     * grid step aside, the Filters pill moves to the Browse header, and the
+     * host's Filters sheet carries the rest (see BrowseSheetControls). */
+    headerChrome?: boolean;
     /** Instant-tap warm-up: render only the skeleton (no grid/sidebar, so no
      * filtered-set read) for the frame a new filter is applied, so the layout
      * paints immediately and the compute lands behind the skeleton. */
@@ -127,6 +133,7 @@
     hideFilterChips = false,
     selectedIds,
     onOpenFilters,
+    headerChrome = false,
     warming = false,
     onSaveSmart,
     emptyAction,
@@ -142,6 +149,18 @@
     revealSequenceId = null,
     onRevealDone,
   }: Props = $props();
+
+  const header = tryGetBrowseHeaderContext();
+  const chromeInHeader = $derived(
+    headerChrome && !!onOpenFilters && !!header?.compactChrome
+  );
+  $effect(() => {
+    if (!chromeInHeader || !header) return;
+    return header.registerFilters({
+      engine: () => engine,
+      open: () => onOpenFilters?.(),
+    });
+  });
 
   const showToolbar = $derived(toolbarOverride ?? layout !== "minimal");
   const showFilterBar = $derived(filterBarOverride ?? layout !== "minimal");
@@ -455,6 +474,7 @@
   class:fullpage={layout === "fullpage"}
   class:compact={layout === "compact"}
   class:minimal={layout === "minimal"}
+  class:chrome-in-header={chromeInHeader}
   bind:this={containerEl}
 >
   {#if title}
@@ -465,23 +485,30 @@
 
   {#if showToolbar}
     {#if selection?.active && !hideSelectionToolbar}
-      <SelectionToolbar
-        selectedCount={selection.selectedIds.size}
-        totalCount={engine.sequences.length}
-        primaryLabel={t("browse_ui_collections_tab")}
-        primaryIcon="fa-folder-plus"
-        onPrimaryAction={selection.openPrimaryAction}
-        dangerLabel={selection.openDangerAction
-          ? t("browse_audit_delete_permanently")
-          : undefined}
-        dangerIcon={selection.openDangerAction ? "fa-trash" : undefined}
-        onDangerAction={selection.openDangerAction}
-        onSelectAll={selection.selectAll}
-        selectAllDisabled={!engine.isLibraryComplete}
-        onClearSelection={selection.clear}
-        onExitSelection={selection.exit}
-      />
-    {:else}
+      <!-- With the chrome in the header nothing is here to swap with, so the
+           toolbar grows in over the grid. -->
+      <div
+        class="selection-slot"
+        transition:growFade={{ duration: chromeInHeader ? DURATION.normal : 0 }}
+      >
+        <SelectionToolbar
+          selectedCount={selection.selectedIds.size}
+          totalCount={engine.sequences.length}
+          primaryLabel={t("browse_ui_collections_tab")}
+          primaryIcon="fa-folder-plus"
+          onPrimaryAction={selection.openPrimaryAction}
+          dangerLabel={selection.openDangerAction
+            ? t("browse_audit_delete_permanently")
+            : undefined}
+          dangerIcon={selection.openDangerAction ? "fa-trash" : undefined}
+          onDangerAction={selection.openDangerAction}
+          onSelectAll={selection.selectAll}
+          selectAllDisabled={!engine.isLibraryComplete}
+          onClearSelection={selection.clear}
+          onExitSelection={selection.exit}
+        />
+      </div>
+    {:else if !chromeInHeader}
       <BrowseToolbar
         {engine}
         {showSourceToggle}
@@ -508,11 +535,11 @@
 
   <!-- Stacked bands: only below the one-row width, or when the toolbar that
        would host them is not shown. -->
-  {#if showViewingControl && !(inlineChrome && showToolbar)}
+  {#if showViewingControl && !chromeInHeader && !(inlineChrome && showToolbar)}
     <PropViewingControl {collectionPropType} />
   {/if}
 
-  {#if showFilterBar && !(inlineChrome && showToolbar && onOpenFilters)}
+  {#if showFilterBar && !chromeInHeader && !(inlineChrome && showToolbar && onOpenFilters)}
     <BrowseFilterBar {engine} chipsOnly={!!onOpenFilters} {onSaveSmart} />
   {/if}
 
@@ -543,7 +570,10 @@
       <!-- Instant-tap warm frame: skeleton only. No sidebar/grid → no
            filtered-set read → the layout paints before the compute. -->
       <div class="grid-area">
-        <BrowseThumbnailSkeleton count={12} />
+        <BrowseThumbnailSkeleton
+          count={12}
+          pinchColumnOverride={engine.columnCount}
+        />
       </div>
     {:else if isEmpty}
       <div class="empty-state" role="status">
@@ -626,7 +656,10 @@
       </div>
       {#if showSkeleton}
         <div class="skeleton-overlay" class:fading={skeletonFading}>
-          <BrowseThumbnailSkeleton count={12} />
+          <BrowseThumbnailSkeleton
+            count={12}
+            pinchColumnOverride={engine.columnCount}
+          />
         </div>
       {/if}
     {/if}
@@ -641,6 +674,28 @@
     overflow: hidden;
     container-type: inline-size;
     container-name: gallery;
+  }
+
+  .selection-slot {
+    flex: 0 0 auto;
+  }
+
+  /* Cards in a row share its height, with shorter art centered: rows of mixed
+     lengths otherwise leave a jagged edge above the next row. */
+  .browse-panel.chrome-in-header {
+    --browse-row-align: stretch;
+  }
+
+  .browse-panel.chrome-in-header :global(.sequences-grid .choreo-card) {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Once its art is in, the space around it is the art's own background, so a
+     shorter card reads as the same size as its neighbors. */
+  .browse-panel.chrome-in-header
+    :global(.sequences-grid .choreo-card:not(:has(.loading-placeholder))) {
+    background: var(--theme-card-bg);
   }
 
   .panel-title {
@@ -737,7 +792,8 @@
 
   /* Narrow containers: cards get the width, not the gutters. */
   @container gallery (max-width: 640px) {
-    .grid-area {
+    .grid-area,
+    .skeleton-overlay {
       padding: var(--spacing-sm, 8px);
     }
   }

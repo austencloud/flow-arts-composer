@@ -119,7 +119,7 @@ export const handMotionsContent: GuideBlock[] = [
     items: d.items,
     flowCols: 2,
     layout: "strip" as const,
-    stepLabels: ["Start", "1"],
+    numbered: true,
     card: true,
     render: RENDER,
     caption: d.caption,

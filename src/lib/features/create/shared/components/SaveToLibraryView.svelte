@@ -575,8 +575,14 @@
   }
 
   /* One scroll region of choices. On a wide 4K panel the choices keep a
-     reading width instead of stretching every toggle across the column. */
+     reading width instead of stretching every toggle across the column.
+
+     Opening a field can start the scroll mid-ease. The gutter stays reserved so
+     the bar arriving doesn't narrow every row at once; where the bar takes up
+     space, the right padding gives that space back so the rows line up with the
+     header and footer. Touch screens have overlay bars, so no room is needed. */
   .view-body {
+    --scrollbar-room: 0px;
     flex: 0 1 auto;
     min-height: 0;
     display: flex;
@@ -585,9 +591,16 @@
     width: 100%;
     max-width: 720px;
     align-self: center;
-    padding: 8px 24px;
+    padding: 8px calc(24px - var(--scrollbar-room)) 8px 24px;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     overscroll-behavior: contain;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .view-body {
+      --scrollbar-room: 10px;
+    }
   }
 
   .save-props > :global(.prop-pair-field) {
@@ -898,7 +911,7 @@
     }
 
     .view-body {
-      padding: 4px 16px;
+      padding: 4px calc(16px - var(--scrollbar-room)) 4px 16px;
       gap: 12px;
     }
 

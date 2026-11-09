@@ -2,18 +2,18 @@
 status: active
 value: null
 effort: null
-remaining: "Verify real WebGL2 shader compilation, synchronized legacy/cinematic playback, sprite-matte crossings, cached/headless export parity, and seven-viewport performance on /test/fire-2d-compare. The upgraded renderer, cache budget and focused tests already exist (31da45c190; src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts)."
+remaining: "Verify real WebGL2 shader compilation, synchronized legacy/cinematic playback, sprite-matte crossings, cached/headless export parity, and seven-viewport performance on /test/fire-2d-compare. The upgraded renderer, cache budget and focused tests exist (31da45c190; src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts). 890b316e26 (2026-10-18, one wick flame for 2D and 3D) changed that renderer's burn timing and trail afterward, so verify the current behavior, not the 2026-08 look."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 work_state: verification
 ---
 # 2D Fire Renderer Upgrade
 
-> 2026-10-14 triage: Verify real WebGL2 shader compilation, synchronized legacy/cinematic playback, sprite-matte crossings, cached/headless export parity, and seven-viewport performance on /test/fire-2d-compare. The upgraded renderer, cache budget and focused tests already exist (31da45c190; src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts). Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage: Verify real WebGL2 shader compilation, synchronized legacy/cinematic playback, sprite-matte crossings, cached/headless export parity, and seven-viewport performance on /test/fire-2d-compare. The upgraded renderer, cache budget and focused tests exist (31da45c190; src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts). 890b316e26 (2026-10-18, one wick flame for 2D and 3D) changed that renderer's burn timing and trail afterward, so verify the current behavior, not the 2026-08 look. Earlier status banners and execution instructions are historical where they conflict with this review.
 
-**Status:** Approved for implementation on 2026-08-11  
+**Status:** Implemented; verification pending (re-triaged 2026-11-07; see the triage line above). Originally approved 2026-08-11.  
 **Owner:** `src/lib/shared/animation-engine/services/fire/`
 
 ## Outcome

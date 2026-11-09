@@ -90,7 +90,12 @@ export function createConstructAttractAct(opts: {
   const STEP_MS = opts.stepMs ?? 1200;
   const DONE_MS = opts.doneMs ?? 2500;
 
-  const { core: g, run } = createAttractGhost({ getRoot: opts.getRoot });
+  // Top-right because the full-card player's action row runs to the bottom-right
+  // corner, where redo would sit under the parked dot.
+  const { core: g, run } = createAttractGhost({
+    getRoot: opts.getRoot,
+    parkCorner: "top-right",
+  });
 
   // A takeover aborts the current script, so resume enters through cycle()
   // again. Remember that specific exit and keep the visitor's live board;

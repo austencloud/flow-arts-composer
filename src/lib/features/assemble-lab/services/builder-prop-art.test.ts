@@ -61,6 +61,7 @@ describe("loadBuilderPropArt", () => {
     );
     void loadBuilderPropArt(HandSide.LEFT, settings);
     expect([...read].sort()).toEqual([
+      "buugengStyle",
       "fanAppearance",
       "leftPropType",
       "primaryPropColors",
@@ -84,6 +85,7 @@ describe("loadBuilderPropArt", () => {
     expect(options).toEqual({
       fanAppearance: normalizeFanAppearance(undefined),
       triangleGrip: normalizeTriangleGrip(undefined),
+      buugengStyle: "classic",
     });
   });
 

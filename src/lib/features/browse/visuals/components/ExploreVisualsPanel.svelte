@@ -43,6 +43,7 @@
   import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import BrowseHeaderSlot from "#lib/features/browse/shared/components/BrowseHeaderSlot.svelte";
   import {
     fitVisualsWall,
     panColumns,
@@ -181,7 +182,8 @@
     const plinth = card?.querySelector<HTMLElement>(".art-plinth");
     if (!body || !card || !plinth) return;
     const head = body.querySelector<HTMLElement>(".shelf-head");
-    if (head)
+    if (filterType) headHeight = 0;
+    else if (head)
       headHeight = head.offsetHeight + gapOf(head.parentElement, "rowGap");
 
     // Read from the card's own box, not from its rendered width: a card
@@ -373,13 +375,13 @@
     });
   }
 
-  function showEverything() {
-    browseNavigation.navigateTo({
-      primary: "explore",
-      section: "visuals",
-      view: "list",
-    });
-  }
+  /** The count for the one type on screen. The bar already names that type and
+   *  has the way back, so the count is all the wall has left to say. */
+  const filteredCount = $derived(
+    filterType && !detailArtifactId && !listLoading && !listError
+      ? (shelves[0]?.items.length ?? 0)
+      : null
+  );
 
   function formatPublished(timestamp: unknown): string {
     if (!timestamp) return "";
@@ -396,6 +398,14 @@
     });
   }
 </script>
+
+{#snippet countAction()}
+  <span class="shelf-count">{filteredCount}</span>
+{/snippet}
+
+{#if filteredCount}
+  <BrowseHeaderSlot actions={countAction} />
+{/if}
 
 <div class="visuals-panel">
   {#if detailArtifactId}
@@ -479,15 +489,6 @@
           </p>
         </div>
       {:else}
-        {#if filterType}
-          <div class="filter-row">
-            <button type="button" class="pill-btn" onclick={showEverything}>
-              <i class="fas fa-arrow-left" aria-hidden="true"></i>
-              <span>{t("browse_ui_all_visuals")}</span>
-            </button>
-          </div>
-        {/if}
-
         <div
           class="gallery-body"
           class:fitted={wall !== null}
@@ -529,10 +530,12 @@
           {:else}
             {#each shelves as shelf, shelfIndex (shelf.meta.route)}
               <section class="shelf">
-                <header class="shelf-head">
-                  <h2>{shelf.meta.label}</h2>
-                  <span class="shelf-count">{shelf.items.length}</span>
-                </header>
+                {#if !filterType}
+                  <header class="shelf-head">
+                    <h2>{shelf.meta.label}</h2>
+                    <span class="shelf-count">{shelf.items.length}</span>
+                  </header>
+                {/if}
 
                 {#if shelf.items.length === 0}
                   <p class="shelf-empty">{shelf.meta.blurb}</p>
@@ -567,7 +570,7 @@
                             <TkaLabel text={envelope.title} darkMode />
                           </span>
                           <span class="art-byline"
-                            >By {envelope.ownerDisplayName}</span
+                            >{envelope.ownerDisplayName}</span
                           >
                         </span>
                       </button>
@@ -629,7 +632,7 @@
     display: flex;
     flex-direction: column;
     gap: clamp(14px, 1.4cqi, 24px);
-    padding: clamp(20px, 2.4cqi, 44px);
+    padding: clamp(12px, 1.6cqi, 28px);
   }
 
   /* The area the wall is fitted to. It never grows with its content, so what
@@ -672,11 +675,9 @@
     min-height: 0;
     overflow-y: auto;
     align-content: start;
-  }
-
-  .filter-row {
-    display: flex;
-    justify-content: center;
+    /* Rows keep their cards' full height. Left as auto, they shrink to fit the
+       wall's height and it never pans. */
+    grid-auto-rows: max-content;
   }
 
   .shelf {
@@ -729,46 +730,29 @@
     gap: var(--art-wall-gap);
   }
 
+  /* No frame: the artwork is the card. Nothing here may transform or filter the
+     card itself, because that would give the poster's blend below nothing to
+     blend with and bring its black square back. */
   .art-card {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.7rem, 0.35vw + 0.45rem, 1.4rem);
-    padding: clamp(0.7rem, 0.35vw + 0.45rem, 1.4rem);
-    padding-bottom: clamp(0.85rem, 0.4vw + 0.55rem, 1.7rem);
-    border-radius: clamp(16px, 0.7vw + 8px, 32px);
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    gap: 0.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background: none;
     color: var(--theme-text, #e8edf6);
-    text-align: left;
+    text-align: center;
     cursor: pointer;
-    transition:
-      border-color var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
-  }
-
-  @media (hover: hover) {
-    .art-card:hover {
-      border-color: color-mix(
-        in srgb,
-        var(--theme-accent, #6366f1) 55%,
-        transparent
-      );
-      transform: translateY(-2px);
-      box-shadow: 0 14px 34px
-        color-mix(in srgb, var(--theme-accent, #6366f1) 18%, transparent);
-    }
   }
 
   .art-card:focus-visible {
     outline: 2px solid var(--theme-accent, #6366f1);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
-  /* The posters are bright strokes rendered on solid black. Dropped straight
-     onto a dark panel they read as holes, which is exactly how they looked
-     before. `screen` blending drops the black out so the artwork sits ON the
-     plinth and keeps its own glow. */
+  /* The posters are bright strokes rendered on solid black. `screen` blending
+     drops the black out, so the lines sit directly on the page. */
   .art-plinth {
     position: relative;
     display: flex;
@@ -779,20 +763,8 @@
     width: var(--plinth, 12rem);
     max-width: 100%;
     aspect-ratio: 1;
-    border-radius: clamp(12px, 0.55vw + 5px, 24px);
-    overflow: hidden;
-    background:
-      radial-gradient(
-        118% 118% at 50% 22%,
-        color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent),
-        transparent 68%
-      ),
-      linear-gradient(
-        170deg,
-        rgba(255, 255, 255, 0.07),
-        rgba(255, 255, 255, 0.02)
-      );
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+    /* A squeezed card would otherwise give up the artwork before anything else. */
+    flex-shrink: 0;
   }
 
   .art-plinth img {
@@ -800,6 +772,13 @@
     height: 100%;
     object-fit: contain;
     mix-blend-mode: screen;
+    transition: filter var(--duration-fast) var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .art-card:hover .art-plinth img {
+      filter: brightness(1.25);
+    }
   }
 
   .art-pending {
@@ -814,11 +793,14 @@
     gap: 0.15rem;
     width: var(--plinth, 12rem);
     max-width: 100%;
-    padding: 0 0.25rem;
     min-width: 0;
   }
 
+  /* Stays the full width of the column and centers the word inside. A title
+     box sized by its word would feed back into the word's fit-to-width, so it
+     would ratchet smaller on every resize and never grow back. */
   .art-title {
+    --tka-label-justify: safe center;
     font-size: clamp(1rem, 0.55vw + 0.62rem, 1.9rem);
     font-weight: 700;
     letter-spacing: 0.01em;
@@ -836,11 +818,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .art-card {
+    .art-plinth img {
       transition: none;
-    }
-    .art-card:hover {
-      transform: none;
     }
   }
 

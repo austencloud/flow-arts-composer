@@ -15,7 +15,11 @@
    */
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
+  import GuideMatrixPairing from "./_components/GuideMatrixPairing.svelte";
+  import {
+    MODE_ORDER,
+    type VtgMode,
+  } from "@tka/shape-engine/services/shape-matrix-realizations.js";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideScreens from "../_components/fit/GuideScreens.svelte";
   import {
@@ -470,6 +474,15 @@
 
   let data = $state<ShapeMatrixData | null>(null);
   let loadError = $state("");
+  /** The last matrix cell opened (still marked once its dialog closes). */
+  let lastPair = $state<{ left: Flower; right: Flower } | null>(null);
+  let pairingOpen = $state(false);
+  let pairingMode = $state<VtgMode | null>(MODE_ORDER[0] ?? null);
+  let pairingPropMode = $state<VtgMode | null>(null);
+
+  function pairCaption(left: Flower, right: Flower): string {
+    return `${ratioLabel(left.turns)} ${styleWord(left.style)} left · ${ratioLabel(right.turns)} ${styleWord(right.style)} right`;
+  }
 
   /** Blue hand ink, the same painter the matrix rows use. */
   function paintFlower(flower: Flower) {
@@ -615,7 +628,7 @@
         { label: pairings, parts: ["h:pairings", "pairingsIntro"] },
         { label: "Opening a cell", parts: ["pairingsChoose"] },
         { label: tDynamic("guide_ratios_cell"), parts: ["anatomy"] },
-        { label: "The matrix", parts: ["scrollHint", "matrix"] },
+        { label: "The matrix", parts: ["matrix"] },
         { label: tDynamic("guide_ratios_beyond_title"), parts: ["beyond"] },
         { label: tDynamic("guide_ratios_sources"), parts: ["sources"] },
       ];
@@ -743,6 +756,14 @@
   const endsHref = $derived(
     `?screen=${views.findIndex((v) => v.parts.includes("h:ends")) + 1}`
   );
+  /** A part's topic, the same in every tier's cut: "level-2:0-2" and
+   * "level-2" are both Level 2, and a phone's family-1 is a laptop's
+   * families. A heading part keeps its name ("h:swap"). */
+  const topic = (part: string) =>
+    part.startsWith("h:")
+      ? part
+      : partName(part).replace(/^family-\d+$/, "families");
+  const topics = $derived(views.map((v) => v.parts.map(topic)));
 </script>
 
 <GuideSeo
@@ -767,6 +788,7 @@
     <GuideScreens
       title={tDynamic("guide_ratios_title")}
       labels={views.map((v) => v.label)}
+      {topics}
       prevPage={{
         href: localHref("/guide/level-2"),
         title: tDynamic("guide_hub_level2_title"),
@@ -984,15 +1006,7 @@
   {:else if name === "pairingsIntro"}
     <p>{tDynamic("guide_ratios_pairings_intro")}</p>
   {:else if name === "pairingsChoose"}
-    <p>
-      {tDynamic(
-        "guide_ratios_pairings_choose_before"
-      )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
-        "guide_ratios_pairings_choose_after"
-      )}
-    </p>
-  {:else if name === "scrollHint"}
-    <p class="note">{tDynamic("guide_ratios_pairings_scroll")}</p>
+    <p>{tDynamic("guide_ratios_pairings_choose")}</p>
   {:else if name === "beyond"}
     <h2>{tDynamic("guide_ratios_beyond_title")}</h2>
     <p>{tDynamic("guide_ratios_beyond_body")}</p>
@@ -1353,7 +1367,7 @@
 {/snippet}
 
 {#snippet matrix()}
-  <div class="matrix-stage" data-fit-self-scroll>
+  <div class="matrix-stage">
     {#if loadError}
       <p class="load-status error">
         {tDynamic("guide_ratios_drawings_unavailable")}
@@ -1366,10 +1380,29 @@
         rowAxis={originalAxis}
         colAxis={originalAxis}
         maxCellPx={88}
+        minCellPx={20}
         painter={CLUB_ARTWORK_PAINTER}
         pressable={false}
-        onselect={({ left, right }) => goto(pairHref(left, right))}
+        selectedPair={lastPair}
+        onselect={(pair) => {
+          lastPair = pair;
+          pairingOpen = true;
+        }}
       />
+      <!-- A cell opens its pairing over the guide: the reader stays here,
+           and closing lands on the same cell. -->
+      {#if lastPair}
+        <GuideMatrixPairing
+          bind:open={pairingOpen}
+          {data}
+          pair={lastPair}
+          caption={pairCaption(lastPair.left, lastPair.right)}
+          engineHref={pairHref(lastPair.left, lastPair.right)}
+          engineName={SHAPE_ENGINE_SHORT_NAME}
+          bind:mode={pairingMode}
+          bind:propMode={pairingPropMode}
+        />
+      {/if}
     {/if}
   </div>
 {/snippet}
@@ -2087,8 +2120,7 @@
 
   /* The 144 pairings. ShapeMatrixGrid is container sized, so its stage owns
      a square that grows with the screen's scale up to the grid's largest
-     tile. On a phone the grid is wider than the square and slides sideways
-     inside it under its sticky headers. */
+     tile. On a phone the whole grid shrinks into the square: nothing slides. */
   .matrix-stage {
     position: relative;
     inline-size: min(100%, calc(var(--stage-max) * var(--fit, 1) * 0.6));

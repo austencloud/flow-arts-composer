@@ -27,14 +27,16 @@
   import FlowFrame from "./FlowFrame.svelte";
   import GuideScreens from "../../_components/fit/GuideScreens.svelte";
   import {
-    SMALL_TEXT_SCREEN_CHARS,
-    MEDIUM_TEXT_SCREEN_CHARS,
-    LARGE_INTRO_BESIDE_CHARS,
-    SMALL_TEXT_SCREEN_MAX_CHARS,
-    watchScreenTier,
-    type ScreenTier,
+    DEFAULT_SCREEN_ROOM,
+    tighterRoom,
+    watchScreenRoom,
+    type ScreenRoom,
   } from "../../_components/fit/guide-screen-url";
-  import { flowRenderItems, flowScreens } from "../_data/flow-render-items";
+  import {
+    flowRenderItems,
+    flowScreens,
+    taglineInHero,
+  } from "../_data/flow-render-items";
   import { localizeLevel1Block } from "../_data/localize-level1-content";
   import GuidePage from "./GuidePage.svelte";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
@@ -49,6 +51,7 @@
     HAND_TYPE_SLUGS,
   } from "../_topics/hand-type-switcher";
   import { guideRelatedLinks } from "../_data/guide-related-links";
+  import { plannedVideoFor } from "../../_data/planned-videos";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
 
@@ -60,17 +63,12 @@
   const content = $derived(GUIDE_CONTENT[slug] ?? null);
   const Sheet = $derived(BUILT[slug]);
   const canFlow = $derived(hasReflowContent(slug));
-  // Most taglines open the page's own intro; show the line once, in the intro.
-  const heroTagline = $derived(
-    seo.tagline &&
-      canFlow &&
-      !(content && taglineInIntro(content, seo.tagline) === "contains")
-      ? seo.tagline
-      : null
-  );
   const useFlow = $derived(canFlow);
   const interactiveLesson = $derived(getConceptExperienceForGuideSlug(slug));
   const relatedLinks = $derived(guideRelatedLinks(slug));
+  // Footage this page still needs (planned-videos.ts): a quiet note on the
+  // first screen tells the reader it is coming.
+  const plannedVideo = $derived(plannedVideoFor(slug));
   // Topics migrated to the shared-record template render their own page in
   // place of the title band and FlowFrame (guide rethink pilot, 2026-10-10).
   const TopicPage = $derived(TOPIC_PAGES[slug] ?? null);
@@ -85,43 +83,46 @@
 
   // A reflow topic shows one screen at a time (GuideScreens): its screens
   // and their pill labels come from the same split FlowFrame draws.
-  // A phone gives long text its own screen (guide-screen-url.ts).
-  let tier = $state<ScreenTier>("large");
-  const smallScreen = $derived(tier === "small");
-  // On a phone a card's long words leave the card, so the words and the
-  // figure each get a screen (FlowFrame must split the same way).
-  const detachTextChars = $derived(
-    smallScreen ? SMALL_TEXT_SCREEN_CHARS : undefined
-  );
-  // A large window keeps long opening words on the screen with the first
-  // figure, beside it (FlowFrame must split the same way).
-  const introBesideChars = $derived(
-    tier === "large" ? LARGE_INTRO_BESIDE_CHARS : undefined
+  // The cut follows the window's room for words (guide-screen-url.ts); a
+  // screen that overflows anyway asks for a tighter one.
+  let windowRoom = $state<ScreenRoom>(DEFAULT_SCREEN_ROOM);
+  let tighter = $state(0);
+  const MAX_TIGHTER = 3;
+  // The "Video coming" note sits over the first screen's content, so that
+  // screen is cut with room for its words; otherwise a phone's first screen
+  // overflowed and recut the whole page (2026-11-07, Negative Space 10 → 17).
+  const VIDEO_NOTE_COST = 20;
+  const room = $derived.by(() => {
+    const r = tighterRoom(windowRoom, tighter);
+    if (!plannedVideo) return r;
+    const words =
+      t("guide_video_coming_label").length +
+      t("guide_video_coming_body").length;
+    return { ...r, lead: words + VIDEO_NOTE_COST };
+  });
+  // Most taglines open the page's own intro; show the line once, in the intro.
+  const heroTagline = $derived(
+    seo.tagline &&
+      canFlow &&
+      taglineInHero(seo.tagline, room) &&
+      !(content && taglineInIntro(content, seo.tagline) === "contains")
+      ? seo.tagline
+      : null
   );
   const pageScreens = $derived(
     useFlow && content
       ? flowScreens(
           flowRenderItems(content, seo.tagline ?? "", localizeLevel1Block, {
-            detachTextChars,
-            introBesideChars,
+            room,
           }),
-          "Intro",
-          {
-            textScreenChars: smallScreen
-              ? SMALL_TEXT_SCREEN_CHARS
-              : tier === "medium"
-                ? MEDIUM_TEXT_SCREEN_CHARS
-                : undefined,
-            textScreenMaxChars: smallScreen
-              ? SMALL_TEXT_SCREEN_MAX_CHARS
-              : undefined,
-            // Only a large window has room for a set of figures at once.
-            keepGalleriesTogether: tier === "large",
-            introOwnScreen: tier === "medium",
-          }
+          "Intro"
         )
       : []
   );
+  $effect(() => {
+    void slug;
+    tighter = 0;
+  });
   const screenLabels = $derived(pageScreens.map((s) => s.label));
 
   // The web's order skips the print pages folded into another page.
@@ -211,7 +212,12 @@
       // sessionStorage unavailable - position just won't persist.
     }
   }
-  onMount(() => watchScreenTier((v) => (tier = v)));
+  onMount(() =>
+    watchScreenRoom((v) => {
+      windowRoom = v;
+      tighter = 0;
+    })
+  );
   onMount(() => {
     let scrollRaf = 0;
     const onWinScroll = () => {
@@ -304,10 +310,14 @@
         kicker={topicKicker}
         subtitle={heroTagline}
         labels={screenLabels}
+        cutKey={tighter}
+        onoverflow={() => {
+          if (tighter < MAX_TIGHTER) tighter += 1;
+        }}
         prevPage={prevLink}
         nextPage={nextLink}
         hubHref={localHref("/guide")}
-        lead={interactiveLesson || relatedLinks.length > 0
+        lead={interactiveLesson || relatedLinks.length > 0 || plannedVideo
           ? lessonLinks
           : undefined}
       >
@@ -318,8 +328,7 @@
             tagline={seo.tagline ?? ""}
             layout={slug === "the-grid" ? "grid-reference" : "default"}
             screen={pageScreens[n]?.items ?? []}
-            {detachTextChars}
-            {introBesideChars}
+            {room}
           />
         {/snippet}
       </GuideScreens>
@@ -416,7 +425,16 @@
 </GuideCompanionHost>
 
 {#snippet lessonLinks()}
-  <span class="interactive-lesson">
+  {#if plannedVideo}
+    <!-- Sits with the first screen's words; its type never reads --fit. -->
+    <p class="video-coming" data-planned-video={plannedVideo.slug}>
+      <span
+        ><strong>{t("guide_video_coming_label")}</strong>
+        {t("guide_video_coming_body")}</span
+      >
+    </p>
+  {/if}
+  {#if interactiveLesson || relatedLinks.length > 0}<span class="interactive-lesson">
     {#if interactiveLesson}
       <LinkChip href={buildConceptStartPath(interactiveLesson.conceptId)}
         ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
@@ -429,7 +447,7 @@
         {t(link.labelKey)}</LinkChip
       >
     {/each}
-  </span>
+  </span>{/if}
 {/snippet}
 
 <style>
@@ -513,6 +531,23 @@
   }
   /* This page owns a light and a dark palette, so the chip reads its colors
      from the page's ink rather than the app's dark-canvas theme. */
+  /* A small side note, quiet beside the page's words: one size at every
+     window (guide type roles), never a screen of its own. */
+  .video-coming {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid color-mix(in oklab, var(--ink, #1a1a1a) 14%, transparent);
+    border-radius: 12px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--ink-dim, #555);
+    text-align: start;
+  }
+  .video-coming strong {
+    color: var(--ink, #1a1a1a);
+    font-weight: 600;
+  }
   .interactive-lesson {
     --theme-text: var(--ink, #1a1a1a);
     --theme-accent: #647ff1;

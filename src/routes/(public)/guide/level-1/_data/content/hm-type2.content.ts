@@ -139,7 +139,7 @@ export const hmType2Content: GuideBlock[] = [
     items: stripSteps(STRIPS[0]!),
     flowCols: 5,
     layout: "strip",
-    stepLabels: ["Start", "1", "2", "3", "4"],
+    numbered: true,
     card: true,
     render: RENDER,
     caption: SEQ_WORDS[0],

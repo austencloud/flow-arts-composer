@@ -137,11 +137,12 @@ type GuideBlockContent =
        */
       layout?: "strip" | "grid";
       /**
-       * Optional labels rendered above each strip cell (parallel to `items`),
-       * e.g. ["Start", "1", "2", "3", "4"]. Strip mode only; omit to let the
-       * baked-in letter glyphs identify each step.
+       * Number the strip cells with the pictograph's own step numbers (the
+       * StepNumber overlay: "Start" on the start box, 1..N on the steps, as
+       * the Create step grid and the cards draw them). Strip mode only; omit
+       * to let the baked-in letter glyphs identify each step.
        */
-      stepLabels?: string[];
+      numbered?: boolean;
       /**
        * Render this sequence as a SequenceShowcase: a banner (square live
        * animation beside the section's text) with the steps unrolled as one

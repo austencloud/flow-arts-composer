@@ -206,6 +206,18 @@ shared query itself.
     if (!scope && text) choose(searchScope);
   }
 
+  // On a phone or tablet the chips keep the band and the header bar carries
+  // the search.
+  const searchInHeader = $derived(header?.compactChrome ?? false);
+  $effect(() => {
+    if (!searchInHeader || !header || !query) return;
+    return header.registerSearch({
+      placeholder: () => placeholder,
+      value: () => query.search,
+      onSearch: search,
+    });
+  });
+
   // Keep the current chip in view when the scope changes from elsewhere
   // (a collection card, Back). `nearest` leaves an already-visible chip alone.
   let track = $state<HTMLElement | null>(null);
@@ -237,7 +249,7 @@ shared query itself.
 
 <div class="scope-frame">
   <div class="scope-bar">
-    {#if query}
+    {#if query && !searchInHeader}
       <div class="scope-search">
         <ExpandableSearchBar
           pinned

@@ -38,7 +38,7 @@
  */
 import { cubicOut } from "svelte/easing";
 import type { TransitionConfig } from "svelte/transition";
-import { arrive, reducedMotion } from "./motion";
+import { EASE_OUT, arrive, reducedMotion } from "./motion";
 import { DURATION, SLIDE } from "./transitions";
 
 /**
@@ -241,6 +241,31 @@ export function emanate(
       })
     );
   };
+}
+
+/**
+ * The same arrival for an element already on the page, started when the caller
+ * says rather than when the element mounts. `after` pushes the whole thing back
+ * from now. The caller checks reduced motion: it decides whether there is an
+ * arrival to play at all.
+ */
+export function playEmanate(
+  node: Element,
+  { delay, dx, dy }: EmanateTiming,
+  after = 0
+): Animation {
+  return node.animate(
+    [
+      { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(0.96)` },
+      { opacity: 1, transform: "none" },
+    ],
+    {
+      duration: DURATION.emphasis,
+      delay: after + delay,
+      easing: EASE_OUT,
+      fill: "backwards",
+    }
+  );
 }
 
 function slideIn({ delay, dx, dy }: EmanateTiming): TransitionConfig {

@@ -12,6 +12,7 @@ import type { ITrailCapturer } from "#lib/shared/animation-engine/services/ITrai
 import { parseFanRenderKey } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { HOOP_FAMILY_BOXES } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 import { parseTriangleRenderKey } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import { parseBuugengRenderKey } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 
 /**
  * Prop dimensions
@@ -178,10 +179,14 @@ export function getPropDimensions(propType: string): PropDimensions {
       ? { width: 600, height: 566.9 }
       : { width: 260, height: 207 };
   }
-  // Both triangle grips share one grip-centred box (spec section 2).
-  const triangleKey = parseTriangleRenderKey(normalized);
+  // Both triangle grips share one grip-centred box (spec section 2), and
+  // every buugeng style is fitted to its plain buugeng's box.
+  const baseKey =
+    parseTriangleRenderKey(normalized)?.propType ??
+    parseBuugengRenderKey(normalized)?.propType ??
+    normalized;
   return (
-    PROP_DIMENSIONS[triangleKey?.propType ?? normalized] ?? {
+    PROP_DIMENSIONS[baseKey] ?? {
       ...DEFAULT_PROP_DIMENSIONS,
     }
   );

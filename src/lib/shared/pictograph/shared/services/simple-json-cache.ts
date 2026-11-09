@@ -5,6 +5,7 @@
  * No complex error hierarchies, just basic caching.
  */
 
+import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
 import { assetFetch } from "#lib/shared/net/asset-fetch.js";
 
 export class SimpleJsonCache {
@@ -94,6 +95,11 @@ export class SimpleJsonCache {
       if (!contentType.includes("application/json")) {
         throw new Error(`File not found: ${path}`);
       }
+      // The placement tables take well over 100 ms to parse on the main thread.
+      // A response that lands while a card is opening parses after it lands.
+      // A screen may be waiting on it, so it does not wait for a screen's
+      // clearing beat (`neededWorkRuns`).
+      await whenMotionSettled({ needed: true });
       return await response.json();
     } catch (error) {
       // Only log non-404 errors

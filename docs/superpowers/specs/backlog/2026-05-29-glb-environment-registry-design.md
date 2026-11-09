@@ -2,16 +2,16 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Implement the self-describing scene manifest, typed registry, shared GlbEnvironment loader and license assertion, then prove a second GLB entry and Ocean parity. Current Environment3D.svelte still dispatches BackgroundType at lines 100–119 and no environment-registry.ts, GlbEnvironment.svelte or scene.json was found under src/static/scripts; 24fab771cc changes transitions, not this registry."
-depends_on: ''
-plan_path: ''
+remaining: "Browser parity is unverified: compare /test/ocean-scene (and /test/glb-environment?scene=ocean) against main, and check /test/glb-environment shows the trench floor vertex-coloured and dimmed like TrenchFloor rather than flat white. The worker Ocean path now reads the registry but was not run in a browser. The boot prefetch list (scene-boot/scene-asset-manifest.ts) still names the ocean GLB literally; optional HDRI IBL is not implemented (only environmentMap: room)."
+depends_on: ""
+plan_path: ""
 tags:
-- 3d
-- environments
-- registry
-- pipeline
-last_triaged: 2026-10-14
-work_state: ready
+  - 3d
+  - environments
+  - registry
+  - pipeline
+last_triaged: 2026-11-07
+work_state: verification
 ---
 
 <!--
@@ -28,7 +28,9 @@ documented "broad paths" failure mode; the spec is not a rebuild hazard.
 
 # Data-Driven GLB Environment Registry — Design
 
-> 2026-10-14 triage: Implement the self-describing scene manifest, typed registry, shared GlbEnvironment loader and license assertion, then prove a second GLB entry and Ocean parity. Current Environment3D.svelte still dispatches BackgroundType at lines 100–119 and no environment-registry.ts, GlbEnvironment.svelte or scene.json was found under src/static/scripts; 24fab771cc changes transitions, not this registry. Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage: Implemented on branch codex/glb-env-registry. `static/models/<scene>/scene.json` manifests (schema in `src/lib/shared/3d/environments/registry/environment-manifest.ts`) feed `environment-registry.ts`; `GlbEnvironment.svelte` is the shared loader; `environment-registry.test.ts` enforces the licence gate (CC0, attributed CC-BY, or first-party with an existing build script) and Ocean config parity. Environment3D looks registered scenes up before its legacy switch; Ocean's switch case is removed and OceanScene loads its seabed through GlbEnvironment. The trench floor (`static/models/water-traverse/scene.json`) is a second entry with no BackgroundType. Open: browser parity, the worker renderer path, and HDRI. Earlier status banners are historical where they conflict.
+
+> 2026-11-07 follow-up (codex/glb-materials): manifests take optional `materials: { vertexColors, tint, envMapIntensity }`, validated in `parseEnvironmentManifest` (unknown keys refused; `envMapIntensity` needs an `environmentMap`). `GlbEnvironment` applies them to a clone (`environment-materials.ts`), so the `useGltf` cache stays untouched; the trench floor's manifest carries TrenchFloor's vertex colours, SURFACE_TINT and 0.16 room-light strength. The worker renderer's Ocean world loads its seabed URL and decoders from the registry through `worker-renderer/worlds/registry-gltf-loader.ts`; tests cover both. Still open: browser look of both, the boot prefetch literal, HDRI.
 
 **Date:** 2026-05-29
 **Status:** Ready for implementation; the registry-specific path is absent as of 2026-10-07.
@@ -98,7 +100,9 @@ export interface EnvironmentDef {
   hdri?: string;
   // ...mirrors scene.json
 }
-export const ENVIRONMENTS: Record<SceneId, EnvironmentDef> = { /* ocean, ... */ };
+export const ENVIRONMENTS: Record<SceneId, EnvironmentDef> = {
+  /* ocean, ... */
+};
 ```
 
 Precedent to generalize: `src/lib/features/museum/services/museum-model-loader.ts`
@@ -141,6 +145,20 @@ opportunistically (per the Blender-first rule), shrinking the switch over time.
   enum is no longer the source of truth for GLB scenes.
 - Scene-feature progress contract: reuse `featureKey` exactly as OceanScene does
   today (`environment`, weighted seabed+flora fold) so the loading curtain keeps working.
+
+## Ownership record (2026-11-07)
+
+Searched `canonical-capabilities.md` and the tree for: environment registry,
+scene manifest, scene.json, GltfAsset, useGltf, scene-asset-manifest,
+museum-model-loader, room-environment. Closest matches: `primitives/GltfAsset.svelte`
+(single-model loader with its own GLTFLoader and dispose, no manifest),
+`scene-boot/scene-asset-manifest.ts` (prefetch URLs only), and
+`rendering/room-environment.ts` (IBL). Decision: create the registry under
+`environments/registry/` as the owner of scene manifests; compose
+`GlbEnvironment.svelte` from threlte `useGltf` and the canonical decoder
+hooks; reuse `getRoomEnvironmentTexture` for `environmentMap: "room"`. The
+licence gate is the registry test plus a throw at module evaluation, not a
+separate build plugin.
 
 ## Out of scope
 

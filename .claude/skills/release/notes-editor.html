@@ -228,6 +228,8 @@
   const $ = (id) => document.getElementById(id);
   const grid = $("grid"), statusEl = $("status");
   let db = null, draft = null, editingId = null, canWrite = true;
+  // Saves and closes the open note. Set while a note is open, so leaving it never drops the edit.
+  let closeOpen = null;
   let saveChain = Promise.resolve();
 
   function setStatus(state, text) { statusEl.dataset.state = state; statusEl.textContent = text; }
@@ -259,6 +261,7 @@
 
   function render() {
     if (!draft) return;
+    closeOpen = null;
     $("badge").textContent = "v" + draft.version;
     const total = draft.entries.length;
     $("subtitle").textContent = total + (total === 1 ? " update" : " updates") + " in this release";
@@ -286,6 +289,7 @@
         add.type = "button";
         add.textContent = "Add a note";
         add.onclick = () => {
+          closeOpen?.();
           const entry = { id: newId(), category: cat.id, audience: "guest", surface: "global", text: "" };
           draft.entries.push(entry);
           editingId = entry.id;
@@ -312,12 +316,15 @@
     if (entry.highlight) btn.insertAdjacentHTML("beforeend", '<span class="tag lead">Highlight</span>');
     if (entry.audience === "account") btn.insertAdjacentHTML("beforeend", '<span class="tag">Signed in</span>');
     btn.setAttribute("aria-label", "Edit note: " + entry.text);
-    btn.onclick = () => { editingId = entry.id; render(); };
+    btn.onclick = () => { closeOpen?.(); editingId = entry.id; render(); };
     li.append(btn);
     return li;
   }
 
   function editorFor(entry) {
+    // Look the note up by id: a snapshot that lands while it's open replaces the draft's objects.
+    const id = entry.id;
+    const cur = () => draft.entries.find((e) => e.id === id);
     const li = document.createElement("li");
     li.className = "note";
     const box = document.createElement("div");
@@ -351,16 +358,16 @@
 
     const up = document.createElement("button");
     up.type = "button"; up.className = "b"; up.textContent = "Move up";
-    up.onclick = () => { commit(); move(entry, -1); };
+    up.onclick = () => { commit(); move(cur(), -1); };
     const down = document.createElement("button");
     down.type = "button"; down.className = "b"; down.textContent = "Move down";
-    down.onclick = () => { commit(); move(entry, 1); };
+    down.onclick = () => { commit(); move(cur(), 1); };
 
     const del = document.createElement("button");
     del.type = "button"; del.className = "b danger"; del.textContent = "Delete";
     del.onclick = () => {
       if (del.dataset.armed) {
-        draft.entries = draft.entries.filter((e) => e !== entry);
+        draft.entries = draft.entries.filter((e) => e.id !== id);
         editingId = null; save(); render();
       } else { del.dataset.armed = "1"; del.textContent = "Delete for good?"; }
     };
@@ -369,37 +376,45 @@
     const cancel = document.createElement("button");
     cancel.type = "button"; cancel.className = "b"; cancel.textContent = "Cancel";
     cancel.onclick = () => {
-      if (!entry.text) draft.entries = draft.entries.filter((e) => e !== entry);
+      const e = cur();
+      if (e && !e.text) draft.entries = draft.entries.filter((x) => x.id !== id);
       editingId = null; render();
     };
     const done = document.createElement("button");
     done.type = "button"; done.className = "b primary"; done.textContent = "Save";
 
     function commit() {
+      let e = cur();
+      if (!e) { e = entry; draft.entries.push(e); }
       const text = ta.value.trim();
-      const changed = text !== entry.text || sel.value !== entry.category ||
-        (aud.getAttribute("aria-pressed") === "true") !== (entry.audience === "account") ||
-        (lead.getAttribute("aria-pressed") === "true") !== !!entry.highlight;
-      entry.text = text;
-      entry.category = sel.value;
-      entry.audience = aud.getAttribute("aria-pressed") === "true" ? "account" : "guest";
-      if (lead.getAttribute("aria-pressed") === "true") entry.highlight = true; else delete entry.highlight;
+      const changed = text !== e.text || sel.value !== e.category ||
+        (aud.getAttribute("aria-pressed") === "true") !== (e.audience === "account") ||
+        (lead.getAttribute("aria-pressed") === "true") !== !!e.highlight;
+      e.text = text;
+      e.category = sel.value;
+      e.audience = aud.getAttribute("aria-pressed") === "true" ? "account" : "guest";
+      if (lead.getAttribute("aria-pressed") === "true") e.highlight = true; else delete e.highlight;
       return changed;
     }
-    done.onclick = () => {
+    function finish() {
+      if (editingId !== id) return;
+      closeOpen = null;
       const changed = commit();
-      if (!entry.text) draft.entries = draft.entries.filter((e) => e !== entry);
+      const empty = !cur().text;
+      if (empty) draft.entries = draft.entries.filter((x) => x.id !== id);
       editingId = null;
-      if (changed || !entry.text) save();
+      if (changed || empty) save();
       render();
-    };
+    }
+    closeOpen = finish;
+    done.onclick = finish;
     ta.addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); done.click(); }
-      if (ev.key === "Escape") { ev.preventDefault(); cancel.click(); }
+      if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); finish(); }
+      if (ev.key === "Escape") { ev.preventDefault(); finish(); }
     });
 
     row.append(sel, aud, lead, up, down, del, spacer, cancel, done);
-    box.append(ta, row, Object.assign(document.createElement("span"), { className: "hint", textContent: "Ctrl+Enter saves · Esc cancels" }));
+    box.append(ta, row, Object.assign(document.createElement("span"), { className: "hint", textContent: "Saves when you click away, press Esc or Ctrl+Enter · Cancel throws the edit out" }));
     li.append(box);
     return li;
   }
@@ -427,6 +442,32 @@
     );
   }
 
+  // An open note saves when attention leaves it: a click or Tab outside it, or the tab going away.
+  // A drag that starts inside the note (selecting text) and ends outside doesn't count.
+  // Focus moves while a pointer is down are left to the click, so the note clicked next still opens.
+  let downInEditor = false, pointerHeld = false;
+  const inEditor = (node) => {
+    const box = grid.querySelector(".editor");
+    return !!(box && node && box.contains(node));
+  };
+  document.addEventListener("pointerdown", (ev) => { downInEditor = inEditor(ev.target); pointerHeld = true; }, true);
+  const release = () => setTimeout(() => { pointerHeld = false; });
+  document.addEventListener("pointerup", release, true);
+  document.addEventListener("pointercancel", release, true);
+  document.addEventListener("click", (ev) => {
+    const fromInside = downInEditor;
+    downInEditor = false;
+    pointerHeld = false;
+    if (closeOpen && !fromInside && !inEditor(ev.target)) closeOpen();
+  }, true);
+  document.addEventListener("focusout", (ev) => {
+    if (closeOpen && !pointerHeld && ev.relatedTarget && inEditor(ev.target) && !inEditor(ev.relatedTarget)) closeOpen();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") closeOpen?.();
+  });
+  window.addEventListener("pagehide", () => closeOpen?.());
+
   async function start() {
     const timer = setTimeout(() => { if (!draft) setStatus("error", "Can't reach the saved draft yet"); }, 10000);
     db = await claude.use("db");
@@ -441,7 +482,10 @@
       if (!snap.exists) { setStatus("idle", "No draft loaded yet"); return; }
       if (snap.metadata.hasPendingWrites) return;
       const data = snap.data();
+      // Keep a note that's open but not saved yet (a new one) when the store's copy replaces the draft.
+      const open = editingId && draft ? draft.entries.find((e) => e.id === editingId) : null;
       draft = { version: data.version, entries: data.entries.map((e) => ({ ...e })) };
+      if (open && !draft.entries.some((e) => e.id === open.id)) draft.entries.push(open);
       if (statusEl.dataset.state !== "saved") setStatus(canWrite ? "saved" : "idle", canWrite ? "Up to date" : "Read only");
       if (!editingId) render();
     }, (err) => { clearTimeout(timer); setStatus("error", "Lost the connection to the draft (" + err.code + ")"); });

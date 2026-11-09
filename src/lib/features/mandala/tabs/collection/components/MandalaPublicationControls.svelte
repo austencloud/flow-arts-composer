@@ -19,7 +19,15 @@
     type PublicationOwner,
   } from "../services/mandala-publication-service";
 
-  let { mandala }: { mandala: CollectedMandala } = $props();
+  let {
+    mandala,
+    onlivechange,
+  }: {
+    mandala: CollectedMandala;
+    /** Reported each time the status loads, for hosts that word things differently
+     *  for a public piece. */
+    onlivechange?: (live: boolean) => void;
+  } = $props();
 
   let status = $state<MandalaPublicationStatus | null>(null);
   let loading = $state(false);
@@ -52,7 +60,10 @@
     error = "";
     try {
       const loaded = await getMandalaPublicationStatus(mandala, owner);
-      if (token === requestToken) status = loaded;
+      if (token === requestToken) {
+        status = loaded;
+        onlivechange?.(loaded.liveRevisionId !== undefined);
+      }
     } catch (cause) {
       console.warn("[MandalaPublication] Status load failed:", cause);
       if (token === requestToken) {

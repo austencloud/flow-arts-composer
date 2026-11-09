@@ -193,3 +193,19 @@ export function departureGaitStepFor(
   }
   return gaitStep;
 }
+
+/**
+ * Whether any formation change moves this performer off their spot. The
+ * viewer loads the locomotion pack only for performers who walk, so the
+ * stage marks them before the first step instead of at the first move.
+ */
+export function stagePerformerTravels(
+  choreography: StageChoreography,
+  performerId: string
+): boolean {
+  for (let index = 1; index < choreography.formations.length; index += 1) {
+    const travel = resolveStageTravel(choreography, performerId, index);
+    if (travel && travel.distanceMeters > MOVEMENT_EPSILON) return true;
+  }
+  return false;
+}

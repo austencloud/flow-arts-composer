@@ -12,6 +12,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { popIn } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
   import { getViewerVisibilityContext } from "../context/viewer-visibility-context";
   import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
   import PrimaryPropColorSettings from "#lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
@@ -38,6 +39,21 @@
   }
 
   let open = $state(false);
+  let triggerEl = $state<HTMLButtonElement | null>(null);
+  let popoverEl = $state<HTMLDivElement | null>(null);
+
+  // A small popover, so the page behind stays live (no inert pass). Tab and
+  // Shift+Tab wrap inside it, and closing hands focus back to the trigger.
+  const focusTrap = new FocusTrap({
+    focusContainerOnInitial: true,
+    setInertOnSiblings: false,
+  });
+
+  $effect(() => {
+    if (!open || !popoverEl) return;
+    focusTrap.activate(popoverEl, triggerEl);
+    return () => focusTrap.deactivate();
+  });
 
   function toggleOpen(e: MouseEvent) {
     e.stopPropagation();
@@ -70,6 +86,7 @@
 
 <div class="motion-vis-root">
   <button
+    bind:this={triggerEl}
     type="button"
     class="motion-vis-btn"
     class:open
@@ -95,16 +112,19 @@
   </button>
 
   {#if open}
+    <!-- Pointer-only dismiss layer; keyboard users close with Escape. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="motion-vis-backdrop"
-      role="button"
-      tabindex="-1"
-      aria-label={t("viewer_detail_close_motion_visibility_menu")}
+      aria-hidden="true"
       onpointerdown={onBackdropPointerDown}
     ></div>
     <div
+      bind:this={popoverEl}
       class="motion-vis-popover"
       role="dialog"
+      aria-modal="true"
+      tabindex="-1"
       aria-label={t("viewer_ui_motion_visibility")}
       in:popIn={{ duration: DURATION.fast, start: 0.96 }}
       out:popIn={{ duration: DURATION.instant, start: 0.98 }}
@@ -215,6 +235,10 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     z-index: 20;
+  }
+
+  .motion-vis-popover:focus {
+    outline: none;
   }
 
   /* Popover chips stretch to fill the popover width evenly. */

@@ -181,6 +181,19 @@ function soloMode(
       };
 }
 
+/**
+ * The grid a flower alone belongs on: a box-mode flower's petals are the box's
+ * corners, so it gets the box grid whichever grid its sequence was written on.
+ * A flower with no mode word stays on its own grid (null).
+ */
+export function soloFlowerGrid(
+  flower: Flower,
+  anchor: PetalAnchor | null
+): "box" | "diamond" | null {
+  if (!soloMode(flower.petals, anchor)) return null;
+  return anchor === "diagonal" ? "box" : "diamond";
+}
+
 export function describeSoloFlower(
   flower: Flower,
   hand: "left" | "right",

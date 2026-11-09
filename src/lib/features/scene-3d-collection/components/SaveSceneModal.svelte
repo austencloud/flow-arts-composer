@@ -64,8 +64,13 @@
     const word = simplifyRepeatedWord(seq?.word || seq?.name || "");
     name = word ? `${word} — 3D scene` : "3D scene";
     poster = captureScene3DPoster(viewer3DState);
-    enabled = allOn();
-    if (!hasSteps) enabled.performance = false;
+    // Build the reset in a local and assign once. Setting `enabled.performance`
+    // after `enabled = allOn()` read the `enabled` state this same effect had
+    // just written, so a no-step open re-queued the effect until Svelte aborted
+    // with effect_update_depth_exceeded.
+    const next = allOn();
+    if ((seq?.steps?.length ?? 0) === 0) next.performance = false;
+    enabled = next;
   });
 
   const seq = $derived(viewer3DState?.currentSequenceData ?? null);

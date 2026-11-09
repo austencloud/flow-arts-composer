@@ -70,6 +70,7 @@ export async function publishMandala(
           {
             show: publicRevision.payload.variant,
             pathShape: publicRevision.payload.pathShape ?? "arc",
+            colors: publicRevision.payload.colors ?? null,
           }
         ),
     },

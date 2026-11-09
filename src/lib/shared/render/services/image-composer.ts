@@ -258,6 +258,7 @@ export class ImageComposer {
         // Like the fan build, only an explicit grip reaches a locked card, so a
         // deck or print render keeps the notation corner grip.
         triangleGrip: overrides.triangleGrip,
+        buugengStyle: overrides.buugengStyle,
         primaryPropColors: overrides.primaryPropColors,
         showTKA: overrides.showTKA,
         showTnD: overrides.showTnD,
@@ -297,6 +298,7 @@ export class ImageComposer {
     const globalSettings: PictographVisibilityOptions = {
       fanAppearance: appSettings.fanAppearance,
       triangleGrip: appSettings.triangleGrip,
+      buugengStyle: appSettings.buugengStyle,
       primaryPropColors: appSettings.primaryPropColors,
       showTKA: visibilityManager.getGlyphVisibility("tkaGlyph"),
       showTnD: visibilityManager.getGlyphVisibility("tndGlyph"),
@@ -318,6 +320,7 @@ export class ImageComposer {
       return {
         fanAppearance: overrides.fanAppearance ?? globalSettings.fanAppearance,
         triangleGrip: overrides.triangleGrip ?? globalSettings.triangleGrip,
+        buugengStyle: overrides.buugengStyle ?? globalSettings.buugengStyle,
         primaryPropColors:
           overrides.primaryPropColors !== undefined
             ? overrides.primaryPropColors
@@ -673,6 +676,7 @@ export class ImageComposer {
       // The blob was drawn with this grip; keying it otherwise would hand a
       // side-grip export to a corner-grip card cell, or the reverse.
       triangleGrip: visibilitySettings.triangleGrip,
+      buugengStyle: visibilitySettings.buugengStyle,
       size: stepSize,
       leftPropType: leftProp,
       rightPropType: rightProp,
@@ -1128,6 +1132,9 @@ export class ImageComposer {
       triangleGrip: visibilitySettings.handPathMode
         ? undefined
         : visibilitySettings.triangleGrip,
+      buugengStyle: visibilitySettings.handPathMode
+        ? undefined
+        : visibilitySettings.buugengStyle,
       leftPropType: visibilitySettings.leftPropType,
       rightPropType: visibilitySettings.rightPropType,
       handPathMode: visibilitySettings.handPathMode ?? false,

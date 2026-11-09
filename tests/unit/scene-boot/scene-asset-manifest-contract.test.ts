@@ -21,6 +21,9 @@
  * and builds a dev or R2 URL around it, so no `/models/…glb` literal exists to
  * find. It is asserted separately, through `sceneAssetUrls`, below.
  *
+ * Registered scenes name their scenery GLB in `static/models/<scene>/scene.json`
+ * rather than in a scene source, so those manifests are scanned as sources too.
+ *
  * If this test fails, fix the manifest — do not loosen the assertions.
  */
 import { readFileSync, readdirSync } from "node:fs";
@@ -41,6 +44,7 @@ const repoRoot = path.resolve(
 );
 const SCENES_DIR = path.join(repoRoot, "src/lib/shared/3d/environments/scenes");
 const WORLDS_DIR = path.join(repoRoot, "src/lib/shared/3d/environments/worlds");
+const MODELS_DIR = path.join(repoRoot, "static/models");
 
 /**
  * Which environment owns each scene folder, and each root-level `*Scene.svelte`
@@ -120,6 +124,23 @@ function collectFromSources(): Map<BackgroundType, Map<string, string>> {
       for (const url of urls) bucket.set(url, `${label}/${relative}`);
       byOwner.set(owner!, bucket);
     }
+  }
+  // A scene.json whose id is a background value serves that background.
+  const backgrounds = new Set<string>(Object.values(BackgroundType));
+  for (const folder of readdirSync(MODELS_DIR)) {
+    const manifestPath = path.join(MODELS_DIR, folder, "scene.json");
+    let text: string;
+    try {
+      text = readFileSync(manifestPath, "utf8");
+    } catch {
+      continue;
+    }
+    const { id, glbUrl } = JSON.parse(text) as { id: string; glbUrl: string };
+    if (!backgrounds.has(id)) continue;
+    const owner = id as BackgroundType;
+    const bucket = byOwner.get(owner) ?? new Map<string, string>();
+    bucket.set(glbUrl, `static/models/${folder}/scene.json`);
+    byOwner.set(owner, bucket);
   }
   return byOwner;
 }

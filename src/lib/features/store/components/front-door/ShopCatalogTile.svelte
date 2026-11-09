@@ -14,12 +14,20 @@
     SALES_LIVE,
   } from "../../domain/purchase-state";
   import ShopEntryArt from "../ShopEntryArt.svelte";
+  import { flyFade, reducedMotion } from "#lib/shared/transitions/motion.js";
+  import {
+    TILE_ENTRANCE_MS,
+    TILE_RISE_PX,
+    tileEntranceDelay,
+  } from "./tile-entrance";
 
   interface Props {
     entry: CatalogEntry;
+    /** Position in the grid; later tiles arrive a beat after earlier ones. */
+    index?: number;
   }
 
-  let { entry }: Props = $props();
+  let { entry, index = 0 }: Props = $props();
 
   // The offer SKU, not the art lead: a cover-only row leads the LOOP group on
   // sortOrder, and reading availability off it labelled a tile "In stock"
@@ -72,7 +80,17 @@
   );
 </script>
 
-<a class="tile" href={entry.href}>
+<!-- The entrance is opacity + transform only and never blocks the link:
+     the tile is clickable from its first frame. -->
+<a
+  class="tile"
+  href={entry.href}
+  in:flyFade={{
+    y: TILE_RISE_PX,
+    duration: TILE_ENTRANCE_MS,
+    delay: tileEntranceDelay(index, reducedMotion()),
+  }}
+>
   <div class="art" bind:clientWidth={artW}>
     <!-- Four cards on a desktop tile, three once the tile is narrow — and the
          card itself grows with the box instead of stopping at the 150px cap

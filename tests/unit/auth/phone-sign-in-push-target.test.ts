@@ -55,6 +55,41 @@ beforeEach(() => {
 });
 
 describe("POST /api/phone-sign-in/push-target", () => {
+  it("answers an auth refusal with its own status, as the other sign-in routes do", async () => {
+    mocks.verifyPhoneUser.mockRejectedValue(
+      Object.assign(new Error("Missing Authorization Bearer token"), {
+        status: 401,
+      })
+    );
+
+    const response = await post(validBody);
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      message: "Missing Authorization Bearer token",
+    });
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(mocks.setTarget).not.toHaveBeenCalled();
+  });
+
+  it("uses the message of a SvelteKit error()", async () => {
+    mocks.verifyPhoneUser.mockRejectedValue({
+      status: 403,
+      body: { message: "Admin access required" },
+    });
+
+    const response = await post(validBody);
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ message: "Admin access required" });
+  });
+
+  it("does not disguise a real failure as a refusal", async () => {
+    mocks.verifyPhoneUser.mockRejectedValue(new Error("boom"));
+
+    await expect(post(validBody)).rejects.toThrow("boom");
+  });
+
   it("names the phone, remembering which trusted phone did it", async () => {
     const response = await post(validBody);
 
@@ -142,5 +177,21 @@ describe("DELETE /api/phone-sign-in/push-target", () => {
 
     expect(await response.json()).toEqual({ status: "off" });
     expect(mocks.deleteTarget).toHaveBeenCalledWith("austen");
+  });
+
+  it("answers an auth refusal with its own status and clears nothing", async () => {
+    mocks.verifyPhoneUser.mockRejectedValue(
+      Object.assign(new Error("Missing Authorization Bearer token"), {
+        status: 401,
+      })
+    );
+    const request = new Request(
+      "https://localhost/api/phone-sign-in/push-target",
+      { method: "DELETE" }
+    );
+    const response = await DELETE({ request } as never);
+
+    expect(response.status).toBe(401);
+    expect(mocks.deleteTarget).not.toHaveBeenCalled();
   });
 });

@@ -451,7 +451,7 @@ describe("Create front door, method previews", () => {
     card("generate").click();
     flushSync();
 
-    expect(onSelect).toHaveBeenCalledWith("generate");
+    expect(onSelect).toHaveBeenCalledWith("generate", expect.any(HTMLElement));
     expect(playingMethod()).toBeNull();
     advance(TURN_CYCLE_MS * 3);
     expect(playingMethod()).toBeNull();

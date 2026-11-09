@@ -80,6 +80,7 @@
     onBack={onBackToStart}
     backLabel={t("site_start_here")}
     hideToolbarSearch
+    headerChrome
     onOpenFilters={() => {
       if (!isMobile && onOpenWorkspace) onOpenWorkspace();
       else isFilterSheetOpen = true;
@@ -100,6 +101,7 @@
     bind:isOpen={isFilterSheetOpen}
     {isMobile}
     allowSearch={false}
+    gridControls={{ onSaveSmart }}
   />
 {/if}
 

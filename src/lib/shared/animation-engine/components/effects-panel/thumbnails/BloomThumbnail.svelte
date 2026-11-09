@@ -2,6 +2,7 @@
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import type { EffectPreset } from "../presets/types";
   import { withAlpha } from "./tile-paint";
+  import { queueTilePaint } from "./tile-paint-queue";
 
   interface Props {
     preset: EffectPreset<"bloom">;
@@ -148,8 +149,14 @@
   }
 
   $effect(() => {
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const node = canvas;
+    if (!node) return;
+    void preset;
+    return queueTilePaint(() => paint(node));
+  });
+
+  function paint(node: HTMLCanvasElement): void {
+    const ctx = node.getContext("2d");
     if (!ctx) return;
 
     const intent = { ...DEFAULT_EFFECTS_CONFIG.bloom, ...(preset.patch ?? {}) };
@@ -201,7 +208,7 @@
     });
 
     ctx.restore();
-  });
+  }
 </script>
 
 <div class="bloom-thumbnail" class:active aria-hidden="true">

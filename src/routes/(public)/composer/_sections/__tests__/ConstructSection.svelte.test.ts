@@ -26,14 +26,26 @@ vi.mock(
     default: (await import("./ConstructDemoTestStub.svelte")).default,
   })
 );
+vi.mock(
+  "#lib/features/create/shared/workspace-panel/sequence-display/components/StepCell.svelte",
+  async () => ({
+    default: (await import("./ConstructDemoTestStub.svelte")).default,
+  })
+);
+vi.mock(
+  "#lib/features/create/shared/workspace-panel/sequence-display/components/StartTile.svelte",
+  async () => ({
+    default: (await import("./ConstructDemoTestStub.svelte")).default,
+  })
+);
 
 import ConstructSection from "../ConstructSection.svelte";
 
 /**
- * Below 1200 px the play-phase actions sit under the player instead of in the
- * action slot, so the slot's crossfade cannot carry focus between them. A
- * keyboard user pressing one of them must never land back at the top of the
- * page, and the control that takes focus must be on screen.
+ * Play swaps the whole card for the player, so the control a keyboard user
+ * pressed is gone. They must never land back at the top of the page, and the
+ * control that takes focus must be on screen, even in a window short enough
+ * to start the action row off screen.
  */
 
 function inView(element: Element | null): boolean {
@@ -64,7 +76,6 @@ async function playOneStep(): Promise<void> {
 
 describe("ConstructSection focus below 1200 px", () => {
   beforeEach(async () => {
-    // Short enough that the actions under the player start off screen.
     await page.viewport(1024, 500);
     window.scrollTo(0, 0);
   });
@@ -86,6 +97,53 @@ describe("ConstructSection focus below 1200 px", () => {
       .element(page.getByRole("button", { name: "Play sequence" }))
       .toHaveFocus();
     await expect.poll(() => inView(document.activeElement)).toBe(true);
+  });
+});
+
+describe("ConstructSection full-card player", () => {
+  function overlaps(a: Element, b: Element): boolean {
+    const boxA = a.getBoundingClientRect();
+    const boxB = b.getBoundingClientRect();
+    return boxA.right > boxB.left && boxB.right > boxA.left;
+  }
+
+  it("shows the start and every step in the strip, and leaves with Keep building", async () => {
+    await page.viewport(1024, 700);
+    const { container } = render(ConstructSection, {
+      presentationMode: "guided-build",
+      active: false,
+    });
+    await press("Choose start");
+    await press("Add step");
+    await press("Add step");
+    await press("Play sequence");
+
+    await expect
+      .poll(() => container.querySelectorAll(".play-strip .tile").length)
+      .toBe(3);
+
+    await press("Keep building");
+    await expect
+      .poll(() => container.querySelector(".play-strip"))
+      .toBeNull();
+  });
+
+  // Keep building is gone at the cap, so undo is the only way back and has to
+  // stay usable on a phone, where it shares the row with Build another.
+  it("keeps undo clear of Build another on a phone at the step cap", async () => {
+    await page.viewport(375, 700);
+    render(ConstructSection, {
+      presentationMode: "guided-build",
+      active: false,
+    });
+    await press("Choose start");
+    for (let step = 0; step < 8; step++) await press("Add step");
+
+    const buildAnother = page.getByRole("button", { name: "Build another" });
+    const undo = page.getByRole("button", { name: "Undo the last change" });
+    await expect.element(buildAnother).toBeVisible();
+    await expect.element(undo).toBeVisible();
+    expect(overlaps(buildAnother.element(), undo.element())).toBe(false);
   });
 });
 

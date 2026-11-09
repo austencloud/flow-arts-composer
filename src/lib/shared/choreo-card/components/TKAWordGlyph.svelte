@@ -64,6 +64,12 @@
       ? availableWidth / naturalWidth
       : 1
   );
+  // A transform leaves the row's layout box at its natural width. Taking the
+  // overflow back out of layout keeps the scaled row inside its parent however
+  // the parent aligns it; TkaLabel pins it left, and the viewer uses safe center.
+  const fitOverflow = $derived(
+    fitScale < 1 ? naturalWidth - availableWidth : 0
+  );
 
   // The app-wide warmup waits for an idle moment. A gallery card can appear
   // before that, so load the exact letters this word needs and repaint when
@@ -95,7 +101,7 @@
   >
     <div
       class="glyph-row"
-      style="transform: scale({fitScale});"
+      style="transform: scale({fitScale}); margin-right: {-fitOverflow}px;"
       bind:offsetWidth={naturalWidth}
     >
     {#if wholeWordSkewed}
@@ -166,7 +172,7 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    transform-origin: center center;
+    transform-origin: left center;
   }
 
   .token-row {

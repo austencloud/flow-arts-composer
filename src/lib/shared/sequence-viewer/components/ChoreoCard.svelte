@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
   // Note: transition/animation imports (fade, fly, scale, flip, cubicOut) moved to
   // extracted sub-components (CardHeader, CardFooter, CardGridLayout, CellRenderer).
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -36,6 +37,7 @@
   import { getScanCardCloudProbe } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
   import { CANONICAL_CARD_VISIBILITY } from "#lib/shared/render/services/cloud-cell-key.js";
   import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import { normalizeBuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
   import { handLegendFor } from "../services/hand-legend";
@@ -309,6 +311,7 @@
           noSavedSession = true;
           return;
         }
+        await whenMotionSettled();
         const mod = await import("#lib/shared/auth/state/auth-state.svelte.js");
         authApi = mod.authState;
         // Idempotent; app-mode boot has normally already run it.
@@ -878,6 +881,15 @@
           visibilityOverrides?.triangleGrip ?? getSettings().triangleGrip
         )
   );
+  // The buugeng style follows the same rule: the viewer's look, except on a
+  // scanned card, which keeps the printed Classic glyph.
+  const cardBuugengStyle = $derived(
+    cloudProbeEnabled
+      ? undefined
+      : normalizeBuugengStyle(
+          visibilityOverrides?.buugengStyle ?? getSettings().buugengStyle
+        )
+  );
 
   /**
    * Build render options from current component state (delegates to extracted pure function)
@@ -913,6 +925,7 @@
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
       triangleGrip: cardTriangleGrip,
+      buugengStyle: cardBuugengStyle,
       primaryPropColors: effectivePrimaryPropColors,
       // A scan represents the printed card, not the scanner's personal export
       // toggles. Pin the same canonical visibility used when QR creation
@@ -974,6 +987,7 @@
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
       triangleGrip: cardTriangleGrip,
+      buugengStyle: cardBuugengStyle,
       primaryPropColors: effectivePrimaryPropColors,
       sequence: cardSequence,
       leftPropType,

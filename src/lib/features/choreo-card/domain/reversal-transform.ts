@@ -1,4 +1,8 @@
 import { SIMPLE_PATTERNS } from "#lib/shared/foundation/domain/sequence-patterns/reversal-patterns.js";
+import {
+  matrixToSymbols,
+  type ReversalMatrix,
+} from "#lib/shared/foundation/domain/sequence-patterns/reversal-matrix.js";
 
 export type ReversalMotion = "pro" | "anti" | "static" | "dash";
 
@@ -68,19 +72,6 @@ export interface ResolvedReversalPattern {
   isCleanLoop: boolean;
 }
 
-function toSequenceString(left: boolean[], right: boolean[]): string {
-  let out = "";
-  for (let i = 0; i < left.length; i++) {
-    const b = left[i];
-    const r = right[i];
-    if (b && r) out += "P";
-    else if (r) out += "R";
-    else if (b) out += "B";
-    else out += "-";
-  }
-  return out;
-}
-
 /**
  * Returns true if `candidate` is fully covered by tiling `patternSequence`.
  * e.g. tilesTo("RBRB", "RBRB") → true
@@ -103,7 +94,7 @@ function tilesTo(patternSequence: string, candidate: string): boolean {
  * the prop returns to its starting rotation direction at the loop boundary.
  */
 export function resolvePattern(left: boolean[], right: boolean[]): ResolvedReversalPattern {
-  const sequence = toSequenceString(left, right);
+  const sequence = matrixToSymbols({ left, right });
   const leftCount = left.filter(Boolean).length;
   const rightCount = right.filter(Boolean).length;
   const isCleanLoop = leftCount % 2 === 0 && rightCount % 2 === 0;
@@ -113,4 +104,9 @@ export function resolvePattern(left: boolean[], right: boolean[]): ResolvedRever
     return { id: named.id, label: named.label, sequence, isNamed: true, isCleanLoop };
   }
   return { id: sequence, label: "Custom", sequence, isNamed: false, isCleanLoop };
+}
+
+/** Adapter from the shared reversal model to the deck's resolved pattern. */
+export function resolveMatrix(matrix: ReversalMatrix): ResolvedReversalPattern {
+  return resolvePattern([...matrix.left], [...matrix.right]);
 }

@@ -3,6 +3,7 @@ import type { Viewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 import type { StagePerformanceFrame } from "../domain/stage-performance-sampler";
+import { stagePerformerTravels } from "../domain/stage-travel-plan";
 import type { StageChoreography } from "../domain/stage-types";
 
 /**
@@ -83,6 +84,9 @@ export function applyStagePerformerMotion(
     const rig = rigs[index];
     if (!rig) continue;
 
+    // Load the walk clips before the first step rather than at it.
+    if (!rig.travels && stagePerformerTravels(choreography, frame.performerId))
+      rig.markTravels();
     rig.position.x = frame.worldPosition.x;
     rig.position.z = frame.worldPosition.z;
     rig.snapFacingAngle(frame.bodyFacing);

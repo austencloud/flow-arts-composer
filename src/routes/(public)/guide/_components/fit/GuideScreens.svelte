@@ -65,7 +65,7 @@
 
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { browser } from "$app/env";
   import { afterNavigate } from "$app/navigation";
   import { holdPageReady } from "@austencloud/motion";
@@ -74,7 +74,11 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import GuideFitBox from "./GuideFitBox.svelte";
-  import { readScreenParam, SCREEN_PARAM } from "./guide-screen-url";
+  import {
+    followScreen,
+    readScreenParam,
+    SCREEN_PARAM,
+  } from "./guide-screen-url";
   import { revealInRow } from "./reveal-in-row";
 
   type PageLink = { href: string; title: string } | null;
@@ -90,6 +94,7 @@
     kicker,
     subtitle,
     labels,
+    topics,
     prevPage = null,
     nextPage = null,
     hubHref,
@@ -100,6 +105,8 @@
     beforeTitle,
     bodyHead = false,
     navLabel,
+    onoverflow,
+    cutKey,
   }: {
     title: string;
     /** Draws the title in place of the plain `title` string (a page whose
@@ -111,6 +118,10 @@
     /** One line under the title (the tagline). */
     subtitle?: string | null;
     labels: string[];
+    /** What each screen shows, for a page that cuts its screens by window
+        size: a resize keeps the reader on the same topic in the new cut
+        (`followScreen`). Without it a recut keeps the screen number. */
+    topics?: string[][];
     prevPage?: PageLink;
     nextPage?: PageLink;
     /** The orange link back to the guide's front page; the front page
@@ -133,6 +144,11 @@
     bodyHead?: boolean;
     /** Draws a Back or Next name; plain text when absent. */
     navLabel?: Snippet<[NavTarget]>;
+    /** A screen will not fit at the smallest scale: the page can cut smaller. */
+    onoverflow?: () => void;
+    /** Changes when the page recuts its screens, so a screen that panned gets
+        measured again even if the number of screens stayed the same. */
+    cutKey?: unknown;
   } = $props();
 
   // A body-head page opened by a link within the visit starts live on the
@@ -171,6 +187,10 @@
   let pillRow = $state<HTMLElement>();
   const count = $derived(labels.length);
   const last = $derived(Math.max(0, count - 1));
+  // The screen drawn. A recut can shorten the list before the effect below
+  // moves `index`, and a page's screen snippet reads its own list at that
+  // number: past the end it drew nothing.
+  const shown = $derived(Math.min(index, last));
 
   function read(): void {
     index = Math.min(readScreenParam(window.location.search), last);
@@ -250,10 +270,38 @@
   });
 
   // The split can change after mount (a phone gives long text its own
-  // screen): reread the URL against the new count.
-  $effect(() => {
+  // screen). A page that names its screens' topics keeps the reader on the
+  // topic they were reading, and the URL follows without a history step;
+  // otherwise reread the URL against the new count. Only a screen the URL
+  // named is followed: the first read, against the server's cut, can clamp
+  // a phone's ?screen=50, and that clamp is not where the reader is.
+  let cutBefore: string[][] | undefined;
+  $effect.pre(() => {
     void count;
-    if (live) read();
+    const cut = topics;
+    const isLive = live;
+    untrack(() => {
+      const before = cutBefore;
+      cutBefore = cut;
+      if (!isLive) return;
+      const onUrl = index === readScreenParam(window.location.search);
+      const was = before?.[index];
+      // The same cut drawn again (a new list, the same screens) stays put:
+      // a topic split over two phone screens would land on the first.
+      if (was && cut?.[index]?.join() === was.join()) return;
+      const next = onUrl && was && cut ? followScreen(was, cut) : -1;
+      if (next < 0) return read();
+      if (next === index) return;
+      index = next;
+      mutateCurrentUrl(
+        (url) => {
+          if (next === 0) url.searchParams.delete(SCREEN_PARAM);
+          else url.searchParams.set(SCREEN_PARAM, String(next + 1));
+        },
+        { mode: "replace" }
+      );
+      void tick().then(showActivePill);
+    });
   });
 
   const prevTarget = $derived<NavTarget | null>(
@@ -293,7 +341,7 @@
     <div class="titles">
       {#if kicker}<p class="kicker">{kicker}</p>{/if}
       {#if beforeTitle}<div class="before-title">
-          {@render beforeTitle(index, goTo)}
+          {@render beforeTitle(shown, goTo)}
         </div>{/if}
       <h1 class="title" class:unseen={bodyHead} id={titleId}>{#if titleContent}{@render titleContent()}{:else}{title}{/if}</h1>
       {#if subtitle}<p class="subtitle">{subtitle}</p>{/if}
@@ -311,7 +359,7 @@
           <button
             type="button"
             class="pill"
-            aria-current={n === index ? "step" : undefined}
+            aria-current={n === shown ? "step" : undefined}
             onclick={() => go(n)}
           >
             <span class="pill-n">{n + 1}</span>{label}
@@ -326,21 +374,26 @@
       <!-- The page's screen stays mounted; it crossfades its own card and
            words, and its title and list hold still. -->
       <GuideFitBox onready={ready}>
-        {@render screen(index, goTo)}
+        {@render screen(shown, goTo)}
       </GuideFitBox>
     {:else if live}
       <Crossfade
-        key={index}
+        key={shown}
         duration={DURATION.normal}
         mode="swap"
         motion="step"
         {direction}
         fill
-        label={labels[index]}
+        label={labels[shown]}
       >
-        <GuideFitBox contentKey={index} top={steadyHead} onready={ready}>
-          {#if index === 0 && lead}<div class="lead">{@render lead()}</div>{/if}
-          {@render screen(index, goTo)}
+        <GuideFitBox
+          contentKey={`${shown}/${labels.length}/${cutKey ?? 0}`}
+          top={steadyHead}
+          onready={ready}
+          {onoverflow}
+        >
+          {#if shown === 0 && lead}<div class="lead">{@render lead()}</div>{/if}
+          {@render screen(shown, goTo)}
         </GuideFitBox>
       </Crossfade>
     {/if}

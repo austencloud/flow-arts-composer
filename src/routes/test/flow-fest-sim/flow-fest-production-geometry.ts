@@ -1738,6 +1738,25 @@ function buildFestivalHeart(
     [3.25, 2.6],
     [-3.25, 2.6],
   ];
+  // Where the Blender truss canopy lands once its GLB loads
+  // (flow-fest-authored-props.ts). It sits on the lowest foot so no tower
+  // floats; the higher feet seat a few centimetres into the grass.
+  const canopyModelAnchor = new Group();
+  canopyModelAnchor.name = "FFS_LEDFlowCircle_ModelAnchor";
+  canopyModelAnchor.position.set(
+    ledCircleCenter.x,
+    Math.min(
+      ...canopyPostOffsets.map(([offsetX, offsetZ]) =>
+        sampleFlowFestTerrainWorldY(
+          terrain,
+          ledCircleCenter.x + offsetX,
+          ledCircleCenter.z + offsetZ
+        )
+      )
+    ),
+    ledCircleCenter.z
+  );
+  canopy.add(canopyModelAnchor);
   for (const [index, [offsetX, offsetZ]] of canopyPostOffsets.entries()) {
     const x = ledCircleCenter.x + offsetX;
     const z = ledCircleCenter.z + offsetZ;

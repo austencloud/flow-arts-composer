@@ -10,7 +10,8 @@
     over any running playback. Its label says "Viewer" wherever the rail
     shows labels, so it never reads as a second Play.
   The purpose prop keeps the icon and accessible copy accurate for each.
-  Choreographed entrance: hatches from nothing, overshoots, settles, then breathes.
+  The bar's presence owner brings it in with the other controls; once there it
+  breathes.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -18,6 +19,7 @@
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
   import { prefetchSequenceViewerWhenIdle } from "#lib/shared/sequence-viewer/services/prefetch-sequence-viewer.js";
   import { onMount } from "svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     onclick,
@@ -36,18 +38,35 @@
     quiet?: boolean;
   }>();
 
+  // Preparing usually lasts a moment. The press has already turned Play into
+  // Stop, because Stop is what the button does from here; a spinner only
+  // appears once the wait is long enough to need explaining.
+  let preparingAWhile = $state(false);
+  $effect(() => {
+    if (playbackState !== "preparing") {
+      preparingAWhile = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      preparingAWhile = true;
+    }, DURATION.dramatic);
+    return () => clearTimeout(timer);
+  });
+
   const icon = $derived(
-    playbackState === "preparing"
+    preparingAWhile
       ? "fa-spinner fa-spin"
-      : playbackState === "retry"
-        ? "fa-rotate-right"
-        : isStopping
-          ? "fa-stop"
-          : purpose === "play"
-            ? "fa-play"
-            : purpose === "viewer"
-              ? "fa-expand"
-              : WORKSPACE_BUTTON_ICON.view.icon
+      : playbackState === "preparing"
+        ? "fa-stop"
+        : playbackState === "retry"
+          ? "fa-rotate-right"
+          : isStopping
+            ? "fa-stop"
+            : purpose === "play"
+              ? "fa-play"
+              : purpose === "viewer"
+                ? "fa-expand"
+                : WORKSPACE_BUTTON_ICON.view.icon
   );
   const accessibleLabel = $derived(
     playbackState === "preparing"
@@ -62,7 +81,7 @@
   );
   const visibleLabel = $derived(
     playbackState === "preparing"
-      ? t("common_cancel")
+      ? t("viewer_ui_stop")
       : playbackState === "retry"
         ? t("common_retry")
         : isStopping
@@ -142,17 +161,12 @@
     border-radius: var(--workspace-action-radius, 50%);
     color: var(--theme-text);
     cursor: pointer;
+    transition: var(--transition-control-shape);
     box-shadow: 0 4px 12px
       color-mix(in srgb, var(--semantic-success) 40%, transparent);
 
-    /*
-      Choreographed entrance:
-      1. arrive (400ms) - fade in, gentle scale up
-      2. breathe (2.4s) - scale + glow pulse, loops forever
-    */
-    animation:
-      arrive 400ms ease-out both,
-      breathe 2.4s ease-in-out 0.5s infinite;
+    /* A slow scale and glow pulse. Arriving belongs to the bar's presence owner. */
+    animation: breathe 2.4s ease-in-out 0.5s infinite;
   }
 
   /* The glow pulse is a second shadow on its own layer whose opacity swells
@@ -181,8 +195,8 @@
     box-shadow:
       0 5px 14px color-mix(in srgb, var(--semantic-success) 45%, transparent),
       0 0 18px color-mix(in srgb, var(--semantic-success) 20%, transparent);
-    animation: play-arrive var(--duration-dramatic) var(--ease-standard-out)
-      both;
+    /* The bar's presence owner brings it in, along with the other controls. */
+    animation: none;
   }
 
   .view-sequence-button.play-purpose::after {
@@ -236,15 +250,11 @@
     font-weight: 650;
     line-height: 1;
     white-space: nowrap;
-  }
+    opacity: var(--workspace-action-label-opacity, 1);
+    transition: var(--transition-control-label);
 
-  @keyframes play-arrive {
-    from {
+    @starting-style {
       opacity: 0;
-    }
-
-    to {
-      opacity: 1;
     }
   }
 
@@ -270,17 +280,6 @@
 
   .view-sequence-button.retry {
     animation: none;
-  }
-
-  @keyframes arrive {
-    from {
-      opacity: 0;
-      transform: scale(0.85);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
   }
 
   /* Gentle breathing - scale here, glow on ::after, in step */
@@ -309,7 +308,9 @@
 
   .view-sequence-button:active {
     transform: scale(0.92);
-    transition: transform var(--duration-instant) var(--ease-standard);
+    transition:
+      transform var(--duration-instant) var(--ease-standard),
+      var(--transition-control-shape);
   }
 
   .view-sequence-button.play-purpose:active {

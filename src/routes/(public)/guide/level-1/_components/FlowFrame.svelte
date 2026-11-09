@@ -33,8 +33,10 @@
   } from "../_data/localize-level1-content";
   import {
     flowRenderItems,
+    isPackable,
     type FlowRenderItem,
   } from "../_data/flow-render-items";
+  import type { ScreenRoom } from "../../_components/fit/guide-screen-url";
 
   let {
     content,
@@ -42,8 +44,7 @@
     tagline = "",
     layout = "default",
     screen = undefined,
-    detachTextChars = undefined,
-    introBesideChars = undefined,
+    room = undefined,
   }: {
     content: GuideBlock[];
     darkMode?: boolean;
@@ -55,9 +56,7 @@
      */
     screen?: number[];
     /** Passed to flowRenderItems; the host's split must use the same. */
-    detachTextChars?: number;
-    /** Passed to flowRenderItems; the host's split must use the same. */
-    introBesideChars?: number;
+    room?: ScreenRoom;
   } = $props();
 
   // Theme handed to each pictograph: "dark" renders on the dark editorial theme
@@ -74,10 +73,7 @@
   // Which text each showcase owns, and how the page splits into screens,
   // live in flow-render-items.ts (pure, tested).
   const renderItems = $derived(
-    flowRenderItems(content, tagline, localizeLevel1Block, {
-      detachTextChars,
-      introBesideChars,
-    })
+    flowRenderItems(content, tagline, localizeLevel1Block, { room })
   );
   // `screen` set: draw only that screen's items (the topic page's one-screen
   // view). Unset: the whole page in reading order (the reader, print-like).
@@ -90,12 +86,9 @@
         }))
   );
 
-  // One screen: gallery figures that share a screen sit side by side in one
-  // wrapping row, each with its caption, instead of stacking down the page.
-  const isGalleryItem = (item: FlowRenderItem) =>
-    item.type === "block" &&
-    item.block.kind === "pictographGroup" &&
-    item.block.layout !== "strip";
+  // One screen: gallery figures and bare strips that share a screen sit side
+  // by side in one wrapping row, each with its caption, instead of stacking
+  // down the page (the cut packs them: flow-render-items.ts).
   type Segment =
     | { key: number; item: FlowRenderItem; row?: undefined }
     | { key: number; row: { item: FlowRenderItem; i: number }[] };
@@ -103,7 +96,7 @@
     const out: Segment[] = [];
     for (const v of visible) {
       const last = out[out.length - 1];
-      if (screen !== undefined && isGalleryItem(v.item)) {
+      if (screen !== undefined && isPackable(v.item)) {
         if (last?.row) last.row.push(v);
         else out.push({ key: v.i, row: [v] });
       } else out.push({ key: v.i, item: v.item });
@@ -143,6 +136,10 @@
     return stripToSequence(strip, { word: w, name: w });
   };
 
+  // A one-screen page's bare strip: as SequenceShowcase's strip beside the
+  // canvas, cells grow past the reading size up to a 4K window's room.
+  const ONE_SCREEN_CELLS = { minCell: 60, maxCell: 300 };
+
   const gridLabel = (mode: "diamond" | "box" | "merged") =>
     mode === "diamond"
       ? localizeLevel1Text(
@@ -167,7 +164,18 @@
     {#if seg.row}
       <div class="gallery-row">
         {#each seg.row as { item, i } (i)}
-          <div class="flow-gallery">{@render flowItem(item)}</div>
+          <div
+            class="flow-gallery"
+            class:flow-strip-slot={item.type === "block" &&
+              item.block.kind === "pictographGroup" &&
+              item.block.layout === "strip"}
+            style:--cells={item.type === "block" &&
+            item.block.kind === "pictographGroup"
+              ? item.block.items.length
+              : undefined}
+          >
+            {@render flowItem(item)}
+          </div>
         {/each}
       </div>
     {:else}
@@ -188,10 +196,10 @@
         <SequenceShowcase
           sequence={sseq}
           items={scard.items}
-          stepLabels={scard.stepLabels}
+          numbered={scard.numbered}
           render={scard.render}
           variant={item.variant}
-          pool={scard.pool?.entries}
+          pool={item.holdPool ? undefined : scard.pool?.entries}
           stripBeside={screen !== undefined}
           {picTheme}
         >
@@ -214,6 +222,9 @@
                   />
                 {/if}
               {/each}
+              {#if item.keepCaption}
+                <p class="flow-caption showcase-caption">{scard.caption}</p>
+              {/if}
             {:else if scard.caption}
               <!-- Authored captions already name the word ("EK - Exploding
                    Kitten") - showing the derived word above one doubles it. -->
@@ -267,12 +278,15 @@
         {#if block.layout === "strip"}
           <!-- A sequence: one left-to-right strip (scrolls on narrow screens),
              the mobile-faithful form of the sheet's step rows. -->
+          <!-- On a one-screen page the strip is the screen's figure: its
+               cells grow with --fit (GuideStepStrip's one-screen bounds). -->
           <GuideStepStrip
             items={block.items}
-            stepLabels={block.stepLabels}
+            numbered={block.numbered}
             caption={block.caption}
             render={block.render}
             {picTheme}
+            {...(screen !== undefined ? ONE_SCREEN_CELLS : {})}
           />
         {:else}
           <div class="flow-grid" style:--cols={block.flowCols ?? 4}>
@@ -516,6 +530,10 @@
     text-align: left;
     margin: 0 0 0.35rem;
   }
+  .one-screen .flow-h2.showcase-h,
+  .one-screen .flow-h3.showcase-h {
+    text-align: center;
+  }
   .flow-glyph.showcase-glyph {
     margin-inline: 0;
   }
@@ -736,6 +754,20 @@
   .flow-gallery {
     flex: 0 1 auto;
     width: min(calc(30rem * var(--fit, 1)), 100%);
+  }
+  /* A strip's slot is as wide as its cells at this scale (GuideStepStrip's
+     FIT_CELL_PX), so strips sit side by side when they fit and the screen
+     only gets shorter as --fit drops. */
+  .flow-gallery.flow-strip-slot {
+    width: min(calc(var(--cells, 3) * 150px * var(--fit, 1)), 100%);
+    /* Never so narrow that two strips squeeze onto a phone's one line: the
+       search would shrink them to thumbnails rather than stack them
+       (2026-11-07, Reversals at 375 wide). Stacked strips that still do
+       not fit recut the screen. */
+    min-width: min(100%, 18rem);
+  }
+  .flow-strip-slot :global(.guide-step-strip) {
+    margin-block: 0.5rem;
   }
   .one-screen .flow-figure {
     max-width: calc(15rem * var(--fit, 1));

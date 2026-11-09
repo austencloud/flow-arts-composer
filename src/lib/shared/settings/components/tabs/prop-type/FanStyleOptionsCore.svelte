@@ -17,6 +17,7 @@
   let {
     fill = false,
     horizontal = false,
+    room = false,
     appearance,
     onchange,
   }: {
@@ -27,6 +28,11 @@
      */
     fill?: boolean;
     horizontal?: boolean;
+    /**
+     * With `fill`, a host that never scrolls (a guide screen): every look stays
+     * in the box, however small, in whichever columns suit the box's shape.
+     */
+    room?: boolean;
     appearance: FanAppearance;
     onchange: (appearance: FanAppearance) => void;
   } = $props();
@@ -96,6 +102,7 @@
   aria-label={t("settings_fan_appearance_choices")}
   class:fill
   class:horizontal
+  class:room
   class:dragging
   data-testid="fan-style-options"
   onpointerdown={pointerDown}
@@ -224,6 +231,65 @@
      stretches instead, and `contain` gives the fan the extra room as air. */
   .fan-style-options.fill :global(.preview-frame) {
     align-self: stretch;
+  }
+
+  /* A host that never scrolls: the box's shape picks the columns, the cards
+     share its height, and a box too short for names shows the fans alone. */
+  .fan-style-options.room {
+    container: fan-room / size;
+    flex: 1 1 0;
+  }
+  .fan-style-options.room :global(.fan-appearance-picker) {
+    container-type: normal;
+  }
+  .fan-style-options.room :global(.option-grid) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 4px;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+  }
+  @container fan-room (max-aspect-ratio: 3 / 4) {
+    .fan-style-options.room :global(.option-grid) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @container fan-room (min-aspect-ratio: 8 / 5) {
+    .fan-style-options.room :global(.option-grid) {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  @container fan-room (min-aspect-ratio: 4 / 1) {
+    .fan-style-options.room :global(.option-grid) {
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+    }
+  }
+  .fan-style-options.room :global(.option) {
+    border-radius: 8px;
+  }
+  .fan-style-options.room :global(.preview-frame) {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+  .fan-style-options.room :global(.option-label) {
+    min-height: 0;
+    padding: 2px 4px;
+    font-size: var(--font-size-compact, 12px);
+    text-align: center;
+  }
+  @container fan-room (max-height: 8rem) {
+    .fan-style-options.room :global(.option-label) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      border: 0;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
 
   /* The rail scrolls its cards sideways under a compact toolbar. */

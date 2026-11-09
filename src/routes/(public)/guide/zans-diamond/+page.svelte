@@ -125,32 +125,30 @@
   );
 
   // One screen at a time (2026-10-24 fit pass): the credit, the original,
-  // the props and each family get a screen. A phone gives Zan's video and
-  // the families' intro screens of their own.
+  // the props and each family get a screen, words with their player at every
+  // size. A phone runs the credit and Zan's words across two screens, his
+  // video on each (2026-11-06: no screen of words alone).
   let tier = $state<ScreenTier>("large");
   onMount(() => watchScreenTier((v) => (tier = v)));
   const views = $derived.by(() => {
-    // A phone reads each player's words on a screen of their own, then
-    // watches the player on the next.
     const small = tier === "small";
     const out: { label: string; parts: string[] }[] = small
       ? [
-          { label: t("guide_zans_title"), parts: ["lede"] },
+          { label: t("guide_zans_title"), parts: ["lede", "zanVideo"] },
           { label: t("guide_zans_from_zan_title"), parts: ["fromZan"] },
         ]
       : [{ label: t("guide_zans_title"), parts: ["lede", "fromZan"] }];
     const player = (label: string, key: string, before: string[] = []) => {
-      if (small) {
-        out.push({ label, parts: [...before, `${key}Text`] });
-        out.push({ label: `Watch: ${label}`, parts: [key] });
-      } else out.push({ label, parts: [...before, `${key}Text`, key] });
+      out.push({ label, parts: [...before, `${key}Text`, key] });
     };
     player(t("guide_zans_original_title"), "original");
     player(t("guide_zans_props_title"), "props");
+    // A phone has no room for the families' opening and the first family's
+    // words at once: they take turns over the same player.
     if (small)
       out.push({
         label: t("guide_zans_families_title"),
-        parts: ["familiesIntro"],
+        parts: ["familiesIntro", "family0"],
       });
     ZANS_DIAMOND_FAMILIES.forEach((family, k) =>
       player(
@@ -159,7 +157,15 @@
         k === 0 && !small ? ["familiesIntro"] : []
       )
     );
-    out.push({ label: t("guide_zans_open_collection"), parts: ["collection"] });
+    // The collection's words go with the last player: on a phone, on a screen
+    // of their own with that player over them.
+    const last = `family${ZANS_DIAMOND_FAMILIES.length - 1}`;
+    if (small)
+      out.push({
+        label: t("guide_zans_open_collection"),
+        parts: [last, "collection"],
+      });
+    else out[out.length - 1]!.parts.push("collection");
     return out;
   });
 
@@ -226,16 +232,23 @@
             </p>
           {/if}
 
-          {#if view?.parts.includes("fromZan")}
-            <section class="from-zan" aria-labelledby="from-zan-heading-{n}">
-              <div class="from-zan-intro">
-                <h2 id="from-zan-heading-{n}">
-                  {t("guide_zans_from_zan_title")}
-                </h2>
-                <p>
-                  <Sentences text={t("guide_zans_from_zan_body")} />
-                </p>
-              </div>
+          {#if view?.parts.includes("fromZan") || view?.parts.includes("zanVideo")}
+            <section
+              class="from-zan"
+              aria-labelledby={view.parts.includes("fromZan")
+                ? `from-zan-heading-${n}`
+                : undefined}
+            >
+              {#if view.parts.includes("fromZan")}
+                <div class="from-zan-intro">
+                  <h2 id="from-zan-heading-{n}">
+                    {t("guide_zans_from_zan_title")}
+                  </h2>
+                  <p>
+                    <Sentences text={t("guide_zans_from_zan_body")} />
+                  </p>
+                </div>
+              {/if}
               <div class="from-zan-video">
                 <SourceVideoCard
                   id={ZANS_DIAMOND_TUTORIAL.id}
@@ -244,7 +257,7 @@
                   year={ZANS_DIAMOND_TUTORIAL.year}
                 />
               </div>
-              {#if ZANS_DIAMOND_CREDIT.href}
+              {#if ZANS_DIAMOND_CREDIT.href && view.parts.includes("fromZan")}
                 <LinkChip
                   href={ZANS_DIAMOND_CREDIT.href}
                   target="_blank"
@@ -255,18 +268,6 @@
               {/if}
             </section>
           {/if}
-
-          {#if view?.parts.includes("originalText") && !view.parts.includes("original")}
-            <div class="text-screen">{@render originalText()}</div>
-          {/if}
-          {#if view?.parts.includes("propsText") && !view.parts.includes("props")}
-            <div class="text-screen">{@render propsText()}</div>
-          {/if}
-          {#each families as family, k (family.id)}
-            {#if view?.parts.includes(`family${k}Text`) && !view.parts.includes(`family${k}`)}
-              <div class="text-screen">{@render familyText(family)}</div>
-            {/if}
-          {/each}
 
           {#if view?.parts.includes("original")}
             <SequenceShowcase
@@ -382,6 +383,7 @@
 
 <style>
   .zans-guide {
+    grid-column: full;
     width: 100%;
     min-width: 0;
     color: var(--theme-text);
@@ -470,11 +472,6 @@
     color: var(--theme-text);
   }
 
-  .text-screen {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
   .prop-choice {
     display: flex;
     flex-direction: column;

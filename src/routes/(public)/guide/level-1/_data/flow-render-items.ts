@@ -3,26 +3,65 @@
  * pieces split into screens.
  *
  * `flowRenderItems` turns a page's GuideBlock[] into render items: plain
- * blocks, and sequence showcases that own the text written about them.
- * `flowScreens` cuts the items into screens, one idea and its example per
- * screen, so a topic page shows one screen at a time and the page never
- * scrolls (2026-10-24 guide fit pass, the same rule as /codex).
+ * blocks, and sequence showcases that own the text written about them. Given
+ * the window's room it also cuts them into screens, one figure with its words
+ * per screen, so a topic page shows one screen at a time, the page never
+ * scrolls (2026-10-24 guide fit pass) and, on a page with a figure, no screen
+ * is words alone (2026-11-06). `flowScreens` groups the cut for the host.
  *
  * Both are pure so the screen split is tested without a browser.
  */
 import type { GuideBlock } from "./guide-content-blocks";
 import { stripHtml, taglineInIntro } from "./flow-intro";
+import { htmlSentences } from "../../_components/sentences";
+import {
+  captionLabel,
+  packPieces,
+  type PackPiece,
+} from "../../_components/fit/pack-words";
+import type { ScreenRoom } from "../../_components/fit/guide-screen-url";
 
 export type CardBlock = Extract<GuideBlock, { kind: "pictographGroup" }>;
 
-export type FlowRenderItem =
+export type FlowRenderItem = (
   | { type: "block"; block: GuideBlock }
   | {
       type: "showcase";
       card: CardBlock;
       text: GuideBlock[];
       variant: "feature" | "compact";
-    };
+      /** Its words came from around it, and its caption still shows. */
+      keepCaption?: boolean;
+      /** The page's words have this screen; the examples come on the next. */
+      holdPool?: boolean;
+    }
+) & {
+  /** Which screen it is on, once the page is cut for a window. */
+  screen?: number;
+};
+
+// Words under the title leave this share of the room's words for the figure.
+const HERO_TAGLINE_SHARE = 0.5;
+
+/**
+ * A tagline short enough to stand under the page's title. A longer one reads
+ * as the page's first words, so the cut holds it with the first figure and
+ * the page never pans for it (2026-11-06).
+ */
+/** The tagline's sentence appears later on the page, or in a pool's example. */
+function pageRepeats(content: readonly GuideBlock[], tagline: string): boolean {
+  const tag = stripHtml(tagline);
+  return content.some((b) =>
+    b.kind === "prose"
+      ? stripHtml(b.html).includes(tag)
+      : b.kind === "pictographGroup" &&
+        (b.pool?.entries ?? []).some((e) => stripHtml(e.proseHtml).includes(tag))
+  );
+}
+
+export function taglineInHero(tagline: string, room?: ScreenRoom): boolean {
+  return !room || stripHtml(tagline).length <= room.over * HERO_TAGLINE_SHARE;
+}
 
 const isCard = (b: GuideBlock): b is CardBlock =>
   b.kind === "pictographGroup" && !!b.card;
@@ -89,27 +128,23 @@ export function flowRenderItems(
   tagline: string,
   localize: (b: GuideBlock) => GuideBlock = (b) => b,
   {
-    detachTextChars,
-    introBesideChars,
+    room,
   }: {
     /**
-     * A small window: a lone card whose text runs at least this long keeps
-     * none of it. The text stays as plain blocks in reading order (its
-     * heading and lead-in above, its notes below), so flowScreens can give
-     * the words a screen and the figure a screen.
+     * The window's room for words: cuts the page into screens. Unset, the
+     * whole page in reading order with each figure once.
      */
-    detachTextChars?: number;
-    /**
-     * A large window: opening words at least this long join the first card's
-     * own words, beside its figure, instead of stacking above it. Words stay
-     * on the screen with their picture and the figure keeps its height.
-     */
-    introBesideChars?: number;
+    room?: ScreenRoom;
   } = {}
 ): FlowRenderItem[] {
   const intro = taglineInIntro(content, tagline);
-  const dropBlock = intro === "same" ? introBlock(content, tagline) : null;
+  const inHero = taglineInHero(tagline, room);
+  const dropBlock =
+    intro === "same" && inHero ? introBlock(content, tagline) : null;
   const blocks: GuideBlock[] = [];
+  // A long tagline the page does not repeat becomes its first words.
+  if (intro === "none" && !inHero && !pageRepeats(content, tagline))
+    blocks.push({ kind: "prose", html: tagline });
   for (const b of content) {
     if (b.kind === "heading" && b.level === 1) continue;
     if (b === dropBlock) continue;
@@ -156,36 +191,10 @@ export function flowRenderItems(
       from = j;
     }
     const before = items.splice(from).map((it) => (it as BlockItem).block);
-    if (
-      introBesideChars !== undefined &&
-      items.length > 0 &&
-      items.every((it) => it.type === "block" && it.block.kind === "prose") &&
-      items.reduce(
-        (n, it) => n + stripHtml(((it as BlockItem).block as { html: string }).html).length,
-        0
-      ) >= introBesideChars
-    ) {
-      before.unshift(...items.splice(0).map((it) => (it as BlockItem).block));
-    }
     const after: GuideBlock[] = [];
     while (i < blocks.length && isFlowText(blocks[i]!) && !isLeadIn(blocks[i]!))
       after.push(blocks[i++]!);
     const text = [...before, ...after];
-    const chars = text.reduce(
-      (n, b) => n + (b.kind === "prose" ? stripHtml(b.html).length : 0),
-      0
-    );
-    if (detachTextChars !== undefined && chars >= detachTextChars) {
-      for (const block of before) items.push({ type: "block", block });
-      items.push({
-        type: "showcase",
-        card: run[0]!,
-        text: [],
-        variant: "compact",
-      });
-      for (const block of after) items.push({ type: "block", block });
-      continue;
-    }
     items.push({
       type: "showcase",
       card: run[0]!,
@@ -193,7 +202,7 @@ export function flowRenderItems(
       variant: showcaseVariant(text),
     });
   }
-  return items;
+  return room ? cutForRoom(items, room) : items;
 }
 
 function introBlock(
@@ -209,13 +218,6 @@ function introBlock(
   return null;
 }
 
-export type FlowScreen = {
-  /** Indexes into the render items, in order. */
-  items: number[];
-  /** The pill label: the screen's heading, else its figure's caption. */
-  label: string;
-};
-
 const isFigure = (it: FlowRenderItem) =>
   it.type === "showcase" ||
   it.block.kind === "pictograph" ||
@@ -228,6 +230,20 @@ const isGallery = (it: FlowRenderItem) =>
   it.type === "block" &&
   (it.block.kind === "pictograph" ||
     (it.block.kind === "pictographGroup" && it.block.layout !== "strip"));
+
+/**
+ * A bare step strip (a sequence drawn as a strip, no player of its own). A
+ * short one alone leaves most of a screen empty (Reversals' three-cell
+ * strips, 2026-11-07), so consecutive strips share a screen like galleries.
+ */
+export const isBareStrip = (it: FlowRenderItem) =>
+  it.type === "block" &&
+  it.block.kind === "pictographGroup" &&
+  it.block.layout === "strip" &&
+  !it.block.card;
+
+/** Figures that pack together on one screen while their tiles fit. */
+export const isPackable = (it: FlowRenderItem) => isGallery(it) || isBareStrip(it);
 
 const headingOf = (it: FlowRenderItem): string | null => {
   if (it.type === "block")
@@ -246,167 +262,291 @@ const captionOf = (it: FlowRenderItem): string | null => {
   return null;
 };
 
+type FigureStop = {
+  /** The figure, or a set of gallery figures that share a screen. */
+  figures: FlowRenderItem[];
+  /** Words above it (for a showcase, the start of its text column). */
+  before: GuideBlock[];
+  /** Words under it, its notes (for a showcase, the end of its text column). */
+  after: GuideBlock[];
+};
+
+const HEADING_COST = 70;
+const GLYPH_COST = 110;
+const PARAGRAPH_COST = 20;
+const SHORT_PARAGRAPH = 40;
+// A showcase's text column never drops below this, however tall its strip.
+const MIN_WORDS = 120;
+/** Stands in for a page's lead note while its first screen's words pack. */
+const LEAD_NOTE: GuideBlock = { kind: "prose", html: "" };
+
+function wordCost(b: GuideBlock): number {
+  if (b.kind === "heading") return HEADING_COST;
+  if (b.kind === "glyphImage") return GLYPH_COST;
+  if (b.kind === "printOnly") return wordsCost(b.flow);
+  if (b.kind === "prose")
+    return Math.max(stripHtml(b.html).length, SHORT_PARAGRAPH) + PARAGRAPH_COST;
+  return 0;
+}
+function wordsCost(blocks: readonly GuideBlock[]): number {
+  return blocks.reduce((n, b) => n + wordCost(b), 0);
+}
+
+// A bare strip's cells sit fused, with no gap or caption between them, so
+// three of them take about the room of two captioned gallery tiles
+// (2026-11-07: counted one each, a phone gave every Reversals strip its own
+// screen). A screen that still overflows recuts itself.
+const STRIP_CELL_COST = 2 / 3;
+/** How many screens of words (`room.over`) may come before packed strips:
+    past that, every word screen carries all of them and a phone shrinks them
+    to thumbnails. Measured on Reversals 2026-11-07: a phone fits about one
+    and a half screens of words with two strips stacked. */
+const STRIP_WORD_SCREENS = 1.5;
+const tileCount = (it: FlowRenderItem): number => {
+  if (it.type !== "block" || it.block.kind !== "pictographGroup") return 1;
+  const cells = it.block.items.length;
+  return isBareStrip(it) ? Math.ceil(cells * STRIP_CELL_COST) : cells;
+};
+
+const hasPoolWords = (card: CardBlock): boolean =>
+  (card.pool?.entries.length ?? 0) > 1;
+
+/** What a card's strip takes from the words beside it. */
+function stripCost(card: CardBlock, room: ScreenRoom): number {
+  const rows = Math.ceil(card.items.length / room.stripCols);
+  return Math.max(0, rows - 1) * room.stripRowChars;
+}
+
+/** What a card's own figure takes from the words beside it. */
+function figureCost(card: CardBlock, room: ScreenRoom): number {
+  const poolWords = hasPoolWords(card)
+    ? Math.max(...card.pool!.entries.map((e) => stripHtml(e.proseHtml).length)) +
+      120
+    : 0;
+  return stripCost(card, room) + poolWords;
+}
+
+const TAG_OPENS = /<[a-z][^>]*>/gi;
+const TAG_CLOSES = /<\/[a-z][^>]*>/gi;
+const VOID_TAG = /<(?:br|img|hr|wbr)[^>]*>/gi;
+const balanced = (html: string) =>
+  (html.replace(VOID_TAG, "").match(TAG_OPENS)?.length ?? 0) ===
+  (html.match(TAG_CLOSES)?.length ?? 0);
+
+/** A paragraph's sentences, its line breaks counting as breaks between them. */
+function proseSentences(html: string): string[] {
+  const lines = html.split(/(?:<br\s*\/?>\s*)+/i).filter((l) => l.trim());
+  return (lines.every(balanced) ? lines : [html]).flatMap(htmlSentences);
+}
+
+/** A paragraph longer than a screen breaks at its sentences. */
+function wordPieces(
+  blocks: readonly GuideBlock[],
+  budget: number
+): PackPiece<GuideBlock>[] {
+  return blocks.flatMap((b) => {
+    const cost = wordCost(b);
+    const parts =
+      b.kind === "prose" && cost > budget ? proseSentences(b.html) : [];
+    if (b.kind !== "prose" || parts.length < 2)
+      return [{ piece: b, cost, leads: b.kind !== "prose" || isLeadIn(b) }];
+    return parts.map((html, n) => {
+      const piece = { ...b, html };
+      return {
+        piece,
+        cost: wordCost(piece),
+        leads: n === parts.length - 1 && isLeadIn(b),
+      };
+    });
+  });
+}
+
 /**
- * One idea and its example per screen:
- *   - A heading starts a new screen once the current one holds a figure.
- *   - A second figure starts a new screen and takes the lead-in text above it
- *     (a heading, or prose that introduces it). Text that comments on the
- *     figure before stays with that figure.
- *   - Gallery figures with nothing between them stay together, so a set of
- *     letters reads as one set, unless `keepGalleriesTogether` is false
- *     (a laptop or phone, where a set of them would shrink past reading).
- *   - Text-only sections share a screen.
- *   - `textScreenMaxChars`: a screen of words alone ends before it passes
- *     that many characters, at a paragraph break.
- *   - `textScreenChars` (a small window): words that run at least that long
- *     before a figure, lead-in included, get a screen of their own and the
- *     figure follows on the next; notes that long after a figure get a
- *     screen after it. Neither has to pan.
+ * Hands every run of words to a figure and draws one screen per figure, more
+ * when its words need them.
+ *   - Headings, lead-ins and anything before the first figure go with the next
+ *     figure. Notes stay with the figure above them while that screen has
+ *     room; past it they go with the next figure, or with the last one when
+ *     no figure follows.
+ *   - Gallery figures and bare strips with nothing between them share a
+ *     screen while their tiles (a strip's cells) fit (`room.tiles`); a strip
+ *     also needs the words before it to stay short (`STRIP_WORD_SCREENS`).
+ *   - A page with no figure is cut by words alone.
+ */
+function cutForRoom(
+  items: readonly FlowRenderItem[],
+  room: ScreenRoom
+): FlowRenderItem[] {
+  const stops: FigureStop[] = [];
+  let pending: GuideBlock[] = [];
+  const budgetOf = (stop: FigureStop): number => {
+    const first = stop.figures[0]!;
+    return first.type === "showcase"
+      ? Math.max(room.beside - figureCost(first.card, room), MIN_WORDS)
+      : room.over;
+  };
+  const stopWords = (stop: FigureStop): number => {
+    const first = stop.figures[0]!;
+    return (
+      wordsCost(stop.before) +
+      wordsCost(stop.after) +
+      (first.type === "showcase" ? wordsCost(first.text) : 0)
+    );
+  };
+
+  for (const it of items) {
+    const stop = stops[stops.length - 1];
+    if (!isFigure(it)) {
+      const b = (it as BlockItem).block;
+      if (b.kind === "rule") continue;
+      const note = b.kind === "prose" && !isLeadIn(b);
+      if (
+        stop &&
+        pending.length === 0 &&
+        note &&
+        stopWords(stop) + wordCost(b) <= budgetOf(stop)
+      ) {
+        stop.after.push(b);
+      } else {
+        pending.push(b);
+      }
+      continue;
+    }
+    if (
+      stop &&
+      pending.length === 0 &&
+      stop.after.length === 0 &&
+      isPackable(it) &&
+      stop.figures.every(isPackable) &&
+      stop.figures.reduce((n, f) => n + tileCount(f), 0) + tileCount(it) <=
+        room.tiles &&
+      // A strip joins only while the words before it stay short enough to
+      // leave the strips room (STRIP_WORD_SCREENS).
+      (!isBareStrip(it) || wordsCost(stop.before) <= room.over * STRIP_WORD_SCREENS)
+    ) {
+      stop.figures.push(it);
+      continue;
+    }
+    stops.push({ figures: [it], before: pending, after: [] });
+    pending = [];
+  }
+
+  const out: FlowRenderItem[] = [];
+  if (stops.length === 0) {
+    packPieces(wordPieces(pending, room.alone), room.alone).forEach(
+      (part, screen) => {
+        for (const block of part) out.push({ type: "block", block, screen });
+      }
+    );
+    return out;
+  }
+  // The words after the last figure stay with it.
+  stops[stops.length - 1]!.after.push(...pending);
+
+  let screen = 0;
+  for (const stop of stops) {
+    const first = stop.figures[0]!;
+    const budget = budgetOf(stop);
+    // The first screen shares its room with the page's lead note, if any:
+    // the note goes in as a piece of words ahead of the rest, then leaves.
+    const lead = stop === stops[0] ? (room.lead ?? 0) : 0;
+    const pack = (blocks: readonly GuideBlock[], b: number): GuideBlock[][] => {
+      const pieces = wordPieces(blocks, b);
+      if (!lead) return packPieces(pieces, b);
+      const parts = packPieces(
+        [{ piece: LEAD_NOTE, cost: lead, leads: false }, ...pieces],
+        b
+      );
+      // The note may take the first screen to itself beside its figure.
+      parts[0] = parts[0]!.filter((p) => p !== LEAD_NOTE);
+      return parts;
+    };
+    if (first.type === "showcase") {
+      const words = [...stop.before, ...first.text, ...stop.after];
+      // A pool's own words change length as it cycles. When the longest of them
+      // and the page's words won't share a screen, the page's words run first
+      // with the figure, and the examples and their button follow.
+      const cost = figureCost(first.card, room);
+      const holdPool =
+        hasPoolWords(first.card) &&
+        words.length > 0 &&
+        wordsCost(words) > room.beside - cost;
+      const wordsBudget = holdPool
+        ? Math.max(room.beside - stripCost(first.card, room), MIN_WORDS)
+        : budget;
+      const parts = pack(words, wordsBudget);
+      if (holdPool) parts.push([]);
+      const keepCaption = first.text.length === 0 && !!first.card.caption;
+      (parts.length ? parts : [[]]).forEach((part, k) => {
+        out.push({
+          ...first,
+          text: part,
+          holdPool: holdPool && k < parts.length - 1,
+          // One figure at one size on every screen its words run across.
+          variant: parts.length > 1 ? "feature" : showcaseVariant(part),
+          keepCaption: keepCaption && part.length > 0,
+          screen: screen++,
+        });
+      });
+      continue;
+    }
+    // Words above and notes below: each screen keeps the order they read in.
+    const isAbove = (b: GuideBlock) =>
+      stop.before.includes(b) ||
+      (b.kind === "prose" &&
+        stop.before.some((o) => o.kind === "prose" && o.html.includes(b.html)));
+    const parts = pack([...stop.before, ...stop.after], budget);
+    for (const part of parts.length ? parts : [[]]) {
+      for (const block of part.filter(isAbove))
+        out.push({ type: "block", block, screen });
+      for (const f of stop.figures) out.push({ ...f, screen });
+      for (const block of part.filter((b) => !isAbove(b)))
+        out.push({ type: "block", block, screen });
+      screen++;
+    }
+  }
+  return out;
+}
+
+export type FlowScreen = {
+  /** Indexes into the render items, in order. */
+  items: number[];
+  /** The pill label: the screen's heading, else its figure's caption. */
+  label: string;
+};
+
+/**
+ * Groups cut items into screens. A screen's label is its heading; a screen
+ * that goes on with the figure before it keeps that screen's label; otherwise
+ * the plain part of its figure's caption, else the label before it. A screen
+ * is never "Part 4". The first screen falls back to `introLabel`.
  */
 export function flowScreens(
   items: readonly FlowRenderItem[],
-  introLabel = "Intro",
-  {
-    textScreenChars,
-    textScreenMaxChars,
-    keepGalleriesTogether = true,
-    introOwnScreen = false,
-  }: {
-    textScreenChars?: number;
-    textScreenMaxChars?: number;
-    keepGalleriesTogether?: boolean;
-    /** The page's opening words get a screen of their own when the first
-     * figure is a showcase that brings its own words (a laptop window). */
-    introOwnScreen?: boolean;
-  } = {}
+  introLabel = "Intro"
 ): FlowScreen[] {
-  const groups: number[][] = [];
-  let cur: number[] = [];
-  let hasFigure = false;
-  let lastFigure: FlowRenderItem | null = null;
-  let textSinceFigure = 0;
-
-  const flush = (keepFrom: number) => {
-    const moved = cur.splice(keepFrom);
-    if (cur.length) groups.push(cur);
-    cur = moved;
-    hasFigure = false;
-    lastFigure = null;
-    textSinceFigure = 0;
-  };
-
-  // Text after the last figure that introduces the next one: a heading, or
-  // prose that leads in. It moves with that figure.
-  const leadInStart = (): number => {
-    let keep = cur.length;
-    while (keep > 0) {
-      const prev = items[cur[keep - 1]!]!;
-      if (prev.type !== "block" || isFigure(prev)) break;
-      if (headingOf(prev) !== null || isLeadIn(prev.block)) keep--;
-      else break;
-    }
-    return keep;
-  };
-  const textChars = (from: number, to: number): number => {
-    let n = 0;
-    for (const idx of cur.slice(from, to)) {
-      const it = items[idx]!;
-      if (it.type === "block" && it.block.kind === "prose")
-        n += stripHtml(it.block.html).length;
-    }
-    return n;
-  };
-
-  // The prose run starting at `idx`, up to the next heading or figure.
-  const proseRunChars = (idx: number): number => {
-    let n = 0;
-    for (let k = idx; k < items.length; k++) {
-      const it = items[k]!;
-      if (isFigure(it) || headingOf(it) !== null) break;
-      if (it.type === "block" && it.block.kind === "prose")
-        n += stripHtml(it.block.html).length;
-    }
-    return n;
-  };
-
+  const groups = new Map<number, number[]>();
   items.forEach((it, idx) => {
-    const heading = headingOf(it);
-    if (!isFigure(it)) {
-      if (heading !== null && hasFigure) flush(cur.length);
-      // A small window: notes that follow a figure and run long get a
-      // screen of their own after it.
-      else if (
-        textScreenChars !== undefined &&
-        hasFigure &&
-        textSinceFigure === 0 &&
-        proseRunChars(idx) >= textScreenChars
-      )
-        flush(cur.length);
-      // A screen of words alone stops before it outgrows the window; the
-      // next paragraph, and a heading just above it, start the next one.
-      else if (
-        textScreenMaxChars !== undefined &&
-        !hasFigure &&
-        it.type === "block" &&
-        it.block.kind === "prose" &&
-        textChars(0, cur.length) > 0 &&
-        textChars(0, cur.length) + stripHtml(it.block.html).length >
-          textScreenMaxChars
-      ) {
-        let keep = cur.length;
-        while (keep > 0 && headingOf(items[cur[keep - 1]!]!) !== null) keep--;
-        if (textChars(0, keep) > 0) flush(keep);
-      }
-      cur.push(idx);
-      if (hasFigure) textSinceFigure++;
-      return;
-    }
-    if (hasFigure) {
-      const together =
-        keepGalleriesTogether &&
-        heading === null &&
-        textSinceFigure === 0 &&
-        lastFigure !== null &&
-        isGallery(lastFigure) &&
-        isGallery(it);
-      if (!together) flush(leadInStart());
-    }
-    if (
-      introOwnScreen &&
-      groups.length === 0 &&
-      !hasFigure &&
-      it.type === "showcase" &&
-      it.text.length > 0 &&
-      textChars(0, cur.length) > 0
-    )
-      flush(cur.length);
-    else if (!hasFigure && textScreenChars !== undefined) {
-      // A small window: words that run long get their own screen, lead-in
-      // and all, and the figure follows on the next.
-      if (textChars(0, cur.length) >= textScreenChars) flush(cur.length);
-    }
-    cur.push(idx);
-    hasFigure = true;
-    lastFigure = it;
-    textSinceFigure = 0;
+    const n = it.screen ?? 0;
+    const group = groups.get(n);
+    if (group) group.push(idx);
+    else groups.set(n, [idx]);
   });
-  if (cur.length) groups.push(cur);
-
-  return groups.map((g, n) => {
-    let label: string | null = null;
-    for (const idx of g) {
-      label = headingOf(items[idx]!);
-      if (label) break;
-    }
-    if (!label) {
-      for (const idx of g) {
-        label = captionOf(items[idx]!);
-        if (label) break;
-      }
-    }
-    return {
-      items: g,
-      label: label ?? (n === 0 ? introLabel : `Part ${n + 1}`),
-    };
+  const figureKey = (it: FlowRenderItem) =>
+    it.type === "showcase" ? it.card : isFigure(it) ? it.block : null;
+  let previous = introLabel;
+  let previousFigure: unknown = null;
+  return [...groups.values()].map((group) => {
+    const all = group.map((idx) => items[idx]!);
+    const figure = all.map(figureKey).find((k) => k !== null) ?? null;
+    const heading = all.map(headingOf).find((h) => h !== null);
+    const caption = all
+      .map((it) => captionLabel(captionOf(it)))
+      .find((c) => c !== null);
+    const goesOn = figure !== null && figure === previousFigure;
+    const label = heading ?? (goesOn ? previous : caption) ?? previous;
+    previous = label;
+    previousFigure = figure;
+    return { items: group, label };
   });
 }

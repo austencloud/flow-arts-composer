@@ -70,6 +70,7 @@
         rightPropType,
         pathShape: ctrl.pathShape,
         sequenceWord: sequence.word ?? "",
+        colors: { left: ctrl.customLeft, right: ctrl.customRight },
       });
       if (name)
         toast.success(

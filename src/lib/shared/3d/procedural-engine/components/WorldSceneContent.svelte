@@ -64,6 +64,13 @@
   import { SeededNoise } from "../generation/seed-generator";
   import { type ImportedTerrainData } from "../generation/real-terrain-zone";
   import { VegetationManager } from "../rendering/instanced-vegetation";
+  import {
+    applyModelCasterCap,
+    applySunShadowBudget,
+    getWorldShadowBudget,
+  } from "../rendering/world-shadow-budget";
+  import { tryGetAdaptiveQualityContext } from "../../context/adaptive-quality-context";
+  import { getQualityTierDetector } from "../../effects/quality/get-quality-tier-detector";
   import { AtmosphereManager } from "../rendering/atmosphere";
   import { WaterManager } from "../rendering/water";
   import { DrainageWaterManager } from "../rendering/drainage-water";
@@ -337,6 +344,24 @@
   // Sun light reference for shadow updates
   let sunLight: DirectionalLight | null = null;
 
+  // Shadow budget per quality tier: map size, how many placed models cast, and
+  // whether vegetation joins the shadow pass. Follows the adaptive-quality
+  // tier when a parent canvas provides one; otherwise the hardware tier.
+  const adaptiveQuality = tryGetAdaptiveQualityContext();
+  const detectedTier = adaptiveQuality
+    ? null
+    : getQualityTierDetector().detectFromBrowserCapabilities();
+  const shadowBudget = $derived(
+    getWorldShadowBudget(adaptiveQuality?.tier ?? detectedTier!)
+  );
+
+  $effect(() => {
+    const budget = shadowBudget;
+    if (sunLight) applySunShadowBudget(sunLight, budget, !isArchiveRealm);
+    applyModelCasterCap(campgroundObjects, budget.maxModelCasters);
+    vegetationManager?.setCastShadow(budget.vegetationCasts);
+  });
+
   // Drainage-based water manager (per-chunk water that follows terrain topology)
   let drainageWaterManager: DrainageWaterManager | null = null;
 
@@ -407,6 +432,7 @@
         useGLTFModels: true,
       });
       await vegetationManager.initWithModels();
+      vegetationManager.setCastShadow(shadowBudget.vegetationCasts);
 
       // Initialize atmosphere (sky, fog)
       atmosphereManager = new AtmosphereManager(rawScene);
@@ -738,11 +764,8 @@
     // Shadow frustum follows player for infinite terrain coverage
     const sun = new DirectionalLight(0xffffff, isArchiveRealm ? 0 : 1.0);
     sun.position.set(100, 200, 100);
-    sun.castShadow = !isArchiveRealm;
-
-    // Shadow map settings - larger map for quality
-    sun.shadow.mapSize.width = 1024;
-    sun.shadow.mapSize.height = 1024;
+    // Casting and map size come from the tier's shadow budget.
+    applySunShadowBudget(sun, shadowBudget, !isArchiveRealm);
 
     // Shadow camera frustum - covers area around player
     // Will be updated each frame to follow player position
@@ -781,17 +804,10 @@
       model.position.set(x, y, z);
       model.rotation.y = rotationY;
       model.scale.setScalar(scale);
-      model.castShadow = true;
-      model.receiveShadow = true;
-      // Enable shadows on all children
-      model.traverse((child) => {
-        if (child instanceof Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
       rawScene.add(model);
       campgroundObjects.push(model);
+      // Only the first models up to the tier's cap cast; all of them receive.
+      applyModelCasterCap(campgroundObjects, shadowBudget.maxModelCasters);
       return model;
     } catch (error) {
       console.warn(`[WorldSceneContent] Failed to load model ${path}:`, error);

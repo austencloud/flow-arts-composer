@@ -37,11 +37,14 @@ const RESIZE_SETTLE_MS = 40;
  */
 const SUPPRESSING_INERT_SELECTOR = "[inert]:not([data-inert-keeps-layout])";
 
-/**
- * Renderer interface for resize operations
- */
 export interface ResizableRenderer {
   resize: (size: number) => Promise<void>;
+  /**
+   * Hears every new frame once, before the main canvas is rebuilt at it. The
+   * render loop, trails and effect overlays size themselves from this, so the
+   * repaint that follows a resize already draws at the new size.
+   */
+  frameChanged?: (frame: CanvasFrame) => void;
 }
 
 /**
@@ -97,7 +100,7 @@ export class CanvasResizer {
     if (width > 0 && height > 0) {
       const frame = measureFrame(width, height);
       this.state.currentSize = frame.size;
-      this.state.frame = frame;
+      this.applyFrame(frame);
     }
   }
 
@@ -150,7 +153,7 @@ export class CanvasResizer {
   async resize(currentSize: number): Promise<number> {
     this.cancelSettle();
     this.state.currentSize = currentSize;
-    this.state.frame = squareFrame(currentSize);
+    this.applyFrame(squareFrame(currentSize));
     return this.performResize();
   }
 
@@ -330,6 +333,12 @@ export class CanvasResizer {
     }
   }
 
+  private applyFrame(frame: CanvasFrame): void {
+    if (sameFrame(frame, this.state.frame)) return;
+    this.state.frame = frame;
+    this.renderer?.frameChanged?.(frame);
+  }
+
   private async performResize(): Promise<number> {
     if (!this.container || !this.renderer) return this.state.currentSize;
 
@@ -350,7 +359,7 @@ export class CanvasResizer {
       this.state.isResizing = true;
       const squareChanged = newSize !== this.state.currentSize;
       this.state.currentSize = newSize;
-      this.state.frame = frame;
+      this.applyFrame(frame);
       if (squareChanged || !this.hasAppliedInitialFrame)
         await this.renderer.resize(newSize);
       this.hasAppliedInitialFrame = true;

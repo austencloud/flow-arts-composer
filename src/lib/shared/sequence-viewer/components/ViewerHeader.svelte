@@ -213,7 +213,10 @@
   );
 
   let shareMenuOpen = $state(false);
-  let viewingControl = $state<{ show: () => void }>();
+  const propViewing = $derived({
+    sequence,
+    collectionPropType: ctx.collectionPropType,
+  });
   const showViewingProps = $derived(
     !hidden &&
       !demoScanProps &&
@@ -267,7 +270,7 @@
           variant="header"
           dropDown
           align="left"
-          onPropsOpen={() => viewingControl?.show()}
+          {propViewing}
           propsSummary={viewingLabel}
           onOpenChange={onOverflowOpenChange}
         />
@@ -461,9 +464,7 @@
       {#if compactChrome}
         <ViewerOverflowMenu
           variant="header"
-          onPropsOpen={showViewingProps
-            ? () => viewingControl?.show()
-            : undefined}
+          propViewing={showViewingProps ? propViewing : undefined}
           propsSummary={viewingLabel}
           dropDown
           align="left"
@@ -611,12 +612,11 @@
       </div>
     {/if}
 
-    {#if showViewingProps}
+    {#if showViewingProps && !compactChrome}
       <PropViewingControl
-        bind:this={viewingControl}
         {sequence}
         collectionPropType={ctx.collectionPropType}
-        presentation={compactChrome ? "none" : "toolbar"}
+        presentation="toolbar"
       />
     {/if}
 

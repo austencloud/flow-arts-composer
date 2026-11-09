@@ -37,8 +37,10 @@ export function getArtifactPublicationRequestPath(requestId: string): string {
  * Version 3 changed what a tunnel poster DEPICTS: the still is now the tunnel's
  * complete traced figure rather than a frame of one, and the same picture every
  * time (see `tunnel-collection/domain/tunnel-poster-look.ts`).
+ * Version 4 brought mandala posters down to the normal line weight, from four
+ * times that.
  */
-export const ARTIFACT_POSTER_RENDER_VERSION = 3;
+export const ARTIFACT_POSTER_RENDER_VERSION = 4;
 
 /**
  * Storage object for the world-readable discovery poster (webp, ≤200KB).

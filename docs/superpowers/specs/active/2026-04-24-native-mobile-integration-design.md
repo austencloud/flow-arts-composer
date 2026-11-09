@@ -6,7 +6,7 @@ remaining: "Finish iOS project/signing/link configuration, durable native SQLite
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 work_state: in-progress
 ---
 # TKA Composer — Native Mobile Integration Design Spec
@@ -20,7 +20,7 @@ work_state: in-progress
 
 
 **Date:** 2026-04-24
-**Status:** Approved
+**Status:** Approved; partly implemented (Android, deep links, Capgo OTA, native Google sign-in, incoming share). Still absent as of 2026-11-07: ios/, a real Apple team ID in apple-app-site-association (TEAMID placeholder remains), SQLite cache, outgoing share.
 **Supersedes:** `2026-04-13-capacitor-integration-design.md` (v1 wrapper — implemented, foundation in place)
 **Goal:** Ship TKA Composer as a native iOS and Android app with offline-first storage, OTA live updates, per-card tracking, native share, and premium 3D recording — timed to land in stores before the first Choreo Card print run.
 

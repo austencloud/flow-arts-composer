@@ -32,7 +32,6 @@
   import { siteCopy } from "../../site-copy";
   import {
     isPlainPress,
-    TILE_WINDOW_NAME,
     tileFlight,
   } from "#lib/shared/transitions/tile-flight.svelte.js";
   import {
@@ -86,10 +85,9 @@
   // links are ordinary. Tiles past `isAction` take over in place and never
   // navigate, so they have nothing to fly to.
   const canFly = $derived(variant === "home" && !isAction);
-  const flying = $derived(canFly && tileFlight.isFlying(tile.id));
 
   function armFlight(event: MouseEvent, href: string): void {
-    if (canFly && isPlainPress(event)) tileFlight.arm(tile.id, href);
+    if (canFly && isPlainPress(event)) tileFlight.arm(href);
   }
 
   function handleActivate(event: MouseEvent) {
@@ -148,9 +146,7 @@
 <li
   class="tile variant-{variant} s-{tile.span} t-{tile.id}"
   class:visible
-  class:flying
   style="--c: {tile.color}; --i: {index}"
-  style:view-transition-name={flying ? TILE_WINDOW_NAME : undefined}
   data-tile-id={tile.id}
 >
   <div
@@ -366,32 +362,6 @@
 </li>
 
 <style>
-  /* Pressed and about to fly: settle everything that moves, so the browser
-     captures the tile still. It keeps its glass while the navigation loads. */
-  .tile.flying {
-    animation: none;
-  }
-  .tile.flying .card {
-    transform: none;
-    translate: none;
-    will-change: auto;
-  }
-  /* While the browser captures a flight the tile hands its glass to the panel,
-     which alone draws it on the first and last frames. No transition, or the
-     capture would catch the border and shadow on their way out. */
-  :global(html.site-flight) .tile.flying {
-    box-shadow: none;
-    transition: none;
-  }
-  :global(html.site-flight) .tile.flying .card {
-    background: none;
-    border-color: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    transition: none;
-  }
-
   /* ---- grid placement (the <li> is a direct child of the parent's CSS
 	   grid; span rules apply here even though the grid itself is declared in
 	   LaunchpadGrid.svelte, because grid-column/grid-row are properties of

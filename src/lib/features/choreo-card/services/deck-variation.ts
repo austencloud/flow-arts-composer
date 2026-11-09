@@ -29,7 +29,8 @@ import {
   SIMPLE_PATTERNS,
   getCompatiblePatterns,
 } from "#lib/shared/foundation/domain/sequence-patterns/reversal-patterns.js";
-import { resolvePattern, type ResolvedReversalPattern } from "../domain/reversal-transform";
+import { resolveMatrix, type ResolvedReversalPattern } from "../domain/reversal-transform";
+import { matrixFromSymbols } from "#lib/shared/foundation/domain/sequence-patterns/reversal-matrix.js";
 import { transformSequence } from "./reversal-transform-apply";
 import type { CsvEdge } from "./pictograph-letter-lookup";
 import { applyPattern } from "#lib/shared/create/services/turn-pattern-apply.js";
@@ -167,18 +168,6 @@ function splitTurnBeats(pattern: string): string[] {
   return beats;
 }
 
-/** Convert a raw reversal pattern string ("RRRR") into per-beat flags, tiled to N. */
-function tileFlags(sequence: string, stepCount: number): { left: boolean[]; right: boolean[] } {
-  const left: boolean[] = [];
-  const right: boolean[] = [];
-  for (let i = 0; i < stepCount; i++) {
-    const sym = sequence[i % sequence.length];
-    left.push(sym === "P" || sym === "B");
-    right.push(sym === "P" || sym === "R");
-  }
-  return { left, right };
-}
-
 /** Pick a random compatible + clean-loop book pattern from the enabled set. */
 function pickReversal(
   stepCount: number,
@@ -187,10 +176,7 @@ function pickReversal(
 ): ResolvedReversalPattern | null {
   const candidates = getCompatiblePatterns(stepCount)
     .filter((p) => p.family === "simple" && p.id !== "continuous" && enabled.includes(p.id))
-    .map((def) => {
-      const { left, right } = tileFlags(def.sequence, stepCount);
-      return resolvePattern(left, right);
-    })
+    .map((def) => resolveMatrix(matrixFromSymbols(def.sequence, stepCount)))
     .filter((r) => r.isCleanLoop);
   if (candidates.length === 0) return null;
   return candidates[Math.floor(rng() * candidates.length)] ?? null;

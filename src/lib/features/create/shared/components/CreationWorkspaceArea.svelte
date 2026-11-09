@@ -12,6 +12,12 @@
    * Domain: Create module - Workspace presentation
    */
 
+  import {
+    CONTROL_LANDING_MS,
+    controlArrive,
+    controlLeave,
+    type ControlPresenceParams,
+  } from "#lib/shared/transitions/control-presence.js";
   import { growFade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { IToolPanelMethods } from "../types/create-module-types";
@@ -172,6 +178,11 @@
     return state;
   });
 
+  /** Stop is the primary here, so the wave climbs the stack away from it. */
+  function theaterPresenceAt(ring: number): ControlPresenceParams {
+    return { edge: "right", ring, lead: () => CONTROL_LANDING_MS };
+  }
+
   $effect(() => {
     const audition = optionAudition;
     if (
@@ -212,21 +223,36 @@
      preview to the full viewer, Share shares the sequence being edited, and
      Play's stopping state ends the preview. -->
 {#snippet theaterActions()}
-  <ViewSequenceButton
-    purpose="viewer"
-    onclick={() => panelState.handoffWorkspacePlaybackToViewer()}
-  />
-  {#if CreateModuleState.canShowActionButtons()}
-    <ShareButton
-      sequence={activeSequenceState.currentSequence}
-      useMobileSheet={useMobileShareSheet}
+  <div
+    in:controlArrive|global={theaterPresenceAt(2)}
+    out:controlLeave|global={theaterPresenceAt(2)}
+  >
+    <ViewSequenceButton
+      purpose="viewer"
+      onclick={() => panelState.handoffWorkspacePlaybackToViewer()}
     />
+  </div>
+  {#if CreateModuleState.canShowActionButtons()}
+    <div
+      in:controlArrive|global={theaterPresenceAt(1)}
+      out:controlLeave|global={theaterPresenceAt(1)}
+    >
+      <ShareButton
+        sequence={activeSequenceState.currentSequence}
+        useMobileSheet={useMobileShareSheet}
+      />
+    </div>
   {/if}
-  <ViewSequenceButton
-    purpose="play"
-    isStopping
-    onclick={() => panelState.stopWorkspacePlayback()}
-  />
+  <div
+    in:controlArrive|global={theaterPresenceAt(0)}
+    out:controlLeave|global={theaterPresenceAt(0)}
+  >
+    <ViewSequenceButton
+      purpose="play"
+      isStopping
+      onclick={() => panelState.stopWorkspacePlayback()}
+    />
+  </div>
 {/snippet}
 
 {#snippet animation()}

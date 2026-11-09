@@ -8,36 +8,12 @@ import type { FlowerStyle } from "@tka/shape-domain";
 /** Where a flower's petals point: up/down/left/right, or the corners. */
 export type PetalAnchor = "cardinal" | "diagonal";
 
-/** Where a flower's petals sit, as a drawing can mark them. */
-export interface FlowerPetalMarks {
-  /** One per petal, in degrees from -180 to 180, sorted. */
-  angles: number[];
-  /** One per petal, same order, in the path's own coordinates. */
-  points: MandalaPoint[];
-  /** How far the flower reaches from its centre. */
-  reach: number;
-}
-
 /**
  * Close to a tip or a waist the radius barely changes while the angle keeps
  * moving, so a loose band would pull in points far off the petal's direction.
  */
 const RADIUS_TOLERANCE = 0.0025;
 const ANGLE_TOLERANCE_DEGREES = 10;
-
-/**
- * Inspin petals are small loops near the middle. Dots that close to the centre
- * would crowd together, so anything nearer than this share of the reach is
- * marked on a ring instead.
- */
-const REAL_POINT_MIN_REACH = 0.35;
-const RING_REACH = 0.5;
-
-/**
- * How closely the read points must agree on where the petals sit, from 0 (they
- * are spread evenly around the circle) to 1 (they fall exactly on the petals).
- */
-const MIN_PETAL_AGREEMENT = 0.25;
 
 /** Distance from the nearest multiple of 90° after turning by `offset`. */
 function distanceFromAxis(degrees: number, offset: number): number {
@@ -103,50 +79,13 @@ export function flowerPetalAnchor(
 }
 
 /**
- * One mark per petal, read at the same points `flowerPetalAnchor` reads. A mark
- * sits on the real petal point when that reaches far enough out, and otherwise
- * on a ring at half the reach, along the same direction.
- *
- * A flower's petals are evenly spaced, so the points only have to settle where
- * the first one goes. That also absorbs an inspin path's inner loops, which
- * pass so close to the centre that one petal's nearest points fan out over
- * 30° and overlap the next petal's: `pro-2.75` has 11 petals and 19 separate
- * angles. Multiplying each angle by the petal count lands every petal's points
- * in one place on the circle, and their mean is the first petal's direction.
+ * Where the petals point once the whole stage has turned by this many eighths
+ * of a circle. An odd count swaps the corners for the sides.
  */
-export function flowerPetalMarks(
-  paths: readonly SVGPathData[],
-  style: FlowerStyle,
-  petalCount: number
-): FlowerPetalMarks | null {
-  if (petalCount < 1) return null;
-  const petals = readPetalPoints(paths, style);
-  if (!petals) return null;
-  const { points, radius, reach } = petals;
-
-  const wrapped = points.map(
-    (point) => Math.atan2(point.y, point.x) * petalCount
-  );
-  const sumX = wrapped.reduce((sum, angle) => sum + Math.cos(angle), 0);
-  const sumY = wrapped.reduce((sum, angle) => sum + Math.sin(angle), 0);
-  if (Math.hypot(sumX, sumY) / points.length < MIN_PETAL_AGREEMENT) return null;
-  const first = Math.atan2(sumY, sumX) / petalCount;
-
-  const markRadius =
-    radius >= reach * REAL_POINT_MIN_REACH ? radius : reach * RING_REACH;
-  const directions = Array.from({ length: petalCount }, (_, index) =>
-    Math.atan2(
-      Math.sin(first + (index * 2 * Math.PI) / petalCount),
-      Math.cos(first + (index * 2 * Math.PI) / petalCount)
-    )
-  ).sort((a, b) => a - b);
-
-  return {
-    angles: directions.map((direction) => (direction * 180) / Math.PI),
-    points: directions.map((direction) => ({
-      x: markRadius * Math.cos(direction),
-      y: markRadius * Math.sin(direction),
-    })),
-    reach,
-  };
+export function turnedPetalAnchor(
+  anchor: PetalAnchor | null,
+  eighthTurns: number
+): PetalAnchor | null {
+  if (!anchor || eighthTurns % 2 === 0) return anchor;
+  return anchor === "diagonal" ? "cardinal" : "diagonal";
 }

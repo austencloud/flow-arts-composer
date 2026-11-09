@@ -14,6 +14,7 @@
 export function createMethodEntryState() {
   let method = $state<string | null>(null);
   let panelReady = $state(false);
+  let piecesReady = $state(false);
   let picturesReady = $state(false);
   let arriving = $state(false);
 
@@ -24,6 +25,10 @@ export function createMethodEntryState() {
     get panelReady() {
       return panelReady;
     },
+    /** The workspace's pieces are laid out, pictures drawn or not. */
+    get piecesReady() {
+      return piecesReady;
+    },
     get picturesReady() {
       return picturesReady;
     },
@@ -33,6 +38,7 @@ export function createMethodEntryState() {
     begin(next: string) {
       method = next;
       panelReady = false;
+      piecesReady = false;
       picturesReady = false;
       arriving = true;
     },
@@ -43,8 +49,14 @@ export function createMethodEntryState() {
     markPanelReady(of: string) {
       if (of === method) panelReady = true;
     },
+    markPiecesReady(of: string) {
+      if (of === method && panelReady) piecesReady = true;
+    },
     markPicturesReady(of: string) {
-      if (of === method && panelReady) picturesReady = true;
+      if (of === method && panelReady) {
+        piecesReady = true;
+        picturesReady = true;
+      }
     },
   };
 }

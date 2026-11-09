@@ -266,6 +266,23 @@
     })();
   }
   let readyCharactersByPerformer = $state<Record<string, string>>({});
+  // Props and effects wait for the character they belong to. The rig mounts
+  // them within two frames but the character arrives seconds later, so
+  // without this a first visit shows staffs and trails floating over an empty
+  // grid. A character that fails to load still shows its props, so the
+  // choreography is never hidden. Keyed by the character id, so a swap hides
+  // them again until the new character is in.
+  let choreographyShownByPerformer = $state<Record<string, string>>({});
+  function showPerformerChoreography(
+    performerId: string,
+    characterId: string
+  ): void {
+    if (choreographyShownByPerformer[performerId] === characterId) return;
+    choreographyShownByPerformer = {
+      ...choreographyShownByPerformer,
+      [performerId]: characterId,
+    };
+  }
   const motionCache = getComposerMotionCache();
   const memoizedCaptureRequest = createComposerCaptureRequestMemo();
   const sceneEffectsCoordinatorModule = enableEffects
@@ -945,6 +962,8 @@
       {@const upperBodyStance = contact.stance}
       {@const rigPlaying = renderEntry.presencePhase !== "exiting" &&
         isPlaying && i < performerCount}
+      {@const choreographyShown =
+        choreographyShownByPerformer[performer.id] === performer.characterId}
       <PerformerVisualPickTarget
         performerIndex={i}
         register={performerInteraction?.registerVisualPickTarget}
@@ -989,8 +1008,9 @@
               propScale={performer.gridScale}
               {propBuild}
               isPlaying={rigPlaying}
-              enableLocomotion={enablePerformerLocomotion}
-              enableFootPlanting={enablePerformerLocomotion}
+              enableLocomotion={enablePerformerLocomotion && performer.travels}
+              enableFootPlanting={enablePerformerLocomotion &&
+                performer.travels}
               weldGrip={weldPerformerGrip}
               isMoving={performer.isMoving}
               moveSpeed={performer.moveSpeed}
@@ -1020,7 +1040,13 @@
               onAvatarSwapped={(characterId) => {
                 onCharacterSwapped(characterId);
                 markPerformerCharacterReady(performer.id, characterId);
+                showPerformerChoreography(performer.id, characterId);
               }}
+              onAvatarMotionReady={(characterId, error) => {
+                if (error) showPerformerChoreography(performer.id, characterId);
+              }}
+              showProps={choreographyShown}
+              showEffects={choreographyShown}
               avatarOpacity={characterOpacity}
             >
               {#snippet gridSlot()}

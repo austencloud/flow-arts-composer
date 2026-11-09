@@ -1638,6 +1638,21 @@
       height: clamp(var(--making-floor), var(--making-fill), 62rem);
     }
 
+    /* From a 750px picker (CONSTRUCT_PHONE_MAX_WIDTH, about 800px of frame) the
+       options are always two rows of eight, sized by the width alone, so more
+       height only opens empty space around them. The frame stops at what that
+       stack uses: 33rem of word row, grid band, action row and picker chrome,
+       plus the two rows, which are a quarter of the width. */
+    @container (min-width: 800px) {
+      .construct-frame {
+        height: clamp(
+          var(--making-floor),
+          min(var(--making-fill), 33rem + 25cqw),
+          62rem
+        );
+      }
+    }
+
     /* --making-fill counts the heading as one line. "Construct a sequence"
        runs about 9.6 times its font size, so in a stop under about 24rem (a
        phone, the Fold's cover screen) it wraps to a second line, which the

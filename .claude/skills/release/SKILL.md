@@ -7,6 +7,12 @@ description: Use when packaging and publishing a new version with changelog and 
 Build release notes from verified, reachable behavior, then publish the version,
 tag, and GitHub release. Never treat commit subjects as final copy.
 
+## Is it time to release?
+
+`npm run release:debt` lists shipped commits since the last release tag that
+no release note covers, then ends with a plain verdict. It is a report only: it
+never blocks a push and is not part of the `push-public.mjs` gates.
+
 ## 1. Gather Evidence
 
 Always gather feedback, commits, the existing release history, and the current

@@ -91,8 +91,9 @@ Controls moved below the grid for better UX
     /** The active Construct guide owns this instruction band. Keep the wrapper
      *  mounted so its height can collapse on the same clock as the guide. */
     suppressHeading?: boolean;
-    /** The Construct tab's picker hands the chosen card to the workspace start
-     *  cell (start-placement-morph.ts). Embeds have no workspace to land in. */
+    /** The picker hands the chosen card to the workspace start cell
+     *  (start-placement-morph.ts). The Construct tab and the /composer demo
+     *  set this; an embed with no workspace to land in leaves it off. */
     morphIntoWorkspace?: boolean;
   }>();
 

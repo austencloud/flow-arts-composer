@@ -31,6 +31,10 @@ import {
   parseTriangleRenderKey,
   triangleAppearanceArtwork,
 } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import {
+  buugengAppearanceArtwork,
+  parseBuugengRenderKey,
+} from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 
 /**
  * SVG Generator for creating prop staff images and grid
@@ -263,6 +267,16 @@ export function resolvePropSvgPath(
   if (triangleRenderKey) {
     return triangleAppearanceArtwork(triangleRenderKey.grip)!;
   }
+  // A buugeng style is fitted to the plain pictograph frame, so it swaps in
+  // without moving the hand point, reach or chirality mirror.
+  const buugengRenderKey = parseBuugengRenderKey(propTypeLower);
+  if (buugengRenderKey) {
+    return buugengAppearanceArtwork(
+      buugengRenderKey.propType,
+      buugengRenderKey.style,
+      "pictograph"
+    )!;
+  }
   const family = isAnimatedOnlyProp(propTypeLower) ? "animated" : "pictograph";
   return `/images/props/${family}/${propArtworkStem(propTypeLower, side)}.svg`;
 }
@@ -311,6 +325,7 @@ export async function generatePropSvg(
   const semanticPropType =
     fanRenderKey?.propType ??
     parseTriangleRenderKey(propTypeLower)?.propType ??
+    parseBuugengRenderKey(propTypeLower)?.propType ??
     propTypeLower;
   // A parsed key is a material build by construction: FanRenderKey types
   // `build` as Exclude<FanBuild, "pictograph">, and resolveFanRenderKey returns

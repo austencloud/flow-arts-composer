@@ -81,6 +81,12 @@
     decideCreateEntrySource,
   } from "../services/create-method-entry-gate";
   import {
+    createEntryChoreography,
+    SOURCE_HOLD_CAP_MS,
+    type EntryFlightPlayer,
+  } from "../services/create-entry-choreography";
+  import {
+    isEntryLayerLaidOut,
     isEntryLayerSettled,
     startCreateEntryTrace,
     type CreateEntryTrace,
@@ -89,6 +95,7 @@
     loadWorkspaceLayout as importWorkspaceLayout,
     warmCreateMethod,
     warmInIdleSequence,
+    warmWorkspaceArea,
     warmWorkspaceLayout,
   } from "./create-method-loaders";
   import { setCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
@@ -100,6 +107,7 @@
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import CreateFrontDoor from "./CreateFrontDoor.svelte";
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import CreateEntryFlight from "./CreateEntryFlight.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { setCreateModuleContext } from "../context/create-module-context";
   import {
@@ -278,6 +286,7 @@
           loadWorkspaceLayout();
           return workspaceLayoutLoad ?? warmWorkspaceLayout();
         },
+        warmWorkspaceArea,
         ...[...(lastUsed ? [lastUsed] : []), ...openable].map(
           (id) => () => warmCreateMethod(id)
         ),
@@ -290,7 +299,20 @@
   const methodEntry = createMethodEntryState();
   let entryTrace = $state.raw<CreateEntryTrace | null>(null);
   let entryCapReached = $state(false);
+  /** How long this entry may hold the board (`holdsLong` raises it). */
+  let entryCapMs = $state(CREATE_ENTRY_HOLD_CAP_MS);
   let entryLayer = $state<HTMLElement | null>(null);
+  let entryFlight = $state<EntryFlightPlayer | null>(null);
+  let boardDeparting = $state(false);
+  // Tapping a method makes it the last used one. Its badge stays where it was
+  // until the board is out of sight, or it pops onto the card just tapped.
+  let lastUsedAtTap = $state<string | null>(null);
+  // Outlives entryTrace, which ends with the crossfade: the arrival runs on.
+  let beatTrace: CreateEntryTrace | null = null;
+  const entryChoreography = createEntryChoreography((beat) => {
+    beatTrace?.beat(beat);
+    if (beat === "arrived") boardDeparting = false;
+  });
 
   const entryDecision = $derived.by(() => {
     void entryCapReached;
@@ -299,9 +321,12 @@
       doorOpen: navigationState.isCreateFrontDoorOpen,
       entering: trace !== null,
       panelReady: methodEntry.panelReady,
+      piecesReady: methodEntry.piecesReady,
       picturesReady: methodEntry.picturesReady,
+      // A card splitting into the pieces goes as soon as they exist.
+      openOnPieces: boardDeparting,
       elapsedMs: trace ? performance.now() - trace.tapAt : 0,
-      capMs: CREATE_ENTRY_HOLD_CAP_MS,
+      capMs: entryCapMs,
     });
   });
   let enteredSource = $state<"door" | "workspace">("door");
@@ -313,17 +338,21 @@
     entryTrace?.cancel();
     methodEntry.begin(methodId);
     entryCapReached = false;
+    entryCapMs = CREATE_ENTRY_HOLD_CAP_MS;
+    lastUsedAtTap = lastUsedCreateMode;
     entryTrace = startCreateEntryTrace(methodId, () => entryLayer);
+    beatTrace = entryTrace;
   }
 
   // Timed from the tap, not from when this effect runs: mounting the workspace
   // can hold the thread for a few hundred milliseconds before effects flush.
   $effect(() => {
     const trace = entryTrace;
+    const capMs = entryCapMs;
     if (!trace) return;
     const handle = setTimeout(
       () => (entryCapReached = true),
-      Math.max(0, CREATE_ENTRY_HOLD_CAP_MS - (performance.now() - trace.tapAt))
+      Math.max(0, capMs - (performance.now() - trace.tapAt))
     );
     return () => clearTimeout(handle);
   });
@@ -333,18 +362,28 @@
     if (!trace) return;
     if (WorkspaceLayout && workspaceWanted) trace.stage("layout-ready");
     if (methodEntry.panelReady) trace.stage("panel-ready");
+    if (methodEntry.piecesReady) trace.stage("pieces-ready");
     if (methodEntry.picturesReady) trace.stage("pictures-ready");
   });
 
-  // Once the panel is mounted, wait for the hidden layer to show the finished
-  // method for two frames in a row: the frame that found it ready still has to
-  // paint it.
+  // Once the panel is mounted, watch the hidden layer. The pieces are ready
+  // the first frame it is laid out with them on the stage: they fly from the
+  // card, so nothing has to have painted. The pictures are ready once the
+  // finished method shows for two frames in a row: the frame that found it
+  // ready still has to paint it.
   $effect(() => {
     const trace = entryTrace;
     const layer = entryLayer;
     if (!trace || !layer || !methodEntry.panelReady) return;
     let settledFrames = 0;
     let frame = requestAnimationFrame(function check() {
+      if (
+        !methodEntry.piecesReady &&
+        isEntryLayerLaidOut(layer, trace.method) &&
+        entryChoreography.piecesShown(layer)
+      ) {
+        methodEntry.markPiecesReady(trace.method);
+      }
       settledFrames = isEntryLayerSettled(layer, trace.method)
         ? settledFrames + 1
         : 0;
@@ -362,6 +401,11 @@
     const trace = untrack(() => entryTrace);
     if (decision.source === "workspace" && enteredSource === "door") {
       trace?.swap(decision.cappedOut);
+      untrack(() => {
+        if (entryLayer && entryFlight) {
+          entryChoreography.land(entryLayer, entryFlight);
+        }
+      });
     }
     enteredSource = decision.source;
   });
@@ -373,15 +417,21 @@
         entryTrace?.cancel();
         entryTrace = null;
         methodEntry.finish();
+        entryChoreography.abort();
+        boardDeparting = false;
       });
     }
   });
+
+  $effect(() => () => entryChoreography.dispose());
 
   function handleWorkspaceSettled(source: "first" | "second"): void {
     if (source !== "second" || !entryTrace) return;
     entryTrace.settled();
     entryTrace = null;
     methodEntry.finish();
+    entryChoreography.settled();
+    if (!entryChoreography.active) boardDeparting = false;
   }
 
   // A visit that boots straight into a method keeps the boot screen up until
@@ -765,6 +815,8 @@
           capture: (mode) => undoManager.captureDraftHistory(mode),
           restore: (mode, sessionId, history) =>
             undoManager.restoreDraftHistory(mode, sessionId, history),
+          move: (mode, sessionId) =>
+            undoManager.moveDraftHistory(mode, sessionId),
         });
 
         const result = await bootProfiler.measureAsync(
@@ -1048,9 +1100,32 @@
     error = null;
   }
 
-  function handleCreateMethodSelected(methodId: string): void {
+  function handleCreateMethodSelected(
+    methodId: string,
+    card: HTMLElement
+  ): void {
     beginMethodEntry(methodId);
-    handleSectionChange(methodId);
+    // The clearing has to reach the compositor before the workspace's mount
+    // takes the thread, or it would stand still until the mount is done; the
+    // choreography says when it has.
+    const departing = entryChoreography.depart(
+      methodId,
+      card,
+      entryFlight,
+      () => {
+        if (entryChoreography.method === methodId) {
+          handleSectionChange(methodId);
+        }
+      }
+    );
+    if (!departing) {
+      handleSectionChange(methodId);
+      return;
+    }
+    boardDeparting = true;
+    // A button riding in keeps moving while it waits, so the board can wait
+    // out a cold workspace instead of fading onto its loading screen.
+    if (entryChoreography.holdsLong) entryCapMs = SOURCE_HOLD_CAP_MS;
   }
 
   function handleOpenSequenceViewer() {
@@ -1301,8 +1376,9 @@
     methods={releasedCreateMethods}
     active={navigationState.isCreateFrontDoorOpen}
     source={navigationState.createFrontDoorSource}
-    lastUsedMode={lastUsedCreateMode}
+    lastUsedMode={entryTrace ? lastUsedAtTap : lastUsedCreateMode}
     enteringMethodId={entryTrace?.method ?? null}
+    departing={boardDeparting}
     onWarm={warmCreateMethod}
     onSelect={handleCreateMethodSelected}
   />
@@ -1443,6 +1519,7 @@
     duration={DURATION.emphasis}
     onsettled={handleWorkspaceSettled}
   />
+  <CreateEntryFlight bind:this={entryFlight} />
 </div>
 
 {#if draftRecovery}
@@ -1460,6 +1537,7 @@
   }
 
   .create-module-stage {
+    position: relative;
     overflow: hidden;
   }
 

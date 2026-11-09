@@ -11,19 +11,19 @@
  * Owned methods (moved verbatim from engine):
  *   - update(props)              — per-prop orchestration called every frame
  *   - handleVisibilityChange()   — dark-mode / trails / props / path-shape branches
- *   - pullServiceState()         — pull precomputer/glyph/proptype/proptexture/resize
+ *   - pullServiceState()         — pull precomputer/glyph/proptype/proptexture
  *   - initializeTrailCapturer()  — lazy one-shot trail capturer init
  *   - trailSettingsChanged()     — shallow comparison helper
  *
  * Owned state (moved from engine):
- *   change-detection fields, prev-* flags, stateSynchronizer instance,
- *   canvasSize (owned here; engine reads via getCanvasSize()).
+ *   change-detection fields and prev-* flags. The canvas size is not owned
+ *   here: the resizer holds it and pushes each change to the render loop,
+ *   trails and overlays itself (CanvasLifecycleManager.pushFrame).
  *
  * Does NOT import AnimationEngine — keeps the dependency graph acyclic.
  * CanvasLifecycleManager and sibling managers are imported as `import type` only.
  */
 
-import { StateSynchronizer } from "../state-synchronizer";
 import type { AnimatorState } from "../../state/animator-state.svelte";
 import type { CanvasLifecycleManager } from "../canvas-lifecycle-manager";
 import type { PropSystem } from "./prop-system";
@@ -67,7 +67,6 @@ export interface PlaybackSyncDeps {
   getVM: () => AnimationVisibilityStateManager;
   getCallbacks: () => AnimationEngineCallbacks;
   getCanvasSize: () => number;
-  setCanvasSize: (s: number) => void;
   buildFrameDeps: () => {
     effectsConfigState:
       | import("#lib/shared/effects/state/effects-config-state.svelte.js").EffectsConfigState
@@ -78,9 +77,6 @@ export interface PlaybackSyncDeps {
 }
 
 export class PlaybackSync {
-  // ── StateSynchronizer (owned here) ──────────────────────────────────────────
-  private readonly stateSynchronizer = new StateSynchronizer();
-
   // ── Change-detection state (moved from engine) ───────────────────────────────
   private _lastPropsRef: AnimationEngineProps | null = null;
   private prevStepData: StartPlacementData | StepData | null = null;
@@ -761,19 +757,12 @@ export class PlaybackSync {
   // ── Service-state pull (was engine.syncServiceState) ────────────────────────
 
   /**
-   * Pull precomputer/glyph/proptype/proptexture/resize state into AnimatorState.
+   * Pull precomputer/glyph/proptype/proptexture state into AnimatorState.
    * Moved from engine.syncServiceState(). Called at the top of update().
    * Internal-only — not exposed on the public surface.
    */
   private pullServiceState(): void {
-    const {
-      lifecycleManager,
-      propSystem,
-      frameSystem,
-      effectSystem,
-      getCanvasSize,
-      setCanvasSize,
-    } = this.deps;
+    const { lifecycleManager, propSystem, frameSystem } = this.deps;
 
     const precomputer = lifecycleManager.precomputer;
     if (precomputer) {
@@ -796,15 +785,6 @@ export class PlaybackSync {
       this.state.setLeftPropDimensions(pts.leftDimensions);
       this.state.setRightPropDimensions(pts.rightDimensions);
     }
-
-    // Sync from resize service (delegated to StateSynchronizer)
-    const newSize = this.stateSynchronizer.syncResizeState({
-      canvasResizerService: lifecycleManager.resizer,
-      trailCapturer: lifecycleManager.trailCapturer,
-      renderLoopService: lifecycleManager.renderLoop,
-      effectRendererManager: effectSystem.rendererManager,
-    });
-    setCanvasSize(newSize);
   }
 
   private initializeTrailCapturer(props: AnimationEngineProps): void {

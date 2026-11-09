@@ -122,6 +122,11 @@ family drill-down, Back/Escape navigation, and animated decision screens.
 `BentoPropGrid.svelte` connects that presentation to account settings;
 `PropSelectionSheet.svelte` provides the bounded Change Prop drawer.
 Searches: prop variants, Change Prop, fan styles, triangle grip.
+`shared/pictograph/prop/components/PropPairPicker.svelte` is the one left and
+right prop choice; `PropPairDialog.svelte` and the viewer's dots menu host it.
+`shared/browse/components/PropViewingPanel.svelte` is the my props or as saved
+choice, hosted by the dots menu and `PropViewingControl.svelte`. Searches: viewing
+props, as saved, change my props, show this sequence with.
 Each prop has one look, its notation artwork. Austen removed the Version 1 /
 Version 2 prop versions on 2026-10-27; do not add a second look back. Saved
 settings, tunnels and Post Studio drafts that still carry `propArtwork` or
@@ -353,6 +358,9 @@ start cell inside the update), and the flight is re-keyed as translate plus
 scale so the option picker's mount doesn't stall it mid-air. Layouts that size
 themselves from a ResizeObserver read `isStartPlacementMorphCapturing()` and
 measure synchronously, since no observer fires while the update is pending.
+A workspace outside Create, such as the /composer Construct demo, joins by
+marking its grid's host `data-start-morph-landing` and passing
+`morphIntoWorkspace` to the picker.
 The second half of that beat is `emanate` (`shared/transitions/emanate.ts`):
 when the option sheet first paints, the bar and section headers `flyFade` in
 and every card fades up while gliding outward from the landed start cell,
@@ -363,6 +371,45 @@ comes from `findLandedStartCell()` in the morph seam, and
 after that window take the plain `arrive`. Opacity and transform only.
 Searches: start placement morph, start card flight, start position into
 workspace, option sheet arrival, emanate, options ripple from start.
+
+A tap on the Create board into a method is `createEntryChoreography`
+(`features/create/shared/services/create-entry-choreography.ts`): the other cards
+file into their drawers, the sidebar icon on a desktop or the bottom pill
+elsewhere (`filingTiming`), and each drawer nods as they go in; the tapped
+card's name files into its own drawer while the card shrinks. The gate opens as
+soon as the pieces are laid out (`piecesReady`, `isEntryLayerLaidOut`), with no
+fixed wait. The card condenses onto a miniature of the workspace's own pieces
+inside it (`CreateEntryFlight.svelte`, `miniatureOf`), and the real pieces and
+the rest of the layer fly out in one wave (`splitTiming`, `playEmanate`), each
+at its turn in the method's order. All six methods play it; each has a
+`Landing` in `LANDINGS`: its pieces, its order (`nearestFirst` by default), its
+spread and an optional signature (Shape's diagonal ripple, Assemble's rings).
+Off-screen elements stay out of the wave. A workspace with nothing to land on
+crossfades after the filing, and reduced motion keeps the plain crossfade.
+Spec: `docs/superpowers/specs/2026-11-07-create-entry-one-motion-design.md`.
+A motion that is itself waiting for something to load holds deferred work with
+`holdDeferredWorkForMotion({ neededWorkRuns: true })`, and work a screen may wait
+on passes `whenMotionSettled({ needed: true })`.
+`scripts/record-create-entry.mjs` records one press frame by frame.
+Searches: create entry, front door transition, method card flight, board to
+workspace, generate entry, tap into method, entry choreography, cards file into
+drawer, sidebar nod, method landing.
+
+The controls around a piece of work step aside and come back through
+`controlArrive` and `controlLeave` (`shared/transitions/control-presence.ts`).
+A family reads as one movement: leaving is quick and starts at the press, each
+control dropping toward its home edge; arriving waits until the panel carrying
+the control has nearly landed, then runs as a short wave outward from the primary
+control. Both directions walk one path, so a reversal turns the same controls
+around without a jump. Consumers pass `|global` so a parent block toggling still
+plays them, with `animate` to stay silent on a lazy mount, and a `lead` from one
+shared landing clock so the top row and the bottom bar arrive together
+(`StandardWorkspaceLayout.svelte`, `ButtonPanel.svelte`,
+`CreationWorkspaceArea.svelte`). Searched: presence, flyFade, stagger, arrive,
+emanate. Closest matches: `flyFade` and `arrive`/`leave` have no edge travel,
+lead or reversal continuity, and `emanate` is a one-way sheet. Decision: create.
+Searches: button presence, buttons appear and disappear, control wave, bottom
+bar arriving, controls step aside, mode change buttons.
 
 Shared-surface stacking extends `reparentToInspector`: control flights use the
 controls layer and may wait for the canvas to dock, using viewer-local
@@ -752,12 +799,12 @@ live player between stages. Decision: new owner (2026-11-06).
 A homepage tile opening into its page lives in
 `shared/transitions/tile-flight.svelte.ts`, with its styles under TILE FLIGHT in
 `view-transitions.css`. A plain press on a tile or chip arms it; `navigationMorphs`
-asks it, so only a press flies. The window is one view-transition name,
-`tile-window`, on the tile and on `.mkt-content` in `MarketingChrome`. The tile's
-glass (the `--tile-glass-*` tokens) becomes the view-transition group, a real panel
-that travels between the tile and the screen, while both pictures stay pinned in
-place and only fade. Nothing is clipped. Pages carry no name for it; a
-page whose first screen draws late uses `holdPageReady`, which the flight honours.
+asks it, so only a press flies. The motion is a depth push: `.mkt-content` in
+`MarketingChrome` is named `page-leaving` on the way out and `page-arriving` on the
+way in, in both directions, so the two pages stay separate pictures. Home sinks back
+as the page comes forward, and Back is the mirror. The tile itself carries no name.
+Pages carry no name for it either; a page whose first screen draws late uses
+`holdPageReady`, which the flight honours.
 It also owns the header and logo stillness in the resident player's glide. Searches:
 launchpad morph, tile morph, shared element, view-transition-name, route morph,
 named route morph, page transition, startViewTransition. Closest match:
@@ -765,3 +812,9 @@ named route morph, page transition, startViewTransition. Closest match:
 generally and which the flight extends rather than replaces. It replaced the
 per-tile `launchpad-*` names, which stretched snapshots between mismatched boxes.
 Decision: new owner (2026-11-06).
+
+Deferred start-up work steps aside for a watched motion through
+`holdDeferredWorkForMotion()` and `whenMotionSettled()` in
+`src/lib/shared/foundation/utils/background-scheduling.ts`. Searches: idle
+callback, warm-up, prefetch, stutter, first open, morph frames. A motion owner
+takes the hold; warm-ups await settling and must never be awaited by the motion.

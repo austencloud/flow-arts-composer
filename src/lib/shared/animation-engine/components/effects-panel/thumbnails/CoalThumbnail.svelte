@@ -21,6 +21,7 @@
   } from "#lib/shared/effects/domain/spark-physics.js";
   import type { EffectPreset } from "../presets/types";
   import { mulberry32 } from "./tile-paint";
+  import { queueTilePaint } from "./tile-paint-queue";
 
   interface Props {
     preset: EffectPreset<"charcoal">;
@@ -284,6 +285,11 @@
   $effect(() => {
     const node = canvas;
     if (!node) return;
+    void preset;
+    return queueTilePaint(() => paint(node));
+  });
+
+  function paint(node: HTMLCanvasElement): void {
     const ctx = node.getContext("2d");
     if (!ctx) return;
 
@@ -341,7 +347,7 @@
     }
 
     ctx.restore();
-  });
+  }
 </script>
 
 <div class="coal-thumbnail" class:active aria-hidden="true">

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import type { EffectPreset } from "../presets/types";
+  import { queueTilePaint } from "./tile-paint-queue";
 
   interface Props {
     preset: EffectPreset<"trails">;
@@ -130,6 +131,11 @@
   $effect(() => {
     const node = canvas;
     if (!node) return;
+    void preset;
+    return queueTilePaint(() => paint(node));
+  });
+
+  function paint(node: HTMLCanvasElement): void {
     const ctx = node.getContext("2d");
     if (!ctx) return;
 
@@ -178,7 +184,7 @@
     }
 
     ctx.restore();
-  });
+  }
 </script>
 
 <div class="trail-thumbnail" class:active aria-hidden="true">

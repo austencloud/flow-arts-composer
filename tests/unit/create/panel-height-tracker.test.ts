@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createPanelHeightTracker } from "#lib/features/create/shared/state/managers/panel-height-tracker.svelte.js";
+import { readCreatePanelMetric } from "#lib/features/create/shared/state/managers/create-panel-metrics.js";
 import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import {
   PANEL_MOTION_ATTRIBUTE,
@@ -337,5 +338,58 @@ describe("panel height tracker", () => {
       panelState: panelState(),
     })();
     expect(root.getPropertyValue("--create-panel-width")).toBe("");
+  });
+
+  it("publishes to the drawers' rule, never the root, where sheets can be adopted", () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      }
+    );
+    // jsdom builds stylesheets but cannot adopt them; a browser can.
+    Object.defineProperty(document, "adoptedStyleSheets", {
+      value: [],
+      writable: true,
+      configurable: true,
+    });
+    try {
+      const tool = realDiv();
+      Object.assign(tool, {
+        getBoundingClientRect: () =>
+          ({
+            width: 320,
+            height: 480,
+            top: 64,
+            right: 1426,
+            bottom: 544,
+            left: 1106,
+            x: 1106,
+            y: 64,
+            toJSON: () => ({}),
+          }) as DOMRect,
+      });
+      const stop = createPanelHeightTracker({
+        toolPanelElement: tool,
+        buttonPanelElement: null,
+        panelState: panelState(),
+      });
+
+      const [sheet] = document.adoptedStyleSheets;
+      const rule = sheet?.cssRules[0] as CSSStyleRule | undefined;
+      expect(rule?.selectorText).toContain(".drawer-content");
+      expect(rule?.selectorText).toContain(".drawer-overlay");
+      expect(readCreatePanelMetric("--create-panel-top")).toBe("64px");
+      expect(readCreatePanelMetric("--create-panel-width")).toBe("320px");
+      expect(
+        document.documentElement.style.getPropertyValue("--create-panel-top")
+      ).toBe("");
+
+      stop();
+      expect(readCreatePanelMetric("--create-panel-top")).toBe("");
+    } finally {
+      delete (document as { adoptedStyleSheets?: unknown }).adoptedStyleSheets;
+    }
   });
 });

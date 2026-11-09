@@ -16,6 +16,14 @@
   import { tick, type Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
   import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
+  import PropViewingPanel from "#lib/shared/browse/components/PropViewingPanel.svelte";
+  import PropPairPicker from "#lib/shared/pictograph/prop/components/PropPairPicker.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import {
+    captureActivePropConfig,
+    type ResolvedPropConfig,
+  } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import LabeledColorPairPicker from "#lib/shared/ui/components/LabeledColorPairPicker.svelte";
   import { randomCoolWarmPair } from "#lib/shared/ui/color-temperature.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
@@ -26,6 +34,7 @@
   import {
     getSettings,
     updateSetting,
+    updateSettings,
   } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     shareTarget,
@@ -33,15 +42,17 @@
   } from "#lib/shared/mobile/share-action.svelte.js";
 
   type OverflowOpenReason = "trigger" | "item" | "backdrop" | "escape" | "tab";
-  type MenuScreen = "menu" | "motion" | "colors";
+  type MenuScreen = "menu" | "motion" | "colors" | "props" | "props-picker";
 
   interface Props {
     isPublished?: boolean;
     onCopyLink?: () => void;
     linkCopied?: boolean;
-    onPropsOpen?: () => void;
-    /** The Props row's whole label, for hosts that do not pass a summary. */
-    propsLabel?: string;
+    /** Which sequence the Props screen is about; omit to leave the row out. */
+    propViewing?: {
+      sequence?: SequenceData | null;
+      collectionPropType?: PropType | null;
+    };
     /** The current props by name ("Double Staff"), shown dim at the row's end. */
     propsSummary?: string;
     onPublish?: () => void;
@@ -92,8 +103,7 @@
     isPublished = false,
     onCopyLink,
     linkCopied = false,
-    onPropsOpen,
-    propsLabel,
+    propViewing,
     propsSummary,
     onPublish,
     onUnpublish,
@@ -174,11 +184,25 @@
   }
 
   // Back lands on the row that opened the screen, not the top of the list,
-  // so a keyboard user carries on from where they were.
+  // so a keyboard user carries on from where they were. The prop picker sits
+  // one level deeper, under the Props screen.
   function backToMenu(): void {
+    if (screen === "props-picker") {
+      screen = "props";
+      void focusOnShownScreen("[data-props-change]");
+      return;
+    }
     const from = screen;
     screen = "menu";
     void focusOnShownScreen(`[data-drill="${from}"]`);
+  }
+
+  // A pick is the answer: it applies at once and shows those props, even if
+  // the viewer was on saved props. Back on the Props screen the tile says so.
+  function pickProps(next: ResolvedPropConfig): void {
+    void updateSettings({ ...next, propViewingMode: "my-props" });
+    screen = "props";
+    void focusOnShownScreen('.prop-viewing-panel [aria-checked="true"]');
   }
 
   const darkMode = $derived(getSettings().darkMode ?? true);
@@ -341,17 +365,11 @@
     return items;
   });
 
-  // A host that names the props gets "Props" plus the name; an older host's
-  // full label still reads on its own.
-  const propsRowLabel = $derived(
-    propsSummary ? t("viewer_ui_props") : (propsLabel ?? t("viewer_ui_props"))
-  );
-
   // Dividers go only between groups that are actually there.
   const sections = $derived({
     lead: leadItems.length > 0,
     actions: actionItems.length > 0,
-    display: !!motionVisibility || !!onPropsOpen,
+    display: !!motionVisibility || !!propViewing,
     owner: ownerItems.length > 0,
   });
   const hasMenu = $derived(Object.values(sections).some(Boolean));
@@ -463,15 +481,12 @@
         colorsSummary
       )}
     {/if}
-    {#if onPropsOpen}
-      {@const openProps = onPropsOpen}
-      <!-- The viewing control is its own sheet, so this row closes the menu
-           first. It still looks like a drill row because it opens a screen. -->
+    {#if propViewing}
       {@render drillRow(
         "props",
         "fa-wand-magic-sparkles",
-        propsRowLabel,
-        () => handleItemSelect(openProps),
+        t("viewer_ui_props"),
+        () => openScreen("props"),
         propsSummaryText
       )}
     {/if}
@@ -564,6 +579,33 @@
                       onToggleLeft={motionVisibility.onToggleLeft}
                       onToggleRight={motionVisibility.onToggleRight}
                       showVisibilityIcons
+                    />
+                  </div>
+                </div>
+              {:else if screen === "props" && propViewing}
+                <div class="drill-screen">
+                  {@render screenHeader(t("browse_audit_show_sequences_with"))}
+                  <div class="drill-body">
+                    <PropViewingPanel
+                      settings={getSettings()}
+                      sequence={propViewing.sequence}
+                      collectionPropType={propViewing.collectionPropType}
+                      title={t("browse_audit_show_sequences_with")}
+                      onUpdate={updateSettings}
+                      onChangeProps={() => openScreen("props-picker")}
+                    />
+                  </div>
+                </div>
+              {:else if screen === "props-picker"}
+                <!-- No colour control here: Prop colors is the row beside
+                     Props in this same menu. -->
+                <div class="drill-screen props-picker-screen">
+                  {@render screenHeader(t("browse_audit_my_props"))}
+                  <div class="drill-body">
+                    <PropPairPicker
+                      value={captureActivePropConfig(getSettings())}
+                      dense
+                      onPick={pickProps}
                     />
                   </div>
                 </div>
@@ -892,9 +934,18 @@
   /* An open color editor can outgrow a short screen, and the popover's
      fallback scroll would carry Back away with it. Pinning the header keeps
      the way out in reach; the opaque panel fill stops rows showing through. */
-  .colors-screen .drill-header {
+  :is(.colors-screen, .props-picker-screen) .drill-header {
     position: sticky;
     top: 0;
+    z-index: 1;
+    background: var(--surface-panel-opaque);
+  }
+
+  /* The prop grid is the one long list here, and it is fine for it to scroll,
+     but which hand it changes stays in view above the tiles. */
+  .props-picker-screen :global(.prop-pair-hands) {
+    position: sticky;
+    top: var(--min-touch-target, 44px);
     z-index: 1;
     background: var(--surface-panel-opaque);
   }

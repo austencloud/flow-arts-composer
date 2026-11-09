@@ -32,7 +32,9 @@ export interface EffectCatalogBox {
 export interface EffectCatalogFit {
   cols: number;
   rows: number;
-  orientation: "row" | "stack" | "list";
+  /** `dense` and `icons` come from `fitEffectPicker` alone: an icon over its
+   *  name, or the icon by itself where even that is too tall. */
+  orientation: "row" | "stack" | "list" | "dense" | "icons";
   /** Picture width in px, 0 for the list. Its height follows from the 8:3
    *  frame. */
   portrait: number;
@@ -41,6 +43,8 @@ export interface EffectCatalogFit {
   /** The tiles share the box's height (the catalog), or take the height they
    *  need (the roster above the dock). */
   fill: boolean;
+  /** Icon size in px for `dense` and `icons`, which grow with their tiles. */
+  icon?: number;
 }
 
 export const CATALOG_GAP = 6;
@@ -167,6 +171,57 @@ export function fitEffectCatalog(
     };
   }
   return best;
+}
+
+/** The smallest tile that holds an icon over the longest name on one line. */
+export const DENSE_TILE_WIDTH = 46;
+export const DENSE_TILE_HEIGHT = 34;
+export const DENSE_GAP = 4;
+const DENSE_ICON_MIN = 14;
+const DENSE_ICON_MAX = 28;
+
+/**
+ * Every effect in a box that must hold them all, for a host that never scrolls.
+ * Pictures when the catalog's arithmetic allows them; otherwise the tiles shrink
+ * until they fit, as many columns as make the largest tile, and the names go
+ * only when a tile is too small for one. It answers for any box with room in it,
+ * so the host has no second arrangement to fall back to.
+ */
+export function fitEffectPicker(
+  box: EffectCatalogBox
+): EffectCatalogFit | null {
+  const { width, height, count } = box;
+  if (width <= 0 || height <= 0 || count <= 0) return null;
+  const catalog = fitEffectCatalog(box);
+  if (catalog && catalog.orientation !== "list") return catalog;
+
+  let cols = 1;
+  let rows = count;
+  let tileHeight = 0;
+  let best = -1;
+  for (let candidate = 1; candidate <= count; candidate += 1) {
+    const candidateRows = Math.ceil(count / candidate);
+    const w = (width - (candidate - 1) * DENSE_GAP) / candidate;
+    const h = (height - (candidateRows - 1) * DENSE_GAP) / candidateRows;
+    const score = Math.min(w / DENSE_TILE_WIDTH, h / DENSE_TILE_HEIGHT);
+    if (score > best) {
+      best = score;
+      cols = candidate;
+      rows = candidateRows;
+      tileHeight = h;
+    }
+  }
+  return {
+    cols,
+    rows,
+    orientation: best >= 1 ? "dense" : "icons",
+    portrait: 0,
+    gap: DENSE_GAP,
+    fill: true,
+    icon: Math.round(
+      Math.max(DENSE_ICON_MIN, Math.min(DENSE_ICON_MAX, tileHeight * 0.34))
+    ),
+  };
 }
 
 function fitList({

@@ -170,6 +170,7 @@ export function buildCardRenderOptions(
     visibilityOverrides: {
       fanAppearance: settings.fanAppearance,
       triangleGrip: settings.triangleGrip,
+      buugengStyle: settings.buugengStyle,
       primaryPropColors: settings.primaryPropColors ?? null,
       leftPropType: props.leftPropType,
       rightPropType: props.rightPropType,

@@ -61,6 +61,10 @@
     morphGenerateCard,
   } from "../../shared/services/generate-card-morph";
   import CustomizeExpandedOverlay from "./CustomizeExpandedOverlay.svelte";
+  import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { generateCardFlight } from "../../shared/state/generate-card-flight.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
   import SetupsPanel from "../presets/SetupsPanel.svelte";
   import TnDPanel from "./TnDPanel.svelte";
@@ -131,6 +135,26 @@
   $effect.pre(() => {
     const next = customize ?? panelState.customizeOverlayPrimer;
     if (next) retainedCustomize = next;
+  });
+  // While the morph carries Customize open, the stage shows the panel's frame
+  // and title only. Its tiles are thousands of elements; laying them out and
+  // snapshotting them before the motion could start held a phone's tap back
+  // for over a second, and they then had to be redrawn on every frame of it.
+  const customizeStandIn = $derived(
+    openCard === "customize" && generateCardFlight.opening === "customize"
+  );
+  // The kept panel is built while the page is idle. A first open that beats
+  // that build waits for the landing too, rather than building in the tap.
+  let customizeMountAllowed = $state(false);
+  $effect.pre(() => {
+    if (retainedCustomize && !customizeStandIn) customizeMountAllowed = true;
+  });
+  // Set when a stand-in gives way to the real panel, so only those contents
+  // arrive with motion. A plain open already has the stage's own entrance.
+  let customizeArriving = $state(false);
+  $effect.pre(() => {
+    if (customizeStandIn) customizeArriving = true;
+    else if (openCard !== "customize") customizeArriving = false;
   });
   let customizeParking = $state<HTMLElement | null>(null);
   let customizeHost = $state<HTMLElement | null>(null);
@@ -397,7 +421,29 @@
 </script>
 
 {#snippet body(titleId: string)}
-  {#if openCard === "customize"}
+  {#if openCard === "customize" && customizeStandIn}
+    <!-- The real panel's own frame and header, so nothing that stays moves
+         when the tiles arrive. No title id: the kept panel holds it. -->
+    <GenerationSettingsOverlay
+      title={t("create_ui_customize")}
+      closeLabel={t("create_deep_close_customize")}
+      onClose={close}
+      entrance="none"
+    >
+      {#snippet actions()}
+        {#if retainedCustomize?.onResetAll}
+          <!-- Holds the header at the real panel's height, so the title and
+               close button stay still when it lands. -->
+          <span class="stand-in-action" aria-hidden="true" inert>
+            <PanelButton variant="quiet">
+              {t("settings_preset_reset_all")}
+            </PanelButton>
+          </span>
+        {/if}
+      {/snippet}
+      {#snippet children()}{/snippet}
+    </GenerationSettingsOverlay>
+  {:else if openCard === "customize"}
     <!-- The kept panel, moved in by holdCustomize. -->
   {:else if openCard === "loop" && panelState.loopSelectedComponents && panelState.loopOnChange && panelState.loopCurrentType}
     <LOOPExpandedOverlay
@@ -447,7 +493,7 @@
   {/if}
 {/snippet}
 
-{#if retainedCustomize}
+{#if retainedCustomize && customizeMountAllowed}
   {@const kept = retainedCustomize}
   <div class="customize-parking" bind:this={customizeParking}>
     <div class="customize-host" bind:this={customizeHost}>
@@ -467,7 +513,7 @@
         onResetAll={kept.onResetAll}
         onClose={close}
         entrance="none"
-        active={openCard === "customize"}
+        active={openCard === "customize" && !customizeStandIn}
         session={kept}
         titleId={expandedCardTitleId("customize")}
       />
@@ -494,13 +540,16 @@
         data-destination="viewport"
         data-presentation={presentation}
         data-card-id={openCard}
+        data-contents-arriving={customizeArriving && !customizeStandIn
+          ? ""
+          : undefined}
         role="dialog"
         aria-labelledby={expandedCardTitleId(openCard)}
         tabindex="-1"
         bind:this={root}
         onkeydown={onKeydown}
         use:holdCustomize={{
-          held: openCard === "customize",
+          held: openCard === "customize" && !customizeStandIn,
           host: customizeHost,
         }}
         use:portal
@@ -517,13 +566,16 @@
       class="expanded-card-stage"
       data-destination="stage"
       data-card-id={openCard}
+      data-contents-arriving={customizeArriving && !customizeStandIn
+        ? ""
+        : undefined}
       role="dialog"
       aria-labelledby={expandedCardTitleId(openCard)}
       tabindex="-1"
       bind:this={root}
       onkeydown={onKeydown}
       use:holdCustomize={{
-        held: openCard === "customize",
+        held: openCard === "customize" && !customizeStandIn,
         host: customizeHost,
       }}
       use:claimedViewTransitionName={{
@@ -551,6 +603,31 @@
      moved into the root at runtime where the compiler cannot see it. */
   .customize-host {
     display: contents;
+  }
+
+  /* The tiles and header actions arrive once the stand-in has landed; the
+     frame, title and close button were already there. */
+  .expanded-card-stage[data-contents-arriving]
+    > :global(.customize-host)
+    > :global(.generation-settings-overlay)
+    > :global(:not(.overlay-header)),
+  .expanded-card-stage[data-contents-arriving]
+    > :global(.customize-host)
+    :global(.overlay-header > :not(.overlay-title, .close-button)) {
+    animation: card-contents-arrive var(--duration-normal) var(--ease-out)
+      both;
+  }
+
+  .stand-in-action {
+    display: contents;
+    visibility: hidden;
+  }
+
+  @keyframes card-contents-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
   }
 
   .expanded-card-stage:focus-visible {

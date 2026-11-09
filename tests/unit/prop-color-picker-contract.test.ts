@@ -127,7 +127,9 @@ describe("the prop colour control is owned by the prop picker", () => {
     }
     // The viewer header and gallery "Viewing props" dialog picks the props
     // every sequence renders with, so its colours belong beside it.
-    expect(read(VIEWING_CONTROL_PATH)).toMatch(/<PropPairField[^>]*showColors/);
+    expect(read(VIEWING_CONTROL_PATH)).toMatch(
+      /<PropPairDialog[^>]*showColors/
+    );
   });
 
   for (const [label, file] of Object.entries(HOSTS)) {

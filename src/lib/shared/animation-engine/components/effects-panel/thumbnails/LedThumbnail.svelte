@@ -5,6 +5,7 @@
   } from "#lib/shared/animation-engine/domain/types/led-types.js";
   import { renderLedThumbnail } from "#lib/shared/animation-engine/services/led/led-thumbnail-renderer.js";
   import type { EffectPreset } from "../presets/types";
+  import { queueTilePaint } from "./tile-paint-queue";
 
   interface Props {
     preset: EffectPreset<"led">;
@@ -38,16 +39,19 @@
     const config = resolveConfig();
 
     let cancelled = false;
-    void renderLedThumbnail(config, WIDTH, HEIGHT).then((canvas) => {
-      // The renderer is shared and serialized, so a tile can resolve long after
-      // its preset changed or the panel closed.
-      if (cancelled || !canvas || !node.isConnected) return;
-      canvas.classList.add("led-frame");
-      node.replaceChildren(canvas);
-    });
+    const cancelQueued = queueTilePaint(() =>
+      renderLedThumbnail(config, WIDTH, HEIGHT).then((canvas) => {
+        // The renderer is shared and serialized, so a tile can resolve long after
+        // its preset changed or the panel closed.
+        if (cancelled || !canvas || !node.isConnected) return;
+        canvas.classList.add("led-frame");
+        node.replaceChildren(canvas);
+      })
+    );
 
     return () => {
       cancelled = true;
+      cancelQueued();
     };
   });
 </script>

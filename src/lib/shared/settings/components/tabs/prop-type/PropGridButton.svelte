@@ -4,6 +4,7 @@
   import PropGridPreview from "./PropGridPreview.svelte";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import { localizedPropName } from "./localized-prop-name";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -24,6 +25,7 @@
     onSelect,
     fanAppearance,
     triangleGrip,
+    buugengStyle,
     recipeOverrides,
     colors,
     singleHand,
@@ -44,6 +46,7 @@
     onSelect?: (propType: PropType) => void;
     fanAppearance: FanAppearance;
     triangleGrip?: TriangleGrip;
+    buugengStyle?: BuugengStyle;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
     singleHand?: "left" | "right";
@@ -83,6 +86,7 @@
         (isBuugengFamilyProp(propType) && rightFlipped)}
       {fanAppearance}
       {triangleGrip}
+      {buugengStyle}
       {recipeOverrides}
     />
   {/snippet}

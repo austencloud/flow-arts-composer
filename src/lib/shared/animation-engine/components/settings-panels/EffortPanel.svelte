@@ -51,6 +51,7 @@
     showSubtitles = false,
     fill = false,
     fit = false,
+    room = false,
     onSettingChange,
     visibilityManagerOverride,
   }: {
@@ -60,6 +61,8 @@
     fill?: boolean;
     /** Fit a bounded inspector; retain readable controls if its drawer scrolls. */
     fit?: boolean;
+    /** The host's box is all there is: the tiles share it and nothing scrolls. */
+    room?: boolean;
     onSettingChange?: (previousValue: string, value: string) => void;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
@@ -85,7 +88,7 @@
   onDestroy(() => vm.unregisterObserver(handleVisibilityChange));
 </script>
 
-<div class="effort-panel" class:fill class:fit>
+<div class="effort-panel" class:fill class:fit class:room>
   <div class="effort-grid" class:fill style:--effort-cols={columns}>
     {#each EFFORTS as effort}
       <button
@@ -167,6 +170,53 @@
   .effort-panel {
     container: effort-panel / inline-size;
     min-width: 0;
+  }
+
+  /* Eight tiles in the box's own shape: four across two rows when it is wide,
+     two across four when it is tall. The curve takes what the name leaves, and
+     the description appears only once a tile has room to spare for it. */
+  .effort-panel.room {
+    container: effort-panel / size;
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+  }
+  .room .effort-grid {
+    height: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .room .effort-btn,
+  .room .effort-btn.with-sub {
+    min-height: 0;
+    padding: 4px;
+    gap: 2px;
+    overflow: hidden;
+  }
+  .room .effort-curve {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+  }
+  .room .effort-label {
+    flex: none;
+  }
+  .room .effort-sub {
+    display: none;
+    flex: none;
+    text-align: center;
+  }
+  @container effort-panel (orientation: portrait) {
+    .room .effort-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @container effort-panel (min-width: 34rem) and (min-height: 22rem) {
+    .room .effort-sub {
+      display: block;
+    }
   }
 
   .effort-grid {

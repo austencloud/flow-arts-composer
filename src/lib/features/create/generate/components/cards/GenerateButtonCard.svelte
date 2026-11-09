@@ -33,6 +33,9 @@ Always renders as a pure button. Word input is now in WordInputCard.
     startFeasibility?: StartFeasibilityResult | null;
   }>();
 
+  /** The scale at the middle of the subtlePulse keyframes below. */
+  const PULSE_PEAK = 0.015;
+
   const noValidStart = $derived(startFeasibility?.feasible === false);
   const isDisabled = $derived(isGenerating || noValidStart);
 
@@ -62,13 +65,32 @@ Always renders as a pure button. Word input is now in WordInputCard.
 
     if (wasPulseSuspended || !buttonElement) return;
 
-    const liveTransform = getComputedStyle(buttonElement).transform;
     buttonElement.style.setProperty(
       "--generate-pulse-settle-from",
-      liveTransform === "none" ? "scale(1)" : liveTransform
+      `scale(${pulseScaleNow(buttonElement)})`
     );
     wasPulseSuspended = true;
   });
+
+  // Where the pulse is right now, worked out from the running animation's
+  // clock. Reading the computed transform instead forced a full page layout,
+  // and this runs inside the tap that opens a card, while the card's panel is
+  // being built.
+  function pulseScaleNow(button: HTMLElement): number {
+    const pulse = button
+      .getAnimations()
+      .find(
+        (animation) =>
+          animation instanceof CSSAnimation &&
+          animation.animationName.endsWith("subtlePulse")
+      );
+    const progress = pulse?.effect?.getComputedTiming().progress;
+    if (progress == null) return 1;
+    // Up to the peak at the halfway keyframe and back, each half eased
+    // in and out (smoothstep stands in for ease-in-out at this size).
+    const half = progress < 0.5 ? progress * 2 : (1 - progress) * 2;
+    return 1 + PULSE_PEAK * half * half * (3 - 2 * half);
+  }
 
   onMount(() => {
     hapticService = getHapticFeedback();

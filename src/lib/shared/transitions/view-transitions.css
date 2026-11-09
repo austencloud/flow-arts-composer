@@ -596,7 +596,7 @@ html.construct-start-morph-active::view-transition {
 
 html.construct-start-morph-from [data-start-morph-source],
 html.construct-start-morph-to
-  .workspace-container
+  :is(.workspace-container, [data-start-morph-landing])
   [data-history-start-placement]
   > .history-layout-shell {
   view-transition-name: construct-start-placement;
@@ -613,6 +613,130 @@ html.construct-start-morph-to [data-start-morph-source] {
   /* The flight is re-keyed as translate + scale (start-placement-morph.ts);
      scaling from the corner keeps the group's resting translate exact. */
   transform-origin: 0 0;
+}
+
+/* The /composer Construct demo crossing between building and the full-card
+   player. The step tiles travel between the grid and the strip one after
+   another, the action row glides to its new edge, and the pane's old contents
+   sink back where they were while the new ones come into focus where they
+   land. The page under it stays live. Names exist only while the morph runs.
+   Owner: routes/(public)/composer/_sections/construct-play-morph.ts. */
+html.construct-play-morph {
+  view-transition-name: none;
+}
+
+html.construct-play-morph::view-transition {
+  background: transparent;
+}
+
+/* The flights are re-keyed as translate + scale (construct-play-morph.ts);
+   scaling from the corner keeps each group's resting translate exact. The
+   tiles fly above the pane so a tile crossing the stage never slips under it. */
+html.construct-play-morph::view-transition-group(*.construct-tile),
+html.construct-play-morph::view-transition-group(construct-actions) {
+  animation-duration: var(--duration-surface-travel);
+  animation-timing-function: var(--ease-surface-travel);
+  transform-origin: 0 0;
+}
+
+html.construct-play-morph::view-transition-group(*.construct-tile) {
+  z-index: 2;
+}
+
+/* Reading order, a beat apart: the start leads and step 8 follows 112ms
+   later. The delay reaches each tile's pictures through the UA's inherit. */
+html.construct-play-morph::view-transition-group(construct-step-1) {
+  animation-delay: 14ms;
+}
+html.construct-play-morph::view-transition-group(construct-step-2) {
+  animation-delay: 28ms;
+}
+html.construct-play-morph::view-transition-group(construct-step-3) {
+  animation-delay: 42ms;
+}
+html.construct-play-morph::view-transition-group(construct-step-4) {
+  animation-delay: 56ms;
+}
+html.construct-play-morph::view-transition-group(construct-step-5) {
+  animation-delay: 70ms;
+}
+html.construct-play-morph::view-transition-group(construct-step-6) {
+  animation-delay: 84ms;
+}
+html.construct-play-morph::view-transition-group(construct-step-7) {
+  animation-delay: 98ms;
+}
+html.construct-play-morph::view-transition-group(construct-step-8) {
+  animation-delay: 112ms;
+}
+
+/* A tile is the same picture at both ends, so it hands over at once rather
+   than showing two half-faded copies at different sizes. */
+html.construct-play-morph::view-transition-old(*.construct-tile) {
+  animation: construct-morph-fade-out 90ms linear both;
+}
+
+html.construct-play-morph::view-transition-new(*.construct-tile) {
+  animation: none;
+}
+
+/* A tile with no partner: the build Build another clears, or the strip tiles
+   that were scrolled out of sight. */
+html.construct-play-morph::view-transition-old(*.construct-tile):only-child {
+  animation: construct-morph-recede 150ms var(--ease-in) both;
+}
+
+html.construct-play-morph::view-transition-new(*.construct-tile):only-child {
+  animation: construct-morph-resolve 320ms var(--ease-out) 180ms both;
+}
+
+/* The row's old controls leave before its new ones arrive, so Play and the
+   play actions never sit on top of each other mid-glide. */
+html.construct-play-morph::view-transition-old(construct-actions) {
+  animation: construct-morph-fade-out 140ms var(--ease-in) both;
+}
+
+html.construct-play-morph::view-transition-new(construct-actions) {
+  animation: construct-morph-fade-in 260ms var(--ease-out) 200ms both;
+}
+
+/* The pane: options, start tiles or the player sink back where they were. The
+   new contents are not captured; they come into focus live where they land
+   (arriveLive in construct-play-morph.ts), so they can keep drawing. The old
+   pane eases out: it starts giving way the moment the tiles lift off, where an
+   ease-in kept it at full strength under them for a third of the flight. */
+html.construct-play-morph::view-transition-old(construct-options),
+html.construct-play-morph::view-transition-old(construct-starts),
+html.construct-play-morph::view-transition-old(construct-stage) {
+  animation: construct-morph-recede 200ms var(--ease-out) both;
+}
+
+@keyframes construct-morph-recede {
+  to {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.97);
+    filter: blur(6px);
+  }
+}
+
+@keyframes construct-morph-resolve {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(10px);
+  }
+}
+
+@keyframes construct-morph-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes construct-morph-fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
 /* The /composer 3D card opening into the viewer's frame over the dimmed page,
@@ -1416,9 +1540,9 @@ html.site-flight::view-transition-new(resident-player):not(:only-child) {
    SITE FLIGHT: what the rest of the page does around a flight
    In a glide between the player's hosts the old page leaves as one quick fade,
    so nothing cuts on the first frame; a tile flight replaces that fade with its
-   own recede. Both sit under the glass panel, which sits under the player, and
-   the header holds still above them all, changing only its active underline. The
-   Back chip is its own picture, so it fades in clear of the sliding logo.
+   depth push. Both sit under the player, and the header holds still above them
+   all, changing only its active underline. The Back chip is its own picture, so
+   it fades in clear of the sliding logo.
    ============================================================================ */
 html.site-flight header[data-route-hold="header"] {
   view-transition-name: route-hold-header;
@@ -1492,276 +1616,111 @@ html.site-flight::view-transition-new(route-hold-header) {
 
 /* ============================================================================
    TILE FLIGHT
-   A homepage tile opens into its page (tile-flight.svelte.ts). The pressed tile's
-   own glass becomes a real panel, the view-transition group, which travels
-   between the tile and the screen. Nothing is clipped. The tile's picture and the
-   page's picture stay pinned where they sit on screen and only fade, the old page
-   recedes from the pressed tile's centre, and the glass clears once the page has
-   resolved on it. Back is the mirror. Boxes arrive as --tile-flight-* in viewport
-   pixels at transition.ready; the panel's first and last frames are the resting
-   tile, which hands its own glass over while the browser captures it.
+   A homepage tile is a doorway, so opening one moves the visitor through depth
+   and nothing grows out of the tile. Home sinks back and softens while the page
+   comes forward from just behind the glass; Back is the mirror, the page lifting
+   toward the viewer and clearing as home comes forward from where it went. Each
+   page is its own group, because two pages sharing a name would morph one box
+   into the other. The groups stay put and only their pictures move. Each picture
+   scales about the middle of its on-screen part, which arrives as
+   --tile-flight-leaving-* and --tile-flight-arriving-* at transition.ready: a
+   page can run thousands of pixels past the screen, and scaling it about its own
+   centre would slide what the visitor sees. Owner: tile-flight.svelte.ts.
    ============================================================================ */
 /* The sidebar package names itself inline. In a flight it is page content and
-   belongs inside the window, not floating over it. */
+   moves with the page instead of floating over it. */
 html.tile-flight-open nav.ac-sidebar,
 html.tile-flight-close nav.ac-sidebar {
   view-transition-name: none !important;
 }
-@property --tile-flight-tint-live {
-  syntax: "<color>";
-  inherits: false;
-  initial-value: transparent;
-}
-/* Three states of the panel's rim and shadow. The same four layers each, so they
-   interpolate: a full-perimeter ring, a top highlight, the drop, the tinted glow. */
-html.tile-flight-open,
-html.tile-flight-close {
-  --tile-flight-shadow-resting:
-    inset 0 0 0 1px var(--tile-glass-border),
-    inset 0 1px 0 0 var(--tile-glass-highlight),
-    0 18px 40px -28px rgba(0, 0, 0, 0.8), 0 0 110px -30px transparent;
-  --tile-flight-shadow-lit:
-    inset 0 0 0 1px oklch(0.78 0.07 275 / 0.3),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.28),
-    0 50px 140px -40px rgba(0, 0, 0, 0.8),
-    0 0 110px -30px
-      color-mix(in oklch, var(--tile-flight-tint, transparent) 55%, transparent);
-  --tile-flight-shadow-clear:
-    inset 0 0 0 1px transparent, inset 0 1px 0 0 transparent,
-    0 50px 140px -40px transparent, 0 0 110px -30px transparent;
-}
 
-/* The panel: one real box that travels between the tile and the screen. */
-::view-transition-group(tile-window) {
-  z-index: 2;
-  box-sizing: border-box;
-  overflow: visible;
-  border-radius: var(--tile-flight-radius, var(--tile-glass-radius));
-  background-color: var(--tile-glass-fill);
-  background-image: radial-gradient(
-    90% 70% at 0% 0%,
-    var(--tile-flight-tint-live),
-    transparent 70%
-  );
-  -webkit-backdrop-filter: blur(var(--tile-glass-blur));
-  backdrop-filter: blur(var(--tile-glass-blur));
-  box-shadow: var(--tile-flight-shadow-lit);
-}
-html.tile-flight-open::view-transition-group(tile-window) {
-  animation:
-    tile-flight-travel var(--duration-surface-travel) var(--ease-surface-travel)
-      both,
-    tile-flight-glass-open var(--duration-surface-travel) linear both;
-}
-html.tile-flight-close::view-transition-group(tile-window) {
-  animation:
-    tile-flight-travel var(--duration-surface-travel) var(--ease-surface-travel)
-      both,
-    tile-flight-glass-close var(--duration-surface-travel) linear both;
-}
-@keyframes tile-flight-travel {
-  from {
-    transform: translate(var(--tile-flight-from-x), var(--tile-flight-from-y));
-    width: var(--tile-flight-from-w);
-    height: var(--tile-flight-from-h);
-  }
-  to {
-    transform: translate(var(--tile-flight-to-x), var(--tile-flight-to-y));
-    width: var(--tile-flight-to-w);
-    height: var(--tile-flight-to-h);
-  }
-}
-/* Starts as the resting tile, lights up as it lifts, clears on the page. */
-@keyframes tile-flight-glass-open {
-  0% {
-    box-shadow: var(--tile-flight-shadow-resting);
-    --tile-flight-tint-live: transparent;
-  }
-  16%,
-  58% {
-    border-radius: var(--tile-flight-radius, var(--tile-glass-radius));
-    background-color: var(--tile-glass-fill);
-    box-shadow: var(--tile-flight-shadow-lit);
-    --tile-flight-tint-live: color-mix(
-      in oklch,
-      var(--tile-flight-tint, transparent) 14%,
-      transparent
-    );
-    -webkit-backdrop-filter: blur(var(--tile-glass-blur));
-    backdrop-filter: blur(var(--tile-glass-blur));
-  }
-  100% {
-    border-radius: 0px;
-    background-color: transparent;
-    box-shadow: var(--tile-flight-shadow-clear);
-    --tile-flight-tint-live: transparent;
-    -webkit-backdrop-filter: blur(0px);
-    backdrop-filter: blur(0px);
-  }
-}
-/* The mirror: forms over the page, settles into the resting tile. */
-@keyframes tile-flight-glass-close {
-  0% {
-    border-radius: 0px;
-    background-color: transparent;
-    box-shadow: var(--tile-flight-shadow-clear);
-    --tile-flight-tint-live: transparent;
-    -webkit-backdrop-filter: blur(0px);
-    backdrop-filter: blur(0px);
-  }
-  26%,
-  84% {
-    border-radius: var(--tile-flight-radius, var(--tile-glass-radius));
-    background-color: var(--tile-glass-fill);
-    box-shadow: var(--tile-flight-shadow-lit);
-    --tile-flight-tint-live: color-mix(
-      in oklch,
-      var(--tile-flight-tint, transparent) 14%,
-      transparent
-    );
-    -webkit-backdrop-filter: blur(var(--tile-glass-blur));
-    backdrop-filter: blur(var(--tile-glass-blur));
-  }
-  100% {
-    box-shadow: var(--tile-flight-shadow-resting);
-    --tile-flight-tint-live: transparent;
-  }
-}
-
-/* Both pictures stay where they sit on screen; only the glass travels. They
-   are pinned with left/top, not translate, on purpose: the panel animates
-   width/height on the main thread, and a compositor-driven translate drifts
-   away from it whenever the main thread is busy loading the page. */
-::view-transition-image-pair(tile-window) {
-  isolation: auto;
-}
-::view-transition-old(tile-window),
-::view-transition-new(tile-window) {
-  position: absolute;
-  inset: 0 auto auto 0;
-  mix-blend-mode: normal;
-  object-fit: none;
-  object-position: left top;
-  background: none;
-  opacity: 1;
-  transform-origin: var(--tile-flight-screen-x, 50%)
-    var(--tile-flight-screen-y, 50%);
-}
-@keyframes tile-flight-pin-tile {
-  from {
-    left: calc(var(--tile-flight-tile-x) - var(--tile-flight-from-x));
-    top: calc(var(--tile-flight-tile-y) - var(--tile-flight-from-y));
-  }
-  to {
-    left: calc(var(--tile-flight-tile-x) - var(--tile-flight-to-x));
-    top: calc(var(--tile-flight-tile-y) - var(--tile-flight-to-y));
-  }
-}
-@keyframes tile-flight-pin-page {
-  from {
-    left: calc(var(--tile-flight-page-x) - var(--tile-flight-from-x));
-    top: calc(var(--tile-flight-page-y) - var(--tile-flight-from-y));
-  }
-  to {
-    left: calc(var(--tile-flight-page-x) - var(--tile-flight-to-x));
-    top: calc(var(--tile-flight-page-y) - var(--tile-flight-to-y));
-  }
-}
-@keyframes tile-flight-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes tile-flight-fade-in {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes tile-flight-page-in {
-  from {
-    opacity: 0;
-    scale: 0.985;
-  }
-}
-@keyframes tile-flight-page-out {
-  to {
-    opacity: 0;
-    scale: 0.985;
-  }
-}
-@keyframes tile-flight-recede {
-  to {
-    opacity: 0;
-    scale: 0.96;
-    filter: blur(8px);
-  }
-}
-@keyframes tile-flight-advance {
-  from {
-    opacity: 0;
-    scale: 0.96;
-    filter: blur(8px);
-  }
-}
-
-/* Open: the tile's picture dissolves in place, the page resolves on the glass,
-   the homepage recedes into the pressed tile. The two pictures overlap so the
-   glass is never bare: the tile art is still going as the page ghosts in. */
-html.tile-flight-open::view-transition-old(tile-window) {
-  width: var(--tile-flight-tile-w);
-  height: var(--tile-flight-tile-h);
-  animation:
-    tile-flight-pin-tile var(--duration-surface-travel)
-      var(--ease-surface-travel) both,
-    tile-flight-fade-out calc(var(--duration-surface-travel) * 0.36)
-      var(--ease-standard-out) both;
-}
-html.tile-flight-open::view-transition-new(tile-window) {
-  width: var(--tile-flight-page-w);
-  height: var(--tile-flight-page-h);
-  animation:
-    tile-flight-pin-page var(--duration-surface-travel)
-      var(--ease-surface-travel) both,
-    tile-flight-page-in calc(var(--duration-surface-travel) * 0.46)
-      var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.24) both;
-}
-html.tile-flight-open::view-transition-old(page-leaving) {
-  transform-origin: var(--tile-flight-origin-x, 50%)
-    var(--tile-flight-origin-y, 50%);
-  animation: tile-flight-recede calc(var(--duration-surface-travel) * 0.36)
-    var(--ease-in-out) both;
-}
-
-/* Close: the page dissolves, the glass gathers into the tile, the homepage
-   comes forward, and the tile's picture is back inside the glass while it is
-   still gathering, so the panel never travels empty. */
-html.tile-flight-close::view-transition-old(tile-window) {
-  width: var(--tile-flight-page-w);
-  height: var(--tile-flight-page-h);
-  animation:
-    tile-flight-pin-page var(--duration-surface-travel)
-      var(--ease-surface-travel) both,
-    tile-flight-page-out calc(var(--duration-surface-travel) * 0.36)
-      var(--ease-standard-out) both;
-}
-html.tile-flight-close::view-transition-new(tile-window) {
-  width: var(--tile-flight-tile-w);
-  height: var(--tile-flight-tile-h);
-  animation:
-    tile-flight-pin-tile var(--duration-surface-travel)
-      var(--ease-surface-travel) both,
-    tile-flight-fade-in calc(var(--duration-surface-travel) * 0.5)
-      var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.32) both;
-}
+/* The nearer picture is on top: the arriving page on the way in, the lifting
+   page on the way out. Both stay under the player. */
 ::view-transition-group(page-arriving) {
   animation: none;
+  z-index: 2;
+}
+html.tile-flight-close::view-transition-group(page-leaving) {
+  z-index: 2;
+}
+html.tile-flight-close::view-transition-group(page-arriving) {
   z-index: 1;
 }
-::view-transition-new(page-arriving) {
-  transform-origin: var(--tile-flight-origin-x, 50%)
-    var(--tile-flight-origin-y, 50%);
-  animation: tile-flight-advance calc(var(--duration-surface-travel) * 0.6)
-    var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.18) both;
+
+html.tile-flight-open::view-transition-old(page-leaving),
+html.tile-flight-close::view-transition-old(page-leaving) {
+  transform-origin: var(--tile-flight-leaving-x, 50%)
+    var(--tile-flight-leaving-y, 50%);
+}
+html.tile-flight-open::view-transition-new(page-arriving),
+html.tile-flight-close::view-transition-new(page-arriving) {
+  transform-origin: var(--tile-flight-arriving-x, 50%)
+    var(--tile-flight-arriving-y, 50%);
+}
+
+/* Open: home sinks away and softens, the page comes forward to rest. */
+html.tile-flight-open::view-transition-old(page-leaving) {
+  animation: tile-push-sink calc(var(--duration-surface-travel) * 0.84)
+    var(--ease-standard) both;
+}
+html.tile-flight-open::view-transition-new(page-arriving) {
+  animation: tile-push-forward calc(var(--duration-surface-travel) * 0.96)
+    var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.12) both;
+}
+
+/* Close: the page lifts past the viewer, home returns from the depth it sank to. */
+html.tile-flight-close::view-transition-old(page-leaving) {
+  animation: tile-push-lift calc(var(--duration-surface-travel) * 0.72)
+    var(--ease-standard) both;
+}
+html.tile-flight-close::view-transition-new(page-arriving) {
+  animation: tile-push-return calc(var(--duration-surface-travel) * 0.96)
+    var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.08) both;
+}
+
+@keyframes tile-push-sink {
+  from {
+    opacity: 1;
+    scale: 1;
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    scale: 0.94;
+    filter: blur(6px);
+  }
+}
+@keyframes tile-push-forward {
+  from {
+    opacity: 0;
+    scale: 1.06;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes tile-push-lift {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 1.06;
+  }
+}
+@keyframes tile-push-return {
+  from {
+    opacity: 0;
+    scale: 0.94;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    filter: blur(0);
+  }
 }
 
 /* ============================================================================

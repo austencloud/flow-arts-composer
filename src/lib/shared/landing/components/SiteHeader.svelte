@@ -77,8 +77,8 @@
 
   // Back-to-launchpad affordance: shown only on pages you "dove into" from the
   // landing launchpad. Clicking it navigates to "/"; after a tile flight the
-  // page closes back into its tile (tile-flight.svelte.ts), and otherwise it is
-  // an ordinary page change.
+  // page lifts away as home comes forward (tile-flight.svelte.ts), and otherwise
+  // it is an ordinary page change.
   const FLIGHT_PATHS = new Set(TILE_FLIGHT_PATHS);
   const currentPath = $derived(page.url ? currentRoutePath() : "");
   const showBack = $derived(FLIGHT_PATHS.has(currentPath));

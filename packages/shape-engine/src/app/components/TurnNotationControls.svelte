@@ -41,7 +41,10 @@
     layout?: "menu" | "inline";
     /** Columns the inline values wrap into. */
     inlineColumns?: number;
-    onturn: (hand: Hand, turn: TurnValue) => void;
+    /** Everything on one short row at any width, for a host that needs the
+        height for what sits under it. */
+    oneRow?: boolean;
+    onturn:(hand: Hand, turn: TurnValue) => void;
     onlabelmodechange: (mode: MatrixLabelMode) => void;
   }
 
@@ -56,6 +59,7 @@
     disabled = false,
     layout = "menu",
     inlineColumns = 4,
+    oneRow = false,
     onturn,
     onlabelmodechange,
   }: Props = $props();
@@ -124,6 +128,7 @@
   class="turn-controls"
   class:inline={layout === "inline"}
   class:with-back={leftBackTurn !== undefined}
+  class:one-row={oneRow}
   aria-label={t("shape_engine_turns_aria")}
 >
   <div class="notation-control">
@@ -391,6 +396,18 @@
     .notation-control {
       grid-column: 1 / -1;
     }
+  }
+
+  .turn-controls.one-row:not(.inline) {
+    grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .one-row .notation-control {
+    grid-column: auto;
+  }
+  .one-row .turn-trigger {
+    min-height: 2.25rem;
+    padding: 0.125rem 0.45rem;
   }
 
   @media (prefers-reduced-motion: reduce) {

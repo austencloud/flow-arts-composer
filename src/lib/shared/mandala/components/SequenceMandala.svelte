@@ -176,6 +176,12 @@
 		 * instead of the mandala's own; null or 1 finishes it.
 		 */
 		traceProgress?: number | null;
+		/**
+		 * Called after each animated frame paints, with the live canvas, its
+		 * spin and the frame's clock time. The afterimage trail copies frames
+		 * from here.
+		 */
+		onFrame?: (canvas: HTMLCanvasElement, rotationDeg: number, time: number) => void;
 	}
 
 	let {
@@ -205,6 +211,7 @@
 		tipEnds,
 		handOffsets = null,
 		traceProgress = undefined,
+		onFrame,
 	}: Props = $props();
 
 	// Prop-aware tip count: an explicit `tipEnds` prop wins (labs / overrides);
@@ -422,6 +429,7 @@
 			// Single per-frame canvas paint (also covers an in-flight shape morph,
 			// which the morph rAF therefore skips while we're animating).
 			draw();
+			if (onFrame && canvasEl) onFrame(canvasEl, rotationDeg, time);
 
 			rafId = requestAnimationFrame(tick);
 		}

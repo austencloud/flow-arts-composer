@@ -1,0 +1,13 @@
+{
+  "id": "ocean",
+  "label": "Ocean",
+  "glbUrl": "/models/ocean/ocean-environment.glb",
+  "license": "first-party",
+  "attribution": null,
+  "source": "scripts/blender-export-ocean-seabed.py",
+  "compression": { "geometry": "meshopt", "texture": "ktx2" },
+  "requiresAsyncLoad": true,
+  "featureKey": "environment",
+  "glbProgressWeight": 0.4,
+  "runtime": "ocean"
+}

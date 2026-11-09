@@ -1,17 +1,16 @@
 /**
  * The one way a homepage tile opens into its page.
  *
- * Pressing a tile arms a flight. While armed, the tile carries the name
- * `tile-window` and the next page's content takes the same name, so the browser
- * captures both. The pressed tile's glass then becomes a real panel that travels
- * from the tile to the screen, and Back flies it home again. Nothing is clipped:
- * the tile's picture and the page's picture stay pinned where they sit on screen
- * and only fade, while the old page recedes from the pressed tile's centre. The
- * glass clears once the page has resolved on it.
+ * A tile is a doorway, not a box, so nothing expands out of it. Pressing one arms
+ * a flight, and the navigation it leads to is a depth push: home sinks back and
+ * softens while the page comes forward from just behind the glass, and Back is
+ * the mirror. Each page content is its own view-transition picture, named
+ * `page-leaving` or `page-arriving`, because sharing a name would morph one box
+ * into the other.
  *
  * A flight starts only from a press. The header's link to the same URL gets the
- * ordinary page fade, and Back flies into a tile only when the trip out was a
- * flight. The styles are in view-transitions.css under TILE FLIGHT.
+ * ordinary page fade, and Back pushes only when the trip out was a flight. The
+ * styles are in view-transitions.css under TILE FLIGHT.
  */
 import { waitForPageReady } from "@austencloud/motion";
 
@@ -23,7 +22,6 @@ export const RESIDENT_HOST_PATHS: readonly string[] = Object.freeze([
 ]);
 
 const HOME_PATH = "/";
-export const TILE_WINDOW_NAME = "tile-window";
 const PAGE_LEAVING_NAME = "page-leaving";
 const PAGE_ARRIVING_NAME = "page-arriving";
 
@@ -39,14 +37,10 @@ export type TileFlightDirection = "open" | "close";
 /** "resident" is the player gliding between its pages with no tile involved. */
 export type SiteFlightKind = TileFlightDirection | "resident";
 
-interface FlightRoute {
-  tileId: string;
-  to: string;
-}
-
 interface ActiveFlight {
   kind: SiteFlightKind;
-  route: FlightRoute | null;
+  /** The tile's page, at the far end of a push; null in a glide. */
+  to: string | null;
 }
 
 export interface TileFlightOptions {
@@ -64,10 +58,11 @@ export function createTileFlight({
   setTimer = (work, ms) => setTimeout(work, ms),
   clearTimer = (timer) => clearTimeout(timer as ReturnType<typeof setTimeout>),
 }: TileFlightOptions = {}) {
-  let armed = $state.raw<FlightRoute | null>(null);
+  // Where the pressed tile leads.
+  let armed: string | null = null;
   let active = $state.raw<ActiveFlight | null>(null);
-  // The tile the visitor flew out of, kept for the trip back.
-  let flown: FlightRoute | null = null;
+  // The page the visitor flew to, kept for the trip back.
+  let flown: string | null = null;
   let expiry: unknown = null;
 
   function disarm(): void {
@@ -77,35 +72,35 @@ export function createTileFlight({
   }
 
   function decide(from: string, to: string): TileFlightDirection | null {
-    if (armed && from === HOME_PATH && to === armed.to) return "open";
-    if (flown && to === HOME_PATH && from === flown.to) return "close";
+    if (armed && from === HOME_PATH && to === armed) return "open";
+    if (flown && to === HOME_PATH && from === flown) return "close";
     return null;
   }
 
   return {
     /** A plain press on a tile or one of its chips. */
-    arm(tileId: string, href: string): void {
+    arm(href: string): void {
       disarm();
       const to = pathOf(href);
       if (to === HOME_PATH) return;
-      armed = { tileId, to };
+      armed = to;
       expiry = setTimer(disarm, armMs);
     },
     disarm,
     decide,
     /** A navigation is starting; one headed elsewhere replaces the press. */
     navigationStarting(to: string | null | undefined): void {
-      if (armed && to !== armed.to) disarm();
+      if (armed && to !== armed) disarm();
     },
     /** A navigation landed. Decides what the next trip home may do. */
     navigationSettled(from: string | null | undefined, to: string): void {
-      if (armed && from === HOME_PATH && to === armed.to) flown = armed;
+      if (armed && from === HOME_PATH && to === armed) flown = armed;
       else if (from !== to) flown = null;
       disarm();
     },
     begin(kind: SiteFlightKind): void {
-      const route = kind === "open" ? armed : kind === "close" ? flown : null;
-      active = { kind, route };
+      const to = kind === "open" ? armed : kind === "close" ? flown : null;
+      active = { kind, to };
     },
     end(): void {
       active = null;
@@ -113,20 +108,12 @@ export function createTileFlight({
     get kind(): SiteFlightKind | null {
       return active?.kind ?? null;
     },
-    /** The tile that is, or is about to be, one end of a flight. */
-    isFlying(tileId: string): boolean {
-      if (armed?.tileId === tileId) return true;
-      return active?.kind === "close" && active.route?.tileId === tileId;
-    },
     /** What the keyed page content calls itself as it arrives. */
     arrivingContentName(path: string): string | undefined {
-      if (active?.kind === "open" && active.route?.to === path) {
-        return TILE_WINDOW_NAME;
-      }
-      if (active?.kind === "close" && path === HOME_PATH) {
-        return PAGE_ARRIVING_NAME;
-      }
-      return undefined;
+      const arriving =
+        (active?.kind === "open" && active.to === path) ||
+        (active?.kind === "close" && path === HOME_PATH);
+      return arriving ? PAGE_ARRIVING_NAME : undefined;
     },
     /**
      * Whether the arriving page does its own short fade. A tile flight animates
@@ -135,12 +122,6 @@ export function createTileFlight({
      */
     get contentFades(): boolean {
       return active?.kind === "resident";
-    },
-    get armedRoute(): FlightRoute | null {
-      return armed;
-    },
-    get activeRoute(): FlightRoute | null {
-      return active?.route ?? null;
     },
   };
 }
@@ -167,68 +148,45 @@ export interface FlightBox {
 }
 
 export interface FlightGeometryInput {
-  direction: TileFlightDirection;
-  /** The pressed tile on the way out, the arriving tile on the way back. */
-  tile: FlightBox;
-  /** The destination page's content: arriving on open, leaving on close. */
-  page: FlightBox;
-  /** The homepage's content: leaving on open, arriving on close. */
-  home: FlightBox;
+  /** The content on its way out, measured before the old capture. */
+  leaving: FlightBox;
+  /** The content on its way in, measured once the transition is ready. */
+  arriving: FlightBox;
   viewport: { width: number; height: number };
 }
 
-function withinViewport(
+/** The middle of a box's on-screen part, from that box's own corner. */
+function screenCentreWithin(
   box: FlightBox,
   viewport: { width: number; height: number }
-): FlightBox {
+): { x: number; y: number } {
   const left = Math.max(box.x, 0);
   const top = Math.max(box.y, 0);
   const right = Math.min(box.x + box.width, viewport.width);
   const bottom = Math.min(box.y + box.height, viewport.height);
   return {
-    x: left,
-    y: top,
-    width: Math.max(right - left, 0),
-    height: Math.max(bottom - top, 0),
-  };
-}
-
-function boxVars(name: string, box: FlightBox): Record<string, string> {
-  return {
-    [`--tile-flight-${name}-x`]: `${box.x}px`,
-    [`--tile-flight-${name}-y`]: `${box.y}px`,
-    [`--tile-flight-${name}-w`]: `${box.width}px`,
-    [`--tile-flight-${name}-h`]: `${box.height}px`,
+    x: left + Math.max(right - left, 0) / 2 - box.x,
+    y: top + Math.max(bottom - top, 0) / 2 - box.y,
   };
 }
 
 /**
- * The flight's boxes as custom properties for the TILE FLIGHT styles, all in
- * viewport pixels. The page box is the whole page, which may be thousands of
- * pixels tall and sit above the screen when scrolled; the panel stops at the
- * screen's edge, so it travels to and from what is actually on screen.
+ * The point each picture scales about, as custom properties for the TILE FLIGHT
+ * styles. A page may be thousands of pixels tall and sit above the screen when
+ * scrolled, so scaling about its own centre would slide what is on screen.
  */
 export function flightGeometry({
-  direction,
-  tile,
-  page,
-  home,
+  leaving,
+  arriving,
   viewport,
 }: FlightGeometryInput): Record<string, string> {
-  const screen = withinViewport(page, viewport);
-  const opening = direction === "open";
+  const leavingCentre = screenCentreWithin(leaving, viewport);
+  const arrivingCentre = screenCentreWithin(arriving, viewport);
   return {
-    ...boxVars("tile", tile),
-    ...boxVars("page", page),
-    ...boxVars("from", opening ? tile : screen),
-    ...boxVars("to", opening ? screen : tile),
-    // The point the homepage recedes into and comes forward from.
-    "--tile-flight-origin-x": `${tile.x + tile.width / 2 - home.x}px`,
-    "--tile-flight-origin-y": `${tile.y + tile.height / 2 - home.y}px`,
-    // The page picture scales about the middle of what is on screen, not the
-    // middle of a page that runs far below it.
-    "--tile-flight-screen-x": `${screen.x + screen.width / 2 - page.x}px`,
-    "--tile-flight-screen-y": `${screen.y + screen.height / 2 - page.y}px`,
+    "--tile-flight-leaving-x": `${leavingCentre.x}px`,
+    "--tile-flight-leaving-y": `${leavingCentre.y}px`,
+    "--tile-flight-arriving-x": `${arrivingCentre.x}px`,
+    "--tile-flight-arriving-y": `${arrivingCentre.y}px`,
   };
 }
 
@@ -240,30 +198,6 @@ function boxOf(element: Element | null): FlightBox | null {
 
 const CONTENT_SELECTOR = ".mkt-content";
 
-function tileElement(tileId: string | undefined): HTMLElement | null {
-  if (!tileId) return null;
-  return document.querySelector<HTMLElement>(
-    `[data-tile-id="${CSS.escape(tileId)}"]`
-  );
-}
-
-/**
- * What the panel takes from the tile itself: its accent, and its corner, which
- * the launchpad's viewport tiers tighten below the token's.
- */
-function tileLook(tile: HTMLElement | null): Record<string, string> {
-  if (!tile) return {};
-  const look: Record<string, string> = {
-    "--tile-flight-tint": getComputedStyle(tile).getPropertyValue("--c").trim(),
-  };
-  if (tile.firstElementChild) {
-    look["--tile-flight-radius"] = getComputedStyle(
-      tile.firstElementChild
-    ).borderTopLeftRadius;
-  }
-  return look;
-}
-
 function flightKindFor(from: string, to: string): SiteFlightKind | null {
   const direction = tileFlight.decide(from, to);
   if (direction) return direction;
@@ -274,7 +208,7 @@ function flightKindFor(from: string, to: string): SiteFlightKind | null {
 
 /**
  * The route motion package only honours holdPageReady on its fade path, so a
- * flight honours it here: everything stays frozen on the pressed tile until the
+ * flight honours it here: everything stays frozen on the home page until the
  * page's first screen is drawn, up to the package's cap.
  */
 async function holdForFirstScreen(): Promise<void> {
@@ -304,14 +238,13 @@ export function startSiteFlight(
   transition: ViewTransition,
   navigation: FlightNavigation
 ): void {
-  const from = navigation.from?.url.pathname;
+  const from = navigation.from?.url?.pathname;
   const to = navigation.to?.url.pathname;
   if (!from || !to) return;
   const kind = flightKindFor(from, to);
   if (!kind) return;
 
   tileFlight.begin(kind);
-  const route = tileFlight.activeRoute;
   const root = document.documentElement;
   const classes = ["site-flight"];
   if (kind !== "resident") classes.push(`tile-flight-${kind}`);
@@ -319,40 +252,28 @@ export function startSiteFlight(
 
   const leavingContent = document.querySelector<HTMLElement>(CONTENT_SELECTOR);
   if (leavingContent) {
-    leavingContent.style.viewTransitionName =
-      kind === "close" ? TILE_WINDOW_NAME : PAGE_LEAVING_NAME;
+    leavingContent.style.viewTransitionName = PAGE_LEAVING_NAME;
   }
 
   let vars: string[] = [];
   if (kind !== "resident") {
-    // Whatever is on screen now is measured now, before the old capture. The
-    // rest does not exist until the transition is ready.
-    const leavingBox = boxOf(leavingContent);
-    const pressedTile = tileElement(route?.tileId);
-    const pressedBox = kind === "open" ? boxOf(pressedTile) : null;
-    const pressedLook = kind === "open" ? tileLook(pressedTile) : null;
+    // The old page is measured now, before its capture. The new one does not
+    // exist until the transition is ready.
+    const leaving = boxOf(leavingContent);
 
     void transition.ready
       .then((): Promise<void> | undefined => {
-        const arrivingContent = boxOf(document.querySelector(CONTENT_SELECTOR));
-        const arrivingTile =
-          kind === "close" ? tileElement(route?.tileId) : null;
-        const tile = kind === "open" ? pressedBox : boxOf(arrivingTile);
-        const page = kind === "open" ? arrivingContent : leavingBox;
-        const home = kind === "open" ? leavingBox : arrivingContent;
-        if (!tile || !page || !home) return undefined;
-        const geometry: Record<string, string> = {
-          ...flightGeometry({
-            direction: kind,
-            tile,
-            page,
-            home,
+        const arriving = boxOf(document.querySelector(CONTENT_SELECTOR));
+        if (leaving && arriving) {
+          const geometry = flightGeometry({
+            leaving,
+            arriving,
             viewport: { width: root.clientWidth, height: innerHeight },
-          }),
-          ...(pressedLook ?? tileLook(arrivingTile)),
-        };
-        vars = Object.keys(geometry);
-        for (const name of vars) root.style.setProperty(name, geometry[name]!);
+          });
+          vars = Object.keys(geometry);
+          for (const name of vars)
+            root.style.setProperty(name, geometry[name]!);
+        }
         return kind === "open" ? holdForFirstScreen() : undefined;
       })
       // A transition skipped before it started has nothing to place.

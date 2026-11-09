@@ -47,7 +47,7 @@
     type AutoAnswer,
   } from "#lib/shared/auth/phone-sign-in/client.js";
   import PhoneNotice from "#lib/shared/auth/phone-sign-in/PhoneNotice.svelte";
-  import { finishBootScreen } from "#lib/shared/auth/phone-sign-in/boot-screen.js";
+  import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
   import AutoApproved from "./AutoApproved.svelte";
   import TrustThisPhone from "./TrustThisPhone.svelte";
 

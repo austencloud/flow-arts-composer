@@ -205,8 +205,8 @@ export const lt3DashLettersContent: GuideBlock[] = [
     html:
       'Just like we did with hands, let’s break down some <strong style="color:#26e600">Cross</strong><strong style="color:#6F2DA8">-Shifts</strong> step-by-step.',
   },
-  { kind: "pictographGroup", items: bdStrip(BREAKDOWNS[0]!), flowCols: 2, layout: "strip", stepLabels: ["Start", "1"], render: RENDER, caption: "W-: step by step" },
-  { kind: "pictographGroup", items: bdStrip(BREAKDOWNS[1]!), flowCols: 2, layout: "strip", stepLabels: ["Start", "1"], render: RENDER, caption: "Δ-: step by step" },
+  { kind: "pictographGroup", items: bdStrip(BREAKDOWNS[0]!), flowCols: 2, layout: "strip", numbered: true, render: RENDER, caption: "W-: step by step" },
+  { kind: "pictographGroup", items: bdStrip(BREAKDOWNS[1]!), flowCols: 2, layout: "strip", numbered: true, render: RENDER, caption: "Δ-: step by step" },
   {
     kind: "prose",
     html:

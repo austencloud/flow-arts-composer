@@ -15,6 +15,7 @@
   import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import type { EffectPreset } from "../presets/types";
   import { TILE_H, TILE_W } from "./tile-paint";
+  import { queueTilePaint } from "./tile-paint-queue";
   import {
     PROP_AWARE_TILES,
     tilePainterFor,
@@ -100,7 +101,13 @@
     if (!node) return;
     const prop = resolvedPropType;
     const keyed = PROP_AWARE_TILES.has(effectType) ? (prop ?? "") : "";
-    paintInto(node, `${effectType}|${preset.id}|${keyed}`, prop);
+    const key = `${effectType}|${preset.id}|${keyed}`;
+    // A remembered frame is a blit, so reopening the picker shows it at once.
+    if (cache.has(key)) {
+      paintInto(node, key, prop);
+      return;
+    }
+    return queueTilePaint(() => paintInto(node, key, prop));
   });
 </script>
 

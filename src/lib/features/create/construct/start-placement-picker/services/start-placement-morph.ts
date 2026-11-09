@@ -29,7 +29,13 @@ export const START_MORPH_SOURCE_ATTRIBUTE = "data-start-morph-source";
 const ACTIVE_CLASS = "construct-start-morph-active";
 const FROM_CLASS = "construct-start-morph-from";
 const TO_CLASS = "construct-start-morph-to";
-const TARGET_SELECTOR = ".workspace-container [data-history-start-placement]";
+/**
+ * The Create workspace is the usual landing. A smaller workspace elsewhere, such
+ * as the /composer Construct demo, marks its grid's host with this attribute.
+ * The name-holding rule in view-transitions.css lists the same two hosts.
+ */
+const TARGET_SELECTOR =
+  ":is(.workspace-container, [data-start-morph-landing]) [data-history-start-placement]";
 
 /**
  * How long the page may stay frozen on the old frame while the start cell

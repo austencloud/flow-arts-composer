@@ -58,6 +58,8 @@ import {
   collectCommits,
   gateCommits,
   auditChangelogEntries,
+  auditReleaseArrivals,
+  loadReleaseAnchors,
   toPublicChangelog,
 } from "./lib/release-module-gate.mjs";
 
@@ -380,6 +382,11 @@ function prepareCustomChangelog(entries) {
       guestModuleAccess: loadGuestModuleAccess(),
       moduleTabs: loadModuleTabs(),
     });
+    // A highlight's anchor must exist in the code, or its arrival pulse
+    // would quietly find nothing.
+    audit.errors.push(
+      ...auditReleaseArrivals(entries, loadReleaseAnchors())
+    );
   } catch (error) {
     console.error(`❌ Changelog visibility audit failed: ${error.message}`);
     return null;

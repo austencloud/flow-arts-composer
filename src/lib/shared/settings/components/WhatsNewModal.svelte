@@ -19,6 +19,7 @@
   import ContributorBadge from "./tabs/release-notes/ContributorBadge.svelte";
   import ChangelogRichText from "./tabs/release-notes/ChangelogRichText.svelte";
   import ChangelogEntryMedia from "./tabs/release-notes/ChangelogEntryMedia.svelte";
+  import ReleaseShowMe from "./tabs/release-notes/ReleaseShowMe.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
 
@@ -48,15 +49,34 @@
   const version = $derived(whatsNewState.version);
   const isOpen = $derived(whatsNewState.isOpen);
 
+  // Several unread releases open as one sheet, newest first. Each note keeps
+  // its release number so the reader can tell what came when.
+  type ShownEntry = ChangelogEntry & { fromVersion: string };
+  const releases = $derived(
+    whatsNewState.rollup.length ? whatsNewState.rollup : version ? [version] : []
+  );
+  const isRollup = $derived(releases.length > 1);
+  const entries = $derived<ShownEntry[]>(
+    releases.flatMap((release) =>
+      (release.changelogEntries ?? []).map((entry) => ({
+        ...entry,
+        fromVersion: release.version,
+      }))
+    )
+  );
+  const contributorIds = $derived([
+    ...new Set(releases.flatMap((release) => release.contributorIds ?? [])),
+  ]);
+
   let contributors = $state<Map<string, Contributor>>(new Map());
 
   $effect(() => {
-    if (!version?.contributorIds?.length) {
+    if (!contributorIds.length) {
       contributors = new Map();
       return;
     }
     const loader = getContributorLoader();
-    loader.getByIds(version.contributorIds).then((list) => {
+    loader.getByIds(contributorIds).then((list) => {
       contributors = new Map(list.map((c) => [c.id, c]));
     });
   });
@@ -69,7 +89,7 @@
   // a strip to step through, in the order the notes run (new features
   // first). Every other note is a line of text in the columns below.
   const featured = $derived(
-    (version?.changelogEntries?.filter((entry) => entry.media) ?? []).sort(
+    entries.filter((entry) => entry.media).sort(
       (a, b) =>
         CATEGORY_CONFIG[a.category].order - CATEGORY_CONFIG[b.category].order
     )
@@ -93,11 +113,11 @@
 
   // Group the remaining entries by category
   const groupedChangelog = $derived.by(() => {
-    if (!version?.changelogEntries) return [];
+    if (!entries.length) return [];
 
-    const groups = new Map<ChangelogCategory, ChangelogEntry[]>();
+    const groups = new Map<ChangelogCategory, ShownEntry[]>();
 
-    for (const entry of version.changelogEntries) {
+    for (const entry of entries) {
       const existing = groups.get(entry.category) || [];
       existing.push(entry);
       groups.set(entry.category, existing);
@@ -119,7 +139,7 @@
   });
 
   // Total count for summary
-  const totalChanges = $derived(version?.changelogEntries?.length ?? 0);
+  const totalChanges = $derived(entries.length);
   const isTrimmed = $derived(
     groupedChangelog.some((group) => group.hidden > 0)
   );
@@ -160,7 +180,12 @@
         <div class="header-text">
           <h1 id="whats-new-title">{t("settings_whats_new")}</h1>
           <p class="subtitle">
-            {t("settings_release_update_count", { count: totalChanges })}
+            {isRollup
+              ? t("settings_release_rollup", {
+                  count: totalChanges,
+                  releases: releases.length,
+                })
+              : t("settings_release_update_count", { count: totalChanges })}
           </p>
         </div>
         <button
@@ -175,7 +200,12 @@
     {/snippet}
 
     <div class="release-body">
-      {#snippet featuredItem(entry: ChangelogEntry)}
+      {#snippet releaseTag(entry: ShownEntry)}
+        {#if isRollup}<span class="entry-version">v{entry.fromVersion}</span
+          >{/if}
+      {/snippet}
+
+      {#snippet featuredItem(entry: ShownEntry)}
         {@const config = CATEGORY_CONFIG[entry.category]}
         <div
           class="featured-media"
@@ -193,9 +223,11 @@
             ></i>
             {t(`settings_changelog_${entry.category}`)}
           </span>
+          {@render releaseTag(entry)}
           <p>
             <ChangelogRichText text={entry.text} onNavigate={handleClose} />
           </p>
+          <ReleaseShowMe {entry} onNavigate={handleClose} />
         </div>
       {/snippet}
 
@@ -274,10 +306,12 @@
             <ul class="category-list">
               {#each group.entries as entry}
                 <li>
+                  {@render releaseTag(entry)}
                   <ChangelogRichText
                     text={entry.text}
                     onNavigate={handleClose}
                   />
+                  <ReleaseShowMe {entry} onNavigate={handleClose} />
                   {#if entry.contributorIds?.length}
                     <span class="entry-contributors">
                       {#each entry.contributorIds as cid}
@@ -300,11 +334,11 @@
         {/each}
       </div>
 
-      {#if version?.contributorIds?.length && contributors.size > 0}
+      {#if contributorIds.length && contributors.size > 0}
         <div class="contributors-footer">
           <h4 class="contributors-title">{t("settings_contributors")}</h4>
           <div class="contributors-list">
-            {#each version.contributorIds as cid}
+            {#each contributorIds as cid}
               {@const contrib = contributors.get(cid)}
               {#if contrib}
                 <ContributorBadge contributor={contrib} size="md" />
@@ -799,6 +833,30 @@
     color: var(--theme-text);
     line-height: 1.5;
     break-inside: avoid;
+  }
+
+  /* In a rolled-up sheet, each note says which release it came in. */
+  .entry-version {
+    display: inline-block;
+    margin-inline-end: 6px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--theme-text) 8%, transparent);
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.6;
+    vertical-align: baseline;
+  }
+
+  /* "Show me" sits on its own line under the note it belongs to. */
+  .category-list li :global(a.link-chip.release-show-me) {
+    display: flex;
+    width: fit-content;
+  }
+
+  .featured-text :global(a.link-chip.release-show-me) {
+    align-self: center;
   }
 
   .category-list li::before {

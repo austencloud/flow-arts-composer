@@ -450,7 +450,7 @@
         style:width="100%"
         style:display="grid"
         style:grid-template-columns="repeat({columnCount}, 1fr)"
-        style:align-items="start"
+        style:align-items="var(--browse-row-align, start)"
         style:gap="var(--spacing-lg, 16px)"
         role="row"
         aria-rowindex={virtualRow.index + 1}

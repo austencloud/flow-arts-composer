@@ -26,7 +26,7 @@ describe("fitScale", () => {
   });
 
   it("reports a screen that cannot fit, at the floor", () => {
-    expect(fitScale(content(4000), 200)).toEqual({ scale: 0.45, fits: false });
+    expect(fitScale(content(4000), 200)).toEqual({ scale: 0.3, fits: false });
   });
 });
 
@@ -77,7 +77,7 @@ describe("fitScaleFromSeedAsync", () => {
       () => false,
       1.2
     );
-    expect(r).toEqual({ scale: 0.45, fits: false });
+    expect(r).toEqual({ scale: 0.3, fits: false });
   });
 
   it("gives way to a newer fit", async () => {

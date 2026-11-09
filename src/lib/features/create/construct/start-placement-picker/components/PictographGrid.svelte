@@ -199,7 +199,8 @@
     min-height: 0;
     position: relative;
     cursor: pointer;
-    padding: min(2cqmin, 0.5rem); /* Add padding for aesthetics */
+    --tile-inset: min(2cqmin, 0.5rem);
+    padding: var(--tile-inset); /* Add padding for aesthetics */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -226,12 +227,13 @@
   .pictograph-wrapper {
     /*
      * The card is square, so it is bounded by whichever runs out first: the
-     * width of its grid cell, or the height of the row. `min(100%, 100cqh)`
-     * says exactly that in one rule and holds at every shape — a short, wide
-     * Fold-landscape strip and a 4K expanse both land correctly, where the old
-     * cqmin/cqw/cqh trio disagreed with each other at the extremes.
+     * width of its grid cell, or the height of the row less the cell's padding.
+     * That one rule holds at every shape — a short, wide Fold-landscape strip
+     * and a 4K expanse both land correctly, where the old cqmin/cqw/cqh trio
+     * disagreed with each other at the extremes. Leave the padding out and a
+     * height-bound card comes out wider than it is tall.
      */
-    width: min(100%, 100cqh);
+    width: min(100%, calc(100cqh - 2 * var(--tile-inset)));
     height: auto;
     /* Constrain to maintain square aspect ratio matching the SVG */
     aspect-ratio: 1 / 1;
@@ -277,9 +279,13 @@
     display: block;
   }
 
-  /* Desktop hover - only on hover-capable devices */
+  /* Desktop hover - only on hover-capable devices. Quiet while the Create
+     entry flies these in under a cursor that has not moved
+     (create-entry-choreography.ts). */
   @media (hover: hover) {
-    .pictograph-container:hover .pictograph-wrapper {
+    :global(html:not([data-entry-hover-quiet]))
+      .pictograph-container:hover
+      .pictograph-wrapper {
       transform: scale(1.05);
       border-color: var(--letter-border-color, var(--primary));
       box-shadow:

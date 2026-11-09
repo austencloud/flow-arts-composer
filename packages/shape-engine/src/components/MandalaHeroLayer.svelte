@@ -8,8 +8,11 @@
   guide the live canvas will draw over it, and the box that carries the
   shared-element name is the tile's picture at the hero's size.
   Opacity animates via CSS so the still-mandala → live-guide transition never
-  re-rasterizes. During a shared-element handoff the floor is forced fully
-  visible with no transition so the transition snapshot has artwork in it. -->
+  re-rasterizes. A shared-element snapshot ignores this layer's opacity, so the
+  floor keeps its real strength through a handoff, with no transition, and the
+  flight lands on exactly what the page will show. Fully transparent, though,
+  the browser skips painting the artwork and the snapshot comes out blank, so
+  during a handoff it stays a hair above zero. -->
 <script lang="ts">
   import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
@@ -38,12 +41,14 @@
     opacity?: number;
     /** This floor owns the shared tile↔hero transition name right now. */
     claim?: boolean;
-    /** A shared-element transition is capturing: show the artwork, instantly. */
+    /** A shared-element transition is capturing: paint the artwork, instantly. */
     handoff?: boolean;
   } = $props();
 
   const transitionDuration = motionDuration(DURATION.normal);
-  const effectiveOpacity = $derived(handoff ? 1 : opacity);
+  const effectiveOpacity = $derived(
+    handoff ? Math.max(opacity, 0.01) : opacity
+  );
   // The live guide that replaces this floor strokes in the viewer's saved
   // hand colors, and so do the matrix tiles it morphs from. Painting the
   // floor in the default palette flipped the mandala's color at the handoff.
@@ -63,6 +68,7 @@
 <div
   class="mandala-layer"
   class:handoff
+  data-mandala-floor
   style={`opacity: ${effectiveOpacity}; --mandala-duration: ${transitionDuration}ms`}
   aria-hidden="true"
 >

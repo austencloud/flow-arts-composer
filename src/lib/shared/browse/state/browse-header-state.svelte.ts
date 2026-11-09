@@ -9,6 +9,7 @@
  * screen leaves.
  */
 import type { Snippet } from "svelte";
+import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
 
 export interface BrowseHeaderEntry {
   /** The current crumb's label. Null while it is still loading. */
@@ -23,7 +24,30 @@ export interface BrowseHeaderEntry {
   accent?: () => string | null | undefined;
 }
 
+/** The scope bar's search, when the bar's own field gives its row to the grid. */
+export interface BrowseHeaderSearch {
+  placeholder: () => string;
+  value: () => string;
+  onSearch: (text: string) => void;
+}
+
+/** The open grid's Filters pill, when its toolbar gives its row to the grid. */
+export interface BrowseHeaderFilters {
+  engine: () => BrowseEngine;
+  open: () => void;
+}
+
 export interface BrowseHeaderState {
+  /** A phone or tablet not held sideways: search and Filters live in the bar,
+   * and the bands under it step aside for the grid. */
+  readonly compactChrome: boolean;
+  readonly search: BrowseHeaderSearch | null;
+  readonly filters: BrowseHeaderFilters | null;
+  /** Both return the matching cleanup, like `register`. They are slots of
+   * their own because the screen that owns them is not the screen's entry: a
+   * collection keeps its own actions beside them. */
+  registerSearch(search: BrowseHeaderSearch): () => void;
+  registerFilters(filters: BrowseHeaderFilters): () => void;
   readonly entry: BrowseHeaderEntry | null;
   readonly leaf: string | null;
   readonly leafContent: Snippet | null;
@@ -34,12 +58,37 @@ export interface BrowseHeaderState {
   register(entry: BrowseHeaderEntry): () => void;
 }
 
-export function createBrowseHeaderState(): BrowseHeaderState {
+export function createBrowseHeaderState({
+  compactChrome = () => false,
+}: { compactChrome?: () => boolean } = {}): BrowseHeaderState {
   // Raw: the entry holds the screen's getters, nothing to deep-proxy, and
   // unregistering compares it against the object the screen handed in.
   let entry = $state.raw<BrowseHeaderEntry | null>(null);
+  let search = $state.raw<BrowseHeaderSearch | null>(null);
+  let filters = $state.raw<BrowseHeaderFilters | null>(null);
 
   return {
+    get compactChrome() {
+      return compactChrome();
+    },
+    get search() {
+      return search;
+    },
+    get filters() {
+      return filters;
+    },
+    registerSearch(next) {
+      search = next;
+      return () => {
+        if (search === next) search = null;
+      };
+    },
+    registerFilters(next) {
+      filters = next;
+      return () => {
+        if (filters === next) filters = null;
+      };
+    },
     get entry() {
       return entry;
     },

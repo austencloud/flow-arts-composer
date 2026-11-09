@@ -3,19 +3,47 @@
  * MandalaViewerController so the controller and the MandalaLoader share one
  * source of truth for preset colors and gradient interpolation.
  */
+import {
+	BLUE_FILL,
+	BLUE_STROKE,
+	PURPLE_FILL,
+	PURPLE_STROKE,
+	RED_FILL,
+	RED_STROKE,
+} from "./mandala-constants";
 import type { MandalaPalette, MandalaPresetId } from "./mandala-types";
+
+function handColorPalette(colors: { left: string; right: string }): MandalaPalette {
+	const overlap = mixColors(colors.left, colors.right);
+	return {
+		leftStroke: colors.left, leftFill: withAlpha(colors.left, 0.2),
+		rightStroke: colors.right, rightFill: withAlpha(colors.right, 0.2),
+		purpleStroke: overlap, purpleFill: withAlpha(overlap, 0.2),
+	};
+}
 
 /** Apply hand identity colors while retaining the theme's default palette. */
 export function applyMandalaHandColors(
 	base: MandalaPalette,
 	colors?: { left: string; right: string } | null,
 ): MandalaPalette {
-	if (!colors) return base;
-	const overlap = mixColors(colors.left, colors.right);
+	return colors ? handColorPalette(colors) : base;
+}
+
+/**
+ * How a saved piece is drawn, wherever it appears: the colors its maker saved
+ * with it, or the one fixed look for a piece saved with none. Never the viewer's
+ * settings, so a poster, its detail page, the owner's gallery and an export all
+ * show the same picture to everyone.
+ */
+export function savedMandalaPalette(
+	colors?: { left: string; right: string } | null,
+): MandalaPalette {
+	if (colors) return handColorPalette(colors);
 	return {
-		leftStroke: colors.left, leftFill: withAlpha(colors.left, 0.2),
-		rightStroke: colors.right, rightFill: withAlpha(colors.right, 0.2),
-		purpleStroke: overlap, purpleFill: withAlpha(overlap, 0.2),
+		leftStroke: BLUE_STROKE, leftFill: BLUE_FILL,
+		rightStroke: RED_STROKE, rightFill: RED_FILL,
+		purpleStroke: PURPLE_STROKE, purpleFill: PURPLE_FILL,
 	};
 }
 

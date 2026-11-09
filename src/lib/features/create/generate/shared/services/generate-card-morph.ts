@@ -21,7 +21,9 @@
  * (where `mutate` lands) asynchronously, after `startMorph` has returned and
  * `lastRan` is assigned below.
  */
+import { holdDeferredWorkForMotion } from "#lib/shared/foundation/utils/background-scheduling.js";
 import { startMorph } from "#lib/shared/transitions/results-morph.js";
+import { generateCardFlight } from "../state/generate-card-flight.svelte";
 import { STAGGER } from "#lib/shared/transitions/transitions.js";
 import { countViewTransitionNameClaims } from "#lib/shared/transitions/view-transition-name-registry.js";
 import type { GenerateCardPanelId } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
@@ -118,19 +120,39 @@ export function morphGenerateCard(
   // stationary siblings; otherwise a later card such as LOOP briefly crosses
   // in front of the workspace growing out of Timing and direction.
   const releaseMorphLayer = claimMorphLayer(host);
+  // The page's start-up jobs wait for the card to land. This morph has no frame
+  // time to spare, and a job landing inside it was the first-open stutter.
+  const releaseDeferredWork = holdDeferredWorkForMotion();
+  // An open stage for this card means the morph is closing it.
+  const opening = !document.querySelector(
+    `.expanded-card-stage[data-card-id="${host}"]`
+  );
+  let started = false;
+  const land = (): void => {
+    releaseMorphLayer();
+    releaseDeferredWork();
+    if (generateCardFlight.opening === host) generateCardFlight.opening = null;
+  };
   lastRan = false;
   let transition: ViewTransition | null;
   try {
-    transition = startMorph(mutate);
+    transition = startMorph(() => {
+      // startMorph runs the change at once when no transition can run, and
+      // only later, inside the transition, when one can. Only a card that is
+      // really flying shows its stand-in.
+      if (started && opening) generateCardFlight.opening = host;
+      mutate();
+    });
+    started = true;
   } catch (error) {
-    releaseMorphLayer();
+    land();
     throw error;
   }
   lastRan = transition !== null;
   if (transition) {
-    void transition.finished.then(releaseMorphLayer, releaseMorphLayer);
+    void transition.finished.then(land, land);
   } else {
-    releaseMorphLayer();
+    land();
   }
   runWhenSettled(transition, options.onSettled);
   return lastRan;

@@ -758,7 +758,11 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 {/snippet}
 
 {#snippet headerActions()}
-  <div class="header-tools" style="--tile-color: {tileColor};">
+  <div
+    class="header-tools"
+    class:compact-chrome={header?.compactChrome}
+    style="--tile-color: {tileColor};"
+  >
     {#if collection && foreignOwnerId && !accessRole && !previewReadOnly}
       {@const following = followedCollectionsState.isFollowed(
         foreignOwnerId,
@@ -994,6 +998,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         curatedSortLabel={t("browse_audit_collection_order")}
         toolbarVariant="embedded"
         hideToolbarSearch={!!browseQuery}
+        headerChrome
         onOpenFilters={() => (filterSheetOpen = true)}
         resultTotal={visibleCount ?? members.length}
         onSelect={(sequence, variations) =>
@@ -1020,6 +1025,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   bind:isOpen={filterSheetOpen}
   isMobile={!isSideBySide}
   allowSearch={!browseQuery}
+  gridControls={{
+    curatedSortLabel: t("browse_audit_collection_order"),
+    collectionPropType: collection?.propType,
+  }}
 />
 
 <ContextMenu
@@ -1203,6 +1212,12 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     .select-btn {
       display: flex;
     }
+  }
+
+  /* The phone header also holds Filters and search, so Select lives in the
+     Filters sheet and the collection menu there and the name keeps its room. */
+  .header-tools.compact-chrome .select-btn {
+    display: none;
   }
 
   /* Follow/Following swap: reserve the wider state so the button's edge

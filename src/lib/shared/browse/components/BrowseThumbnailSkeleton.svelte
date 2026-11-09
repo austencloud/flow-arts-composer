@@ -4,7 +4,7 @@ Gallery Thumbnail Skeleton - Loading State Component
 State-of-the-art skeleton that matches the real browse gallery:
 - Same responsive column breakpoints as BrowseGrid
 - Cards are image-only (no metadata/actions) matching ChoreoCardThumbnail
-- Varied aspect ratios mimicking real sequence length distribution
+- One even card shape, in a tone that reads as loading on any scene
 - Staggered shimmer for organic feel
 - Fade-out transition for smooth handoff to real content
 -->
@@ -28,29 +28,9 @@ State-of-the-art skeleton that matches the real browse gallery:
     return 2;
   });
 
-  // Realistic aspect ratios derived from LayoutCalculator.calculateGalleryAspectRatio().
-  // These represent actual sequence layouts: cols / (rows + 10/21).
-  // Distribution weighted toward common beat counts (4-8 beats).
-  const ASPECT_RATIO_POOL: number[] = [
-    3.39, // 4 beats: 5 / (1 + 10/21) - short wide card
-    2.07, // 8 beats: 5 / (2 + 10/21) - medium card
-    1.36, // 20 beats: 6 / (4 + 10/21) - tall card
-    2.07, // 8 beats again (most common)
-    1.62, // 12 beats: 4 / (4 + 10/21) - medium-tall
-    2.49, // 10 beats: 6 / (2 + 10/21) - medium-wide
-    1.13, // 16 beats: 5 / (4 + 10/21) - near-square
-    2.07, // 8 beats (very common)
-    1.36, // 20 beats
-    3.39, // 4 beats
-    1.62, // 12 beats
-    2.49, // 10 beats
-  ];
-
-  // Deterministic aspect ratio for each skeleton card index.
-  // Wraps around the pool so any count works.
-  function getAspectRatio(index: number): number {
-    return ASPECT_RATIO_POOL[index % ASPECT_RATIO_POOL.length]!;
-  }
+  // One even shape: the common eight-beat card. Varied heights made a grid
+  // that is still loading look like a broken one (Austen, 2026-11-06).
+  const CARD_ASPECT_RATIO = 1.15;
 
   let resizeObserver: ResizeObserver | null = null;
 
@@ -86,7 +66,7 @@ State-of-the-art skeleton that matches the real browse gallery:
     <div class="skeleton-card">
       <div
         class="skeleton-image"
-        style:aspect-ratio={getAspectRatio(index)}
+        style:aspect-ratio={CARD_ASPECT_RATIO}
       ></div>
       <!-- Shimmer overlay with staggered timing per card -->
       <div
@@ -109,14 +89,15 @@ State-of-the-art skeleton that matches the real browse gallery:
     position: relative;
     border-radius: 8px;
     overflow: hidden;
-    background: var(--theme-card-bg);
+    /* Not the card background: on a dark scene that is black, which read as
+       thumbnails that had failed. */
+    background: color-mix(in srgb, var(--theme-text, #fff) 9%, transparent);
     border: 1px solid var(--theme-stroke);
   }
 
   .skeleton-image {
     width: 100%;
     /* aspect-ratio set dynamically via inline style */
-    background: var(--theme-card-hover-bg);
   }
 
   /* Separate shimmer element so stagger delay applies per-card */
@@ -126,9 +107,7 @@ State-of-the-art skeleton that matches the real browse gallery:
     background: linear-gradient(
       90deg,
       transparent 0%,
-      var(--theme-card-hover-bg) 40%,
-      rgba(255, 255, 255, 0.04) 50%,
-      var(--theme-card-hover-bg) 60%,
+      color-mix(in srgb, var(--theme-text, #fff) 8%, transparent) 50%,
       transparent 100%
     );
     animation: shimmer 1.8s ease-in-out infinite;

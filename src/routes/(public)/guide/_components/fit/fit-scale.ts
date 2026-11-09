@@ -26,7 +26,7 @@ export interface FitResult {
 }
 
 /** Figures never shrink below this share of their designed size. */
-export const FIT_MIN_SCALE = 0.45;
+export const FIT_MIN_SCALE = 0.3;
 /** Figures grow up to this multiple on a large screen. */
 export const FIT_MAX_SCALE = 4;
 

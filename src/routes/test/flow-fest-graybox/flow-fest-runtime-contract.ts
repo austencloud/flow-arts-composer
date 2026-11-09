@@ -31,6 +31,11 @@ export interface FlowFestReviewCamera {
   horizontalFovDegrees: number;
   positionWorld: [number, number, number];
   targetWorld: [number, number, number];
+  /**
+   * Arrive standing on the terrain under the camera instead of at its height.
+   * Shared view links set this; registered review frames keep their exact eye.
+   */
+  standOnGround?: boolean;
 }
 
 export interface FlowFestRuntimeZone {

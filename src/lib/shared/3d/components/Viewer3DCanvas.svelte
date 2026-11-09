@@ -39,6 +39,7 @@
   import type { PerformerPropColors } from "../rendering/performer-prop-tint";
   import WebComposerMotionPreparation from "./WebComposerMotionPreparation.svelte";
   import type { composerCaptureRequest } from "../unreal/domain/composer-capture-request";
+  import { shouldPrepareWebMotion } from "./web-motion-preparation-plan";
   import Viewer3DCamera from "./Viewer3DCamera.svelte";
   import Viewer3DCanvasRef from "./Viewer3DCanvasRef.svelte";
   import PerfMonitor from "./PerfMonitor.svelte";
@@ -160,6 +161,13 @@
     enablePerformerLocomotion?: boolean;
     /** Attach props to the achieved palm and knuckle line. Requires the main-thread rig. */
     weldPerformerGrip?: boolean;
+    /**
+     * How fingers meet the prop. "legacy" snaps the prop to the palm and is
+     * cheap. Strict contact closes every finger onto the prop and first
+     * bakes the motion in a hidden scene, which costs seconds of CPU on a
+     * first visit, so only a host that needs Unreal parity opts into it.
+     */
+    performerContactMode?: ContactMode;
     /** Cap expensive prop effects when one shot contains a large ensemble. */
     effectQualityTier?: QualityTier;
     /** Keep the first-load curtain up until every active character is visible. */
@@ -169,7 +177,9 @@
     /** Resolved per-performer step for hosts whose lanes run independent clocks. */
     performerSteps?: readonly (number | null | undefined)[] | null;
     /** Per-performer prop colors — see Viewer3DScene. Main-thread renderer only. */
-    performerPropColors?: readonly (PerformerPropColors | null | undefined)[] | null;
+    performerPropColors?:
+      | readonly (PerformerPropColors | null | undefined)[]
+      | null;
     /** Host world geometry rendered in the performer coordinate frame. */
     worldChildren?: Snippet;
     /** Keep reserved rigs mounted while rendering only the active shot's cast. */
@@ -228,6 +238,7 @@
     enableEffects = true,
     enablePerformerLocomotion = true,
     weldPerformerGrip = false,
+    performerContactMode = "legacy",
     effectQualityTier,
     waitForPerformersOnInitialReveal = false,
     performerStepOffsets = [],
@@ -273,12 +284,16 @@
       import("#lib/shared/timeline/UnifiedTimeline.svelte"));
 
   const viewer3DState = getViewer3DContext();
-  const performerContactMode: ContactMode = "prop-authoritative";
   type CaptureRequest = ReturnType<typeof composerCaptureRequest>;
   let webCaptureRequests = $state<CaptureRequest[] | null>(null);
   let motionCacheRevision = $state(0);
   const prepareWebMotion = $derived(
-    !rendererHandleRequired && !weldPerformerGrip && !viewer3DState.isExporting
+    shouldPrepareWebMotion({
+      contactMode: performerContactMode,
+      rendererHandleRequired,
+      weldGrip: weldPerformerGrip,
+      exporting: viewer3DState.isExporting,
+    })
   );
   // Baking motion runs a second hidden scene on this thread to sample the
   // sequence. The live scene's frame collapse during those seconds is CPU

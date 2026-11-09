@@ -2,18 +2,18 @@
 status: active
 value: null
 effort: null
-remaining: "Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Review current dense-palette behavior after e7a90da6dc rather than restoring the original material."
+remaining: "Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Ink was reworked after this spec (e7a90da6dc dense-palette nib and gloss, ab3afd4dcd 2026-10-17 thrown liquid that strands and stains the floor), so review current behavior rather than restoring the original material."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 work_state: verification
 ---
 # 2D Ink Production-Context Redesign
 
-> 2026-10-14 triage: Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Review current dense-palette behavior after e7a90da6dc rather than restoring the original material. Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage: Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Ink was reworked after this spec (e7a90da6dc dense-palette nib and gloss, ab3afd4dcd 2026-10-17 thrown liquid that strands and stains the floor), so review current behavior rather than restoring the original material. Earlier status banners and execution instructions are historical where they conflict with this review.
 
-**Status:** Approved 2026-08-06
+**Status:** Implemented; verification pending (re-triaged 2026-11-07; see the triage line above). Originally approved 2026-08-06.
 
 ## Goal
 

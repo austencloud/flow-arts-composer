@@ -81,6 +81,35 @@ async function pressFromKeyboard(
 }
 
 describe("Crossfade interruption", () => {
+  // The last key in the harness sequence is "c" (100px). A swap or delayed
+  // intro that a new key interrupts must still land on that layer's height,
+  // leave exactly one layer, and stop clipping once it is at rest.
+  describe.each([
+    ["swap mode", "swap-stage", "swap panel"],
+    ["delay", "delay-stage", "delay panel"],
+  ])("%s interrupted before the intro starts", (_name, stage, text) => {
+    it.each([20, 60, 100, 160, 260])(
+      "lands on the current layer at a %i ms gap",
+      async (gap) => {
+        const { container } = render(CrossfadeTestHarness);
+        await settle();
+        await page
+          .getByRole("button", { name: `Interrupt delayed ${gap}`, exact: true })
+          .click();
+        await new Promise((resolve) => setTimeout(resolve, gap * 5 + 700));
+
+        const box = container.querySelector<HTMLElement>(
+          `[data-testid="${stage}"] .crossfade`
+        );
+        const settled = [...(box?.querySelectorAll(":scope > .layer") ?? [])];
+        expect(settled).toHaveLength(1);
+        expect(settled[0]?.textContent).toContain(`c ${text}`);
+        expect(box!.getBoundingClientRect().height).toBeCloseTo(100, 0);
+        expect(box!.classList.contains("clipping")).toBe(false);
+      }
+    );
+  });
+
   it("settles an active swap when the in-app reduced motion setting changes", async () => {
     const { container } = render(CrossfadeTestHarness);
     await settle();

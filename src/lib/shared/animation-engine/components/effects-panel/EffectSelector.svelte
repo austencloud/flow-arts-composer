@@ -44,6 +44,9 @@
      *  view-transition names, so each travels as its own piece. Null the rest
      *  of the time, which keeps the names out of every other transition. */
     morphName?: string | null;
+    /** Off as the grid's first tile, for a host whose box holds nothing else.
+     *  It takes up whatever the last row leaves empty, so no hole remains. */
+    onOff?: () => void;
   }
 
   const {
@@ -58,6 +61,7 @@
     catalog = null,
     portrait,
     morphName = null,
+    onOff,
   }: Props = $props();
 
   function morphPart(part: string, effectId: string) {
@@ -76,6 +80,11 @@
     availableEffects
       ? EFFECTS.filter((effect) => availableEffects.includes(effect.id))
       : EFFECTS
+  );
+
+  const namesShown = $derived(catalog?.orientation !== "icons");
+  const offSpan = $derived(
+    catalog ? catalog.cols * catalog.rows - (effects.length + 1) + 1 : 1
   );
 
   function getActiveLabel(effect: EffectMeta): string {
@@ -109,9 +118,31 @@
     style:--fx-caption-h={showCatalog
       ? `${CATALOG_CAPTION_HEIGHT}px`
       : undefined}
+    style:--fx-icon={catalog?.icon ? `${catalog.icon}px` : undefined}
     role="radiogroup"
     aria-label={t("effect_deep_select_effect")}
   >
+    {#if onOff}
+      <button
+        type="button"
+        class="effect-btn off-tile"
+        class:active={activeEffect === "none"}
+        role="radio"
+        aria-checked={activeEffect === "none"}
+        aria-label={t("effect_deep_off")}
+        title={t("effect_deep_off")}
+        style:grid-column={offSpan > 1 ? `span ${offSpan}` : undefined}
+        {disabled}
+        onclick={onOff}
+      >
+        <span class="effect-caption">
+          <i class="fas effect-icon fa-ban" aria-hidden="true"></i>
+          {#if namesShown}
+            <span class="effect-label">{t("effect_deep_off")}</span>
+          {/if}
+        </span>
+      </button>
+    {/if}
     {#each effects as effect (effect.id)}
       {@const isActive = activeEffect === effect.id}
       <button
@@ -154,11 +185,13 @@
                 use:claimedViewTransitionName={morphPart("icon", effect.id)}
               ></i>
             {/if}
-            <span
-              class="effect-label"
-              use:claimedViewTransitionName={morphPart("name", effect.id)}
-              >{effectUiLabel(effect.label)}</span
-            >
+            {#if namesShown}
+              <span
+                class="effect-label"
+                use:claimedViewTransitionName={morphPart("name", effect.id)}
+                >{effectUiLabel(effect.label)}</span
+              >
+            {/if}
           </span>
         {:else}
           <i
@@ -399,6 +432,54 @@
   .catalog[data-orientation="stack"] .effect-caption {
     max-width: 100%;
     justify-content: center;
+  }
+
+  /* A picker that holds every effect in a small box: the tile gives up its
+     padding, and the icon sits over the name so the name keeps the width. */
+  .catalog:is([data-orientation="dense"], [data-orientation="icons"])
+    .effect-btn {
+    padding: 2px;
+    gap: 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .catalog:is([data-orientation="dense"], [data-orientation="icons"])
+    .effect-caption {
+    flex-direction: column;
+    gap: 3px;
+    min-height: 0;
+    max-width: 100%;
+    justify-content: center;
+  }
+
+  .catalog:is([data-orientation="dense"], [data-orientation="icons"])
+    .effect-btn
+    i.effect-icon {
+    font-size: var(--fx-icon, 14px);
+  }
+
+  /* Off carries no picture, so it centres its icon and name in a picture grid. */
+  .catalog:is(
+      [data-orientation="row"],
+      [data-orientation="stack"],
+      [data-orientation="list"]
+    )
+    .off-tile {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .off-tile {
+    --effect-color: var(--theme-text-dim, rgba(255, 255, 255, 0.65));
+  }
+
+  .catalog:is([data-orientation="dense"], [data-orientation="icons"])
+    .tune-badge {
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
   }
 
   .tune-badge {

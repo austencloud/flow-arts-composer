@@ -15,7 +15,8 @@
  * (loadProductionModules, collectCommits) live at the bottom.
  */
 
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
+import { join } from "path";
 import { execSync } from "child_process";
 
 /** Default location of the module-visibility source of truth. */
@@ -647,21 +648,106 @@ export function changelogMediaProblem(media) {
 
 /**
  * Remove release-audit metadata before notes are shown or published. An
- * entry's example media is public and stays.
+ * entry's example media is public and stays, and so do its deep-link fields:
+ * `surface` (what "Show me" opens), and on a highlight its `anchor` (the
+ * `data-release-anchor` the arrival pulses) and `callout` (the one-line
+ * welcome shown when there is no anchor). `audience` is authoring-only.
+ * Firestore rejects undefined values, so absent fields are left off.
  *
  * @param {Array} entries
- * @returns {Array<{ category: string, text: string, media?: object }>}
+ * @returns {Array<{ category: string, text: string, media?: object, surface?: "global" | { module: string, tab?: string }, highlight?: true, anchor?: string, callout?: string }>}
  */
 export function toPublicChangelog(entries) {
-  return entries.map(({ category, text, media }) => {
-    if (!media) return { category, text };
-    const { image, video, alt, width, height } = media;
-    return {
-      category,
-      text,
-      media: { image, ...(video ? { video } : {}), alt, width, height },
-    };
+  return entries.map(
+    ({ category, text, media, surface, highlight, anchor, callout }) => {
+      const entry = { category, text };
+      if (media) {
+        const { image, video, alt, width, height } = media;
+        entry.media = { image, ...(video ? { video } : {}), alt, width, height };
+      }
+      const publicSurface = toPublicSurface(surface);
+      if (publicSurface) entry.surface = publicSurface;
+      if (highlight === true) {
+        entry.highlight = true;
+        if (typeof anchor === "string" && anchor.trim()) {
+          entry.anchor = anchor.trim();
+        }
+        if (typeof callout === "string" && callout.trim()) {
+          entry.callout = callout.trim();
+        }
+      }
+      return entry;
+    }
+  );
+}
+
+function toPublicSurface(surface) {
+  if (surface === "global") return "global";
+  if (
+    typeof surface !== "object" ||
+    surface === null ||
+    typeof surface.module !== "string"
+  ) {
+    return undefined;
+  }
+  return typeof surface.tab === "string"
+    ? { module: surface.module, tab: surface.tab }
+    : { module: surface.module };
+}
+
+const RELEASE_ANCHOR_ATTRIBUTE = /data-release-anchor=["']([a-z0-9-]+)["']/g;
+
+/**
+ * The `data-release-anchor` values written in a source file.
+ * @param {string} source
+ * @returns {string[]}
+ */
+export function parseReleaseAnchors(source) {
+  return [...source.matchAll(RELEASE_ANCHOR_ATTRIBUTE)].map((m) => m[1]);
+}
+
+/**
+ * Highlight arrival fields that would rot silently: an anchor nothing in
+ * `src/` carries, or an anchor or callout on an entry that is not a highlight
+ * or has no surface to arrive at.
+ *
+ * @param {Array} entries
+ * @param {Set<string>} knownAnchors
+ * @returns {Array<{ index: number, message: string }>}
+ */
+export function auditReleaseArrivals(entries, knownAnchors) {
+  const errors = [];
+  entries.forEach((entry, index) => {
+    const label = `Entry ${index + 1}`;
+    const hasArrival = entry?.anchor !== undefined || entry?.callout !== undefined;
+    if (!hasArrival) return;
+    if (entry.highlight !== true) {
+      errors.push({
+        index,
+        message: `${label} has an anchor or callout but is not a highlight`,
+      });
+      return;
+    }
+    if (typeof entry.surface !== "object" || entry.surface === null) {
+      errors.push({
+        index,
+        message: `${label} has an anchor or callout but no { module, tab } surface to arrive at`,
+      });
+    }
+    if (entry.anchor !== undefined && !knownAnchors.has(entry.anchor)) {
+      errors.push({
+        index,
+        message: `${label} names anchor "${entry.anchor}", but no element under src/ has data-release-anchor="${entry.anchor}"`,
+      });
+    }
+    if (
+      entry.callout !== undefined &&
+      (typeof entry.callout !== "string" || entry.callout.trim() === "")
+    ) {
+      errors.push({ index, message: `${label} has an empty callout` });
+    }
   });
+  return errors;
 }
 
 // ── Thin I/O wrappers (not unit-tested; exercised by release.js) ────────────
@@ -691,6 +777,23 @@ export function loadGuestModuleAccess(path = GUEST_MODULE_ACCESS_PATH) {
  */
 export function loadModuleTabs(path = TAB_DEFINITIONS_PATH) {
   return parseModuleTabs(readFileSync(path, "utf8"));
+}
+
+/**
+ * Every `data-release-anchor` value under a source folder.
+ * @param {string} [dir]
+ * @returns {Set<string>}
+ */
+export function loadReleaseAnchors(dir = "src") {
+  const anchors = new Set();
+  for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !/\.(svelte|ts|html)$/.test(entry.name)) continue;
+    const path = join(entry.parentPath ?? entry.path, entry.name);
+    for (const anchor of parseReleaseAnchors(readFileSync(path, "utf8"))) {
+      anchors.add(anchor);
+    }
+  }
+  return anchors;
 }
 
 /**

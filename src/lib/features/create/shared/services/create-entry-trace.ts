@@ -28,26 +28,43 @@ export const CREATE_ENTRY_PLACEHOLDERS =
  * drawing.
  */
 export function isEntryLayerSettled(layer: Element, method: string): boolean {
+  return (
+    isEntryLayerLaidOut(layer, method) &&
+    pictographDrawState(layer) !== "drawing"
+  );
+}
+
+/**
+ * True when the workspace layer has the method laid out: its panel has
+ * content and no loading state is left in the layer. Pictures may still be
+ * drawing.
+ */
+export function isEntryLayerLaidOut(layer: Element, method: string): boolean {
   const panel = layer.querySelector(
     `.sub-tab-content[data-tab="${CSS.escape(method)}"]`
   );
   return (
     panel !== null &&
     panel.childElementCount > 0 &&
-    layer.querySelector(CREATE_ENTRY_PLACEHOLDERS) === null &&
-    pictographDrawState(layer) !== "drawing"
+    layer.querySelector(CREATE_ENTRY_PLACEHOLDERS) === null
   );
 }
 
 export type CreateEntryStage =
   | "layout-ready"
   | "panel-ready"
+  | "pieces-ready"
   | "pictures-ready";
+
+/** The choreography's beats, for an entry that plays one. */
+export type CreateEntryBeat = "departure" | "flight" | "landed" | "arrived";
 
 export interface CreateEntryTrace {
   readonly method: string;
   readonly tapAt: number;
   stage(stage: CreateEntryStage): void;
+  /** Recorded whatever else has happened: the arrival outlasts the crossfade. */
+  beat(beat: CreateEntryBeat): void;
   swap(cappedOut: boolean): void;
   settled(): void;
   cancel(): void;
@@ -90,6 +107,9 @@ export function startCreateEntryTrace(
     stage(stage) {
       if (finished || swapAt !== null) return;
       bootProfiler.milestone(`${prefix}:${stage}`, { fromTapMs: sinceTap() });
+    },
+    beat(beat) {
+      bootProfiler.milestone(`${prefix}:${beat}`, { fromTapMs: sinceTap() });
     },
     swap(capped) {
       if (finished || swapAt !== null) return;

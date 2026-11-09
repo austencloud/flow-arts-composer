@@ -91,9 +91,9 @@
 
   let stageEl = $state<HTMLDivElement | undefined>(undefined);
 
-  // Waits for the stage's own reveal rather than for any animationend: the
-  // app-wide reduced-motion rule (keyframes.css) swaps every animation name,
-  // so under it the reveal never plays and the surface would never leave.
+  // Waits for the stage's own reveal rather than for any animationend: under
+  // reduced motion the reveal can finish before this runs or never start, and
+  // the surface would never leave.
   $effect(() => {
     if (!leaving || !stageEl || !onLeft) return;
     const left = onLeft;

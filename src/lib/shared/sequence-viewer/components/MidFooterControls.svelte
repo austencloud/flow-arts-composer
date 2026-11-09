@@ -19,7 +19,6 @@
     onPublish?: () => void;
     onUnpublish?: () => void;
     onCopyLink?: () => void;
-    onPropsOpen?: () => void;
     linkCopied?: boolean;
   }
 
@@ -40,7 +39,6 @@
     onPublish,
     onUnpublish,
     onCopyLink,
-    onPropsOpen,
     linkCopied = false,
   }: Props = $props();
 </script>
@@ -119,7 +117,6 @@
       {isPublished}
       {onCopyLink}
       {linkCopied}
-      {onPropsOpen}
       onPublish={isOwned && isSaved ? onPublish : undefined}
       onUnpublish={isOwned && isSaved ? onUnpublish : undefined}
       onDeleteRequest={isOwned && isSaved ? onDeleteRequest : undefined}

@@ -27,8 +27,8 @@
     { unit: "outerPoints", point: "outer" },
   ] as const;
 
-  // A phone shows the labeled figure first and the three definitions on a
-  // screen of their own, so neither has to shrink past reading size.
+  // A phone shows the labeled figure first and the three definitions with the
+  // figure again on the next screen, so no screen is words alone.
   // A phone held sideways is short but wide: the figure and the definitions
   // share one screen there, in two columns.
   let small = $state(false);
@@ -74,7 +74,7 @@
           <p class="lede"><Sentences text={gridTopicText("intro")} /></p>
         {/if}
         <div class="pair">
-          {#if part !== "points"}<LabeledGridFigure {darkMode} />{/if}
+          <LabeledGridFigure {darkMode} />
           {#if part !== "figure"}<div class="definitions">
             <p id="grid-points-lead" class="lead">
               {gridTopicText("pointTypesLead")}
@@ -140,10 +140,16 @@
     gap: clamp(1rem, 4vw, 4rem);
     width: 100%;
   }
+  /* The drawing shrinks with the window; its caption's words keep a reading
+     width instead of folding into a tall sliver under a small drawing. */
   .pair :global(.labeled-grid) {
     flex: 0 0 auto;
-    width: min(100%, calc(18rem * var(--fit, 1)));
+    width: min(100%, max(18rem, calc(18rem * var(--fit, 1))));
     margin: 0;
+  }
+  .pair :global(.labeled-grid .stage) {
+    width: min(100%, calc(18rem * var(--fit, 1)));
+    margin-inline: auto;
   }
   .definitions {
     display: grid;
@@ -216,6 +222,9 @@
     .pair :global(.labeled-grid) {
       grid-area: figure;
       width: calc(15rem * var(--fit, 1));
+    }
+    .pair :global(.labeled-grid .stage) {
+      width: 100%;
     }
     .definitions {
       grid-area: definitions;

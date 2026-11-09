@@ -24,6 +24,7 @@ Staging generates `runtime-rigs.json` from the exact source rigs to validate imp
 The shared Web scene and native capture use the same prop-authoritative contact
 solver. The Web worker renderer remains unavailable for this mode until it can
 reproduce that solver; the Web scene uses its main-thread renderer.
+The Web viewer now defaults to legacy contact; strict contact is opt-in per host through `Viewer3DCanvas`'s `performerContactMode` prop.
 
 The native environment is currently the studio. Web environment settings remain
 in Composer and return when switching to Web. Uniform none, fire, and LED effects

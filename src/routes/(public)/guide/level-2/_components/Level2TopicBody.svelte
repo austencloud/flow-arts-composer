@@ -19,9 +19,11 @@
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
   import GuideScreens from "../../_components/fit/GuideScreens.svelte";
   import {
+    DEFAULT_SCREEN_ROOM,
     SCREEN_PARAM,
-    watchScreenTier,
-    type ScreenTier,
+    tighterRoom,
+    watchScreenRoom,
+    type ScreenRoom,
   } from "../../_components/fit/guide-screen-url";
   import { setGuideData } from "../../level-1/_data/guide-data-context";
   import type { GuideChapterData } from "../../level-1/_data/guide-types";
@@ -34,7 +36,6 @@
     readSectionUnits,
     showOnlyUnits,
     splitSections,
-    SPLIT_RULES,
     type SectionUnit,
   } from "../_data/section-screens";
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
@@ -68,13 +69,16 @@
   // each section is one screen, so the prerendered page keeps every word.
   // Once live, the page reads its sections' blocks from a hidden copy and
   // splits them for the window (section-screens.ts).
-  let tier = $state<ScreenTier>("large");
+  let windowRoom = $state<ScreenRoom>(DEFAULT_SCREEN_ROOM);
+  let tighter = $state(0);
+  const MAX_TIGHTER = 3;
+  const room = $derived(tighterRoom(windowRoom, tighter));
   let units = $state<SectionUnit[] | null>(null);
   let titles = $state<string[]>([]);
   let censusEl = $state<HTMLDivElement>();
   let censusing = $state(false);
   const screens = $derived(
-    units ? splitSections(units, titles, SPLIT_RULES[tier]) : null
+    units ? splitSections(units, titles, room) : null
   );
   const labels = $derived(
     screens
@@ -83,7 +87,10 @@
   );
 
   onMount(() => {
-    const stop = watchScreenTier((v) => (tier = v));
+    const stop = watchScreenRoom((v) => {
+      windowRoom = v;
+      tighter = 0;
+    });
     censusing = true;
     void tick().then(() => {
       const found = Array.from(
@@ -95,7 +102,7 @@
       const hash = decodeURIComponent(window.location.hash.slice(1));
       const target = found.findIndex((el) => el.id === hash);
       if (target > 0) {
-        const first = splitSections(read, titles, SPLIT_RULES[tier]).findIndex(
+        const first = splitSections(read, titles, room).findIndex(
           (s) => s.section === target
         );
         if (first > 0)
@@ -129,6 +136,10 @@
       title={localizedLevel2Topic(meta, "h1")}
       {kicker}
       {labels}
+      cutKey={tighter}
+      onoverflow={() => {
+        if (tighter < MAX_TIGHTER) tighter += 1;
+      }}
       prevPage={prev
         ? {
             href: localHref(`/guide/level-2/${prev.slug}`),
@@ -147,6 +158,12 @@
       {#snippet screen(n)}
         {@const sc = screens?.[n]}
         {@const Section = sections[sc ? sc.section : n]}
+        {@const Borrowed = sc?.borrowed ? sections[sc.borrowed.section] : null}
+        {#if Borrowed && sc?.borrowed}
+          <div class="l2-screen" use:only={[sc.borrowed.path]}>
+            <Borrowed />
+          </div>
+        {/if}
         {#if Section}
           <div class="l2-screen" use:only={sc?.paths ?? null}>
             <Section />

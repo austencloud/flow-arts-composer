@@ -5,6 +5,7 @@
  * The drawer host loads through the same function, so both share one module
  * promise.
  */
+import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
 
 type ViewerContentModule =
   typeof import("../components/SequenceViewerDrawerContent.svelte");
@@ -25,9 +26,11 @@ export function loadSequenceViewerContent(): Promise<ViewerContentModule> {
 export function prefetchSequenceViewerWhenIdle(): void {
   if (pending || typeof window === "undefined") return;
   const run = () => {
-    loadSequenceViewerContent().catch(() => {
-      // A failed warm-up just means the viewer loads on open as before.
-    });
+    void whenMotionSettled()
+      .then(loadSequenceViewerContent)
+      .catch(() => {
+        // A failed warm-up just means the viewer loads on open as before.
+      });
   };
   if (typeof window.requestIdleCallback === "function") {
     window.requestIdleCallback(run, { timeout: 4000 });

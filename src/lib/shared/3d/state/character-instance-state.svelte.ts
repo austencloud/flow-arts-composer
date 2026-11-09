@@ -63,6 +63,8 @@ import { buildForEffect } from "../domain/build-for-effect";
 import { findScenePropFamily } from "../domain/scene-prop-catalog";
 import type { PerformerDomainSnapshot } from "../undo/scene-undo-types";
 import { isSeamlesslyLoopable3D } from "../services/sequence-loopability-3d";
+import { applyWallFeasibility } from "../services/wall-plane-policy";
+import { travelMeansWalking } from "../locomotion/performer-travels";
 
 // Position Constants (all in meters)
 
@@ -198,6 +200,11 @@ export function createCharacterInstanceState(
 
   // Whether the character is currently moving
   let isMoving = $state(false);
+
+  // Sticky: once this performer has walked, or a host has said they will,
+  // the locomotion pack stays loaded. Dropping it when they stop would unload
+  // the clips the next walk needs.
+  let travels = $state(false);
 
   // Ground speed in m/s. The locomotion animator scales the walk clip's
   // playback rate by this, which is what keeps the feet from skating.
@@ -520,6 +527,21 @@ export function createCharacterInstanceState(
   );
 
   /**
+   * Beats 1+ for the current plane config, with the offline wall scan's
+   * "withCheat" overrides (per-step, per-hand depthOffset and k) stamped on.
+   * Unscanned or stale-version sequences convert exactly as before.
+   */
+  function convertSteps(
+    sequence: SequenceData,
+    modeConfig: PlaneModeConfig
+  ): StepMotionConfigs[] {
+    return applyWallFeasibility(
+      sequenceToMotionConfigs(sequence, Plane.WALL, modeConfig),
+      sequence.metadata?.wallFeasibility
+    );
+  }
+
+  /**
    * Load a sequence for this character.
    * Auto-enables looping for circular sequences (matching 2D animator behavior).
    */
@@ -531,11 +553,7 @@ export function createCharacterInstanceState(
     // Get motion configs (beats 1+) and prepend start placement (beat 0)
     // so the full sequence including initial orientation is available.
     const effectiveSequence = loadedSequence ?? sequence;
-    const motionConfigs = sequenceToMotionConfigs(
-      effectiveSequence,
-      Plane.WALL,
-      modeConfig
-    );
+    const motionConfigs = convertSteps(effectiveSequence, modeConfig);
     const startConfig = getStartPlacementConfigs(
       effectiveSequence,
       Plane.WALL,
@@ -746,6 +764,9 @@ export function createCharacterInstanceState(
     if (!loadedSequence) return;
 
     const modeConfig = getEffectiveModeConfig(effectivePlaneMode);
+    // Raw conversion first: the wall-scan overrides are stamped after the
+    // per-beat planes are patched, so a beat moved to wheel never carries a
+    // wall-plane depth cheat.
     const motionConfigs = sequenceToMotionConfigs(
       loadedSequence,
       Plane.WALL,
@@ -773,7 +794,13 @@ export function createCharacterInstanceState(
       }
     }
 
-    stepConfigs = allConfigs;
+    const wallFeasibility = loadedSequence.metadata?.wallFeasibility;
+    stepConfigs = startConfig
+      ? [
+          startConfig,
+          ...applyWallFeasibility(allConfigs.slice(1), wallFeasibility),
+        ]
+      : applyWallFeasibility(allConfigs, wallFeasibility);
     updateVisibilityFromStep(stepConfigs[currentStepIndex] ?? stepConfigs[0]);
   }
 
@@ -828,11 +855,7 @@ export function createCharacterInstanceState(
   /** Re-convert the loaded sequence with the given mode config */
   function reconvertWithConfig(modeConfig: PlaneModeConfig) {
     if (!loadedSequence) return;
-    const motionConfigs = sequenceToMotionConfigs(
-      loadedSequence,
-      Plane.WALL,
-      modeConfig
-    );
+    const motionConfigs = convertSteps(loadedSequence, modeConfig);
     const startConfig = getStartPlacementConfigs(
       loadedSequence,
       Plane.WALL,
@@ -927,8 +950,17 @@ export function createCharacterInstanceState(
     moveInput = travel.direction;
     moveSpeed = travel.speed;
     isMoving = travel.moving;
+    if (!travels && travelMeansWalking(travel)) travels = true;
     gaitTimingSample = travel.gaitTimingSample ?? null;
     terminalStepPlan = travel.terminalStepPlan ?? null;
+  }
+
+  /**
+   * Mark this performer as one who walks before their first step, so a host
+   * that knows its plan up front loads the locomotion pack early.
+   */
+  function markTravels() {
+    travels = true;
   }
 
   /**
@@ -1379,6 +1411,11 @@ export function createCharacterInstanceState(
       return isMoving;
     },
 
+    /** Has walked, or will: the rig needs the locomotion pack. */
+    get travels() {
+      return travels;
+    },
+
     // Move direction for animation blending (raw input, not camera-rotated)
     get moveDirection() {
       return moveInput;
@@ -1397,6 +1434,7 @@ export function createCharacterInstanceState(
 
     // Locomotion methods
     setTravel,
+    markTravels,
     setMoveInput,
     updateMovement,
     updateLocomotion,

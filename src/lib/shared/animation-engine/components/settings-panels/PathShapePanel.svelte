@@ -112,18 +112,34 @@
   const PREVIEW_TILE_EXTRA_HEIGHT = 24;
   const PREVIEW_INSET = 20;
   const previewRows = $derived(Math.ceil(options.length / columns));
+  /* A column of tiles beside the canvas: each tile is the column's width so
+     its name always fits, and the picture takes the height the name leaves. */
+  const inColumn = $derived(fill && columns === 1);
+  const COLUMN_TILE_INSET = 7;
+  const COLUMN_TILE_EXTRA_HEIGHT = 29;
 
   // Width-driven by default. With `fill`, the tiles are the largest squares
   // that fit the grid's height too, centred in tracks wider than they are.
   const previewTileWidth = $derived.by(() => {
     const byWidth = (previewWidth - PREVIEW_GAP * (columns - 1)) / columns;
-    if (!fill || previewHeight <= 0) return byWidth;
+    if (!fill || inColumn || previewHeight <= 0) return byWidth;
     const byHeight =
       (previewHeight - PREVIEW_GAP * (previewRows - 1)) / previewRows -
       PREVIEW_TILE_EXTRA_HEIGHT;
     return Math.min(byWidth, byHeight);
   });
-  const previewSize = $derived(Math.max(1, previewTileWidth - PREVIEW_INSET));
+  const previewSize = $derived.by(() => {
+    if (!inColumn) return Math.max(1, previewTileWidth - PREVIEW_INSET);
+    const rowHeight =
+      (previewHeight - PREVIEW_GAP * (previewRows - 1)) / previewRows;
+    return Math.max(
+      1,
+      Math.min(
+        previewTileWidth - COLUMN_TILE_INSET,
+        rowHeight - COLUMN_TILE_EXTRA_HEIGHT
+      )
+    );
+  });
 
   const isActive = (o: PathOption): boolean =>
     o.id === "byMotion" ? motionAware : !motionAware && pathShape === o.id;
@@ -153,6 +169,7 @@
   class="path-shape-grid"
   class:with-preview={!!preview}
   class:fill={!!preview && fill}
+  class:in-column={!!preview && inColumn}
   style:--tile-columns={preview ? columns : undefined}
   role="group"
   aria-label={t("animation_motion_paths")}
@@ -238,6 +255,15 @@
   }
   .fill .path-btn {
     min-height: 0;
+  }
+  .in-column .path-btn {
+    padding: 2px;
+    overflow: hidden;
+  }
+  .in-column .path-preview {
+    flex: none;
+    width: auto;
+    aspect-ratio: auto;
   }
   .path-scope {
     color: var(--theme-text-muted);

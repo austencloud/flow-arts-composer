@@ -6,7 +6,7 @@
   standalone viewer. Viewer chrome must never return to this route.
 -->
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { goto, preloadData } from "$app/navigation";
   import { page } from "$app/state";
   import { onDestroy, onMount } from "svelte";
   import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
@@ -272,6 +272,11 @@
         page.url.searchParams,
         propConfig
       );
+      // Fetch /sequence's route code and server data while the viewer graph
+      // finishes, so the goto below finds them ready instead of starting a
+      // __data.json round trip after the wait. A failed preload is harmless:
+      // goto fetches again.
+      void preloadData(destination).catch(() => {});
       // Hand off only once the viewer can mount at once. This route's loader
       // is opaque; /sequence would otherwise show its loader over a bare
       // animated background while the same import finishes.

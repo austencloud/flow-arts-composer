@@ -60,6 +60,7 @@
   import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
   import FlowFestGroundSurface from "./FlowFestGroundSurface.svelte";
   import FlowFestHeroFire from "./FlowFestHeroFire.svelte";
+  import { applyFlowFestAuthoredProps } from "./flow-fest-authored-props";
   import { getFlowFestVisualProfile } from "./flow-fest-visual-system";
   import { buildFlowFestEntranceGradedTerrain } from "./flow-fest-entrance-terrain";
 
@@ -104,6 +105,8 @@
   let builtBranch: FlowFestBranchId | null = null;
   let buildEpoch = 0;
   let destroyed = false;
+  /** The Blender fire circle brings its own logs; the hero fire then skips its stand-ins. */
+  let authoredFireLogs = $state(false);
   let sceneElapsed = 0;
   let animatedLedRings: Object3D[] = [];
   let staticSceneSetupComplete = false;
@@ -258,6 +261,16 @@
     next.setFestivalActive(festivalActive);
     dressing?.dispose();
     dressing = next;
+    authoredFireLogs = false;
+    // Compare build epochs, not `dressing === next`: `dressing` is deep
+    // $state, so it holds a proxy of `next` and that identity check is always
+    // false, which silently skipped every swap.
+    const isCurrentBuild = () => !destroyed && epoch === buildEpoch;
+    void applyFlowFestAuthoredProps(next.root, isCurrentBuild).then(
+      (swapped) => {
+        if (isCurrentBuild()) authoredFireLogs = swapped.fire;
+      }
+    );
     queueTerrain = terrain;
     animatedLedRings = nextAnimatedLedRings;
     contract = loadedContract;
@@ -860,6 +873,7 @@
       z: heroFirePosition.z,
     }}
     energy={props.fireJamEnergy}
+    showLogs={!authoredFireLogs}
   />
   <!-- The LED circle is the second light source on the field. It has to emit
        its own colour, not merely be a bright object, so the canopy posts and

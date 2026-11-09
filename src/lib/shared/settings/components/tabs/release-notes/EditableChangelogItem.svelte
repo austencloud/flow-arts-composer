@@ -9,6 +9,7 @@
   import ContributorPicker from "./ContributorPicker.svelte";
   import ChangelogRichText from "./ChangelogRichText.svelte";
   import ChangelogEntryMedia from "./ChangelogEntryMedia.svelte";
+  import ReleaseShowMe from "./ReleaseShowMe.svelte";
 
   let {
     entry,
@@ -294,6 +295,7 @@
       <span class="bullet"></span>
       <div class="change-item-content">
         <span class="change-text"><ChangelogRichText text={entry.text} /></span>
+        <ReleaseShowMe {entry} />
         {#if entry.media}
           <ChangelogEntryMedia media={entry.media} />
         {/if}

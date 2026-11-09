@@ -69,4 +69,22 @@ describe("buugeng artwork handedness", () => {
       });
     }
   });
+
+  // A style replaces the plain art in every renderer, so chirality A has to
+  // stay the same shape with it (scripts/generate-buugeng-variants.cjs).
+  it("draws every buugeng style with the notation art's handedness", async () => {
+    const read = (file: string) => readFileSync(resolve(PROPS, file));
+    const reference = await handedness(read(NOTATION[0]!));
+    for (const folder of ["pictograph", "buttons", "animated"]) {
+      for (const stem of ["buugeng", "bigbuugeng"]) {
+        for (const style of ["crescent", "perforated", "fire", "filigree"]) {
+          const file = `${folder}/${stem}-${style}.svg`;
+          expect({ file, hand: await handedness(read(file)) }).toEqual({
+            file,
+            hand: reference,
+          });
+        }
+      }
+    }
+  });
 });

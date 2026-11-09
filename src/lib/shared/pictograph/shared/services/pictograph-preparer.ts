@@ -395,10 +395,12 @@ export class PictographPreparer {
       resolvePropRenderKey(effectiveLeft, {
         fanAppearance: options?.fanAppearance,
         triangleGrip: options?.triangleGrip,
+        buugengStyle: options?.buugengStyle,
       }),
       resolvePropRenderKey(effectiveRight, {
         fanAppearance: options?.fanAppearance,
         triangleGrip: options?.triangleGrip,
+        buugengStyle: options?.buugengStyle,
       }),
       pictograph.betaSwapped ? "bs" : "",
       // The grid is drawn from this, so the same hands on another grid must
@@ -496,11 +498,13 @@ export class PictographPreparer {
               options?.useGridVersion ?? false,
               options?.themeMode ||
                 options?.fanAppearance ||
-                options?.triangleGrip
+                options?.triangleGrip ||
+                options?.buugengStyle
                 ? {
                     themeMode: options.themeMode,
                     fanAppearance: options.fanAppearance,
                     triangleGrip: options.triangleGrip,
+                    buugengStyle: options.buugengStyle,
                   }
                 : undefined
             ),

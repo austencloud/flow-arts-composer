@@ -7,6 +7,7 @@ import {
   compactDisplayColumns,
   DISPLAY_GROUP_GAP,
   fitDisplayGrid,
+  fitDisplayRoom,
   MIN_FIT_ART,
 } from "#lib/shared/animation-engine/domain/display-grid-fit.js";
 
@@ -217,5 +218,40 @@ describe("compactDisplayArt", () => {
     expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 400 })).toBe(
       COMPACT_MIN_ART
     );
+  });
+});
+
+// A guide screen never scrolls, so this fit is the only layout its panel has.
+describe("fitDisplayRoom", () => {
+  const ROOM = { padX: 8, chromeY: 40, gapX: 6, gapY: 6, count: 9 };
+
+  it.each([
+    [316, 147],
+    [300, 90],
+    [420, 160],
+    [160, 420],
+    [700, 500],
+  ])("holds every tile inside a %ix%i box", (width, height) => {
+    const fit = fitDisplayRoom({ ...ROOM, width, height });
+    expect(fit).not.toBeNull();
+    const rows = Math.ceil(ROOM.count / fit!.cols);
+    expect(fit!.art).toBeGreaterThan(0);
+    expect(fit!.art + ROOM.padX).toBeLessThanOrEqual(
+      (width - ROOM.gapX * (fit!.cols - 1)) / fit!.cols
+    );
+    expect(fit!.art + ROOM.chromeY).toBeLessThanOrEqual(
+      (height - ROOM.gapY * (rows - 1)) / rows
+    );
+  });
+
+  it("follows the box's shape", () => {
+    const wide = fitDisplayRoom({ ...ROOM, width: 316, height: 147 });
+    const tall = fitDisplayRoom({ ...ROOM, width: 160, height: 420 });
+    expect(wide!.cols).toBeGreaterThan(tall!.cols);
+  });
+
+  it("keeps a roomy box's pictures from swallowing it", () => {
+    const fit = fitDisplayRoom({ ...ROOM, width: 3000, height: 2000 });
+    expect(fit!.art).toBeLessThanOrEqual(176);
   });
 });

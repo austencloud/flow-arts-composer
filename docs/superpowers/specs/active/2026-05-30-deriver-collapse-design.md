@@ -6,7 +6,7 @@ remaining: "Finish lifting the app derivers into render-core and replacing both 
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 work_state: in-progress
 ---
 # Deriver Collapse — Design
@@ -19,7 +19,7 @@ work_state: in-progress
 > absorption), all in scope.
 
 **Date:** 2026-05-30
-**Status:** Design — awaiting review
+**Status:** Design approved; partly implemented (MCP delegates to render-core after 9c064a8255; app copies remain). See the triage line above.
 **Related:** `docs/superpowers/specs/2026-05-30-canonical-minimal-codec-design.md` (the codec that consumes these derivers), `.claude/rules/verify-at-canonical-source.md`, `.claude/rules/mcp-ground-truth.md`
 
 ---

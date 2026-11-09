@@ -594,6 +594,7 @@
     data-motion-surface="3d"
     data-presented={is3DPresented}
     data-scene-ready={scene3DReady}
+    data-scene-revealed={scene3DRevealed}
     inert={!is3DActive}
     aria-hidden={!is3DActive}
     data-scene-inspector-docked={sceneControlLayout.reservedWidth > 0 ||

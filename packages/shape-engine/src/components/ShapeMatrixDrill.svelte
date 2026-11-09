@@ -62,8 +62,15 @@
   } from "../services/shape-matrix-realizations";
   import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
   import { HERO_TRAIL_PRESET } from "../services/hero-trail-preset.js";
-  import { flowerPetalAnchor } from "../services/flower-petal-anchor.js";
-  import { describeSoloFlower } from "../services/shape-matrix-display.js";
+  import {
+    flowerPetalAnchor,
+    turnedPetalAnchor,
+  } from "../services/flower-petal-anchor.js";
+  import {
+    describeSoloFlower,
+    soloFlowerGrid,
+  } from "../services/shape-matrix-display.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { DURATION } from "@austencloud/motion";
   import { growFade } from "@austencloud/motion";
@@ -73,6 +80,11 @@
     SHAPE_MATRIX_CONTROLS_NAME,
     SHAPE_MATRIX_MODES_NAME,
     SHAPE_MATRIX_STRIP_NAME,
+    SHAPE_MATRIX_ACTIONS_NAME,
+    SHAPE_MATRIX_FIGURE_NAME,
+    SHAPE_MATRIX_STAGE_HEAD_NAME,
+    SHAPE_MATRIX_STAGE_ROTATE_NAME,
+    SHAPE_MATRIX_STAGE_TRANSPORT_NAME,
   } from "../services/shape-matrix-artwork";
   import { getShapeMatrixTransitionRecorder } from "../debug/shape-matrix-transition-recorder";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -101,6 +113,9 @@
      * between two hands, and there is only one here.
      */
     solo?: "left" | "right" | null;
+    /** The flowers a solo can switch to, by hand, at the current turns. */
+    soloAxes?: { left: readonly Flower[]; right: readonly Flower[] };
+    onsolopick?: (hand: "left" | "right", flower: Flower) => void;
     data: ShapeMatrixData;
     /** Optional composing surface action. The public archive remains a viewer;
      *  pickers can receive the exact realization this drill already built. */
@@ -141,6 +156,8 @@
   let {
     pair,
     solo = null,
+    soloAxes = { left: [], right: [] },
+    onsolopick,
     data,
     onselectRealization,
     selectLabel = t("shape_engine_use_realization"),
@@ -322,6 +339,13 @@
     mandalaTransition.claim && mandalaTransition.handoff
   );
 
+  // A flight snapshots the frame the panes change in, so a frame growing in or
+  // out at that moment would be caught half size, squashed into the page.
+  const frameMotion = () =>
+    mandalaTransition.handoff
+      ? { axis: "y" as const, duration: 0 }
+      : { axis: "y" as const };
+
   // The cell's mandala: left hand's flower merged with right hand's flower — the
   // exact merge renderCell uses for the grid tiles, so the hero IS the cell.
   const heroPaths = $derived.by<MandalaPaths | null>(() => {
@@ -341,16 +365,50 @@
     };
   });
 
-  // A solo has no hand relationship to pick, so the picker's place says what
-  // the flower is, read from the same paths the hero draws.
-  const soloDescription = $derived.by(() => {
+  // Where the solo flower's petals sit, read from the same paths the hero draws.
+  const soloAnchor = $derived.by(() => {
     if (!solo || !pair) return null;
     const flower = pair[solo];
-    const anchor =
-      flower.style === "float"
-        ? null
-        : flowerPetalAnchor(heroPaths?.[solo] ?? [], flower.style);
-    return describeSoloFlower(flower, solo, anchor);
+    return flower.style === "float"
+      ? null
+      : flowerPetalAnchor(heroPaths?.[solo] ?? [], flower.style);
+  });
+
+  // The whole picture turns an eighth of a circle per press. The count only
+  // goes up, so the turn always runs clockwise, and it ends with the solo.
+  let soloEighthTurns = $state(0);
+  $effect(() => {
+    if (!solo) soloEighthTurns = 0;
+  });
+  // The grid's flowers stand upright, so a turned stage unwinds on the flight
+  // back to its header, and the next flower opens upright. The floor's turn is
+  // a transform the shared-element flight interpolates.
+  let wasOnStage = false;
+  $effect(() => {
+    const onStage = mandalaTransition.claim;
+    if (wasOnStage && !onStage) soloEighthTurns = 0;
+    wasOnStage = onStage;
+  });
+
+  // A solo has no hand relationship to pick, so the picker's place says what
+  // the flower is. A turned stage shows it the other way up, so its name turns
+  // with it.
+  const soloDescription = $derived.by(() => {
+    if (!solo || !pair) return null;
+    return describeSoloFlower(
+      pair[solo],
+      solo,
+      turnedPetalAnchor(soloAnchor, soloEighthTurns)
+    );
+  });
+
+  // The grid is drawn in the sequence's own frame and turns with the flower,
+  // so it follows the unturned petals.
+  const soloGridMode = $derived.by(() => {
+    if (!solo || !pair) return null;
+    const grid = soloFlowerGrid(pair[solo], soloAnchor);
+    if (!grid) return null;
+    return grid === "box" ? GridMode.BOX : GridMode.DIAMOND;
   });
 
   // Build the selected relationship first, then fill the remaining five one
@@ -1196,6 +1254,7 @@
             // A solo plays one hand of a two-hand letter, so the corner
             // glyph would name a relationship that is not on stage.
             hideTkaGlyph: solo !== null,
+            gridModeOverride: soloGridMode,
             beatIndicators: false,
             leftPropType: layer.leftPropType,
             rightPropType: layer.rightPropType,
@@ -1261,7 +1320,7 @@
         name: SHAPE_MATRIX_MODES_NAME,
         enabled: morphingFrames,
       }}
-      transition:growFade={{ axis: "y" }}
+      transition:growFade={frameMotion()}
     >
       <ElementChipRow
         selected={selectedMode}
@@ -1286,6 +1345,11 @@
       flower={pair[solo]}
       hand={solo}
       {data}
+      axes={soloAxes}
+      eighthTurns={soloEighthTurns}
+      morphing={morphingFrames}
+      motion={frameMotion()}
+      onpick={onsolopick}
     />
   {/if}
 
@@ -1310,7 +1374,14 @@
            header band and the strip leave with the mode picker and the
            canvas takes the height back. -->
       {#if !solo}
-        <div class="hero-header" data-focus-mode-chrome>
+        <div
+          class="hero-header"
+          data-focus-mode-chrome
+          use:claimedViewTransitionName={{
+            name: SHAPE_MATRIX_STAGE_HEAD_NAME,
+            enabled: morphingFrames,
+          }}
+        >
           <div class="hero-header-ghost" aria-hidden="true">
             <WordHeader word="A" visible={true} darkMode={headerDarkMode} />
           </div>
@@ -1335,7 +1406,14 @@
           {/if}
         </div>
       {/if}
-      <div class="hero-frame">
+      <div
+        class="hero-frame"
+        style:--solo-turn={`${soloEighthTurns * 45}deg`}
+        use:claimedViewTransitionName={{
+          name: SHAPE_MATRIX_FIGURE_NAME,
+          enabled: morphingFrames,
+        }}
+      >
         {#if pair && heroPaths}
           <!-- The still mandala is a cold-load floor only. Once the canonical
                animation canvas has painted, its own trail is the sole path
@@ -1372,8 +1450,35 @@
           </div>
         {/if}
       </div>
+      {#if solo && pair}
+        <button
+          type="button"
+          class="stage-rotate"
+          data-focus-mode-chrome
+          use:claimedViewTransitionName={{
+            name: SHAPE_MATRIX_STAGE_ROTATE_NAME,
+            enabled: morphingFrames,
+          }}
+          aria-label={t("shape_engine_solo_rotate")}
+          title={t("shape_engine_solo_rotate")}
+          onclick={() => (soloEighthTurns += 1)}
+        >
+          <i
+            class="fas fa-rotate-right"
+            style:rotate={`${soloEighthTurns * 45}deg`}
+            aria-hidden="true"
+          ></i>
+        </button>
+      {/if}
       {#if pair && heroPaths}
-        <div class="canvas-transport" data-shape-matrix-transport>
+        <div
+          class="canvas-transport"
+          data-shape-matrix-transport
+          use:claimedViewTransitionName={{
+            name: SHAPE_MATRIX_STAGE_TRANSPORT_NAME,
+            enabled: morphingFrames,
+          }}
+        >
           {#if livePlayerShowsPair}
             <UnifiedTimeline
               playback={playbackAdapter}
@@ -1398,7 +1503,7 @@
           name: SHAPE_MATRIX_STRIP_NAME,
           enabled: morphingFrames,
         }}
-        transition:growFade={{ axis: "y" }}
+        transition:growFade={frameMotion()}
       >
         {#if railRealization && pictographRailReady}
           <LazyMount
@@ -1491,6 +1596,10 @@
       class="select-action"
       class:available={visibleRealization !== null}
       data-focus-mode-chrome
+      use:claimedViewTransitionName={{
+        name: SHAPE_MATRIX_ACTIONS_NAME,
+        enabled: morphingFrames,
+      }}
     >
       {#if onselectRealization}
         <PanelButton
@@ -1669,6 +1778,58 @@
     height: 100%;
     min-width: 0;
     min-height: 0;
+  }
+
+  /* A solo's stage turns as one picture: the grid, the flower, the prop and the
+     still floor. The words on the stage stay upright, so the canvas turns and
+     not the layer it sits in. Everything drawn stays inside the circle the
+     canvas's sides touch, so no turn can clip it. */
+  .hero-stage.solo .hero-frame :global(canvas),
+  .hero-stage.solo .hero-frame :global(.mandala-art) {
+    rotate: var(--solo-turn, 0deg);
+    transition: rotate var(--duration-emphasis) var(--ease-standard);
+  }
+  .stage-rotate {
+    position: absolute;
+    inset-block-start: 0.5rem;
+    inset-inline-end: 0.5rem;
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
+    border-radius: 50%;
+    background: color-mix(
+      in srgb,
+      var(--theme-card-bg, #0a0f14) 72%,
+      transparent
+    );
+    color: var(--theme-text-dim, rgb(255 255 255 / 0.65));
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
+  }
+  .stage-rotate i {
+    transition: rotate var(--duration-emphasis) var(--ease-standard);
+  }
+  .stage-rotate:hover {
+    color: var(--theme-text, #fff);
+    border-color: var(--theme-text-dim, rgb(255 255 255 / 0.65));
+  }
+  .stage-rotate:focus-visible {
+    outline: 2px solid var(--theme-accent, #818cf8);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-stage.solo .hero-frame :global(canvas),
+    .hero-stage.solo .hero-frame :global(.mandala-art),
+    .stage-rotate i {
+      transition: none;
+    }
   }
 
   /* Holds the transport's own height so the canvas does not move when the

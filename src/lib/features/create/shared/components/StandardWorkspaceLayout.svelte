@@ -9,14 +9,19 @@
    * Domain: Create module - Layout
    */
 
-  import { untrack } from "svelte";
+  import { onMount, untrack } from "svelte";
   import ButtonPanel from "../workspace-panel/shared/components/ButtonPanel.svelte";
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import {
-    flyFade,
+    CONTROL_LANDING_MS,
+    controlArrive,
+    controlLeave,
+    type ControlPresenceParams,
+  } from "#lib/shared/transitions/control-presence.js";
+  import {
     growFade,
     reducedMotion,
     standardEasing,
@@ -412,6 +417,44 @@
       (hasWorkspaceContent || isAssembleTab)
   );
   const showCompactHistory = $derived(shouldShowWorkspace && useCompactToolbar);
+  // Sideways-phone theater and the save view both take the workspace for the
+  // work itself, so the controls step aside the same way for each, and for a
+  // workspace closing altogether.
+  const controlsStepAside = $derived(isWorkspaceTheater || isSaveView);
+  // A surface painting for the first time isn't a mode change: its controls are
+  // simply there.
+  let controlsMayAnimate = false;
+  onMount(() => {
+    const frame = requestAnimationFrame(() => (controlsMayAnimate = true));
+    return () => cancelAnimationFrame(frame);
+  });
+  // Controls wait for the panels to land only when the mode itself just changed.
+  // One appearing while everything is already still, like Construct's first
+  // step, comes straight away. Top row and bottom bar read the same clock, so
+  // they arrive together however the panels got here.
+  let panelsLandAt = 0;
+  // A plain yes or no: shouldShowWorkspace carries the sequence itself, which
+  // changes with every step.
+  const workspaceIsShown = $derived(Boolean(shouldShowWorkspace));
+  $effect.pre(() => {
+    void navigationState.activeTab;
+    void workspaceIsShown;
+    void controlsStepAside;
+    panelsLandAt = performance.now() + CONTROL_LANDING_MS;
+  });
+  const landingLeft = () => Math.max(0, panelsLandAt - performance.now());
+  const topControlPresence = {
+    edge: "top",
+    ring: 2,
+    lead: landingLeft,
+    animate: () => controlsMayAnimate,
+  } satisfies ControlPresenceParams;
+  const bottomControlPresence = {
+    edge: "bottom",
+    ring: 2,
+    lead: landingLeft,
+    animate: () => controlsMayAnimate,
+  } satisfies ControlPresenceParams;
   // Only a tab whose Play runs in place, and only with steps to animate.
   const showSavePreviewSwitch = $derived(
     shouldShowWorkspace &&
@@ -553,12 +596,12 @@
         buttonPanelElement.getBoundingClientRect().height
       );
     }
-    // Theater mode lifts the bar out of its wrapper. Its height is kept
-    // through the preview, so the room under the workspace grows back to the
-    // same size when the bar returns instead of growing from nothing.
+    // Stepping aside lifts the bar out of its wrapper. Its height is kept
+    // meanwhile, so the room under the workspace grows back to the same size
+    // when the bar returns instead of growing from nothing.
     const resizeObserver = new ResizeObserver((entries) => {
       const box = entries.at(-1)?.borderBoxSize?.[0];
-      if (box && !isWorkspaceTheater)
+      if (box && !controlsStepAside)
         buttonPanelHeight = Math.round(box.blockSize);
     });
     resizeObserver.observe(buttonPanelElement, { box: "border-box" });
@@ -569,7 +612,11 @@
 
 {#snippet compactSaveAction()}
   {#if canSaveToLibrary}
-    <div class="compact-save-action">
+    <div
+      class="compact-save-action"
+      in:controlArrive|global={bottomControlPresence}
+      out:controlLeave|global={bottomControlPresence}
+    >
       <SaveToLibraryButton
         sequence={currentSequence}
         onclick={() => panelState.openSaveToLibraryPanel()}
@@ -638,70 +685,57 @@
       {/if}
     </div>
 
-    <!-- Theater mode's own blocks sit inside the usual ones, so their
-         transitions play only when the preview starts or ends, never when
-         the workspace itself opens. -->
-    {#if shouldShowWorkspace && !useCompactToolbar}
-      {#if !isWorkspaceTheater}
-        <div
-          class="workspace-history-actions"
-          class:save-mode={isSaveView}
-          inert={!!panelState.workspacePlayback || isSaveView}
-          transition:flyFade={{ y: -8 }}
-        >
-          <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
-          <UndoButton {CreateModuleState} direction="redo" />
-        </div>
-      {/if}
-    {/if}
-
-    {#if shouldShowWorkspace && !useCompactToolbar && canSaveToLibrary}
-      {#if !isWorkspaceTheater}
-        <div
-          class="workspace-save-action"
-          class:save-mode={isSaveView}
-          inert={isSaveView}
-          transition:flyFade={{ y: -8 }}
-        >
-          {#if canSaveToLibrary}
-            <SaveToLibraryButton
-              sequence={currentSequence}
-              onclick={() => panelState.openSaveToLibraryPanel()}
-            />
-          {/if}
-        </div>
-      {/if}
-    {/if}
-
-    <!-- Button Panel - Shows when workspace is visible -->
-    {#if shouldShowWorkspace}
+    {#if shouldShowWorkspace && !useCompactToolbar && !controlsStepAside}
       <div
-        class="button-panel-wrapper"
-        class:save-mode={isSaveView}
-        inert={isSaveView}
-        bind:this={buttonPanelElement}
+        class="workspace-history-actions"
+        inert={!!panelState.workspacePlayback}
+        in:controlArrive={topControlPresence}
+        out:controlLeave={topControlPresence}
       >
-        {#if !isWorkspaceTheater}
-          <div class="button-panel-presence" transition:flyFade={{ y: 8 }}>
-            <ButtonPanel
-              {onClearSequence}
-              {onViewSequence}
-              compact={useCompactToolbar}
-              trailingActions={compactSaveAction}
-            />
-          </div>
+        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
+        <UndoButton {CreateModuleState} direction="redo" />
+      </div>
+    {/if}
+
+    {#if shouldShowWorkspace && !useCompactToolbar && canSaveToLibrary && !controlsStepAside}
+      <div
+        class="workspace-save-action"
+        in:controlArrive={topControlPresence}
+        out:controlLeave={topControlPresence}
+      >
+        <SaveToLibraryButton
+          sequence={currentSequence}
+          onclick={() => panelState.openSaveToLibraryPanel()}
+        />
+      </div>
+    {/if}
+
+    <!-- Button Panel - Shows when workspace is visible. The wrapper stays while
+         the controls step aside, so its height is still there to come back to.
+         Each control carries its own presence, in ButtonPanel. -->
+    {#if shouldShowWorkspace}
+      <div class="button-panel-wrapper" bind:this={buttonPanelElement}>
+        {#if !controlsStepAside}
+          <ButtonPanel
+            {onClearSequence}
+            {onViewSequence}
+            compact={useCompactToolbar}
+            trailingActions={compactSaveAction}
+            arrivalLead={landingLeft}
+            animateControls={() => controlsMayAnimate}
+          />
         {/if}
       </div>
     {/if}
 
-    <!-- Fades in over the room under the workspace as the bar fades out. A
-         sibling of the bar, which is inert in save mode. -->
+    <!-- Comes up in the room under the workspace as the bar leaves it. -->
     {#if showSavePreviewSwitch}
       <div
         class="save-preview-slot"
         style:height="{saveSwitchRoom}px"
         style:padding-top="{SAVE_SWITCH_GAP_ABOVE}px"
-        transition:flyFade={{ y: 0, duration: DURATION.normal }}
+        in:controlArrive={bottomControlPresence}
+        out:controlLeave={bottomControlPresence}
       >
         <SavePreviewSwitch size={saveSwitchSize} />
       </div>
@@ -734,17 +768,22 @@
   >
     <!-- On phones Undo/Redo sit in the grid panel's empty top-left corner,
          clear of every grid point; that pair also undoes a Clear. -->
-    {#if showCompactHistory}
+    {#if showCompactHistory && !isSaveView}
       <div
         class="compact-history-actions"
-        class:save-mode={isSaveView}
-        inert={isWorkspacePlayback || isSaveView}
+        inert={isWorkspacePlayback}
+        in:controlArrive={topControlPresence}
+        out:controlLeave={topControlPresence}
       >
         <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
         <UndoButton {CreateModuleState} direction="redo" quiet />
       </div>
     {:else if showHistoryRecovery}
-      <div class="clear-recovery-action">
+      <div
+        class="clear-recovery-action"
+        in:controlArrive={topControlPresence}
+        out:controlLeave={topControlPresence}
+      >
         {#if CreateModuleState.canUndo}
           <UndoButton {CreateModuleState} />
         {/if}
@@ -889,9 +928,11 @@
     display: flex;
     gap: var(--settings-spacing-sm, 8px);
     pointer-events: auto;
+    interpolate-size: allow-keywords;
   }
 
   .workspace-save-action {
+    interpolate-size: allow-keywords;
     --workspace-action-label-display: inline;
     --workspace-action-width: auto;
     --workspace-action-gap: 8px;
@@ -909,6 +950,7 @@
   @container create-workspace (max-width: 500px) {
     .workspace-save-action {
       --workspace-action-label-display: none;
+      --workspace-action-label-opacity: 0;
       --workspace-action-width: var(--min-touch-target, 44px);
       --workspace-action-padding-inline: 0;
     }
@@ -919,27 +961,15 @@
     opacity: 0.45;
   }
 
-  /* Save mode: the workspace's controls fade out where they stand (their
-     boxes stay, so the grid keeps its place) and come back the same way. */
+  /* Undo and Redo dim while a preview plays, and brighten again after. */
   .workspace-history-actions,
-  .workspace-save-action,
-  .compact-history-actions,
-  .button-panel-wrapper {
+  .compact-history-actions {
     transition: opacity var(--duration-normal) var(--ease-standard);
-  }
-
-  .workspace-history-actions.save-mode,
-  .workspace-save-action.save-mode,
-  .compact-history-actions.save-mode,
-  .button-panel-wrapper.save-mode {
-    opacity: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .workspace-history-actions,
-    .workspace-save-action,
-    .compact-history-actions,
-    .button-panel-wrapper {
+    .compact-history-actions {
       transition: none;
     }
   }

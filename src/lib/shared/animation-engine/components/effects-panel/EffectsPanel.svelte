@@ -17,6 +17,7 @@
   import { effectCatalogLooks } from "./effect-catalog-looks";
   import {
     fitEffectCatalog,
+    fitEffectPicker,
     fitEffectRoster,
     holdEffectRoster,
   } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
@@ -72,6 +73,13 @@
      * pictures that fills the card. Sidebar layout only.
      */
     fill?: boolean;
+    /**
+     * With the strip layout and `fill`: the box is all there is and nothing
+     * scrolls. Every effect and Off share it (`fitEffectPicker`), and an effect's
+     * page holds its looks and headline slider. Deep tuning stays in the hosts
+     * that have the room for it, so this page has no Tune button.
+     */
+    fitRoom?: boolean;
     /** Post Studio can show the roster beside looks and tuning when its panel is wide. */
     wideWorkspace?: boolean;
     /** Post Studio opens an already chosen effect's looks and tuning first. */
@@ -104,6 +112,7 @@
     layout = "sidebar",
     showHeading = true,
     fill = false,
+    fitRoom = false,
     wideWorkspace = false,
     preferSelectedDetail = false,
     pagedRichDetail = false,
@@ -210,10 +219,23 @@
     return fit;
   });
 
+  // The strip page of a host that never scrolls: one arrangement for both
+  // states, from the box it was given, with Off as one more tile.
+  let stripRect = $state<DOMRectReadOnly>();
+  const pickerFit = $derived(
+    fitRoom
+      ? fitEffectPicker({
+          width: Math.floor(stripRect?.width ?? 0),
+          height: Math.floor(stripRect?.height ?? 0),
+          count: rosterCount + 1,
+        })
+      : null
+  );
+
   /** The look each tile shows (effect-catalog-looks). The list arrangement
    *  has names only. */
   const catalogLooks = $derived(
-    (catalogFit ? catalogFit.portrait : rosterFit)
+    (fitRoom ? pickerFit?.portrait : catalogFit ? catalogFit.portrait : rosterFit)
       ? effectCatalogLooks(effectsConfigState)
       : null
   );
@@ -974,7 +996,12 @@
   <!-- Mobile drill-down: picker grid (all 16 + Off, no h-scroll) ⇄ per-effect
        detail screen ⇄ deep tuning. Tap a tile = apply live + stay; tap the
        active tile = drill into its detail. -->
-  <div class="mep strip-layout" class:fill>
+  <div
+    class="mep strip-layout"
+    class:fill
+    class:fit-room={fitRoom}
+    bind:contentRect={stripRect}
+  >
     <!-- Same reason as the sidebar, and it matters more here: the tray sits at
          the bottom of a phone screen, so a step in its height shoves the canvas
          above it. -->
@@ -1062,6 +1089,24 @@
             {/if}
           {/if}
         </div>
+      {:else if stripView === "detail" && fitRoom && registration && activeEffect !== "none"}
+        <div class="drill-view">
+          <EffectDock
+            {registration}
+            {activePresetId}
+            defaultChipId={DEFAULT_CHIP_ID}
+            customChipId={CUSTOM_CHIP_ID}
+            {customDisabled}
+            {customColors}
+            {primarySpec}
+            {primaryValue}
+            onSelectPreset={handlePresetSelect}
+            onPrimaryInput={setPrimaryValue}
+            onBack={() => (detailOpen = false)}
+            backLabel={t("effect_deep_all_effects")}
+            looks="fit"
+          />
+        </div>
       {:else if stripView === "detail" && registration && activeEffect !== "none"}
         <div class="drill-view">
           <!-- The dock carries this effect's identity, so the head is just the
@@ -1083,6 +1128,20 @@
             t("effect_deep_tune"),
             "rail"
           )}
+        </div>
+      {:else if fitRoom}
+        <div class="drill-view">
+          <EffectSelector
+            {activeEffect}
+            onSelect={handleTileTap}
+            onPrewarm={handleEffectPrewarm}
+            onOff={handleOffTap}
+            layout="tray"
+            activeAction="tune"
+            {availableEffects}
+            catalog={pickerFit}
+            portrait={catalogPortrait}
+          />
         </div>
       {:else}
         <div class="drill-view">
@@ -1467,6 +1526,15 @@
   .strip-layout.fill .drill-view::-webkit-scrollbar-thumb {
     border-radius: 8px;
     background: var(--theme-stroke-strong, #484755);
+  }
+  /* Sized from a measurement of the panel, so the page cannot feed back into
+     its own box. */
+  .mep.strip-layout.fit-room {
+    contain: size;
+    height: 100%;
+  }
+  .strip-layout.fit-room .drill-view {
+    gap: 0;
   }
   .strip-layout.fill .picker-bar {
     flex: none;

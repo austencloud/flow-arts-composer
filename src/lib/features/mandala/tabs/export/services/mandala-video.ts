@@ -48,6 +48,8 @@ export interface MandalaVideoSource {
   rightPropType?: string;
   variant?: MandalaRenderOptions["show"];
   pathShape?: MandalaPathShape;
+  /** The colors saved with the piece; none draws the fixed look. */
+  colors?: { left: string; right: string } | null;
 }
 
 export function buildMandalaVideoSpec(
@@ -70,10 +72,12 @@ export function buildMandalaVideoSpec(
     fps: VIDEO_DEFAULTS.fps,
     rangeMax: VIDEO_DEFAULTS.rangeMax,
     rotation: VIDEO_DEFAULTS.rotation,
-    // Solid default palette — matches the still PNG and the live detail preview
-    // (which render the default blue/red, not a flow gradient).
+    // Solid, not a flow gradient: the same colors as the still PNG and the live
+    // detail preview (see savedMandalaPalette).
     morphColors: null,
-    solidPair: [BLUE_STROKE, RED_STROKE],
+    solidPair: source.colors
+      ? [source.colors.left, source.colors.right]
+      : [BLUE_STROKE, RED_STROKE],
   };
 }
 

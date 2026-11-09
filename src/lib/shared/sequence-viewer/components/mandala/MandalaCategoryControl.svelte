@@ -29,6 +29,10 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import LabeledColorPairPicker from "#lib/shared/ui/components/LabeledColorPairPicker.svelte";
   import MandalaPreviewOption from "./MandalaPreviewOption.svelte";
+  import {
+    MANDALA_TRAIL_MAX,
+    MANDALA_TRAIL_MIN,
+  } from "#lib/shared/mandala/domain/mandala-ghost-ring.js";
 
   /** "download" holds the export config (loops / fidelity / fps + estimate). */
   export type MandalaCategory =
@@ -38,6 +42,7 @@
     | "colors"
     | "weight"
     | "depth"
+    | "trails"
     | "download";
 
   interface Props {
@@ -158,6 +163,20 @@
     { value: "both", label: t("viewer_ui_both"), tone: "accent" },
     { value: "right", label: t("viewer_ui_right"), tone: "red" },
   ]);
+  type TrailMode = "off" | "on";
+  const TRAIL_OPTIONS = $derived<{ value: TrailMode; label: string }[]>([
+    { value: "off", label: t("viewer_ui_trails_off") },
+    { value: "on", label: t("viewer_ui_trails_on") },
+  ]);
+  const trailMode = $derived<TrailMode>(ctrl.trailEnabled ? "on" : "off");
+  function handleTrailChange(value: TrailMode): void {
+    changeSetting(
+      "trails",
+      trailMode,
+      value,
+      () => (ctrl.trailEnabled = value === "on")
+    );
+  }
   const motionMode = $derived<MotionMode>(ctrl.paused ? "static" : "animated");
   // Derived from PRESET_COLORS (the single source of truth) so a preset added
   // there is automatically selectable here — no second list to drift out of
@@ -536,6 +555,47 @@
     />
     <span class="slider-value">{ctrl.depth}%</span>
   </div>
+{:else if category === "trails"}
+  <!-- The length row stays put while the trail is off, only dimmed, so
+       switching it on never moves the tray. -->
+  <div
+    class="tray-stack"
+    transition:growFade|local={{ duration: DURATION.normal, easing: cubicOut }}
+  >
+    <div class="control-field">
+      <span class="control-label">{t("viewer_ui_trails")}</span>
+      <SegmentedControl
+        options={TRAIL_OPTIONS}
+        value={trailMode}
+        onchange={handleTrailChange}
+        color="accent"
+        size="sm"
+      />
+    </div>
+    <div class="tray-slider trail-length" class:dimmed={!ctrl.trailEnabled}>
+      <input
+        type="range"
+        min={MANDALA_TRAIL_MIN}
+        max={MANDALA_TRAIL_MAX}
+        step="1"
+        value={ctrl.trailLength}
+        disabled={!ctrl.trailEnabled}
+        oninput={(e) => {
+          const value = Number((e.target as HTMLInputElement).value);
+          changeSetting(
+            "trail_length",
+            ctrl.trailLength,
+            value,
+            () => (ctrl.trailLength = value),
+            true
+          );
+        }}
+        class="slider"
+        aria-label={t("viewer_ui_trail_length")}
+      />
+      <span class="slider-value">{ctrl.trailLength}</span>
+    </div>
+  </div>
 {:else if category === "download"}
   <div class="download-tray">
     <div class="dl-row">
@@ -900,6 +960,20 @@
     background: var(--theme-accent, #6366f1);
     border: 2px solid var(--theme-panel-bg, rgba(10, 10, 26, 0.9));
     cursor: pointer;
+  }
+  .trail-length {
+    transition: opacity var(--duration-normal) var(--ease-standard-out);
+  }
+  .trail-length.dimmed {
+    opacity: 0.4;
+  }
+  .trail-length.dimmed .slider {
+    cursor: default;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .trail-length {
+      transition: none;
+    }
   }
   .slider-value {
     font-size: 13px;

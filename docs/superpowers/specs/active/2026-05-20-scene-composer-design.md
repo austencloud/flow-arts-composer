@@ -6,7 +6,7 @@ remaining: "Verify current ten-scene Compose and museum edit/save/reload behavio
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 work_state: verification
 ---
 
@@ -34,7 +34,7 @@ work_state: verification
 > instance sidecar.
 
 **Date:** 2026-05-20
-**Status:** Draft
+**Status:** Partly implemented; verification pending (re-triaged 2026-11-07, see the triage line above)
 **Scope:** Plugin architecture for universal 3D object placement across all scenes
 
 ## Problem

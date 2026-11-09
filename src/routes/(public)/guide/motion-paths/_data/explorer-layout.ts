@@ -15,6 +15,23 @@
 
 export type ExplorerMode = "quad" | "trio" | "split" | "stack";
 
+/**
+ * The studio's stage, reported to the screen around the explorer so a short
+ * intro can leave and come back on the same beats as the lesson's pickers.
+ *
+ *   rest       the lesson layout
+ *   clearing   the lesson's pickers fading out, layout unchanged
+ *   open       studio layout, section panel showing
+ *   closing    studio layout, section panel fading out
+ *   revealing  lesson layout back, its pickers about to fade in
+ */
+export type StudioPhase =
+  | "rest"
+  | "clearing"
+  | "open"
+  | "closing"
+  | "revealing";
+
 export interface ExplorerLayout {
   mode: ExplorerMode;
   /** Tiles to a row. */

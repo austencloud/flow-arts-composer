@@ -188,3 +188,31 @@ describe("LOOPExpandedOverlay live single selection", () => {
     expect(handlers.onClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("LOOPExpandedOverlay opening", () => {
+  beforeEach(async () => {
+    await page.viewport(900, 900);
+  });
+
+  it("does not measure its settings switches while it mounts", async () => {
+    // The panel mounts inside the tap that opens the card. A settings switch
+    // measures its choices only when its list is rebuilt, and a rebuild there
+    // forces a full page layout before the card can start moving.
+    const measure = vi.spyOn(Element.prototype, "getBoundingClientRect");
+    try {
+      renderOverlay({
+        selectedComponents: new Set([LOOPComponent.ROTATED]),
+        rhythm: { ...HALVED_RHYTHM },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(document.querySelector(".segment")).not.toBeNull();
+      const switchMeasures = measure.mock.contexts.filter(
+        (element) => element instanceof Element && element.matches(".segment")
+      );
+      expect(switchMeasures).toHaveLength(0);
+    } finally {
+      measure.mockRestore();
+    }
+  });
+});

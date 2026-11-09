@@ -4,7 +4,6 @@ import {
   createTileFlight,
   flightGeometry,
   isPlainPress,
-  TILE_WINDOW_NAME,
 } from "./tile-flight.svelte";
 
 /** Press, navigate and land, the way the root layout reports it. */
@@ -12,21 +11,19 @@ function flyTo(
   flight: ReturnType<typeof createTileFlight>,
   href = "/composer"
 ) {
-  flight.arm("composer", href);
+  flight.arm(href);
   flight.navigationStarting(href.split("#")[0]);
   flight.navigationSettled("/", href.split("#")[0]!);
 }
 
 describe("arming a tile flight", () => {
-  it("flies only the pressed tile, only to where it was pressed for", () => {
+  it("flies only to where the tile was pressed for", () => {
     const flight = createTileFlight();
-    flight.arm("composer", "/composer");
+    flight.arm("/composer");
 
     expect(flight.decide("/", "/composer")).toBe("open");
     expect(flight.decide("/", "/faq")).toBeNull();
     expect(flight.decide("/about", "/composer")).toBeNull();
-    expect(flight.isFlying("composer")).toBe(true);
-    expect(flight.isFlying("faq")).toBe(false);
   });
 
   it("does not fly for the header's link to the same URL", () => {
@@ -37,22 +34,21 @@ describe("arming a tile flight", () => {
 
   it("reads a chip's destination without its hash", () => {
     const flight = createTileFlight();
-    flight.arm("guide", "/guide#start");
+    flight.arm("/guide#start");
     expect(flight.decide("/", "/guide")).toBe("open");
   });
 
   it("lets go when the press's navigation is cancelled", () => {
     const flight = createTileFlight();
-    flight.arm("composer", "/composer");
+    flight.arm("/composer");
     flight.disarm();
 
     expect(flight.decide("/", "/composer")).toBeNull();
-    expect(flight.isFlying("composer")).toBe(false);
   });
 
   it("lets go when another navigation replaces the press", () => {
     const flight = createTileFlight();
-    flight.arm("composer", "/composer");
+    flight.arm("/composer");
     flight.navigationStarting("/faq");
     expect(flight.decide("/", "/composer")).toBeNull();
   });
@@ -60,29 +56,24 @@ describe("arming a tile flight", () => {
   it("lets go by itself when no navigation ever starts", () => {
     vi.useFakeTimers();
     const flight = createTileFlight();
-    flight.arm("composer", "/composer");
+    flight.arm("/composer");
     vi.advanceTimersByTime(ARM_EXPIRY_MS);
-    expect(flight.isFlying("composer")).toBe(false);
+    expect(flight.decide("/", "/composer")).toBeNull();
     vi.useRealTimers();
   });
 
   it("clears the press once the navigation lands", () => {
     const flight = createTileFlight();
     flyTo(flight);
-    expect(flight.armedRoute).toBeNull();
     expect(flight.decide("/", "/composer")).toBeNull();
   });
 });
 
 describe("the trip back", () => {
-  it("flies back into the tile after a tile flight", () => {
+  it("pushes back to home after a tile flight", () => {
     const flight = createTileFlight();
     flyTo(flight);
     expect(flight.decide("/composer", "/")).toBe("close");
-
-    flight.begin("close");
-    expect(flight.isFlying("composer")).toBe(true);
-    expect(flight.isFlying("faq")).toBe(false);
   });
 
   it("does not fly back after arriving by the header link", () => {
@@ -126,11 +117,11 @@ describe("the trip back", () => {
 describe("what each end calls itself", () => {
   it("names only the arriving page of an opening flight", () => {
     const flight = createTileFlight();
-    flight.arm("faq", "/faq");
+    flight.arm("/faq");
     expect(flight.arrivingContentName("/faq")).toBeUndefined();
 
     flight.begin("open");
-    expect(flight.arrivingContentName("/faq")).toBe(TILE_WINDOW_NAME);
+    expect(flight.arrivingContentName("/faq")).toBe("page-arriving");
     expect(flight.arrivingContentName("/")).toBeUndefined();
 
     flight.end();
@@ -193,71 +184,44 @@ describe("isPlainPress", () => {
 
 describe("flightGeometry", () => {
   const viewport = { width: 1000, height: 800 };
-  const tile = { x: 100, y: 500, width: 200, height: 150 };
   const home = { x: 0, y: 64, width: 1000, height: 736 };
   const page = { x: 0, y: 64, width: 1000, height: 3000 };
-  const open = { direction: "open", tile, page, home, viewport } as const;
-  const close = { ...open, direction: "close" } as const;
-
-  it("opens from the tile to the part of the page on screen", () => {
-    const vars = flightGeometry(open);
-    expect(vars["--tile-flight-from-x"]).toBe("100px");
-    expect(vars["--tile-flight-from-y"]).toBe("500px");
-    expect(vars["--tile-flight-from-w"]).toBe("200px");
-    expect(vars["--tile-flight-from-h"]).toBe("150px");
-    // Stops at the bottom of the screen, not the bottom of a tall page.
-    expect(vars["--tile-flight-to-x"]).toBe("0px");
-    expect(vars["--tile-flight-to-y"]).toBe("64px");
-    expect(vars["--tile-flight-to-w"]).toBe("1000px");
-    expect(vars["--tile-flight-to-h"]).toBe("736px");
-  });
-
-  it("closes as the mirror of opening", () => {
-    const opening = flightGeometry(open);
-    const closing = flightGeometry(close);
-    for (const edge of ["x", "y", "w", "h"]) {
-      expect(closing[`--tile-flight-from-${edge}`]).toBe(
-        opening[`--tile-flight-to-${edge}`]
-      );
-      expect(closing[`--tile-flight-to-${edge}`]).toBe(
-        opening[`--tile-flight-from-${edge}`]
-      );
-    }
-  });
-
-  it("keeps the page box whole, so its picture stays pinned", () => {
-    const vars = flightGeometry(open);
-    expect(vars["--tile-flight-page-y"]).toBe("64px");
-    expect(vars["--tile-flight-page-h"]).toBe("3000px");
-    expect(vars["--tile-flight-tile-y"]).toBe("500px");
-    expect(vars["--tile-flight-tile-h"]).toBe("150px");
-  });
-
-  it("starts from what was on screen when the page was scrolled", () => {
-    const vars = flightGeometry({
-      ...close,
-      page: { x: 0, y: -400, width: 1000, height: 3000 },
-    });
-    expect(vars["--tile-flight-page-y"]).toBe("-400px");
-    expect(vars["--tile-flight-from-y"]).toBe("0px");
-    expect(vars["--tile-flight-from-h"]).toBe("800px");
-    // The middle of the screen is 800px down a page that starts 400px above it.
-    expect(vars["--tile-flight-screen-x"]).toBe("500px");
-    expect(vars["--tile-flight-screen-y"]).toBe("800px");
-  });
 
   it("scales a tall page about the middle of what is on screen", () => {
-    const vars = flightGeometry(open);
-    expect(vars["--tile-flight-screen-x"]).toBe("500px");
-    expect(vars["--tile-flight-screen-y"]).toBe("368px");
+    const vars = flightGeometry({ leaving: home, arriving: page, viewport });
+    expect(vars["--tile-flight-arriving-x"]).toBe("500px");
+    expect(vars["--tile-flight-arriving-y"]).toBe("368px");
   });
 
-  it("recedes the homepage into the tile's centre, from the home box's corner", () => {
+  it("gives each picture its own origin", () => {
     const vars = flightGeometry({
-      ...open,
-      home: { x: 40, y: 64, width: 960, height: 736 },
+      leaving: { x: 40, y: 64, width: 960, height: 400 },
+      arriving: page,
+      viewport,
     });
-    expect(vars["--tile-flight-origin-x"]).toBe("160px");
-    expect(vars["--tile-flight-origin-y"]).toBe("511px");
+    expect(vars["--tile-flight-leaving-x"]).toBe("480px");
+    expect(vars["--tile-flight-leaving-y"]).toBe("200px");
+    expect(vars["--tile-flight-arriving-y"]).toBe("368px");
+  });
+
+  it("finds what is on screen when the page was scrolled", () => {
+    const vars = flightGeometry({
+      leaving: { x: 0, y: -400, width: 1000, height: 3000 },
+      arriving: home,
+      viewport,
+    });
+    // The middle of the screen is 800px down a page that starts 400px above it.
+    expect(vars["--tile-flight-leaving-x"]).toBe("500px");
+    expect(vars["--tile-flight-leaving-y"]).toBe("800px");
+  });
+
+  it("returns the two origin pairs and nothing about the tile", () => {
+    const vars = flightGeometry({ leaving: home, arriving: page, viewport });
+    expect(Object.keys(vars).sort()).toEqual([
+      "--tile-flight-arriving-x",
+      "--tile-flight-arriving-y",
+      "--tile-flight-leaving-x",
+      "--tile-flight-leaving-y",
+    ]);
   });
 });

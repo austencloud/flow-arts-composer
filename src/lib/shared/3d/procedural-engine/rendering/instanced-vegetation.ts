@@ -14,7 +14,7 @@
  * - Automatic batching by vegetation category
  * - Dynamic instance buffer updates
  * - LOD support with procedural fallback
- * - Frustum culling at batch level
+ * - Frustum culling at batch level (bounds cover every live instance)
  * - Model variety through random selection within categories
  */
 
@@ -218,7 +218,10 @@ export class VegetationManager {
   ): void {
     const mesh = new InstancedMesh(geometry, material, maxInstances);
     mesh.count = 0;
-    mesh.frustumCulled = false;
+    // Culling stays on: commitInstances() keeps the mesh's bounding sphere
+    // around every live instance, so three.js no longer tests the base model's
+    // bounds at the origin.
+    mesh.frustumCulled = true;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.name = `vegetation_${category}`;
@@ -468,9 +471,13 @@ export class VegetationManager {
   ): void {
     const mesh = new InstancedMesh(geometry, material, maxInstances);
     mesh.count = 0;
-    mesh.frustumCulled = false;
+    // Culling stays on: commitInstances() keeps the mesh's bounding sphere
+    // around every live instance, so three.js no longer tests the base model's
+    // bounds at the origin.
+    mesh.frustumCulled = true;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.name = `vegetation_${type}`;
 
     // Initialize all matrices to identity
     const identity = new Matrix4();
@@ -729,8 +736,7 @@ export class VegetationManager {
 
     batch.instances.set(chunkKey, startIndex);
     batch.instanceCount += count;
-    batch.mesh.count = batch.instanceCount;
-    batch.mesh.instanceMatrix.needsUpdate = true;
+    this.commitInstances(batch);
   }
 
   private addToLegacyBatch(
@@ -771,8 +777,7 @@ export class VegetationManager {
 
     batch.instances.set(chunkKey, startIndex);
     batch.instanceCount += count;
-    batch.mesh.count = batch.instanceCount;
-    batch.mesh.instanceMatrix.needsUpdate = true;
+    this.commitInstances(batch);
   }
 
   private removeFromCategoryBatch(category: VegetationCategory, chunkKey: string): void {
@@ -789,6 +794,21 @@ export class VegetationManager {
 
     batch.instances.delete(chunkKey);
     batch.dirty = true;
+  }
+
+  /**
+   * Publishes a batch's instance writes: the draw count, the matrix upload, and
+   * bounds that cover every live instance. three.js culls an InstancedMesh by
+   * its own boundingSphere, so it must be recomputed whenever instances move;
+   * a stale sphere would cull trees that are on screen.
+   */
+  private commitInstances(batch: VegetationBatch): void {
+    const mesh = batch.mesh;
+    mesh.count = batch.instanceCount;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    // The box is only used by raycasts; let three.js rebuild it on demand.
+    mesh.boundingBox = null;
   }
 
   /**
@@ -847,8 +867,7 @@ export class VegetationManager {
       batch.instanceCount += count;
     }
 
-    batch.mesh.count = batch.instanceCount;
-    batch.mesh.instanceMatrix.needsUpdate = true;
+    this.commitInstances(batch);
     batch.dirty = false;
   }
 
@@ -891,8 +910,7 @@ export class VegetationManager {
       batch.instanceCount += count;
     }
 
-    batch.mesh.count = batch.instanceCount;
-    batch.mesh.instanceMatrix.needsUpdate = true;
+    this.commitInstances(batch);
     batch.dirty = false;
   }
 
@@ -926,6 +944,12 @@ export class VegetationManager {
         grass: this.legacyBatches.get("grass")?.instanceCount ?? 0,
       };
     }
+  }
+
+  /** Whether the vegetation batches draw into the sun's shadow map. */
+  setCastShadow(enabled: boolean): void {
+    for (const batch of this.batches.values()) batch.mesh.castShadow = enabled;
+    for (const batch of this.legacyBatches.values()) batch.mesh.castShadow = enabled;
   }
 
   /**

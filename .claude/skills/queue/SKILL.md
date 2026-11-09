@@ -14,6 +14,8 @@ Read the selected spec, its current handoff, and its plan before acting. Check t
 
 Tell the user the selected task, score, and specific remaining work. For a verification task, perform its acceptance checks and capture evidence. Do not rebuild a feature just because its original design says "not started". If no entry is eligible, report the reason and reconcile a candidate within the user's scope. Do not invent scores or silently select held work.
 
+To answer "is it time to release?", run `npm run release:debt` (a read-only report, never a gate).
+
 ## Commands
 
 - `npm run specs:list`: show ranked eligible work and held entries with reasons.

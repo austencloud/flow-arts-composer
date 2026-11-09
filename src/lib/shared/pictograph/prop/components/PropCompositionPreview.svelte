@@ -125,6 +125,7 @@
     appearanceOverride ?? {
       fanAppearance: getSettings?.().fanAppearance ?? null,
       triangleGrip: getSettings?.().triangleGrip ?? null,
+      buugengStyle: getSettings?.().buugengStyle ?? null,
     }
   );
   const leftGlyph = $derived(

@@ -22,9 +22,13 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import {
+    controlArrive,
+    controlLeave,
+    type ControlPresenceParams,
+  } from "#lib/shared/transitions/control-presence.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { PresenceAnimation } from "../../../../../../shared/ui-animation/animations.svelte";
   import { getCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import ClearSequencePanelButton from "./buttons/ClearSequenceButton.svelte";
   import SequenceActionsButton from "./buttons/SequenceActionsButton.svelte";
@@ -60,6 +64,8 @@
     visible = true,
     compact = false,
     trailingActions,
+    arrivalLead = () => 0,
+    animateControls,
   }: {
     onClearSequence?: () => void;
     onViewSequence?: () => void;
@@ -67,7 +73,20 @@
     /** One-row rail: Save joins the panel and Share leaves it */
     compact?: boolean;
     trailingActions?: Snippet;
+    /** How long a control appearing now still waits for the panels to land */
+    arrivalLead?: () => number;
+    /** False while the surface paints for the first time */
+    animateControls?: () => boolean;
   } = $props();
+
+  /** Play is the centre of the wave; each ring out arrives one beat later. */
+  function presenceAt(ring: number): ControlPresenceParams {
+    return {
+      ring,
+      lead: arrivalLead,
+      animate: () => animateControls?.() ?? true,
+    };
+  }
 
   // Derive computed values from context
   const showViewSequenceButton = $derived(
@@ -159,45 +178,6 @@
       constructTutorialState.recordFullPlay();
     }
   }
-
-  // Count center-zone buttons to key the container, so Play cross-fades in
-  // and out instead of popping. Play's Stop, Retry and Cancel states swap
-  // inside it and keep the key. Where Play runs in place, Viewer hangs off
-  // Play's left side, so it never moves Play off center and is one tap from
-  // the full viewer (and its 3D view). Save is the only workspace action in
-  // the header.
-  const centerZoneButtonCount = $derived(() => {
-    let count = 0;
-    if (showViewSequenceButton) count++;
-    return count;
-  });
-
-  /**
-   * Spring scale transition using unified animation system
-   * Replaces old springScaleTransition with physics-based PresenceAnimation
-   */
-  function presenceTransition(
-    _node: Element,
-    { duration = 550, delay = 0 }: { duration?: number; delay?: number } = {}
-  ) {
-    const animation = new PresenceAnimation("snappy");
-
-    // Trigger enter animation
-    animation.enter();
-
-    return {
-      duration,
-      delay,
-      css: (t: number) => {
-        // Interpolate between start (0.95 scale) and end (1.0 scale)
-        const scale = 0.95 + (1 - 0.95) * t;
-        return `
-          transform: scale(${scale});
-          opacity: ${t};
-        `;
-      },
-    };
-  }
 </script>
 
 {#if visible}
@@ -212,7 +192,10 @@
       <div class="left-zone">
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence}
-            <div transition:presenceTransition>
+            <div
+              in:controlArrive|global={presenceAt(2)}
+              out:controlLeave|global={presenceAt(2)}
+            >
               <ClearSequencePanelButton onclick={() => onClearSequence?.()} />
             </div>
           {/if}
@@ -221,30 +204,37 @@
 
       <!-- CENTER ZONE: Primary Play action -->
       <div class="center-zone-wrapper">
-        {#key centerZoneButtonCount()}
-          <div
-            class="center-zone"
-            out:opaqueFade={{ duration: DURATION.fast }}
-            in:opaqueFade={{ duration: DURATION.fast, delay: DURATION.fast }}
-          >
-            {#each centerButtons as btn (btn.id)}
-              {#if btn.id === "view" && showViewSequenceButton && onViewSequence}
+        <!-- Where Play runs in place, Viewer hangs off Play's left side, so it
+             never moves Play off center and is one tap from the full viewer
+             (and its 3D view). Play's Stop, Retry and Cancel states swap
+             inside the button. -->
+        <div class="center-zone">
+          {#each centerButtons as btn (btn.id)}
+            {#if btn.id === "view" && showViewSequenceButton && onViewSequence}
+              <div
+                class="play-controls"
+                class:tutorial-target={isPlayTutorialTarget}
+                data-tutorial-target={isPlayTutorialTarget
+                  ? "play-sequence"
+                  : undefined}
+              >
+                {#if usesWorkspacePlayback}
+                  <div
+                    class="viewer-action"
+                    in:controlArrive|global={presenceAt(1)}
+                    out:controlLeave|global={presenceAt(1)}
+                  >
+                    <ViewSequenceButton
+                      purpose="viewer"
+                      onclick={() =>
+                        panelState.handoffWorkspacePlaybackToViewer()}
+                    />
+                  </div>
+                {/if}
                 <div
-                  class="play-controls"
-                  class:tutorial-target={isPlayTutorialTarget}
-                  data-tutorial-target={isPlayTutorialTarget
-                    ? "play-sequence"
-                    : undefined}
+                  in:controlArrive|global={presenceAt(0)}
+                  out:controlLeave|global={presenceAt(0)}
                 >
-                  {#if usesWorkspacePlayback}
-                    <div class="viewer-action">
-                      <ViewSequenceButton
-                        purpose="viewer"
-                        onclick={() =>
-                          panelState.handoffWorkspacePlaybackToViewer()}
-                      />
-                    </div>
-                  {/if}
                   <ViewSequenceButton
                     onclick={handleFullSequencePlay}
                     isActive={isExportPanelOpen}
@@ -258,10 +248,10 @@
                     purpose="play"
                   />
                 </div>
-              {/if}
-            {/each}
-          </div>
-        {/key}
+              </div>
+            {/if}
+          {/each}
+        </div>
       </div>
 
       <!-- RIGHT ZONE: order/membership from the shared layout -->
@@ -270,7 +260,8 @@
           {#if btn.id === "sequence-actions" && showSequenceActions}
             <div
               class="sequence-actions-workspace-trigger"
-              transition:presenceTransition
+              in:controlArrive|global={presenceAt(1)}
+              out:controlLeave|global={presenceAt(1)}
             >
               <SequenceActionsButton
                 onclick={() =>
@@ -278,7 +269,11 @@
               />
             </div>
           {:else if btn.id === "share" && canShareSequence && !compact}
-            <div class="share-slot" transition:presenceTransition>
+            <div
+              class="share-slot"
+              in:controlArrive|global={presenceAt(2)}
+              out:controlLeave|global={presenceAt(2)}
+            >
               <ShareButton
                 sequence={currentSequence}
                 useMobileSheet={useMobileShareSheet}
@@ -319,18 +314,24 @@
     border-radius: 24px;
     position: relative; /* Positioning context for absolutely-centered center zone */
 
-    /* Intelligent reactive padding to prevent overlap */
-    padding: clamp(2px, 0.3vh, 16px) clamp(2px, 1vw, 24px);
+    /* The same either side of a wide rail, so a workspace sliding wider or
+       narrower carries the controls without dropping them a few pixels. */
+    padding: clamp(6px, 1.2vh, 12px) clamp(10px, 1.8vw, 18px);
 
     /* Let taps pass through empty areas to step grid below */
     pointer-events: none;
+
+    /* A label leaving fades as its pill closes, so it never spills out. */
+    interpolate-size: allow-keywords;
+    --workspace-action-label-opacity: 0;
+    --share-trigger-label-opacity: 0;
   }
 
   /* LEFT ZONE: Clear at the left edge */
   .left-zone {
     display: flex;
     align-items: center;
-    gap: 12px; /* Slightly reduced for better mobile fit */
+    gap: 10px;
     flex-shrink: 0; /* Don't shrink */
     pointer-events: none;
   }
@@ -350,7 +351,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     position: absolute;
     left: 50%;
     /* Play is larger than the surrounding controls. Anchor its bottom edge to
@@ -364,7 +365,7 @@
   .right-zone {
     display: flex;
     align-items: center;
-    gap: 12px; /* Slightly reduced for better mobile fit */
+    gap: 10px;
     flex-shrink: 0; /* Don't shrink */
     pointer-events: none;
   }
@@ -419,6 +420,7 @@
   @container button-panel (min-width: 640px) {
     .button-panel {
       --workspace-action-label-display: inline;
+      --workspace-action-label-opacity: 1;
       --workspace-action-width: auto;
       --workspace-action-gap: 8px;
       --workspace-action-padding-inline: 16px;
@@ -426,22 +428,11 @@
       --workspace-play-action-width: auto;
       --workspace-play-action-height: var(--min-touch-target, 44px);
       --share-trigger-label-display: inline;
+      --share-trigger-label-opacity: 1;
       --share-trigger-width: auto;
       --share-trigger-gap: 8px;
       --share-trigger-padding-inline: 16px;
       --share-trigger-radius: 999px;
-    }
-  }
-
-  @container button-panel (max-width: 768px) {
-    .button-panel {
-      padding: clamp(6px, 1.2vh, 12px) clamp(10px, 1.8vw, 18px);
-    }
-
-    .left-zone,
-    .center-zone,
-    .right-zone {
-      gap: 10px; /* Balanced spacing for 48px buttons */
     }
   }
 

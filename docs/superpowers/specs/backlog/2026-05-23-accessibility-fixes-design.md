@@ -2,16 +2,18 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Complete focus containment/restoration in CardInspectModal, MotionVisibilityToggle and LegalSheet, label BottomNavigation, and fix SidebarFooter/AccountPopover contrast before keyboard, screen-reader and reduced-motion acceptance. ChoreoCardThumbnail now has labels and Environment3D has reduced-motion handling, but LegalSheet still lacks focus trapping and SidebarFooter retains 0.25/0.15 icon alpha; the scan-radio item is explicitly a false positive in this spec."
+remaining: "Keyboard, screen-reader and reduced-motion acceptance in a real browser (NVDA/VoiceOver pass, axe scan on the bottom nav and sheets). Issue 9 (ViewerOverflowMenu backdrop) and the P0 3D reduced-motion sweep were not re-checked in the 2026-11-07 pass. Code for issues 2-6 and 10 landed 2026-11-07."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-07
 work_state: in-progress
 ---
 
 # Accessibility Fixes Design Spec
 
+> 2026-11-07 triage: CardInspectModal, MotionVisibilityToggle and LegalSheet now use the shared FocusTrap (`focus-trap.ts`): Tab and Shift+Tab stay inside, Escape closes, focus returns to the opener. BottomNavigation carries `aria-label` (`nav_main_navigation`). SidebarFooter's mic and AccountPopover's version link, chevron and surface now use theme tokens; ratios are in "2026-11-07 contrast measurements" below. LegalSheet has a component test (`LegalSheet.svelte.test.ts`). Left: real-browser keyboard and screen-reader acceptance, issue 9, and the P0 3D sweep.
+>
 > 2026-10-14 triage: Complete focus containment/restoration in CardInspectModal, MotionVisibilityToggle and LegalSheet, label BottomNavigation, and fix SidebarFooter/AccountPopover contrast before keyboard, screen-reader and reduced-motion acceptance. ChoreoCardThumbnail now has labels and Environment3D has reduced-motion handling, but LegalSheet still lacks focus trapping and SidebarFooter retains 0.25/0.15 icon alpha; the scan-radio item is explicitly a false positive in this spec. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 Date: 2026-05-23
@@ -255,6 +257,24 @@ Additionally, this modal should have a focus trap. Apply the same `FocusTrap` pa
   });
 </script>
 ```
+
+## 2026-11-07 contrast measurements
+
+WCAG 2.x relative-luminance ratios, foreground alpha-composited over the background. Token values come from `background-theme-calculator.ts`: dark text `#ffffff`, light text `#0f172a`; dark `--theme-card-bg` `rgba(0,0,0,0.8)`, light `#d8d8d2`; dark `--theme-panel-bg` `rgba(0,0,0,0.8)`, light `#d0d0ca`. Dark backgrounds are measured at their worst case: the translucent card over a pure white scene (`rgb(51,51,51)`).
+
+| Element | Before | After (token) | Dark | Light |
+|---|---|---|---|---|
+| Mic, voice enabled | `rgba(255,255,255,0.25)`: 2.20 dark, 1.10 light | `--theme-text` 65% | 6.34 | 4.80 |
+| Mic, enabled hover | white 0.5 | `--theme-text-dim` (75%) | 7.87 | 6.49 |
+| Mic, inactive (non-text glyph, 3:1 floor) | `rgba(255,255,255,0.15)`: 1.61 dark, 1.06 light | `--theme-text` 50% | 4.43 | 3.12 |
+| Mic, inactive hover | white 0.4 | `--theme-text` 65% | 6.34 | 4.80 |
+| AccountPopover surface | fixed `rgb(18,18,28)` in both themes (light-mode text-dim on it: 1.02) | `--surface-panel-opaque` | n/a | n/a |
+| AccountPopover version link | text-dim at opacity 0.6 | `--theme-text` 65%, opacity 1 | 8.54 | 4.63 |
+| AccountPopover identity chevron | opacity 0.3 (2.51 dark) | opacity 0.65 | 8.54 | 4.63 |
+
+The mic stays 32px and the popover keeps its size; only colours changed. The inactive mic tier is a glyph, so it is held to the 3:1 non-text floor (WCAG 1.4.11) to stay one step dimmer than the enabled tier; every text-bearing element clears 4.5:1 in both themes.
+
+The original Issue 10 design suggested `aria-hidden="true"` on the LegalSheet backdrop. That backdrop wraps the dialog, so it would hide the dialog too; it was left without a role instead. The MotionVisibilityToggle backdrop is a sibling of its popover and does get `aria-hidden`.
 
 ## Implementation Order
 

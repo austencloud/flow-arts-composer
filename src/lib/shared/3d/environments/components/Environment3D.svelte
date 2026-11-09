@@ -9,6 +9,10 @@
    * Switcher component that renders the appropriate 3D environment
    * based on the BackgroundType setting. This unifies the 2D background
    * and 3D environment selection - they are the same setting.
+   *
+   * Scenes registered by a `static/models/<scene>/scene.json` are looked up
+   * first (environment-registry.ts) and need no case here; the switch below
+   * keeps only the legacy procedural scenes.
    */
 
   import { BackgroundType } from "@austencloud/backgrounds";
@@ -34,13 +38,22 @@
   } from "../domain/environment-handoff";
   import { EnvironmentHandoffGuard } from "../rendering/environment-handoff-guard";
   import { createEnvironmentModuleLoader } from "../domain/environment-module-load";
+  import {
+    getEnvironmentFrame,
+    getRegisteredEnvironment,
+  } from "../registry/environment-registry";
+  import { environmentModuleImporter } from "../registry/environment-runtimes";
+  import type { SceneId } from "../registry/environment-manifest";
+
+  // A legacy background, or the id of any registered scene.json.
+  type EnvironmentKey = BackgroundType | SceneId;
 
   // The host owns the visible cut, so its worlds swap in a single update.
   const HOST_CONTROLLED_TIMING = { coverDurationMs: 0, revealDurationMs: 0 };
 
   interface Props {
-    /** Background type from settings */
-    backgroundType: BackgroundType;
+    /** Background type from settings, or a registered scene id. */
+    backgroundType: EnvironmentKey;
     /** Number of performers on stage. Scenes use this to size platforms. */
     performerCount?: number;
     /** Live X/Z stage positions for environments that respond to presence. */
@@ -59,12 +72,16 @@
     forestConfig?: ForestSceneConfig;
     /** Winter review harness may hide the legacy ice platform behind a revision overlay. */
     winterPlatformVisible?: boolean;
-    /** Reports the transition owner's semantic state for hosts and diagnostics. */
-    onTransitionChange?: (
-      observation: EnvironmentTransitionObservation<BackgroundType>
-    ) => void;
+    /**
+     * Reports the transition owner's semantic state for hosts and diagnostics.
+     * Method syntax on purpose: hosts that only ever pass a BackgroundType
+     * keep their narrower callback type.
+     */
+    onTransitionChange?(
+      observation: EnvironmentTransitionObservation<EnvironmentKey>
+    ): void;
     /** Worlds that stay mounted after their first film preparation pass. */
-    retainedEnvironmentTypes?: readonly BackgroundType[];
+    retainedEnvironmentTypes?: readonly EnvironmentKey[];
     /**
      * A film host can own the visible edit while this component performs an
      * atomic retained-world switch behind that host's opaque frame.
@@ -102,7 +119,6 @@
     | { scene: "autumn" }
     | { scene: "cosmic"; variant: "night" | "aurora" }
     | { scene: "winter" }
-    | { scene: "ocean" }
     | { scene: "ember" }
     | { scene: "blossom" }
     | { scene: "rainbow" }
@@ -110,7 +126,7 @@
     | { scene: "void" }
     | { scene: "none" };
 
-  function getSceneConfig(bg: BackgroundType): SceneConfig {
+  function getSceneConfig(bg: EnvironmentKey): SceneConfig {
     switch (bg) {
       case BackgroundType.AUTUMN:
         return { scene: "autumn" };
@@ -120,8 +136,6 @@
         return { scene: "cosmic", variant: "night" };
       case BackgroundType.WINTER:
         return { scene: "winter" };
-      case BackgroundType.OCEAN:
-        return { scene: "ocean" };
       case BackgroundType.EMBER:
         return { scene: "ember" };
       case BackgroundType.BLOSSOM:
@@ -176,21 +190,30 @@
   // the ordinary single-scene path — treating it as retained would gate off
   // the fallback renderer too, so nothing mounts, "environment" never reports
   // ready, and a film host's warmup waits on a settle signal that cannot come.
-  const RETAINABLE_ENVIRONMENT_TYPES = new Set<BackgroundType>([
+  // Every registered scene shares one retained block, so all of them qualify.
+  const RETAINABLE_ENVIRONMENT_TYPES = new Set<EnvironmentKey>([
     BackgroundType.AUTUMN,
     BackgroundType.FOREST,
-    BackgroundType.OCEAN,
     BackgroundType.CELESTIAL,
   ]);
   const retainedEnvironments = $derived(
-    new Set(
-      retainedEnvironmentTypes.filter((type) =>
-        RETAINABLE_ENVIRONMENT_TYPES.has(type)
+    new Set<EnvironmentKey>(
+      retainedEnvironmentTypes.filter(
+        (type) =>
+          RETAINABLE_ENVIRONMENT_TYPES.has(type) ||
+          getRegisteredEnvironment(type) !== null
       )
     )
   );
+  // Plain keys, not objects: a recomputed list must not hand the retained
+  // block a new item, or its import would re-run and remount the world.
+  const retainedRegisteredKeys = $derived(
+    [...retainedEnvironments].filter(
+      (key) => getRegisteredEnvironment(key) !== null
+    )
+  );
   // A retained world keeps loading while it is the one being prepared.
-  function isRetainedWorldActive(type: BackgroundType): boolean {
+  function isRetainedWorldActive(type: EnvironmentKey): boolean {
     return mountedBackgroundType === type || preparingBackgroundType === type;
   }
   const autumnRetryRequest = $derived(
@@ -210,11 +233,11 @@
   // A world's chunk can fail to download (offline, stale deploy). Report it so
   // the handoff drops the newcomer and the picker says so, instead of the
   // tapped tile spinning forever over the old world.
-  const worldModules = createEnvironmentModuleLoader<BackgroundType>(
+  const worldModules = createEnvironmentModuleLoader<EnvironmentKey>(
     (message) => sceneFeatures.reportFailed("environment", message)
   );
   function loadWorld<T>(
-    type: BackgroundType,
+    type: EnvironmentKey,
     importer: () => Promise<T>
   ): Promise<T> {
     return worldModules.load(type, importer, () =>
@@ -339,7 +362,7 @@
   });
 
   $effect(() => {
-    const observation: EnvironmentTransitionObservation<BackgroundType> =
+    const observation: EnvironmentTransitionObservation<EnvironmentKey> =
       hostControlled
         ? {
             requestedKey: transition.requestedKey,
@@ -420,18 +443,17 @@
   </T.Group>
 {/if}
 
-{#if retainedEnvironments.has(BackgroundType.OCEAN)}
-  {@const frame = getStageCoordinateFrame(
-    BackgroundType.OCEAN,
-    sceneFeatures.isEnabled("stage")
-  )}
+{#each retainedRegisteredKeys as key (key)}
+  {@const environment = getRegisteredEnvironment(key)!}
+  {@const frame = getEnvironmentFrame(key, sceneFeatures.isEnabled("stage"))}
   <T.Group
     position.y={frame.environmentYOffset}
-    visible={mountedBackgroundType === BackgroundType.OCEAN}
+    visible={mountedBackgroundType === key}
   >
-    {#await import("../scenes/ocean/OceanScene.svelte") then { default: OceanScene }}
-      <OceanScene
-        active={isRetainedWorldActive(BackgroundType.OCEAN)}
+    {#await environmentModuleImporter(environment)() then { default: RegisteredScene }}
+      <RegisteredScene
+        {environment}
+        active={isRetainedWorldActive(key)}
         {performerCount}
         {stageWidth}
         {stageDepth}
@@ -440,7 +462,7 @@
       />
     {/await}
   </T.Group>
-{/if}
+{/each}
 
 {#if retainedEnvironments.has(BackgroundType.CELESTIAL)}
   {@const frame = getStageCoordinateFrame(
@@ -469,8 +491,9 @@
      promoted instead of mounting again. -->
 {#each mountedWorlds as worldType (worldType)}
   {#if !retainedEnvironments.has(worldType)}
+    {@const registered = getRegisteredEnvironment(worldType)}
     {@const config = getSceneConfig(worldType)}
-    {@const environmentYOffset = getStageCoordinateFrame(
+    {@const environmentYOffset = getEnvironmentFrame(
       worldType,
       stageFeatureEnabled
     ).environmentYOffset}
@@ -478,7 +501,20 @@
       position.y={environmentYOffset}
       visible={worldType === mountedBackgroundType}
     >
-      {#if config.scene === "forest"}
+      {#if registered}
+        {#await loadWorld(worldType, environmentModuleImporter(registered)) then { default: RegisteredScene }}
+          <RegisteredScene
+            environment={registered}
+            {performerCount}
+            {stageWidth}
+            {stageDepth}
+            {stageZOffset}
+            worldYOffset={environmentYOffset}
+          />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "forest"}
         {#await loadWorld(worldType, () => import("../scenes/ForestScene.svelte")) then { default: ForestScene }}
           <ForestScene
             variant={config.variant}
@@ -521,18 +557,6 @@
             {stageRadiusGrowth}
             {stageZOffset}
             platformVisible={winterPlatformVisible}
-            worldYOffset={environmentYOffset}
-          />
-        {:catch}
-          <!-- loadWorld reported the failure; the shown world stays. -->
-        {/await}
-      {:else if config.scene === "ocean"}
-        {#await loadWorld(worldType, () => import("../scenes/ocean/OceanScene.svelte")) then { default: OceanScene }}
-          <OceanScene
-            {performerCount}
-            {stageWidth}
-            {stageDepth}
-            {stageZOffset}
             worldYOffset={environmentYOffset}
           />
         {:catch}

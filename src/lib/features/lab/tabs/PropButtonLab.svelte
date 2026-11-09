@@ -663,6 +663,7 @@
               appearanceOverride={{
                 fanAppearance: getSettings().fanAppearance,
                 triangleGrip: getSettings().triangleGrip,
+                buugengStyle: getSettings().buugengStyle,
               }}
               {propType}
               size={isExpanded ? 280 : 100}
@@ -694,6 +695,7 @@
                           appearanceOverride={{
                             fanAppearance: getSettings().fanAppearance,
                             triangleGrip: getSettings().triangleGrip,
+                            buugengStyle: getSettings().buugengStyle,
                           }}
                           {propType}
                           size={80}

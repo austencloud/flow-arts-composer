@@ -104,3 +104,43 @@ describe("PanelGroup content during a fold", () => {
     ).toBeCloseTo(300, 0);
   });
 });
+
+describe("PanelGroup panes trading the track", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  function widthOf(id: string): number {
+    const wrapper = document.querySelector<HTMLElement>(
+      `.panel-wrapper[data-panel-id="${id}"]`
+    );
+    return Math.round(wrapper?.getBoundingClientRect().width ?? -1);
+  }
+
+  // A second change arriving while the first is still settling must not be
+  // overwritten by the first one's size: the view state would say one pane
+  // while the other filled the screen, and nothing would ever correct it.
+  it("lands on the latest pane when a change interrupts the last one", async () => {
+    // A host running a page flight lands its panes at once, as this does, so
+    // the first change has reached its size and is only waiting to settle.
+    const instant = document.createElement("style");
+    instant.textContent = ".panel-wrapper { transition: none !important; }";
+    document.head.append(instant);
+    try {
+      const screen = render(PanelGroupMotionTestHarness, { shown: "main" });
+      await settle(300);
+      expect(widthOf("main")).toBe(600);
+
+      await screen.rerender({ shown: "tool" });
+      await settle(30);
+      expect(widthOf("tool")).toBe(600);
+      await screen.rerender({ shown: "main" });
+      await settle(800);
+
+      expect(widthOf("main")).toBe(600);
+      expect(widthOf("tool")).toBe(0);
+    } finally {
+      instant.remove();
+    }
+  });
+});

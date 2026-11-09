@@ -18,7 +18,6 @@
  * All animations respect prefers-reduced-motion via the media query at the end.
  */
 
-
 /**
  * Standard rotation - continuous 360deg spin
  * Usage: animation: spin 1s linear infinite;
@@ -44,7 +43,6 @@
     transform: rotate(0deg);
   }
 }
-
 
 /**
  * Standard pulse - opacity fade for loading states
@@ -88,7 +86,6 @@
   }
 }
 
-
 /**
  * Standard fade in
  * Usage: animation: fadeIn var(--duration-normal) ease-out;
@@ -114,7 +111,6 @@
     opacity: 0;
   }
 }
-
 
 /**
  * Slide up with fade - content entering from below
@@ -176,7 +172,6 @@
   }
 }
 
-
 /**
  * Scale in with fade - for modals, cards
  * Usage: animation: scaleIn var(--duration-normal) ease-out;
@@ -224,7 +219,6 @@
     transform: scale(1);
   }
 }
-
 
 /**
  * Bounce - for notifications, alerts
@@ -328,20 +322,15 @@
    ============================================================================
 
    For users with vestibular disorders or motion sensitivity.
-   This query disables all decorative animations defined above.
+   The keyframes above become motionless here, so an element using one keeps
+   its end state without moving. app.css shortens every running animation.
 
-   Essential UI feedback (opacity changes) are preserved but instantaneous.
+   Never assign animation names to `*` in this block: each name becomes one
+   animation on every element and pseudo-element (about 38,000 on /create),
+   and switching reduced motion on froze busier pages
+   (reduced-motion-css.test.ts).
 */
 @media (prefers-reduced-motion: reduce) {
-  /* Disable all keyframe animations from this file */
-  *,
-  *::before,
-  *::after {
-    animation-name: spin, spin-reverse, pulse, pulse-scale, pulse-glow, fadeIn,
-      fadeOut, slideUp, slideDown, slideLeft, slideRight, scaleIn, scaleOut,
-      popIn, bounce, shake, shimmer !important;
-  }
-
   /* Make animations instant - preserves state changes without motion */
   @keyframes spin {
     from,

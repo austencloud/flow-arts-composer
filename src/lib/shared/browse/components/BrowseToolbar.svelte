@@ -14,9 +14,10 @@
   import type { Snippet } from "svelte";
   import type { BrowseEngine } from "../engine/types";
   import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
-  import SortChoice, {
-    type SortChoiceOption,
-  } from "#lib/features/browse/shared/components/SortChoice.svelte";
+  import SortChoice from "#lib/features/browse/shared/components/SortChoice.svelte";
+  import BrowseFiltersPill from "./BrowseFiltersPill.svelte";
+  import BrowseZoomControl from "./BrowseZoomControl.svelte";
+  import { browseSortOptions } from "./browse-sort-options";
   import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
   import LevelFilterChip from "#lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
   import FavoritesFilterChip from "#lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
@@ -86,67 +87,16 @@
 
   const effectiveBackLabel = $derived(backLabel ?? t("browse_ui_start_here"));
 
-  const activeUserFilterCount = $derived(
-    engine.allFilterChips.filter((c) => !c.locked).length
-  );
-
   // Sort choice
-
-  type SortOption = SortChoiceOption<BrowseSortMethod>;
-
-  const SORT_OPTIONS = $derived<SortOption[]>([
-    {
-      id: BrowseSortMethod.ALPHABETICAL,
-      label: "A-Z",
-      chipLabel: "A-Z",
-      icon: "fa-font",
-    },
-    {
-      id: BrowseSortMethod.DATE_ADDED,
-      label: t("browse_ui_recent"),
-      chipLabel: t("browse_ui_recent"),
-      icon: "fa-clock",
-    },
-    {
-      id: BrowseSortMethod.DIFFICULTY_LEVEL,
-      label: t("browse_ui_level"),
-      chipLabel: t("browse_ui_level"),
-      icon: "fa-signal",
-    },
-    {
-      id: BrowseSortMethod.SEQUENCE_LENGTH,
-      label: t("browse_ui_length"),
-      chipLabel: t("browse_ui_length"),
-      icon: "fa-ruler",
-    },
-    {
-      id: BrowseSortMethod.DENSITY,
-      label: t("browse_ui_mandala"),
-      chipLabel: t("browse_ui_mandala"),
-      icon: "fa-dharmachakra",
-    },
-  ]);
 
   const isHandsMode = $derived(engine.viewMode.subject === "hands");
 
-  const visibleSortOptions = $derived.by(() => {
-    const base = isHandsMode
-      ? SORT_OPTIONS.filter((o) => o.id !== BrowseSortMethod.DIFFICULTY_LEVEL)
-      : SORT_OPTIONS;
-    // A host-provided pool can carry its own meaningful order (a collection's
-    // curated one). Only that host offers it, and it leads — it is the default.
-    return curatedSortLabel
-      ? [
-          {
-            id: BrowseSortMethod.CURATED,
-            label: curatedSortLabel,
-            chipLabel: curatedSortLabel,
-            icon: "fa-list-ol",
-          },
-          ...base,
-        ]
-      : base;
-  });
+  const visibleSortOptions = $derived(
+    browseSortOptions({
+      handsMode: isHandsMode,
+      curatedLabel: curatedSortLabel,
+    })
+  );
 
   function handleSortSelect(method: BrowseSortMethod) {
     withResultsMorph(() => engine.setSort(method, engine.sortDirection));
@@ -335,60 +285,9 @@
     onSortChange={handleSortSelect}
   />
 
-  <!-- 3b. Filters pill (bottom-sheet pattern). The result count lives IN the
-       pill — a bare number floating at the toolbar's edge read as noise
-       (Austen, 2026-07-02); on the button it says "482 behind this filter
-       set, tap to tune". Badge = active filter count, number = results. -->
+  <!-- 3b. Filters pill (bottom-sheet pattern) -->
   {#if onOpenFilters}
-    <button
-      type="button"
-      class="filters-pill"
-      onclick={onOpenFilters}
-      aria-label={!engine.isLibraryComplete
-        ? `At least ${engine.resultCount} sequences loaded. More may be available.`
-        : activeUserFilterCount > 0
-          ? t("browse_audit_filters_with_active", {
-              results:
-                engine.resultCount === 1
-                  ? t("browse_audit_one_sequence", {
-                      count: engine.resultCount,
-                    })
-                  : t("browse_audit_many_sequences", {
-                      count: engine.resultCount,
-                    }),
-              active: activeUserFilterCount,
-            })
-          : t("browse_audit_filters_with_results", {
-              results:
-                engine.resultCount === 1
-                  ? t("browse_audit_one_sequence", {
-                      count: engine.resultCount,
-                    })
-                  : t("browse_audit_many_sequences", {
-                      count: engine.resultCount,
-                    }),
-            })}
-    >
-      <i class="fas fa-sliders" aria-hidden="true"></i>
-      <span class="filters-pill-count">
-        {engine.resultCount}{engine.isLibraryComplete ? "" : "+"}<span
-          class="result-count-word"
-          >&nbsp;{engine.resultCount === 1
-            ? t("browse_audit_sequence")
-            : t("browse_audit_sequences")}</span
-        >
-      </span>
-      {#if activeUserFilterCount > 0}
-        <span class="filters-badge">{activeUserFilterCount}</span>
-      {/if}
-    </button>
-    <span class="sr-only" aria-live="polite" aria-atomic="true">
-      {engine.isLibraryComplete
-        ? engine.resultCount === 1
-          ? t("browse_audit_one_sequence", { count: engine.resultCount })
-          : t("browse_audit_many_sequences", { count: engine.resultCount })
-        : `At least ${engine.resultCount} sequences loaded`}
-    </span>
+    <BrowseFiltersPill {engine} onOpen={onOpenFilters} />
   {/if}
 
   <!-- 3b. Applied chips beside the Filters pill (one-row chrome) -->
@@ -485,33 +384,8 @@
     />
   {/if}
 
-  <!-- 4b. Grid zoom (fine pointers only — touch users pinch). Makes the
-       hidden Ctrl+scroll density control discoverable on desktop. -->
-  <div
-    class="zoom-control"
-    role="group"
-    aria-label={t("browse_ui_grid_density")}
-    title={t("browse_audit_grid_density_tip")}
-  >
-    <button
-      type="button"
-      class="zoom-btn"
-      onclick={() => engine.zoomIn()}
-      disabled={!engine.canZoomIn}
-      aria-label={t("browse_audit_zoom_out")}
-    >
-      <i class="fas fa-magnifying-glass-minus" aria-hidden="true"></i>
-    </button>
-    <button
-      type="button"
-      class="zoom-btn"
-      onclick={() => engine.zoomOut()}
-      disabled={!engine.canZoomOut}
-      aria-label={t("browse_audit_zoom_in")}
-    >
-      <i class="fas fa-magnifying-glass-plus" aria-hidden="true"></i>
-    </button>
-  </div>
+  <!-- 4b. Grid zoom (fine pointers only) -->
+  <BrowseZoomControl {engine} />
 
   <!-- 5. ExpandableSearchBar -->
   {#if !hideSearch}
@@ -690,64 +564,6 @@
     flex-shrink: 0;
   }
 
-  /* ---- Filters pill (bottom-sheet pattern) ---- */
-  .filters-pill {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 12px;
-    min-height: var(--min-touch-target, 48px);
-    background: var(--theme-card-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--border-radius-md, 10px);
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition:
-      border-color var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard);
-  }
-
-  .filters-pill:hover {
-    color: var(--theme-text);
-    border-color: color-mix(
-      in srgb,
-      var(--theme-stroke) 80%,
-      var(--theme-text)
-    );
-  }
-
-  .filters-pill:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-
-  .filters-pill-count {
-    color: var(--theme-text);
-    font-weight: 700;
-    /* Changing number must not jitter the pill width (no-layout-shift). */
-    font-variant-numeric: tabular-nums;
-  }
-
-  .filters-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 9px;
-    background: var(--theme-accent);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-  }
-
   /* One-row chrome slots. The applied chips take the row's slack so the
      trailing group lands at the right edge; when there are no chips the
      trailing slot's own auto margin does the same job. */
@@ -772,7 +588,7 @@
 
   /* Only one auto margin per row, or the slack splits between them. */
   .trailing-slot ~ .result-count,
-  .browse-toolbar.embedded .trailing-slot ~ .zoom-control {
+  .browse-toolbar.embedded .trailing-slot ~ :global(.zoom-control) {
     margin-left: 0;
   }
 
@@ -871,59 +687,10 @@
     }
   }
 
-  /* ---- Grid zoom (fine pointers only) ---- */
-  .zoom-control {
-    display: none;
-    align-items: center;
-    background: var(--theme-card-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--border-radius-md, 10px);
-    padding: 2px;
-    gap: 2px;
-    flex-shrink: 0;
-  }
-
   @media (hover: hover) and (pointer: fine) {
-    .zoom-control {
-      display: flex;
-    }
-
-    .browse-toolbar.embedded .zoom-control {
+    .browse-toolbar.embedded :global(.zoom-control) {
       margin-left: auto;
     }
-  }
-
-  .zoom-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    min-height: var(--min-touch-target, 44px);
-    background: transparent;
-    border: none;
-    border-radius: var(--border-radius-sm, 6px);
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard);
-  }
-
-  .zoom-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-text) 8%, transparent);
-    color: var(--theme-text);
-  }
-
-  .zoom-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-
-  .zoom-btn:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 1px;
   }
 
   .search-slot {

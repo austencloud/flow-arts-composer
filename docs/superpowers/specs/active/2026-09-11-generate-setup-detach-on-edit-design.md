@@ -7,7 +7,7 @@ remaining: "Verify apply/edit/revert behavior in the current Setups UI and run f
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 ---
 
 # Generate saved setups: detach on edit
@@ -15,7 +15,7 @@ last_triaged: 2026-10-14
 > 2026-10-14 triage: Verify apply/edit/revert behavior in the current Setups UI and run favorite-state and snapshot coverage. Detachment and reattachment already exist in favorite-state.svelte.ts and SavedSetupRow disables Update for the active match (9a0121bc76); the old PresetDrawer target has been removed, so use its current replacement rather than recreating it. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 Date: 2026-09-11
-Status: approved, awaiting plan
+Status: implemented (detach and reattach in favorite-state.svelte.ts); verification pending (re-triaged 2026-11-07, see the triage line above)
 Supersedes: the "Snapshot equality and modified state" section of
 `shipped/2026-07-30-generate-saved-setups-favorites-design.md`
 

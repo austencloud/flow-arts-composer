@@ -197,10 +197,9 @@ export class AnimationEngine {
     propSystem: this.propSystem,
   });
 
-  // canvasSize is owned by PlaybackSync (via getCanvasSize/setCanvasSize closures below).
-  // We keep a local field so the engine can read it in captureEffectDiagnostics and
-  // pass the initial value into the lifecycle ctx — PlaybackSync keeps it up to date.
-  private _canvasSize: number = DEFAULT_CANVAS_SIZE;
+  // The size seeded before the resizer exists. Once it does, the resizer's
+  // frame is the canvas size and this value is only the fallback.
+  private _initialCanvasSize: number = DEFAULT_CANVAS_SIZE;
 
   private readonly playbackSync = new PlaybackSync(this._animatorState, {
     lifecycleManager: this.lifecycleManager,
@@ -209,10 +208,7 @@ export class AnimationEngine {
     effectSystem: this.effectSystem,
     getVM: () => this.getVM(),
     getCallbacks: () => this.callbacks,
-    getCanvasSize: () => this._canvasSize,
-    setCanvasSize: (s) => {
-      this._canvasSize = s;
-    },
+    getCanvasSize: () => this.canvasSize,
     buildFrameDeps: () => this.buildFrameDeps(),
   });
 
@@ -282,7 +278,13 @@ export class AnimationEngine {
    */
   setInitialCanvasSize(size: number): void {
     if (this.state.isInitialized) return;
-    if (size > 0) this._canvasSize = size;
+    if (size > 0) this._initialCanvasSize = size;
+  }
+
+  private get canvasSize(): number {
+    return (
+      this.lifecycleManager.resizer?.state.frame.size ?? this._initialCanvasSize
+    );
   }
 
   get canvasResizeCount(): number {
@@ -427,7 +429,7 @@ export class AnimationEngine {
       effectRendererManager: this.effectSystem.rendererManager,
       propSystem: this.propSystem,
       frameBudgetMonitor: this.frameBudgetMonitor,
-      canvasSize: this._canvasSize,
+      canvasSize: this._initialCanvasSize,
       getLastPropsRef: () => this.playbackSync.lastPropsRef,
       state: this._animatorState,
       callbacks,
@@ -705,7 +707,7 @@ export class AnimationEngine {
       isInitialized: this.state.isInitialized,
       isPlaying: lastProps?.isPlaying ?? false,
       currentStep: lastProps?.currentStep ?? 0,
-      canvasSize: this._canvasSize,
+      canvasSize: this.canvasSize,
       instanceId: this.instanceId,
     });
 

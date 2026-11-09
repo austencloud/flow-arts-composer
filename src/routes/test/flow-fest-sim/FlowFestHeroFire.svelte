@@ -12,6 +12,8 @@
   interface Props {
     position: { x: number; y: number; z: number };
     energy?: number;
+    /** False once the Blender fire circle (flow-fest-authored-props.ts) supplies the logs. */
+    showLogs?: boolean;
   }
 
   const props: Props = $props();
@@ -120,7 +122,7 @@
     />
   </T.Mesh>
 
-  {#each logAngles as angle}
+  {#each props.showLogs === false ? [] : logAngles as angle}
     <T.Group rotation={[0, angle, 0]}>
       <T.Mesh
         position={[0, 0.245, 0]}

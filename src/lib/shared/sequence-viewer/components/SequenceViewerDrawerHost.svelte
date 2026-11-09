@@ -50,6 +50,7 @@
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
   import { getScanLoaderBaseLetters } from "../services/scan-sequence-loader";
+  import { whenPageStill } from "#lib/shared/foundation/utils/background-scheduling.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     createDestinationFade,
@@ -168,15 +169,28 @@
 
   function whenIdle(run: () => void): () => void {
     let idleId: number | null = null;
-    const timer = setTimeout(() => {
-      if (typeof requestIdleCallback === "function") {
-        idleId = requestIdleCallback(run, { timeout: 2000 });
-      } else {
-        run();
-      }
-    }, PREWARM_QUIET_MS);
+    let cancelled = false;
+    // Building the viewer takes hundreds of milliseconds on the main thread, so
+    // it waits for someone to stop pressing things, not just for a moment
+    // without frames. Its code comes first: a press can land during the
+    // download, and once the page is still the build starts in the same task.
+    const buildOnceStill = () => {
+      void loadSequenceViewerContent()
+        .catch(() => {
+          // LazyMount's own load reports the failure and owns the retry.
+        })
+        .then(() => whenPageStill(PREWARM_QUIET_MS))
+        .then(() => {
+          if (!cancelled) run();
+        });
+    };
+    if (typeof requestIdleCallback === "function") {
+      idleId = requestIdleCallback(buildOnceStill, { timeout: 2000 });
+    } else {
+      buildOnceStill();
+    }
     return () => {
-      clearTimeout(timer);
+      cancelled = true;
       if (idleId !== null) cancelIdleCallback(idleId);
     };
   }

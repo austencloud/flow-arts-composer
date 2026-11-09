@@ -2,16 +2,18 @@
 status: active
 value: 3
 effort: S
-remaining: "Remove or explicitly retire the remaining service-state mirroring in managers/playback-sync.ts, which still owns StateSynchronizer; per-instance animator state and manager extraction already exist (7b996f97fc). Verify current offscreen export and split/disassemble HMR, and reconcile the intentionally absent createLiveContext API (asserted absent in render-context-factory.test.ts) rather than recreating the old stub."
+remaining: "Run the §3.2 HMR survival test in a live browser (split and disassemble views mounted, edit an upstream canvas import, no undefined-default crash and no full reload) and one live offscreen video export. Code and tests are done: StateSynchronizer is gone, no .svelte file imports itself, the B0 vite bridge is gone, and export runs through createOffscreenContext."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
-work_state: in-progress
+last_triaged: 2026-11-07
+work_state: verification
 ---
 # Animation Engine Re-Architecture — Fused Design & Handoff Spec
 
-> 2026-10-14 triage: Remove or explicitly retire the remaining service-state mirroring in managers/playback-sync.ts, which still owns StateSynchronizer; per-instance animator state and manager extraction already exist (7b996f97fc). Verify current offscreen export and split/disassemble HMR, and reconcile the intentionally absent createLiveContext API (asserted absent in render-context-factory.test.ts) rather than recreating the old stub. Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage: StateSynchronizer is deleted. The canvas frame lives once, in the resizer's reactive state; the resizer calls `frameChanged` once per change, before the main canvas rebuilds, and `CanvasLifecycleManager.pushFrame` hands it to the trail capturer, render loop and effect overlays. PlaybackSync no longer mirrors size, and the engine reads it from the resizer. A full `src/` sweep finds no self-importing `.svelte` file, `vite.config.ts` has no B0 bridge, and the `onResizeForExport` / `onRestoreFromExport` callbacks are gone from `src/`; offscreen export goes through `RenderContextFactory.createOffscreenContext` (covered by render-context-factory and offscreen-export-renderer tests). `createLiveContext` stays absent on purpose: live canvases build through `AnimationEngine.getRenderContext` from CanvasSurface, and render-context-factory.test.ts asserts the method does not exist, so the P5 and "Offscreen export" lines below that ask for it are retired. Only the live-browser HMR survival test and one live export remain.
+
+> 2026-10-14 triage (historical): Remove or explicitly retire the remaining service-state mirroring in managers/playback-sync.ts, which still owns StateSynchronizer; per-instance animator state and manager extraction already exist (7b996f97fc). Verify current offscreen export and split/disassemble HMR, and reconcile the intentionally absent createLiveContext API (asserted absent in render-context-factory.test.ts) rather than recreating the old stub. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Queue evidence (2026-10-07):** Managers, plugin registry, and HMR fix landed; StateSynchronizer dissolution remains unresolved. See frontmatter for the remaining work.
 

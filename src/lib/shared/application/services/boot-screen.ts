@@ -111,3 +111,16 @@ export function holdBootScreen(name: string, waitMs?: number): () => void {
 export function releaseBootHold(name: string): void {
   openHolds.get(name)?.();
 }
+
+/**
+ * Lets the boot screen go. The app shell normally reports that boot
+ * finished; routes that never mount it (phone sign-in, the sequence viewer)
+ * call this, or the screen waits for its 15 s safety net.
+ */
+export function finishBootScreen(): void {
+  (
+    window as unknown as {
+      __tkaLoadProgress?: (percent: number, message: string) => void;
+    }
+  ).__tkaLoadProgress?.(100, "Ready");
+}

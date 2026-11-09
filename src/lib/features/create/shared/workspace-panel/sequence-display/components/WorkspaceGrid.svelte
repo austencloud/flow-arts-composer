@@ -545,6 +545,16 @@
   let lastLayoutSignature: string | null = null;
   let lastHistoryEpoch = 0;
   let layoutTransitionToken = 0;
+  // A layout change before the grid's first frame has nothing on screen to
+  // carry: it is the first measurement replacing the unmeasured guess. Played
+  // anyway, the cells would grow into place on mount, and a view transition
+  // capturing the grid as it mounts (no frames run inside one) would freeze
+  // them mid-way.
+  let hasPainted = false;
+  $effect(() => {
+    const frame = requestAnimationFrame(() => (hasPainted = true));
+    return () => cancelAnimationFrame(frame);
+  });
   // Arrival captures at a precise moment inside its own flushSync, before it
   // measures the destination cell. While that transaction is open the automatic
   // capture stands aside rather than overwriting its snapshot.
@@ -672,7 +682,10 @@
     gridHistoryAnimation = null;
 
     const captured =
-      layoutChanged && !arrivalCapturePending && layoutMotion.capture();
+      layoutChanged &&
+      hasPainted &&
+      !arrivalCapturePending &&
+      layoutMotion.capture();
     const token = ++layoutTransitionToken;
 
     void tick().then(() => {
@@ -824,6 +837,11 @@
           rightPropType: effectiveRightPropType,
           pathShape: mandalaPathShape,
           sequenceWord,
+          // Whatever this grid's mandala is showing right now.
+          colors:
+            leftColorOverride && rightColorOverride
+              ? { left: leftColorOverride, right: rightColorOverride }
+              : (settingsService.settings.primaryPropColors ?? null),
         });
         if (name) toast.success(`Saved "${name}" to collection`);
       },

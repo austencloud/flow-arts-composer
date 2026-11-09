@@ -3,17 +3,17 @@ status: active
 value: 4
 effort: L
 work_state: in-progress
-remaining: Build steps 1 and 3 started 2026-10-22; the remaining steps, the weave library and the Unreal port follow.
+remaining: "Poi tether and Poi String lab code are on main (src/lib/shared/3d/props/poi/PoiTether3D.svelte, src/lib/features/lab/tabs/poi-string); a first visit now opens with poi (9a1a7fed8a). No weave library files (weave-3-forward.json, weave-3-backward.json) and no Unreal poi port were found in the tracked tree on 2026-11-07. Remaining: poi move library, weave mocap study, personality interface to the phrase brain, Unreal port, and Austen's look at each step."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-23'
+last_triaged: '2026-11-07'
 ---
 
 # Real poi: tether physics and a weave library
 
 Status: APPROVED by Austen, 2026-10-22. Build steps 1 and 3 started the same
-day.
+day; the string sim and Poi String lab are on main, the weave library and Unreal port are not (re-triaged 2026-11-07).
 
 Scope: poi on the 3D performers, in the browser (Threlte) and in native Unreal
 (`unreal/FlowFest/`). Rigid props (staffs, clubs, fans, hoops) belong to the

@@ -221,6 +221,11 @@
     /** A height-bounded sidebar can give its visual pages the remaining room.
      *  Auto-height hosts leave this off so their content sets the height. */
     fillPages?: boolean;
+    /** The box the host gives is all there is and no page may scroll in it:
+     *  tiles shrink to share it and anything more is one drill further in.
+     *  For a host that bans scrolling (the guide). Composer and Shape Engine
+     *  leave it off. Implies a content page with fillPages. */
+    fitRoom?: boolean;
     /** Replaces every page's own bottom-dock tray cap. Those caps keep a dock
      *  from swallowing the stage above it. A host that docks the panel in a
      *  column beside its stage (the viewer on a phone held sideways) has no
@@ -280,6 +285,7 @@
     closeRequest = 0,
     regionLabel,
     fillPages = false,
+    fitRoom = false,
     dockTrayMaxHeight,
     dockStartsOpen = false,
   }: Props = $props();
@@ -924,7 +930,8 @@
           layout={layout === "bottom" ? "rail" : "grid"}
           variant="inline"
           flat
-          fill={layout === "sidebar"}
+          fill={layout === "sidebar" || fitRoom}
+          {fitRoom}
         >
           {#snippet heading()}
             {#if layout === "bottom" && handProps}
@@ -936,10 +943,13 @@
     </div>
   {:else if resolvedPill === "effects"}
     <EffectsPanel
-      layout={layout === "bottom" && !visualPagesFill ? "strip" : "sidebar"}
+      layout={fitRoom || (layout === "bottom" && !visualPagesFill)
+        ? "strip"
+        : "sidebar"}
       showHeading={(layout === "bottom" && !visualPagesFill) ||
         (presentation === "content" && !fillPages)}
       fill={visualPagesFill}
+      {fitRoom}
       {bpm}
       onBpmChange={onBpmChange ?? (() => {})}
       {isPlaying}
@@ -1017,8 +1027,9 @@
     {/if}
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
-      showSubtitles={layout === "sidebar"}
-      fill={visualPagesFill}
+      showSubtitles={layout === "sidebar" || fitRoom}
+      fill={visualPagesFill && !fitRoom}
+      room={fitRoom}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -1101,6 +1112,8 @@
         propType={selectedPropType}
         fill={layout === "sidebar" || visualPagesFill}
         grow={fillPages}
+        compact={fitRoom}
+        room={fitRoom}
         {onSettingChange}
       />
     </div>
@@ -1340,6 +1353,7 @@
   <div
     class="external-section-body dock-dense"
     class:fill={visualPagesFill}
+    class:fit-room={fitRoom}
     role="region"
     aria-label={activePillLabel || effectiveRegionLabel}
   >
@@ -1501,6 +1515,17 @@
   .external-section-body.fill {
     display: flex;
     flex-direction: column;
+  }
+  /* Every page spends the box and none scrolls. Left overflowing rather than
+     clipped, so a page that fails to fit shows up as the bug it is. */
+  .external-section-body.fit-room :global(.section-pad) {
+    padding: 0;
+    gap: 0;
+  }
+  .external-section-body.fit-room .bottom-prop-picker {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
   }
   .section-pad {
     display: flex;

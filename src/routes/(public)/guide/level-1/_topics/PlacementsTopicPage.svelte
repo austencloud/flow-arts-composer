@@ -48,10 +48,10 @@
         ]
       : tier === "small"
       ? [
-          { label: "Intro", intro: true, kinds: [] as string[] },
-          ...PLACEMENT_FAMILIES.map((f) => ({
+          ...PLACEMENT_FAMILIES.map((f, k) => ({
             label: t(f.name),
-            intro: false,
+            intro: k === 0,
+            more: k === 1,
             kinds: [f.kind as string],
           })),
         ]
@@ -79,11 +79,13 @@
       {#if view?.intro}
         <div class="intro">
           <p class="lede"><Sentences text={placementsTopicText("tagline")} /></p>
-          <p>
-            <Sentences
-              text={`${placementsTopicText("combine")} ${placementsTopicText("transform")}`}
-            />
-          </p>
+          {#if tier !== "small"}
+            <p>
+              <Sentences
+                text={`${placementsTopicText("combine")} ${placementsTopicText("transform")}`}
+              />
+            </p>
+          {/if}
           <p class="color-key">
             <span class="key"
               ><span class="dot right" aria-hidden="true"
@@ -93,6 +95,15 @@
               ><span class="dot left" aria-hidden="true"
               ></span>{placementsTopicText("blueLeft")}</span
             >
+          </p>
+        </div>
+      {/if}
+      {#if view && "more" in view && view.more}
+        <div class="intro">
+          <p>
+            <Sentences
+              text={`${placementsTopicText("combine")} ${placementsTopicText("transform")}`}
+            />
           </p>
         </div>
       {/if}

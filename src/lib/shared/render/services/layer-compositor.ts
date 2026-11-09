@@ -404,6 +404,7 @@ export class LayerCompositor {
         showNonRadialPoints: options.showNonRadialPoints,
         fanAppearance: options.fanAppearance,
         triangleGrip: options.triangleGrip,
+        buugengStyle: options.buugengStyle,
         leftPropType: options.leftPropType,
         rightPropType: options.rightPropType,
         leftBuugengFlipped: options.leftBuugengFlipped,

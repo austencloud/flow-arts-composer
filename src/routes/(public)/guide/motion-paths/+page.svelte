@@ -7,6 +7,7 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import MotionPathExplorer from "./_components/MotionPathExplorer.svelte";
   import MotionPathExplanation from "./_components/MotionPathExplanation.svelte";
+  import type { StudioPhase } from "./_data/explorer-layout";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
@@ -95,6 +96,21 @@
   // The explorer's room: its screen's height, less its intro. The explorer
   // composes itself to fit exactly that.
   let room = $state<number | null>(null);
+  let areaHeight = $state(0);
+  let areaWidth = $state(0);
+  // On a phone or a short screen the intro steps aside while the studio is
+  // open, on the same beats as the lesson's own pickers. The studio needs those
+  // rows for the canvas and the section, and the intro is back when it closes.
+  const INTRO_YIELDS_WIDTH = 640;
+  let studioPhase = $state<StudioPhase>("rest");
+  const introYields = $derived(shortScreen || areaWidth < INTRO_YIELDS_WIDTH);
+  const introFaded = $derived(introYields && studioPhase !== "rest");
+  const introGone = $derived(
+    introYields && (studioPhase === "open" || studioPhase === "closing")
+  );
+  // Worked out here rather than measured, so the studio's motion sees the new
+  // height in the flush that opens it.
+  const explorerRoom = $derived(introGone ? areaHeight - 2 : room);
   // A short screen keeps the canvas big: the intro's first sentence stays with
   // the explorer and the rest is one tap away, in the explorer's place.
   const SHORT_SCREEN_HEIGHT = 520;
@@ -116,12 +132,19 @@
     const intro = node.querySelector<HTMLElement>(".explorer-intro");
     if (!intro) return;
     introOpen = false;
+    // Stepped aside it measures nothing, and the room it will take back when it
+    // returns is still the room the explorer composes to.
+    let introHeight = 0;
     const update = () => {
+      areaHeight = area.clientHeight;
+      areaWidth = area.clientWidth;
       shortScreen = area.clientHeight < SHORT_SCREEN_HEIGHT;
       if (!shortScreen) introOpen = false;
-      const introHeight =
-        intro.offsetHeight +
-        (parseFloat(getComputedStyle(intro).marginBottom) || 0);
+      if (intro.offsetHeight > 0) {
+        introHeight =
+          intro.offsetHeight +
+          (parseFloat(getComputedStyle(intro).marginBottom) || 0);
+      }
       room = Math.floor(area.clientHeight - introHeight - 2);
     };
     const observer = new ResizeObserver(update);
@@ -169,7 +192,12 @@
 
           {#if has(n, "explore")}
             <div class="explore" class:intro-open={introOpen} use:measureRoom>
-              <header class="explorer-intro" class:short={shortScreen}>
+              <header
+                class="explorer-intro"
+                class:short={shortScreen}
+                class:faded={introFaded}
+                class:gone={introGone}
+              >
                 {#if shortScreen}
                   <p>{sentences(introBody)[0]}</p>
                   <span class="intro-more" bind:this={moreButton}>
@@ -182,7 +210,11 @@
               </header>
               <div class="explorer-slot">
                 {#if browser}
-                  <MotionPathExplorer {room} />
+                  <MotionPathExplorer
+                    room={explorerRoom}
+                    layoutRoom={room}
+                    onstudiophase={(phase) => (studioPhase = phase)}
+                  />
                 {:else}
                   <p role="status">
                     {tDynamic("guide_paths_loading_comparison")}
@@ -385,9 +417,13 @@
       visibility 0s linear var(--duration-fast);
   }
   .intro-open .explorer-intro,
-  .intro-open .explorer-slot {
+  .intro-open .explorer-slot,
+  .explorer-intro.faded {
     opacity: 0;
     visibility: hidden;
+  }
+  .explorer-intro.gone {
+    display: none;
   }
   .intro-drill {
     position: absolute;

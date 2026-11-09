@@ -20,6 +20,11 @@
  * tile uses it to make the clicked tile the name holder before the view
  * flips; otherwise the previously selected tile would be captured instead.
  *
+ * The flower's two pictures are rasters of different sizes, so which one shows
+ * depends on the way it is flying (`back`), and the stage's still has to land
+ * on, or leave from, the strength it really rests at on the page
+ * (`--shape-matrix-floor-rest`), which is zero under a live canvas.
+ *
  * 4. the destination must be laid out and painted before the new-state
  *    capture. Both compact panes stay mounted, so the pane the view flips
  *    TO was collapsed at 0x0; its tile or floor learns its raster size from
@@ -37,6 +42,8 @@ import {
 } from "../../services/shape-matrix-artwork";
 
 export const SHAPE_MATRIX_MORPH_CLASS = "shape-matrix-morph";
+export const SHAPE_MATRIX_MORPH_BACK_CLASS = "shape-matrix-morph-back";
+export const SHAPE_MATRIX_FLOOR_REST_VAR = "--shape-matrix-floor-rest";
 
 export interface MandalaMorphHost {
   beginMandalaHandoff(): void;
@@ -46,6 +53,8 @@ export interface MandalaMorphHost {
 export interface MandalaMorphOptions {
   /** Applied (and flushed) before the old-state snapshot. */
   before?: () => void;
+  /** The flower is flying from the stage back to its place in the Matrix. */
+  back?: boolean;
 }
 
 export interface MandalaMorphDependencies {
@@ -65,6 +74,17 @@ function activeMandalaImages(): HTMLImageElement[] {
     (el) => el.style.viewTransitionName === SHAPE_MATRIX_ACTIVE_MANDALA_NAME
   );
   return owners.flatMap((owner) => [...owner.querySelectorAll("img")]);
+}
+
+/** Tell the flight how strongly the stage's still rests on the page. */
+function recordFloorRest(): void {
+  if (typeof document === "undefined") return;
+  const floor = document.querySelector("[data-mandala-floor]");
+  if (!floor) return;
+  document.documentElement.style.setProperty(
+    SHAPE_MATRIX_FLOOR_REST_VAR,
+    getComputedStyle(floor).opacity
+  );
 }
 
 /**
@@ -94,19 +114,34 @@ export function runMandalaMorph(
 ): ViewTransition | null {
   const root = deps.root();
   root?.classList.add(SHAPE_MATRIX_MORPH_CLASS);
+  if (options.back) root?.classList.add(SHAPE_MATRIX_MORPH_BACK_CLASS);
   deps.flush(() => {
     options.before?.();
     host.beginMandalaHandoff();
   });
+  // Going back the flight leaves from the floor as it stands now; going forward
+  // it lands on the floor as it stands once the stage is showing.
+  if (options.back) recordFloorRest();
 
   const finish = () => {
     host.endMandalaHandoff();
-    root?.classList.remove(SHAPE_MATRIX_MORPH_CLASS);
+    root?.classList.remove(
+      SHAPE_MATRIX_MORPH_CLASS,
+      SHAPE_MATRIX_MORPH_BACK_CLASS
+    );
   };
 
   let transition: ViewTransition | null;
   try {
-    transition = deps.startMorph(mutate, deps.settle);
+    transition = deps.startMorph(
+      mutate,
+      options.back
+        ? deps.settle
+        : async () => {
+            await deps.settle();
+            recordFloorRest();
+          }
+    );
   } catch (error) {
     finish();
     throw error;

@@ -7,6 +7,8 @@
   says what the press does.
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   interface Props {
     icon: string;
     label: string;
@@ -19,6 +21,8 @@
     busy?: boolean;
     disabled?: boolean;
     onclick: (event: MouseEvent) => void;
+    /** A marker after the label, such as an unread dot. */
+    badge?: Snippet;
   }
 
   let {
@@ -31,6 +35,7 @@
     busy = false,
     disabled = false,
     onclick,
+    badge,
   }: Props = $props();
 </script>
 
@@ -47,7 +52,7 @@
   </span>
 
   <span class="action-copy">
-    <span class="action-label">{label}</span>
+    <span class="action-label">{label}{@render badge?.()}</span>
     {#if description}
       <span class="action-description">{description}</span>
     {/if}

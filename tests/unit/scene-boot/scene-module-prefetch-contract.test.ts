@@ -14,9 +14,13 @@
  * one branch that awaits a module held in a local const rather than an inline
  * import, so that indirection is resolved too.
  *
+ * Backgrounds registered by a `static/models/<scene>/scene.json` (Ocean) are
+ * looked up before that switch. Their module is the runtime the manifest names
+ * in `environment-runtimes.ts`, or the shared GlbEnvironment loader.
+ *
  * If this test fails, fix the map — do not loosen the assertions.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -30,6 +34,11 @@ const ENVIRONMENT_3D = path.join(
   repoRoot,
   "src/lib/shared/3d/environments/components/Environment3D.svelte"
 );
+const ENVIRONMENT_RUNTIMES = path.join(
+  repoRoot,
+  "src/lib/shared/3d/environments/registry/environment-runtimes.ts"
+);
+const MODELS_DIR = path.join(repoRoot, "static/models");
 const PREFETCH_MAP = path.join(
   repoRoot,
   "src/lib/shared/3d/scene-boot/scene-module-prefetch.ts"
@@ -90,6 +99,43 @@ function sceneModules(source: string): Map<string, string> {
   return modules;
 }
 
+/** Backgrounds a scene.json takes over, with the module that mounts them. */
+function registeredModules(runtimesSource: string): Map<string, string> {
+  const runtimes = new Map(
+    [
+      ...runtimesSource.matchAll(
+        /(\w+):\s*\(\)\s*=>\s*import\(\s*["']([^"']+)["']\s*\)/g
+      ),
+    ].map(([, name, specifier]) => [name, specifier])
+  );
+  const sharedLoader = runtimesSource.match(
+    /runtime === null\)\s*\{\s*return\s*\(\)\s*=>\s*import\(\s*["']([^"']+)["']/
+  );
+  expect(sharedLoader, "the shared GlbEnvironment import").toBeTruthy();
+
+  const byBackground = Object.fromEntries(
+    Object.entries(BackgroundType).map(([name, value]) => [value, name])
+  ) as Record<string, string>;
+  const modules = new Map<string, string>();
+  for (const folder of readdirSync(MODELS_DIR)) {
+    const manifest = path.join(MODELS_DIR, folder, "scene.json");
+    if (!existsSync(manifest)) continue;
+    const { id, runtime } = JSON.parse(readFileSync(manifest, "utf8")) as {
+      id: string;
+      runtime?: string | null;
+    };
+    const background = byBackground[id];
+    if (!background) continue;
+    const specifier = runtime ? runtimes.get(runtime) : sharedLoader![1];
+    expect(specifier, `a module for registered "${id}"`).toBeTruthy();
+    modules.set(
+      background,
+      resolveFrom(ENVIRONMENT_RUNTIMES, specifier as string)
+    );
+  }
+  return modules;
+}
+
 /** The specifier the prefetch map warms for each `BackgroundType`. */
 function prefetchedModules(source: string): Map<string, string> {
   const pattern =
@@ -105,18 +151,21 @@ function prefetchedModules(source: string): Map<string, string> {
 describe("scene module prefetch map", () => {
   const environmentSource = readFileSync(ENVIRONMENT_3D, "utf8");
   const prefetchSource = readFileSync(PREFETCH_MAP, "utf8");
+  const runtimesSource = readFileSync(ENVIRONMENT_RUNTIMES, "utf8");
 
   const scenes = backgroundScenes(environmentSource);
   const modules = sceneModules(environmentSource);
   const prefetched = prefetchedModules(prefetchSource);
 
-  const mounted = new Map(
-    [...scenes].map(([background, scene]) => {
+  const registered = registeredModules(runtimesSource);
+  const mounted = new Map([
+    ...[...scenes].map(([background, scene]): [string, string] => {
       const specifier = modules.get(scene);
       expect(specifier, `a module for scene "${scene}"`).toBeTruthy();
       return [background, resolveFrom(ENVIRONMENT_3D, specifier as string)];
-    })
-  );
+    }),
+    ...registered,
+  ]);
   const warmed = new Map(
     [...prefetched].map(([background, specifier]) => [
       background,

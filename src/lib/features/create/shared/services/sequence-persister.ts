@@ -36,6 +36,7 @@ type HistoryAdapter = {
     sessionId: string,
     history?: DraftHistory
   ): void;
+  move?(mode: ActiveCreateModule, sessionId: string): void;
 };
 type LocalDraft = {
   workspace: WorkspaceDraftState | null;
@@ -610,6 +611,12 @@ export class SequencePersister {
   async startFreshDraft(
     mode: ActiveCreateModule
   ): Promise<WorkspaceDraftState | null> {
+    return this.rotateToFreshDraft(mode, false);
+  }
+  private async rotateToFreshDraft(
+    mode: ActiveCreateModule,
+    keepHistory: boolean
+  ): Promise<WorkspaceDraftState | null> {
     return this.enqueue(mode, async () => {
       try {
         const result = await commitDraft(
@@ -633,7 +640,14 @@ export class SequencePersister {
         const sessionId = newId();
         this.sessions.set(mode, sessionId);
         this.preparedResumes.delete(mode);
-        this.historyAdapter?.restore(mode, sessionId);
+        if (keepHistory && this.historyAdapter?.move) {
+          // Clearing is itself undoable: the workspace gets a new session, so
+          // the old work keeps its own Drafts slot, but the history moves with
+          // it. Moved here, after the awaits, so Clear's own entry goes too.
+          this.historyAdapter.move(mode, sessionId);
+        } else {
+          this.historyAdapter?.restore(mode, sessionId);
+        }
         this.pending.delete(mode);
         this.pendingHistory.delete(mode);
         this.pendingRecovery.delete(mode);
@@ -673,7 +687,7 @@ export class SequencePersister {
   }
   async clearCurrentState(mode?: string): Promise<void> {
     const target = isMode(mode) ? mode : this.currentMode();
-    await this.startFreshDraft(target);
+    await this.rotateToFreshDraft(target, true);
     const status = this.getDraftStatus(target);
     if (status.status === "error" || status.status === "conflict") {
       throw new Error(status.error ?? "Could not clear draft");

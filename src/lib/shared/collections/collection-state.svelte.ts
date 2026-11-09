@@ -450,8 +450,8 @@ export class CollectionState<T extends CollectionEntry> {
     const next = await this.prepareExclusively(id, async () => {
       // Reached after at least one await even with no lifecycle — the queue
       // itself is awaited — so the identity is re-checked here rather than only
-      // on the lifecycle branch. Every real consumer (mandala, 3D scene, film)
-      // runs the lifecycle-free path.
+      // on the lifecycle branch. The 3D scene and film stores run the
+      // lifecycle-free path.
       if (!this.isCurrent(generation)) return null;
       const slot = this.ownedCollection.findIndex((entry) => entry.id === id);
       if (slot === -1) return null;

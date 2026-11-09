@@ -13,6 +13,7 @@ import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-a
 import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
 import { applyHandColorOverride } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import { normalizeBuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 import { propSvgLoader } from "#lib/shared/pictograph/prop/services/prop-svg-loader.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
@@ -26,6 +27,7 @@ export type BuilderPropSettings = Pick<
   | "primaryPropColors"
   | "fanAppearance"
   | "triangleGrip"
+  | "buugengStyle"
 >;
 
 /** The prop type a hand holds. */
@@ -58,6 +60,7 @@ export async function loadBuilderPropArt(
   const appearance = {
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
+    buugengStyle: normalizeBuugengStyle(settings.buugengStyle),
   };
   const data = await propSvgLoader.loadPropSvg(
     { positionX: 0, positionY: 0, rotationAngle: 0 },

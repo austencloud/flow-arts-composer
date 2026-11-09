@@ -8,8 +8,12 @@ const mocks = vi.hoisted(() => ({
   settings: {
     darkMode: true,
     primaryPropColors: null as { left: string; right: string } | null,
+    propType: "staff",
+    catDogMode: false,
+    propViewingMode: "my-props",
   },
   updateSetting: vi.fn(),
+  updateSettings: vi.fn(),
 }));
 
 // Component tests never start app services, so the prop colors are read from
@@ -22,6 +26,7 @@ vi.mock(
     >()),
     getSettings: () => mocks.settings,
     updateSetting: mocks.updateSetting,
+    updateSettings: mocks.updateSettings,
   })
 );
 
@@ -203,9 +208,9 @@ describe("ViewerOverflowMenu display rows", () => {
       .not.toBeInTheDocument();
   });
 
-  it("names the props and hands the Props row to the viewing control", async () => {
-    const onPropsOpen = vi.fn();
-    await openMenu({ onPropsOpen, propsSummary: "Double Staff" });
+  it("drills into the props, applies a choice at once, and stays open", async () => {
+    mocks.updateSettings.mockClear();
+    await openMenu({ propViewing: {}, propsSummary: "Double Staff" });
 
     const row = drillRow("props");
     expect(row.querySelector(".drill-label")?.textContent?.trim()).toBe(
@@ -216,11 +221,39 @@ describe("ViewerOverflowMenu display rows", () => {
     );
 
     await page.getByRole("button", { name: /^Props/ }).click();
-    expect(onPropsOpen).toHaveBeenCalledTimes(1);
+    const mine = page.getByRole("radio", { name: "My props, Double Staff" });
+    await expect.element(mine).toHaveAttribute("aria-checked", "true");
+
+    await page.getByRole("radio", { name: /^As saved/ }).click();
+    expect(mocks.updateSettings).toHaveBeenCalledWith({
+      propViewingMode: "as-saved",
+    });
+    await expect.element(mine).toBeVisible();
+
+    await page.getByRole("button", { name: "Back" }).click();
     await expect
-      .poll(() =>
-        document.querySelector('.viewer-overflow-popover[data-state="open"]')
-      )
-      .toBeNull();
+      .element(page.getByRole("button", { name: /^Props/ }))
+      .toHaveFocus();
+  });
+
+  it("picks new props inside the menu and lands back on the choice", async () => {
+    mocks.updateSettings.mockClear();
+    await openMenu({ propViewing: {}, propsSummary: "Double Staff" });
+
+    await page.getByRole("button", { name: /^Props/ }).click();
+    await page.getByRole("button", { name: "Change my props" }).click();
+    await page.getByRole("button", { name: /Buugeng/ }).click();
+
+    expect(mocks.updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        leftPropType: "buugeng",
+        rightPropType: "buugeng",
+        catDogMode: false,
+        propViewingMode: "my-props",
+      })
+    );
+    await expect
+      .element(page.getByRole("radio", { name: /^My props/ }))
+      .toHaveFocus();
   });
 });

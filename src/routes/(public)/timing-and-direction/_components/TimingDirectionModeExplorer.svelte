@@ -684,6 +684,7 @@
     /* The mode grid: a heading row and two rows of tiles (see
        TimingDirectionModeGrid), with the title under it. */
     --mode-tile-h: 4.5rem;
+    --mode-row-tile-h: 6.5rem;
     --grid-h: calc(1.5rem + 2 * var(--mode-tile-h) + 2 * 0.375rem);
     --title-h: 3rem;
     --header-gap: 0.25rem;
@@ -729,6 +730,13 @@
     padding: 0.5rem var(--page-pad) 3rem;
     color: var(--theme-text);
     background: var(--theme-panel-bg);
+  }
+  /* The mode grid's one-row layout: a label row, a timing row and the
+     tiles (the same query as TimingDirectionModeGrid). */
+  @media (min-width: 760px) and (min-height: 600px) {
+    .mode-page {
+      --grid-h: calc(2.375rem + var(--mode-row-tile-h) + 2 * 0.375rem);
+    }
   }
   .mode-top {
     display: grid;

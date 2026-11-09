@@ -2,16 +2,18 @@
 status: active
 value: 2
 effort: M
-remaining: "Finish or explicitly revise the single reversal/turn model and shared write-path contract across Generate, deck and sequence-actions; RotationDirectionPattern and ResolvedReversalPattern still coexist. Reuse recipe hashing/seeding and seeded composer tests (4848592d56, e45ce2268f), then establish full pool rebuild, version-migration and cross-surface acceptance instead of treating prior Phase 1/2 labels as proof."
+remaining: "Reversal model decided: ReversalMatrix (shared/foundation/domain/sequence-patterns/reversal-matrix.ts) is the one model; deck-variation migrated behind resolveMatrix with a seeded golden test. Still to migrate: transformSequence/applyVariationDescriptor (reversal-transform-apply.ts, deck-variation.ts:330) to applyReversalMatrix with goldens; canonical-tnd-pool BOOK_PATTERN; deck-releaser state/session/UI props (ResolvedReversalPattern as display wrapper only); RotationDirectionPattern apply path (rotation-direction-pattern-manager.ts) needs a first-spin anchor before it can route through the matrix. Turn model collapse (TurnPatternPreset vs TurnPattern), full pool rebuild, version migration and cross-surface acceptance not started."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-07
 work_state: in-progress
 ---
 # Unified Generation Vocabulary — Generate Panel · Deck Composer · Sequence Actions
 
-> 2026-10-14 triage: Finish or explicitly revise the single reversal/turn model and shared write-path contract across Generate, deck and sequence-actions; RotationDirectionPattern and ResolvedReversalPattern still coexist. Reuse recipe hashing/seeding and seeded composer tests (4848592d56, e45ce2268f), then establish full pool rebuild, version-migration and cross-surface acceptance instead of treating prior Phase 1/2 labels as proof. Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage: One reversal model chosen: `ReversalMatrix` (per-step, per-hand reversal toggles, the shape `applyReversalMatrix` writes and the detector reads). Symbol strings convert losslessly (`matrixFromSymbols`/`matrixToSymbols`); absolute spins collapse lossily (`matrixFromSpins`, drops the first-spin anchor). `ResolvedReversalPattern` stays as a display/label wrapper via `resolveMatrix`. Migrated: deck-variation `pickReversal` (golden `deck-variation-golden.test.ts` digest unchanged). Remaining consumers are listed in `remaining`.
+
+> 2026-10-14 triage (superseded): Finish or explicitly revise the single reversal/turn model and shared write-path contract across Generate, deck and sequence-actions; RotationDirectionPattern and ResolvedReversalPattern still coexist. Reuse recipe hashing/seeding and seeded composer tests (4848592d56, e45ce2268f), then establish full pool rebuild, version-migration and cross-surface acceptance instead of treating prior Phase 1/2 labels as proof. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Phases 1-2 shipped past spec; Phase 0's actual goal (collapse 3 reversal + 2 turn representations) and Phases 3-4 unstarted
 >

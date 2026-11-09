@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
@@ -140,11 +141,12 @@
   });
   $effect(() => {
     if (!isPersistenceFullyInitialized || stepEditorLoad) return;
+    const warmOnceStill = () => void whenMotionSettled().then(warmStepEditor);
     if (typeof requestIdleCallback === "undefined") {
-      const handle = setTimeout(warmStepEditor, 1000);
+      const handle = setTimeout(warmOnceStill, 1000);
       return () => clearTimeout(handle);
     }
-    const handle = requestIdleCallback(warmStepEditor, { timeout: 4000 });
+    const handle = requestIdleCallback(warmOnceStill, { timeout: 4000 });
     return () => cancelIdleCallback(handle);
   });
   const isStepEditorView = $derived(wantsStepEditorView && stepEditorLoaded);

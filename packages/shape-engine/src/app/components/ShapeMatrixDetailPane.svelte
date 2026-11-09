@@ -38,6 +38,9 @@
         pair={state.selectedPair}
         data={state.data}
         solo={state.soloHand}
+        soloAxes={{ left: state.rowAxis, right: state.colAxis }}
+        onsolopick={(hand, flower) =>
+          state.selectSolo(hand, flower, { navigate: false })}
         selectedMode={state.selectedMode}
         selectedPropMode={state.selectedPropMode}
         onmodechange={state.setMode}

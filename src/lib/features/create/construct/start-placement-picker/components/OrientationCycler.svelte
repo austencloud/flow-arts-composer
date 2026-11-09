@@ -217,6 +217,11 @@ center label opens an anchored popover with all four orientations.
   );
 
   let popoverOpen = $state(false);
+  // The panel mounts when it opens and leaves once its pop-out has played. A
+  // closed panel kept mounted (forceMount) still positioned itself on every
+  // scroll and resize, and the first positioning forced a restyle of the
+  // whole page in the middle of Construct's opening.
+  let panelMounted = $state(false);
 
   function currentIndex(): number {
     const idx = cycleOrder.indexOf(orientation);
@@ -252,7 +257,12 @@ center label opens an anchored popover with all four orientations.
     <i class="fas fa-chevron-left" aria-hidden="true"></i>
   </button>
 
-  <Popover.Root bind:open={popoverOpen}>
+  <Popover.Root
+    bind:open={popoverOpen}
+    onOpenChange={(open) => {
+      if (open) panelMounted = true;
+    }}
+  >
     <Popover.Trigger>
       {#snippet child({ props })}
         <button
@@ -268,61 +278,66 @@ center label opens an anchored popover with all four orientations.
       {/snippet}
     </Popover.Trigger>
 
-    <Popover.Portal>
-      <Popover.Content
-        side="top"
-        sideOffset={8}
-        align="center"
-        avoidCollisions={true}
-        collisionPadding={12}
-        forceMount
-      >
-        {#snippet child({ open, wrapperProps, props })}
-          <div {...wrapperProps}>
-            {#if open}
-              <div
-                {...props}
-                class="orientation-popover"
-                class:color-blue={color === "blue"}
-                class:color-red={color === "red"}
-                in:popIn={{
-                  duration: DURATION.fast,
-                  start: 0.92,
-                }}
-                out:popIn={{
-                  duration: DURATION.instant,
-                  start: 0.95,
-                }}
-              >
-                <div class="orientation-options">
-                  {#each orientationOptions as opt (opt.value)}
-                    <button
-                      class="orientation-option"
-                      class:selected={opt.value === orientation}
-                      onclick={() => handleSelect(opt.value)}
-                      aria-pressed={opt.value === orientation}
-                      aria-label="{opt.label}: {opt.hint}"
-                    >
-                      <i
-                        class="fas {opt.icon}"
-                        style:transform={opt.iconRotation === undefined
-                          ? undefined
-                          : `rotate(${opt.iconRotation}deg)`}
-                        aria-hidden="true"
-                      ></i>
-                      <div class="option-text">
-                        <span class="option-label">{opt.label}</span>
-                        <span class="option-hint">{opt.hint}</span>
-                      </div>
-                    </button>
-                  {/each}
+    {#if panelMounted}
+      <Popover.Portal>
+        <Popover.Content
+          side="top"
+          sideOffset={8}
+          align="center"
+          avoidCollisions={true}
+          collisionPadding={12}
+          forceMount
+        >
+          {#snippet child({ open, wrapperProps, props })}
+            <div {...wrapperProps}>
+              {#if open}
+                <div
+                  {...props}
+                  class="orientation-popover"
+                  class:color-blue={color === "blue"}
+                  class:color-red={color === "red"}
+                  in:popIn|global={{
+                    duration: DURATION.fast,
+                    start: 0.92,
+                  }}
+                  out:popIn={{
+                    duration: DURATION.instant,
+                    start: 0.95,
+                  }}
+                  onoutroend={() => {
+                    if (!popoverOpen) panelMounted = false;
+                  }}
+                >
+                  <div class="orientation-options">
+                    {#each orientationOptions as opt (opt.value)}
+                      <button
+                        class="orientation-option"
+                        class:selected={opt.value === orientation}
+                        onclick={() => handleSelect(opt.value)}
+                        aria-pressed={opt.value === orientation}
+                        aria-label="{opt.label}: {opt.hint}"
+                      >
+                        <i
+                          class="fas {opt.icon}"
+                          style:transform={opt.iconRotation === undefined
+                            ? undefined
+                            : `rotate(${opt.iconRotation}deg)`}
+                          aria-hidden="true"
+                        ></i>
+                        <div class="option-text">
+                          <span class="option-label">{opt.label}</span>
+                          <span class="option-hint">{opt.hint}</span>
+                        </div>
+                      </button>
+                    {/each}
+                  </div>
                 </div>
-              </div>
-            {/if}
-          </div>
-        {/snippet}
-      </Popover.Content>
-    </Popover.Portal>
+              {/if}
+            </div>
+          {/snippet}
+        </Popover.Content>
+      </Popover.Portal>
+    {/if}
   </Popover.Root>
 
   <button

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   runMandalaMorph,
+  SHAPE_MATRIX_MORPH_BACK_CLASS,
   SHAPE_MATRIX_MORPH_CLASS,
   type MandalaMorphDependencies,
 } from "@tka/shape-engine/app/services/shape-matrix-mandala-morph.js";
@@ -11,7 +12,7 @@ function createHarness(startMorph: MandalaMorphDependencies["startMorph"]) {
   const root = {
     classList: {
       add: (name: string) => void classes.add(name),
-      remove: (name: string) => void classes.delete(name),
+      remove: (...names: string[]) => names.forEach((n) => classes.delete(n)),
     } as unknown as DOMTokenList,
   };
   const host = {
@@ -43,7 +44,44 @@ describe("runMandalaMorph", () => {
       deps
     );
 
-    expect(startMorph).toHaveBeenCalledWith(expect.any(Function), settle);
+    const handedOver = startMorph.mock.calls[0][1] as () => Promise<void>;
+    void handedOver();
+    expect(settle).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks a flight going back, and only until it ends", async () => {
+    let land: () => void = () => {};
+    const finished = new Promise<void>((resolve) => {
+      land = resolve;
+    });
+    const startMorph = vi.fn(() => ({ finished }) as unknown as ViewTransition);
+    const { classes, host, deps } = createHarness(startMorph);
+
+    runMandalaMorph(host, () => {}, { back: true }, deps);
+    expect(classes.has(SHAPE_MATRIX_MORPH_BACK_CLASS)).toBe(true);
+
+    land();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(classes.has(SHAPE_MATRIX_MORPH_BACK_CLASS)).toBe(false);
+    expect(classes.has(SHAPE_MATRIX_MORPH_CLASS)).toBe(false);
+  });
+
+  it("leaves a forward flight unmarked", () => {
+    const startMorph = vi.fn((fn: () => void) => {
+      fn();
+      return null;
+    });
+    const added: string[] = [];
+    const { host, deps } = createHarness(startMorph);
+    const root = deps.root()!;
+    const add = root.classList.add;
+    root.classList.add = (...names: string[]) => {
+      added.push(...names);
+      add(...names);
+    };
+
+    runMandalaMorph(host, () => {}, {}, deps);
+    expect(added).toEqual([SHAPE_MATRIX_MORPH_CLASS]);
   });
 
   it("applies the mutation plainly and restores the flags when no transition runs", () => {

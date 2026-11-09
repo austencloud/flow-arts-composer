@@ -835,6 +835,12 @@
   .pairs-stage.fitted {
     --fit-shrink: min(var(--fit, 1), 1);
   }
+  /* The result board's cells follow its width, so on a one-screen page the
+     width follows the fit, down to the column's own floor. */
+  .pairs-stage.fitted .results {
+    width: min(100%, max(18rem, calc(30rem * var(--fit-shrink, 1))));
+    justify-self: center;
+  }
 
   /* Two grids side by side, and the larger picture they fuse into: 1.4 times
      a grid. Stacked, the result line and the bars sit under the grids and the

@@ -5,7 +5,9 @@ import {
 	mixColors,
 	flowPalette,
 	flowGradientColors,
+	savedMandalaPalette,
 } from "../mandala-palette";
+import { BLUE_STROKE, PURPLE_STROKE, RED_STROKE } from "../mandala-constants";
 
 describe("mandala-palette", () => {
 	it("PRESET_COLORS exposes the named presets with pair + morph", () => {
@@ -58,5 +60,22 @@ describe("mandala-palette", () => {
 		expect(g.left).toEqual([c1, c3]);
 		expect(g.right).toEqual([c2, c1]);
 		expect(g.purple).toEqual([mixColors(c1, c2), c3]);
+	});
+
+	// A saved piece with no recorded colors must match its baked poster, so the
+	// wall and the detail page can't disagree.
+	it("savedMandalaPalette falls back to the renderer's own default colors", () => {
+		const pal = savedMandalaPalette(null);
+		expect(pal.leftStroke).toBe(BLUE_STROKE);
+		expect(pal.rightStroke).toBe(RED_STROKE);
+		expect(pal.purpleStroke).toBe(PURPLE_STROKE);
+		expect(savedMandalaPalette(undefined)).toEqual(pal);
+	});
+
+	it("savedMandalaPalette draws a recorded pair, whatever the viewer has chosen", () => {
+		const pal = savedMandalaPalette({ left: "#d4af37", right: "#b8722c" });
+		expect(pal.leftStroke).toBe("#d4af37");
+		expect(pal.rightStroke).toBe("#b8722c");
+		expect(pal.purpleStroke).toBe(mixColors("#d4af37", "#b8722c"));
 	});
 });

@@ -13,6 +13,18 @@ import {
   PANEL_SETTLE_EVENT,
 } from "#lib/shared/panels/panel-motion.js";
 import type { PanelCoordinationState } from "../panel-coordination-state.svelte";
+import {
+  clearCreatePanelMetric,
+  setCreatePanelMetric,
+} from "./create-panel-metrics";
+
+const CREATE_PANEL_METRICS = [
+  "--create-panel-left",
+  "--create-panel-inset-right",
+  "--create-panel-top",
+  "--create-panel-bottom",
+  "--create-panel-width",
+] as const;
 
 export interface PanelHeightTrackerConfig {
   toolPanelElement: HTMLElement | null;
@@ -42,8 +54,7 @@ export function createPanelHeightTracker(
   } = config;
 
   const cleanups: (() => void)[] = [];
-  const rootElement =
-    typeof document !== "undefined" ? document.documentElement : null;
+  const canPublish = typeof document !== "undefined";
   let scheduledFrame: number | null = null;
   let lastToolPanelHeight: number | null = null;
   let lastToolPanelWidth: number | null = null;
@@ -51,8 +62,8 @@ export function createPanelHeightTracker(
   const lastRootMetrics = new Map<string, string>();
 
   const setRootMetric = (name: string, value: string) => {
-    if (!rootElement || lastRootMetrics.get(name) === value) return;
-    rootElement.style.setProperty(name, value);
+    if (!canPublish || lastRootMetrics.get(name) === value) return;
+    setCreatePanelMetric(name, value);
     lastRootMetrics.set(name, value);
   };
 
@@ -75,14 +86,10 @@ export function createPanelHeightTracker(
   };
 
   const clearCreatePanelMetrics = () => {
-    if (!rootElement) {
+    if (!canPublish) {
       return;
     }
-    rootElement.style.removeProperty("--create-panel-left");
-    rootElement.style.removeProperty("--create-panel-inset-right");
-    rootElement.style.removeProperty("--create-panel-top");
-    rootElement.style.removeProperty("--create-panel-bottom");
-    rootElement.style.removeProperty("--create-panel-width");
+    for (const name of CREATE_PANEL_METRICS) clearCreatePanelMetric(name);
     lastRootMetrics.clear();
     setNavigationBarHeight(64);
   };
@@ -106,7 +113,7 @@ export function createPanelHeightTracker(
     setToolPanelHeight(rect.height);
     setToolPanelWidth(rect.width);
 
-    if (!rootElement) {
+    if (!canPublish) {
       return;
     }
 

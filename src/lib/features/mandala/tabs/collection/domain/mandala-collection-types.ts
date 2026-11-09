@@ -6,6 +6,7 @@ import type {
   MandalaPathShape,
 } from "#lib/shared/mandala/domain/mandala-types.js";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
+import type { HandColorPair } from "@tka/render-composition";
 
 export interface CollectedMandala {
   id: string;
@@ -15,6 +16,10 @@ export interface CollectedMandala {
   leftPropType: string;
   rightPropType: string;
   pathShape?: MandalaPathShape;
+  /** The hand colors the maker saw when saving. Absent on anything saved before
+   *  colors were recorded, or with none chosen: those draw in the one fixed look
+   *  (`savedMandalaPalette`). A viewer's own settings never recolor a saved piece. */
+  colors?: HandColorPair;
   createdAt: number;
   source?: "studio" | "sequence" | "default";
   /** Lineage stamp — the source sequence's simplified word (never a raw
@@ -31,6 +36,14 @@ export interface CollectedMandala {
   revisionDigestVersion?: 1;
 }
 
+const HandHexColorSchema = z.string().regex(/^#[0-9a-f]{6}$/i);
+
+/** Exported so a save refuses what a later load would throw away. */
+export const SavedHandColorsSchema = z.object({
+  left: HandHexColorSchema,
+  right: HandHexColorSchema,
+});
+
 export const CollectedMandalaSchema = z.preprocess(
   normalizeLegacyPropConfig,
   z.object({
@@ -45,6 +58,10 @@ export const CollectedMandalaSchema = z.preprocess(
     leftPropType: z.string(),
     rightPropType: z.string(),
     pathShape: z.enum(["arc", "linear", "concave", "hybrid"]).optional(),
+    // Published payloads reach guests' browsers and end up inside SVG markup, and
+    // the database rules do not inspect them, so only a real hex color gets
+    // through. Anything else loses its colors, not the whole mandala.
+    colors: SavedHandColorsSchema.optional().catch(undefined),
     createdAt: z.any(),
     updatedAt: z.any().optional(),
     source: z.enum(["studio", "sequence", "default"]).optional(),

@@ -680,6 +680,12 @@
     flex-shrink: 1;
   }
 
+  /* Art still on its way. The card background is black on a dark scene, which
+     read as a thumbnail that had failed. */
+  .prop-thumbnail:has(> .loading-placeholder) {
+    background: color-mix(in srgb, var(--theme-text, #fff) 9%, transparent);
+  }
+
   /* Container query adaptive sizing */
   @container image-container (aspect-ratio > 4/3) {
     .prop-thumbnail {
@@ -739,6 +745,10 @@
     color: var(--theme-text-dim);
     box-sizing: border-box;
     overflow: hidden;
+  }
+
+  .loading-placeholder {
+    background: transparent;
   }
 
   /* Skeleton shimmer effect for loading state */

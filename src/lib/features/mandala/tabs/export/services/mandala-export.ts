@@ -7,13 +7,18 @@
  */
 
 import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
-import { renderMandalaToCanvas } from "#lib/shared/mandala/services/mandala-renderer.js";
+import {
+	MANDALA_SVG_STROKE_WIDTH,
+	renderMandalaToCanvas,
+} from "#lib/shared/mandala/services/mandala-renderer.js";
 import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 import type { StepLike } from "#lib/shared/mandala/services/types.js";
 import type {
 	MandalaPathShape,
 	MandalaRenderOptions,
 } from "#lib/shared/mandala/domain/mandala-types.js";
+import { savedMandalaPalette } from "#lib/shared/mandala/domain/mandala-palette.js";
+import type { HandColorPair } from "@tka/render-composition";
 import { getMandalaPathOptions } from "#lib/shared/mandala/services/mandala-path-options.js";
 
 export interface ExportOptions {
@@ -22,6 +27,8 @@ export interface ExportOptions {
 	strokeWidth: number;
 	show: MandalaRenderOptions["show"];
 	pathShape: MandalaPathShape;
+	/** The colors saved with the piece; none draws the fixed look. */
+	colors?: HandColorPair | null;
 }
 
 const DEFAULT_EXPORT_OPTIONS: ExportOptions = {
@@ -62,6 +69,7 @@ function drawMandala(opts: ExportOptions, steps: StepLike[], leftPropType: strin
 		style: "stroke",
 		show: opts.show,
 		strokeWidth: opts.strokeWidth,
+		palette: savedMandalaPalette(opts.colors),
 		offsetX: 0,
 		offsetY: 0,
 	});
@@ -99,10 +107,6 @@ export async function exportMandalaPNG(
 // the poster is sized to cover that 1:1 rather than be upscaled. Thin strokes on
 // black compress hard — this stays well inside POSTER_MAX_BYTES at 0.85.
 const POSTER_SIZE = 1024;
-/** Stroke weight is absolute pixels, so it has to track POSTER_SIZE or the
- *  figure thins out every time the poster grows. 5px at the original 512 is the
- *  weight this was tuned at. */
-const POSTER_STROKE_RATIO = 5 / 512;
 const POSTER_MAX_BYTES = 200 * 1024;
 const POSTER_QUALITIES = [0.85, 0.7, 0.55] as const;
 
@@ -110,14 +114,17 @@ export function renderMandalaPosterDataUrl(
 	steps: StepLike[],
 	leftPropType: string | undefined,
 	rightPropType: string | undefined,
-	options: Partial<Pick<ExportOptions, "show" | "pathShape">> = {},
+	options: Partial<Pick<ExportOptions, "show" | "pathShape" | "colors">> = {},
 ): string {
 	const canvas = drawMandala(
 		{
 			...DEFAULT_EXPORT_OPTIONS,
 			size: POSTER_SIZE,
 			background: "black",
-			strokeWidth: POSTER_SIZE * POSTER_STROKE_RATIO,
+			// Mandala units, not pixels: the renderer scales the figure and its lines
+			// together, so this needs no adjusting for POSTER_SIZE. Multiplying by the
+			// size is what once drew every poster at four times the normal weight.
+			strokeWidth: MANDALA_SVG_STROKE_WIDTH,
 			...options,
 		},
 		steps,

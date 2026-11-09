@@ -3,7 +3,10 @@
 -->
 <script lang="ts">
   import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { savedMandalaPalette } from "#lib/shared/mandala/domain/mandala-palette.js";
+  import type { HandColorPair } from "@tka/render-composition";
   import type {
+    MandalaPalette,
     MandalaPathShape,
     MandalaRenderOptions,
     UndulationEasing,
@@ -31,7 +34,13 @@
   import type { StepLike } from "#lib/shared/mandala/services/types.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import MandalaColorPane from "./tabs/collection/components/MandalaColorPane.svelte";
   import MandalaPublicationControls from "./tabs/collection/components/MandalaPublicationControls.svelte";
+  import {
+    mandalaColorsPatch,
+    sameMandalaColors,
+  } from "./tabs/collection/domain/mandala-recolor";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import {
     openLineageSource,
     hasLineageSource,
@@ -51,6 +60,10 @@
     leftPropType: string;
     rightPropType: string;
     pathShape?: MandalaPathShape;
+    /** Saved pieces only. Curated mandalas have no maker and no palette here, so
+     *  they keep following the viewer's settings. */
+    colors?: { left: string; right: string };
+    palette?: MandalaPalette;
     createdAt: number;
     group: "curated" | "collection";
     /** Lineage stamp — see docs/superpowers/specs/2026-07-12-art-in-library-design.md
@@ -91,6 +104,8 @@
         leftPropType: m.leftPropType,
         rightPropType: m.rightPropType,
         pathShape: m.pathShape,
+        ...(m.colors ? { colors: m.colors } : {}),
+        palette: savedMandalaPalette(m.colors),
         createdAt: m.createdAt,
         group: "collection",
         sourceWord: m.sourceWord,
@@ -292,6 +307,7 @@
           strokeWidth: 2.5,
           show: selectedMandala.variant,
           pathShape: selectedMandala.pathShape ?? "arc",
+          colors: selectedMandala.colors ?? null,
         }
       );
       const safeName = selectedMandala.name
@@ -333,6 +349,7 @@
         rightPropType: selectedMandala.rightPropType,
         variant: selectedMandala.variant,
         pathShape: selectedMandala.pathShape,
+        colors: selectedMandala.colors ?? null,
       },
       {
         onPhase: (p) => {
@@ -366,8 +383,46 @@
     videoExporting = false;
   }
 
+  // ── Colors ──
+  // What's on screen lives on the selection, so the preview, Meditate and both
+  // exports all read the same pair. Only these two fields change: the steps stay
+  // untouched, so a drag across the picker recolors without rebuilding the paths.
+  let colorPaneOpen = $state(false);
+  let selectedIsPublic = $state(false);
+
+  function showColors(colors: HandColorPair | null) {
+    if (!selectedMandala) return;
+    selectedMandala.palette = savedMandalaPalette(colors);
+    if (colors) selectedMandala.colors = colors;
+    else delete selectedMandala.colors;
+  }
+
+  /** Saves the pair on screen once, when its owner leaves the color pane. */
+  function commitColors() {
+    const saved = selectedCollected;
+    if (!selectedMandala || !saved) return;
+    const colors = selectedMandala.colors ?? null;
+    if (sameMandalaColors(colors, saved.colors)) return;
+    const id = saved.id;
+    mandalaCollectionState
+      .update(id, mandalaColorsPatch(colors))
+      .catch((err: unknown) => {
+        console.error("[Mandala] Saving colors failed:", err);
+        toast.error("Couldn't save the colors. Please try again.");
+        if (selectedMandala?.id === id) showColors(saved.colors ?? null);
+      });
+  }
+
+  function closeColorPane() {
+    commitColors();
+    colorPaneOpen = false;
+  }
+
   // ── Navigation ──
   function selectMandala(item: MandalaItem) {
+    commitColors();
+    colorPaneOpen = false;
+    selectedIsPublic = false;
     selectedMandala = {
       id: item.id,
       name: item.name,
@@ -376,6 +431,8 @@
       leftPropType: item.leftPropType,
       rightPropType: item.rightPropType,
       pathShape: item.pathShape,
+      ...(item.colors ? { colors: item.colors } : {}),
+      ...(item.palette ? { palette: item.palette } : {}),
       createdAt: item.createdAt,
       sourceWord: item.sourceWord,
       sourceSequenceId: item.sourceSequenceId,
@@ -385,6 +442,7 @@
   }
 
   function backToGallery() {
+    closeColorPane();
     meditationSession.stop();
     audioService.stopAmbient();
     cancelVideoExport();
@@ -397,6 +455,7 @@
     // auth-boot-orchestrator's init(uid) instead — initLocal no-ops then).
     mandalaCollectionState.initLocal();
     return () => {
+      commitColors();
       clearTimeout(deleteTimer);
       meditationSession.dispose();
       audioService.dispose();
@@ -433,6 +492,7 @@
           leftPropType={selectedMandala.leftPropType}
           rightPropType={selectedMandala.rightPropType}
           pathShape={selectedMandala.pathShape ?? "arc"}
+          palette={selectedMandala.palette}
         />
       </div>
       <div class="controls-rail">
@@ -464,6 +524,7 @@
         leftPropType={selectedMandala.leftPropType}
         rightPropType={selectedMandala.rightPropType}
         pathShape={selectedMandala.pathShape ?? "arc"}
+        palette={selectedMandala.palette}
       />
       <MeditationOverlay
         status={meditationSession.status}
@@ -526,6 +587,7 @@
                   leftPropType={item.leftPropType}
                   rightPropType={item.rightPropType}
                   pathShape={item.pathShape ?? "arc"}
+                  palette={item.palette}
                 />
               </div>
               <div class="card-label">
@@ -566,109 +628,148 @@
             leftPropType={selectedMandala.leftPropType}
             rightPropType={selectedMandala.rightPropType}
             pathShape={selectedMandala.pathShape ?? "arc"}
+            palette={selectedMandala.palette}
           />
         </div>
 
         <div class="detail-panel">
-          <div class="detail-info">
-            <div class="detail-glyphs">
-              <TKAWordGlyph word={selectedMandala.name} height={28} darkMode />
-            </div>
-            {#if selectedMandala.createdAt}
-              <span class="detail-date">{dateLabel}</span>
-            {/if}
-          </div>
+          <Crossfade key={colorPaneOpen ? "colors" : "main"} fill>
+            {#if colorPaneOpen && selectedCollected}
+              <div class="panel-pane">
+                <MandalaColorPane
+                  colors={selectedMandala.colors ?? null}
+                  isPublic={selectedIsPublic}
+                  onchange={showColors}
+                  onback={closeColorPane}
+                />
+              </div>
+            {:else}
+              <div class="panel-pane">
+                <div class="detail-info">
+                  <div class="detail-glyphs">
+                    <TKAWordGlyph word={selectedMandala.name} height={28} darkMode />
+                  </div>
+                  {#if selectedMandala.createdAt}
+                    <span class="detail-date">{dateLabel}</span>
+                  {/if}
+                </div>
 
-          {#if hasLineageSource(selectedMandala)}
-            <div class="meta-chips">
-              <FilterChipBase
-                mode="action"
-                size="sm"
-                icon="fa-arrow-up-right-from-square"
-                label={`From ${simplifyRepeatedWord(selectedMandala.sourceWord ?? "")}`}
-                chipColor="var(--theme-accent, #6366f1)"
-                onclick={() =>
-                  void openLineageSource({
-                    sourceWord: selectedMandala!.sourceWord,
-                    sourceSequenceId: selectedMandala!.sourceSequenceId,
-                    // selectedMandala.steps is typed StepLike (rendering-only
-                    // subset) but is always the original CollectedMandala's
-                    // StepData[] under the hood — safe to widen back here.
-                    steps: selectedMandala!.steps as unknown as StepData[],
-                  })}
-              />
-            </div>
-          {/if}
-
-          <div class="detail-actions">
-            <button
-              type="button"
-              class="action-btn meditate-btn"
-              onclick={() => {
-                phase = "meditate-config";
-              }}
-            >
-              <i class="fas fa-spa" aria-hidden="true"></i>
-              <span>Meditate</span>
-            </button>
-
-            <button
-              type="button"
-              class="action-btn export-btn"
-              onclick={handleVideoExport}
-              disabled={videoExporting}
-            >
-              {#if videoExporting}
-                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                <span class="export-progress">
-                  {videoPhase === "encoding"
-                    ? "Encoding"
-                    : `${Math.round(videoProgress * 100)}%`}
-                </span>
-              {:else}
-                <i class="fas fa-film" aria-hidden="true"></i>
-                <span>{saveActionLabel("Video")}</span>
-              {/if}
-            </button>
-
-            <button
-              type="button"
-              class="action-btn export-btn"
-              onclick={handleExport}
-              disabled={exporting}
-            >
-              {#if exporting}
-                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                <span>…</span>
-              {:else}
-                <i class="fas fa-image" aria-hidden="true"></i>
-                <span>{saveActionLabel("PNG")}</span>
-              {/if}
-            </button>
-          </div>
-
-          {#if selectedCollected && !mandalaCollectionState.isReadOnlyPreview}
-            <MandalaPublicationControls mandala={selectedCollected} />
-          {/if}
-
-          {#if !mandalaCollectionState.isReadOnlyPreview}
-            <div class="detail-footer">
-              <button
-                type="button"
-                class="action-btn delete-btn"
-                class:confirming={deleteConfirming}
-                onclick={handleDeleteClick}
-              >
-                {#if deleteConfirming}
-                  <i class="fas fa-check" aria-hidden="true"></i>
-                  <span>Confirm Delete</span>
-                {:else}
-                  <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                  <span>Delete</span>
+                {#if hasLineageSource(selectedMandala)}
+                  <div class="meta-chips">
+                    <FilterChipBase
+                      mode="action"
+                      size="sm"
+                      icon="fa-arrow-up-right-from-square"
+                      label={`From ${simplifyRepeatedWord(selectedMandala.sourceWord ?? "")}`}
+                      chipColor="var(--theme-accent, #6366f1)"
+                      onclick={() =>
+                        void openLineageSource({
+                          sourceWord: selectedMandala!.sourceWord,
+                          sourceSequenceId: selectedMandala!.sourceSequenceId,
+                          // selectedMandala.steps is typed StepLike (rendering-only
+                          // subset) but is always the original CollectedMandala's
+                          // StepData[] under the hood — safe to widen back here.
+                          steps: selectedMandala!.steps as unknown as StepData[],
+                        })}
+                    />
+                  </div>
                 {/if}
-              </button>
-            </div>
-          {/if}
+
+                <div class="detail-actions">
+                  <button
+                    type="button"
+                    class="action-btn meditate-btn"
+                    onclick={() => {
+                      phase = "meditate-config";
+                    }}
+                  >
+                    <i class="fas fa-spa" aria-hidden="true"></i>
+                    <span>Meditate</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-btn export-btn"
+                    onclick={handleVideoExport}
+                    disabled={videoExporting}
+                  >
+                    {#if videoExporting}
+                      <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                      <span class="export-progress">
+                        {videoPhase === "encoding"
+                          ? "Encoding"
+                          : `${Math.round(videoProgress * 100)}%`}
+                      </span>
+                    {:else}
+                      <i class="fas fa-film" aria-hidden="true"></i>
+                      <span>{saveActionLabel("Video")}</span>
+                    {/if}
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-btn export-btn"
+                    onclick={handleExport}
+                    disabled={exporting}
+                  >
+                    {#if exporting}
+                      <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                      <span>…</span>
+                    {:else}
+                      <i class="fas fa-image" aria-hidden="true"></i>
+                      <span>{saveActionLabel("PNG")}</span>
+                    {/if}
+                  </button>
+                </div>
+
+                {#if selectedCollected && !mandalaCollectionState.isReadOnlyPreview}
+                  <button
+                    type="button"
+                    class="color-row"
+                    onclick={() => (colorPaneOpen = true)}
+                  >
+                    <span class="color-dots" aria-hidden="true">
+                      <span
+                        style:background={selectedMandala.palette?.leftStroke}
+                      ></span>
+                      <span
+                        style:background={selectedMandala.palette?.rightStroke}
+                      ></span>
+                    </span>
+                    <span class="color-row-label">Colors</span>
+                    <span class="color-row-value">
+                      {selectedMandala.colors ? "Custom" : "Default"}
+                    </span>
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                  </button>
+
+                  <MandalaPublicationControls
+                    mandala={selectedCollected}
+                    onlivechange={(live) => (selectedIsPublic = live)}
+                  />
+                {/if}
+
+                {#if !mandalaCollectionState.isReadOnlyPreview}
+                  <div class="detail-footer">
+                    <button
+                      type="button"
+                      class="action-btn delete-btn"
+                      class:confirming={deleteConfirming}
+                      onclick={handleDeleteClick}
+                    >
+                      {#if deleteConfirming}
+                        <i class="fas fa-check" aria-hidden="true"></i>
+                        <span>Confirm Delete</span>
+                      {:else}
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                        <span>Delete</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </Crossfade>
         </div>
       </div>
     {/if}
@@ -844,14 +945,67 @@
   }
 
   .detail-panel {
+    position: relative;
     width: 320px;
     flex-shrink: 0;
-    padding: 24px;
     border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
+    overflow: hidden;
+  }
+
+  .panel-pane {
+    height: 100%;
+    padding: 24px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 28px;
+  }
+
+  .color-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 14px;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: 12px;
+    color: var(--theme-text, white);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      border-color var(--duration-fast) var(--ease-out, var(--ease-standard));
+  }
+  .color-row:focus-visible {
+    outline: 2px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    outline-offset: 2px;
+  }
+  .color-dots {
+    display: flex;
+  }
+  .color-dots span {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--theme-panel-bg, #14141f);
+  }
+  .color-dots span + span {
+    margin-left: -6px;
+  }
+  .color-row-value {
+    font-weight: 400;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
+  }
+  .color-row > i {
+    font-size: 12px;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
   }
 
   .back-btn {
@@ -1010,6 +1164,10 @@
   }
 
   @media (hover: hover) {
+    .color-row:hover {
+      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
+      border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    }
     .meditate-btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 6px 16px
@@ -1115,6 +1273,8 @@
     }
     .detail-panel {
       width: 380px;
+    }
+    .panel-pane {
       padding: 32px;
     }
   }
@@ -1146,6 +1306,8 @@
     }
     .detail-panel {
       width: 440px;
+    }
+    .panel-pane {
       padding: 40px 36px;
       gap: 32px;
     }
@@ -1184,9 +1346,13 @@
     }
     .detail-panel {
       width: 100%;
-      max-height: 55%;
+      height: 55%;
       border-left: none;
       border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
+    }
+    .panel-pane {
+      padding: 12px 14px;
+      gap: 16px;
     }
 
     .meditate-layout {
@@ -1201,6 +1367,27 @@
       max-height: 50%;
       border-left: none;
       border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
+    }
+  }
+
+  /* A phone on its side is narrow only because the app's own rail and list take
+     the width. Stacking would leave a strip of art over a strip of controls, so
+     the art stays beside the panel as it does on a desktop. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .detail-layout {
+      flex-direction: row;
+    }
+    .detail-preview {
+      min-height: 0;
+    }
+    .detail-panel {
+      width: 320px;
+      height: auto;
+      border-top: none;
+      border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
+    }
+    .panel-pane {
+      padding: 8px 12px;
     }
   }
 
@@ -1220,6 +1407,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .gallery-card,
+    .color-row,
     .action-btn,
     .session-exit-btn,
     .back-btn {

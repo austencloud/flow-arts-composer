@@ -24,7 +24,7 @@ export interface GhostState {
   y: number;
   pressed: boolean;
   visible: boolean;
-  /** Takeover pose: parked bottom-right as the clickable "watch again" button. */
+  /** Takeover pose: parked in a corner as the clickable "watch again" button. */
   parked: boolean;
   /**
    * How fast the ghost is travelling right now, normalised 0..1 against a brisk
@@ -126,6 +126,12 @@ export function createAttractGhost(opts: {
    * diverges every score after it. The composer attract acts omit it.
    */
   choose?: () => number;
+  /**
+   * Which corner of the band the ghost parks in on takeover. Bottom-right unless
+   * a surface keeps real controls there: the parked dot is a button of its own
+   * and sits above everything in the band, so it would cover them.
+   */
+  parkCorner?: "bottom-right" | "top-right";
 }): {
   core: AttractGhost;
   /** Wrap a cycle script into the running loop; returns the section handle. */
@@ -579,9 +585,9 @@ export function createAttractGhost(opts: {
     return [];
   }
 
-  /** Takeover pose: glide to the band's bottom-right corner and sit there as
-   *  the clickable "watch it again" button until resume() or kill(). The
-   *  glide ignores `stopped` (it IS the stopped pose) but respects kill. */
+  /** Takeover pose: glide to the band's parking corner and sit there as the
+   *  clickable "watch it again" button until resume() or kill(). The glide
+   *  ignores `stopped` (it IS the stopped pose) but respects kill. */
   async function parkAndWait(): Promise<void> {
     setHover(null);
     ghost.pressed = false;
@@ -594,7 +600,8 @@ export function createAttractGhost(opts: {
     const root = opts.getRoot();
     if (root) {
       const rr = root.getBoundingClientRect();
-      await glide(rr.width - 32, rr.height - 32, () => dead);
+      const parkY = opts.parkCorner === "top-right" ? 32 : rr.height - 32;
+      await glide(rr.width - 32, parkY, () => dead);
     }
     ghost.visible = true;
     ghost.parked = true;

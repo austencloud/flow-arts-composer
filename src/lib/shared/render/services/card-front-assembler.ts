@@ -233,6 +233,7 @@ export function buildCellLayerOptions(
   const options: LayerRenderOptions = {
     fanAppearance: visibility.fanAppearance,
     triangleGrip: visibility.triangleGrip,
+    buugengStyle: visibility.buugengStyle,
     size: stepSize,
     darkMode: visibility.darkMode ?? false,
     showNonRadialPoints: visibility.showNonRadialPoints ?? false,

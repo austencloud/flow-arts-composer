@@ -152,9 +152,13 @@
     display: block;
   }
 
-  /* Desktop hover - only on hover-capable devices */
+  /* Desktop hover - only on hover-capable devices. Quiet while the Create
+     entry flies these in under a cursor that has not moved
+     (create-entry-choreography.ts). */
   @media (hover: hover) {
-    .pictograph-container:hover .pictograph-wrapper {
+    :global(html:not([data-entry-hover-quiet]))
+      .pictograph-container:hover
+      .pictograph-wrapper {
       background: var(--row-tint, rgba(255, 255, 255, 0.12));
       transform: scale(1.05);
       box-shadow:

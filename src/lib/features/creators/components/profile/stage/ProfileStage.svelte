@@ -322,6 +322,7 @@
     leftPropType?: string;
     rightPropType?: string;
     pathShape?: "arc" | "linear" | "concave" | "hybrid";
+    colors?: { left: string; right: string };
   };
 
   type CollectionEntry = {
@@ -384,6 +385,7 @@
           leftPropType: r.leftPropType,
           rightPropType: r.rightPropType,
           pathShape: r.pathShape,
+          colors: r.colors,
         },
       });
     }

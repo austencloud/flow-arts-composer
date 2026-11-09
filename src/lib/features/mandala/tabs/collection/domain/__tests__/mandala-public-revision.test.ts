@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
 import {
+  createMandalaPublicRevision,
   mandalaPublicPayloadFromArtifact,
   mandalaPublicTitle,
 } from "../mandala-public-revision";
@@ -71,5 +73,68 @@ describe("mandalaPublicPayloadFromArtifact", () => {
   it("refuses a payload that is not a mandala", () => {
     expect(mandalaPublicPayloadFromArtifact({ steps: "nope" })).toBeNull();
     expect(mandalaPublicPayloadFromArtifact(null)).toBeNull();
+  });
+
+  it("carries the maker's colors through to the guest view", () => {
+    const colors = { left: "#d4af37", right: "#b8722c" };
+    const payload = mandalaPublicPayloadFromArtifact({
+      ...legacyPayload,
+      colors,
+    });
+    expect(payload?.colors).toEqual(colors);
+  });
+
+  // Published payloads are not inspected by the database rules and the colors
+  // land inside SVG attributes in a guest's browser.
+  it.each([
+    { left: '"><script>alert(1)</script>', right: "#b8722c" },
+    { left: "#d4af37", right: "url(javascript:alert(1))" },
+    { left: "#d4af37" },
+    "#d4af37",
+  ])("drops colors that are not a pair of hex values, keeping the mandala", (colors) => {
+    const payload = mandalaPublicPayloadFromArtifact({
+      ...legacyPayload,
+      colors,
+    });
+    expect(payload).not.toBeNull();
+    expect(payload && "colors" in payload).toBe(false);
+  });
+});
+
+describe("createMandalaPublicRevision", () => {
+  const fixture = {
+    id: "mandala-1",
+    name: "Bloom",
+    steps: [],
+    variant: "both",
+    leftPropType: "staff",
+    rightPropType: "staff",
+    createdAt: 123,
+  } as const;
+
+  // The 51 mandalas already public have no colors. If the absent field changed
+  // their digest, every one would turn into a new revision on its next publish.
+  it("does not change the content address of a mandala with no colors", async () => {
+    const before = await canonicalDigest({
+      steps: [],
+      variant: "both",
+      leftPropType: "staff",
+      rightPropType: "staff",
+    });
+    const { contentDigest } = await createMandalaPublicRevision({
+      ...fixture,
+      steps: [],
+    });
+    expect(contentDigest).toBe(before);
+  });
+
+  it("makes a recolored mandala a new revision", async () => {
+    const plain = await createMandalaPublicRevision({ ...fixture, steps: [] });
+    const gilded = await createMandalaPublicRevision({
+      ...fixture,
+      steps: [],
+      colors: { left: "#d4af37", right: "#b8722c" },
+    });
+    expect(gilded.revisionId).not.toBe(plain.revisionId);
   });
 });

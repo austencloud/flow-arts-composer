@@ -525,7 +525,6 @@ export function localizeLevel1Block(block: GuideBlock): GuideBlock {
       return {
         ...block,
         caption: block.caption ? localizeLevel1Text(block.caption) : undefined,
-        stepLabels: block.stepLabels?.map(localizeLevel1Text),
         pool: block.pool && {
           ...block.pool,
           entries: block.pool.entries.map((entry) => ({

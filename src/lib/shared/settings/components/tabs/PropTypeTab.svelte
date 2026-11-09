@@ -481,6 +481,7 @@
           {darkMode}
           fanAppearance={settings.fanAppearance}
           triangleGrip={settings.triangleGrip}
+          buugengStyle={settings.buugengStyle}
           showShortcuts={hasKeyboard}
           onApply={applyPreset}
           onSave={savePreset}

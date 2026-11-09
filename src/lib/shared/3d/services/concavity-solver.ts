@@ -5,8 +5,8 @@
  * hands (ANTI motions, or explicit pathShape "concave") participate — pro
  * conflicts bail to the dual-wheel fallback.
  */
-import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { scanStepPair } from "./wall-feasibility-scanner";
+import { concaveEligible, withDepth } from "./wall-plane-policy";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 
 const K_TOLERANCE = 0.02;
@@ -19,13 +19,9 @@ export interface ConcavitySolveResult {
   hands: Array<"left" | "right">;
 }
 
-function concaveEligible(m: MotionConfig3D): boolean {
-  return m.motionType === MotionType.ANTI || m.pathShape === "concave";
-}
-
-function withDepth(m: MotionConfig3D, k: number): MotionConfig3D {
-  return concaveEligible(m) ? { ...m, pathShape: "concave", concaveDepth: k } : m;
-}
+// The eligibility predicate and k stamp live with the viewer seam, which
+// must not pull in the collision model; re-exported for the solvers.
+export { concaveEligible, withDepth };
 
 export function solveStepConcavity(
   left: MotionConfig3D,
@@ -44,12 +40,30 @@ export function solveStepConcavity(
     return { cleared: false, k: null, hands };
   }
 
-  let lo = 0,
-    hi = 1;
-  for (let i = 0; i < MAX_ITERATIONS && hi - lo > K_TOLERANCE; i++) {
+  const k = bisectToThreshold(
+    0,
+    1,
+    (mid) => scanStepPair(withDepth(left, mid), withDepth(right, mid)).clean,
+    K_TOLERANCE
+  );
+  return { cleared: true, k, hands };
+}
+
+/**
+ * Shrink a passing value toward a failing one. `lo` is known to fail and `hi`
+ * to pass; the returned value always passed, so a non-monotonic test can make
+ * the answer less than minimal but never wrong. Bounded by MAX_ITERATIONS.
+ */
+export function bisectToThreshold(
+  lo: number,
+  hi: number,
+  passes: (value: number) => boolean,
+  tolerance: number
+): number {
+  for (let i = 0; i < MAX_ITERATIONS && hi - lo > tolerance; i++) {
     const mid = (lo + hi) / 2;
-    if (scanStepPair(withDepth(left, mid), withDepth(right, mid)).clean) hi = mid;
+    if (passes(mid)) hi = mid;
     else lo = mid;
   }
-  return { cleared: true, k: hi, hands };
+  return hi;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isCurrentMotionCaptureJob,
   planWebMotionPreparation,
+  shouldPrepareWebMotion,
 } from "../../../src/lib/shared/3d/components/web-motion-preparation-plan";
 
 const request = (signature: string) => ({ signature, sequence: {} });
@@ -88,5 +89,25 @@ describe("Web motion preparation", () => {
     expect(
       planWebMotionPreparation([...eight, request("8")], () => false)
     ).toMatchObject({ overflow: true, next: undefined });
+  });
+
+  it("bakes motion only for strict contact on a live, unwelded, non-exporting rig", () => {
+    const live = {
+      contactMode: "prop-authoritative" as const,
+      rendererHandleRequired: false,
+      weldGrip: false,
+      exporting: false,
+    };
+    expect(shouldPrepareWebMotion(live)).toBe(true);
+    // Legacy contact snaps the prop to the palm and needs no baked clip, so
+    // the hidden capture scene never mounts.
+    expect(shouldPrepareWebMotion({ ...live, contactMode: "legacy" })).toBe(
+      false
+    );
+    expect(
+      shouldPrepareWebMotion({ ...live, rendererHandleRequired: true })
+    ).toBe(false);
+    expect(shouldPrepareWebMotion({ ...live, weldGrip: true })).toBe(false);
+    expect(shouldPrepareWebMotion({ ...live, exporting: true })).toBe(false);
   });
 });

@@ -45,6 +45,10 @@ const environmentSource = readFileSync(
   resolve("src/lib/shared/3d/environments/components/Environment3D.svelte"),
   "utf8"
 );
+const environmentRuntimesSource = readFileSync(
+  resolve("src/lib/shared/3d/environments/registry/environment-runtimes.ts"),
+  "utf8"
+);
 const appDocumentSource = readFileSync(resolve("src/app.html"), "utf8");
 
 describe("Viewer 3D scene workbench bootstrap", () => {
@@ -163,7 +167,11 @@ describe("Viewer 3D scene workbench bootstrap", () => {
     expect(environmentSource).toContain(
       'import("../scenes/BlossomScene.svelte")'
     );
-    expect(environmentSource).toContain(
+    // Ocean is a registered scene, so its runtime import lives with the registry.
+    expect(environmentRuntimesSource).not.toMatch(
+      /import\s+\w+Scene\s+from\s+["']\.\.\/scenes\//
+    );
+    expect(environmentRuntimesSource).toContain(
       'import("../scenes/ocean/OceanScene.svelte")'
     );
   });

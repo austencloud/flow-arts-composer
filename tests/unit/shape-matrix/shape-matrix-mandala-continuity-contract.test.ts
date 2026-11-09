@@ -136,7 +136,7 @@ describe("shape matrix mandala continuity", () => {
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
     expect(shell).not.toContain("--ease-spring");
     expect(shell).toMatch(
-      /view-transition-group\(shape-matrix-active-mandala\)[\s\S]*?--ease-in-out/
+      /view-transition-group\(shape-matrix-active-mandala\)[\s\S]*?--ease-surface-travel/
     );
   });
 
@@ -175,7 +175,7 @@ describe("shape matrix mandala continuity", () => {
     );
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
     expect(shell).toMatch(
-      /view-transition-group\(shape-matrix-active-stage\)[\s\S]*?--ease-in-out/
+      /view-transition-group\(shape-matrix-active-stage\)[\s\S]*?--ease-surface-travel/
     );
     expect(shell).toMatch(
       /view-transition-new\(shape-matrix-active-stage\)\s*\)\s*\{[^}]*object-fit: cover/
@@ -184,6 +184,35 @@ describe("shape matrix mandala continuity", () => {
     // The tile's hairline rings sit out the flight; the wash may travel.
     expect(grid).toMatch(
       /html\.shape-matrix-morph\) \.cell\.sel::after \{\s*opacity: 0;/
+    );
+  });
+
+  it("flies a solo flower between its own header and the stage", () => {
+    const shell = read("app/components/ShapeMatrixAppShell.svelte");
+    expect(shell).toMatch(
+      /function selectSolo[\s\S]*?runMandalaMorph\(appState, \(\) => appState\.showDetail\(\), \{\s*before: \(\) => appState\.selectSolo\(hand, flower, \{ navigate: false \}\)/
+    );
+
+    // The claim is derived from the selection, not from the header pressed, so
+    // a flower picked on the stage lands on its own header in either hand.
+    const grid = read("components/ShapeMatrixGrid.svelte");
+    expect(grid).toContain(
+      "claimSelected && soloHand === hand && soloKey === keyOf(item)"
+    );
+    for (const [hand, item] of [
+      ["right", "rf"],
+      ["left", "bf"],
+    ]) {
+      expect(grid).toContain(`enabled: headerClaims("${hand}", ${item})`);
+      expect(grid).toContain(`claim={headerClaims("${hand}", ${item})}`);
+    }
+    // A header and a tile never claim together, which would abort the flight.
+    expect(grid).toMatch(/selectedKey = \$derived\(\s*soloHand\s*\? null/);
+
+    // A turned stage's still turns as an element, so the flight unwinds it.
+    const drill = read("components/ShapeMatrixDrill.svelte");
+    expect(drill).toMatch(
+      /\.hero-frame :global\(\.mandala-art\) \{\s*rotate: var\(--solo-turn/
     );
   });
 
@@ -316,30 +345,70 @@ describe("shape matrix mandala continuity", () => {
     expect(drill).toContain(
       "mandalaTransition.claim && mandalaTransition.handoff"
     );
-    expect(drill.match(/enabled: morphingFrames,/g)).toHaveLength(3);
+    // The three frames, and the stage's contents, which leave the surface so it
+    // flies clean and they arrive around the landed flower.
+    expect(drill.match(/enabled: morphingFrames,/g)).toHaveLength(8);
 
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
     expect(shell).toContain("@keyframes -global-shape-matrix-settle-in");
     expect(shell).toContain("@keyframes -global-shape-matrix-settle-out");
-    // Every leg of the wave is delayed, and each frame travels from the side
-    // it sits on, so the page assembles outward from the landing stage.
-    expect(
-      shell.match(/animation-delay: calc\(var\(--duration-dramatic\)/g)
-    ).toHaveLength(3);
-    expect(shell).toContain("--settle-from: -0.9rem;");
+    // Every leg of the wave has its own beat on one clock, and each frame
+    // travels from the side it sits on, so the page assembles around the stage.
+    const beats = [
+      ...shell.matchAll(
+        /animation-delay: calc\(var\(--flight\) \* ([\d.]+)\)/g
+      ),
+    ].map((beat) => Number(beat[1]));
+    expect(beats).toEqual([...new Set(beats)].sort((a, b) => a - b));
+    expect(beats.length).toBeGreaterThanOrEqual(6);
+    expect(shell).toContain("--settle-y: -0.625rem;");
+    expect(shell).toContain("--settle-x: -0.75rem;");
     for (const name of [
       "shape-matrix-modes",
+      "shape-matrix-solo-card",
       "shape-matrix-strip",
       "shape-matrix-controls",
+      "shape-matrix-figure",
+      "shape-matrix-stage-head",
+      "shape-matrix-stage-transport",
+      "shape-matrix-stage-rotate",
+      "shape-matrix-pane",
+      "shape-matrix-bar-lead",
+      "shape-matrix-bar-swap",
+      "shape-matrix-actions",
     ]) {
       expect(shell).toContain(`::view-transition-new(${name})`);
       expect(shell).toContain(`::view-transition-old(${name})`);
     }
-    // The page under the flight dissolves rather than summing both sides at
-    // full strength for the whole flight and vanishing at teardown.
-    expect(shell).toContain("shape-matrix-page-out var(--duration-emphasis)");
-    expect(shell).toContain("shape-matrix-page-in var(--duration-emphasis)");
+    // What is left of the page crosses on complementary linear ramps, so the
+    // backdrop holds still. Mismatched curves read as a double exposure.
+    expect(shell).toMatch(
+      /view-transition-old\(root\)\) \{\s*animation: shape-matrix-page-out calc\(var\(--flight\) \* 0\.5\) linear both/
+    );
+    expect(shell).toMatch(
+      /view-transition-new\(root\)\) \{\s*animation: shape-matrix-page-in calc\(var\(--flight\) \* 0\.5\) linear both/
+    );
     expect(shell).toContain("mix-blend-mode: plus-lighter;");
+  });
+
+  it("keeps the flying flower sharp and on the page", () => {
+    const shell = read("app/components/ShapeMatrixAppShell.svelte");
+    // A tile's picture stretched to the stage's size is a blur, so it may only
+    // show in the first moments of the opening, never across the whole flight.
+    expect(shell).toMatch(
+      /view-transition-old\(\s*shape-matrix-active-mandala\s*\)\s*\) \{\s*animation: shape-matrix-page-out calc\(var\(--flight\) \* 0\.14\)/
+    );
+    // Going back, the stage's picture holds until the flower is nearly home.
+    expect(shell).toMatch(
+      /shape-matrix-morph-back::view-transition-new\(\s*shape-matrix-active-mandala\s*\)\s*\) \{\s*animation: shape-matrix-page-in calc\(var\(--flight\) \* 0\.16\) linear\s*calc\(var\(--flight\) \* 0\.36\)/
+    );
+    // The flight ends on the strength the floor really rests at, not at full
+    // brightness with a fade still to come.
+    expect(shell).toContain("opacity: var(--shape-matrix-floor-rest);");
+    // Fully transparent, the browser skips painting the floor and its snapshot
+    // comes out blank: the flower vanishes from the flight, silently.
+    const floor = read("components/MandalaHeroLayer.svelte");
+    expect(floor).toContain("handoff ? Math.max(opacity, 0.01) : opacity");
   });
 
   it("fades the live player up instead of flipping it visible", () => {
@@ -428,9 +497,7 @@ describe("shape matrix mandala continuity", () => {
     // Open, Save and Share are chrome too. Their grid area is missing from the
     // focus layout, so in flow they opened implicit tracks that pushed the
     // canvas off the left edge on every compact host.
-    expect(drill).toMatch(
-      /class="select-action"[^>]*data-focus-mode-chrome/
-    );
+    expect(drill).toMatch(/class="select-action"[^>]*data-focus-mode-chrome/);
     // And the shell is the single owner of what marked chrome does, so a row
     // cannot opt out and stand while the rest step aside.
     expect(shell).toMatch(
@@ -453,5 +520,28 @@ describe("shape matrix mandala continuity", () => {
     expect(controls).not.toMatch(
       /\.turn-editor\.tray[^{]*\{[^}]*(?<![-\w])width: 100%/
     );
+  });
+
+  it("eases the solo card's words instead of jumping when a flower is picked", () => {
+    const card = read("components/ShapeMatrixSoloCard.svelte");
+    // A name of a different length, or a line of explanation coming or going,
+    // changes the height the tiles share.
+    // Sized from a copy of the current words, the followed first child:
+    // Crossfade's own height tracking can lock onto a layer on its way out when
+    // a pick interrupts a swap.
+    expect(card).toMatch(
+      /class="words" use:followHeight=\{true\}>\s*<div class="name-words sizer" aria-hidden="true">/
+    );
+    expect(card).not.toContain("animateHeight");
+    // Every piece of changing text crosses over; none is written straight in.
+    const words = card.slice(
+      card.indexOf('<div class="name">'),
+      card.indexOf("<style>")
+    );
+    expect(words).toMatch(/<Crossfade key=\{wordsKey\} fill mode="swap"/);
+    expect(words).not.toMatch(/<dd>\{description/);
+    expect(words).not.toMatch(/class="eyebrow">\{description/);
+    // A flight snapshots the card the frame it changes.
+    expect(card).toMatch(/wordMotion = \$derived\(morphing \? 0 :/);
   });
 });

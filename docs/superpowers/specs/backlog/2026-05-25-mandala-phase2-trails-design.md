@@ -2,15 +2,17 @@
 status: backlog
 value: 2
 effort: M
-remaining: "Implement ghost capture, bounded trails, controls and matching export compositing on the current MandalaPane/MandalaControlDock owners. No ghostBuffer, trailEnabled, trailLength, GhostFrame or suppressGlow implementation exists in shared mandala/sequence-viewer; 7d1dfff785 changed the motion owner, so the old MandalaViewerControls and local RAF instructions are historical."
+remaining: "Export compositing: the MP4 exporter (mandala-video-exporter + worker) does not draw the trail yet, so an exported video lacks the ghosts the live pane shows. Also owed: Austen's look at the live trail on desktop and phone."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
-work_state: ready
+last_triaged: 2026-11-07
+work_state: in-progress
 ---
 
 # Mandala Trails / Afterimage — Phase 2 Design Spec
+
+> 2026-11-07 triage: Live trail built. `MandalaGhostRing` (src/lib/shared/mandala/domain/mandala-ghost-ring.ts) keeps a fixed ring of slots; `MandalaGhostTrail` copies frames from SequenceMandala's new `onFrame` hook into one canvas per slot (no per-frame allocation, ghosts capped at 720 px backing) and fades them by age; `MandalaViewerController.trailEnabled`/`trailLength` (persisted with the look) drive it; a Trails tab sits in MandalaControlDock and the Art sidebar. Ghost copies are canvas pixels, not SVG strings, because the live pane paints a canvas. Remaining: export compositing in the MP4 exporter, and Austen's look.
 
 > 2026-10-14 triage: Implement ghost capture, bounded trails, controls and matching export compositing on the current MandalaPane/MandalaControlDock owners. No ghostBuffer, trailEnabled, trailLength, GhostFrame or suppressGlow implementation exists in shared mandala/sequence-viewer; 7d1dfff785 changed the motion owner, so the old MandalaViewerControls and local RAF instructions are historical. Earlier status banners and execution instructions are historical where they conflict with this review.
 

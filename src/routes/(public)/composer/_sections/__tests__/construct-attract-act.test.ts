@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { calculateGridLayout } from "#lib/shared/create/utils/grid-calculations.js";
 import {
   HERO_TIP_EFFECT_MAP,
   HERO_TRAIL_PRESET,
@@ -203,6 +204,38 @@ describe("createConstructAttractAct", () => {
     expect(core.paused).toBe(true);
     core.kill();
   });
+
+  // The other demos keep the default corner; only Construct has controls there.
+  it.each([
+    ["bottom-right", undefined, 568],
+    ["top-right", "top-right", 32],
+  ] as const)("parks in the %s corner", async (_name, parkCorner, expectedY) => {
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
+      setTimeout(() => cb(performance.now()), 4)
+    );
+    const { createAttractGhost } = await vi.importActual<{
+      createAttractGhost: typeof createActualAttractGhost;
+    }>("#lib/shared/attract/services/attract-ghost.svelte.js");
+    const root = document.createElement("div");
+    root.getBoundingClientRect = () => new DOMRect(0, 0, 1000, 600);
+    const { core, run } = createAttractGhost({
+      getRoot: () => root,
+      ...(parkCorner ? { parkCorner } : {}),
+    });
+
+    // The motor idles its glides until it knows it is on screen.
+    core.setVisible(true);
+    core.pause();
+    run(async () => {}).start();
+    await vi.waitFor(() => expect(core.ghost.parked).toBe(true), {
+      timeout: 4000,
+    });
+
+    expect(core.ghost.x).toBe(968);
+    expect(core.ghost.y).toBe(expectedY);
+    core.kill();
+    vi.unstubAllGlobals();
+  });
 });
 
 describe("Construct animation rendering", () => {
@@ -225,6 +258,93 @@ describe("Construct animation rendering", () => {
     expect(constructSource).not.toContain("align-items: start;");
     expect(constructSource).toContain("margin-block: auto;");
     expect(constructSource).not.toContain("margin-top: auto;");
+  });
+
+  // Lose any one of these and the card quietly fades instead of flying.
+  it("lands the start placement flight on the demo's own start cell", () => {
+    const read = (path: string) =>
+      readFileSync(resolve(process.cwd(), path), "utf8");
+    const constructSource = read(
+      "src/routes/(public)/composer/_sections/ConstructSection.svelte"
+    );
+
+    expect(constructSource).toContain("data-start-morph-landing");
+    expect(constructSource).toContain("morphIntoWorkspace");
+    for (const seam of [
+      "src/lib/features/create/construct/start-placement-picker/services/start-placement-morph.ts",
+      "src/lib/shared/transitions/view-transitions.css",
+    ]) {
+      // The stylesheet wraps the selector over lines.
+      expect(read(seam).replace(/\s+/g, " ")).toContain(
+        ":is(.workspace-container, [data-start-morph-landing]) [data-history-start-placement]"
+      );
+    }
+  });
+
+  // A legible floor or a pinned column count overflows the short band into an
+  // inner scrollbar, and nothing else notices: the page itself still fits.
+  it("fits every step in the stacked demo's short band without scrolling", () => {
+    const constructSource = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/routes/(public)/composer/_sections/ConstructSection.svelte"
+      ),
+      "utf8"
+    );
+    expect(constructSource).toContain(
+      'sizingProfile={isCompactDemo ? "preview" : "workbench"}'
+    );
+    expect(constructSource).toContain(
+      "manualColumnCount={isCompactDemo ? null : STEP_COLUMNS}"
+    );
+
+    // Measured stacked bands: phone, unfolded Fold, short landscape.
+    for (const [width, band] of [
+      [311, 109],
+      [643, 127],
+      [851, 109],
+    ] as const) {
+      for (let steps = 1; steps <= 7; steps++) {
+        const layout = calculateGridLayout(steps, width - 8, band - 8, null, {
+          minCellSize: 28,
+          maxCellSize: 360,
+          fitAllSteps: true,
+          widthPaddingRatio: 1,
+          heightPaddingRatio: 1,
+        });
+        expect(layout.rows * layout.cellSize).toBeLessThanOrEqual(band - 8);
+        expect(layout.totalColumns * layout.cellSize).toBeLessThanOrEqual(
+          width - 8
+        );
+      }
+    }
+  });
+
+  // The page still fits when this goes, so only the clipped tiles would show it.
+  it("lets the start picker shrink into a short window's pane", () => {
+    const constructSource = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/routes/(public)/composer/_sections/ConstructSection.svelte"
+      ),
+      "utf8"
+    );
+    expect(constructSource).toMatch(
+      /\.picker-pane :global\(\.start-placement-picker\) \{\s*min-height: 0;/
+    );
+  });
+
+  // Leave the cell's padding out and a height-bound tile is ~10px wider than tall.
+  it("keeps a height-bound start tile square", () => {
+    const gridSource = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/lib/features/create/construct/start-placement-picker/components/PictographGrid.svelte"
+      ),
+      "utf8"
+    );
+    expect(gridSource).toContain("width: min(100%, calc(100cqh - 2 * var(--tile-inset)));");
+    expect(gridSource).toContain("padding: var(--tile-inset);");
   });
 
   it("pins the shared vivid trail preset and assigns trails to the prop tips", () => {

@@ -48,6 +48,7 @@
   import { createStepGridDisplayState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
   import { createScrollState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte.js";
   import ComposerWordRow from "../_components/ComposerWordRow.svelte";
+  import ConstructPlayStrip from "./ConstructPlayStrip.svelte";
   import ViewSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
   import HorizontalTransportRow from "#lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
   import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
@@ -55,6 +56,10 @@
   import UndoGlyph from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import {
+    controlArrive,
+    controlLeave,
+  } from "#lib/shared/transitions/control-presence.js";
   import {
     growFade,
     motionDuration,
@@ -76,6 +81,9 @@
   } from "./construct-attract-act.svelte";
   import { isVisitorOwnedConstructSequence } from "../_components/composer-sequence-ownership";
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
+  import { pictographDrawState } from "#lib/shared/pictograph/shared/utils/pictograph-draw-state.js";
+  import { morphConstructPhase } from "./construct-play-morph";
+  import { setTypeNavigationHostContext } from "#lib/features/create/construct/option-picker/context/type-navigation-host-context.js";
 
   type ConstructPresentationMode = "full" | "guided-build" | "continuous";
 
@@ -304,6 +312,55 @@
         ? "play"
         : "add-step"
   );
+  // Stacked, the picker spans the card under the action row, and a row of
+  // letter-type tabs across its top costs the grid a whole row of height.
+  // There the tabs stand in the picker's left rail instead, the pattern the
+  // app uses on the unfolded Fold, and the action row keeps the app's own
+  // clear, Play, undo/redo. Side by side the picker is narrow and tall, so the
+  // tabs stay across its top. Under 600px the rail would squeeze the grid.
+  const TYPE_RAIL_MIN_WIDTH = 600;
+  let demoWidth = $state(0);
+  const typeRailInDemo = $derived(
+    isGuidedBuild &&
+      demoWidth >= TYPE_RAIL_MIN_WIDTH &&
+      demoWidth < 1100
+  );
+  setTypeNavigationHostContext({ preferRail: () => typeRailInDemo });
+
+  // The option picker is a lazy chunk, and its first load parses the whole
+  // motion dataset. Fetched only when the first pick came in, both stalled the
+  // pane for a second or two between the start tiles leaving and the options
+  // arriving. The visitor spends that time choosing a start, so fetch them then.
+  let pickerWarmed = false;
+  $effect(() => {
+    if (phase !== "pick-start" || pickerWarmed) return;
+    const warm = () => {
+      pickerWarmed = true;
+      void import(
+        "#lib/features/create/construct/option-picker/components/OptionPicker.svelte"
+      ).catch(() => {});
+      void import(
+        "#lib/shared/pictograph/shared/services/motion-query-handler.js"
+      )
+        .then(({ motionQueryHandler }) => motionQueryHandler.prewarm())
+        .catch(() => {});
+    };
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(warm, { timeout: 1500 });
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(warm, 300);
+    return () => clearTimeout(id);
+  });
+
+  // Play turns the guided card into one player with a step strip: the grid and
+  // the picker give way to them, and the play actions stay in the action slot.
+  const fullPlayer = $derived(isGuidedBuild && phase === "play");
+  const actionsInSlot = $derived(!isCompactDemo || isGuidedBuild);
+  let hasLeftPlayer = $state(false);
+  $effect(() => {
+    if (fullPlayer) hasLeftPlayer = true;
+  });
   const compactPaneOptions = $derived(
     phase === "play"
       ? [
@@ -434,15 +491,32 @@
       finishCommit("cancelled", { reason: "step-limit" });
       return;
     }
+    // A second tap in the frame before the eighth step's morph lands would
+    // append a ninth.
+    if (phasePending) {
+      finishCommit("cancelled", { reason: "phase-morph" });
+      return;
+    }
     const carry = holdsFocus(pickerPaneEl);
-    recordHistory();
-    steps = [...steps, option];
-    void tick().then(() =>
-      finishCommit("ok", { mode: "append", stepCount: steps.length })
-    );
-    // The eighth step plays at once and the player replaces the options, so
-    // focus goes to the play actions, as it does from Play.
-    if (carry && phase === "play") void focusPlayControls();
+    const append = () => {
+      recordHistory();
+      steps = [...steps, option];
+    };
+    // The eighth step plays at once, so it crosses into the player the way
+    // Play does.
+    const entersPlay =
+      !isContinuous && !playing && steps.length + 1 >= MAX_STEPS;
+    const appended = entersPlay
+      ? morphPhase(append)
+      : (append(), Promise.resolve());
+    void appended.then(() => {
+      void tick().then(() =>
+        finishCommit("ok", { mode: "append", stepCount: steps.length })
+      );
+      // The player replaces the options, so focus goes to the play actions,
+      // as it does from Play.
+      if (carry && phase === "play") void focusPlayControls();
+    });
   }
 
   // ── build history ────────────────────────────────────────────────────────
@@ -502,20 +576,38 @@
     startPlacementState.setSelectedPlacement(target.startPlacement);
   }
 
+  // Undo from a full eight steps, or redo back to them, crosses between the
+  // player and the build like Play and Keep building do.
+  function crossesPlay(target: BuildSnapshot): boolean {
+    const targetPlays =
+      !isContinuous &&
+      !!target.startPlacement &&
+      target.steps.length >= MAX_STEPS;
+    return targetPlays !== (phase === "play");
+  }
+
   function undo() {
     const previous = past[past.length - 1];
-    if (!previous) return;
-    future = [snapshot(), ...future];
-    past = past.slice(0, -1);
-    applySnapshot(previous);
+    if (!previous || phasePending) return;
+    const apply = () => {
+      future = [snapshot(), ...future];
+      past = past.slice(0, -1);
+      applySnapshot(previous);
+    };
+    if (crossesPlay(previous)) void morphPhase(apply);
+    else apply();
   }
 
   function redo() {
     const next = future[0];
-    if (!next) return;
-    past = [...past, snapshot()];
-    future = future.slice(1);
-    applySnapshot(next);
+    if (!next || phasePending) return;
+    const apply = () => {
+      past = [...past, snapshot()];
+      future = future.slice(1);
+      applySnapshot(next);
+    };
+    if (crossesPlay(next)) void morphPhase(apply);
+    else apply();
   }
 
   // ---- Play phase: the built sequence, packaged for the real AnimationPlayer.
@@ -581,7 +673,86 @@
     playerIsPlaying = false;
   }
 
-  function reset() {
+  // The pane crossfades between the start picker and the options, as the real
+  // Create page does. Leaving the full-card player is the exception: the pane
+  // already rises back in with its own animation there, and a crossfade inside
+  // it would show a shrunken ghost of the player fading out.
+  let paneCut = $state(false);
+  const paneKey = $derived(phase === "pick-start" ? "start" : "build");
+
+  // Clear and the side Play join the build once the action row's middle has
+  // swapped over, so the whole row arrives together.
+  const arriveLead = () => DURATION.normal;
+
+  // ── Build ↔ play ────────────────────────────────────────────────────────
+  // Every way across the line between building and the full-card player goes
+  // through morphPhase, so the parts travel instead of swapping in place
+  // (construct-play-morph.ts). While it runs, the crossfades inside the moving
+  // parts cut: the morph already carries them, and a fade inside one would
+  // ghost. Where it cannot run (reduced motion), `cssSwap` lets the CSS
+  // arrivals below play instead. It stays off after a morph, so those
+  // arrivals never replay over parts that have already landed.
+  let morphing = $state(false);
+  let cssSwap = $state(true);
+  // Between the tap and the swap, a frame later. Input that lands there would
+  // act on the board the swap is about to replace, so it waits it out.
+  let phasePending = false;
+  let wsFrameEl = $state<HTMLElement | null>(null);
+  let actionSlotEl = $state<HTMLElement | null>(null);
+
+  function paneMorphName(): string {
+    if (phase === "play") return "construct-stage";
+    return phase === "pick-start" ? "construct-starts" : "construct-options";
+  }
+
+  // The new phase is ready to capture once the step tiles in the frame have
+  // drawn, since those are what fly. The pane arrives live (see
+  // construct-play-morph.ts), so its pictures keep drawing during the flight.
+  function phaseSettled(): boolean {
+    return !wsFrameEl || pictographDrawState(wsFrameEl) !== "drawing";
+  }
+
+  /** Resolves once `mutate` has run, morphed or not. */
+  function morphPhase(mutate: () => void): Promise<void> {
+    if (!isGuidedBuild) {
+      mutate();
+      return Promise.resolve();
+    }
+    morphing = true;
+    cssSwap = false;
+    phasePending = true;
+    const transition = morphConstructPhase(
+      {
+        frame: () => wsFrameEl,
+        pane: () => pickerPaneEl,
+        actions: () => actionSlotEl,
+        paneName: paneMorphName,
+        settled: phaseSettled,
+      },
+      mutate
+    );
+    if (!transition) {
+      // Ran plainly, in this same update: the CSS arrivals take over.
+      morphing = false;
+      cssSwap = true;
+      phasePending = false;
+      return Promise.resolve();
+    }
+    void transition.finished
+      .catch(() => {})
+      .finally(() => (morphing = false));
+    return transition.updateCallbackDone
+      .catch(() => {})
+      .finally(() => (phasePending = false));
+  }
+
+  function clearBoard() {
+    if (fullPlayer) {
+      // Held past the swap: Svelte reads the transition's length when the
+      // transition starts, which can be a task after this update lands.
+      paneCut = true;
+      setTimeout(() => (paneCut = false), DURATION.normal);
+    }
     recordHistory();
     steps = [];
     startPlacement = null;
@@ -593,12 +764,20 @@
     compactPane = "build";
   }
 
+  // Clearing from the player is Build another: it crosses back like Keep
+  // building, onto the start picker.
+  function reset(): Promise<void> {
+    if (fullPlayer) return morphPhase(clearBoard);
+    clearBoard();
+    return Promise.resolve();
+  }
+
   // Focus follows the build when a phase change removes the control that held
   // it. The action slot's crossfade covers controls inside the slot; the
-  // handlers below cover the rest. Below 1200 px the play-phase actions sit
-  // under the player, outside the slot, so Play hands focus to Keep building
-  // and leaving play hands it back to the slot, as the crossfade itself does
-  // on wide screens. Either end can be off screen, so it scrolls just into
+  // handlers below cover the rest. Below 1200 px the full demo's play actions
+  // sit under the player, outside the slot, so Play hands focus to Keep
+  // building and leaving play hands it back to the slot, as the crossfade does
+  // where they share it. Either end can be off screen, so it scrolls just into
   // view.
   let actionSwapEl = $state<HTMLElement | null>(null);
   let actionFade = $state<ReturnType<typeof Crossfade> | null>(null);
@@ -618,10 +797,14 @@
   }
 
   function play() {
-    const carry = holdsFocus(actionSwapEl);
-    playing = true;
-    compactPane = "build";
-    if (carry) void focusPlayActions();
+    if (phasePending) return;
+    const carry = holdsFocus(actionSwapEl) || holdsFocus(clearSideEl);
+    void morphPhase(() => {
+      playing = true;
+      compactPane = "build";
+    }).then(() => {
+      if (carry) void focusPlayControls();
+    });
   }
 
   async function focusPlayActions() {
@@ -632,7 +815,11 @@
   }
 
   function focusPlayControls() {
-    return isCompactDemo ? focusPlayActions() : focusActionSlot();
+    return actionsInSlot ? focusActionSlot() : focusPlayActions();
+  }
+
+  function holdsPlayControls(): boolean {
+    return holdsFocus(actionsInSlot ? actionSwapEl : playActionsEl);
   }
 
   // Picking a start swaps the start picker for the step options. They load
@@ -645,26 +832,34 @@
   }
 
   function keepBuilding() {
-    const carry = holdsFocus(playActionsEl);
-    playing = false;
-    playingStepNumber = null;
-    compactPane = "build";
-    dropPlayerRefs();
-    if (carry) void focusActionSlot();
+    if (phasePending) return;
+    const carry = holdsPlayControls();
+    void morphPhase(() => {
+      playing = false;
+      playingStepNumber = null;
+      compactPane = "build";
+      dropPlayerRefs();
+    }).then(() => {
+      if (carry) void focusActionSlot();
+    });
   }
 
   function buildAnother() {
-    const carry = holdsFocus(playActionsEl);
-    reset();
-    if (carry) void focusActionSlot();
+    if (phasePending) return;
+    const carry = holdsPlayControls();
+    void reset().then(() => {
+      if (carry) void focusActionSlot();
+    });
   }
 
   // Clear sequence goes away with the build it clears, so focus goes to the
   // slot beside it, as it does from Build another.
   function clearSequence() {
+    if (phasePending) return;
     const carry = holdsFocus(clearSideEl);
-    reset();
-    if (carry) void focusActionSlot();
+    void reset().then(() => {
+      if (carry) void focusActionSlot();
+    });
   }
 
   async function focusActionSlot() {
@@ -700,7 +895,7 @@
           {sequence}
           autoPlay={active && !isContinuous}
           showControls={false}
-          hideWordHeader={!isCompactDemo}
+          hideWordHeader={!isCompactDemo || isGuidedBuild}
           tapToToggle
           progressLine
           progressLineSeekable
@@ -725,9 +920,14 @@
   class:compact-demo={isCompactDemo}
   class:play-phase={phase === "play"}
   class:guided-build={isGuidedBuild}
+  class:full-player={fullPlayer}
+  class:back-from-player={hasLeftPlayer && !fullPlayer}
+  class:css-swap={cssSwap}
+  class:at-step-cap={steps.length >= MAX_STEPS}
   class:continuous-workspace={isContinuous}
   class:embedded
   bind:this={bandEl}
+  bind:clientWidth={demoWidth}
   onpointerdowncapture={takeover}
   onfocusincapture={takeover}
 >
@@ -807,25 +1007,39 @@
             {/snippet}
           </ComposerWordRow>
 
-          <div class="ws-frame" bind:clientWidth={wsW} bind:clientHeight={wsH}>
+          <div
+            class="ws-frame"
+            data-start-morph-landing
+            bind:this={wsFrameEl}
+            bind:clientWidth={wsW}
+            bind:clientHeight={wsH}
+          >
             {#if startStepData}
-              {#if isGuidedBuild}
+              {#if fullPlayer}
+                <ConstructPlayStrip
+                  start={startStepData}
+                  steps={stepData}
+                  selectedStepNumber={playingStepNumber}
+                  follow={!morphing}
+                  onStepClick={handleWorkspaceStepClick}
+                  onStartClick={handleWorkspaceStartClick}
+                  leftPropType={effectiveLeftPropType}
+                  rightPropType={effectiveRightPropType}
+                  leftColor={primaryPropColors?.left}
+                  rightColor={primaryPropColors?.right}
+                />
+              {:else if isGuidedBuild}
+                <!-- Stacked, this grid gets a short band it can't scroll, and
+                     nothing in it can be selected. So it sizes like a passive
+                     preview: no floor to overflow at, no room held for a
+                     selection pop, and the column count that gives every step
+                     the biggest cell that fits. -->
                 <StepGrid
                   steps={stepData}
                   startPlacement={startStepData}
-                  selectedStepNumber={isContinuous
-                    ? (editingStepNumber ?? playingStepNumber)
-                    : phase === "play"
-                      ? playingStepNumber
-                      : null}
-                  onStepClick={phase === "play" || isContinuous
-                    ? (stepNumber) => handleWorkspaceStepClick(stepNumber)
-                    : undefined}
-                  onStartClick={phase === "play" || isContinuous
-                    ? handleWorkspaceStartClick
-                    : undefined}
                   activeMode="construct"
-                  manualColumnCount={STEP_COLUMNS}
+                  sizingProfile={isCompactDemo ? "preview" : "workbench"}
+                  manualColumnCount={isCompactDemo ? null : STEP_COLUMNS}
                   allowFewStepOverflowOnNarrow={false}
                   fitAllSteps={isCompactDemo}
                   arrivalSequence={composedSequence}
@@ -874,19 +1088,36 @@
            the SAME slot crossfades to Build another (answers "where does Build
            another go on wide screens" — the canonical action slot, not under
            the canvas). -->
-          <div class="action-slot">
+          <div class="action-slot" bind:this={actionSlotEl}>
             <!-- Left zone: the real app's clear button — back out of a build to
              pick a different start position. Play phase has Build another. -->
             <div class="slot-side" bind:this={clearSideEl}>
+              <!-- Its own block, so clear's arrival and exit play. Across the
+               play line the row travels as one piece, so it cuts there. -->
               {#if phase === "add-step"}
-                <ClearSequenceButton onclick={clearSequence} />
+                <span
+                  class="side-control"
+                  in:controlArrive={{
+                    edge: "left",
+                    ring: 1,
+                    lead: arriveLead,
+                    animate: () => !morphing,
+                  }}
+                  out:controlLeave={{
+                    edge: "left",
+                    ring: 1,
+                    animate: () => !morphing,
+                  }}
+                >
+                  <ClearSequenceButton onclick={clearSequence} />
+                </span>
               {/if}
             </div>
             <div class="action-swap" bind:this={actionSwapEl}>
               <Crossfade
                 bind:this={actionFade}
                 key={phase}
-                duration={DURATION.normal}
+                duration={morphing ? 0 : DURATION.normal}
                 mode="swap"
                 label={phase === "pick-start"
                   ? t("create_ui_choose_your_start_placement")
@@ -912,14 +1143,12 @@
                     {:else}
                       <span
                         data-demo-play
-                        style:visibility={steps.length > 0
-                          ? "visible"
-                          : "hidden"}
+                        class:awaiting-step={steps.length === 0}
                       >
                         <ViewSequenceButton purpose="play" onclick={play} />
                       </span>
                     {/if}
-                  {:else if phase === "play" && !isCompactDemo}
+                  {:else if phase === "play" && actionsInSlot}
                     {@render playPhaseActions()}
                   {/if}
                 </div>
@@ -1009,11 +1238,21 @@
 
         <!-- PICKER / PLAYER: the real primitives; phase swap lives HERE only. -->
         <div class="picker-pane" bind:this={pickerPaneEl}>
+          <!-- Swap, not overlap, for ConstructTabContent's reason: the start
+           tiles and the options share no chrome. Play keeps the "build" key,
+           so the player keeps its own arrival. -->
+          <Crossfade
+            key={paneKey}
+            duration={paneCut || morphing ? 0 : DURATION.normal}
+            mode="swap"
+            fill
+          >
           {#if phase === "pick-start"}
             {#await import("#lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
               <mod.default
                 {startPlacementState}
                 embedded
+                morphIntoWorkspace
                 lockedPath="presets"
                 rememberPreferences={false}
                 leftPropTypeOverride={effectiveLeftPropType}
@@ -1040,6 +1279,7 @@
           {:else if playSequence}
             {@render player(playSequence)}
           {/if}
+          </Crossfade>
         </div>
 
         {#if isContinuous && isCompactDemo && phase !== "play"}
@@ -1080,7 +1320,7 @@
       </div>
     </div>
 
-    {#if isCompactDemo && phase === "play"}
+    {#if !actionsInSlot && phase === "play"}
       <div class="compact-play-actions" bind:this={playActionsEl}>
         {@render playPhaseActions()}
       </div>
@@ -1254,11 +1494,12 @@
      and the picker split it. The grid band asks for what its cells can use:
      one row at the 200px cell cap plus StepGrid's 40px of padding and edge
      room (15rem), or two rows of width-sized cells in a narrow frame. The
-     picker takes the rest and never less than half, so a short frame shrinks
-     the band first and StepGrid fits its cells to what is left
-     (fitAllSteps). Every height down to the band stays definite: the frame is
-     definite, so each flexed size is too. StepGrid's size container needs
-     that; see the .ws-frame notes below. */
+     picker takes the rest and never less than half of a short frame (21rem
+     once half is more than that, which a tall frame's picker never reaches),
+     so a short frame shrinks the band first and StepGrid fits its cells to what
+     is left (fitAllSteps). Every height down to the band stays definite: the
+     frame is definite, so each flexed size is too. StepGrid's size container
+     needs that; see the .ws-frame notes below. */
   .guided-build .compact-layout .sequence-column {
     flex: 0 1 auto;
     min-height: 0;
@@ -1266,7 +1507,7 @@
 
   .guided-build .compact-layout .build-column {
     flex: 1 1 0;
-    min-height: 50%;
+    min-height: min(50%, 21rem);
   }
 
   .guided-build .compact-layout .sequence-column .workspace {
@@ -1556,6 +1797,7 @@
      centered whether or not clear is showing). Height reserved — phase swaps
      never shift the grid above it. */
   .action-slot {
+    flex: none;
     min-height: 3.25rem;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -1576,8 +1818,13 @@
     min-inline-size: var(--min-touch-target);
   }
 
+  /* Holds Play's height with or without Play, so the first pick doesn't push the
+     picker down by the difference. */
   .action-swap-state {
-    min-block-size: var(--min-touch-target);
+    min-block-size: max(
+      var(--min-touch-target),
+      var(--workspace-play-action-height, 50px)
+    );
     display: grid;
     place-items: center;
   }
@@ -1602,6 +1849,37 @@
   .history-side {
     justify-content: flex-end;
     gap: 0.4rem;
+  }
+
+  .side-control {
+    display: grid;
+    place-items: center;
+  }
+
+  /* Play holds its place before the first step, so the row never reflows, and
+     steps forward into it when there is something to play. */
+  [data-demo-play] {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard-out, ease-out),
+      transform var(--duration-normal) var(--ease-spring, ease-out),
+      visibility 0s;
+  }
+
+  [data-demo-play].awaiting-step {
+    opacity: 0;
+    transform: scale(0.94);
+    visibility: hidden;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard-in, ease-in),
+      transform var(--duration-fast) var(--ease-standard-in, ease-in),
+      visibility 0s linear var(--duration-fast);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-demo-play],
+    [data-demo-play].awaiting-step {
+      transition: none;
+    }
   }
 
   /* Matched to the real UndoButton: a filled accent circle, not an outline.
@@ -1760,6 +2038,13 @@
     height: clamp(18.75rem, 38vh, 33.75rem);
   }
 
+  /* The picker's own 300px floor is for a page that can scroll. A short window
+     leaves this pane less than that, and the start tiles sized themselves from
+     the floor and ran out of the bottom of the pane. */
+  .picker-pane :global(.start-placement-picker) {
+    min-height: 0;
+  }
+
   /* The option grid caps its tile size; in a tall picker it top-aligns because
      the single-section fallback drops the grid into a flex item that isn't a
      flex container. Center it, scoped to this demo picker. */
@@ -1767,6 +2052,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+  }
+
+  /* The type rail sits flush against the carousel. When the grid fills the
+     pane's width, its first column touched the rail's edge and read as part of
+     the rail; this gives the two the gap the grid keeps between its own tiles
+     and a little more. */
+  .picker-pane :global(.swipe-layout.type-rail) {
+    gap: 0.75rem;
   }
 
   /* The shared grid now sizes each tile from the room it actually has (cell
@@ -1855,6 +2148,239 @@
 
     .compact-demo.play-phase .build-column .picker-pane {
       height: auto;
+    }
+  }
+
+  /* ===== Full-card player =====
+     Play turns the guided card into one player with a step strip. The word row
+     and the action row keep the card's top and bottom edges; between them the
+     canvas gets everything the strip leaves. The columns dissolve so their
+     parts can sit directly on this grid, and every rule above that sized them
+     for building loses to the longer selectors here.
+
+     The card's shape picks the strip's side. The canvas is square, so a wide
+     card gives it the most room with a column beside it and a tall card with a
+     row beneath it. The min-height only matters where no host gives the card a
+     height: size containment would otherwise collapse it. */
+  .construct-demo.full-player .demo-shell {
+    container: play-shell / size;
+    min-height: 20rem;
+  }
+
+  .construct-demo.full-player .demo-shell .demo-columns {
+    --play-tile: clamp(4.25rem, 16cqh, 8rem);
+    /* Tile plus the strip's padding and a thin scrollbar. */
+    --play-strip-size: calc(var(--play-tile) + 1.5rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) var(--play-strip-size) auto;
+    grid-template-areas:
+      "word"
+      "player"
+      "strip"
+      "actions";
+    row-gap: 0.5rem;
+    min-height: 0;
+  }
+
+  .construct-demo.full-player .sequence-column,
+  .construct-demo.full-player .workspace,
+  .construct-demo.full-player .build-column {
+    display: contents;
+  }
+
+  .construct-demo.full-player :global(.word-row) {
+    grid-area: word;
+    min-width: 0;
+  }
+
+  /* Size containment: the strip scrolls its tiles, so however many there are
+     they never add to the height of the row it sits in. */
+  .construct-demo.full-player .demo-shell .ws-frame {
+    grid-area: strip;
+    flex: none;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    contain: size;
+  }
+
+  .construct-demo.full-player .demo-shell .build-column .picker-pane {
+    grid-area: player;
+    flex: none;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Crossing the play line is a view transition (construct-play-morph.ts);
+     these arrivals stand in only when it ran plainly. */
+  .construct-demo.css-swap.full-player .demo-shell .ws-frame {
+    animation: strip-arrive-from-below var(--duration-normal)
+      var(--ease-out, ease-out) both;
+  }
+
+  .construct-demo.css-swap.full-player .demo-shell .build-column .picker-pane {
+    animation: player-arrive var(--duration-normal)
+      var(--ease-out, ease-out) both;
+  }
+
+  /* The player's own sizing reserves room for a word header and a full
+     transport. Here the word row is above it and the transport is a thin line,
+     so the canvas takes that room back, keeping just the line's grab band. */
+  .construct-demo.full-player :global(.animation-player),
+  .construct-demo.full-player :global(.canvas-wrap) {
+    padding: 0;
+  }
+
+  .construct-demo.full-player :global(.animation-container) {
+    --sequence-seek-target-size: 1rem;
+  }
+
+  .construct-demo.full-player :global(.animation-container .content-wrapper) {
+    width: min(100cqw, 100cqh - var(--sequence-seek-target-size));
+    max-width: none;
+  }
+
+  .construct-demo.full-player .action-slot {
+    grid-area: actions;
+  }
+
+  /* The fixed height stops the row settling when the taller Play button finishes
+     fading out, which would nudge the canvas above it. */
+  .construct-demo.full-player .action-swap {
+    inline-size: auto;
+    block-size: var(--min-touch-target);
+  }
+
+  /* The strip and the canvas stay together and centered however wide the card
+     is, while the word and action rows keep its full width. The canvas column
+     is as wide as the height it gets, less what the width can spare. */
+  @container play-shell (orientation: landscape) {
+    .construct-demo.full-player .demo-shell .demo-columns {
+      --play-tile: clamp(5.5rem, 22cqh, 11rem);
+      --play-strip-size: calc(var(--play-tile) + 2.5rem);
+      grid-template-columns:
+        minmax(0, 1fr)
+        var(--play-strip-size)
+        minmax(
+          0,
+          min(100cqh - 8.5rem, 100cqw - var(--play-strip-size))
+        )
+        minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "word word word word"
+        ". strip player ."
+        "actions actions actions actions";
+    }
+
+    .construct-demo.full-player .demo-shell .ws-frame {
+      padding-inline-end: 0.75rem;
+    }
+
+    .construct-demo.css-swap.full-player .demo-shell .ws-frame {
+      animation-name: strip-arrive-from-side;
+    }
+  }
+
+  /* A narrow action row has no room for history beside both actions. Keep
+     building leads back to the build, where history lives, so history only
+     stays when the eight-step cap has removed that way back. Then Build another
+     is alone and gives up the center so history fits beside it. */
+  @container play-shell (max-width: 36rem) {
+    .construct-demo.full-player .action-slot {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+
+    .construct-demo.full-player.at-step-cap .action-slot {
+      grid-template-columns: 0 auto minmax(0, 1fr);
+    }
+
+    .construct-demo.full-player:not(.at-step-cap) .history-side {
+      display: none;
+    }
+  }
+
+  /* The smallest phones fit both labels on one line only without their icons. */
+  @container play-shell (max-width: 20rem) {
+    .construct-demo.full-player .play-actions {
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .construct-demo.full-player .play-actions :global(i) {
+      display: none;
+    }
+  }
+
+  /* Leaving the player, the build rises back into place. The pane is the same
+     element in both phases and an animation only restarts when its name changes,
+     so arriving in each direction needs its own keyframes. */
+  .construct-demo.css-swap.back-from-player .ws-frame,
+  .construct-demo.css-swap.back-from-player .picker-pane {
+    animation: build-arrive var(--duration-normal)
+      var(--ease-out, ease-out) both;
+  }
+
+  /* The actions fade out in the narrower column Play is arriving into. Wrapping
+     there would make the row taller until they are gone, then let it hop back. */
+  .construct-demo.back-from-player .play-actions {
+    white-space: nowrap;
+  }
+
+  @keyframes player-arrive {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+
+  @keyframes build-arrive {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+
+  @keyframes strip-arrive-from-below {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+  }
+
+  @keyframes strip-arrive-from-side {
+    from {
+      opacity: 0;
+      transform: translateX(-0.75rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .construct-demo.css-swap.full-player .demo-shell .ws-frame,
+    .construct-demo.css-swap.full-player
+      .demo-shell
+      .build-column
+      .picker-pane {
+      animation-name: player-dissolve-in;
+    }
+
+    .construct-demo.css-swap.back-from-player .ws-frame,
+    .construct-demo.css-swap.back-from-player .picker-pane {
+      animation-name: build-dissolve-in;
+    }
+  }
+
+  @keyframes player-dissolve-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes build-dissolve-in {
+    from {
+      opacity: 0;
     }
   }
 </style>

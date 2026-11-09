@@ -13,6 +13,7 @@
 -->
 <script lang="ts">
   import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { savedMandalaPalette } from "#lib/shared/mandala/domain/mandala-palette.js";
   import type { MandalaPublicPayload } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
 
   const { payload }: { payload: MandalaPublicPayload } = $props();
@@ -60,6 +61,8 @@
   });
 
   const sequence = $derived({ steps: payload.steps });
+  // The maker's colors, the same as the poster that opened this page.
+  const palette = $derived(savedMandalaPalette(payload.colors));
 </script>
 
 <div class="mandala-preview">
@@ -71,6 +74,7 @@
       leftPropType={payload.leftPropType}
       rightPropType={payload.rightPropType}
       pathShape={payload.pathShape ?? "arc"}
+      {palette}
       animate={animating}
       animateMin={ANIMATE_MIN}
       animateMax={ANIMATE_MAX}

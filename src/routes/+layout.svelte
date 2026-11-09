@@ -129,7 +129,7 @@
       startSiteFlight(transition, navigation);
       if (import.meta.env.DEV) {
         startMorphProbe(
-          `${navigation.from?.url.pathname}→${navigation.to?.url.pathname}`
+          `${navigation.from?.url?.pathname}→${navigation.to?.url?.pathname}`
         ).attach(transition);
       }
     },
@@ -142,7 +142,7 @@
   afterNavigate((navigation) => {
     if (navigation.to) {
       tileFlight.navigationSettled(
-        navigation.from?.url.pathname,
+        navigation.from?.url?.pathname,
         navigation.to.url.pathname
       );
     }

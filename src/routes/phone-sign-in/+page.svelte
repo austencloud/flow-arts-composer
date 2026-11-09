@@ -16,7 +16,7 @@
   import PhoneNotice from "#lib/shared/auth/phone-sign-in/PhoneNotice.svelte";
   import PhoneSignInPanel from "#lib/shared/auth/phone-sign-in/PhoneSignInPanel.svelte";
   import { createPhoneSignInSession } from "#lib/shared/auth/phone-sign-in/phone-sign-in-session.svelte.js";
-  import { finishBootScreen } from "#lib/shared/auth/phone-sign-in/boot-screen.js";
+  import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
 
   const next = $derived(pathAfterPhoneSignIn(page.url.searchParams));
   const session = createPhoneSignInSession({

@@ -11,6 +11,8 @@ vi.mock("#lib/shared/transitions/view-transition-name-registry.js", () => ({
   countViewTransitionNameClaims: (name: string) => claims(name),
 }));
 
+import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
+import { generateCardFlight } from "../state/generate-card-flight.svelte";
 import {
   generateCardMorphName,
   lastGenerateCardMorphRan,
@@ -100,5 +102,105 @@ describe("morphGenerateCard", () => {
     expect(onSettled).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(onSettled).toHaveBeenCalledOnce());
     expect(lastGenerateCardMorphRan()).toBe(false);
+  });
+});
+
+describe("start-up work during a card morph", () => {
+  async function deferredWorkRan(): Promise<boolean> {
+    let ran = false;
+    void whenMotionSettled().then(() => (ran = true));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    return ran;
+  }
+
+  it("waits until the card lands, including when the morph is skipped", async () => {
+    claims.mockReturnValue(1);
+    for (const end of ["resolve", "reject"] as const) {
+      let finish!: { resolve: () => void; reject: () => void };
+      const finished = new Promise<void>((resolve, reject) => {
+        finish = { resolve, reject: () => reject(new Error("skipped")) };
+      });
+      startMorph.mockImplementationOnce((mutate) => {
+        mutate();
+        return { finished } as unknown as ViewTransition;
+      });
+      morphGenerateCard("loop", () => {});
+      expect(await deferredWorkRan()).toBe(false);
+      finish[end]();
+      await finished.catch(() => {});
+      expect(await deferredWorkRan()).toBe(true);
+    }
+  });
+
+  it("does not hold anything when the change applies plainly", async () => {
+    claims.mockReturnValue(1);
+    startMorph.mockImplementationOnce((mutate) => {
+      mutate();
+      return null;
+    });
+    morphGenerateCard("loop", () => {});
+    expect(await deferredWorkRan()).toBe(true);
+  });
+});
+
+describe("the card a morph is carrying open", () => {
+  function deferredMorph() {
+    let finish!: { resolve: () => void; reject: () => void };
+    const finished = new Promise<void>((resolve, reject) => {
+      finish = { resolve, reject: () => reject(new Error("skipped")) };
+    });
+    let pending: (() => void) | null = null;
+    startMorph.mockImplementationOnce((mutate) => {
+      pending = mutate;
+      return { finished } as unknown as ViewTransition;
+    });
+    return {
+      finished,
+      finish,
+      runUpdate: () => pending?.(),
+    };
+  }
+
+  beforeEach(() => {
+    generateCardFlight.opening = null;
+    document.body.innerHTML = "";
+  });
+
+  it("is set while the morph opens a card and cleared when it lands, or is skipped", async () => {
+    claims.mockReturnValue(1);
+    for (const end of ["resolve", "reject"] as const) {
+      const morph = deferredMorph();
+      let seen: string | null = "unset";
+      morphGenerateCard("customize", () => (seen = generateCardFlight.opening));
+      expect(generateCardFlight.opening).toBeNull();
+      morph.runUpdate();
+      expect(seen).toBe("customize");
+      morph.finish[end]();
+      await morph.finished.catch(() => {});
+      await Promise.resolve();
+      expect(generateCardFlight.opening).toBeNull();
+    }
+  });
+
+  it("is never set when the card opens plainly", () => {
+    claims.mockReturnValue(1);
+    let seen: string | null = "unset";
+    startMorph.mockImplementationOnce((mutate) => {
+      mutate();
+      return null;
+    });
+    morphGenerateCard("customize", () => (seen = generateCardFlight.opening));
+    expect(seen).toBeNull();
+  });
+
+  it("is not set when the morph closes an open card", () => {
+    claims.mockReturnValue(1);
+    document.body.innerHTML =
+      '<div class="expanded-card-stage" data-card-id="customize"></div>';
+    const morph = deferredMorph();
+    let seen: string | null = "unset";
+    morphGenerateCard("customize", () => (seen = generateCardFlight.opening));
+    morph.runUpdate();
+    expect(seen).toBeNull();
   });
 });

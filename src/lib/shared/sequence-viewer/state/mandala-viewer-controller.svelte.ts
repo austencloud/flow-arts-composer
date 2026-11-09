@@ -1,3 +1,7 @@
+import {
+  MANDALA_TRAIL_DEFAULT,
+  clampTrailLength,
+} from "#lib/shared/mandala/domain/mandala-ghost-ring.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   MandalaPathShape,
@@ -82,6 +86,8 @@ export interface MandalaViewState {
   customLeft: string;
   customRight: string;
   lineWeight: number;
+  trailEnabled?: boolean;
+  trailLength?: number;
 }
 
 export interface MandalaControllerOptions {
@@ -168,6 +174,9 @@ export class MandalaViewerController {
     this.customColorState.setColor("right", value);
   }
   lineWeight = $state(2.5);
+  /** Afterimage trail: earlier frames fading out behind the live one. */
+  trailEnabled = $state(false);
+  trailLength = $state(MANDALA_TRAIL_DEFAULT);
   exporting = $state(false);
 
   // Export config (persisted to localStorage).
@@ -272,6 +281,10 @@ export class MandalaViewerController {
     if (view.colorMode !== undefined) this.colorMode = view.colorMode;
     if (view.preset !== undefined) this.preset = view.preset;
     if (typeof view.lineWeight === "number") this.lineWeight = view.lineWeight;
+    if (typeof view.trailEnabled === "boolean")
+      this.trailEnabled = view.trailEnabled;
+    if (typeof view.trailLength === "number")
+      this.trailLength = clampTrailLength(view.trailLength);
 
     // Persist the look on change (separate key from export config).
     $effect(() => {
@@ -285,6 +298,8 @@ export class MandalaViewerController {
         customLeft: this.customLeft,
         customRight: this.customRight,
         lineWeight: this.lineWeight,
+        trailEnabled: this.trailEnabled,
+        trailLength: this.trailLength,
       };
       if (typeof localStorage === "undefined") return;
       try {

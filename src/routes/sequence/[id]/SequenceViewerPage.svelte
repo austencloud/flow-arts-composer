@@ -13,6 +13,7 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { browser } from "$app/env";
+  import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import { onMount, onDestroy } from "svelte";
   import {
@@ -220,6 +221,26 @@
     if (!loadingSession || isLoading) return;
     if (loadError || !sequence) loadingSession.abandon();
     else loadingSession.complete();
+  });
+  // This page never mounts the app shell that ends app.html's boot screen, so
+  // its 15 s safety net did. A 2D view ends it once the viewer is up; a 3D
+  // view once the scene reveals.
+  $effect(() => {
+    if (!browser || isLoading) return;
+    const revealed = () =>
+      document.querySelector('[data-scene-revealed="true"]') !== null;
+    if (urlRenderMode !== "3d" || loadError || revealed())
+      return finishBootScreen();
+    const observer = new MutationObserver(() => {
+      if (!revealed()) return;
+      observer.disconnect();
+      finishBootScreen();
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      attributeFilter: ["data-scene-revealed"],
+    });
+    return () => observer.disconnect();
   });
   let handoffData = $state<SequenceRouteHandoff | null>(null);
 

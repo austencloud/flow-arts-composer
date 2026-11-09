@@ -2,13 +2,13 @@
 status: active
 value: 3
 effort: XS
-remaining: "Verify Shop Transitions — Design Spec against src/lib/shared/ui-animation/animations.svelte.ts before resuming implementation. Prior recorded remainder: 'Items 1-4 shipped past spec; item 5 (grid entrance stagger) never built. Its depends_on WSL blocker is stale'"
+remaining: "Item 5 (grid entrance stagger) built 2026-11-07, unit-tested, not browser-checked. Items 1-4 only partly verified in code: driver is live via installRouteMotion and navigationMorphs matches /shop descendants; fan names exist for loop-deck and tnd-trilogy plus the book cover, but starter-pack and choreography-cards have none, tnd-trilogy still mounts through {#await import} so its destination fan can miss the snapshot, and no morph, F5 or reduced-motion check has been run in a browser."
 depends_on: ""
 supersedes_context: ""
 tags: [shop, transitions, view-transitions, polish, ux]
-last_triaged: 2026-10-07
+last_triaged: 2026-11-07
 plan_path: ""
-work_state: unverified
+work_state: verification
 ---
 
 # Shop Transitions — Design Spec
@@ -155,6 +155,15 @@ driver as a plain navigation); naming any 3D canvas; cross-document VT.
 4. `prefers-reduced-motion: reduce` → instant cut, no morph.
 5. Grid entrance stagger plays once on first paint, reduced-motion safe.
 6. `npm run check` and `npm run build` green.
+
+## Status, 2026-11-07
+
+- Item 5 built: `ShopCatalogTile` takes an `index` and enters with the shared
+  `flyFade` (250 ms, 10 px rise, 45 ms per tile, capped at 270 ms); delay is 0
+  under reduced motion (`tile-entrance.ts`, tested). Tiles stay clickable from
+  the first frame. Plays when tiles mount after the catalog loads or the shelf
+  filter changes; a fully server-rendered first paint does not replay.
+- Items 1-4 verified by reading code only: see `remaining`. Not closed.
 
 ## Browser verification, 2026-08-02 — criterion 1 FAILS
 

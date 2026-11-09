@@ -51,6 +51,12 @@ export interface MotionConfig3D {
    * Written by the wall-plane feasibility solver as a per-step override.
    */
   concaveDepth?: number;
+  /**
+   * World-z shift of the hand, meters (+ toward the audience, − toward and
+   * behind the body). Written by the wall-plane depth solver as a per-step
+   * override so a crossing staff passes the other arm in depth. Absent = 0.
+   */
+  depthOffset?: number;
 }
 
 /**

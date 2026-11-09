@@ -38,6 +38,9 @@ export interface MandalaPublicPayload {
   readonly leftPropType: string;
   readonly rightPropType: string;
   readonly pathShape?: MandalaPathShape;
+  /** Left out when the maker saved none, so a mandala with no colors keeps the
+   *  content address it was published under. */
+  readonly colors?: CollectedMandala["colors"];
   readonly sourceWord?: string;
 }
 
@@ -63,6 +66,7 @@ export function mandalaPublicPayload(
     | "leftPropType"
     | "rightPropType"
     | "pathShape"
+    | "colors"
     | "sourceWord"
   >
 ): MandalaPublicPayload {
@@ -72,6 +76,7 @@ export function mandalaPublicPayload(
     leftPropType: mandala.leftPropType,
     rightPropType: mandala.rightPropType,
     ...(mandala.pathShape !== undefined && { pathShape: mandala.pathShape }),
+    ...(mandala.colors !== undefined && { colors: mandala.colors }),
     ...(mandala.sourceWord !== undefined && { sourceWord: mandala.sourceWord }),
   };
 }

@@ -55,7 +55,7 @@
     createMotionPathExplorerState,
     type ExplorerSource,
   } from "../_data/motion-path-explorer-state.svelte";
-  import { explorerLayout } from "../_data/explorer-layout";
+  import { explorerLayout, type StudioPhase } from "../_data/explorer-layout";
   import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
   import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
   import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
@@ -88,15 +88,30 @@
   // The screen gives the explorer its room and the explorer composes to it
   // (explorer-layout.ts): nothing here pans. When the room cannot hold what
   // picks what plays beside the canvas, that opens behind one button.
-  let { room = null }: { room?: number | null } = $props();
+  //
+  // `room` is the height this has right now. `layoutRoom` is what it has with
+  // the studio shut: a screen that clears its intro for the studio grows `room`
+  // while the studio is open, and the mode must not change under it.
+  let {
+    room = null,
+    layoutRoom = null,
+    onstudiophase,
+  }: {
+    room?: number | null;
+    layoutRoom?: number | null;
+    /** Called in the same flush as the phase it reports, so a screen that
+        resizes this in answer is part of what the studio's motion measures. */
+    onstudiophase?: (phase: StudioPhase) => void;
+  } = $props();
+  const restingRoom = $derived(layoutRoom ?? room ?? 0);
   let explorerWidth = $state(0);
-  const layout = $derived(explorerLayout(explorerWidth, room ?? 0));
+  const layout = $derived(explorerLayout(explorerWidth, restingRoom));
   const chooserInGrid = $derived(
     layout.mode === "quad" || layout.mode === "trio"
   );
   // A guide screen shorter than the window the four boxes were drawn for
   // keeps the hand-relationship chips at their compact size.
-  const shortRoom = $derived(room != null && room < 820);
+  const shortRoom = $derived(restingRoom > 0 && restingRoom < 820);
   // A small phone: the studio gives up the transport so the canvas stays large
   // enough to watch while choosing. Playback keeps running.
   const TIGHT_STUDIO_ROOM = 460;
@@ -105,14 +120,8 @@
   // the chooser) fades away first, then the canvas takes the room and the
   // section opens beside it (landscape) or under it (portrait). The pills
   // stay under the canvas and switch sections from there; the pressed pill,
-  // Back to paths or Escape brings the paths back the same way round.
-  //
-  //   rest       the lesson layout
-  //   clearing   the lesson's pickers fading out, layout unchanged
-  //   open       studio layout, section panel showing
-  //   closing    studio layout, section panel fading out
-  //   revealing  lesson layout back, its pickers about to fade in
-  type StudioPhase = "rest" | "clearing" | "open" | "closing" | "revealing";
+  // Back to paths or Escape brings the paths back the same way round. The
+  // phases are spelled out in explorer-layout.ts.
   //
   // "Change what plays" is one more such section where it has no box of its
   // own: it opens the same way, from a button in the lesson row.
@@ -123,6 +132,10 @@
   let shownSection = $state<StudioSection>("display");
   const pillSection = $derived(toySection === "sequence" ? null : toySection);
   let studioPhase = $state<StudioPhase>("rest");
+  function setStudioPhase(next: StudioPhase): void {
+    studioPhase = next;
+    onstudiophase?.(next);
+  }
   const restFaded = $derived(studioPhase !== "rest");
   const studioLayout = $derived(
     studioPhase === "open" || studioPhase === "closing"
@@ -140,10 +153,17 @@
   // Beside the canvas in a landscape room, the canvas over its section in a
   // portrait one. The shape of the room decides it (explorer-layout.ts), not
   // the window's: a short landscape room has no height for a band under the
-  // canvas. The side-by-side panel is tall, so it gets the inspector's page;
-  // the stacked one is short and wide, so it gets the dock tray's dense page.
+  // canvas. The page fits whichever box that leaves (fitRoom): nothing scrolls.
   const studioSideBySide = $derived(layout.studioSide);
   const sequenceShown = $derived(shownSection === "sequence");
+  // Stacked on a phone every row counts, and the pressed pill already names the
+  // section, so its header gives its height back and Back joins the pills.
+  const backInDock = $derived(
+    studioLayout &&
+      layout.mode === "stack" &&
+      !studioSideBySide &&
+      !sequenceShown
+  );
   // On a phone what plays takes the whole room. The canvas stays mounted out
   // of sight so the playing sequence is still there on the way back.
   const sequenceBesideCanvas = $derived(layout.mode !== "stack");
@@ -170,7 +190,7 @@
   function recompose(next: "open" | "revealing"): void {
     stageMotion.capture();
     dockMotion.capture();
-    studioPhase = next;
+    setStudioPhase(next);
     void tick().then(() => {
       stageMotion.play();
       dockMotion.play();
@@ -181,7 +201,7 @@
       // Laid out at no opacity by the play above, the lesson's pickers now
       // fade back in, unless a pill was pressed again in the meantime.
       if (studioPhase !== "revealing") return;
-      studioPhase = "rest";
+      setStudioPhase("rest");
       if (focusChangeOnRest) {
         focusChangeOnRest = false;
         // Hidden until its fade begins, and a hidden button takes no focus.
@@ -230,19 +250,19 @@
       if (studioPhase === "closing") {
         // Pressed again while the panel was leaving: it comes straight back.
         clearTimeout(phaseTimer);
-        studioPhase = "open";
+        setStudioPhase("open");
       }
       if (studioPhase !== "rest" && studioPhase !== "revealing") return;
-      studioPhase = "clearing";
+      setStudioPhase("clearing");
       afterFade(() => recompose("open"));
       return;
     }
     if (studioPhase === "clearing") {
       // Let go before the studio opened: the pickers fade straight back.
       clearTimeout(phaseTimer);
-      studioPhase = "rest";
+      setStudioPhase("rest");
     } else if (studioPhase === "open") {
-      studioPhase = "closing";
+      setStudioPhase("closing");
       afterFade(() => recompose("revealing"));
     }
   }
@@ -510,10 +530,10 @@
 <svelte:window onkeydown={onWindowKeydown} />
 
 <!-- One section's page, for the studio panel. -->
-{#snippet sectionPage(layout: "bottom" | "sidebar")}
+{#snippet sectionPage()}
   <AnimationPanel
     isExporting={false}
-    {layout}
+    layout="bottom"
     presentation="content"
     controlledSection={shownSection === "sequence" ? null : shownSection}
     isPlaying={explorer.playing}
@@ -527,7 +547,8 @@
     selectedPropType={explorer.propType}
     onPropChange={choosePropType}
     sequence={explorer.sequence}
-    fillPages={layout === "sidebar"}
+    fillPages
+    fitRoom
   />
 {/snippet}
 
@@ -570,6 +591,7 @@
                   {leftTurn}
                   {rightTurn}
                   {labelMode}
+                  oneRow={layout.mode !== "quad"}
                   onturn={chooseTurn}
                   onlabelmodechange={(value) => (labelMode = value)}
                 />
@@ -626,11 +648,10 @@
           {/if}
         </div>
       </div>
-      <!-- The stage is the largest square its share of the box holds. On a
-           phone the matrix is larger than that and scrolls inside it, under
-           its sticky headers. -->
+      <!-- The stage is the largest square its share of the box holds, and the
+           matrix's cells shrink to share it. -->
       <div class="source-stage">
-        <div class="source-square" data-fit-self-scroll>
+        <div class="source-square">
           <Crossfade key={explorer.source} duration={DURATION.normal} fill>
             {#if explorer.source === "matrix"}
               <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
@@ -651,6 +672,7 @@
                     {rowAxis}
                     {colAxis}
                     maxCellPx={108}
+                    minCellPx={14}
                     selectedPair={explorer.selectedPair}
                     soloHand={explorer.soloHand}
                     onselect={(pair) =>
@@ -716,6 +738,7 @@
     class:tight={layout.mode === "stack" &&
       room != null &&
       room < TIGHT_STUDIO_ROOM}
+    class:back-in-dock={backInDock}
     class:side={studioSideBySide && !sequenceShown}
     class:sequence={sequenceShown}
     class:with-canvas={sequenceBesideCanvas}
@@ -821,25 +844,40 @@
            the transport above holds it. Its pills open the studio and stay
            its section tabs. -->
       <div class="toy-box" data-studio-dock>
-        <AnimationPanel
-          isExporting={false}
-          layout="bottom"
-          isPlaying={explorer.playing}
-          bpm={explorer.bpm}
-          onBpmChange={explorer.setBpm}
-          onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
-          showEffectsPlayback={false}
-          showTempoControls={false}
-          showPathShape={false}
-          showWordToggle={false}
-          selectedPropType={explorer.propType}
-          onPropChange={choosePropType}
-          sequence={explorer.sequence}
-          presentation="navigation"
-          controlledSection={pillSection}
-          onActiveSectionChange={chooseToySection}
-          regionLabel={tDynamic("guide_paths_animation_controls")}
-        />
+        {#if backInDock}
+          <div
+            class="dock-back"
+            transition:growFade={{ axis: "x", duration: DURATION.normal }}
+          >
+            <PanelButton
+              onclick={leaveStudio}
+              ariaLabel={tDynamic("guide_paths_back")}
+            >
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            </PanelButton>
+          </div>
+        {/if}
+        <div class="toy-pills">
+          <AnimationPanel
+            isExporting={false}
+            layout="bottom"
+            isPlaying={explorer.playing}
+            bpm={explorer.bpm}
+            onBpmChange={explorer.setBpm}
+            onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
+            showEffectsPlayback={false}
+            showTempoControls={false}
+            showPathShape={false}
+            showWordToggle={false}
+            selectedPropType={explorer.propType}
+            onPropChange={choosePropType}
+            sequence={explorer.sequence}
+            presentation="navigation"
+            controlledSection={pillSection}
+            onActiveSectionChange={chooseToySection}
+            regionLabel={tDynamic("guide_paths_animation_controls")}
+          />
+        </div>
       </div>
       <span class="sr-only" aria-live="polite">{nowPlaying}</span>
     </div>
@@ -863,32 +901,34 @@
         aria-label={tDynamic("guide_paths_settings", { section: shownLabel })}
         transition:flyFade={{ y: 8, duration: DURATION.fast }}
       >
-        <header class="toy-section-header">
-          <PanelButton
-            onclick={leaveStudio}
-            ariaLabel={tDynamic("guide_paths_back")}
-          >
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            {#if !(sequenceShown && layout.mode === "stack")}
-              <span>{tDynamic("guide_paths_back")}</span>
+        {#if backInDock}
+          <h3 class="sr-only">{shownLabel}</h3>
+        {:else}
+          <header class="toy-section-header">
+            <PanelButton
+              onclick={leaveStudio}
+              ariaLabel={tDynamic("guide_paths_back")}
+            >
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
+              {#if !(sequenceShown && layout.mode === "stack")}
+                <span>{tDynamic("guide_paths_back")}</span>
+              {/if}
+            </PanelButton>
+            {#if sequenceShown}
+              <h3 class="sr-only">{shownLabel}</h3>
+              <div class="header-source">{@render sourceChoice()}</div>
+            {:else}
+              <h3 class="toy-section-title">{shownLabel}</h3>
             {/if}
-          </PanelButton>
-          {#if sequenceShown}
-            <h3 class="sr-only">{shownLabel}</h3>
-            <div class="header-source">{@render sourceChoice()}</div>
-          {:else}
-            <h3 class="toy-section-title">{shownLabel}</h3>
-          {/if}
-        </header>
+          </header>
+        {/if}
         <div class="toy-section-body" class:sequence-body={sequenceShown}>
           {#if sequenceShown}
             {@render chooserBody(true)}
-          {:else if studioSideBySide}
-            {@render sectionPage("sidebar")}
           {:else}
             <Crossfade key={shownSection} duration={DURATION.normal} fill>
               <div class="dense-page">
-                {@render sectionPage("bottom")}
+                {@render sectionPage()}
               </div>
             </Crossfade>
           {/if}
@@ -946,6 +986,10 @@
   .path-panel {
     display: grid;
     flex: 1 1 0;
+    /* The panel's width sets the tiles' width, so the tiles must never set the
+       panel's: an open-ended column stayed as wide as the tiles it held, and
+       after a window resize they ran under the canvas and never shrank back. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     min-width: 0;
     min-height: 0;
@@ -1037,9 +1081,20 @@
     border-radius: 12px;
   }
   .toy-box {
+    display: flex;
     flex-shrink: 0;
+    align-items: center;
     min-width: 0;
     margin-top: var(--spacing-sm, 8px);
+  }
+  .toy-pills {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .dock-back {
+    flex: none;
+    overflow: hidden;
+    padding-inline-end: var(--spacing-xs, 4px);
   }
 
   /* ── What plays ───────────────────────────────────────────────────── */
@@ -1122,12 +1177,22 @@
     width: min(100cqw, 100cqh);
     aspect-ratio: 1;
   }
-  /* A phone's what-plays is taller than it has room for, so the stage takes
-     the whole width: the matrix's columns all show and only its rows scroll. */
-  .mode-stack .source-square {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: auto;
+  /* A phone keeps the strip's row for the matrix: a build in progress speaks
+     over the matrix's foot, and moves nothing. */
+  .mode-stack .chooser {
+    position: relative;
+  }
+  .mode-stack .picker-feedback {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 1;
+    justify-content: center;
+    min-height: 0;
+    background: var(--theme-panel-bg);
+  }
+  .mode-stack .picker-feedback:not(:empty) {
+    padding: var(--spacing-xs, 4px);
   }
   .card-stage {
     width: 100%;
@@ -1268,6 +1333,10 @@
   .mode-stack.beside .path-panel :global(.path-header) {
     display: none;
   }
+  /* The dock's four pills share a phone's width rather than scrolling it. */
+  .mode-stack .toy-box {
+    --min-touch-target: 2rem;
+  }
   /* One line on a phone: the segmented control names its own choices. */
   .mode-stack .control-label,
   .mode-stack .chooser-chevron {
@@ -1314,6 +1383,9 @@
     position: absolute;
     visibility: hidden;
   }
+  .back-in-dock .toy-section {
+    grid-template-rows: minmax(0, 1fr);
+  }
   .toy-section-header {
     display: flex;
     align-items: center;
@@ -1349,31 +1421,16 @@
     padding: var(--spacing-sm, 8px);
     box-sizing: border-box;
   }
-  .toy-section-body > :global(.animator-inspector),
   .toy-section-body > :global(.crossfade) {
     flex: 1 1 0;
     min-height: 0;
   }
-  /* The panel reads top-down under its header, as the Shape Engine's
-     customize pane does, instead of floating a short page mid-column. */
-  .toy-section-body :global(.panel-center-inner) {
-    margin-block: 0 auto;
-  }
-  .toy-section-body :global(.panel-center-inner:not(.fill-body)) {
-    padding-top: var(--spacing-sm, 8px);
-  }
-  /* The dense page scrolls itself and ends on its own padding. The inset is
-     the dock tray's, which these pages are drawn for. A short page (the
-     tempo row) sits in the middle of the band rather than over a strip of
-     empty panel; a tall one scrolls from its top. */
+  /* The page fills this box and does not scroll (fitRoom), so the inset is all
+     that stands between its tiles and the panel's edge. */
   .dense-page {
     height: 100%;
-    padding-inline: 14px;
+    padding: 6px 8px;
     box-sizing: border-box;
-  }
-  .dense-page :global(.external-section-body) {
-    display: grid;
-    align-content: safe center;
   }
 
   /* ── The studio ───────────────────────────────────────────────────── */
@@ -1387,6 +1444,9 @@
   }
   .explorer-workspace.studio.tight:not(.side, .sequence) {
     grid-template-rows: minmax(0, 1fr) minmax(0, 10rem);
+  }
+  .explorer-workspace.studio.back-in-dock {
+    gap: var(--spacing-sm, 8px);
   }
   .studio.tight .canvas-transport {
     display: none;

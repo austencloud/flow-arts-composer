@@ -36,6 +36,11 @@
     colAxis: TAxis[];
     /** Upper bound on a cell's edge; the actual size shrinks to fit the viewport. */
     maxCellPx?: number;
+    /**
+     * Lower bound on a cell's edge; below it the grid scrolls. A host that never
+     * scrolls lowers it, so the whole matrix stays on screen on a phone.
+     */
+    minCellPx?: number;
     onselect: (pair: { left: TAxis; right: TAxis }) => void;
     /**
      * A header was activated: that axis item alone, on that hand. Without
@@ -102,6 +107,7 @@
     rowAxis,
     colAxis,
     maxCellPx = 100,
+    minCellPx = 44,
     onselect,
     onsolo,
     soloHand = null,
@@ -215,6 +221,21 @@
       : null
   );
 
+  /* While one hand is on stage, its header is the flower's place in the grid:
+     the flight lands there and leaves from there. It follows the selection, so
+     a flower picked on the stage flies back to its own header, in either hand. */
+  const headerClaims = (hand: "left" | "right", item: TAxis) =>
+    claimSelected && soloHand === hand && soloKey === keyOf(item);
+
+  /* The flight needs its landing place on screen, and a choice made on the
+     stage can name a flower scrolled out of view. */
+  $effect(() => {
+    if (!claimSelected || (!soloKey && !selectedKey)) return;
+    wrap
+      ?.querySelector<HTMLElement>(".head-button.solo, .cell.sel")
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  });
+
   /* The tiles are one composite control, not one tab stop each: a 12x12
      matrix would otherwise cost 144 Tabs to walk past. One tile carries the
      tab stop (the chosen crossing, else the last one focused, else the first),
@@ -295,7 +316,7 @@
 <div
   class="wrap"
   bind:this={wrap}
-  style="--cols:{cols}; --rows:{rows}; --cell-max:{maxCellPx}px"
+  style="--cols:{cols}; --rows:{rows}; --cell-max:{maxCellPx}px; --cell-min:{minCellPx}px"
 >
   {#if rowAxis.length === 0 || colAxis.length === 0}
     <div class="empty">{t("shape_engine_no_flowers")}</div>
@@ -328,6 +349,10 @@
                     flower: labelOf(rf),
                   })}
                   aria-pressed={soloHand === "right" && soloKey === keyOf(rf)}
+                  use:claimedViewTransitionName={{
+                    name: SHAPE_MATRIX_ACTIVE_STAGE_NAME,
+                    enabled: headerClaims("right", rf),
+                  }}
                   onclick={() => onsolo("right", rf)}
                 >
                   <ShapeMatrixMandalaArt
@@ -336,6 +361,7 @@
                     alt={t("shape_engine_right_flower", {
                       flower: labelOf(rf),
                     })}
+                    claim={headerClaims("right", rf)}
                   />
                 </button>
               {:else}
@@ -368,12 +394,17 @@
                     flower: labelOf(bf),
                   })}
                   aria-pressed={soloHand === "left" && soloKey === keyOf(bf)}
+                  use:claimedViewTransitionName={{
+                    name: SHAPE_MATRIX_ACTIVE_STAGE_NAME,
+                    enabled: headerClaims("left", bf),
+                  }}
                   onclick={() => onsolo("left", bf)}
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(bf, "left")}
                     artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
                     alt={t("shape_engine_left_flower", { flower: labelOf(bf) })}
+                    claim={headerClaims("left", bf)}
                   />
                 </button>
               {:else}
@@ -461,12 +492,12 @@
        a pixel and grows a scrollbar. */
     --header-stroke: 2px;
     /* Fit the whole grid (headers + cells) into the viewport at whole pixels,
-       never below the 44px AAA touch-target floor. When it cannot fit at 44px
-       (a large axis on a small viewport) it overflows and scrolls. */
+       never below the host's floor (44px by default). When it cannot fit at the
+       floor (a large axis on a small viewport) it overflows and scrolls. */
     --cell: round(
       down,
       clamp(
-        44px,
+        var(--cell-min, 44px),
         min(
           (100cqw - var(--header-stroke)) / var(--cols),
           (100cqh - var(--header-stroke)) / var(--rows)
@@ -569,6 +600,8 @@
     display: block;
     width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
     padding: 0;
     border: 1px solid transparent;
     border-radius: 10px;
@@ -608,6 +641,21 @@
     );
   }
 
+  /* As on the tiles, the pressed ring would scale into a thick band in flight;
+     only the wash travels. */
+  :global(html.shape-matrix-morph) .head-button {
+    transition: none;
+  }
+  :global(html.shape-matrix-morph) .head-button.solo {
+    border-color: transparent;
+  }
+
+  /* The sticky header row and column cover what scrolls under them. */
+  .head-button,
+  .cell {
+    scroll-margin: var(--cell);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .head-button {
       transition: none;
@@ -629,6 +677,10 @@
     position: relative;
     width: var(--cell);
     height: var(--cell);
+    /* The app's button floor would hold a cell at 44px whatever --cell says,
+       and a host that asks for smaller would scroll. */
+    min-width: 0;
+    min-height: 0;
     aspect-ratio: 1;
     display: block;
     padding: 0;
@@ -705,8 +757,16 @@
     z-index: 3;
     display: grid;
     place-items: center;
-    width: clamp(0.85rem, calc(var(--cell) * 0.13), 1.5rem);
-    height: clamp(0.85rem, calc(var(--cell) * 0.13), 1.5rem);
+    width: clamp(
+      min(0.85rem, calc(var(--cell) * 0.4)),
+      calc(var(--cell) * 0.13),
+      1.5rem
+    );
+    height: clamp(
+      min(0.85rem, calc(var(--cell) * 0.4)),
+      calc(var(--cell) * 0.13),
+      1.5rem
+    );
     border-radius: 999px;
     /* A light tint of the accent, as on the chips: the accent at full
        strength is mid-dark in several themes and a small mark on it read
@@ -737,9 +797,23 @@
   :global(html.shape-matrix-morph) .cell.sel .sel-mark {
     opacity: 0;
   }
+  /* The tile that just lost the selection must not carry its mark or ring
+     into the snapshot of the page the flight leaves behind. */
+  :global(html.shape-matrix-morph) .cell::after,
+  :global(html.shape-matrix-morph) .cell .sel-mark {
+    transition: none;
+  }
   :global(html.shape-matrix-morph) .cell:hover,
   :global(html.shape-matrix-morph) .cell:focus-visible {
     box-shadow: none;
+  }
+  /* A hover ring still fading out, or the cell's hairline border, would scale
+     into a thick band around the flower. */
+  :global(html.shape-matrix-morph) .cell {
+    transition: none;
+  }
+  :global(html.shape-matrix-morph) .cell.sel {
+    border-color: transparent;
   }
   .cell:focus-visible {
     outline: 2px solid var(--theme-text, #fff);

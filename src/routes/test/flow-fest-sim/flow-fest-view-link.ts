@@ -77,6 +77,8 @@ export function parseFlowFestViewLink(
     horizontalFovDegrees: pose.fov,
     positionWorld: [pose.position.x, pose.position.y, pose.position.z],
     targetWorld: [pose.target.x, pose.target.y, pose.target.z],
+    // A link taken from above would otherwise drop the player out of the sky.
+    standOnGround: true,
   };
 }
 

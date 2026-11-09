@@ -2,12 +2,15 @@
   PanelGroupMotionTestHarness.svelte
 
   Harness for PanelGroup.svelte.test.ts: a two-panel track whose second panel
-  folds to nothing and back, the shape of Create's Play fold.
+  folds to nothing and back, the shape of Create's Play fold. With `shown`,
+  the panels instead trade the whole track, the shape of a compact app's two
+  panes.
 -->
 <script lang="ts">
   import PanelGroup from "./PanelGroup.svelte";
 
-  let { folded = false }: { folded?: boolean } = $props();
+  let { folded = false, shown }: { folded?: boolean; shown?: "main" | "tool" } =
+    $props();
 </script>
 
 {#snippet main()}
@@ -30,16 +33,23 @@
         id: "main",
         content: main,
         defaultSize: 1,
+        fixedSize: shown ? (shown === "main" ? "100%" : "0px") : undefined,
         resizable: false,
-        revealContent: true,
+        revealContent: !shown,
       },
       {
         id: "tool",
         content: tool,
         defaultSize: 1,
-        fixedSize: folded ? "0px" : undefined,
+        fixedSize: shown
+          ? shown === "tool"
+            ? "100%"
+            : "0px"
+          : folded
+            ? "0px"
+            : undefined,
         resizable: false,
-        revealContent: true,
+        revealContent: !shown,
       },
     ]}
   />

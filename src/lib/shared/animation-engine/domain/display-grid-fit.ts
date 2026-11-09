@@ -125,6 +125,34 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
 }
 
 /**
+ * Fit for a host that never scrolls: every tile in the box, however small the
+ * box. The tiles share the box instead of staying square, so the picture is
+ * what is left of a tile once its label and padding are out, and the column
+ * count is whichever leaves the biggest one. `chromeY` allows for the label on
+ * two lines whether or not it wraps, so a change of columns cannot wrap a label
+ * past what the fit allowed for.
+ */
+export function fitDisplayRoom(box: DisplayGridBox): DisplayGridFit | null {
+  const { width, height, padX, chromeY, gapX, gapY, count } = box;
+  if (width <= 0 || height <= 0 || count <= 0) return null;
+  const cap = Math.min(176, Math.max(72, Math.round(Math.min(width, height) * 0.2)));
+  let best = { cols: 0, art: 0, tile: 0 };
+  for (let cols = 1; cols <= count; cols += 1) {
+    const rows = Math.ceil(count / cols);
+    const tileW = (width - gapX * (cols - 1)) / cols;
+    const tileH = (height - gapY * (rows - 1)) / rows;
+    const art = Math.min(cap, tileW - padX, tileH - chromeY);
+    if (art > best.art + 0.5) best = { cols, art, tile: tileW };
+  }
+  if (!best.cols) return null;
+  return {
+    cols: best.cols,
+    art: Math.floor(best.art),
+    tile: Math.floor(best.tile),
+  };
+}
+
+/**
  * The compact layout, for a host that scrolls the panel inside a box it does
  * not size (Post Studio's tool panel). There is no definite height to fit the
  * tiles to, so the arrangement is fixed (as few, wide rows as the width allows)

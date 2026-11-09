@@ -435,12 +435,28 @@ export const init: ClientInit = async () => {
           updateViaCache: "none",
         }),
       onUpdateReady: (apply) => {
-        showToast({
-          message: "An update is ready.",
-          type: "info",
-          duration: UPDATE_ACTION_TOAST_MS,
-          action: { label: "Reload", onClick: apply },
-        });
+        void (async () => {
+          // A deploy that carries a published release says so; anything else,
+          // or a failed lookup, keeps the plain wording.
+          const message = await import(
+            "#lib/shared/offline/services/update-ready-copy.js"
+          )
+            .then(({ updateReadyMessage }) =>
+              updateReadyMessage(__APP_VERSION__, async () => {
+                const { getLatestVersion } = await import(
+                  "#lib/shared/feedback/services/version-service.js"
+                );
+                return getLatestVersion();
+              })
+            )
+            .catch(() => "An update is ready.");
+          showToast({
+            message,
+            type: "info",
+            duration: UPDATE_ACTION_TOAST_MS,
+            action: { label: "Reload", onClick: apply },
+          });
+        })();
       },
     });
     if (startup === "reloading") {

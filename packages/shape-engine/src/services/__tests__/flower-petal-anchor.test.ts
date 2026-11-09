@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SVGPathData } from "#lib/shared/mandala/domain/mandala-types.js";
-import { flowerPetalAnchor, flowerPetalMarks } from "../flower-petal-anchor";
+import { flowerPetalAnchor, turnedPetalAnchor } from "../flower-petal-anchor";
 
 function path(...anglesAndRadii: readonly [number, number][]): SVGPathData {
   return {
@@ -61,77 +61,15 @@ describe("flowerPetalAnchor", () => {
   });
 });
 
-describe("flowerPetalMarks", () => {
-  const expectAngles = (actual: readonly number[], expected: number[]) => {
-    expect(actual).toHaveLength(expected.length);
-    expected.forEach((angle, index) =>
-      expect(actual[index]).toBeCloseTo(angle, 5)
-    );
-  };
-
-  it("marks four far points on the axes at their tips", () => {
-    const flower = path(...ring(onAxes, 100), ...ring(onCorners, 20));
-    const marks = flowerPetalMarks([flower], "anti", 4)!;
-    expectAngles(marks.angles, [-90, 0, 90, 180]);
-    expect(marks.reach).toBe(100);
-    for (const point of marks.points) {
-      expect(Math.hypot(point.x, point.y)).toBeCloseTo(100, 5);
-    }
+describe("turnedPetalAnchor", () => {
+  it("swaps corners and sides on an odd count, and keeps them on an even one", () => {
+    expect(turnedPetalAnchor("diagonal", 1)).toBe("cardinal");
+    expect(turnedPetalAnchor("cardinal", 3)).toBe("diagonal");
+    expect(turnedPetalAnchor("diagonal", 2)).toBe("diagonal");
+    expect(turnedPetalAnchor("cardinal", 0)).toBe("cardinal");
   });
 
-  it("marks four far points on the diagonals at their tips", () => {
-    const flower = path(...ring(onCorners, 100), ...ring(onAxes, 20));
-    const marks = flowerPetalMarks([flower], "anti", 4)!;
-    expectAngles(marks.angles, [-135, -45, 45, 135]);
-    expect(marks.points[3]!.x).toBeCloseTo(-100 * Math.SQRT1_2, 5);
-    expect(marks.points[3]!.y).toBeCloseTo(100 * Math.SQRT1_2, 5);
-  });
-
-  it("marks three petals, evenly spaced", () => {
-    const flower = path(
-      ...ring([90, 210, 330], 100),
-      ...ring([30, 150, 270], 20)
-    );
-    expectAngles(
-      flowerPetalMarks([flower], "anti", 3)!.angles,
-      [-150, -30, 90]
-    );
-  });
-
-  it("marks an inner loop on a ring at half the reach", () => {
-    const flower = path(...ring(onCorners, 10), ...ring(onAxes, 100));
-    const marks = flowerPetalMarks([flower], "pro", 4)!;
-    expectAngles(marks.angles, [-135, -45, 45, 135]);
-    for (const point of marks.points) {
-      expect(Math.hypot(point.x, point.y)).toBeCloseTo(50, 5);
-    }
-  });
-
-  it("keeps a real inner point that reaches far enough out", () => {
-    const flower = path(...ring(onCorners, 40), ...ring(onAxes, 100));
-    const marks = flowerPetalMarks([flower], "pro", 4)!;
-    expect(Math.hypot(marks.points[0]!.x, marks.points[0]!.y)).toBeCloseTo(
-      40,
-      5
-    );
-  });
-
-  it("makes one mark per petal when a petal's points fan out", () => {
-    const flower = path(
-      ...ring([78, 90, 102, -158, -146, -34, -22], 5),
-      ...ring([30, 150, 270], 100)
-    );
-    expectAngles(flowerPetalMarks([flower], "pro", 3)!.angles, [-150, -30, 90]);
-  });
-
-  it("marks nothing without petals or a path", () => {
-    const flower = path(...ring(onAxes, 100), [45, 20]);
-    expect(flowerPetalMarks([flower], "pro", 0)).toBeNull();
-    expect(flowerPetalMarks([], "anti", 4)).toBeNull();
-  });
-
-  it("marks nothing when the points disagree about where the petals sit", () => {
-    const scattered = path(...ring([0, 22.5, 45, 67.5], 100), [10, 20]);
-    expect(flowerPetalMarks([scattered], "anti", 4)).toBeNull();
+  it("has nothing to turn when the petals have no anchor", () => {
+    expect(turnedPetalAnchor(null, 1)).toBeNull();
   });
 });

@@ -189,7 +189,8 @@
       transform var(--duration-emphasis) var(--ease-standard),
       background var(--duration-fast) var(--ease-standard),
       border-color var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
+      box-shadow var(--duration-fast) var(--ease-standard),
+      var(--transition-control-shape);
     font-size: var(--font-size-lg);
     color: var(--theme-text);
 
@@ -216,6 +217,12 @@
     font-weight: 650;
     line-height: 1;
     white-space: nowrap;
+    opacity: 0;
+    transition: var(--transition-control-label);
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   @container create-workspace (min-width: 768px) {
@@ -228,6 +235,7 @@
 
     .workspace-action-label {
       display: inline;
+      opacity: 1;
     }
   }
 

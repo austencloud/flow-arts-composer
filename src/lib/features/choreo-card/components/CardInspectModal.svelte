@@ -17,6 +17,7 @@
   import { initializeSpecialOverrides } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton.js";
   import { initializeDefaultOverrides } from "#lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton.js";
   import { getClaudeCodeCopier } from "#lib/shared/browse/get-claude-code-copier.js";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
   interface Props {
     sequence?: SequenceData | null;
@@ -117,6 +118,35 @@
   }
 
   let stackEl: HTMLDivElement | undefined = $state();
+  let backdropEl = $state<HTMLDivElement | null>(null);
+  let dialogEl = $state<HTMLDivElement | null>(null);
+
+  // Whatever had focus when the inspector opened gets it back on close.
+  const opener =
+    typeof document === "undefined"
+      ? null
+      : (document.activeElement as HTMLElement | null);
+
+  // Trap the backdrop, not just the dialog box: the Close button sits beside
+  // the dialog inside it. The trap pauses while the arrow editor (its own
+  // dialog, outside this tree) is open, without handing focus back to the
+  // page, and resumes when the editor closes.
+  const focusTrap = new FocusTrap({ inertExclusions: [] });
+
+  $effect(() => {
+    if (!backdropEl || !dialogEl || selectedStep) return;
+    // Focus lands on the dialog itself so it is announced, with no ring on
+    // the first toolbar button.
+    focusTrap.updateOptions({
+      initialFocus: dialogEl,
+      returnFocusOnDeactivate: true,
+    });
+    focusTrap.activate(backdropEl, opener);
+    return () => {
+      focusTrap.updateOptions({ returnFocusOnDeactivate: !selectedStep });
+      focusTrap.deactivate();
+    };
+  });
   let copyImageState = $state<"idle" | "copying" | "success" | "error">("idle");
   let copyDataState = $state<"idle" | "copying" | "success" | "error">("idle");
 
@@ -214,13 +244,20 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="modal-backdrop" role="presentation" onclick={handleBackdropClick}>
+<div
+  bind:this={backdropEl}
+  class="modal-backdrop"
+  role="presentation"
+  onclick={handleBackdropClick}
+>
   <div
+    bind:this={dialogEl}
     class="modal-container"
     class:live-container={presentation === "live"}
     class:rendered-pair-container={Boolean(backImageUrl)}
     role="dialog"
     aria-modal="true"
+    tabindex="-1"
     aria-label={presentation === "live"
       ? "Choreo Card viewer"
       : "Card inspector"}
@@ -410,6 +447,11 @@
     width: 90vw;
     height: 90vh;
     max-width: 1600px;
+  }
+
+  /* Focus only lands here programmatically on open; no ring on the box. */
+  .modal-container:focus {
+    outline: none;
   }
 
   .modal-container.live-container {

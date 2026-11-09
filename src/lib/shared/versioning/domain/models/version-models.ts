@@ -29,7 +29,18 @@ export interface ChangelogEntry {
   feedbackId?: string; // Original feedback ID for linking to details
   contributorIds?: string[]; // References to contributor doc IDs
   media?: ChangelogMedia; // An example of the change: a picture, or a clip with its poster
+  /** What "Show me" opens. "global" or absent renders no button. */
+  surface?: ChangelogSurface;
+  /** A highlight leads the notes; only a highlight carries anchor or callout. */
+  highlight?: boolean;
+  /** Matches a `data-release-anchor` in the DOM; the arrival pulses it. */
+  anchor?: string;
+  /** One sentence shown on arrival when there is no anchor to pulse. */
+  callout?: string;
 }
+
+/** A module, optionally one of its tabs, or "global" for app-wide changes. */
+export type ChangelogSurface = { module: string; tab?: string } | "global";
 
 /**
  * A picture or short clip showing a changelog entry. `image` is the still

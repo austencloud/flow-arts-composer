@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, writeBatch } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import { stripUndefined } from "#lib/shared/firestore/firestore-helpers.js";
 import {
@@ -75,7 +75,13 @@ export function createMandalaCollectionRepository(): FirebaseCollectionRepositor
         workRef,
         stripUndefined({ ...work, updatedAt: serverTimestamp() })
       );
-      batch.set(revisionRef, stripUndefined({ ...revision }));
+      // Revisions are content-addressed and the rules refuse any change to one.
+      // Going back to a look this mandala already had lands on its old revision
+      // with a new timestamp, and writing that would sink the whole batch.
+      const revisionExists = (await getDoc(revisionRef)).exists();
+      if (!revisionExists) {
+        batch.set(revisionRef, stripUndefined({ ...revision }));
+      }
       await batch.commit();
     },
 

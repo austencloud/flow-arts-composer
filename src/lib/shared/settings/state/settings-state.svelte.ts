@@ -19,6 +19,7 @@ import {
 } from "../domain/prop-pair-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_TRIANGLE_GRIP } from "../../pictograph/prop/domain/triangle-appearance";
+import { DEFAULT_BUUGENG_STYLE } from "../../pictograph/prop/domain/buugeng-appearance";
 /**
  * Prop versions (the `propArtwork` field) were removed on 2026-10-27. A patch
  * from an older preset or client may still carry the field; it is dropped
@@ -102,6 +103,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   propType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
   triangleGrip: DEFAULT_TRIANGLE_GRIP,
+  buugengStyle: DEFAULT_BUUGENG_STYLE,
   primaryPropColors: null,
   blockedStartPlacements: [],
   blockedStartPlacementsByGridMode: {},

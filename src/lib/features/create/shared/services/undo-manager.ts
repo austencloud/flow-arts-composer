@@ -335,6 +335,9 @@ export class UndoManager {
     sessionId: string,
     history?: { undo: UndoHistoryEntry[]; redo: UndoHistoryEntry[] }
   ): void {
+    // Create loading again in the same page reaches here with the session it
+    // already holds. That history belongs to this session, so it stays.
+    if (!history && this._draftSessions.get(mode) === sessionId) return;
     this._draftSessions.set(mode, sessionId);
     this._undoHistory = this._undoHistory.filter(
       (entry) => entry.beforeState.activeSection !== mode
@@ -358,6 +361,23 @@ export class UndoManager {
         this._maxHistorySize
       )
     );
+    this.queueSave();
+    this.notifyChange();
+  }
+
+  /**
+   * Move a workspace's whole history onto a new draft session. Everything the
+   * Undo and Redo buttons can reach moves, including entries recorded before
+   * this manager was told a session.
+   */
+  moveDraftHistory(mode: ActiveCreateModule, sessionId: string): void {
+    this._draftSessions.set(mode, sessionId);
+    const move = (entry: UndoHistoryEntry) =>
+      entry.beforeState.activeSection === mode
+        ? { ...entry, sessionId }
+        : entry;
+    this._undoHistory = this._undoHistory.map(move);
+    this._redoHistory = this._redoHistory.map(move);
     this.queueSave();
     this.notifyChange();
   }

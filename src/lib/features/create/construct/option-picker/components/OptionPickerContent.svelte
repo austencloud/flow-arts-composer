@@ -56,6 +56,7 @@ Uses organizer and sizer services for section grouping and sizing.
     isConstructPhoneTier,
     isConstructTypeRailTier,
   } from "../../services/construct-phone-split";
+  import { tryGetTypeNavigationHostContext } from "../context/type-navigation-host-context";
   import {
     isAncestorResizing,
     shouldCommitContainerSize,
@@ -381,13 +382,18 @@ Uses organizer and sizer services for section grouping and sizing.
   );
   // A phone-tier picker this wide and short (the unfolded Fold), or a short
   // side-by-side picker on a phone held sideways, stands its tabs in a left
-  // rail and keeps the height for the grid.
+  // rail and keeps the height for the grid, with the phone tier's sizing.
   const isTypeRailTier = $derived(
     isConstructTypeRailTier({
       width: containerWidth,
       height: containerHeight,
       stacked: isMobileStackedLayout(),
     })
+  );
+  // A host may ask for the rail at any size; the grid keeps its own sizing.
+  const typeNavigationHost = tryGetTypeNavigationHostContext();
+  const usesTypeRail = $derived(
+    isTypeRailTier || !!typeNavigationHost?.preferRail()
   );
 
   // These are evaluated when container is narrow (< 750px) OR in mobile stacked layout
@@ -828,7 +834,8 @@ Uses organizer and sizer services for section grouping and sizing.
             settingsHasTurnRows={turnControlsEditable && level > 1}
             openIntoWorkspace={isMobileStackedLayout()}
             phoneTier={isPhoneTier || isTypeRailTier}
-            typeRail={isTypeRailTier}
+            typeRail={usesTypeRail}
+            railColumns={isTypeRailTier}
           >
             {#snippet settingsContent()}
               {@render compactControls()}

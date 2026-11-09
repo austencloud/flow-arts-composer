@@ -13,6 +13,7 @@
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
   import { growFade, STEP_DRIFT_PX } from "#lib/shared/transitions/motion.js";
   import { DEFAULT_TRIANGLE_GRIP } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import { DEFAULT_BUUGENG_STYLE } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 
   // Public hosts own their appearance without writing global settings.
   let {
@@ -34,6 +35,8 @@
     | "colors"
     | "triangleGrip"
     | "onTriangleGripChange"
+    | "buugengStyle"
+    | "onBuugengStyleChange"
     | "onDrillChange"
   > & {
     fanAppearance?: FanAppearance;
@@ -141,6 +144,8 @@
   colors={displayedColors}
   triangleGrip={settings.triangleGrip ?? DEFAULT_TRIANGLE_GRIP}
   onTriangleGripChange={(triangleGrip) => void updateSettings({ triangleGrip })}
+  buugengStyle={settings.buugengStyle ?? DEFAULT_BUUGENG_STYLE}
+  onBuugengStyleChange={(buugengStyle) => void updateSettings({ buugengStyle })}
 />
 {#if colorsPlace === "after"}{@render colorControl()}{/if}
 

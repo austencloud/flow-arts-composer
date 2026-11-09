@@ -17,12 +17,44 @@ function answer(body: unknown, status = 200): Response {
   return json(body, { status, headers: NO_STORE });
 }
 
+// A thrown auth refusal (SvelteKit's error(), or requireFirebaseUser's Error with
+// a status) as a response. The package's routes do this for themselves; it does
+// not export the helper, and unanswered here each refusal would surface as a 500.
+function refusalFrom(cause: unknown): Response | null {
+  if (typeof cause !== "object" || cause === null) return null;
+  const { status, body, message } = cause as {
+    status?: unknown;
+    body?: { message?: unknown };
+    message?: unknown;
+  };
+  if (typeof status !== "number" || status < 400 || status > 599) return null;
+  const text =
+    typeof body?.message === "string"
+      ? body.message
+      : typeof message === "string"
+        ? message
+        : "Error";
+  return answer({ message: text }, status);
+}
+
+function guarded(handler: RequestHandler): RequestHandler {
+  return async (event) => {
+    try {
+      return await handler(event);
+    } catch (cause) {
+      const refusal = refusalFrom(cause);
+      if (refusal) return refusal;
+      throw cause;
+    }
+  };
+}
+
 // Which phone gets this account's sign-in notifications. Naming it needs the
 // same fresh Google sign-in as trusting a phone, a signature from the account's
 // trusted key over this token document's id (so only the phone trusted now can
 // claim them, not an old one still holding its key), and a token document that
 // belongs to this account. The target remembers which trusted phone set it.
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = guarded(async ({ request }) => {
   const user = await verifyPhoneUser(request);
   if (user.signInProvider !== "google.com") {
     return answer(
@@ -80,10 +112,10 @@ export const POST: RequestHandler = async ({ request }) => {
     keyTag,
   });
   return answer({ status: "on" });
-};
+});
 
-export const DELETE: RequestHandler = async ({ request }) => {
+export const DELETE: RequestHandler = guarded(async ({ request }) => {
   const user = await verifyPhoneUser(request);
   await signInPush.deleteTarget(user.uid);
   return answer({ status: "off" });
-};
+});

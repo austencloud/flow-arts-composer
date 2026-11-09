@@ -24,6 +24,7 @@
   appearanceOverride={{
     fanAppearance: settings.fanAppearance,
     triangleGrip: settings.triangleGrip,
+    buugengStyle: settings.buugengStyle,
   }}
   leftFlipped={isBuugengFamilyProp(left) && settings.leftBuugengFlipped}
   rightFlipped={right === PropType.HAND ||

@@ -10,6 +10,11 @@
  * Supports two modes:
  * - "auto": Triggered on app load for new versions (shows "Got it" button)
  * - "manual": Triggered by clicking version number (shows feedback + View All Releases)
+ *
+ * Read means opened. The once-per-release toast keeps its own high-water mark
+ * (`tka-last-toasted-version`), so an ignored toast never counts as read and
+ * the unread dot stays until the notes are opened here or in Release Notes.
+ * When several releases went unread, the modal rolls them up newest first.
  */
 
 import { getOnboardingPersister } from "#lib/shared/onboarding/get-onboarding-persister.js";
@@ -22,6 +27,8 @@ import type { OnboardingPersister } from "#lib/shared/onboarding/services/onboar
 import * as versionService from "#lib/shared/feedback/services/version-service.js";
 
 const STORAGE_KEY = "tka-last-seen-version";
+// Device-local is enough: the worst a device switch costs is one extra toast.
+const TOASTED_KEY = "tka-last-toasted-version";
 
 export type WhatsNewMode = "auto" | "manual";
 
@@ -45,6 +52,69 @@ class WhatsNewState {
   isLoading = $state(false);
   error = $state<string | null>(null);
   mode = $state<WhatsNewMode>("auto");
+  /** Releases with notes this reader has not opened, newest first. */
+  unseen = $state<AppVersion[]>([]);
+  /** The releases the open modal shows, newest first; one unless rolled up. */
+  rollup = $state<AppVersion[]>([]);
+
+  get hasUnread(): boolean {
+    return this.unseen.length > 0;
+  }
+
+  /** The newest release whose notes were opened, or null before any. */
+  lastSeenVersion(): string | null {
+    const service = getOnboardingService();
+    if (service) return service.getLastSeenVersion();
+    if (typeof localStorage === "undefined") return null;
+    return localStorage.getItem(STORAGE_KEY);
+  }
+
+  lastToastedVersion(): string | null {
+    if (typeof localStorage === "undefined") return null;
+    return localStorage.getItem(TOASTED_KEY);
+  }
+
+  /** The toast fired for this release; it never fires for it again. */
+  markToasted(version: string): void {
+    if (typeof localStorage === "undefined") return;
+    const last = localStorage.getItem(TOASTED_KEY);
+    if (!last || compareVersions(version, last) > 0) {
+      localStorage.setItem(TOASTED_KEY, version);
+    }
+  }
+
+  setUnseen(versions: AppVersion[]): void {
+    this.unseen = versions;
+  }
+
+  /**
+   * The notes up to `version` were opened. Seeing N implies seeing everything
+   * at or below it, so the dot clears for every release rolled into it.
+   */
+  markOpened(version: string): void {
+    this.markVersionAsSeen(version);
+    this.unseen = this.unseen.filter(
+      (v) => compareVersions(v.version, version) > 0
+    );
+  }
+
+  /** The Release Notes tab opened: everything unread is now read. */
+  markReleaseNotesOpened(): void {
+    const newest = this.unseen[0];
+    if (newest) this.markOpened(newest.version);
+  }
+
+  /** Open every unread release in one sheet, newest first. */
+  openRollup(versions: AppVersion[]) {
+    const newest = versions[0];
+    if (!newest) return;
+    this.mode = "manual";
+    this.error = null;
+    this.version = newest;
+    this.rollup = versions;
+    this.isOpen = true;
+    this.markOpened(newest.version);
+  }
 
   /**
    * Check if user has seen the current version.
@@ -108,7 +178,9 @@ class WhatsNewState {
   open(version: AppVersion) {
     this.mode = "auto";
     this.version = version;
+    this.rollup = [version];
     this.isOpen = true;
+    this.markOpened(version.version);
   }
 
   /**
@@ -120,8 +192,10 @@ class WhatsNewState {
   openDetail(version: AppVersion) {
     this.mode = "manual";
     this.version = version;
+    this.rollup = [version];
     this.error = null;
     this.isOpen = true;
+    this.markOpened(version.version);
   }
 
   /**
@@ -129,6 +203,12 @@ class WhatsNewState {
    * Loads the current version data first, then opens modal to prevent layout shift
    */
   async openManual() {
+    // Unread releases come first: the version number carries the dot.
+    if (this.unseen.length > 0) {
+      this.openRollup(this.unseen);
+      return;
+    }
+
     this.mode = "manual";
     this.error = null;
 
@@ -146,8 +226,10 @@ class WhatsNewState {
 
     if (picked) {
       this.version = picked;
+      this.rollup = [picked];
       // Open modal only after data is ready - prevents layout shift
       this.isOpen = true;
+      this.markOpened(picked.version);
       return;
     }
 
@@ -197,6 +279,8 @@ class WhatsNewState {
     this.isLoading = false;
     this.error = null;
     this.mode = "auto";
+    this.unseen = [];
+    this.rollup = [];
   }
 }
 

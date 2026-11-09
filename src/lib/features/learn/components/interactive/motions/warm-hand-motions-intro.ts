@@ -20,6 +20,7 @@ import {
 } from "#lib/shared/guide-topics/hand-motions-topic.js";
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import { normalizeBuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
@@ -39,6 +40,7 @@ async function warm(): Promise<void> {
     rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
+    buugengStyle: normalizeBuugengStyle(settings.buugengStyle),
     showLeftMotion: true,
     showRightMotion: false,
   };

@@ -762,7 +762,7 @@
   .sequences-grid.grid-view {
     display: grid;
     gap: var(--spacing-sm, 8px);
-    align-items: start;
+    align-items: var(--browse-row-align, start);
     padding-bottom: var(--spacing-sm, 8px);
   }
   .sequences-grid.grid-view.is-transitioning {

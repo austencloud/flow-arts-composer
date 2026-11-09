@@ -8,6 +8,10 @@
   BrowseHeaderSlot: a late-loading name, action pills, a selection toolbar
   that takes the whole bar over, and a tint.
 
+  On a phone or tablet it also holds the open grid's Filters pill and the
+  scope bar's search, so the grid gets their bands. The search button swaps the
+  row for the field, which stays while there is text: a search is never hidden.
+
   Fixed logical size (the 4K rule): 44px controls, 64px tall, 56px compact.
 -->
 <script lang="ts">
@@ -23,7 +27,9 @@
   } from "#lib/shared/browse/navigation/browse-trail.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, flyFade } from "#lib/shared/transitions/motion.js";
+  import BrowseFiltersPill from "#lib/shared/browse/components/BrowseFiltersPill.svelte";
+  import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let { compact = false }: { compact?: boolean } = $props();
@@ -45,6 +51,23 @@
   const actions = $derived(header?.actions ?? null);
   const leafContent = $derived(header?.leafContent ?? null);
   const accent = $derived(header?.accent ?? null);
+  const search = $derived(header?.search ?? null);
+  const filters = $derived(header?.filters ?? null);
+
+  let searchRequested = $state(false);
+  const searchShown = $derived(
+    !!search && (searchRequested || !!search.value())
+  );
+
+  // A screen with no search closes it, so coming back starts from the title.
+  $effect(() => {
+    if (!search) searchRequested = false;
+  });
+
+  function closeSearch(): void {
+    searchRequested = false;
+    search?.onSearch("");
+  }
 
   // Browse home mounts through its own Crossfade, so the group heading is not
   // there on the frame the crumb is pressed. Look for it over a few frames.
@@ -76,10 +99,37 @@
   class:compact
   style:--header-accent={accent ?? "var(--theme-accent)"}
 >
-  <Crossfade key={toolbar ? "toolbar" : "trail"} duration={DURATION.fast} fill>
+  <Crossfade
+    key={toolbar ? "toolbar" : searchShown ? "search" : "trail"}
+    duration={DURATION.fast}
+    fill
+  >
     {#if toolbar}
       <div class="toolbar-layer">
         {@render toolbar()}
+      </div>
+    {:else if searchShown && search}
+      <div class="trail-row">
+        <div class="back-slot">
+          <PanelButton
+            variant="secondary"
+            ariaLabel={t("browse_clear_search")}
+            title={t("browse_clear_search")}
+            onclick={closeSearch}
+          >
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+          </PanelButton>
+        </div>
+        <div class="search-field">
+          <ExpandableSearchBar
+            pinned
+            autofocus={searchRequested}
+            name="browse-search"
+            value={search.value()}
+            placeholder={search.placeholder()}
+            onSearch={search.onSearch}
+          />
+        </div>
       </div>
     {:else}
       <div class="trail-row">
@@ -137,6 +187,27 @@
         <div class="actions">
           {#if actions}
             {@render actions()}
+          {/if}
+          {#if filters}
+            <span class="action-slot" transition:flyFade>
+              <BrowseFiltersPill
+                engine={filters.engine()}
+                onOpen={filters.open}
+                label="filters"
+              />
+            </span>
+          {/if}
+          {#if search}
+            <span class="action-slot search-action" transition:flyFade>
+              <PanelButton
+                variant="secondary"
+                ariaLabel={t("browse_open_search")}
+                title={search.placeholder()}
+                onclick={() => (searchRequested = true)}
+              >
+                <i class="fas fa-search" aria-hidden="true"></i>
+              </PanelButton>
+            </span>
           {/if}
         </div>
       </div>
@@ -301,6 +372,21 @@
 
   .compact .actions {
     gap: 6px;
+  }
+
+  .action-slot {
+    display: flex;
+    flex: 0 0 auto;
+  }
+
+  .search-action :global(.panel-btn) {
+    width: 44px;
+    padding: 0;
+  }
+
+  .search-field {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .compact .crumb-earlier {

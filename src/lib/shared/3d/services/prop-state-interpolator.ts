@@ -185,8 +185,14 @@ export function calculatePropState(
           handDistance
         )
       : undefined;
-  const joinedPosition = (position: Vector3): Vector3 =>
-    gridCenter ? position.add(gridCenter) : position;
+  // The depth solver's per-step z shift rides on top of the grid placement,
+  // so the scanner's swept volume and the drawn prop move together.
+  const depthOffset = config.depthOffset ?? 0;
+  const joinedPosition = (position: Vector3): Vector3 => {
+    if (gridCenter) position.add(gridCenter);
+    if (depthOffset !== 0) position.z += depthOffset;
+    return position;
+  };
   const startCenterAngle = LOCATION_ANGLES[config.startLocation] ?? 0;
   const endCenterAngle = LOCATION_ANGLES[config.endLocation] ?? 0;
 

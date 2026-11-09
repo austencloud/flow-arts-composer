@@ -2,6 +2,8 @@
   import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
   import MandalaControlDock from "./MandalaControlDock.svelte";
   import MandalaExportTakeover from "./MandalaExportTakeover.svelte";
+  import MandalaGhostTrail from "./mandala/MandalaGhostTrail.svelte";
+  import { calculateLuminance } from "#lib/shared/settings/utils/background-theme-calculator.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { MandalaViewerController } from "../state/mandala-viewer-controller.svelte";
   import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
@@ -67,6 +69,16 @@
       pathPolicy,
     });
 
+  let ghostTrail: MandalaGhostTrail | undefined = $state();
+  // Ghosts only form while the mandala moves; a still one lets them fade out.
+  const trailOn = $derived(ctrl.trailEnabled && !ctrl.paused);
+  // Overlapping ghosts brighten like light on film over a dark stage. Over a
+  // light one that same blend would wash them out, so they just fade there.
+  const additiveTrail = $derived.by(() => {
+    const bg = ctrl.bgColor;
+    return !/^#[0-9a-f]{6}$/i.test(bg) || calculateLuminance(bg) < 0.2;
+  });
+
   const takeoverSize = $derived(Math.max(160, containerSize - 32));
   const renderedHands = $derived(show ?? ctrl.show);
   // A joined sequence draws each hand's figure around its own grid.
@@ -103,26 +115,45 @@
     data-ghost-linger=""
     style:padding-bottom="{stagePadBottom}px"
   >
-    <SequenceMandala
-      {sequence}
-      animate={!ctrl.paused}
-      animateMin={0}
-      animateMax={ctrl.rangeMax}
-      animatePeriod={ctrl.period}
-      animateEasing="breathe"
-      animateRotation={ctrl.rotation}
-      pathShape={ctrl.pathShape}
-      size={containerSize}
-      {leftPropType}
-      {rightPropType}
-      mode="card-back"
-      style="stroke"
-      show={renderedHands}
-      palette={ctrl.palette}
-      strokeWidth={ctrl.lineWeight}
-      gradient={ctrl.gradientColors}
-      {handOffsets}
-    />
+    <div
+      class="mandala-frame"
+      style:width="{containerSize}px"
+      style:height="{containerSize}px"
+    >
+      <MandalaGhostTrail
+        bind:this={ghostTrail}
+        enabled={trailOn}
+        length={ctrl.trailLength}
+        size={containerSize}
+        additive={additiveTrail}
+      />
+      <div class="mandala-live">
+        <SequenceMandala
+          {sequence}
+          animate={!ctrl.paused}
+          animateMin={0}
+          animateMax={ctrl.rangeMax}
+          animatePeriod={ctrl.period}
+          animateEasing="breathe"
+          animateRotation={ctrl.rotation}
+          pathShape={ctrl.pathShape}
+          size={containerSize}
+          {leftPropType}
+          {rightPropType}
+          mode="card-back"
+          style="stroke"
+          show={renderedHands}
+          palette={ctrl.palette}
+          strokeWidth={ctrl.lineWeight}
+          gradient={ctrl.gradientColors}
+          {handOffsets}
+          onFrame={trailOn
+            ? (canvas, rotationDeg, time) =>
+                ghostTrail?.capture(canvas, rotationDeg, time)
+            : undefined}
+        />
+      </div>
+    </div>
   </div>
 
   {#if controlsPlacement === "dock"}
@@ -161,6 +192,13 @@
     justify-content: center;
     min-width: 0;
     transition: padding-bottom var(--duration-emphasis) var(--ease-standard-out);
+  }
+  .mandala-frame {
+    position: relative;
+    flex: none;
+  }
+  .mandala-live {
+    position: relative;
   }
   .mandala-stage :global(svg) {
     width: 100%;

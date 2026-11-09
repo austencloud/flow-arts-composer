@@ -18,6 +18,9 @@ their own copies drifted (dropdown popovers, stale search) within days.
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import GalleryDrill from "./GalleryDrill.svelte";
+  import BrowseSheetControls from "#lib/shared/browse/components/BrowseSheetControls.svelte";
+  import { tryGetBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     engine,
@@ -28,6 +31,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
     title = "Filters",
     chooserTitle,
     chooserHint,
+    gridControls,
   }: {
     engine: BrowseEngine;
     isOpen?: boolean;
@@ -41,7 +45,19 @@ their own copies drifted (dropdown popovers, stale search) within days.
     /** Host-specific chooser copy without duplicating the drill. */
     chooserTitle?: string;
     chooserHint?: string;
+    /** A Browse grid (BrowsePanel's `headerChrome`): on a phone or tablet the
+     * sheet also carries the grid's sort, props, applied filters and Select. */
+    gridControls?: {
+      curatedSortLabel?: string | undefined;
+      collectionPropType?: PropType | null | undefined;
+      onSaveSmart?: (() => void) | undefined;
+      onEnterSelection?: (() => void) | undefined;
+    };
   } = $props();
+
+  const header = tryGetBrowseHeaderContext();
+  const showGridControls = $derived(!!gridControls && !!header?.compactChrome);
+  const enterSelection = $derived(gridControls?.onEnterSelection);
 
   // Remount the drill per OPEN (fresh section state) — not per close, which
   // would blank the sheet during the drawer's exit slide.
@@ -96,6 +112,21 @@ their own copies drifted (dropdown popovers, stale search) within days.
   >
     <DrawerHeader {title} onClose={() => (isOpen = false)} />
     <div class="filter-sheet-content">
+      {#if showGridControls}
+        <BrowseSheetControls
+          {engine}
+          curatedSortLabel={gridControls?.curatedSortLabel}
+          collectionPropType={gridControls?.collectionPropType}
+          onSaveSmart={gridControls?.onSaveSmart}
+          onEnterSelection={enterSelection
+            ? () => {
+                isOpen = false;
+                enterSelection();
+              }
+            : undefined}
+        />
+      {/if}
+      <div class="filter-sheet-drill">
       {#key epoch}
         <!-- Search is absent in Smart Collection builders because the
 				     saved spec serializes filters, not text queries. -->
@@ -139,6 +170,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
           onShowAll={allowShowAll ? showAllResults : undefined}
         />
       {/key}
+      </div>
     </div>
   </Drawer>
 </div>
@@ -151,6 +183,15 @@ their own copies drifted (dropdown popovers, stale search) within days.
     background: var(--theme-panel-bg);
     overflow: hidden;
     height: calc(85dvh - 60px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-sheet-drill {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Right-placement drawer (desktop) is a full-height 100dvh panel — fill the

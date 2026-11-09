@@ -6,7 +6,7 @@ Animates forward in z-axis and expands to fill the container space
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { popIn } from "#lib/shared/transitions/motion.js";
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -87,13 +87,33 @@ Animates forward in z-axis and expands to fill the container space
   // from, not back on Single (the overlay remounts per open — props are nulled
   // on close — so mount-time init is the reopen path).
   let isMultiSelectMode = $state(selectedComponents.size > 1);
-  let localSelectedComponents = $state(new Set<LOOPComponent>());
+  // Both local copies start from the props, and the effects below write only
+  // when a prop really differs. The panel mounts inside the tap that opens
+  // it, and a fresh copy written there ran every settings switch again in
+  // that same tap, each one measuring the whole page twice.
+  let localSelectedComponents = $state(
+    normalizeReflectionSelection(new Set<LOOPComponent>(selectedComponents))
+  );
+  // One list for the life of the panel. The switch animates its options as a
+  // keyed list, and a fresh array on every render made it measure both
+  // options, a full-page layout each time, inside the tap that opens the card.
+  const modeOptions = $derived([
+    { value: "single", label: t("create_deep_single") },
+    { value: "combo", label: t("create_deep_combo") },
+  ]);
 
   // Sync local state with prop changes
   $effect(() => {
-    localSelectedComponents = normalizeReflectionSelection(
+    const next = normalizeReflectionSelection(
       new Set<LOOPComponent>(selectedComponents)
     );
+    const current = untrack(() => localSelectedComponents);
+    if (
+      next.size !== current.size ||
+      [...next].some((component) => !current.has(component))
+    ) {
+      localSelectedComponents = next;
+    }
     if (selectedComponents.size > 1) {
       isMultiSelectMode = true;
     }
@@ -102,17 +122,29 @@ Animates forward in z-axis and expands to fill the container space
   // Combo edits stay local until Apply. Single LOOP settings write through as
   // soon as they form a valid configuration, while this local copy keeps an
   // invalid choice visible long enough to explain what needs changing.
-  let localRhythm = $state<LoopRhythmValue>({
-    rotationInterval: 2,
-    inversionInterval: 2,
-    inversionMode: "expand",
-    reflectionAxis:
-      currentType === LOOPType.FLIPPED ? "east-west" : "north-south",
-  });
+  let localRhythm = $state<LoopRhythmValue>(
+    rhythm
+      ? { ...rhythm }
+      : {
+          rotationInterval: 2,
+          inversionInterval: 2,
+          inversionMode: "expand",
+          reflectionAxis:
+            currentType === LOOPType.FLIPPED ? "east-west" : "north-south",
+        }
+  );
 
   $effect(() => {
-    if (rhythm) {
-      localRhythm = { ...rhythm };
+    if (!rhythm) return;
+    const next: LoopRhythmValue = { ...rhythm };
+    const current = untrack(() => localRhythm);
+    if (
+      next.rotationInterval !== current.rotationInterval ||
+      next.inversionInterval !== current.inversionInterval ||
+      next.inversionMode !== current.inversionMode ||
+      next.reflectionAxis !== current.reflectionAxis
+    ) {
+      localRhythm = next;
     }
   });
 
@@ -457,10 +489,7 @@ Animates forward in z-axis and expands to fill the container space
   {#snippet modeSelector()}
     <div class="mode-selector">
       <SegmentedControl
-        options={[
-          { value: "single", label: t("create_deep_single") },
-          { value: "combo", label: t("create_deep_combo") },
-        ]}
+        options={modeOptions}
         value={isMultiSelectMode ? "combo" : "single"}
         onchange={(v) => handleModeChange(v === "combo")}
         size="sm"

@@ -401,6 +401,18 @@ describe("SequenceViewerShell host contract", () => {
     expect(scanSource).not.toContain("SequenceViewerOrchestrator.svelte");
   });
 
+  it("starts the scan ingress and viewer downloads together", () => {
+    // Serial loading (ingress graph, then the viewer graph from the ingress's
+    // onMount) cost a phone scan ~3 s. The route load starts both at once.
+    const scanLoadSource = read("src/routes/q/[code]/+page.ts");
+    expect(scanLoadSource).toContain('import("./QScanPage.svelte")');
+    expect(scanLoadSource).toContain("loadSequenceViewerPage()");
+    // The handoff's route data loads while the viewer graph finishes.
+    const preload = scanSource.indexOf("preloadData(destination)");
+    expect(preload).toBeGreaterThan(-1);
+    expect(preload).toBeLessThan(scanSource.indexOf("await viewerModule"));
+  });
+
   it.each(hostEntries)(
     "%s declares no calculator-owned theme vars (shadowing bug)",
     (_name, source) => {

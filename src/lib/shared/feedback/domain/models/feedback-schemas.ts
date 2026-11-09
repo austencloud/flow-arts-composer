@@ -192,6 +192,13 @@ const ChangelogMediaSchema = z.object({
   height: z.number().int().positive(),
 });
 
+// Where an entry's "Show me" goes. A malformed or null surface (legacy docs,
+// hand edits) drops to undefined, so the entry renders as plain text.
+const ChangelogSurfaceSchema = z.union([
+  z.literal("global"),
+  z.object({ module: z.string().min(1), tab: z.string().min(1).optional() }),
+]);
+
 const ChangelogEntrySchema = z
   .object({
     category: ChangelogCategorySchema,
@@ -199,6 +206,10 @@ const ChangelogEntrySchema = z
     feedbackId: z.string().optional(),
     contributorIds: z.array(z.string()).optional(),
     media: ChangelogMediaSchema.optional().catch(undefined),
+    surface: ChangelogSurfaceSchema.optional().catch(undefined),
+    highlight: z.boolean().optional().catch(undefined),
+    anchor: z.string().min(1).optional().catch(undefined),
+    callout: z.string().min(1).optional().catch(undefined),
   })
   .passthrough();
 

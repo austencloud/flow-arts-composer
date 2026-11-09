@@ -12,6 +12,7 @@
  * Construct has no entry: its panel is part of the layout chunk.
  */
 import type { Component } from "svelte";
+import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
 
 type ComponentModule = { default: Component<any> };
 
@@ -56,6 +57,15 @@ export function warmWorkspaceLayout(): Promise<unknown> {
   return warm("layout", loadWorkspaceLayout);
 }
 
+/**
+ * The sequence area under the layout. The layout prefetches it once mounted,
+ * which used to be just after the tap: its stylesheet then landed mid-entry
+ * and restyled the whole page under the arriving pieces.
+ */
+export function warmWorkspaceArea(): Promise<unknown> {
+  return warm("workspace-area", () => import("./CreationWorkspaceArea.svelte"));
+}
+
 export function warmCreateMethod(methodId: string): Promise<unknown> {
   const loader = CREATE_METHOD_PANEL_LOADERS[methodId];
   // Construct (and an unknown id) needs only the layout.
@@ -80,7 +90,10 @@ export function warmInIdleSequence(
   const next = (index: number): void => {
     const run = warms[index];
     if (cancelled || !run) return;
-    const go = () => void run().finally(() => next(index + 1));
+    const go = () =>
+      void whenMotionSettled()
+        .then(run)
+        .finally(() => next(index + 1));
     if (typeof requestIdleCallback === "undefined") {
       const handle = setTimeout(go, 200);
       cancelPending = () => clearTimeout(handle);

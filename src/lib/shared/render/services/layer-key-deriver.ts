@@ -12,6 +12,10 @@ import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js
 import type { LayerRenderOptions } from "../services/types";
 import { renderedTriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";
 import {
+  renderedBuugengStyle,
+  type BuugengStyle,
+} from "../../pictograph/prop/domain/buugeng-appearance";
+import {
   isVisibleMotion,
   type MotionData,
 } from "../../pictograph/shared/domain/models/motion-data";
@@ -23,6 +27,8 @@ export interface BaseLayerKeyComponents {
   // The triangle's side grip swaps the prop artwork without touching the
   // motion hash.
   triangleGrip?: "side";
+  // Likewise a buugeng drawn in a non-classic style.
+  buugengStyle?: Exclude<BuugengStyle, "classic">;
   leftPropType: string;
   rightPropType: string;
   // Chirality mirrors the prop AND (via the preparer) can collapse the beta
@@ -122,10 +128,14 @@ export function getBaseLayerComponents(
   const triangleGrip = options.handPathMode
     ? undefined
     : renderedTriangleGrip(options.triangleGrip, [leftPropType, rightPropType]);
+  const buugengStyle = options.handPathMode
+    ? undefined
+    : renderedBuugengStyle(options.buugengStyle, [leftPropType, rightPropType]);
   return {
     motionHash: deriveMotionHash(pictograph),
     ...(options.fanAppearance && { fanAppearance: JSON.stringify(options.fanAppearance) }),
     ...(triangleGrip && { triangleGrip }),
+    ...(buugengStyle && { buugengStyle }),
     leftPropType,
     rightPropType,
     leftBuugengFlipped: options.leftBuugengFlipped ?? false,

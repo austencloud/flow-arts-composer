@@ -1,3 +1,22 @@
+/**
+ * Baking motion only exists to feed the strict finger-contact solver, so
+ * legacy contact never mounts the hidden capture scene at all. Recording,
+ * welded grips and exports drive the rig directly and skip it too.
+ */
+export function shouldPrepareWebMotion(options: {
+  contactMode: "legacy" | "prop-authoritative";
+  rendererHandleRequired: boolean;
+  weldGrip: boolean;
+  exporting: boolean;
+}): boolean {
+  return (
+    options.contactMode === "prop-authoritative" &&
+    !options.rendererHandleRequired &&
+    !options.weldGrip &&
+    !options.exporting
+  );
+}
+
 export interface MotionRequestKey {
   signature: string;
   sequence: object | null;

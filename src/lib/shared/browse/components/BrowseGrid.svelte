@@ -263,7 +263,7 @@
   .sequences-grid.grid-view {
     display: grid;
     gap: var(--spacing-sm);
-    align-items: start;
+    align-items: var(--browse-row-align, start);
   }
 
   .sequences-grid.grid-view.is-transitioning {

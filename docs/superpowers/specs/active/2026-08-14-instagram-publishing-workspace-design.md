@@ -6,7 +6,7 @@ remaining: "Continue from the implemented schemas, delivery state, InstagramPost
 depends_on: "external: Meta app permissions and Austen account review for publishing"
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 work_state: blocked
 ---
 # Instagram Publishing Workspace and Delivery Contract
@@ -15,8 +15,7 @@ work_state: blocked
 
 **Date:** 2026-08-14
 
-**Status:** Proposed. This document defines the implementation target but does
-not mark any gate as implemented.
+**Status:** Partly implemented (schemas, delivery state, InstagramPostReview, server capabilities); live publishing blocked on owned-account proof and Austen review. Re-triaged 2026-11-07; see the triage line above. Gate wording below is the original target, not current state.
 
 **Short review:** [Instagram Publishing: Austen Review Brief](./2026-08-14-instagram-publishing-austen-review.md)
 

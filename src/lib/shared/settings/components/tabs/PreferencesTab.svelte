@@ -28,6 +28,7 @@
     type SkippableConfirmation,
   } from "../../confirmations";
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
+  import ReleaseUnreadDot from "../ReleaseUnreadDot.svelte";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import {
     applyNativeUpdate,
@@ -199,7 +200,9 @@
             description={versionLine}
             opensPage
             onclick={() => openSettingsPage("release-notes")}
-          />
+          >
+            {#snippet badge()}<ReleaseUnreadDot />{/snippet}
+          </SettingActionRow>
           {#if nativeUpdate.available}
             <div aria-live="polite">
               <SettingActionRow

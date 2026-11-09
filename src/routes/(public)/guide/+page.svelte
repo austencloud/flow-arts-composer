@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import GuideShell from "./_components/GuideShell.svelte";
   import HubHeroBuild from "./_components/HubHeroBuild.svelte";
   import HubPictograph from "./_components/HubPictograph.svelte";
   import GuideScreens from "./_components/fit/GuideScreens.svelte";
+  import { watchSmallScreen } from "./_components/fit/guide-screen-url";
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import {
     GROUP_TITLES,
@@ -60,10 +62,15 @@
   // The front page drills down like every guide page (2026-10-24 fit pass):
   // the way in, Level 1's three stages, then everything else. The window is
   // the page and it never scrolls.
+  // On a phone the section list runs across two screens, so it never pans.
+  let small = $state(false);
+  onMount(() => watchSmallScreen((v) => (small = v)));
+  const SECTIONS_ON_FIRST_PHONE_SCREEN = 3;
   const screenLabels = $derived([
     "Start",
     tDynamic("guide_hub_level1_title"),
     tDynamic("guide_hub_read_by_section"),
+    ...(small ? [tDynamic("guide_hub_read_by_section")] : []),
   ]);
   const nextPage = firstTopic
     ? { href: localHref(firstTopicHref), title: firstTopic.title }
@@ -195,7 +202,7 @@
               {tDynamic("guide_hub_read_by_section")}
             </h2>
             <div class="section-list">
-              {#each guideSections as section (section.key)}
+              {#each !small ? guideSections : n === 2 ? guideSections.slice(0, SECTIONS_ON_FIRST_PHONE_SCREEN) : guideSections.slice(SECTIONS_ON_FIRST_PHONE_SCREEN) as section (section.key)}
                 <a class="section-row" href={localHref(section.href)}>
                   <span class="section-copy">
                     <strong>
@@ -209,6 +216,7 @@
                   <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                 </a>
               {/each}
+              {#if !small || n === 3}
               <a class="section-row" href="/guides/level-1.pdf" download>
                 <span class="section-copy">
                   <strong>
@@ -221,6 +229,7 @@
                 </span>
                 <span class="pdf-action">{tDynamic("guide_hub_download_pdf")}</span>
               </a>
+              {/if}
             </div>
           </section>
         {/if}

@@ -10,7 +10,6 @@
     type EffectsConfigState,
   } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
-  import { flyFade } from "#lib/shared/transitions/motion.js";
   import { isTheaterViewport } from "#lib/features/create/shared/services/workspace-theater.js";
 
   let {
@@ -287,10 +286,8 @@
              canvas never resizes as the buttons arrive or leave. -->
         <div class="theater-actions">
           {#if active && theaterActions}
-            <div
-              class="theater-actions-stack"
-              transition:flyFade={{ x: 8, y: 0 }}
-            >
+            <!-- Each action carries its own presence, in its snippet. -->
+            <div class="theater-actions-stack">
               {@render theaterActions()}
             </div>
           {/if}

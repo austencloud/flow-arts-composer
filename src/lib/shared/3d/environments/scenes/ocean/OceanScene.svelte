@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { T, useThrelte, useTask } from "@threlte/core";
-  import { useGltf, useKtx2, useMeshopt } from "@threlte/extras";
+  import { useThrelte, useTask } from "@threlte/core";
   import { type Scene, type WebGLRenderer } from "three";
+  import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
   import { userProportionsState } from "@austencloud/scene-3d";
   import {
     detectOceanQuality,
@@ -17,21 +17,17 @@
   import FloraInstances from "./authored/FloraInstances.svelte";
   import OceanRuntimeSystems from "./runtime/OceanRuntimeSystems.svelte";
   import OceanDepthGradient from "./runtime/OceanDepthGradient.svelte";
-  import { getSceneFeatureContext } from "../../../scene-features/context/scene-feature-context";
   import { tryGetAdaptiveQualityContext } from "../../../context/adaptive-quality-context";
+  import GlbEnvironment from "../../components/GlbEnvironment.svelte";
+  import { requireRegisteredEnvironment } from "../../registry/environment-registry";
+  import type { RegisteredEnvironmentProps } from "../../registry/environment-runtimes";
 
-  interface Props {
-    performerCount?: number;
-    stageWidth?: number;
-    stageDepth?: number;
-    stageZOffset?: number;
-    /** Translation applied by the shared environment coordinate frame. */
-    worldYOffset?: number;
-    /** Retained film worlds load while hidden but only the active one owns globals. */
-    active?: boolean;
-  }
+  // Lab previews mount Ocean without a registry lookup, so it defaults to its
+  // own manifest (static/models/ocean/scene.json).
+  type Props = Partial<RegisteredEnvironmentProps>;
 
   let {
+    environment = requireRegisteredEnvironment("ocean"),
     performerCount = 1,
     stageWidth = 6,
     stageDepth = 6,
@@ -60,22 +56,16 @@
   const floraRequired = $derived(quality.enableAuthoredFlora);
 
 
-  const sceneFeatures = getSceneFeatureContext();
 
 
-  const environmentGlb = useGltf("/models/ocean/ocean-environment.glb", {
-    meshoptDecoder: useMeshopt(),
-    ktx2Loader: useKtx2("/basis/"),
-  });
+  // The seabed comes from the manifest's GLB, loaded by GlbEnvironment.
+  let environmentGlb = $state<GLTF | null>(null);
 
-  // The environment feature loads two GLBs: the seabed (ocean-environment.glb,
-  // above) and the flora scene (inside FloraInstances). The loading bar must
-  // represent BOTH, and never bounce — so we fold them into one combined
-  // fraction here. Seabed is a binary step (useGltf gives no byte progress);
-  // flora reports real loaded/total. Ready fires only when both have landed.
-  const SEABED_WEIGHT = 0.4;
-  const FLORA_WEIGHT = 0.6;
-
+  // The environment feature loads two GLBs: the seabed and the flora scene
+  // (inside FloraInstances). GlbEnvironment folds the flora's real
+  // loaded/total into the curtain beside the seabed's single step, weighted by
+  // the manifest's glbProgressWeight, so the bar covers both and never bounces.
+  // Ready fires only when both have landed.
   let floraFraction = $state(0);
   let floraLoaded = $state(false);
 
@@ -102,14 +92,9 @@
     floraFraction = 1;
   }
 
-  $effect(() => {
-    if (!active) return;
-    const seabed = $environmentGlb ? 1 : 0;
-    const combined = seabed * SEABED_WEIGHT + floraFraction * FLORA_WEIGHT;
-    sceneFeatures?.reportProgress("environment", combined);
-    if ($environmentGlb && (!floraRequired || floraLoaded)) {
-      sceneFeatures?.reportReady("environment");
-    }
+  const floraProgress = $derived({
+    fraction: floraFraction,
+    ready: !floraRequired || floraLoaded,
   });
 
 
@@ -129,7 +114,7 @@
   // casting underneath itself. Its neutral envMapIntensity lets the scene-level
   // underwater IBL control match the authored reef exactly.
   $effect(() => {
-    const g = $environmentGlb;
+    const g = environmentGlb;
     if (!g) return;
     enhanceOceanSeabed(g.scene, {
       enableCaustics: quality.enableCaustics,
@@ -171,9 +156,12 @@
   });
 </script>
 
-{#if $environmentGlb}
-  <T is={$environmentGlb.scene} dispose={false} />
-{/if}
+<GlbEnvironment
+  {environment}
+  {active}
+  companion={floraProgress}
+  bind:gltf={environmentGlb}
+/>
 
 {#if floraRequired}
   <FloraInstances

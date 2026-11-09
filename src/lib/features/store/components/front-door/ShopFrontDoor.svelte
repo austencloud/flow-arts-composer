@@ -201,8 +201,8 @@
           class:wide-rem2={remWide === 2}
           class:mid-rem1={remMid === 1}
         >
-          {#each visible as entry (entry.href)}
-            <ShopCatalogTile {entry} />
+          {#each visible as entry, index (entry.href)}
+            <ShopCatalogTile {entry} {index} />
           {/each}
         </div>
       {/if}

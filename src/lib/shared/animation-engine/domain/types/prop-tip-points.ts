@@ -14,6 +14,7 @@
  */
 
 import { HOOP_FAMILY_TIP_POINTS } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
+import { BUUGENG_STYLE_TIP_POINTS } from "#lib/shared/pictograph/prop/domain/buugeng-style-geometry.generated.js";
 
 /**
  * A single tip attachment point on a prop. Position only - no effect-specific
@@ -584,6 +585,13 @@ export const PROP_RENDER_KEY_TIP_POINTS: Record<string, PropTipConfig> = {
   ...fanBuildTables("bigfan", BIGFAN_BUILD_SCALE),
   // The side grip by glyph key.
   triangle__side: TRIANGLE_SIDE_TIP_POINTS,
+  // Buugeng styles curl their tips inward, off the plain pair's axis.
+  ...Object.fromEntries(
+    Object.entries(BUUGENG_STYLE_TIP_POINTS).map(([key, points]) => [
+      key,
+      { points: points.map((point) => ({ ...point })) },
+    ])
+  ),
 };
 
 // Callback injection avoids a circular dependency on the feature layer.

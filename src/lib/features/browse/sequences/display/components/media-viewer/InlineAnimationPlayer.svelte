@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     onMount,
     onDestroy,
@@ -178,6 +179,7 @@
     hideStepNumbers = false,
     overlayVisibility = undefined,
     gridVisible = true,
+    gridModeOverride = null,
     disableContextMenu = false,
     videoDownload = false,
     interactive = true,
@@ -357,6 +359,8 @@
     overlayVisibility?: ComponentProps<typeof AnimatorCanvas>["overlayVisibility"];
     /** Hide the diamond/box grid — pattern-trace embeds show only the prop. */
     gridVisible?: boolean;
+    /** Draw this grid instead of the one the sequence was written on. */
+    gridModeOverride?: GridMode | null;
     /** Suppress the canvas right-click / long-press settings menu so a locked
      *  public embed can't have its prop/effort/BPM changed out from under it. */
     disableContextMenu?: boolean;
@@ -706,7 +710,9 @@
 
   // Prefer sequence prop's gridMode (always current) over animation state (may be stale during switch)
   let gridMode = $derived(
-    sequence?.gridMode ?? animationState.sequenceData?.gridMode
+    gridModeOverride ??
+      sequence?.gridMode ??
+      animationState.sequenceData?.gridMode
   );
 
   // Load services on mount - create per-instance playback stack so multiple

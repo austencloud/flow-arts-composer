@@ -14,6 +14,10 @@ import {
   normalizeFanAppearance,
 } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { renderedTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import {
+  renderedBuugengStyle,
+  type BuugengStyle,
+} from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 import { gridJoinKey, isGridJoin } from "@tka/render-core";
 // getSettings loaded dynamically to avoid pulling $app/env into worker bundle
 
@@ -58,6 +62,8 @@ interface PictographKeyInput {
     // Present only when a triangle is drawn with the side grip, so corner-grip
     // renders and every other prop keep their established key.
     triangleGrip?: "side";
+    // Present only when a buugeng is drawn in a non-classic style.
+    buugengStyle?: Exclude<BuugengStyle, "classic">;
     primaryPropColors?: { left: string; right: string };
     primaryPropColorRevision?: string;
     showTKA: boolean;
@@ -299,6 +305,12 @@ export class PictographKeyHasher {
           resolvedLeftProp,
           resolvedRightProp,
         ]);
+    const buugengStyle = visibility.handPathMode
+      ? undefined
+      : renderedBuugengStyle(visibility.buugengStyle, [
+          resolvedLeftProp,
+          resolvedRightProp,
+        ]);
     const turnGlyphRevision = getTurnGlyphRevision(
       data,
       visibility.showTKA ?? true
@@ -335,6 +347,7 @@ export class PictographKeyHasher {
             ),
           }),
         ...(triangleGrip && { triangleGrip }),
+        ...(buugengStyle && { buugengStyle }),
         ...(visibility.primaryPropColors && {
           primaryPropColors: visibility.primaryPropColors,
           primaryPropColorRevision: "material-colors-v2",

@@ -23,6 +23,7 @@
     compactDisplayArt,
     compactDisplayColumns,
     fitDisplayGrid,
+    fitDisplayRoom,
   } from "../../domain/display-grid-fit";
 
   let {
@@ -66,6 +67,10 @@
      *  compact padding but fits the arrangement to both dimensions. Ignored
      *  with the per-hand chips. */
     compact = false,
+    /** With `fill`: a host that never scrolls (a guide screen). Every tile
+     *  stays in the box however small the box is, sharing it, with no floor
+     *  under the picture. */
+    room = false,
     /** The host lays the tiles out: they join the shared `.rt-tile-grid`
      *  (rail-tile.css) and take its `--tile-grid-cols` and `--tile-grid-art`,
      *  so this panel's tiles match the host's other tile grids exactly
@@ -108,6 +113,7 @@
     grow?: boolean;
     stretch?: boolean;
     compact?: boolean;
+    room?: boolean;
     hostSized?: boolean;
     chips?: boolean;
     showSequenceMarks?: boolean;
@@ -450,7 +456,9 @@
         child === gridEl ? sum : sum + (child as HTMLElement).offsetHeight,
       0
     );
-    if (stretch) shellEl.style.minHeight = `${below + MIN_STRETCH_GRID}px`;
+    if (stretch && !room) {
+      shellEl.style.minHeight = `${below + MIN_STRETCH_GRID}px`;
+    }
     const height = shellEl.clientHeight - below;
     const chip = gridEl.firstElementChild as HTMLElement | null;
     if (width <= 0 || height <= 0 || !chip) return;
@@ -479,6 +487,24 @@
     const gridStyle = getComputedStyle(gridEl);
     const gapX = parseFloat(gridStyle.columnGap) || 0;
     const gapY = parseFloat(gridStyle.rowGap) || 0;
+
+    if (room) {
+      const label = gridEl.querySelector<HTMLElement>(".chip-label");
+      const lineH = label ? parseFloat(getComputedStyle(label).lineHeight) : 0;
+      const roomFit = fitDisplayRoom({
+        width,
+        height,
+        padX,
+        chromeY: chromeY - labelH + lineH * 2,
+        gapX,
+        gapY,
+        count: chips.length,
+      });
+      fitCols = roomFit?.cols ?? 0;
+      fitArt = roomFit?.art ?? 0;
+      fitTile = roomFit?.tile ?? 0;
+      return;
+    }
 
     const fit = fitDisplayGrid({
       width,
@@ -638,7 +664,8 @@
   <div
     class="vis-grid-shell"
     class:fill
-    class:stretch={fill && stretch}
+    class:stretch={fill && (stretch || room)}
+    class:room={fill && room}
     bind:this={shellEl}
   >
     <div
@@ -848,6 +875,25 @@
 
   .vis-grid-shell.stretch > .vis-grid.fitted .rt-chip {
     aspect-ratio: auto;
+  }
+
+  /* A host that never scrolls: a label keeps to the two lines the fit allowed
+     for, and the tiles may shrink below the app's button floor. */
+  .vis-grid-shell.room .rt-chip {
+    min-width: 0;
+    min-height: 0;
+  }
+  .vis-grid-shell.room .chip-label {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  @container (max-width: 30rem) {
+    .vis-grid-shell.room .vis-grid.compact .chip-label {
+      font-size: var(--font-size-compact, 12px);
+    }
   }
 
   /* Same breath between the two groups, placed on whichever axis the boundary

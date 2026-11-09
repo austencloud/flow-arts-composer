@@ -68,7 +68,8 @@
       transform var(--duration-emphasis) var(--ease-standard),
       background var(--duration-fast) var(--ease-standard),
       border-color var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
+      box-shadow var(--duration-fast) var(--ease-standard),
+      var(--transition-control-shape);
     box-shadow:
       0 5px 14px
         color-mix(in srgb, var(--semantic-success, #22c55e) 52%, transparent),
@@ -81,6 +82,12 @@
     font-weight: 650;
     line-height: 1;
     white-space: nowrap;
+    opacity: var(--workspace-action-label-opacity, 1);
+    transition: var(--transition-control-label);
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   .sequence-actions-button:hover {

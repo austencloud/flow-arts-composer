@@ -6,11 +6,11 @@
   placements; on narrow screens each placement stacks as a captioned 2 x 2.
   Every sentence comes from the shared topic record.
 
-  One screen at a time (2026-10-24 fit pass): a large window shows the
-  advice, the table and the two notes on one screen; a laptop gives the
-  advice a screen and the table the next; a phone gives the advice, each
-  placement and the notes a screen each. The pictographs grow with the
-  window (--fit).
+  One screen at a time (2026-10-24 fit pass): a window with room shows the
+  advice with the whole table, then the two notes with it again; a phone
+  runs the advice and the notes across five screens, one paragraph with a
+  placement on each, so no screen is words alone and none pans (2026-11-06).
+  The pictographs grow with the window (--fit).
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -42,30 +42,33 @@
 
   let tier = $state<ScreenTier>("large");
   onMount(() => watchScreenTier((v) => (tier = v)));
-  type View = { label: string; intro: boolean; kinds: string[]; notes: boolean };
+  // Which of the advice's three paragraphs, and which of the two notes, a
+  // screen shows.
+  type View = { label: string; intro: number[]; kinds: string[]; notes: number[] };
   const ALL = PLACEMENT_FAMILIES.map((f) => f.kind as string);
   const views = $derived<View[]>(
-    tier === "large"
+    tier !== "small"
       ? [
-          { label: "Alpha, Beta, Gamma", intro: true, kinds: ALL, notes: false },
-          { label: "Notes", intro: false, kinds: [], notes: true },
+          { label: "Alpha, Beta, Gamma", intro: [0, 1, 2], kinds: ALL, notes: [] },
+          { label: "Notes", intro: [], kinds: ALL, notes: [0, 1] },
         ]
-      : tier === "medium"
-        ? [
-            { label: "Intro", intro: true, kinds: [], notes: false },
-            { label: "Alpha, Beta, Gamma", intro: false, kinds: ALL, notes: false },
-            { label: "Notes", intro: false, kinds: [], notes: true },
-          ]
-        : [
-            { label: "Intro", intro: true, kinds: [], notes: false },
-            ...PLACEMENT_FAMILIES.map((f) => ({
-              label: t(f.name),
-              intro: false,
-              kinds: [f.kind as string],
-              notes: false,
-            })),
-            { label: "Notes", intro: false, kinds: [], notes: true },
-          ]
+      : (
+          [
+            [0, [0], []],
+            [0, [1], []],
+            [1, [2], []],
+            [1, [], [0]],
+            [2, [], [1]],
+          ] as [number, number[], number[]][]
+        ).map(([k, intro, notes]) => {
+          const family = PLACEMENT_FAMILIES[k]!;
+          return {
+            label: t(family.name),
+            intro,
+            kinds: [family.kind as string],
+            notes,
+          };
+        })
   );
   const labels = $derived(views.map((v) => v.label));
 </script>
@@ -90,18 +93,24 @@
   {#snippet screen(n)}
     {@const view = views[n]}
     <div class="staff-topic" class:dark={darkMode}>
-      {#if view?.intro}
+      {#if view && view.intro.length > 0}
         <div class="intro">
-          <p class="lede">{staffPlacementsTopicText("markThumb")}</p>
-          <p>
-            <Sentences
-              text={`${staffPlacementsTopicText("trackRotations")} ${staffPlacementsTopicText("negativeSpace")}`}
-            />
-          </p>
-          <p>
-            {staffPlacementsTopicText("centerEnd")}
-            {staffPlacementsTopicText("practice")}
-          </p>
+          {#if view.intro.includes(0)}
+            <p class="lede">{staffPlacementsTopicText("markThumb")}</p>
+          {/if}
+          {#if view.intro.includes(1)}
+            <p>
+              <Sentences
+                text={`${staffPlacementsTopicText("trackRotations")} ${staffPlacementsTopicText("negativeSpace")}`}
+              />
+            </p>
+          {/if}
+          {#if view.intro.includes(2)}
+            <p>
+              {staffPlacementsTopicText("centerEnd")}
+              {staffPlacementsTopicText("practice")}
+            </p>
+          {/if}
         </div>
       {/if}
 
@@ -147,10 +156,14 @@
         </div>
       {/if}
 
-      {#if view?.notes}
+      {#if view && view.notes.length > 0}
         <aside class="remember">
-          <p><Sentences text={staffPlacementsTopicText("unmarked")} /></p>
-          <p><Sentences text={staffPlacementsTopicText("thumbsInFirst")} /></p>
+          {#if view.notes.includes(0)}
+            <p><Sentences text={staffPlacementsTopicText("unmarked")} /></p>
+          {/if}
+          {#if view.notes.includes(1)}
+            <p><Sentences text={staffPlacementsTopicText("thumbsInFirst")} /></p>
+          {/if}
         </aside>
       {/if}
     </div>

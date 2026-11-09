@@ -46,6 +46,12 @@ export class MotionQueryHandler implements IMotionQueryHandler {
     }
   }
 
+  /** Load and parse the motion data ahead of the first query, so a surface
+   * can fetch it while the visitor is still busy with something else. */
+  prewarm(): Promise<void> {
+    return this.ensureInitialized();
+  }
+
   private async initialize(): Promise<void> {
     try {
       const csvData = await this.csvLoader.loadCSVDataSet();

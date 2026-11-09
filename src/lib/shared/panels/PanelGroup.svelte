@@ -465,8 +465,10 @@
       clearTimeout(safety);
       basisHandoffs.delete(key);
       // Hand the basis back so a content-sized dock resumes following its
-      // contents instead of freezing at the size it happened to land on.
-      element.style.flexBasis = basis;
+      // contents instead of freezing at the size it happened to land on. Take the
+      // latest one: a change that interrupts this handoff settles it first, and
+      // the basis captured here would overwrite the one just declared.
+      element.style.flexBasis = appliedFlex.get(key)?.basis ?? basis;
     };
     const onTransitionEnd = (event: TransitionEvent) => {
       if (event.target !== element || event.propertyName !== "flex-basis")

@@ -6,9 +6,7 @@ import {
   navigationMorphs,
   RESIDENT_HOST_PATHS,
 } from "../../src/lib/shared/transitions/navigation-morphs";
-import {
-  TILE_FLIGHT_PATHS,
-} from "../../src/lib/shared/landing/components/launchpad/launchpad-tiles";
+import { TILE_FLIGHT_PATHS } from "../../src/lib/shared/landing/components/launchpad/launchpad-tiles";
 import { tileFlight } from "../../src/lib/shared/transitions/tile-flight.svelte";
 import {
   isNamedRouteMorphActive,
@@ -70,7 +68,7 @@ describe("landing route morph allowlist", () => {
       expect(navigationMorphs(location("/"), location(pathname))).toBe(false);
       expect(navigationMorphs(location(pathname), location("/"))).toBe(false);
 
-      tileFlight.arm("test-tile", pathname);
+      tileFlight.arm(pathname);
       expect(navigationMorphs(location("/"), location(pathname))).toBe(true);
       tileFlight.navigationSettled("/", pathname);
       expect(navigationMorphs(location(pathname), location("/"))).toBe(true);
@@ -136,9 +134,9 @@ describe("landing route morph allowlist", () => {
 });
 
 describe("landing shared-element contract", () => {
-  // Every tile shares one window and one destination, so no page has to carry a
-  // name of its own, and a name left on a page would pull it out of the window.
-  it("flies every tile through one name on the shell's content region", () => {
+  // The shell's content region is the only thing a flight names, so no page has
+  // to carry a name of its own and the tile stays out of it.
+  it("pushes every tile's page through names on the shell's content region", () => {
     const tile = readSource(
       "src/lib/shared/landing/components/launchpad/LaunchpadTile.svelte"
     );
@@ -147,13 +145,12 @@ describe("landing shared-element contract", () => {
     );
     const css = readSource("src/lib/shared/transitions/view-transitions.css");
 
-    expect(tile).toContain(
-      "style:view-transition-name={flying ? TILE_WINDOW_NAME : undefined}"
-    );
+    expect(tile).not.toContain("view-transition-name");
     expect(chrome).toContain(
       "style:view-transition-name={tileFlight.arrivingContentName(path)}"
     );
-    expect(css).toContain("::view-transition-group(tile-window)");
+    expect(css).toContain("::view-transition-group(page-arriving)");
+    expect(css).not.toContain("tile-window");
     expect(css).not.toMatch(/launchpad-/);
 
     for (const page of [
@@ -232,7 +229,9 @@ describe("landing shared-element contract", () => {
     expect(chrome).toMatch(
       /duration:\s*suppressContentFade\s*\|\|\s*!navigated\s*\?\s*0\s*:\s*DURATION\.normal/
     );
-    expect(chrome).toContain("if (contentKey !== openingKey) navigated = true;");
+    expect(chrome).toContain(
+      "if (contentKey !== openingKey) navigated = true;"
+    );
     expect(chrome).toContain(
       'import { DURATION } from "#lib/shared/transitions/transitions.js";'
     );

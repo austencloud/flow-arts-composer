@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@tka/shape-domain": "workspace:*",
-    "@austencloud/motion": "file:../../vendor/austencloud-motion-0.2.1.tgz"
+    "@austencloud/motion": "file:../../vendor/austencloud-motion-0.2.3.tgz"
   },
   "peerDependencies": {
     "svelte": ">=5.0.0"

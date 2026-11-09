@@ -50,6 +50,24 @@
     setTimeout(() => (key = "beta"), 40);
   }
 
+  // A new key lands while the previous key's delayed intro is still waiting
+  // (swap mode, or crossfade with `delay`). Sequences run on in-page timers
+  // for the rapid toggle's reason: a runner round-trip would miss the window.
+  const INTERRUPT_GAPS = [20, 60, 100, 160, 260];
+  const INTERRUPT_SEQUENCE = ["b", "a", "c", "b", "c"];
+  let swapKey = $state("a");
+  let delayKey = $state("a");
+  const DELAYED_HEIGHTS: Record<string, number> = { a: 60, b: 160, c: 100 };
+
+  function interruptDelayed(gap: number): void {
+    INTERRUPT_SEQUENCE.forEach((next, index) => {
+      setTimeout(() => {
+        swapKey = next;
+        delayKey = next;
+      }, index * gap);
+    });
+  }
+
   function sampleInteractiveLayers(): void {
     maxInteractiveLayers = 0;
     observedOverlap = false;
@@ -142,6 +160,11 @@
 <button type="button" onclick={sampleInteractiveLayers}
   >Measure interactive layers</button
 >
+{#each INTERRUPT_GAPS as gap (gap)}
+  <button type="button" onclick={() => interruptDelayed(gap)}
+    >Interrupt delayed {gap}</button
+  >
+{/each}
 <output data-testid="interactive-layer-count">{maxInteractiveLayers}</output>
 <output data-testid="observed-overlap">{observedOverlap}</output>
 <output data-testid="collapse-midpoint">{collapseMidpoint}</output>
@@ -150,6 +173,22 @@
   <Crossfade {key} duration={80} animateHeight>
     <div class="panel" style="height: {HEIGHTS[key]}px;">
       {key} panel <button type="button">Panel action</button>
+    </div>
+  </Crossfade>
+</div>
+
+<div data-testid="swap-stage" style="width: 240px;">
+  <Crossfade key={swapKey} duration={80} mode="swap" animateHeight>
+    <div class="panel" style="height: {DELAYED_HEIGHTS[swapKey]}px;">
+      {swapKey} swap panel
+    </div>
+  </Crossfade>
+</div>
+
+<div data-testid="delay-stage" style="width: 240px;">
+  <Crossfade key={delayKey} duration={80} delay={60} animateHeight>
+    <div class="panel" style="height: {DELAYED_HEIGHTS[delayKey]}px;">
+      {delayKey} delay panel
     </div>
   </Crossfade>
 </div>

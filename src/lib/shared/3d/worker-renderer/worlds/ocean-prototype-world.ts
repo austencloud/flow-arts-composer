@@ -1,10 +1,10 @@
+import { BackgroundType } from "@austencloud/backgrounds";
 import { Group, Raycaster, Scene, Vector2, Vector3 } from "three";
-import {
+import type {
+  GLTF,
   GLTFLoader,
-  type GLTF,
 } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
+import { requireRegisteredEnvironment } from "../../environments/registry/environment-registry";
 import {
   causticUniforms,
   DEFAULT_CAUSTIC_STRENGTH,
@@ -28,6 +28,7 @@ import {
   type WorkerEnvironmentWorld,
   type WorkerWorldContext,
 } from "./worker-environment-world";
+import { createRegistryGltfLoader } from "./registry-gltf-loader";
 
 const OCEAN_WORLD_Y_OFFSET = -1.95;
 
@@ -75,12 +76,13 @@ export async function createOceanPrototypeWorld(
     enableImageBasedLighting: true,
   });
 
-  const loader = new GLTFLoader();
-  loader.setMeshoptDecoder(MeshoptDecoder);
-  const ktx2Loader = new KTX2Loader()
-    .setTranscoderPath(absoluteAssetUrl("/basis/"))
-    .detectSupport(context.renderer);
-  loader.setKTX2Loader(ktx2Loader);
+  // The seabed's URL and decoders come from static/models/ocean/scene.json,
+  // the same manifest the main-thread OceanScene reads.
+  const seabedSource = createRegistryGltfLoader(
+    requireRegisteredEnvironment(BackgroundType.OCEAN),
+    context.renderer
+  );
+  const { loader } = seabedSource;
 
   const loaded: [number, number] = [0, 0];
   const totals: [number, number] = [0, 0];
@@ -96,7 +98,7 @@ export async function createOceanPrototypeWorld(
   let flora: GLTF;
   try {
     [seabed, flora] = await Promise.all([
-      loadGltf(loader, "/models/ocean/ocean-environment.glb", (value, total) =>
+      loadGltf(loader, seabedSource.url, (value, total) =>
         report(0, value, total)
       ),
       loadGltf(loader, oceanFloraSceneUrl(), (value, total) =>
@@ -104,7 +106,7 @@ export async function createOceanPrototypeWorld(
       ),
     ]);
   } finally {
-    ktx2Loader.dispose();
+    seabedSource.dispose();
   }
   context.reportProgress("assets", 1);
 

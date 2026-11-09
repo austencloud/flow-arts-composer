@@ -13,6 +13,7 @@
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import { whatsNewState } from "../../../settings/state/whats-new-state.svelte";
+  import ReleaseUnreadDot from "../../../settings/components/ReleaseUnreadDot.svelte";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import RobustAvatar from "../../../components/avatar/RobustAvatar.svelte";
   import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
@@ -281,6 +282,7 @@
       <button class="version-link" onclick={handleWhatsNew}>
         v{__APP_VERSION__}
         <span class="whats-new-label">{t("nav_ui_what_s_new")}</span>
+        <ReleaseUnreadDot />
       </button>
     </div>
   </div>
@@ -290,7 +292,9 @@
   .account-popover {
     position: fixed;
     min-width: 220px;
-    background: rgb(18, 18, 28);
+    /* Opaque theme surface: the old fixed near-black put the theme's dark
+       light-mode text on a dark panel. */
+    background: var(--surface-panel-opaque, rgb(18, 18, 28));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     box-shadow:
@@ -343,7 +347,7 @@
 
   .identity-chevron {
     font-size: var(--font-size-compact, 12px);
-    opacity: 0.3;
+    opacity: 0.65;
     flex-shrink: 0;
   }
 
@@ -533,8 +537,8 @@
     border: none;
     padding: 10px 16px 12px;
     font-size: var(--font-size-sm, 14px);
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
-    opacity: 0.6;
+    color: color-mix(in srgb, var(--theme-text, #fff) 65%, transparent);
+    opacity: 1;
     cursor: pointer;
     transition:
       opacity var(--duration-fast) var(--ease-standard),

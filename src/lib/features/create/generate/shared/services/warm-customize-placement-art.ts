@@ -5,18 +5,25 @@
  * letters, and that load used to land in the middle of the card's morph: the
  * panel stuttered on its first open only.
  * The Generate grid warms the same pictographs while the page is idle, so the
- * first open draws from the preparer's cache like every open after it.
+ * first open draws from the preparer's cache like every open after it. An idle
+ * callback can fire between a morph's frames, so the warm-up steps aside for
+ * any card already opening, and yields between pictographs so a tap can get in.
  *
  * The options follow the ones PictographContainer prepares with, read from the
  * same settings. A setting the warm-up misses only costs a cache miss on open;
  * the shared tables and art are loaded either way.
  */
+import {
+  whenMotionSettled,
+  yieldToScheduler,
+} from "#lib/shared/foundation/utils/background-scheduling.js";
 import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 import { loadStartPlacementVariations } from "#lib/shared/components/placement-picker/placement-variations.js";
 import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import { normalizeBuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
 import * as TKAGlyphModule from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
@@ -32,6 +39,7 @@ const { preloadLetterDimensions } = TKAGlyphModule as unknown as {
 const warmed = new Set<GridMode>();
 
 async function warm(gridMode: GridMode): Promise<void> {
+  await whenMotionSettled();
   const settings = getSettings();
   const options = {
     themeMode: getAnimationVisibilityManager().isDarkMode()
@@ -43,6 +51,7 @@ async function warm(gridMode: GridMode): Promise<void> {
     rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
+    buugengStyle: normalizeBuugengStyle(settings.buugengStyle),
     showLeftMotion: true,
     showRightMotion: true,
   };
@@ -57,6 +66,8 @@ async function warm(gridMode: GridMode): Promise<void> {
     preloadLetterDimensions(variations.map((v) => v.letter)),
   ]);
   for (const variation of variations) {
+    await yieldToScheduler();
+    await whenMotionSettled();
     await pictographPreparer.prepareSingle(variation, options);
   }
 }

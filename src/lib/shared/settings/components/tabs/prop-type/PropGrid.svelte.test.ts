@@ -210,6 +210,75 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("button", { name: "Select Buugeng prop type" }))
       .toBeVisible();
   });
+
+  // The buugeng style is a look beside Size: every style visible at once,
+  // the current one marked, and a pick reported without changing the prop.
+  it("offers every buugeng style on the details page and keeps it on Big", async () => {
+    const onSelect = vi.fn();
+    const onBuugengStyleChange = vi.fn();
+    const { rerender } = render(PropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect,
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      buugengStyle: "classic",
+      onBuugengStyleChange,
+    });
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    const row = page.getByTestId("buugeng-style-row");
+    await expect.element(row).toBeVisible();
+    const styles = row.getByRole("radiogroup", { name: "Style" });
+    await expect.element(styles).toBeVisible();
+    const radios = styles.getByRole("radio").elements();
+    expect(radios.map((radio) => radio.textContent?.trim())).toEqual([
+      "Classic",
+      "Crescent",
+      "Perforated",
+      "Fire",
+      "Filigree",
+    ]);
+    await expect
+      .element(styles.getByRole("radio", { name: "Classic" }))
+      .toHaveAttribute("aria-checked", "true");
+
+    await styles.getByRole("radio", { name: "Fire" }).click();
+    expect(onBuugengStyleChange).toHaveBeenCalledWith("fire");
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BUUGENG);
+
+    await rerender({ buugengStyle: "fire" });
+    await expect
+      .element(styles.getByRole("radio", { name: "Fire" }))
+      .toHaveAttribute("aria-checked", "true");
+
+    await page.getByRole("button", { name: "Big" }).click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGBUUGENG);
+    await rerender({ selectedPropType: PropType.BIGBUUGENG });
+    await expect
+      .element(page.getByTestId("buugeng-style-row"))
+      .toBeVisible();
+  });
+
+  it("hides the buugeng style where the host cannot store it", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+    });
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    await expect
+      .element(page.getByRole("button", { name: "Big" }))
+      .toBeVisible();
+    expect(page.getByTestId("buugeng-style-row").elements()).toHaveLength(0);
+  });
 });
 
 // Austen removed the Version 1 / Version 2 prop versions on 2026-10-27. Each

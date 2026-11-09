@@ -3,14 +3,16 @@ status: active
 value: null
 effort: null
 work_state: verification
-remaining: Presentation code exists; capture shape-matrix geometry at required viewports and verify performance and motion acceptance.
+remaining: "Capture Shape Matrix geometry at the required viewports and verify performance and motion acceptance. The presentation code still exists but moved to packages/shape-engine and packages/shape-domain on 2026-11-01 (cc0bfea7ce); the file list below now names the new locations."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-07'
 ---
 
 # Shape Matrix Presentation Hardening
+
+**Path note, 2026-11-07:** the files listed under owners moved from `src/lib/shared/shape-matrix/` into `packages/shape-engine/` and `packages/shape-domain/` (cc0bfea7ce, 2026-11-01); paths below are updated. Geometry and performance proof is still unrecorded.
 
 **Queue evidence, 2026-10-07:** Shape Matrix presentation components and services exist, but the required geometry and performance browser proof is not recorded here. Keep this in verification until those checks are captured.
 
@@ -93,15 +95,15 @@ No parallel framework or replacement renderer will be introduced.
 
 Primary files:
 
-- `src/lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.ts`
-- `src/lib/shared/shape-matrix/app/components/ShapeMatrixAppShell.svelte`
-- `src/lib/shared/shape-matrix/app/components/ShapeMatrixDetailPane.svelte`
-- `src/lib/shared/shape-matrix/app/components/ShapeMatrixOverflowMenu.svelte`
-- `src/lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte`
-- `src/lib/shared/shape-matrix/components/PropRelationshipChipRow.svelte`
-- `src/lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte`
-- `src/lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte`
-- `src/lib/shared/shape-matrix/domain/rotation-style.ts`
+- `packages/shape-engine/src/app/state/shape-matrix-app-state.svelte.ts`
+- `packages/shape-engine/src/app/components/ShapeMatrixAppShell.svelte`
+- `packages/shape-engine/src/app/components/ShapeMatrixDetailPane.svelte`
+- `packages/shape-engine/src/app/components/ShapeMatrixOverflowMenu.svelte`
+- `packages/shape-engine/src/components/ShapeMatrixGrid.svelte`
+- `packages/shape-engine/src/components/PropRelationshipChipRow.svelte`
+- `packages/shape-engine/src/components/RelationshipChoiceChip.svelte`
+- `packages/shape-engine/src/components/ShapeMatrixDrill.svelte`
+- `packages/shape-domain/src/flowers/rotation-style.ts`
 
 Focused tests may be added alongside existing Shape Matrix state/component/domain tests when they protect silent state, focus, recovery, or type-mapping behavior. Unrelated style cleanup and domain changes are out of scope.
 

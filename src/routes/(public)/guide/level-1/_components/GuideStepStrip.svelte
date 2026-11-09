@@ -10,10 +10,12 @@
    * rows always stack in aligned columns.
    *
    * The step block is ONE solid rounded rectangle - cells flush with hairline
-   * seams in BOTH axes (the choreo card grid), step labels drawn inside their
-   * cells (the card's step-number convention) so nothing splits the block
-   * apart - and nothing ever scrolls sideways (a single scrollable row
-   * survives only as the SSR/no-JS fallback).
+   * seams in BOTH axes (the choreo card grid), the start box fused onto it
+   * with the same seam as between two steps - and nothing ever scrolls
+   * sideways (a single scrollable row survives only as the SSR/no-JS
+   * fallback). Step numbers are the pictograph's own StepNumber overlay
+   * ("Start" on the start box, 1..N on the steps, top-left), the way the
+   * Create step grid and the cards draw them; the strip draws no labels.
    *
    * Cells are real GuidePictographs: each carries its synchronous
    * describePictograph aria-label, so the notation lands in SSR HTML and the
@@ -29,7 +31,7 @@
 
   let {
     items,
-    stepLabels,
+    numbered = false,
     caption,
     render,
     picTheme = "light",
@@ -40,8 +42,11 @@
     maxCell = 132,
   }: {
     items: PictographData[];
-    /** Per-cell labels ("Start", "1", …), parallel to `items`. Omitted → unlabeled. */
-    stepLabels?: string[];
+    /**
+     * Number the cells with the pictograph's own step numbers: "Start" on the
+     * start box, 1..N on the steps. Same as render.showStepNumbers.
+     */
+    numbered?: boolean;
     /** Optional figcaption under the strip. */
     caption?: string;
     /** Flow render hints; defaults match FlowFrame's long-standing behavior. */
@@ -85,12 +90,11 @@
     showElemental: render?.showElemental ?? false,
     showReversals: render?.showReversals ?? false,
     showNonRadialPoints: render?.showNonRadialPoints ?? false,
-    showStepNumbers: render?.showStepNumbers ?? false,
+    showStepNumbers: numbered || (render?.showStepNumbers ?? false),
   });
 
   const MIN_CELL = $derived(minCell);
   const MAX_CELL = $derived(maxCell);
-  const START_GAP_PX = 10; // must match .unit's column gap below
   const NARROW_STRIP_W = 480;
   /** A one-screen page's cell width at fit 1. */
   const FIT_CELL_PX = 150;
@@ -100,9 +104,23 @@
   const startBox = $derived(
     items.length && isStartBox(items[0] as unknown as StepData) ? items[0]! : null
   );
-  const steps = $derived(startBox ? items.slice(1) : items);
-  /** Label index offset: step i's label lives at stepLabels[offset + i]. */
-  const labelOffset = $derived(startBox ? 1 : 0);
+  /**
+   * The step number each cell's pictograph draws comes from its data: the
+   * start box carries 0 (StepNumber's "Start"), each step its 1-based place
+   * in the strip. Authored strips leave the start box's stepNumber null, so
+   * the data is set here rather than any label being drawn on top.
+   */
+  const numberedItems = $derived.by(() => {
+    if (!r.showStepNumbers) return items;
+    const offset = startBox ? 0 : 1;
+    return items.map((pos, i) => {
+      const want = i + offset;
+      const has = (pos as { stepNumber?: number | null }).stepNumber;
+      return has === want ? pos : ({ ...pos, stepNumber: want } as PictographData);
+    });
+  });
+  const startCell = $derived(startBox ? numberedItems[0]! : null);
+  const steps = $derived(startBox ? numberedItems.slice(1) : numberedItems);
 
   type Mode = "scroll" | "column" | "row" | "none";
   const chunk = (list: PictographData[], size: number): PictographData[][] => {
@@ -142,13 +160,14 @@
       // extra row costs more height than the screen has. There the label is
       // left out: the screen's pill already names the sequence.
       if (startAside && (!oneScreen || measuredW >= NARROW_STRIP_W)) return rowLayout();
-      // Otherwise: own COLUMN or own ROW - whichever leaves the steps in
-      // fewer, wider rows. Ties go to the column (the start then leads the
-      // reading direction, the card's top-left corner).
-      const colCols = neatCols(Math.floor((measuredW - START_GAP_PX) / MIN_CELL) - 1);
-      const colCellW = Math.min(MAX_CELL, Math.floor((measuredW - START_GAP_PX) / (colCols + 1)));
+      // Otherwise: own COLUMN or own ROW - whichever takes fewer rows in all.
+      // The own-row layout spends a whole row on the start box, so it counts.
+      // Ties go to the column (the start then leads the reading direction,
+      // the card's top-left corner).
+      const colCols = neatCols(Math.floor(measuredW / MIN_CELL) - 1);
+      const colCellW = Math.min(MAX_CELL, Math.floor(measuredW / (colCols + 1)));
       const colFits = colCellW >= MIN_CELL;
-      const columnWins = colFits && Math.ceil(n / colCols) <= Math.ceil(n / rowCols);
+      const columnWins = colFits && Math.ceil(n / colCols) <= 1 + Math.ceil(n / rowCols);
       if (columnWins) {
         return { mode: "column" as Mode, rows: chunk(steps, colCols), cols: colCols, cellW: colCellW };
       }
@@ -175,7 +194,7 @@
   );
 </script>
 
-{#snippet stepCell(pos: PictographData, label: string | undefined, beatNumber: number | null = null)}
+{#snippet stepCell(pos: PictographData, beatNumber: number | null = null)}
   <div class="strip-cell" style:width={cellWidth}>
     <div class="pic-card" class:guide-step-active={activeBeat != null && beatNumber === activeBeat}>
       <GuidePictograph
@@ -191,11 +210,6 @@
         showNonRadialPoints={r.showNonRadialPoints}
         showStepNumbers={r.showStepNumbers}
       />
-      {#if label}
-        <!-- Inside the cell (the card's step-number convention) so labels never
-             break the fused grid apart. -->
-        <span class="strip-step">{label}</span>
-      {/if}
     </div>
   </div>
 {/snippet}
@@ -206,22 +220,22 @@
          scrollable row rather than overflowing the page. Vanishes once measured. -->
     {#if startAside}<div class="start-aside bare">{@render startAside()}</div>{/if}
     <div class="strip scroll">
-      {#each items as pos, n (pos.id ?? n)}
-        {@render stepCell(pos, stepLabels?.[n], startBox ? n : n + 1)}
+      {#each numberedItems as pos, n (pos.id ?? n)}
+        {@render stepCell(pos, startBox ? n : n + 1)}
       {/each}
     </div>
   {:else}
     <div class="unit" class:start-column={layout.mode === "column"} class:start-tab={layout.mode === "row"}>
-      {#if startBox && layout.mode === "column"}
+      {#if startCell && layout.mode === "column"}
         <div class="start-slot">
-          {@render stepCell(startBox, stepLabels?.[0], 0)}
+          {@render stepCell(startCell, 0)}
         </div>
-      {:else if startBox}
+      {:else if startCell}
         <!-- The tab: start box fused onto the grid's top-left, the label
              filling the band beside it. -->
         <div class="start-row">
           <div class="start-slot">
-            {@render stepCell(startBox, stepLabels?.[0], 0)}
+            {@render stepCell(startCell, 0)}
           </div>
           {#if startAside}<div class="start-aside">{@render startAside()}</div>{/if}
         </div>
@@ -232,7 +246,7 @@
         {#each layout.rows as row, ri (ri)}
           <div class="strip">
             {#each row as pos, ci (pos.id ?? ri * layout.cols + ci)}
-              {@render stepCell(pos, stepLabels?.[labelOffset + ri * layout.cols + ci], ri * layout.cols + ci + 1)}
+              {@render stepCell(pos, ri * layout.cols + ci + 1)}
             {/each}
           </div>
         {/each}
@@ -262,18 +276,18 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px; /* START_GAP_PX */
+    gap: 0;
     max-width: 100%;
   }
+  /* Column layout: the start box fused onto the first step row's leading
+     edge, the same hairline seam as between two steps (the choreo card grid's
+     start cell). */
   .unit.start-column {
     flex-direction: row;
     justify-content: center;
   }
-  /* Tab layout: the start box sits ON the grid (no gap - the grid's top edge
-     is the shared hairline seam), its label filling the band beside it. */
-  .unit.start-tab {
-    gap: 0;
-  }
+  /* Tab layout: the start box sits ON the grid (the grid's top edge is the
+     shared hairline seam), its label filling the band beside it. */
   .start-row {
     /* The tab stays PINNED to the grid (flex-end) even when the label beside
        it is taller; the label centres itself in the band. */
@@ -346,20 +360,6 @@
     gap: 0.3rem;
     scroll-snap-align: center;
   }
-  /* The step label lives INSIDE its cell (the card's step-number convention),
-     top-left, quiet - so labels never split the fused grid into loose bars. */
-  .strip-step {
-    position: absolute;
-    top: 0.3rem;
-    inset-inline-start: 0.45rem;
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-dim, #555);
-    font-variant-numeric: tabular-nums;
-    pointer-events: none;
-  }
   /* Each step box carries its LEADING seam (inline) and its BOTTOM edge; the
      first row adds the top edge, each row's last cell the trailing edge - one
      continuous frame with hairline seams in both axes, closed even when a
@@ -396,6 +396,21 @@
   .start-slot .pic-card {
     border: 1px solid var(--seam, color-mix(in oklab, var(--ink, #1a1a1a) 16%, transparent));
     border-radius: 12px;
+  }
+  /* Column layout: the start box is the block's leading cell. Framed on top,
+     start and bottom; the first step's leading seam closes it. Only its
+     leading corners round, and the grid's leading corners square off, so
+     start + steps read as one shape. */
+  .start-column .start-slot .pic-card {
+    border: 1px solid var(--seam, color-mix(in oklab, var(--ink, #1a1a1a) 16%, transparent));
+    border-inline-end: none;
+    border-radius: 12px 0 0 12px;
+  }
+  .start-column .strip:first-child .strip-cell:first-child .pic-card {
+    border-start-start-radius: 0;
+  }
+  .start-column .strip:only-child .strip-cell:first-child .pic-card {
+    border-end-start-radius: 0;
   }
   .pic-card :global(.guide-pictograph) {
     width: 100%;

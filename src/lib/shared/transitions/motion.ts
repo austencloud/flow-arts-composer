@@ -16,6 +16,9 @@ import { cssCubicBezier } from "./ws-ease";
 // run). Rule: docs/architecture/visual-design-canon.md §9.
 export {
   Crossfade,
+  EASE_STANDARD,
+  EASE_STANDARD_IN,
+  EASE_STANDARD_OUT,
   STEP_DRIFT_PX,
   arrive,
   flipDuration,

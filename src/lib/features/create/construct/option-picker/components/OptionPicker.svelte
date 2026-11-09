@@ -31,6 +31,7 @@ Delegates all rendering to child components.
   import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
   import { calculateDeviceAwareSize } from "../services/option-grid-fit-calculator";
+  import { isAwaitingFirstOptionFrame } from "../services/first-option-frame";
 
   import { createOptionPickerState } from "../state/option-picker-state.svelte";
   import { applyPoiLegalComposerFilter } from "#lib/features/levels/poi-lab/services/apply-poi-legal-filter.js";
@@ -118,14 +119,15 @@ Delegates all rendering to child components.
   let isSelecting = $state(false);
   let initError = $state<string | null>(null);
 
-  // The grid can only speak truthfully once a load has resolved. Before that,
-  // an empty `preparedOptions` would render as "no pictographs match these
-  // settings" — a confident wrong answer about data we never fetched. Only the
-  // first fill is gated: on later refilters we keep showing the current tiles
-  // rather than blinking a spinner between them.
+  // Hold the placeholder until the first prepared frame (or an authoritative
+  // empty result) lands; see first-option-frame.ts for why "ready" is not enough.
+  let firstFrameSettled = $state(false);
   const isAwaitingFirstOptions = $derived(
-    preparedOptions.length === 0 &&
-      (pickerState?.state === "idle" || pickerState?.state === "loading")
+    isAwaitingFirstOptionFrame({
+      preparedCount: preparedOptions.length,
+      loadState: pickerState?.state,
+      firstFrameSettled,
+    })
   );
 
   // Internal continuous filter state - initialize with default
@@ -252,6 +254,7 @@ Delegates all rendering to child components.
         themeMode: darkMode ? "dark" : "light",
         fanAppearance: s.fanAppearance,
         triangleGrip: s.triangleGrip,
+        buugengStyle: s.buugengStyle,
         leftBuugengFlipped: s.leftBuugengFlipped,
         rightBuugengFlipped: s.rightBuugengFlipped,
         leftPropType: leftPropTypeOverride ?? s.leftPropType,
@@ -394,6 +397,7 @@ Delegates all rendering to child components.
       // stale tiles instead of offering an option from the prior filter state.
       preparedOptions = [];
       optionAvailability = { shownCount: 0, hiddenCount: 0 };
+      firstFrameSettled = true;
       isSelecting = false;
       return;
     }
@@ -413,6 +417,7 @@ Delegates all rendering to child components.
     prepareWithTurns(filtered).then((frame) => {
       preparedOptions = frame.options;
       optionAvailability = frame.availability;
+      firstFrameSettled = true;
       isSelecting = false;
     });
   });
@@ -461,9 +466,11 @@ Delegates all rendering to child components.
           const frame = await prepareWithTurns(filtered);
           preparedOptions = frame.options;
           optionAvailability = frame.availability;
+          firstFrameSettled = true;
         } else if (filtered.length === 0) {
           preparedOptions = [];
           optionAvailability = { shownCount: 0, hiddenCount: 0 };
+          firstFrameSettled = true;
         }
       } finally {
         isSelecting = false;
@@ -607,6 +614,23 @@ Delegates all rendering to child components.
     color: var(--text-muted);
   }
 
+  /* Most loads land in a few hundred milliseconds. Saying "Loading" for that
+     long only reads as a flash of text before the tiles, so the line stays
+     invisible unless the wait is long enough to need explaining. */
+  .loading {
+    animation: loading-line-in var(--duration-emphasis) var(--ease-standard, ease-out)
+      calc(var(--duration-dramatic) * 2) both;
+  }
+
+  @keyframes loading-line-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   .error button {
     margin-top: 0.5rem;
     min-height: var(--min-touch-target, 48px); /* WCAG AAA touch target */
@@ -634,6 +658,10 @@ Delegates all rendering to child components.
   @media (prefers-reduced-motion: reduce) {
     .error button {
       transition: none;
+    }
+
+    .loading {
+      animation: none;
     }
   }
 </style>

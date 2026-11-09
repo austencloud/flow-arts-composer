@@ -32,6 +32,7 @@
   import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
   import { supportModalState } from "../../support/state/support-modal-state.svelte";
   import { whatsNewState } from "../../settings/state/whats-new-state.svelte";
+  import ReleaseUnreadDot from "../../settings/components/ReleaseUnreadDot.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
@@ -565,7 +566,9 @@
               aria-label={t("nav_ui_open_release_notes")}
             >
               <i class="fas fa-gift" aria-hidden="true"></i>
-              <span>{t("tab_settings_release_notes")}</span>
+              <span
+                >{t("tab_settings_release_notes")}<ReleaseUnreadDot /></span
+              >
             </button>
             <button
               class="drawer-action support"
@@ -816,14 +819,6 @@
     overscroll-behavior-y: contain;
     scrollbar-gutter: stable both-edges;
     -webkit-overflow-scrolling: touch;
-  }
-
-  /* This scroller already clips at the Crossfade box's edge. The box's own
-     clip margin only lets a taller incoming list count as overflow while the
-     box grows, which flashes a scrollbar through every drill. Chrome drops a
-     unitless 0 for this property, so the unit stays. */
-  .module-switcher-content :global(.crossfade.animate-height) {
-    overflow-clip-margin: 0px;
   }
 
   .navigator-body {

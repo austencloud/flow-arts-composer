@@ -2,7 +2,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import ColorPicker from "svelte-awesome-color-picker";
-  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { COLOR_PRESETS } from "../color-presets";
   import { COOL_PRESETS, WARM_PRESETS } from "../color-temperature";
@@ -31,6 +31,12 @@
         passes "Default" while no pair is chosen, because the default motion
         colors aren't presets and the tiles would otherwise say "Custom". */
     valueNames?: { left?: string; right?: string };
+    /** Which tile's editor is open, for a host that lays itself out around it. */
+    editing?: HandSide | null;
+    /** For a panel with no height to spare: tight tiles, the swatches in one
+        12-column block, and the custom picker behind a button instead of under
+        them, so the open editor never makes the panel scroll. */
+    compact?: boolean;
   }
 
   let {
@@ -45,10 +51,12 @@
     valueLabel = "hex",
     showPairPreview = true,
     valueNames,
+    editing = $bindable(null),
+    compact = false,
   }: Props = $props();
 
-  let editing = $state<HandSide | null>(null);
   const editorId = $props.id();
+  let customOpen = $state(false);
 
   let leftInput = $state<HTMLInputElement>();
   let rightInput = $state<HTMLInputElement>();
@@ -124,8 +132,151 @@
   }
 </script>
 
+{#snippet swatches(entry: (typeof entries)[number])}
+  <div class="preset-block">
+    <div class="hue-groups">
+      {#each [{ label: t("color_cool_colors"), presets: COOL_PRESETS }, { label: t("color_warm_colors"), presets: WARM_PRESETS }] as group (group.label)}
+        <div
+          class="preset-group"
+          role="group"
+          aria-label={`${entry.label}: ${group.label}`}
+        >
+          <span class="preset-heading">{group.label}</span>
+          <div class="preset-grid">
+            {#each group.presets as preset (preset.hex)}
+              {@const pressed = entry.value.toLowerCase() === preset.hex}
+              <button
+                type="button"
+                class="preset"
+                style:--preset={preset.hex}
+                aria-label={`${entry.label}: ${preset.name}`}
+                aria-pressed={pressed}
+                title={preset.name}
+                onclick={() => onchange(entry.hand, preset.hex)}
+              >
+                <span aria-hidden="true">{pressed ? "✓" : ""}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/each}
+    </div>
+    <div
+      class="preset-group"
+      role="group"
+      aria-label={`${entry.label}: ${t("color_neutral_colors")}`}
+    >
+      <span class="preset-heading">{t("color_neutral_colors")}</span>
+      <div class="preset-grid neutral-grid">
+        {#each neutralPresets as preset (preset.hex)}
+          {@const pressed = entry.value.toLowerCase() === preset.hex}
+          <button
+            type="button"
+            class="preset"
+            style:--preset={preset.hex}
+            aria-label={`${entry.label}: ${preset.name}`}
+            aria-pressed={pressed}
+            title={preset.name}
+            onclick={() => onchange(entry.hand, preset.hex)}
+          >
+            <span aria-hidden="true">{pressed ? "✓" : ""}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    {#if compact}
+      {@render modeToggle()}
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet modeToggle()}
+  <button
+    type="button"
+    class="custom-button mode-toggle"
+    aria-expanded={customOpen}
+    onclick={() => (customOpen = !customOpen)}
+  >
+    {customOpen ? t("color_swatches") : t("color_value_custom")}
+  </button>
+{/snippet}
+
+{#snippet fineTune(entry: (typeof entries)[number])}
+  <div class="fine-tune">
+    <ColorPicker
+      hex={entry.value}
+      isDialog={false}
+      isAlpha={false}
+      isTextInput={false}
+      sliderDirection="horizontal"
+      components={{ wrapper: BareWrapper }}
+      texts={{
+        label: {
+          h: `${entry.label} hue`,
+          s: `${entry.label} saturation`,
+          v: `${entry.label} brightness`,
+        },
+      }}
+      onInput={(color) => applyPicked(entry.hand, entry.value, color.hex)}
+    />
+    <div class="custom-row">
+      <label class="hex-field">
+        <span>{t("color_hex")}</span>
+        <input
+          aria-label={`${entry.label}, ${t("color_hex")}`}
+          dir="ltr"
+          type="text"
+          value={entry.value.toUpperCase()}
+          maxlength="7"
+          pattern={"#?([0-9a-fA-F]{3}){1,2}"}
+          spellcheck="false"
+          autocomplete="off"
+          oninput={(event) =>
+            applyPicked(
+              entry.hand,
+              entry.value,
+              parseHex(event.currentTarget.value, false)
+            )}
+          onchange={(event) =>
+            applyPicked(
+              entry.hand,
+              entry.value,
+              parseHex(event.currentTarget.value, true)
+            )}
+          onblur={(event) => {
+            event.currentTarget.value = entry.value.toUpperCase();
+          }}
+        />
+      </label>
+      {#if eyeDropper}
+        <button
+          class="custom-button"
+          type="button"
+          aria-label={t("color_pick_screen_label")}
+          title={t("color_pick_screen")}
+          onclick={() => pickFromScreen(entry.hand)}
+        >
+          <i class="fas fa-eye-dropper" aria-hidden="true"></i>
+        </button>
+      {:else}
+        <button
+          class="custom-button"
+          type="button"
+          onclick={() => entry.input?.click()}
+        >
+          {t("color_more")}
+        </button>
+      {/if}
+      {#if compact}
+        {@render modeToggle()}
+      {/if}
+    </div>
+  </div>
+{/snippet}
+
 <div
   class="color-pair"
+  class:compact
   role="group"
   aria-label={groupLabel ?? t("color_prop_colors")}
 >
@@ -213,125 +364,22 @@
         duration: editing ? DURATION.emphasis : DURATION.normal,
       }}
     >
-      <div class="preset-block">
-        <div class="hue-groups">
-          {#each [{ label: t("color_cool_colors"), presets: COOL_PRESETS }, { label: t("color_warm_colors"), presets: WARM_PRESETS }] as group (group.label)}
-            <div
-              class="preset-group"
-              role="group"
-              aria-label={`${entry.label}: ${group.label}`}
-            >
-              <span class="preset-heading">{group.label}</span>
-              <div class="preset-grid">
-                {#each group.presets as preset (preset.hex)}
-                  {@const pressed = entry.value.toLowerCase() === preset.hex}
-                  <button
-                    type="button"
-                    class="preset"
-                    style:--preset={preset.hex}
-                    aria-label={`${entry.label}: ${preset.name}`}
-                    aria-pressed={pressed}
-                    title={preset.name}
-                    onclick={() => onchange(entry.hand, preset.hex)}
-                  >
-                    <span aria-hidden="true">{pressed ? "✓" : ""}</span>
-                  </button>
-                {/each}
-              </div>
-            </div>
-          {/each}
-        </div>
-        <div
-          class="preset-group"
-          role="group"
-          aria-label={`${entry.label}: ${t("color_neutral_colors")}`}
+      {#if compact}
+        <Crossfade
+          key={customOpen ? "custom" : "swatches"}
+          duration={DURATION.normal}
+          animateHeight
         >
-          <span class="preset-heading">{t("color_neutral_colors")}</span>
-          <div class="preset-grid neutral-grid">
-            {#each neutralPresets as preset (preset.hex)}
-              {@const pressed = entry.value.toLowerCase() === preset.hex}
-              <button
-                type="button"
-                class="preset"
-                style:--preset={preset.hex}
-                aria-label={`${entry.label}: ${preset.name}`}
-                aria-pressed={pressed}
-                title={preset.name}
-                onclick={() => onchange(entry.hand, preset.hex)}
-              >
-                <span aria-hidden="true">{pressed ? "✓" : ""}</span>
-              </button>
-            {/each}
-          </div>
-        </div>
-      </div>
-      <div class="fine-tune">
-        <ColorPicker
-          hex={entry.value}
-          isDialog={false}
-          isAlpha={false}
-          isTextInput={false}
-          sliderDirection="horizontal"
-          components={{ wrapper: BareWrapper }}
-          texts={{
-            label: {
-              h: `${entry.label} hue`,
-              s: `${entry.label} saturation`,
-              v: `${entry.label} brightness`,
-            },
-          }}
-          onInput={(color) => applyPicked(entry.hand, entry.value, color.hex)}
-        />
-        <div class="custom-row">
-          <label class="hex-field">
-            <span>{t("color_hex")}</span>
-            <input
-              aria-label={`${entry.label}, ${t("color_hex")}`}
-              dir="ltr"
-              type="text"
-              value={entry.value.toUpperCase()}
-              maxlength="7"
-              pattern={"#?([0-9a-fA-F]{3}){1,2}"}
-              spellcheck="false"
-              autocomplete="off"
-              oninput={(event) =>
-                applyPicked(
-                  entry.hand,
-                  entry.value,
-                  parseHex(event.currentTarget.value, false)
-                )}
-              onchange={(event) =>
-                applyPicked(
-                  entry.hand,
-                  entry.value,
-                  parseHex(event.currentTarget.value, true)
-                )}
-              onblur={(event) => {
-                event.currentTarget.value = entry.value.toUpperCase();
-              }}
-            />
-          </label>
-          {#if eyeDropper}
-            <button
-              class="custom-button"
-              type="button"
-              aria-label={t("color_pick_screen_label")}
-              title={t("color_pick_screen")}
-              onclick={() => pickFromScreen(entry.hand)}
-            >
-              <i class="fas fa-eye-dropper" aria-hidden="true"></i>
-            </button>
+          {#if customOpen}
+            {@render fineTune(entry)}
           {:else}
-            <button
-              class="custom-button"
-              type="button"
-              onclick={() => entry.input?.click()}
-            >
-              {t("color_more")}
-            </button>
+            {@render swatches(entry)}
           {/if}
-        </div>
-      </div>
+        </Crossfade>
+      {:else}
+        {@render swatches(entry)}
+        {@render fineTune(entry)}
+      {/if}
     </div>
   {/if}
 </div>
@@ -728,6 +776,181 @@
 
     .swap {
       justify-self: center;
+    }
+  }
+
+  /* The compact editor. The matrix is 12 hues across and 4 rows down, so cool and
+     warm sit side by side and the neutrals run underneath at the same pitch. */
+  .compact.color-pair > * + * {
+    margin-top: 8px;
+  }
+
+  .compact .color-editor {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 6px;
+  }
+
+  .compact .preset-block,
+  .compact .hue-groups {
+    gap: 2px;
+  }
+
+  .compact .hue-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compact .preset-group {
+    gap: 0;
+  }
+
+  .compact .preset-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .compact .neutral-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  /* Without this the app's button floor sets the height, and aspect-ratio turns
+     that into a width wider than the grid cell, so the swatches overlap. */
+  .compact .preset {
+    min-height: 0;
+    padding: 1px;
+    border-radius: 7px;
+  }
+
+  .compact .preset span {
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  /* The groups keep their names for screen readers through aria-label. */
+  .compact .preset-heading {
+    display: none;
+  }
+
+  .compact .fine-tune {
+    gap: 8px;
+    justify-self: center;
+    width: 100%;
+    --picker-height: 84px;
+  }
+
+  /* A phone on its side has the least height of anything. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .compact .fine-tune {
+      --picker-height: 56px;
+    }
+  }
+
+  .compact .custom-row {
+    flex-wrap: nowrap;
+  }
+
+  .compact .hex-field {
+    min-width: 72px;
+  }
+
+  .compact .hex-field span {
+    display: none;
+  }
+
+  .compact .hex-field input,
+  .compact .custom-button {
+    min-height: 36px;
+    padding: 6px 8px;
+  }
+
+  .compact .custom-row .mode-toggle {
+    flex-shrink: 0;
+  }
+
+  .compact .preset-block .mode-toggle {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .compact .pair-controls,
+  .compact .pair-controls.has-swap {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .compact .color-control {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    min-height: 44px;
+    padding: 4px 8px;
+  }
+
+  .compact .color-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    font-size: 10px;
+  }
+
+  .compact .color-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .compact .color-label,
+  .compact .color-value {
+    line-height: 1.2;
+  }
+
+  .compact .swap {
+    width: 34px;
+    height: 34px;
+  }
+
+  @media (orientation: landscape) and (max-height: 520px) {
+    .compact .color-control {
+      min-height: 36px;
+      padding: 2px 8px;
+    }
+  }
+
+  /* A tall panel has room to spare, and tiny swatches would leave it half empty,
+     so the swatches take their full size and the groups get their names back. */
+  @media (min-width: 769px) and (min-height: 700px) {
+    .compact .preset-block,
+    .compact .hue-groups {
+      gap: 10px;
+    }
+
+    .compact .hue-groups {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .compact .preset-group {
+      gap: 4px;
+    }
+
+    .compact .neutral-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .compact .preset-heading {
+      display: block;
+    }
+
+    .compact .preset {
+      padding: 2px;
+      border-radius: 10px;
+    }
+
+    .compact .preset span {
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .compact .fine-tune {
+      --picker-height: 160px;
     }
   }
 </style>

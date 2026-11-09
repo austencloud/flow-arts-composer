@@ -65,8 +65,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/motion':
-        specifier: file:vendor/austencloud-motion-0.2.1.tgz
-        version: file:vendor/austencloud-motion-0.2.1.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+        specifier: file:vendor/austencloud-motion-0.2.3.tgz
+        version: file:vendor/austencloud-motion-0.2.3.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/phone-sign-in':
         specifier: file:vendor/austencloud-phone-sign-in-0.3.0.tgz
         version: file:vendor/austencloud-phone-sign-in-0.3.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
@@ -742,8 +742,8 @@ importers:
   packages/shape-engine:
     dependencies:
       '@austencloud/motion':
-        specifier: file:../../vendor/austencloud-motion-0.2.1.tgz
-        version: file:vendor/austencloud-motion-0.2.1.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+        specifier: file:../../vendor/austencloud-motion-0.2.3.tgz
+        version: file:vendor/austencloud-motion-0.2.3.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@tka/shape-domain':
         specifier: workspace:*
         version: link:../shape-domain
@@ -960,9 +960,9 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
-  '@austencloud/motion@file:vendor/austencloud-motion-0.2.1.tgz':
-    resolution: {integrity: sha512-SEaZSZ8MH89TDd2iYb+MCbKyioEVz9UhxgovYm3e3CV5/nfT00+bPJDYNad/ERIftDJEHpxbUtCfaHDnec2IXA==, tarball: file:vendor/austencloud-motion-0.2.1.tgz}
-    version: 0.2.1
+  '@austencloud/motion@file:vendor/austencloud-motion-0.2.3.tgz':
+    resolution: {integrity: sha512-WGAKs9KhO/NMCXBFzrNNQGOsViNt+3mY29hvS4aq35CVNDR+TWPoT0vdv5JMeAZsHza0m4AxEvRZ6roLnB8XfA==, tarball: file:vendor/austencloud-motion-0.2.3.tgz}
+    version: 0.2.3
     peerDependencies:
       svelte: ^5.0.0
 
@@ -9789,7 +9789,7 @@ snapshots:
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
-  '@austencloud/motion@file:vendor/austencloud-motion-0.2.1.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+  '@austencloud/motion@file:vendor/austencloud-motion-0.2.3.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 

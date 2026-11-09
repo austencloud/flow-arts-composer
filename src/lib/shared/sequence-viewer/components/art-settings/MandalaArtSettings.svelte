@@ -58,6 +58,7 @@
     { id: "colors", icon: "fa-palette", label: t("viewer_ui_colors") },
     { id: "weight", icon: "fa-grip-lines", label: t("viewer_ui_weight") },
     { id: "depth", icon: "fa-wave-square", label: t("viewer_ui_depth") },
+    { id: "trails", icon: "fa-ghost", label: t("viewer_ui_trails") },
     { id: "download", icon: "fa-download", label: t("viewer_ui_download") },
   ]);
 

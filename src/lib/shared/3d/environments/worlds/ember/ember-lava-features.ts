@@ -2,7 +2,6 @@ import {
   AdditiveBlending,
   CircleGeometry,
   Color,
-  ConeGeometry,
   CylinderGeometry,
   DoubleSide,
   Group,
@@ -22,6 +21,7 @@ import {
 
 import { QualityTier } from "../../../effects/types";
 import { createMidflankLava } from "./ember-midflank-finish";
+import { createObsidianPillarField } from "./ember-obsidian-pillars";
 import type {
   EmberSceneConfig,
   LavaCracksConfig,
@@ -38,8 +38,6 @@ import {
 import {
   EMBER_CRACKS_FRAGMENT_SHADER,
   EMBER_CRACKS_VERTEX_SHADER,
-  EMBER_PILLAR_FRAGMENT_SHADER,
-  EMBER_PILLAR_VERTEX_SHADER,
   EMBER_PLATFORM_FRAGMENT_SHADER,
   EMBER_PLATFORM_VERTEX_SHADER,
   EMBER_POOL_FRAGMENT_SHADER,
@@ -396,138 +394,23 @@ export function createEmberLavaRivers(
   };
 }
 
-function distanceToPolyline(
-  x: number,
-  z: number,
-  points: readonly [number, number][]
-): number {
-  if (points.length === 0) return Infinity;
-  if (points.length === 1) {
-    return Math.hypot(x - points[0]![0], z - points[0]![1]);
-  }
-  let best = Infinity;
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const [ax, az] = points[index]!;
-    const [bx, bz] = points[index + 1]!;
-    const dx = bx - ax;
-    const dz = bz - az;
-    const lengthSq = dx * dx + dz * dz;
-    const t =
-      lengthSq < 1e-9
-        ? 0
-        : Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSq));
-    best = Math.min(best, Math.hypot(x - (ax + dx * t), z - (az + dz * t)));
-  }
-  return best;
-}
-
 export function createEmberObsidianPillars(
   config: ObsidianPillarsConfig,
   groundY: number
 ): EmberWorldElement | null {
-  if (!config.enabled) return null;
-  const root = new Group();
-  root.name = "EmberObsidianPillars";
-  root.position.y = groundY;
-  const resources: Array<{
-    geometries: BufferGeometry[];
-    material: ShaderMaterial;
-  }> = [];
-
-  for (const [ringIndex, ring] of config.rings.entries()) {
-    for (let index = 0; index < ring.count; index += 1) {
-      const angle = (index / ring.count) * Math.PI * 2 + ringIndex * 0.6;
-      const seed = ringIndex * 100 + index;
-      const radius = ring.radius + Math.sin(seed * 3.7) * ring.radiusJitter;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-      if (
-        config.keepOut?.some(
-          (corridor) =>
-            distanceToPolyline(x, z, corridor.points) < corridor.radius
-        )
-      ) {
-        continue;
-      }
-      const scale =
-        ring.scaleBase + Math.abs(Math.sin(seed * 2.3) * ring.scaleVariation);
-      const height =
-        config.heightRange[0] +
-        Math.abs(Math.sin(seed * 1.9)) *
-          (config.heightRange[1] - config.heightRange[0]);
-      const material = new ShaderMaterial({
-        side: DoubleSide,
-        uniforms: {
-          uBaseColor: { value: new Color(config.baseColor) },
-          uVeinColor: { value: new Color(config.veinColor) },
-          uVeinIntensity: { value: config.veinIntensity },
-          uSeed: { value: seed },
-          uTime: { value: 0 },
-          uPulseSpeed: { value: config.pulseSpeed },
-          uPulseColor: { value: new Color(config.pulseColor) },
-        },
-        vertexShader: EMBER_PILLAR_VERTEX_SHADER,
-        fragmentShader: EMBER_PILLAR_FRAGMENT_SHADER,
-      });
-      const group = new Group();
-      group.name = `EmberObsidianPillar-${seed}`;
-      group.position.set(x, 0, z);
-      group.scale.setScalar(scale);
-      group.rotation.y = angle + Math.sin(seed * 1.7) * 0.5;
-      const shaftGeometry = new CylinderGeometry(0.25, 0.35, height, 5, 1);
-      const shaft = new Mesh(shaftGeometry, material);
-      shaft.position.y = height / 2;
-      group.add(shaft);
-      const tipGeometry = new ConeGeometry(0.28, height * 0.3, 5);
-      const tip = new Mesh(tipGeometry, material);
-      tip.position.y = height + (height * 0.3) / 2 - 0.05;
-      group.add(tip);
-      const geometries: BufferGeometry[] = [shaftGeometry, tipGeometry];
-      if (height > 2.5) {
-        const shardHeight = height * 0.45;
-        const shardGeometry = new CylinderGeometry(
-          0.12,
-          0.18,
-          shardHeight,
-          4,
-          1
-        );
-        const shard = new Mesh(shardGeometry, material);
-        shard.position.set(0.3, shardHeight / 2, 0.15);
-        shard.rotation.set(0.15, 0, -0.25);
-        group.add(shard);
-        const shardTipGeometry = new ConeGeometry(0.14, shardHeight * 0.25, 4);
-        const shardTip = new Mesh(shardTipGeometry, material);
-        shardTip.position.set(
-          0.3,
-          shardHeight + shardHeight * 0.125 - 0.03,
-          0.15
-        );
-        shardTip.rotation.set(0.15, 0, -0.25);
-        group.add(shardTip);
-        geometries.push(shardGeometry, shardTipGeometry);
-      }
-      root.add(group);
-      resources.push({ geometries, material });
-    }
-  }
-
+  const field = createObsidianPillarField(config);
+  if (!field) return null;
+  field.object.position.y = groundY;
   return {
-    object: root,
+    object: field.object,
     update(deltaSeconds) {
-      for (const resource of resources) {
-        resource.material.uniforms.uTime!.value += deltaSeconds;
-      }
+      field.update(deltaSeconds);
     },
     setGroundY(value) {
-      root.position.y = value;
+      field.object.position.y = value;
     },
     dispose() {
-      for (const { geometries, material } of resources) {
-        for (const geometry of geometries) geometry.dispose();
-        material.dispose();
-      }
-      root.clear();
+      field.dispose();
     },
   };
 }

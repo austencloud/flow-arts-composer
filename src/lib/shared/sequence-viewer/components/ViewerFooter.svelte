@@ -24,7 +24,6 @@
     onPublish?: () => void;
     onUnpublish?: () => void;
     onCopyLink?: () => void;
-    onPropsOpen?: () => void;
     linkCopied?: boolean;
   }
 
@@ -49,7 +48,6 @@
     onPublish,
     onUnpublish,
     onCopyLink,
-    onPropsOpen,
     linkCopied = false,
   }: Props = $props();
 
@@ -115,7 +113,6 @@
       {onPublish}
       {onUnpublish}
       {onCopyLink}
-      {onPropsOpen}
       {linkCopied}
     />
   {:else}

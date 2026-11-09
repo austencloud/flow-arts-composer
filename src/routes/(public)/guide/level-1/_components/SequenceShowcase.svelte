@@ -40,7 +40,7 @@
   let {
     sequence,
     items,
-    stepLabels,
+    numbered = false,
     render,
     picTheme = "light",
     bpm = 60,
@@ -62,7 +62,8 @@
     sequence: SequenceData;
     /** The same sequence's pictographs, in reading order, for the step strip. */
     items: PictographData[];
-    stepLabels?: string[];
+    /** Number the strip cells with the pictograph's own Start / 1..N. */
+    numbered?: boolean;
     render?: PictographRender;
     picTheme?: "light" | "dark";
     bpm?: number;
@@ -366,7 +367,7 @@
     <Crossfade key={exampleIndex} duration={DURATION.normal}>
       <GuideStepStrip
         items={curItems}
-        {stepLabels}
+        {numbered}
         {render}
         {picTheme}
         {activeBeat}
@@ -376,7 +377,7 @@
   {:else}
     <GuideStepStrip
       {items}
-      {stepLabels}
+      {numbered}
       {render}
       {picTheme}
       {activeBeat}
@@ -438,7 +439,7 @@
                filling the band the tab layout leaves free. -->
           <GuideStepStrip
             {items}
-            {stepLabels}
+            {numbered}
             {render}
             {picTheme}
             startAside={text}
@@ -520,11 +521,15 @@
     align-items: stretch;
   }
   /* The square stays square when the text column runs taller than it. */
+  /* Above the designed size (--fit > 1, a one-screen page with height to
+     spare) the square may take up to half the band, so the room goes to the
+     figure instead of empty bands above and below it (2026-11-07). At or
+     below fit 1 it stays at its designed share. */
   .banner.beside .canvas-box {
     align-self: center;
     flex-basis: clamp(
       calc(260px * min(var(--fit, 1), 1)),
-      40cqw,
+      clamp(40cqw, calc(40cqw * var(--fit, 1)), 50cqw),
       calc(380px * var(--fit, 1))
     );
   }
@@ -634,7 +639,7 @@
     flex: 0 0
       clamp(
         calc(230px * min(var(--fit, 1), 1)),
-        34cqw,
+        clamp(34cqw, calc(34cqw * var(--fit, 1)), 46cqw),
         calc(330px * var(--fit, 1))
       );
     aspect-ratio: 1;
@@ -720,6 +725,35 @@
       align-items: stretch;
       gap: 0.9rem;
     }
+    /* A pool's words, button and player are the tallest stack there is. On a
+       small window the button stands beside the small canvas, and wraps above
+       it when the canvas has room to grow. The words take the height of the
+       example showing, not the longest one: the fit box measures again when
+       the example changes. */
+    .example-prose > .ex-ghost {
+      display: none;
+    }
+    .banner:has(.cycle) {
+      flex-flow: row wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem 0.75rem;
+    }
+    .banner:has(.cycle) .banner-text {
+      display: contents;
+    }
+    .banner:has(.cycle) .banner-text > :global(*) {
+      flex: 0 0 100%;
+    }
+    .banner:has(.cycle) .banner-text > .cycle {
+      flex: 0 0 auto;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-top: 0;
+    }
+    .banner:has(.cycle) .canvas-box {
+      margin-inline: 0;
+    }
     .canvas-box,
     .compact .canvas-box,
     .compact.has-strip .canvas-box {
@@ -732,6 +766,43 @@
       align-items: stretch;
       width: 100%;
       gap: 0.9rem;
+    }
+  }
+
+  /* Short landscape: a pool's heading, words, button and strip are taller than
+     the window even with the figures at their smallest. The button moves under
+     the canvas, level with the strip, and the words take the height of the
+     example showing. */
+  @media (max-height: 500px) {
+    .example-prose > .ex-ghost {
+      display: none;
+    }
+    .banner.beside:has(.cycle) {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.3rem clamp(1.25rem, 4cqw, 2.5rem);
+      align-items: center;
+    }
+    .banner.beside:has(.cycle) .banner-text {
+      display: contents;
+    }
+    .banner.beside:has(.cycle) .banner-text > :global(*) {
+      grid-column: 2;
+    }
+    .banner.beside:has(.cycle) .canvas-box {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      width: max(12rem, calc(380px * var(--fit, 1)));
+    }
+    .banner.beside:has(.cycle) .banner-text > .cycle {
+      grid-column: 1;
+      grid-row: 4;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-top: 0;
+    }
+    .banner.beside:has(.cycle) .banner-text > :global(.crossfade) {
+      grid-row: 4;
     }
   }
 

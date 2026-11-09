@@ -21,6 +21,7 @@ export interface PropPlacementVisibility {
 import type { ThemeMode } from "../../../utils/svg-color-utils";
 import type { FanAppearance } from "../domain/fan-appearance";
 import type { TriangleGrip } from "../domain/triangle-appearance";
+import type { BuugengStyle } from "../domain/buugeng-appearance";
 
 /**
  * Options for prop SVG loading
@@ -38,4 +39,9 @@ export interface PropSvgLoadOptions {
    * grip, the notation glyph. Ignored for other props.
    */
   triangleGrip?: TriangleGrip;
+  /**
+   * The buugeng's blade style. Omitted means Classic, the notation glyph.
+   * Ignored for props other than buugeng and big buugeng.
+   */
+  buugengStyle?: BuugengStyle;
 }

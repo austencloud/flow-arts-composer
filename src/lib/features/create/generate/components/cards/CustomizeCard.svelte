@@ -18,6 +18,7 @@ to three rows. Click opens the expanded overlay.
   import { tryGetCreateModuleContext } from "../../../shared/context/create-module-context";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
   import CardHeader from "./shared/CardHeader.svelte";
   import {
     buildCustomizeSummary,
@@ -107,17 +108,30 @@ to three rows. Click opens the expanded overlay.
   // Let the stage build the panel while the page is idle, so its thirty-two
   // pictographs are not built inside the first tap's morph. Arriving from the
   // Create board, the first idle moment falls inside the crossfade onto this
-  // panel, so the build waits until that fade has finished.
+  // panel, so the build waits until that fade has finished. An idle moment can
+  // also fall between the frames of another card's morph, so it waits for that
+  // too.
   const methodEntry = tryGetCreateModuleContext()?.methodEntry;
   $effect(() => {
     if (primed || methodEntry?.arriving) return;
-    const prime = () => (primed = true);
+    let cancelled = false;
+    const prime = () => {
+      void whenMotionSettled().then(() => {
+        if (!cancelled) primed = true;
+      });
+    };
     if (typeof window.requestIdleCallback === "function") {
       const id = window.requestIdleCallback(prime, { timeout: 4000 });
-      return () => window.cancelIdleCallback(id);
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(id);
+      };
     }
     const id = window.setTimeout(prime, 1500);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
   });
 
   // One pass answers both questions: is anything non-default, and what is it.

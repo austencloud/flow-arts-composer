@@ -51,7 +51,6 @@ function createSync() {
     getVM: vi.fn(),
     getCallbacks: () => ({}),
     getCanvasSize: () => 500,
-    setCanvasSize: vi.fn(),
     buildFrameDeps: () => ({}),
   } as unknown as PlaybackSyncDeps;
   const state = {

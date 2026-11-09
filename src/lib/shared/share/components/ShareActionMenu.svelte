@@ -312,7 +312,8 @@
     transition:
       transform var(--duration-emphasis) var(--ease-standard),
       background var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
+      box-shadow var(--duration-fast) var(--ease-standard),
+      var(--transition-control-shape);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -361,6 +362,12 @@
     font-weight: 650;
     line-height: 1;
     white-space: nowrap;
+    opacity: var(--share-trigger-label-opacity, 1);
+    transition: var(--transition-control-label);
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   :global(.share-action-menu) {

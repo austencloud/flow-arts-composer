@@ -60,6 +60,7 @@ Features:
     openIntoWorkspace = false,
     phoneTier = false,
     typeRail = false,
+    railColumns,
   } = $props<{
     organizedPictographs?: OrganizedSection[];
     onPictographSelected?: (pictograph: PictographData) => void;
@@ -95,6 +96,9 @@ Features:
      *  stays in view, and the grid holds to the rail tier's columns (a 4x4
      *  block for 16 options). */
     typeRail?: boolean;
+    /** The rail tier's four-column grid. Defaults to a rail on the phone
+     *  tier; a host that asks for the rail on a wider picker passes false. */
+    railColumns?: boolean;
   }>();
 
   type UtilityPanel = "settings" | "info";
@@ -617,7 +621,7 @@ Features:
 
   <div class="carousel-area">
     <HorizontalSwipeContainer
-      showArrows={!phoneTier}
+      showArrows={!phoneTier && !typeRail}
       showIndicators={false}
       {initialPanelIndex}
       onPanelChange={handlePanelChange}
@@ -686,7 +690,7 @@ Features:
                   {currentSequence}
                   {contentAreaBounds}
                   headerOnlyWithRoom={phoneTier}
-                  columnOptions={typeRail
+                  columnOptions={(railColumns ?? (typeRail && phoneTier))
                     ? CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS
                     : undefined}
                   {onSlotClicked}
@@ -1066,10 +1070,13 @@ Features:
   }
 
   /* The tabs run the full height between settings and the guide, as four
-     equal rows, instead of bunching under the settings button. */
+     equal rows, instead of bunching under the settings button. A tall rail
+     (the Composer's stacked demo on a tablet) stops them at 18rem, about
+     72px a tab, so they stay a bar of tabs rather than four tall columns. */
   .type-rail .type-navigation-selector {
     align-self: stretch;
     height: 100%;
+    max-height: 18rem;
   }
 
   .type-rail .type-navigation-selector :global(.segmented-control) {

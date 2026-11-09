@@ -2,17 +2,17 @@
 status: active
 value: 4
 effort: L
-work_state: in-progress
-remaining: Build the staff test stage in both engines, then the phrase brain behind it.
+work_state: unverified
+remaining: "Phrase brain code exists on main (flow-fest-phrase-brain, -library, -playback, -sequence, -stage under src/lib/features/flow-fest-sim/domain, plus the village phrase table), and per-staff plane switching shipped 2026-10-23. Audit it against this spec's phrase kinds (holding, turning, travelling), move catalogue and Austen's look at the jam circle; which kinds are still missing has not been established."
 depends_on: '2026-10-22-flow-fest-follow-the-light.md'
 plan_path: ''
 tags: []
-last_triaged: '2026-10-23'
+last_triaged: '2026-11-07'
 ---
 
 # Flow Fest: the phrase brain (believable jam spinners)
 
-Status: approved direction, 2026-10-22. First build: a staff test stage in both engines.
+Status: approved direction, 2026-10-22. Partly built: the staff test stage and phrase-brain domain code exist on main; the audit against this spec is open (re-triaged 2026-11-07).
 Parent: `2026-10-22-flow-fest-follow-the-light.md` (the jam slice).
 
 ## Why

@@ -122,6 +122,7 @@
   import FlowFestDrivenCar from "../flow-fest-sim/FlowFestDrivenCar.svelte";
   import { FLOW_FEST_WORLD_STEP_TASK } from "../flow-fest-sim/flow-fest-frame-tasks";
   import FlowFestOnFootPlayer from "./FlowFestOnFootPlayer.svelte";
+  import { standReviewArrivalOnGround } from "./flow-fest-review-camera-ground";
   import { type CharacterId } from "#lib/shared/3d/domain/character-model.js";
 
   interface Props {
@@ -906,13 +907,24 @@
     if (!camera) return false;
     const orientation = yawPitchForCamera(camera);
     const boom = reviewCameraRigBoom();
-    const position = {
+    const eyeAboveBody = boom.forward > 0 ? boom.vertical : CAMERA_OFFSET;
+    let position = {
       x: camera.positionWorld[0] + boom.forward * Math.sin(orientation.yaw),
-      y:
-        camera.positionWorld[1] -
-        (boom.forward > 0 ? boom.vertical : CAMERA_OFFSET),
+      y: camera.positionWorld[1] - eyeAboveBody,
       z: camera.positionWorld[2] + boom.forward * Math.cos(orientation.yaw),
     };
+    if (camera.standOnGround) {
+      const arrival = standReviewArrivalOnGround({
+        body: position,
+        groundBodyY: bodyPositionAt(position.x, position.z).y,
+        eyeAboveBody,
+        cameraWorld: camera.positionWorld,
+        targetWorld: camera.targetWorld,
+        pitch: orientation.pitch,
+      });
+      position = arrival.body;
+      orientation.pitch = arrival.pitch;
+    }
     ensureTerrainColliders(position.x, position.z);
     physicsProvider?.teleport?.(position);
     playerPosition = position;

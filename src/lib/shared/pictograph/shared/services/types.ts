@@ -29,6 +29,7 @@ import type { ThemeMode } from "../../../utils/svg-color-utils";
 import type { PropType } from "../../prop/domain/enums/prop-type";
 import type { FanAppearance } from "../../prop/domain/fan-appearance";
 import type { TriangleGrip } from "../../prop/domain/triangle-appearance";
+import type { BuugengStyle } from "../../prop/domain/buugeng-appearance";
 
 // Re-export for convenience
 export type { PreparedPictographData };
@@ -50,6 +51,11 @@ export interface PrepareOptions {
    * grip, which printed and scanned cards keep.
    */
   triangleGrip?: TriangleGrip;
+  /**
+   * The buugeng's blade style. Omitted means Classic, the notation glyph,
+   * which printed and scanned cards keep.
+   */
+  buugengStyle?: BuugengStyle;
   /**
    * Explicit prop type for the performer's left hand.
    * When provided, this value is used directly. When omitted, falls back to global settings.

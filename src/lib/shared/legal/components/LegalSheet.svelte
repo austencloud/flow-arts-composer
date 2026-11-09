@@ -1,5 +1,6 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
   type SheetType = "terms" | "privacy";
 
@@ -11,6 +12,21 @@
 
   let { isOpen = false, type = "terms", onClose }: Props = $props();
 
+  let sheetEl = $state<HTMLDivElement | null>(null);
+
+  // Modal sheet: Tab and Shift+Tab stay inside, the page behind goes inert,
+  // and focus returns to whatever opened it when the sheet closes.
+  const focusTrap = new FocusTrap({
+    focusContainerOnInitial: true,
+    inertExclusions: [],
+  });
+
+  $effect(() => {
+    if (!isOpen || !sheetEl) return;
+    focusTrap.activate(sheetEl);
+    return () => focusTrap.deactivate();
+  });
+
   function handleBackdropClick(e: MouseEvent) {
     if (e.target === e.currentTarget) {
       onClose();
@@ -18,7 +34,7 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") {
+    if (isOpen && e.key === "Escape") {
       onClose();
     }
   }
@@ -36,6 +52,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet-backdrop" onclick={handleBackdropClick}>
     <div
+      bind:this={sheetEl}
       class="sheet"
       role="dialog"
       aria-labelledby="sheet-title"
@@ -382,6 +399,10 @@
     to {
       opacity: 1;
     }
+  }
+
+  .sheet:focus {
+    outline: none;
   }
 
   .sheet {

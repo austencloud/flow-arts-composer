@@ -45,6 +45,7 @@
     panScale = 0.8,
     top = false,
     onready,
+    onoverflow,
   }: {
     children: Snippet;
     min?: number;
@@ -59,6 +60,9 @@
     top?: boolean;
     /** Called each time a fit lands and the content shows. */
     onready?: () => void;
+    /** Called when the content will not fit at the smallest scale: a screen
+        that can be cut smaller recuts instead of panning. */
+    onoverflow?: () => void;
   } = $props();
 
   let area = $state<HTMLDivElement>();
@@ -68,6 +72,7 @@
   let ready = $state(false);
   let lastHeight = -1;
   let lastArea = "";
+  let lastKey: unknown;
   let raf = 0;
   // Set once the first fit may run (after the short wait for fonts).
   let started = false;
@@ -90,7 +95,16 @@
     const r = box.getBoundingClientRect();
     for (const el of box.querySelectorAll("svg, canvas, img")) {
       if (el.closest("[data-fit-self-scroll]")) continue;
-      const e = el.getBoundingClientRect();
+      // An animator resizes its canvas in script a frame or more after the
+      // canvas's box changes, so mid-search the canvas can still be the
+      // size of the last probe; the box that holds it is the space it takes
+      // (2026-11-07: a stale canvas read as overflow and the search landed
+      // at 0.675).
+      const holder =
+        el instanceof HTMLCanvasElement && el.parentElement
+          ? el.parentElement
+          : el;
+      const e = holder.getBoundingClientRect();
       if (e.width < 1) continue;
       // Parked off screen on purpose (an offscreen render pass), not a
       // figure sticking out.
@@ -127,9 +141,11 @@
     // and fills the box; otherwise search out of sight.
     if (ready && lastArea === `${aw}x${ah}`) {
       const height = inner.offsetHeight;
-      // A panning screen stays at its pan scale while it still overflows.
+      // A panning screen stays only while its content is the content that
+      // failed. Its pan scale draws larger than the floor, so "still overflows"
+      // proves nothing: a screen recut with fewer words may fit at the floor.
       const keeps = !fits
-        ? height > ah + 0.5
+        ? contentKey === lastKey
         : !overflowsWidth(inner) &&
           height <= ah + 0.5 &&
           (scale >= max || height >= ah * KEEP_FILL);
@@ -167,11 +183,13 @@
     if (mine !== generation || !inner) return;
     lastHeight = inner.offsetHeight;
     lastArea = `${aw}x${ah}`;
+    lastKey = contentKey;
     if (result.fits) lastFit = { area: lastArea, scale: final };
     fitted = true;
     fitting = false;
     ready = true;
     onready?.();
+    if (!result.fits) onoverflow?.();
   }
 
   function schedule(): void {
@@ -246,6 +264,9 @@
     align-content: start;
     overflow-y: auto;
     overscroll-behavior: contain;
+    /* No bar: its width would narrow the box, restart the search, and the
+       search's small sizes would take the bar away again, without end. */
+    scrollbar-width: none;
   }
   .fit-content {
     --fit: 1;

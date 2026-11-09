@@ -2,17 +2,19 @@
 status: backlog
 value: 2
 effort: L
-remaining: "Implement solveStepDepth and its scanner/renderer integration using existing wall-feasibility and concavity owners; the depth solver, scan-wall-feasibility.ts and depth-solver test are absent, while wall-feasibility.ts only declares depthOffset/withCheat (f558fd9fc9). Reconcile current IK owner paths, then validate reachable crossing fixtures, scan-version behavior and Austen's visual gate before claiming a working cheat."
+remaining: "Solver, depthOffset in calculatePropState, scan script --solve/--write, SCAN_VERSION 2 and the viewer seam (wall-plane-policy.ts, wired into character-instance-state) are on main. Left: computeWallPole depth term in the published @austencloud/scene-3d package, the false-verdict dual-wheel switch plus notice, a decision on the depthOffset snap at step boundaries, scanner/viewer hand-distance and grid-join parity, a Svelte-aware runner for the scan script, reach calibration, Austen's labelled fixtures, and his visual gate."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
-work_state: ready
+last_triaged: 2026-11-07
+work_state: in-progress
 ---
 
 # Wall-Plane Depth-First Joint Feasibility Solver — Design (Phase 3)
 
-> 2026-10-14 triage: Implement solveStepDepth and its scanner/renderer integration using existing wall-feasibility and concavity owners; the depth solver, scan-wall-feasibility.ts and depth-solver test are absent, while wall-feasibility.ts only declares depthOffset/withCheat (f558fd9fc9). Reconcile current IK owner paths, then validate reachable crossing fixtures, scan-version behavior and Austen's visual gate before claiming a working cheat. Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage (viewer): `src/lib/shared/3d/services/wall-plane-policy.ts` holds `resolvePlanePolicy`, `applyWallPlaneOverrides` and `applyWallFeasibility`, and `character-instance-state.svelte.ts` converts every step through it, so a current-version `"withCheat"` sequence plays with its per-step, per-hand `depthOffset` and `k`; absent, `true`, `false` and stale verdicts convert unchanged, and a hand off the wall plane never carries the cheat (`tests/unit/3d/state/character-instance-wall-feasibility.test.ts`). Search tests for the opposite-sign pairing, reach rejection and the k tiebreak run against a synthetic scanner (`tests/unit/3d/depth-feasibility-solver-search.test.ts`). The z = 0 audit found no in-repo consumer that redraws a hand at a single wall depth; see Remaining Work items 2 and 3.
+>
+> 2026-11-07 triage: The depth solver works in the offline model. `src/lib/shared/3d/services/depth-feasibility-solver.ts` (`solveStepDepth`, `solveSequenceWallFeasibility`, `applyWallPlaneOverrides`) reuses concavity-solver's `concaveEligible`, `withDepth` and `bisectToThreshold`; `MotionConfig3D.depthOffset` is honored by `calculatePropState`, so scanner and renderer share one z shift; `SCAN_VERSION` is 2; `scripts/scan-wall-feasibility.ts` has `--solve`/`--write`. Four reachable crossing ANTI fixtures (1.9 m performer, CLOCK/COUNTER orientations) collide flat and clear with a single-hand 17.5 cm forward pull in 34 to 35 scans; pro and dash conflicts bail with one scan. Finding: at the scanner's default 1.7 m figure no crossing is reachable even at z = 0 (grid 0.3 m forward, 0.52 m hand distance), so default-height sequences cannot reach "withCheat" until the scanner's reach geometry is calibrated against Austen's fixtures. Renderer work and his visual gate remain; see Remaining Work below. Earlier status banners are historical where they conflict.
 
 **Date:** 2026-07-13
 **Status:** Approved (brainstormed with Austen 2026-07-13). **Targeted for Fable 5 execution at xhigh effort** — see Fable Handoff.
@@ -141,3 +143,16 @@ This is a complex, judgment-heavy build (a bounded non-monotonic 3D search, a ri
 ## Terminology
 
 "Turns" in this spec means PROP turns (the staff's rotation, which drives petal count `1 + turns`) — a legitimate use per `.claude/rules/tka-domain.md`. Never used here for LOOP rotation slices.
+
+## Remaining Work (2026-11-07)
+
+Done: items 1, 3 (metadata, script, scan version), the `depthOffset` hand shift in the shared prop interpolator, and the viewer seam for `"withCheat"`. Still open, in order:
+
+1. **Elbow pole depth term.** `ElbowPoleComputer.computeWallPole` lives in the published `@austencloud/scene-3d` package (`src/lib/services/implementations/ElbowPoleComputer.ts` in that repo), not in this repository, so it cannot change from here. Add `localZ = handTarget.z - bodyCenter.z` biasing the pole like `computeWheelPole`'s `depthFactor`, with a regression test that z = bodyCenter.z matches today's output; then bump the vendored package. Until then a pulled hand is placed correctly (IK reaches the shifted grip) but bends with the wall-tuned pole.
+2. **False verdict.** `resolvePlanePolicy` reports `preferDualWheel` for `false`, but the viewer does not switch planes yet: that needs a non-persisted policy plane mode that yields to any manual choice, the facing snap, and a visible notice. Not wired, so a `false` sequence still plays on the wall.
+3. **z = 0 audit result.** Every in-repo 3D consumer reads `worldPosition` from `calculatePropState` (avatar props, worker snapshot, viewmodel staffs, contact displacement through `propStatesAtScoreTime`, collision-lab pose viewports), so none desyncs from the scan. `plane-transforms.ts` still returns z = 0 for `Plane.WALL`, with the shift added on top. `pose-target-mapper.ts`/`PoseViewport.svelte` place static lab poses that never carry `depthOffset`. Three real gaps remain: (a) the offset is constant across its step, so the hand jumps by the full offset at the step boundary where the next step has a different one; easing it inside `calculatePropState` would keep scanner and renderer together but changes what the solver verified, so it needs a design call and a re-run of the fixtures; (b) the scanner samples at `DEFAULT_HAND_DISTANCE` while a performer can carry a grid-style hand distance; (c) the viewer's grid-join setting can differ from the scanned sequence's. (b) and (c) shift x/y, not z, but they put the drawn hand somewhere the scan did not check.
+4. **Scan script runner.** Plain `tsx` fails on `@austencloud/scene-3d`'s `.svelte` exports and `vite-node` is not installed; pick a Svelte-aware runner (adding a dependency needs Austen).
+5. **Reach calibration and fixtures.** Add Austen's labelled fixtures under `tests/fixtures/wall-feasibility/` and tune the scanner's reach geometry (figure height, grid offset, or hand distance) so default-height crossings are reachable at all. The solver's reach rule allows a hand no more shortfall than `max(REACH_FEASIBILITY_TOLERANCE, its unshifted shortfall)`; revisit once calibrated.
+6. **Visual gate.** Austen confirms a "withCheat" sequence shows the staff passing in depth with a natural elbow. Owed.
+
+Finding: the k tiebreak's torso guard cannot fire. A tiebreak candidate must scan clean, and a clean scan has no `prop-through-torso` collision, so "never increases torso depth" holds trivially. If the tiebreak should ever accept a partial clear, the guard becomes real; today it is dead weight.

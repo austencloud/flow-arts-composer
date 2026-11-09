@@ -25,6 +25,8 @@
     /** Always open and as wide as its parent: the Browse scope bar's search,
      * which is the page's main way in rather than a toolbar tool. */
     pinned?: boolean;
+    /** Take the keyboard on mount: the field just opened on a button press. */
+    autofocus?: boolean;
   }
 
   let {
@@ -35,6 +37,7 @@
     name = "search",
     expansionAnchor = "start",
     pinned = false,
+    autofocus = false,
   }: Props = $props();
 
   // Local state - initialized empty; the $effect below syncs the prop value
@@ -126,6 +129,7 @@
   }
 
   onMount(() => {
+    if (autofocus) inputRef?.focus();
     document.addEventListener("pointerdown", handlePointerDownOutside, true);
     return () => {
       document.removeEventListener(

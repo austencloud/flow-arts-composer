@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import type { FlowerStyle } from "@tka/shape-domain";
-import {
-  flowerPetalAnchor,
-  flowerPetalMarks,
-} from "@tka/shape-engine/services/flower-petal-anchor.js";
+import { flowerPetalAnchor } from "@tka/shape-engine/services/flower-petal-anchor.js";
 import { loadShapeMatrix } from "@tka/shape-engine/services/shape-matrix-flowers.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
@@ -58,32 +54,6 @@ describe("the real poi flowers' petal direction", () => {
       const key = `${flower.style}-${flower.turns}-${flower.ori}-${flower.grid}`;
       const paths = data.left.get(key)?.left ?? [];
       expect(flowerPetalAnchor(paths, flower.style), key).not.toBeNull();
-    }
-  });
-
-  it.each<[string, FlowerStyle]>([
-    ["pro-2-out-diamond", "pro"],
-    ["anti-1-in-diamond", "anti"],
-  ])("%s marks its four petals on the diagonals", async (key, style) => {
-    const data = await loadShapeMatrix(PropType.POI);
-    const marks = flowerPetalMarks(data.left.get(key)?.left ?? [], style, 4)!;
-    expect(marks.angles).toHaveLength(4);
-    [-135, -45, 45, 135].forEach((angle, index) =>
-      expect(marks.angles[index]).toBeCloseTo(angle, 0)
-    );
-  });
-
-  it("marks one point per petal on every poi flower", async () => {
-    const data = await loadShapeMatrix(PropType.POI);
-    for (const flower of data.axis) {
-      if (flower.style === "float" || flower.petals === 0) continue;
-      const key = `${flower.style}-${flower.turns}-${flower.ori}-${flower.grid}`;
-      const marks = flowerPetalMarks(
-        data.left.get(key)?.left ?? [],
-        flower.style,
-        flower.petals
-      );
-      expect(marks?.angles, key).toHaveLength(flower.petals);
     }
   });
 });

@@ -46,7 +46,7 @@ import { FireTipTracker } from "./fire-tip-tracker";
 import { LedSampler } from "./led-sampler";
 import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
-import { squareFrame } from "../domain/types/canvas-frame";
+import { squareFrame, type CanvasFrame } from "../domain/types/canvas-frame";
 
 /**
  * Context passed to CanvasLifecycleManager.initialize().
@@ -409,12 +409,28 @@ export class CanvasLifecycleManager {
     const renderer = this._animationRenderer;
     this._resizer = new CanvasResizerImpl();
     this._resizer.initialize(containerElement, {
+      frameChanged: (frame) => this.pushFrame(frame),
       resize: async (size) => {
         await renderer.resize(size);
         // Resizing clears the canvas. A paused player has no next frame to repair it.
         if (this._containerElement === containerElement) redraw();
       },
     });
+  }
+
+  /**
+   * The resizer's frame is the one record of the canvas's size. Everything
+   * that draws into it hears about a change here, once, instead of comparing
+   * against a copy on every update. Consumers built later (the render loop,
+   * the trail layer) read the resizer's frame when they are created.
+   */
+  private pushFrame(frame: CanvasFrame): void {
+    this._trailCapturer?.updateConfig({ canvasSize: frame.size });
+    this._renderLoop?.updateConfig({
+      canvasSize: frame.size,
+      canvasFrame: frame,
+    });
+    this._effectManager?.resizeAll(frame);
   }
 
   private _doInitGlyphTextureLoader(): void {

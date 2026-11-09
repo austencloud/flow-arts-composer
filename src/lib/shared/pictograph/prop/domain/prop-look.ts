@@ -7,6 +7,13 @@ import {
   resolveFanRenderKey,
   type FanAppearance,
 } from "./fan-appearance";
+import {
+  buugengAppearanceArtwork,
+  isStyledBuugengPropType,
+  normalizeBuugengStyle,
+  resolveBuugengRenderKey,
+  type BuugengStyle,
+} from "./buugeng-appearance";
 import { HOOP_FAMILY_GLYPH_CROPS } from "./hoop-family-geometry.generated";
 import {
   isTrianglePropType,
@@ -22,11 +29,12 @@ export { propArtworkStem, type PropSpriteSide };
 export interface PropRenderAppearance {
   fanAppearance?: FanAppearance | null;
   triangleGrip?: TriangleGrip | null;
+  buugengStyle?: BuugengStyle | null;
 }
 
 /**
- * Renderer-only identity for the texture cache: a fan's build, or a triangle's
- * grip. Every other prop keeps its plain type. Keys never enter PropType,
+ * Renderer-only identity for the texture cache: a fan's build, a triangle's
+ * grip, or a buugeng's style. Every other prop keeps its plain type. Keys never enter PropType,
  * choreography, or URLs.
  */
 export function resolvePropRenderKey(
@@ -46,10 +54,19 @@ export function resolvePropRenderKey(
       normalizeTriangleGrip(appearance.triangleGrip)
     );
   }
+  if (isStyledBuugengPropType(normalized)) {
+    return resolveBuugengRenderKey(
+      normalized,
+      normalizeBuugengStyle(appearance.buugengStyle)
+    );
+  }
   return normalized;
 }
 
-/** The notation prop behind any render key (fan build, triangle grip, or plain). */
+/**
+ * The notation prop behind any render key (fan build, triangle grip, buugeng
+ * style, or plain).
+ */
 export function basePropTypeOfRenderKey(value: string): string {
   const normalized = value.toLowerCase();
   const separator = normalized.indexOf("__");
@@ -272,6 +289,16 @@ export function propTileArtwork(
     const grip = normalizeTriangleGrip(appearance.triangleGrip);
     return {
       href: triangleAppearanceArtwork(grip) ?? fallback,
+      styled: false,
+      prelit: false,
+    };
+  }
+  if (isStyledBuugengPropType(normalized)) {
+    // A style is one flat recolorable body fitted to the plain button frame,
+    // so it draws exactly like the notation tile.
+    const style = normalizeBuugengStyle(appearance.buugengStyle);
+    return {
+      href: buugengAppearanceArtwork(normalized, style, "buttons") ?? fallback,
       styled: false,
       prelit: false,
     };

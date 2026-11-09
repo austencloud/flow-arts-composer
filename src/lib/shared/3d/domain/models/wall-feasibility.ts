@@ -4,6 +4,12 @@
  * The viewer reads it to choose plane mode and path params. Absent =
  * unscanned: current behavior, no claims.
  */
+/**
+ * Bump when thresholds, stance, or the petal model change shape.
+ * v2: the depth solver writes per-hand depthOffset overrides.
+ */
+export const SCAN_VERSION = 2;
+
 export type WallFeasibilityVerdict = true | "withCheat" | false;
 
 /** Per-step, per-hand path overrides. Phase 2 writes k; Phase 3 adds depthOffset. */

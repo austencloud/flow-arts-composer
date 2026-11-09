@@ -49,6 +49,25 @@ describe("decideCreateEntrySource", () => {
     ).toEqual({ source: "workspace", cappedOut: false });
   });
 
+  it("opens a choreographed entry on its pieces, without waiting for pictures", () => {
+    const laidOut = { ...entering, panelReady: true, piecesReady: true };
+    expect(
+      decideCreateEntrySource({ ...laidOut, openOnPieces: true, elapsedMs: 1 })
+    ).toEqual({ source: "workspace", cappedOut: false });
+    // A plain crossfade shows everything at once, so it still waits.
+    expect(decideCreateEntrySource({ ...laidOut, elapsedMs: 1 }).source).toBe(
+      "door"
+    );
+    // Pieces need their panel.
+    expect(
+      decideCreateEntrySource({
+        ...entering,
+        piecesReady: true,
+        openOnPieces: true,
+      }).source
+    ).toBe("door");
+  });
+
   it("swaps at the cap anyway and says it capped out", () => {
     expect(
       decideCreateEntrySource({ ...entering, panelReady: true, elapsedMs: 560 })

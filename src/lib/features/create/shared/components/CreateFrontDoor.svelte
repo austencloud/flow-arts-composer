@@ -24,6 +24,11 @@
     runAfterBootScreen,
   } from "#lib/shared/application/services/boot-screen.js";
   import { methodPreviewHold } from "./method-previews/method-preview-hold";
+  import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
+  import {
+    PRESS_BACKDROP_KEY,
+    PRESS_BACKDROP_MS,
+  } from "../services/create-entry-choreography";
   import { METHOD_PREVIEW_SCENES } from "./method-previews/method-preview-scenes";
 
   const METHOD_ORDER = new Map([
@@ -41,6 +46,7 @@
     source,
     lastUsedMode = null,
     enteringMethodId = null,
+    departing = false,
     onWarm,
     onSelect,
   }: {
@@ -51,9 +57,11 @@
     /** The method a tap is entering while its workspace gets ready. Its card
      *  keeps the pressed look so the wait reads as the tap being taken. */
     enteringMethodId?: string | null;
+    /** The board is clearing for a choreographed entry and takes no more taps. */
+    departing?: boolean;
     /** Fetch a method's code ahead of the tap, once a card is pointed at. */
     onWarm?: (methodId: string) => void;
-    onSelect: (methodId: string) => void;
+    onSelect: (methodId: string, card: HTMLElement) => void;
   } = $props();
 
   const orderedMethods = $derived(
@@ -228,7 +236,7 @@
     trigger.blur();
     // Choosing a method ends the turns.
     turns.stop();
-    onSelect(methodId);
+    onSelect(methodId, trigger);
   }
 
   function warmMethod(methodId: string): void {
@@ -247,7 +255,11 @@
   }
 </script>
 
-<section class="front-door" aria-labelledby="create-front-door-title">
+<section
+  class="front-door"
+  class:departing
+  aria-labelledby="create-front-door-title"
+>
   <div class="front-door-inner" class:two-methods={orderedMethods.length === 2}>
     <header class="front-door-header">
       <h1 id="create-front-door-title">
@@ -283,7 +295,12 @@
             aria-label={accessibleName(method)}
             onclick={(event) => selectMethod(method.id, event.currentTarget)}
             onpointerenter={() => warmMethod(method.id)}
-            onpointerdown={() => warmMethod(method.id)}
+            onpointerdown={() => {
+              // The backdrop's frames would sit between the press and its
+              // release; the entry holds it from there on.
+              holdBackgroundFor(PRESS_BACKDROP_KEY, PRESS_BACKDROP_MS);
+              warmMethod(method.id);
+            }}
             onfocus={() => warmMethod(method.id)}
             use:methodPreviewHold={{ turns, id: method.id }}
           >
@@ -333,8 +350,15 @@
   .front-door {
     width: 100%;
     height: 100%;
-    overflow: auto;
+    /* The leaving cards file into the navigation past the board's edge, and
+       that must not show a scrollbar. Hidden from the start: switching it on
+       at the tap laid the whole board out again inside the press's task. */
+    overflow: hidden auto;
     container: create-entry / size;
+  }
+
+  .front-door.departing {
+    pointer-events: none;
   }
 
   .front-door-inner {
@@ -423,7 +447,8 @@
     cursor: pointer;
     transition:
       background-color var(--transition-normal),
-      border-color var(--transition-normal);
+      border-color var(--transition-normal),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   /* Construct, alone on its row, sets its square beside its words. */
@@ -447,10 +472,17 @@
     );
   }
 
+  /* The press shows under the finger at once: the tap itself only lands on
+     release, and the entry starts from wherever this dip has got to. The
+     color steps at once: fading it repainted the card every frame of the
+     press (about 30 ms a frame at 4x CPU slowdown), which held back the
+     release and the entry behind it. */
   .method-card:active {
+    transition: transform var(--duration-instant) var(--ease-standard);
+    transform: scale(0.97);
     background: color-mix(
       in srgb,
-      var(--method-color) 22%,
+      var(--method-color) 28%,
       var(--theme-card-bg)
     );
   }
@@ -910,7 +942,8 @@
        the second row. */
     .method-index[data-method-count="2"] .method-item.method-item,
     .method-index[data-method-count="4"] .method-item.method-item,
-    .method-index[data-method-count="5"] .method-item.method-item:nth-child(n + 4) {
+    .method-index[data-method-count="5"]
+      .method-item.method-item:nth-child(n + 4) {
       grid-column: span 3;
     }
 
@@ -947,6 +980,10 @@
   @media (prefers-reduced-motion: reduce) {
     .method-card {
       transition: none;
+    }
+
+    .method-card:active {
+      transform: none;
     }
   }
 </style>

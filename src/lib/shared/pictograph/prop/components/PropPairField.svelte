@@ -3,11 +3,9 @@
   import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
   import { getPropTypeDisplayInfo } from "../domain/prop-type-display-registry";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PropCompositionPreview from "./PropCompositionPreview.svelte";
+  import PropPairDialog from "./PropPairDialog.svelte";
+  import PropPairPicker from "./PropPairPicker.svelte";
 
   let {
     value = $bindable(),
@@ -46,14 +44,17 @@
      */
     picker?: "inline" | "modal";
   } = $props();
-  const titleId = $props.id();
   let choosing = $state(false);
-  let hand = $state<"both" | "left" | "right">("both");
   const pairLabel = $derived(
     value.leftPropType === value.rightPropType
       ? getPropTypeDisplayInfo(value.leftPropType).label
       : `${getPropTypeDisplayInfo(value.leftPropType).label} / ${getPropTypeDisplayInfo(value.rightPropType).label}`
   );
+
+  function pick(next: ResolvedPropConfig): void {
+    value = next;
+    choosing = false;
+  }
 </script>
 
 <div class="prop-pair-field" class:fill>
@@ -75,68 +76,22 @@
   </PanelButton>
   {#if picker === "inline" && choosing && !disabled}
     <div class="picker" transition:growFade>
-      {@render pickerBody()}
+      <PropPairPicker {value} {hint} {showColors} onPick={pick} />
     </div>
   {/if}
 </div>
 
 {#if picker === "modal"}
-  <BaseModal
+  <PropPairDialog
     open={choosing && !disabled}
-    onclose={() => (choosing = false)}
-    size="fit"
-    class="prop-pair-dialog"
-    labelledBy={titleId}
-  >
-    {#snippet header()}<h2 id={titleId}>{label}</h2>{/snippet}
-    <div class="picker in-modal">
-      {@render pickerBody()}
-    </div>
-    {#snippet footer()}
-      <div class="modal-actions">
-        <PanelButton variant="secondary" onclick={() => (choosing = false)}
-          >{t("action_cancel")}</PanelButton
-        >
-      </div>
-    {/snippet}
-  </BaseModal>
-{/if}
-
-{#snippet pickerBody()}
-  {#if hint}
-    <p class="hint">{hint}</p>
-  {/if}
-  <SegmentedControl
-    options={[
-      { value: "both", label: "Both" },
-      { value: "left", label: "Left", tone: "blue" },
-      { value: "right", label: "Right", tone: "red" },
-    ]}
-    value={hand}
-    onchange={(next) => (hand = next)}
-    ariaLabel="Which props to change"
-    semantics="radiogroup"
-  />
-  <BentoPropGrid
-    selectedPropType={hand === "right"
-      ? value.rightPropType
-      : value.leftPropType}
-    variant="inline"
-    scrollMode="host"
-    showAppearance={false}
+    title={label}
+    {value}
+    {hint}
     {showColors}
-    onSelect={(prop) => {
-      const leftPropType = hand === "right" ? value.leftPropType : prop;
-      const rightPropType = hand === "left" ? value.rightPropType : prop;
-      value = {
-        leftPropType,
-        rightPropType,
-        catDogMode: leftPropType !== rightPropType,
-      };
-      choosing = false;
-    }}
+    onclose={() => (choosing = false)}
+    onPick={pick}
   />
-{/snippet}
+{/if}
 
 <style>
   /* The button sizes to its label; only the open picker spans the field. */
@@ -176,45 +131,6 @@
   }
 
   .picker {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
     align-self: stretch;
-  }
-
-  .picker.in-modal {
-    padding: 0 20px;
-  }
-
-  /* Wide enough for the prop grid's eight-column tier (850px of grid), so a
-     laptop shows every prop in three rows with no scrollbar. Narrower
-     screens take the full width less the gutters and the grid steps down. */
-  :global(dialog.base-modal.prop-pair-dialog[data-size="fit"]) {
-    width: min(calc(100vw - 32px), 920px);
-  }
-
-  /* Three short choices: the control sizes to them instead of spanning the
-     wide dialog. */
-  .picker.in-modal :global(.segmented-control) {
-    max-width: 26rem;
-  }
-
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding: 16px 20px 20px;
-  }
-
-  h2 {
-    margin: 0;
-    padding: 20px;
-    font-size: var(--font-size-lg, 18px);
-  }
-
-  .hint {
-    margin: 0;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
-    line-height: 1.4;
   }
 </style>

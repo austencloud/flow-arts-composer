@@ -1,0 +1,22 @@
+{
+  "id": "water-traverse",
+  "label": "Trench Floor",
+  "glbUrl": "/models/water-traverse/trench-floor.glb",
+  "license": "first-party",
+  "attribution": null,
+  "source": "scripts/build-traverse-seabed.py",
+  "bounds": { "min": [-41.85, -18.0, -58.0], "max": [41.85, 0.37, 79.7] },
+  "offset": [0, 0, 0],
+  "compression": { "geometry": "meshopt", "texture": "none" },
+  "requiresAsyncLoad": true,
+  "featureKey": "environment",
+  "fog": { "color": "#0b2a33", "density": 0.02 },
+  "background": "#0b2a33",
+  "environmentMap": "room",
+  "stageSurface": { "withStage": -18.0, "withoutStage": -18.0 },
+  "materials": {
+    "vertexColors": true,
+    "tint": [0.2, 0.25, 0.26],
+    "envMapIntensity": 0.16
+  }
+}

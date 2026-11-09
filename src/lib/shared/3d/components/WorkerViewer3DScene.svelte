@@ -226,7 +226,9 @@
       rightPropFlipped:
         isBuugengFamilyProp(resolvedRight) &&
         (viewerSettings?.settings?.rightBuugengFlipped ?? false),
-      enableLocomotion: enablePerformerLocomotion,
+      // Same gate as the main-thread scene: the walk pack is only worth
+      // fetching for a performer who leaves their spot.
+      enableLocomotion: enablePerformerLocomotion && performer.travels,
       badge: {
         index,
         selected,

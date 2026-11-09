@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { SHAPE_MATRIX_PANE_NAME } from "../../services/shape-matrix-artwork";
   import { s as t } from "../../strings.svelte.js";
   import ShapeMatrixGrid from "../../components/ShapeMatrixGrid.svelte";
   import type { Flower } from "@tka/shape-domain";
@@ -36,6 +38,11 @@
 <section
   class="matrix-pane"
   class:compact={state.compact}
+  use:claimedViewTransitionName={{
+    name: SHAPE_MATRIX_PANE_NAME,
+    enabled:
+      state.compact && state.activeView === "matrix" && state.mandalaHandoff,
+  }}
   aria-label={t("shape_engine_matrix_aria")}
 >
   {#if state.compact}

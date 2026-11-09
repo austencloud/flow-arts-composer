@@ -37,6 +37,12 @@
      * and a hidden look is one you will not try.
      */
     wrap?: boolean;
+    /**
+     * Every chip in a grid that shares the height the host gives it, for a host
+     * that never scrolls. The name gets what the chip has, and the title carries
+     * it when a long one is cut.
+     */
+    fit?: boolean;
   }
 
   const {
@@ -50,6 +56,7 @@
     effectLabel,
     onSelect,
     wrap = false,
+    fit = false,
   }: Props = $props();
 
   // A clipped chip against a hard edge reads as broken, not as scrollable, so
@@ -80,8 +87,9 @@
   use:scrollEdges={(next) => (edges = next)}
   class="look-chips"
   class:wrap
-  class:fade-start={!wrap && edges.start}
-  class:fade-end={!wrap && edges.end}
+  class:fit
+  class:fade-start={!wrap && !fit && edges.start}
+  class:fade-end={!wrap && !fit && edges.end}
   role="radiogroup"
   aria-label={t("effect_deep_choose_look", {
     effect: effectUiLabel(effectLabel),
@@ -128,6 +136,7 @@
       class:active={isActive}
       role="radio"
       aria-checked={isActive}
+      title={fit ? effectUiLabel(preset.name) : undefined}
       onclick={() => onSelect(preset.id)}
     >
       {#if preset.previewColor === "rainbow"}
@@ -168,6 +177,30 @@
   .look-chips.wrap {
     flex-wrap: wrap;
     overflow-x: visible;
+  }
+
+  .look-chips.fit {
+    flex: 1 1 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(5rem, 100%), 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 0.25rem;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+  }
+
+  .look-chips.fit .look-chip {
+    height: auto;
+    min-height: 0;
+    min-width: 0;
+    padding: 0 0.375rem;
+    gap: 0.25rem;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   /* Only the overflowing edge fades, so nothing softens a chip that is fully

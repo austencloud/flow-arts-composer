@@ -12,6 +12,7 @@
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import WhatsNewModal from "./WhatsNewModal.svelte";
+  import { planReleaseDiscovery } from "#lib/shared/versioning/domain/utils/release-discovery.js";
 
   // Configuration
   const CHECK_DELAY_MS = 1500; // Delay before checking (let app stabilize)
@@ -58,43 +59,54 @@
       return;
     }
 
-    // Check if user has already seen this version
+    // Read up to the running build: nothing can be unread, so skip the fetch.
     if (whatsNewState.hasSeenVersion(currentVersion)) {
       return;
     }
 
-    // Load version data
+    // Load version data. Nothing here marks notes read: reading happens when
+    // What's New or Release Notes actually opens. The toast fires once per
+    // release; the unread dot stays until then.
     whatsNewState.setLoading(true);
     try {
       const versions = await versionService.getVersions();
-      const versionData = versions.find((v) => v.version === currentVersion);
+      const plan = planReleaseDiscovery({
+        versions,
+        lastSeen: whatsNewState.lastSeenVersion(),
+        lastToasted: whatsNewState.lastToastedVersion(),
+        running: currentVersion,
+      });
+      if (plan.kind !== "unread") return;
 
-      if (versionData && versionData.changelogEntries?.length) {
-        // Non-blocking update toast instead of an auto-popup modal. Mark seen
-        // on fire so it never re-nags even if ignored; the "See what's new"
-        // action opens the full modal for detail on demand.
-        whatsNewState.markVersionAsSeen(currentVersion);
-        const count = versionData.changelogEntries.length;
+      const announced = plan.unseen;
+      whatsNewState.setUnseen(announced);
+      if (plan.toast) {
+        whatsNewState.markToasted(plan.toast);
+        const count = announced.reduce(
+          (sum, v) => sum + (v.changelogEntries?.length ?? 0),
+          0
+        );
         showToast({
           message: t("settings_update_count_toast", {
-            version: currentVersion,
+            version: plan.toast,
             count,
           }),
           type: "info",
           duration: WHATS_NEW_TOAST_MS,
           action: {
             label: t("settings_see_whats_new"),
-            onClick: () => whatsNewState.openDetail(versionData),
+            // The dot may have cleared meanwhile (Release Notes opened);
+            // the toast still opens what it announced.
+            onClick: () =>
+              whatsNewState.openRollup(
+                whatsNewState.unseen.length ? whatsNewState.unseen : announced
+              ),
           },
         });
-      } else {
-        // No changelog for this version, mark as seen silently
-        whatsNewState.markVersionAsSeen(currentVersion);
       }
     } catch (error) {
       console.error("Failed to load version data for What's New:", error);
-      // Don't show modal on error, but don't mark as seen either
-      // User will see it next time if load succeeds
+      // Nothing is marked, so the next load tries again.
     } finally {
       whatsNewState.setLoading(false);
     }

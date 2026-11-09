@@ -14,6 +14,7 @@ Delegates ALL logic to services (SRP compliant)
   } from "svelte";
   import { flip } from "svelte/animate";
   import { motionDuration, popIn } from "#lib/shared/transitions/motion.js";
+  import { tryGetCreateModuleContext } from "../../shared/context/create-module-context";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
@@ -131,6 +132,9 @@ Delegates ALL logic to services (SRP compliant)
 
   // Get panel coordination state from context (for LOOP expanded overlay)
   const panelState = getContext<PanelCoordinationState>("panelState");
+  // Arriving from the Create board, the cards mount in a hidden layer and the
+  // landing brings them in. Their own entrance is for a level change.
+  const methodEntry = tryGetCreateModuleContext()?.methodEntry;
 
   // Services - use $state to make them reactive
   let loopParamProvider = $state<LOOPParameterProvider | null>(null);
@@ -767,8 +771,8 @@ Delegates ALL logic to services (SRP compliant)
             easing: quintOut,
           }}
           in:popIn={{
-            duration: DURATION.normal,
-            delay: motionDuration(DURATION.fast),
+            duration: methodEntry?.arriving ? 0 : DURATION.normal,
+            delay: methodEntry?.arriving ? 0 : motionDuration(DURATION.fast),
             start: 0.92,
           }}
           out:popIn={{ duration: DURATION.fast, start: 0.92 }}

@@ -15,8 +15,9 @@ import type { StancePose } from "#lib/features/lab/tabs/collision-lab/domain/typ
 import { buildSweptVolume } from "./swept-volume/swept-volume-builder";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 
-/** Bump when thresholds, stance, or the petal model change shape. */
-export const SCAN_VERSION = 1;
+// The version lives with the metadata types so the viewer can check it
+// without importing the collision model.
+export { SCAN_VERSION } from "../domain/models/wall-feasibility";
 
 const DEFAULT_HEIGHT_M = 1.7;
 
@@ -38,6 +39,8 @@ export interface StepScanResult {
   clean: boolean;
   collisions: SimCollision[];
   worstDepth: number;
+  /** Worst reach shortfall across the sweep, per hand, meters. */
+  reachShortfall: { left: number; right: number };
 }
 
 export interface SequenceScanResult {
@@ -59,6 +62,7 @@ export function scanStepPair(
     clean: result.collisions.length === 0,
     collisions: result.collisions,
     worstDepth: result.totalCollisionDepth,
+    reachShortfall: result.reachShortfall,
   };
 }
 

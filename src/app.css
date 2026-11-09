@@ -302,15 +302,13 @@ h6 {
   /* Duration Tiers - Progressively longer for different contexts */
 
   /* A large surface travelling across the page: the resident player between
-     heroes, a homepage tile's glass opening into its page. Calm and
+     heroes, a page coming forward from behind a homepage tile. Calm and
      decelerating, with no overshoot; long enough to follow the distance, short
      enough to stay out of the way. */
   --duration-surface-travel: 500ms;
   --ease-surface-travel: cubic-bezier(0.2, 0, 0, 1);
 
-  /* The launchpad tile's glass. The resting tile and the panel that flies out of
-     it (TILE FLIGHT in view-transitions.css) both read these, so the panel at
-     rest is the tile's glass by construction. */
+  /* The launchpad tile's glass. */
   --tile-glass-fill: oklch(0.16 0.018 270 / 0.45);
   --tile-glass-blur: 14px;
   --tile-glass-radius: 22px;
@@ -329,6 +327,15 @@ h6 {
   --transition-fast: var(--duration-fast) var(--ease-out);
   --transition-normal: var(--duration-normal) var(--ease-out);
   --transition-emphasis: var(--duration-emphasis) var(--ease-in-out);
+  /* A workspace control growing into or out of its labelled pill as the room
+     around it changes. The width needs interpolate-size where it is supported;
+     elsewhere the pill simply takes its new size. */
+  --transition-control-shape:
+    width var(--transition-emphasis), height var(--transition-emphasis),
+    padding-inline var(--transition-emphasis), gap var(--transition-emphasis);
+  --transition-control-label:
+    opacity var(--duration-fast) var(--ease-standard),
+    display var(--duration-fast) allow-discrete;
   --transition-spring: var(--duration-normal) var(--ease-spring);
   --transition-dramatic: var(--duration-dramatic) var(--ease-out);
 

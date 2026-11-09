@@ -325,6 +325,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
       {onBack}
       {backLabel}
       hideToolbarSearch
+      headerChrome
       warming={gridWarming || (!engine.sectionsReady && !engine.error)}
       showToolbar={true}
       showFilterBar={engine.sectionsReady || !!engine.error}
@@ -350,6 +351,10 @@ the gallery's, and the source is pinned to my-library with no toggle.
     bind:isOpen={filterSheetOpen}
     {isMobile}
     allowSearch={!browseQuery}
+    gridControls={{
+      onSaveSmart: () => (smartSaveOpen = true),
+      onEnterSelection: () => selection.enter(),
+    }}
   />
 {/if}
 

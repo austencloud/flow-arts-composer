@@ -86,7 +86,8 @@
       transform var(--duration-emphasis) var(--ease-standard),
       background var(--duration-fast) var(--ease-standard),
       border-color var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
+      box-shadow var(--duration-fast) var(--ease-standard),
+      var(--transition-control-shape);
     font-size: var(--font-size-lg);
     color: var(--theme-text);
 
@@ -121,6 +122,12 @@
     font-weight: 650;
     line-height: 1;
     white-space: nowrap;
+    opacity: var(--workspace-action-label-opacity, 1);
+    transition: var(--transition-control-label);
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   .save-button:hover:not(:disabled) {

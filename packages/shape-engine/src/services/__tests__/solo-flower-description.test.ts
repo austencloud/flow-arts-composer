@@ -5,7 +5,7 @@ import {
   type FlowerStyle,
   type RotatingFlowerOri,
 } from "@tka/shape-domain";
-import { describeSoloFlower } from "../shape-matrix-display";
+import { describeSoloFlower, soloFlowerGrid } from "../shape-matrix-display";
 
 function rotating(
   style: FlowerStyle,
@@ -136,5 +136,24 @@ describe("describeSoloFlower", () => {
       );
       expect(reading.value).not.toContain(ratio.value);
     }
+  });
+});
+
+describe("soloFlowerGrid", () => {
+  it("puts a box-mode flower on the box grid whatever grid its sequence names", () => {
+    const flower = rotating("pro", 2);
+    expect(flower.grid).toBe("diamond");
+    expect(flower.petals).toBe(4);
+    expect(soloFlowerGrid(flower, "diagonal")).toBe("box");
+  });
+
+  it("puts a diamond-mode flower on the diamond grid", () => {
+    expect(soloFlowerGrid(rotating("pro", 2), "cardinal")).toBe("diamond");
+  });
+
+  it("leaves a flower with no mode word on its own grid", () => {
+    const eightPetals = { ...rotating("pro", 2), petals: 8 };
+    expect(soloFlowerGrid(eightPetals, "diagonal")).toBeNull();
+    expect(soloFlowerGrid(rotating("pro", 2), null)).toBeNull();
   });
 });

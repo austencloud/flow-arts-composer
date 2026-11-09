@@ -171,7 +171,9 @@
   const browseNavigationState = setBrowseNavigationContext(
     createBrowseNavigationState()
   );
-  setBrowseHeaderContext(createBrowseHeaderState());
+  setBrowseHeaderContext(
+    createBrowseHeaderState({ compactChrome: () => compactChrome })
+  );
 
   // One query for every grid: seeded from the community engine (after the
   // restore above) so a returning visitor's filters survive, then carried to
@@ -476,10 +478,14 @@
     responsiveSettings?.isMobile || responsiveSettings?.isTablet || false
   );
 
-  // A phone or tablet on an explore list stacks the bar, the section tabs and
-  // the scope bar above the grid. Held sideways (the Fold's cover on its side,
-  // about 340px tall) that stack ate three quarters of the height, so there
-  // the three move into a column beside the list (the CSS below decides when).
+  // A phone or tablet holds its search and Filters pill in the header bar, and
+  // only the scope chips stay under it. The bottom navigation lists Sequences,
+  // Collections and Visuals, so the section tabs have no row here.
+  const compactChrome = $derived(isMobile && !isSidewaysViewport());
+
+  // Held sideways (the Fold's cover on its side, about 340px tall) the bar, the
+  // section tabs and the scope bar stand in a column beside the list instead
+  // (the CSS below decides when).
   const exploreSwitcherShown = $derived(
     isMobile && !homeOpen && activePrimary === "explore"
   );
@@ -786,10 +792,9 @@
        Crossfade so the trail, back box and screen actions never fade or move
        with the content under them. -->
   <BrowseHeaderBar compact={isMobile} />
-  {#if exploreSwitcherShown}
-    <!-- Phones and tablets have no sidebar, so the Community sibling switcher
-         sits in its own row under the bar, above the section's own search and
-         filters: it picks what they filter. -->
+  {#if exploreSwitcherShown && !compactChrome}
+    <!-- A phone on its side: the Community sibling switcher stands in the side
+         column, above the section's own search and filters. -->
     <div
       class="explore-switcher-row"
       transition:growFade={{ duration: DURATION.normal }}
@@ -1006,14 +1011,6 @@
       grid-area: list;
       border-inline-start: 1px solid
         color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
-    }
-  }
-
-  /* Phones reach the Community sections from the bottom navigation, so the
-     switcher row only serves tablets. */
-  @media (max-width: 560px) {
-    .explore-switcher-row {
-      display: none;
     }
   }
 </style>

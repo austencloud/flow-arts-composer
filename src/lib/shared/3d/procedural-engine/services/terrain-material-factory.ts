@@ -100,8 +100,11 @@ export function createTerrainMaterialFactory(): TerrainMaterialFactory {
     const material = getCurrentMaterial(texturesEnabled);
 
     const mesh = new Mesh(geometry, material);
+    // Terrain receives the avatar's and props' shadows but does not cast:
+    // hills shading themselves inside the sun's 50 m shadow frustum are rarely
+    // visible and were the largest share of the shadow pass.
     mesh.receiveShadow = true;
-    mesh.castShadow = true;
+    mesh.castShadow = false;
 
     if (chunk) {
       mesh.position.set(chunkWorldX, 0, chunkWorldZ);
@@ -113,7 +116,7 @@ export function createTerrainMaterialFactory(): TerrainMaterialFactory {
     state.entity.mesh = {
       object3D: mesh,
       visible: true,
-      castShadow: true,
+      castShadow: false,
       receiveShadow: true,
     };
   }

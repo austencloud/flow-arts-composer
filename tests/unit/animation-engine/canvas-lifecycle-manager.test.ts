@@ -83,6 +83,61 @@ describe("CanvasLifecycleManager", () => {
     expect(redraw).not.toHaveBeenCalled();
   });
 
+  // The resizer's frame is the only record of the canvas size. Trails, the
+  // render loop and the effect overlays hear each change from it once, before
+  // the main canvas is rebuilt; nothing re-reads it on later updates, so a
+  // missed push would leave overlays stretched at the old size.
+  it("pushes each new frame to trails, render loop and overlays before repainting", async () => {
+    const container = document.createElement("div");
+    sizeContainer(container, 320);
+    const order: string[] = [];
+    const trailCapturer = { updateConfig: vi.fn(), clearTrails: vi.fn() };
+    const renderLoop = {
+      updateConfig: vi.fn(() => order.push("renderLoop")),
+      dispose: vi.fn(),
+    };
+    const effectManager = { resizeAll: vi.fn(), dispose: vi.fn() };
+    const resize = vi.fn(async () => {
+      order.push("canvas");
+    });
+    const mgr = new CanvasLifecycleManager();
+    mgr.configure({ effectManager: effectManager as any });
+    injectInternals(mgr, {
+      _animationRenderer: { resize },
+      _containerElement: container,
+      _trailCapturer: trailCapturer,
+      _renderLoop: renderLoop,
+    });
+
+    mgr["_doInitResizeService"](container, vi.fn());
+    const measured = { size: 320, width: 320, height: 320 };
+    expect(trailCapturer.updateConfig).toHaveBeenLastCalledWith({
+      canvasSize: 320,
+    });
+    expect(renderLoop.updateConfig).toHaveBeenLastCalledWith({
+      canvasSize: 320,
+      canvasFrame: measured,
+    });
+    expect(effectManager.resizeAll).toHaveBeenLastCalledWith(measured);
+
+    sizeContainer(container, 400);
+    order.length = 0;
+    await mgr.resizer!.resize(400);
+    expect(order).toEqual(["renderLoop", "canvas"]);
+    expect(effectManager.resizeAll).toHaveBeenLastCalledWith({
+      size: 400,
+      width: 400,
+      height: 400,
+    });
+
+    // The same frame again is not news.
+    const pushes = renderLoop.updateConfig.mock.calls.length;
+    await mgr.resizer!.resize(400);
+    expect(renderLoop.updateConfig).toHaveBeenCalledTimes(pushes);
+    expect(effectManager.resizeAll).toHaveBeenCalledTimes(2);
+    mgr.dispose();
+  });
+
   it("pauseResize delegates to resizer", () => {
     const resizer = { pauseObservation: vi.fn(), resumeObservation: vi.fn() };
     const mgr = new CanvasLifecycleManager();

@@ -591,15 +591,27 @@ export const EMBER_RIVER_GLOW_FRAGMENT_SHADER = /* glsl */ `
     }
   `;
 
+// Drawn only through InstancedMesh (ember-obsidian-pillars.ts). Each part is a
+// unit-height geometry stretched by the instance matrix; aLength restores the
+// geometry-local position the vein and pulse patterns were tuned against.
 export const EMBER_PILLAR_VERTEX_SHADER = /* glsl */ `
+    attribute float aSeed;
+    attribute float aLength;
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec2 vUv;
+    // flat: the hash amplifies any interpolation error in the seed into noise.
+    flat varying float vSeed;
     void main() {
-      vPosition = position;
-      vNormal = normalize(normalMatrix * normal);
+      vPosition = vec3(position.x, position.y * aLength, position.z);
+      // Inverse-transpose of an instance matrix built from rotation and
+      // per-axis scale, as three's defaultnormal_vertex does it.
+      mat3 im = mat3(instanceMatrix);
+      vec3 objectNormal = normal / vec3(dot(im[0], im[0]), dot(im[1], im[1]), dot(im[2], im[2]));
+      vNormal = normalize(normalMatrix * (im * objectNormal));
       vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      vSeed = aSeed;
+      gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
     }
   `;
 
@@ -607,7 +619,6 @@ export const EMBER_PILLAR_FRAGMENT_SHADER = /* glsl */ `
     uniform vec3 uBaseColor;
     uniform vec3 uVeinColor;
     uniform float uVeinIntensity;
-    uniform float uSeed;
     uniform float uTime;
     uniform float uPulseSpeed;
     uniform vec3 uPulseColor;
@@ -615,9 +626,10 @@ export const EMBER_PILLAR_FRAGMENT_SHADER = /* glsl */ `
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec2 vUv;
+    flat varying float vSeed;
 
     float hash(vec2 p) {
-      return fract(sin(dot(p + uSeed, vec2(127.1, 311.7))) * 43758.5453);
+      return fract(sin(dot(p + vSeed, vec2(127.1, 311.7))) * 43758.5453);
     }
 
     float noise(vec2 p) {
@@ -633,7 +645,7 @@ export const EMBER_PILLAR_FRAGMENT_SHADER = /* glsl */ `
 
     void main() {
       // Vertical vein pattern using position + UV
-      vec2 veinUv = vec2(vUv.x * 8.0 + uSeed, vPosition.y * 3.0);
+      vec2 veinUv = vec2(vUv.x * 8.0 + vSeed, vPosition.y * 3.0);
       float n1 = noise(veinUv * 2.0);
       float n2 = noise(veinUv * 4.0 + 50.0);
       float veinPattern = n1 * 0.6 + n2 * 0.4;

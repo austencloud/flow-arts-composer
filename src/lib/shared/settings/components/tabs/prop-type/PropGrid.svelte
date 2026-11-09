@@ -40,6 +40,7 @@
   } from "./section-fill-layout";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import PropChiralityRow from "./PropChiralityRow.svelte";
+  import BuugengStyleRow from "./BuugengStyleRow.svelte";
   import FanStyleOptionsCore from "./FanStyleOptionsCore.svelte";
   import {
     fanBuildPreviewOptions,
@@ -61,6 +62,11 @@
     normalizeTriangleGrip,
     type TriangleGrip,
   } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import {
+    isStyledBuugengPropType,
+    normalizeBuugengStyle,
+    type BuugengStyle,
+  } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
 
   let {
     selectedPropType,
@@ -77,6 +83,7 @@
     scrollMode = "internal",
     fill = false,
     minTileSize = 52,
+    fitRoom = false,
     includeBareHands = false,
     chirality,
     allowedProps,
@@ -90,6 +97,8 @@
     colors,
     triangleGrip,
     onTriangleGripChange,
+    buugengStyle,
+    onBuugengStyleChange,
     isActive = true,
     onDrillChange,
   } = $props<{
@@ -134,6 +143,13 @@
     fill?: boolean;
     /** Host readability floor for the measured flat grid. */
     minTileSize?: number;
+    /**
+     * A bounded host that never scrolls (the guide). Every prop shares the box
+     * however small that makes the tiles, the rail stops being a carousel, and
+     * a tile too narrow for its name keeps it for screen readers only. Needs
+     * `fill`.
+     */
+    fitRoom?: boolean;
     /** Adds the scene-only no-prop choice using the same canonical card. */
     includeBareHands?: boolean;
     /**
@@ -162,6 +178,10 @@
     colors?: ViewerCustomColorPair | null;
     triangleGrip?: TriangleGrip;
     onTriangleGripChange?: (grip: TriangleGrip) => void;
+    /** The buugeng's blade style; a look like the grip, never notation. */
+    buugengStyle?: BuugengStyle;
+    /** Absent hides the Style row (a host that cannot store the look). */
+    onBuugengStyleChange?: (style: BuugengStyle) => void;
     /** A sheet can reset this transient route when it closes. */
     isActive?: boolean;
     /** Lets a sheet temporarily reclaim root-only control space while drilled. */
@@ -491,7 +511,10 @@
     return () => observer.disconnect();
   });
 
-  const FLAT_GAP = 8;
+  const flatGap = $derived(fitRoom ? 4 : 8);
+  // Below this a prop's name would wrap or clip, so the picture speaks alone.
+  const NAMED_TILE_WIDTH = 60;
+
   /**
    * Tile grid for the flat picker in a bounded host: the column count that
    * makes the largest tile once the rows must share the height, so the grid
@@ -512,33 +535,36 @@
       rowHeight: number;
       size: number;
     } | null = null;
-    for (let cols = 2; cols <= Math.min(n, 10); cols += 1) {
+    for (let cols = 2; cols <= Math.min(n, fitRoom ? 16 : 10); cols += 1) {
       const rows = Math.ceil(n / cols);
       const colWidth = Math.min(
-        (width - FLAT_GAP * (cols - 1)) / cols,
+        (width - flatGap * (cols - 1)) / cols,
         FILL_MAX_TILE
       );
       const rowHeight = Math.min(
-        (height - FLAT_GAP * (rows - 1)) / rows,
+        (height - flatGap * (rows - 1)) / rows,
         colWidth * 1.15
       );
-      const size = Math.min(colWidth, rowHeight / 1.15);
+      // A tile with no name to fit is its picture: squat tiles hold a bigger
+      // one than the tall ones a named tile wants.
+      const size = Math.min(colWidth, fitRoom ? rowHeight : rowHeight / 1.15);
       if (best === null || size > best.size + 0.5) {
         best = { cols, colWidth, rowHeight, size };
       }
     }
-    if (best === null || best.size < minTileSize) return null;
+    if (best === null || (!fitRoom && best.size < minTileSize)) return null;
     const orphans = n % best.cols;
     return {
       cols: best.cols,
-      halfTrack: Math.floor((best.colWidth - FLAT_GAP) / 2),
+      nameless: best.colWidth < NAMED_TILE_WIDTH,
+      halfTrack: Math.floor((best.colWidth - flatGap) / 2),
       rowHeight: Math.floor(best.rowHeight),
       orphanIndex: orphans === 0 ? -1 : n - orphans,
       orphanStart: best.cols - orphans + 1,
     };
   });
 
-  const DRILL_GAP = 10;
+  const drillGap = $derived(fitRoom ? 4 : 10);
   /** A family's styles, each once, wearing the picked size. */
   type FamilyTile = { style: PropType; prop: PropType };
   const familyTiles = $derived.by((): FamilyTile[] => {
@@ -581,9 +607,9 @@
     let bestSize = 0;
     for (let candidate = 1; candidate <= Math.min(n, 4); candidate += 1) {
       const candidateRows = Math.ceil(n / candidate);
-      const candidateWidth = (width - DRILL_GAP * (candidate - 1)) / candidate;
+      const candidateWidth = (width - drillGap * (candidate - 1)) / candidate;
       const candidateHeight =
-        (height - DRILL_GAP * (candidateRows - 1)) / candidateRows;
+        (height - drillGap * (candidateRows - 1)) / candidateRows;
       const size = Math.min(candidateWidth, candidateHeight / 1.25);
       if (size > bestSize + 0.5) {
         bestSize = size;
@@ -591,9 +617,9 @@
       }
     }
     const rows = Math.ceil(n / cols);
-    const colWidth = (width - DRILL_GAP * (cols - 1)) / cols;
+    const colWidth = (width - drillGap * (cols - 1)) / cols;
     const rowHeight = Math.floor(
-      Math.min((height - DRILL_GAP * (rows - 1)) / rows, colWidth * 1.25)
+      Math.min((height - drillGap * (rows - 1)) / rows, colWidth * 1.25)
     );
     // The tiles sit on a doubled track grid (two tracks each) so a short
     // last row can start one track in and centre itself.
@@ -693,6 +719,20 @@
     onTriangleGripChange?.(grip);
   }
 
+  // The buugeng's blade style is a look too. It shows as a row of tiles on
+  // the buugeng's details page and the buugeng family page, beside Size and
+  // the Buugeng pair; Big Buugeng takes the same style.
+  const showBuugengStyle = $derived(
+    showAppearance &&
+      onBuugengStyleChange !== undefined &&
+      detailProp !== null &&
+      isStyledBuugengPropType(detailProp)
+  );
+  const currentBuugengStyle = $derived(normalizeBuugengStyle(buugengStyle));
+  function chooseBuugengStyle(next: BuugengStyle) {
+    if (currentBuugengStyle === next) return;
+    onBuugengStyleChange?.(next);
+  }
   // Size is a property of the current prop, not a prop of its own. Every big
   // prop is reached from here, which is why the grid can fold them away.
   const showSize = $derived(
@@ -744,6 +784,7 @@
       (isFanPropType(prop) ||
         hasBigVariant(prop) ||
         isTrianglePropType(prop) ||
+        (onBuugengStyleChange !== undefined && isStyledBuugengPropType(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
   }
@@ -799,6 +840,7 @@
   class:inline={variant === "inline"}
   class:flat
   class:rail={layout === "rail"}
+  class:fit-room={fitRoom}
   class:inspector={tileDensity === "inspector"}
   class:host-scroll={scrollMode === "host"}
   class:fluid-sections={fluidSections}
@@ -888,6 +930,9 @@
           {#if showSize}{@render sizeControl()}{/if}
           {#if showGrip}{@render gripControl()}{/if}
         {/if}
+        {#if fitRoom && drill.kind === "fan-look" && showSize}
+          {@render sizeControl()}
+        {/if}
         {#if railCredit && !railCredit.sourceUrl}
           <!-- A maker with no product page yet is credited by name alone. -->
           <span class="rail-credit rail-credit-text"
@@ -947,6 +992,7 @@
         onSelect={() => handleTileClick(prop)}
         fanAppearance={normalizedFanAppearance}
         triangleGrip={currentGrip}
+        buugengStyle={currentBuugengStyle}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -992,6 +1038,7 @@
         {color}
         fanAppearance={normalizedFanAppearance}
         triangleGrip={currentGrip}
+        buugengStyle={currentBuugengStyle}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -1050,10 +1097,11 @@
           {/if}
           {#if drill.kind === "fan-look"}
             <div class="detail-options" class:fill={fillHeight > 0}>
-              {#if showSize}{@render sizeControl()}{/if}
+              {#if showSize && !fitRoom}{@render sizeControl()}{/if}
               <FanStyleOptionsCore
-                fill={fillHeight > 0 && layout !== "rail"}
-                horizontal={layout === "rail"}
+                fill={fillHeight > 0 && (layout !== "rail" || fitRoom)}
+                horizontal={layout === "rail" && !fitRoom}
+                room={fitRoom}
                 appearance={normalizedFanAppearance}
                 onchange={onFanAppearanceChange}
               />
@@ -1083,6 +1131,14 @@
                   {@render gripControl()}
                 </div>
               {/if}
+              {#if showBuugengStyle}
+                <BuugengStyleRow
+                  propType={drill.prop}
+                  style={currentBuugengStyle}
+                  onChange={chooseBuugengStyle}
+                  {colors}
+                />
+              {/if}
               {#if chirality && isBuugengFamilyProp(drill.prop)}
                 <PropChiralityRow
                   propType={drill.prop}
@@ -1108,6 +1164,16 @@
                   <div class="detail-row" transition:growFade={{ axis: "y" }}>
                     <span class="look-label">{t("settings_grip")}</span>
                     {@render gripControl()}
+                  </div>
+                {/if}
+                {#if familyMember !== null && showBuugengStyle}
+                  <div transition:growFade={{ axis: "y" }}>
+                    <BuugengStyleRow
+                      propType={familyMember}
+                      style={currentBuugengStyle}
+                      onChange={chooseBuugengStyle}
+                      {colors}
+                    />
                   </div>
                 {/if}
                 {#if familyMember !== null && chirality && isBuugengFamilyProp(familyMember)}
@@ -1174,6 +1240,7 @@
             class:comfortable={tileDensity === "comfortable"}
             class:inspector={tileDensity === "inspector"}
             class:fill={flatLayout !== null}
+            class:nameless={flatLayout?.nameless}
             style:height={flatLayout ? `${gridFillHeight}px` : undefined}
             style:--flat-cols={flatLayout?.cols}
             style:--flat-half={flatLayout
@@ -1430,6 +1497,131 @@
     .rail .flat-grid {
       grid-template-rows: minmax(0, 1fr);
     }
+  }
+  /* A host that never scrolls: the rail stops being a carousel. The fill grid's
+     tracks hold every prop, and a drill wraps what it has to say. */
+  .fit-room.rail .grid-scroll {
+    padding: 0;
+  }
+  .fit-room {
+    --min-touch-target: 2rem;
+  }
+  .fit-room .rail-toolbar {
+    flex-wrap: nowrap;
+    padding: 2px 2px 0.25rem;
+  }
+  .fit-room .rail-toolbar .size-option {
+    min-height: 2rem;
+  }
+  .fit-room .rail-toolbar :global(.compact-color-button) {
+    padding-block: 2px;
+  }
+  .fit-room .rail-heading {
+    min-width: 0;
+  }
+  .fit-room .rail-heading .drill-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* The look chip keeps its picture beside the size choice on a phone. */
+  @container prop-grid (max-width: 24rem) {
+    .fit-room .rail-toolbar .look-name {
+      display: none;
+    }
+  }
+  .fit-room .drill-tiles.fill {
+    gap: 4px;
+  }
+  .fit-room .drill-tiles.fill :global(.prop-button) {
+    min-height: 0;
+    padding: 2px 3px;
+    gap: 1px;
+  }
+  .fit-room .drill-tiles.fill :global(.prop-label) {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.05;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  .fit-room .drill-tiles.fill :global(.prop-composition-preview) {
+    width: 100%;
+    max-height: 100%;
+  }
+  .flat-grid.nameless :global(.variant-badge) {
+    top: 1px;
+    left: 1px;
+    width: 12px;
+    height: 12px;
+    font-size: 9px;
+  }
+  .flat-grid.nameless :global(.checkmark-container) {
+    top: 1px;
+    right: 1px;
+  }
+  .flat-grid.nameless :global(.ios-checkmark) {
+    width: 12px;
+    height: 12px;
+    font-size: 7px;
+  }
+  /* The picker sits flush to its box, which would clip the ring outside. */
+  .fit-room .rail-toolbar .drill-back:focus-visible {
+    outline-offset: -2px;
+  }
+  .fit-room.rail .flat-grid.fill {
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 4px;
+    overflow: hidden;
+    padding: 0;
+    scroll-snap-type: none;
+    touch-action: auto;
+    cursor: auto;
+  }
+  .fit-room.rail .flat-grid.fill :global(.prop-button) {
+    min-height: 0;
+    padding: 2px;
+    gap: 2px;
+  }
+  .flat-grid.nameless :global(.prop-label) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .flat-grid.nameless :global(.prop-image-container .prop-composition-preview) {
+    width: 100%;
+    max-height: 100%;
+  }
+  .fit-room.rail .drill-view:not(.fan-look-drill) > .detail-options {
+    flex-flow: row wrap;
+    align-content: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0;
+    scroll-snap-type: none;
+    touch-action: auto;
+    cursor: auto;
+  }
+  .fit-room.rail
+    .drill-view:not(.fan-look-drill)
+    > .detail-options
+    > .detail-row {
+    flex: 1 1 10rem;
+  }
+  .fit-room.rail
+    .drill-view:not(.fan-look-drill)
+    > .detail-options
+    > :global(.chirality-row) {
+    flex: 1 1 100%;
   }
   @container prop-grid (max-width: 500px) {
     .rail-toolbar .look-chip {

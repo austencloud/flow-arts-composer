@@ -13,6 +13,8 @@ import {
   gateCommits,
   auditChangelogEntries,
   toPublicChangelog,
+  auditReleaseArrivals,
+  parseReleaseAnchors,
   DARK_DENYLIST,
 } from "../../scripts/lib/release-module-gate.mjs";
 
@@ -559,7 +561,7 @@ describe("auditChangelogEntries", () => {
 });
 
 describe("toPublicChangelog", () => {
-  it("strips private audience and surface metadata", () => {
+  it("strips the private audience but keeps the surface", () => {
     expect(
       toPublicChangelog([
         {
@@ -573,8 +575,57 @@ describe("toPublicChangelog", () => {
       {
         category: "fixed",
         text: "Saved sequences open from your Library.",
+        surface: { module: "browse", tab: "library" },
       },
     ]);
+  });
+
+  it("keeps a highlight's arrival fields and drops them from a plain entry", () => {
+    expect(
+      toPublicChangelog([
+        {
+          category: "added",
+          text: "Mirror a sequence in one tap.",
+          audience: "guest",
+          surface: { module: "create", tab: "construct", extra: "x" },
+          highlight: true,
+          anchor: "mirror-button",
+          callout: "  Mirror sits under the grid.  ",
+        },
+        {
+          category: "fixed",
+          text: "Sound stays on.",
+          audience: "guest",
+          surface: "global",
+          anchor: "stray",
+          callout: "stray",
+        },
+        { category: "fixed", text: "Old shape.", audience: "guest" },
+      ])
+    ).toEqual([
+      {
+        category: "added",
+        text: "Mirror a sequence in one tap.",
+        surface: { module: "create", tab: "construct" },
+        highlight: true,
+        anchor: "mirror-button",
+        callout: "Mirror sits under the grid.",
+      },
+      { category: "fixed", text: "Sound stays on.", surface: "global" },
+      { category: "fixed", text: "Old shape." },
+    ]);
+  });
+
+  it("never writes an undefined field, which Firestore rejects", () => {
+    const [entry] = toPublicChangelog([
+      { category: "fixed", text: "A.", surface: { module: "browse" } },
+    ]);
+    expect(entry).toEqual({
+      category: "fixed",
+      text: "A.",
+      surface: { module: "browse" },
+    });
+    expect(Object.values(entry).includes(undefined)).toBe(false);
   });
 
   it("keeps an entry's example media and nothing else on it", () => {
@@ -600,8 +651,52 @@ describe("toPublicChangelog", () => {
         category: "added",
         text: "A.",
         media: { image: media.image, alt: "A", width: 520, height: 520 },
+        surface: "global",
       },
     ]);
+  });
+});
+
+describe("auditReleaseArrivals", () => {
+  const known = new Set(["mirror-button"]);
+  const surface = { module: "create", tab: "construct" };
+
+  it("passes a highlight whose anchor exists in the code", () => {
+    expect(
+      auditReleaseArrivals(
+        [{ highlight: true, surface, anchor: "mirror-button" }],
+        known
+      )
+    ).toEqual([]);
+  });
+
+  it("blocks an anchor that nothing in src carries", () => {
+    const errors = auditReleaseArrivals(
+      [{ highlight: true, surface, anchor: "gone-button" }],
+      known
+    );
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toMatch(/gone-button/);
+  });
+
+  it("blocks arrival fields on a plain entry or a global surface", () => {
+    expect(
+      auditReleaseArrivals([{ surface, callout: "Hi." }], known)
+    ).toHaveLength(1);
+    expect(
+      auditReleaseArrivals(
+        [{ highlight: true, surface: "global", callout: "Hi." }],
+        known
+      )
+    ).toHaveLength(1);
+  });
+
+  it("finds anchors written in markup", () => {
+    expect(
+      parseReleaseAnchors(
+        `<button data-release-anchor="mirror-button">x</button><div data-release-anchor='a-2'></div>`
+      )
+    ).toEqual(["mirror-button", "a-2"]);
   });
 });
 

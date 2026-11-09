@@ -3,11 +3,11 @@ status: active
 value: 4
 effort: XL
 work_state: in-progress
-remaining: Austen reviews the overnight design pass and its flagged material choices; then the Thursday slice is rebuilt around them in both engines.
+remaining: Austen reviews the overnight design pass and its flagged material choices; then the Thursday slice is rebuilt around them in both engines. Browser hero props (LED canopy truss, fire circle, path lanterns) were Blender-modelled 2026-11-07 on codex/flowfest-modeling; his look owed.
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-23'
+last_triaged: '2026-11-07'
 ---
 
 # Flow Fest: Follow the Light
@@ -147,3 +147,10 @@ opening are still first guesses to tune by feel.
 - People you know: returning faces who notice you the way the jam does.
 - Fire clubs and passing in the circle (polish Jam 2), the Night and LightAir
   runs for stars, moon and air.
+
+Triage 2026-11-07: browser hero-prop modelling pass on `codex/flowfest-modeling`
+(scripts/build-flow-fest-sim-props.py -> static/models/flow-fest-sim/props/):
+the LED circle canopy is a box-truss shade, the fire ring is weathered stones
+with crossed logs, kindling and coals, and the route lanterns are hooked
+caged lanterns. Existing colours carried over; none of the flagged material
+choices above were decided. Unmerged pending Austen's look.

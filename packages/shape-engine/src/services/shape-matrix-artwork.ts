@@ -52,6 +52,26 @@ export const SHAPE_MATRIX_MODES_NAME = "shape-matrix-modes";
 export const SHAPE_MATRIX_STRIP_NAME = "shape-matrix-strip";
 export const SHAPE_MATRIX_CONTROLS_NAME = "shape-matrix-controls";
 
+/**
+ * The rest of the cast. The Matrix pane steps back as one; the solo card is the
+ * frame a solo has instead of the chips; and the stage's contents leave its
+ * surface, so the surface flies clean and they arrive around the landed flower
+ * instead of being stretched with the rectangle.
+ */
+export const SHAPE_MATRIX_PANE_NAME = "shape-matrix-pane";
+export const SHAPE_MATRIX_SOLO_CARD_NAME = "shape-matrix-solo-card";
+export const SHAPE_MATRIX_ACTIONS_NAME = "shape-matrix-actions";
+export const SHAPE_MATRIX_FIGURE_NAME = "shape-matrix-figure";
+export const SHAPE_MATRIX_STAGE_HEAD_NAME = "shape-matrix-stage-head";
+export const SHAPE_MATRIX_STAGE_TRANSPORT_NAME = "shape-matrix-stage-transport";
+export const SHAPE_MATRIX_STAGE_ROTATE_NAME = "shape-matrix-stage-rotate";
+
+/** The top bar's pieces, which are on screen on both sides and slide. */
+export const SHAPE_MATRIX_BAR_LEAD_NAME = "shape-matrix-bar-lead";
+export const SHAPE_MATRIX_BAR_SURFACE_NAME = "shape-matrix-bar-surface";
+export const SHAPE_MATRIX_BAR_TURNS_NAME = "shape-matrix-bar-turns";
+export const SHAPE_MATRIX_BAR_SWAP_NAME = "shape-matrix-bar-swap";
+
 export interface ShapeMatrixArtworkPainter {
   cell: (
     left: MandalaPaths,

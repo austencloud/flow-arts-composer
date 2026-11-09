@@ -19,6 +19,7 @@
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
   import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { savedMandalaPalette } from "#lib/shared/mandala/domain/mandala-palette.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { getTipPointsBaseline } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
@@ -71,6 +72,7 @@
       leftPropType?: string;
       rightPropType?: string;
       pathShape?: "arc" | "linear" | "concave" | "hybrid";
+      colors?: { left: string; right: string };
     } | null;
     lightMode?: boolean;
     size?: "sm" | "md" | "lg";
@@ -420,6 +422,7 @@
           leftPropType={mandala.leftPropType}
           rightPropType={mandala.rightPropType}
           pathShape={mandala.pathShape ?? "arc"}
+          palette={savedMandalaPalette(mandala.colors)}
           animate={showLive}
           animateRotation={0}
           darkMode={!lightMode}

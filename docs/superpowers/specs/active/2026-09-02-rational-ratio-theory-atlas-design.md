@@ -3,18 +3,18 @@ status: active
 value: null
 effort: null
 work_state: verification
-remaining: "Verify exact ratio/closure suites, legacy URL compatibility and current Theory/Level 4 transitions at the seven viewports. The arithmetic, QFT geometry and Theory UI exist (6720731a94), and dd6947dd4f expanded ratios through 15; validate that evolution instead of rebuilding the original denominator-9 atlas."
+remaining: "Verify exact ratio/closure suites, legacy URL compatibility and current Theory/Level 4 transitions at the seven viewports. The arithmetic, QFT geometry and Theory UI exist (6720731a94; code now in packages/shape-domain/src/flowers/theory-*.ts and packages/shape-engine), and dd6947dd4f expanded ratios through 15; validate that evolution instead of rebuilding the original denominator-9 atlas."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: '2026-11-07'
 ---
 
 # Rational Ratio Theory Atlas
 
-> 2026-10-14 triage: Verify exact ratio/closure suites, legacy URL compatibility and current Theory/Level 4 transitions at the seven viewports. The arithmetic, QFT geometry and Theory UI exist (6720731a94), and dd6947dd4f expanded ratios through 15; validate that evolution instead of rebuilding the original denominator-9 atlas. Earlier status banners and execution instructions are historical where they conflict with this review.
+> 2026-11-07 triage: Verify exact ratio/closure suites, legacy URL compatibility and current Theory/Level 4 transitions at the seven viewports. The arithmetic, QFT geometry and Theory UI exist (6720731a94; code now in packages/shape-domain/src/flowers/theory-*.ts and packages/shape-engine), and dd6947dd4f expanded ratios through 15; validate that evolution instead of rebuilding the original denominator-9 atlas. Earlier status banners and execution instructions are historical where they conflict with this review.
 
-**Status:** Approved for implementation  
+**Status:** Implemented; verification pending (re-triaged 2026-11-07). The denominator limit below was later raised to 15.  
 **Date:** 2026-09-02  
 **Surface:** `/notation/shape-matrix`
 
