@@ -3,7 +3,7 @@
  * is otherwise a generic "render a manifest's BUILT pages as a fit-to-pane
  * scroller with side nav + click-to-animate companion"; this bundle carries the
  * per-level specifics (which document, which pages, which nav, whether the
- * level-1-only deep-link/codex/scan machinery is live) so Level 1 and Level 2
+ * level-1-only deep-link machinery is live) so Level 1 and Level 2
  * share one reader instead of forking it (never-hand-roll).
  *
  * LEVEL1_READER_CONFIG is the default - passing no `config` to GuideReader keeps
@@ -16,7 +16,6 @@ import { BUILT } from "./built-pages";
 import { GUIDE_BODY_PAGES } from "./guide-manifest";
 import { buildReaderNav, FRONT_MATTER_COUNT, READER_PAGE_COUNT } from "./guide-reader-nav";
 import { hrefForIndex } from "./guide-page-links";
-import { isCodexSlug } from "./guide-content-index";
 
 /** The minimal page shape the reader reads off the active manifest entry. */
 export type ReaderBodyPage = { id: string; title: string };
@@ -43,8 +42,6 @@ export type GuideReaderConfig = {
   levelLabel: string;
   /** Level-1-only URL deep-link sync + QR scan-intent handoff. */
   enableDeepLinks: boolean;
-  /** Codex page detection (level 1 has the interactive Codex sheet; level 2 none). */
-  isCodexSlug: (slug: string) => boolean;
 };
 
 export const LEVEL1_READER_CONFIG: GuideReaderConfig = {
@@ -57,5 +54,4 @@ export const LEVEL1_READER_CONFIG: GuideReaderConfig = {
   hrefFor: hrefForIndex,
   levelLabel: "Level 1",
   enableDeepLinks: true,
-  isCodexSlug,
 };

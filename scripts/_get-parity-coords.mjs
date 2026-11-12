@@ -1,5 +1,5 @@
 import { chromium } from "playwright-core";
-const url = process.argv[2] ?? "http://localhost:5173/guide/codex/parity";
+const url = process.argv[2] ?? "http://localhost:5173/test/codex-parity";
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });

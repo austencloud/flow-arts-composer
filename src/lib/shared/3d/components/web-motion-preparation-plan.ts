@@ -77,3 +77,24 @@ export function isCurrentMotionCaptureJob(
     job.requestKeys === current.requestKeys
   );
 }
+
+/**
+ * The longest a bake waits after the scene shows for the page to fall still.
+ * Someone who keeps orbiting the camera would otherwise never get a baked clip.
+ */
+export const MOTION_BAKE_AFTER_REVEAL_CAP_MS = 2000;
+
+/**
+ * Baking runs a second hidden scene on the main thread, so it waits until the
+ * loading curtain is down and the page is still (or the cap after reveal has
+ * passed). `revealedAt` is when the scene showed, or null while it has not.
+ */
+export function mayStartMotionBake(
+  revealedAt: number | null,
+  pageStill: boolean,
+  now: number,
+  capMs = MOTION_BAKE_AFTER_REVEAL_CAP_MS
+): boolean {
+  if (revealedAt === null) return false;
+  return pageStill || now - revealedAt >= capMs;
+}

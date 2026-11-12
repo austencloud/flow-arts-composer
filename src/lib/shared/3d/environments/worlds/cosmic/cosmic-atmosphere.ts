@@ -3,6 +3,7 @@ import {
   BackSide,
   BufferGeometry,
   Color,
+  DataTexture,
   DoubleSide,
   Float32BufferAttribute,
   Group,
@@ -15,7 +16,6 @@ import {
   Vector2,
   Vector3,
   type Camera,
-  type Texture,
   type WebGLRenderer,
 } from "three";
 import type {
@@ -48,11 +48,13 @@ export interface CosmicWorldElement {
   dispose(): void;
 }
 
-export function createCosmicSky(
-  config: SkyGradientConfig,
-  moonTexture: Texture
-): CosmicWorldElement {
+export function createCosmicSky(config: SkyGradientConfig): CosmicWorldElement {
   const geometry = new SphereGeometry(200, 32, 32);
+  // Cosmic never shows a moon (uMoonEnabled stays 0), but the shared sky
+  // shader still declares the sampler. A 1x1 texture made here satisfies it
+  // without downloading the 1.9 MB moon image the scene never draws.
+  const moonPlaceholder = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1);
+  moonPlaceholder.needsUpdate = true;
   const material = new ShaderMaterial({
     uniforms: {
       uTopColor: { value: new Color(config.topColor) },
@@ -62,7 +64,7 @@ export function createCosmicSky(
       uGradientStart: { value: 0 },
       uGradientEnd: { value: 1 },
       uMoonEnabled: { value: 0 },
-      uMoonTexture: { value: moonTexture },
+      uMoonTexture: { value: moonPlaceholder },
       uMoonDirection: { value: new Vector3(0, 0.25, -1).normalize() },
       uMoonAngularRadius: { value: MathUtils.degToRad(0.52 * 0.5) },
       uMoonOpacity: { value: 1 },
@@ -102,6 +104,7 @@ export function createCosmicSky(
     dispose() {
       geometry.dispose();
       material.dispose();
+      moonPlaceholder.dispose();
     },
   };
 }

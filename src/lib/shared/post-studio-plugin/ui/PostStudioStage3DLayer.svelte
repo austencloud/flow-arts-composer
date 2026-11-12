@@ -8,6 +8,10 @@
   staged like the tunnel page's 3D view: a file front to back, all facing the
   audience, the back performers in the tunnel's colors.
 
+  The stage is kept by `PostStage3DKeeper` for as long as the post is open,
+  because building it takes seconds. It shows in its clip's layer whenever
+  that layer lends it a slot, and rests, its render loop paused, otherwise.
+
   Nothing here plays on its own. Every step comes from the post time, and the
   camera is a function of the shot and the post time, so a paused, scrubbed or
   exported frame shows the same picture. For export the stage registers a
@@ -36,6 +40,12 @@
   import { propHandPalette } from "@austencloud/scene-3d/prop-hand-palette";
   import { backPerformerName, followerPropColors } from "../tunnel-performers";
   import { registerStage3DFrameSource } from "../stage-3d-registry";
+  import { stage3DCastCharacters } from "../stage-3d";
+  import {
+    CHARACTER_DEFINITIONS,
+    type CharacterId,
+  } from "#lib/shared/3d/domain/character-model.js";
+  import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
   import {
     stage3DBaseShot,
     stage3DCameraPose,
@@ -59,6 +69,8 @@
     exporting,
     exportSize,
     swapHandColors = false,
+    slot = null,
+    parked = false,
   }: {
     itemId: string;
     sequence: SequenceData;
@@ -77,6 +89,10 @@
     exportSize?: { width: number; height: number } | null;
     /** Each hand wears the other's color, as the post's drawing does. */
     swapHandColors?: boolean;
+    /** The clip layer's element the stage shows in, while it is mounted. */
+    slot?: HTMLElement | null;
+    /** No layer is showing the stage: it rests with its loop paused. */
+    parked?: boolean;
   } = $props();
 
   // While the shot editor has this clip open, the stage shows its draft.
@@ -189,6 +205,44 @@
     });
   });
 
+  // Who plays whom: the clip's cast, front first. A performer the cast does
+  // not name keeps the viewer's default figure. The page owns the cast, so
+  // the change is not an undo step.
+  const KNOWN_CHARACTERS: ReadonlySet<string> = new Set(
+    CHARACTER_DEFINITIONS.map((definition) => definition.id)
+  );
+  const characters = $derived(
+    stage3DCastCharacters(stage, 1 + followerCount, KNOWN_CHARACTERS)
+  );
+  $effect(() => {
+    const wanted = characters;
+    if (!castApplied) return;
+    untrack(() => {
+      getSceneUndoManager().withoutUndo(() => {
+        viewer.performerManager.performers.forEach((rig, index) => {
+          const character = wanted[index];
+          if (character && rig.characterId !== character)
+            rig.setCharacter(character as CharacterId);
+        });
+      });
+    });
+  });
+  const castDressed = $derived(
+    castApplied &&
+      characters.every(
+        (character, index) =>
+          !character ||
+          viewer.performerManager.performers[index]?.characterId === character
+      )
+  );
+
+  // Every performer's model has loaded, so no frame shows a figure popping in.
+  let readyPerformers = $state(0);
+  let totalPerformers = $state(0);
+  const performersReady = $derived(
+    totalPerformers > 0 && readyPerformers >= totalPerformers
+  );
+
   /** The box's shape; the export's own size while exporting. */
   const aspect = $derived(
     exporting && exportSize && exportSize.height > 0
@@ -256,6 +310,31 @@
     return () => cancelAnimationFrame(frame);
   });
 
+  // ---- Showing and resting ---------------------------------------------------
+
+  // The whole stage moves into the clip layer's slot, so the export finds it
+  // inside the layer it draws, and comes home when the layer goes.
+  $effect(() => {
+    const target = slot;
+    const moved = element;
+    if (!target || !moved) return;
+    const home = moved.parentElement;
+    target.append(moved);
+    return () => {
+      home?.append(moved);
+    };
+  });
+
+  // A resting stage stops drawing once it has built; the export drives its
+  // own frames and gives the loop back when it finishes.
+  $effect(() => {
+    const rest = parked && sceneReady;
+    const pause = viewer.threltePauseAutoLoop;
+    const resume = viewer.threlteResumeAutoLoop;
+    if (viewer.isExporting || !pause || !resume) return;
+    untrack(() => (rest ? pause() : resume()));
+  });
+
   // ---- Shot editor ---------------------------------------------------------
 
   // The open editor borrows the picture itself: the same canvas moves into
@@ -289,6 +368,8 @@
     entered &&
       sceneReady &&
       castApplied &&
+      castDressed &&
+      performersReady &&
       pose !== null &&
       viewer.threlteRunFrame !== null &&
       viewer.webglCanvas !== null
@@ -415,8 +496,13 @@
         hideOverlays
         hidePerformerBadges
         hideSceneMarkers
+        cleanFrame
         rendererHandleRequired
         onSceneReadyChange={(value: boolean) => (sceneReady = value)}
+        onPerformerReadinessChange={(ready: number, total: number) => {
+          readyPerformers = ready;
+          totalPerformers = total;
+        }}
       />
     {/if}
   </div>

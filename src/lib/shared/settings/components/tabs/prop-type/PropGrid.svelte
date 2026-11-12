@@ -41,6 +41,7 @@
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import PropChiralityRow from "./PropChiralityRow.svelte";
   import BuugengStyleRow from "./BuugengStyleRow.svelte";
+  import TriadBuildRow from "./TriadBuildRow.svelte";
   import FanStyleOptionsCore from "./FanStyleOptionsCore.svelte";
   import {
     fanBuildPreviewOptions,
@@ -67,6 +68,11 @@
     normalizeBuugengStyle,
     type BuugengStyle,
   } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+  import {
+    isBuiltTriadPropType,
+    normalizeTriadBuild,
+    type TriadBuild,
+  } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 
   let {
     selectedPropType,
@@ -99,13 +105,22 @@
     onTriangleGripChange,
     buugengStyle,
     onBuugengStyleChange,
+    triadBuild,
+    onTriadBuildChange,
     isActive = true,
     onDrillChange,
+    onChoiceDone,
   } = $props<{
     selectedPropType: PropType | null;
     color?: "blue" | "red" | (string & {});
     title?: string;
     onSelect: (propType: PropType) => void;
+    /**
+     * A pick that leaves nothing more to choose here: no size, grip, style or
+     * fan build page follows it. A host that closes on a pick listens to this
+     * instead of onSelect, which also fires for a pick that opens such a page.
+     */
+    onChoiceDone?: (propType: PropType) => void;
     variant?: "panel" | "inline";
     /**
      * Flat mode: drop the section labels and pack every prop into one dense
@@ -182,6 +197,10 @@
     buugengStyle?: BuugengStyle;
     /** Absent hides the Style row (a host that cannot store the look). */
     onBuugengStyleChange?: (style: BuugengStyle) => void;
+    /** The triad's physical build; a look like the fan build, never notation. */
+    triadBuild?: TriadBuild;
+    /** Absent hides the Build row (a host that cannot store the look). */
+    onTriadBuildChange?: (build: TriadBuild) => void;
     /** A sheet can reset this transient route when it closes. */
     isActive?: boolean;
     /** Lets a sheet temporarily reclaim root-only control space while drilled. */
@@ -733,6 +752,20 @@
     if (currentBuugengStyle === next) return;
     onBuugengStyleChange?.(next);
   }
+  // The triad's build (Pictograph, Fire, Day) is the same kind of look: a row
+  // of tiles on the triad's details page and the triad family page. Big Triad
+  // takes the same build; Trigeng and Quiad keep their own art.
+  const showTriadBuild = $derived(
+    showAppearance &&
+      onTriadBuildChange !== undefined &&
+      detailProp !== null &&
+      isBuiltTriadPropType(detailProp)
+  );
+  const currentTriadBuild = $derived(normalizeTriadBuild(triadBuild));
+  function chooseTriadBuild(next: TriadBuild) {
+    if (currentTriadBuild === next) return;
+    onTriadBuildChange?.(next);
+  }
   // Size is a property of the current prop, not a prop of its own. Every big
   // prop is reached from here, which is why the grid can fold them away.
   const showSize = $derived(
@@ -785,6 +818,7 @@
         hasBigVariant(prop) ||
         isTrianglePropType(prop) ||
         (onBuugengStyleChange !== undefined && isStyledBuugengPropType(prop)) ||
+        (onTriadBuildChange !== undefined && isBuiltTriadPropType(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
   }
@@ -804,8 +838,14 @@
 
   function selectProp(prop: PropType): void {
     onSelect(prop);
-    if (drill?.kind === "family" && familyPageHolds(prop)) return;
-    if (!opensDetails(prop)) return;
+    if (drill?.kind === "family" && familyPageHolds(prop)) {
+      if (!opensDetails(prop)) onChoiceDone?.(prop);
+      return;
+    }
+    if (!opensDetails(prop)) {
+      onChoiceDone?.(prop);
+      return;
+    }
     void openDrill(
       isFanPropType(prop)
         ? { kind: "fan-look", prop }
@@ -993,6 +1033,7 @@
         fanAppearance={normalizedFanAppearance}
         triangleGrip={currentGrip}
         buugengStyle={currentBuugengStyle}
+        triadBuild={currentTriadBuild}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -1039,6 +1080,7 @@
         fanAppearance={normalizedFanAppearance}
         triangleGrip={currentGrip}
         buugengStyle={currentBuugengStyle}
+        triadBuild={currentTriadBuild}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -1139,6 +1181,14 @@
                   {colors}
                 />
               {/if}
+              {#if showTriadBuild}
+                <TriadBuildRow
+                  propType={drill.prop}
+                  build={currentTriadBuild}
+                  onChange={chooseTriadBuild}
+                  {colors}
+                />
+              {/if}
               {#if chirality && isBuugengFamilyProp(drill.prop)}
                 <PropChiralityRow
                   propType={drill.prop}
@@ -1172,6 +1222,16 @@
                       propType={familyMember}
                       style={currentBuugengStyle}
                       onChange={chooseBuugengStyle}
+                      {colors}
+                    />
+                  </div>
+                {/if}
+                {#if familyMember !== null && showTriadBuild}
+                  <div transition:growFade={{ axis: "y" }}>
+                    <TriadBuildRow
+                      propType={familyMember}
+                      build={currentTriadBuild}
+                      onChange={chooseTriadBuild}
                       {colors}
                     />
                   </div>

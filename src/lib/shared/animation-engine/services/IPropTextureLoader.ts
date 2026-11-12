@@ -13,6 +13,7 @@ import { parseFanRenderKey } from "#lib/shared/pictograph/prop/domain/fan-appear
 import { HOOP_FAMILY_BOXES } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 import { parseTriangleRenderKey } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { parseBuugengRenderKey } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import { parseTriadRenderKey } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 
 /**
  * Prop dimensions
@@ -184,6 +185,7 @@ export function getPropDimensions(propType: string): PropDimensions {
   const baseKey =
     parseTriangleRenderKey(normalized)?.propType ??
     parseBuugengRenderKey(normalized)?.propType ??
+    parseTriadRenderKey(normalized)?.propType ??
     normalized;
   return (
     PROP_DIMENSIONS[baseKey] ?? {

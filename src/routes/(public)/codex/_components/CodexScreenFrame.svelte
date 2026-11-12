@@ -149,15 +149,17 @@
     white-space: nowrap;
   }
 
+  /* The subtitle can carry an instruction ("Pick a prop, then open a
+     letter"), so it wraps at its normal size rather than cut off. The header
+     row is auto height and the content row takes the rest, so an extra line
+     comes out of the content (the type tiles), never out of the window. */
   .subtitle {
     margin: 0;
     max-width: 100%;
-    overflow: hidden;
     color: var(--theme-text-dim);
     font-size: var(--font-size-sm, 0.875rem);
     line-height: 1.3;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-wrap: balance;
   }
 
   .content {

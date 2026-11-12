@@ -107,7 +107,7 @@ async function boot(page, base, mode) {
     return {
       ready: mark("ready"),
       hydrated: mark("hydrated"),
-      timeout: mark("timeout-dismiss"),
+      longWait: mark("long-wait"),
       startMs: +c.start.toFixed(2),
       relayMs: +c.relay.toFixed(2),
       relays: c.relays,

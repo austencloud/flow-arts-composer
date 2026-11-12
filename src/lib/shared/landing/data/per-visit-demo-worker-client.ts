@@ -15,6 +15,7 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PerVisitContinuity } from "#lib/shared/landing/data/per-visit-demo-core.js";
+import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type {
   PerVisitDemoRequest,
   PerVisitDemoResponse,
@@ -23,8 +24,10 @@ import type {
 export type WorkerRollResult =
   /** The worker ran the roll and produced a sequence. */
   | { status: "ok"; sequence: SequenceData }
-  /** The worker ran and generation failed. Caller substitutes the fallback. */
-  | { status: "failed" }
+  /** The worker ran and generation failed. Caller substitutes the fallback.
+   *  `error` is the worker-side message, so a caller can tell an exhausted
+   *  recipe from an engine fault. */
+  | { status: "failed"; error?: string }
   /** No worker could run this. Caller must roll in-process instead. */
   | { status: "unavailable" };
 
@@ -94,7 +97,7 @@ function ensureWorker(): Worker | null {
       resolve(
         data.ok
           ? { status: "ok", sequence: data.sequence }
-          : { status: "failed" }
+          : { status: "failed", error: data.error }
       );
     }
   );
@@ -128,6 +131,7 @@ export function rollInWorker(options?: {
   propType?: PropType;
   startPlacement?: PictographData | null;
   continuity?: PerVisitContinuity;
+  difficulty?: DifficultyLevel;
 }): Promise<WorkerRollResult> {
   const active = ensureWorker();
   if (!active) return Promise.resolve(UNAVAILABLE);
@@ -145,6 +149,7 @@ export function rollInWorker(options?: {
           }
         : {}),
       ...(options?.continuity ? { continuity: options.continuity } : {}),
+      ...(options?.difficulty ? { difficulty: options.difficulty } : {}),
     };
   } catch (error) {
     console.warn("[per-visit-demo] could not serialize roll options:", error);

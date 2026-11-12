@@ -15,6 +15,12 @@ import { getFirestoreRest } from "#lib/server/firestore/firestore-rest.js";
 import { readPhysicalCardPropsWithin } from "#lib/server/physical-cards/physical-card-props.js";
 import { physicalCardIdNeedingProps } from "#lib/shared/qr/services/physical-card-props.js";
 import { requestCf, workerEnv } from "#lib/server/cloudflare/worker-env.js";
+import {
+  deriveShortCodeMeta,
+  EMPTY_SHORT_CODE_META,
+  withSourceAttribution,
+  type ShortCodeMeta,
+} from "../../sequence/[id]/short-code-meta";
 
 // The project id lives in the public env; the value below is the same one the
 // client Firebase config uses (src/lib/shared/auth/firebase.ts) and only
@@ -23,71 +29,6 @@ const PROJECT_ID = env.PUBLIC_FIREBASE_PROJECT_ID || "the-kinetic-alphabet";
 
 // SSR renders with or without meta — it must never hang on a slow lookup.
 const LOOKUP_TIMEOUT_MS = 2500;
-
-interface ShortCodeMeta {
-  word: string | null;
-  payloadKind: "word" | "solo";
-  authoredHand: "left" | "right" | null;
-  creator: string | null;
-  thumbnailUrl: string | null;
-  deckId: string | null;
-  deckName: string | null;
-  leftPropType: string | null;
-  rightPropType: string | null;
-}
-
-const EMPTY_META: ShortCodeMeta = {
-  word: null,
-  payloadKind: "word",
-  authoredHand: null,
-  creator: null,
-  thumbnailUrl: null,
-  deckId: null,
-  deckName: null,
-  leftPropType: null,
-  rightPropType: null,
-};
-
-function readString(
-  record: Record<string, unknown>,
-  key: string
-): string | null {
-  const value = record[key];
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function deriveMeta(record: ShortCodeData | null): ShortCodeMeta {
-  if (!record) return EMPTY_META;
-  const values = record as unknown as Record<string, unknown>;
-  const payloadKind =
-    readString(values, "payloadKind") === "solo" ? "solo" : "word";
-  const authoredHandValue = readString(values, "authoredHand");
-  const authoredHand =
-    authoredHandValue === "left" || authoredHandValue === "right"
-      ? authoredHandValue
-      : null;
-
-  return {
-    // Schema-3 solos carry a human title, never a fabricated TKA word.
-    // Schema-2 words and legacy records retain the historical fallbacks.
-    word:
-      (payloadKind === "solo"
-        ? readString(values, "payloadTitle")
-        : readString(values, "payloadWord")) ??
-      readString(values, "word") ??
-      readString(values, "sequenceName"),
-    payloadKind,
-    authoredHand,
-    creator: readString(values, "ownerDisplayName"),
-    thumbnailUrl: readString(values, "thumbnailUrl"),
-    deckId: readString(values, "deckId"),
-    deckName: readString(values, "deckName"),
-    leftPropType:
-      readString(values, "leftPropType") ?? readString(values, "bluePropType"),
-    rightPropType:
-      readString(values, "rightPropType") ?? readString(values, "redPropType"),
-  };
-}
 
 function stripPreparedPayload(
   record: ShortCodeData | null,
@@ -115,7 +56,7 @@ export const load: PageServerLoad = async ({ params, request, url }) => {
     lng: null,
   };
 
-  let meta: ShortCodeMeta = EMPTY_META;
+  let meta: ShortCodeMeta = EMPTY_SHORT_CODE_META;
   let record: ShortCodeData | null = null;
   let prepared: PreparedScanViewerPayload | null = null;
 
@@ -140,7 +81,7 @@ export const load: PageServerLoad = async ({ params, request, url }) => {
         projectId: PROJECT_ID,
         timeoutMs: LOOKUP_TIMEOUT_MS,
       });
-      meta = deriveMeta(record);
+      meta = deriveShortCodeMeta(record);
     } catch (error) {
       // Non-fatal: the page still renders and the client resolver takes over.
       // But it must never be silent again — the empty catch that used to live
@@ -152,6 +93,16 @@ export const load: PageServerLoad = async ({ params, request, url }) => {
       );
     }
   }
+
+  // The code often lacks its author and thumbnail; the sequence it was minted
+  // from has them. Read it beside the props lookup and the hydration below.
+  const attributedMeta = record
+    ? withSourceAttribution(
+        meta,
+        record,
+        workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
+      )
+    : Promise.resolve(meta);
 
   const physicalCardProps = await physicalCardPropsLookup;
 
@@ -173,6 +124,8 @@ export const load: PageServerLoad = async ({ params, request, url }) => {
       error instanceof Error ? error.message : error
     );
   }
+
+  meta = await attributedMeta;
 
   return {
     geo,

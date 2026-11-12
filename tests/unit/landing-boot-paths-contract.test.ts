@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 // The boot splash in src/app.html decides, before SvelteKit loads, whether a
 // path is a public page. Landing mode never reports load progress, so a public
 // route missing from that inline list sits behind the #app-loading bar until
-// the 15 s safety net. The list is hand-maintained; this keeps it covering the
+// the root layout lets it go once the landing bootstrap is up. The list is
+// hand-maintained; this keeps it covering the
 // two registries the router itself uses (/shape-engine, /faq and
 // /learn/concepts were all missing at once before this existed).
 

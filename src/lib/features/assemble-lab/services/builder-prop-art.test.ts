@@ -65,6 +65,7 @@ describe("loadBuilderPropArt", () => {
       "fanAppearance",
       "leftPropType",
       "primaryPropColors",
+      "triadBuild",
       "triangleGrip",
     ]);
   });
@@ -86,6 +87,7 @@ describe("loadBuilderPropArt", () => {
       fanAppearance: normalizeFanAppearance(undefined),
       triangleGrip: normalizeTriangleGrip(undefined),
       buugengStyle: "classic",
+      triadBuild: "pictograph",
     });
   });
 

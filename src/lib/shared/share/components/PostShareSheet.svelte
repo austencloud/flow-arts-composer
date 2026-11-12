@@ -5,7 +5,11 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { growFade } from "#lib/shared/transitions/motion.js";
+  import {
+    growFade,
+    motionDuration,
+    opaqueFade,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
@@ -65,6 +69,7 @@
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { VIEWER_STATE_PARAM_NAMES } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
   import type { ViewerMode } from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
+  import { tagOutboundLink } from "#lib/shared/share/domain/outbound-link.js";
   import {
     buildArtifactFilename,
     buildPostLink,
@@ -720,6 +725,24 @@
     simplifyRepeatedWord(
       sequence?.displayName || alphabetWord || sequence?.intendedWord || ""
     )
+  );
+
+  const panelTitle = $derived(
+    videoDrill
+      ? videoPane === "show"
+        ? t("share_video_pane_show")
+        : t("share_video_pane_file")
+      : shareRoute === "publish"
+        ? t("share_publish_post")
+        : shareRoute === "scan"
+          ? t("share_scan_title")
+          : shareRoute === "download"
+            ? artifact === "video"
+              ? videoSettingsAvailable
+                ? t("share_download_video")
+                : t("share_download_post")
+              : t("share_download_card")
+            : t("share_sequence")
   );
 
   /** The glyph header uses the simplified alphabet word, never display prose. */
@@ -1390,10 +1413,14 @@
     copyLinkMessage = "";
     copiedLinkUrl = null;
     try {
+      // Only the copied text is tagged. The QR drawn from the same link stays
+      // bare, and so does the "copied" line under the button.
       const result = copyLinkUrl
-        ? await copyLink(copyLinkUrl)
+        ? await copyLink(tagOutboundLink(copyLinkUrl, "copy_link"))
         : await copyPreparedLink(
-            requestPostLink().then((url) => buildCopyLinkUrl(url, viewerUrl))
+            requestPostLink().then((url) =>
+              tagOutboundLink(buildCopyLinkUrl(url, viewerUrl), "copy_link")
+            )
           );
 
       if (target && linkSessionIsCurrent(session, target) && result.message) {
@@ -1406,7 +1433,7 @@
           const fallbackUrl =
             copyLinkUrl || buildCopyLinkUrl(shortUrl || viewerUrl, viewerUrl);
           if (fallbackUrl) {
-            revealedLinkUrl = fallbackUrl;
+            revealedLinkUrl = tagOutboundLink(fallbackUrl, "copy_link");
             copyLinkMessage = t("share_copy_link_manually");
           }
         }
@@ -1436,6 +1463,27 @@
     publishOpen = true;
     if (postingAvailable && !needsAccountForFiles) preparePostLink();
   }
+
+  // The dialog takes the QR column's width between the two screens, once the
+  // old task has faded out and before the new one shows. Switched at the tap,
+  // a wide screen squeezed Home into the narrow column while it faded. Going
+  // back it widens at once: the centred QR column fades out unharmed in the
+  // wider box, and Home then arrives at its own width.
+  let scanWidth = $state(false);
+  $effect(() => {
+    const wanted = shareRoute === "scan";
+    if (wanted === untrack(() => scanWidth)) return;
+    // A closed sheet has nothing on screen to wait for: it reopens at width.
+    if (!isOpen || !wanted) {
+      scanWidth = wanted;
+      return;
+    }
+    const timer = setTimeout(
+      () => (scanWidth = wanted),
+      motionDuration(DURATION.normal)
+    );
+    return () => clearTimeout(timer);
+  });
 
   async function openScanCode(): Promise<void> {
     shareRoute = "scan";
@@ -2315,7 +2363,7 @@
         : t("share_sequence")}
   {onClose}
   onClosed={runPendingHandoff}
-  narrow={!!qrDataUrl || shareRoute === "scan"}
+  narrow={!!qrDataUrl || scanWidth}
 >
   {#snippet children(surface)}
     <Crossfade
@@ -2353,37 +2401,39 @@
         >
           <header class="panel-header">
             {#if videoDrill || (shareRoute === "download" && initialEntry === "chooser" && !qrDataUrl) || (shareRoute === "publish" && initialEntry !== "publish") || shareRoute === "scan"}
-              <button
-                type="button"
-                class="header-icon"
-                onclick={videoDrill
-                  ? () => (videoDrillOpen = false)
-                  : returnToChooser}
-                aria-label={t("share_back")}
+              <!-- Back opens its own room beside the title, so the title slides
+                   over instead of being shoved sideways in one frame. -->
+              <span
+                class="header-back"
+                transition:growFade={{ axis: "x", duration: DURATION.normal }}
               >
-                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-              </button>
+                <button
+                  type="button"
+                  class="header-icon"
+                  onclick={videoDrill
+                    ? () => (videoDrillOpen = false)
+                    : returnToChooser}
+                  aria-label={t("share_back")}
+                >
+                  <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                </button>
+              </span>
             {/if}
             <div class="title-group">
+              <!-- The title changes on the body's clock: it leaves with the old
+                   task and arrives with the new one, never ahead of it. -->
               <h2 class="panel-title">
-                {videoDrill
-                  ? videoPane === "show"
-                    ? t("share_video_pane_show")
-                    : t("share_video_pane_file")
-                  : shareRoute === "publish"
-                    ? t("share_publish_post")
-                    : shareRoute === "scan"
-                      ? t("share_scan_title")
-                      : shareRoute === "download"
-                        ? artifact === "video"
-                          ? videoSettingsAvailable
-                            ? t("share_download_video")
-                            : t("share_download_post")
-                          : t("share_download_card")
-                        : t("share_sequence")}
+                <Crossfade key={panelTitle} duration={DURATION.normal} mode="swap">
+                  {panelTitle}
+                </Crossfade>
               </h2>
               <div class="sequence-identity">
-                <TKAWordGlyph word={glyphWord} height={glyphHeight} darkMode />
+                <TKAWordGlyph
+                  word={glyphWord}
+                  height={glyphHeight}
+                  darkMode
+                  fitToParent
+                />
               </div>
             </div>
             <button
@@ -2417,7 +2467,11 @@
                      whatever the theme: a camera reads dark on light. -->
                 <div class="scan-tile" aria-busy={!scanQrSrc && !scanError}>
                   {#if scanQrSrc}
-                    <img src={scanQrSrc} alt={t("share_scan_qr_alt")} />
+                    <img
+                      src={scanQrSrc}
+                      alt={t("share_scan_qr_alt")}
+                      in:opaqueFade={{ duration: DURATION.fast }}
+                    />
                   {:else if !scanError}
                     <i
                       class="fa-solid fa-circle-notch fa-spin"
@@ -2430,9 +2484,12 @@
                     ></i>
                   {/if}
                 </div>
+                <!-- The caption and the link line hold their final size from
+                     the first frame. A late two-line caption or link used to
+                     grow the dialog twice after it had settled, and the sheet
+                     jumped each time. The spinner in the tile says preparing. -->
                 <p class="scan-caption" role="status">
-                  {scanError ||
-                    (scanQrSrc ? t("share_scan_hint") : t("share_preparing"))}
+                  {scanError || t("share_scan_hint")}
                 </p>
                 {#if scanError && scanRetryable}
                   <button
@@ -2443,8 +2500,34 @@
                     <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
                     {t("share_scan_retry")}
                   </button>
-                {:else if scanShortLink}
-                  <p class="scan-link">{displayLink(scanShortLink)}</p>
+                {:else if !scanError}
+                  <!-- The link under the code copies it. Before the link exists
+                       its line is held empty so nothing moves when it lands. -->
+                  <button
+                    type="button"
+                    class="scan-link"
+                    class:pending={!scanShortLink}
+                    disabled={!scanShortLink}
+                    aria-busy={copyLinkPending}
+                    onclick={handleCopyLinkIntent}
+                  >
+                    <i
+                      class={copyLinkState === "copied"
+                        ? "fa-solid fa-check"
+                        : "fa-regular fa-copy"}
+                      aria-hidden="true"
+                    ></i>
+                    <span class="scan-link-text">
+                      {copyLinkState === "copied"
+                        ? t("share_link_copied")
+                        : scanShortLink
+                          ? displayLink(scanShortLink)
+                          : ""}
+                    </span>
+                  </button>
+                  {#if copyLinkMessage && copyLinkMessage !== t("share_link_copied")}
+                    <p class="scan-link-note" role="status">{copyLinkMessage}</p>
+                  {/if}
                 {/if}
               </div>
             {:else if !publishFlow}
@@ -3320,12 +3403,49 @@
     font-size: 0.9375rem;
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
   }
+  /* A real control: the link reads as one, and a tap copies it. */
   .scan-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    max-width: 100%;
     margin: 0;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: 999px;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
+    color: var(--theme-text, #fff);
+    font: inherit;
     font-size: 0.875rem;
     font-variant-numeric: tabular-nums;
-    color: var(--theme-text, #fff);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease,
+      opacity var(--duration-fast) ease;
+  }
+  .scan-link > i {
+    color: var(--theme-accent, #8b7cff);
+  }
+  .scan-link-text {
+    min-width: 0;
     overflow-wrap: anywhere;
+  }
+  .scan-link:hover:not(:disabled),
+  .scan-link:active:not(:disabled) {
+    border-color: var(--theme-accent, #8b7cff);
+    background: var(--theme-surface-hover, rgba(255, 255, 255, 0.1));
+  }
+  .scan-link.pending {
+    opacity: 0;
+    cursor: default;
+  }
+  .scan-link-note {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
   }
 
   .video-settings {
@@ -3876,12 +3996,18 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    gap: 1rem;
     border-bottom: 1px solid var(--theme-stroke);
+  }
+  /* Margins, not the header gap: a gap cannot ease in with Back. */
+  .header-back {
+    flex: 0 0 auto;
+    display: flex;
+    margin-inline-end: 1rem;
   }
   .title-group {
     flex: 1 1 auto;
     min-width: 0;
+    margin-inline-end: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.375rem;

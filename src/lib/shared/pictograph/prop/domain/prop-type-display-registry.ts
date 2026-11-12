@@ -110,12 +110,12 @@ export const PROP_TYPE_DISPLAY_REGISTRY: Record<PropType, PropTypeDisplayInfo> =
 
     [PropType.BUUGENG]: {
       label: "Buugeng",
-      image: "/images/props/buttons/buugeng.svg",
+      image: "/images/props/buttons/buugeng.svg?v=2",
       category: "curved",
     },
     [PropType.BIGBUUGENG]: {
       label: "Big Buugeng",
-      image: "/images/props/buttons/bigbuugeng.svg",
+      image: "/images/props/buttons/bigbuugeng.svg?v=2",
     },
 
     [PropType.TRIGENG]: {

@@ -17,6 +17,13 @@
   A search in a box the size of the last one that landed (the next topic in
   the same window, the next screen) starts from that scale, so similar
   content lands in a probe or two instead of the full bisection.
+
+  The scale each screen landed at, per window size, is also kept in the
+  browser (2026-11-10: a cold load of a run page spent ~0.9 s in ten
+  probes with the body blank). A reload or a later visit seeds from it and
+  lands in one probe. With no seed at all the search still starts from the
+  designed size and steps by the room left, which takes three to five
+  probes where the bisection took ten.
 -->
 <script lang="ts" module>
   // The last fit that landed, in any box: a page change in the same window
@@ -30,9 +37,9 @@
   import {
     FIT_MAX_SCALE,
     FIT_MIN_SCALE,
-    fitScaleAsync,
     fitScaleFromSeedAsync,
   } from "./fit-scale";
+  import { fitSeedKey, keepFitSeed, keptFitSeed } from "./fit-seeds";
 
   let {
     children,
@@ -134,6 +141,10 @@
     const aw = area.clientWidth;
     const ah = area.clientHeight;
     if (aw < 10 || ah < 10) return;
+    // The box's height, for a figure that holds one size on every screen of
+    // a window (the figure card, SequenceShowcase) instead of growing with
+    // the search. Nothing else reads it.
+    inner.style.setProperty("--fit-area-h", `${ah}px`);
     const mine = ++generation;
     fitting = true;
     // The box is the size it was at the last fit: the content moved on its
@@ -167,11 +178,20 @@
       };
     };
     const stale = () => mine !== generation || !inner;
-    const seed = lastFit?.area === `${aw}x${ah}` ? lastFit.scale : null;
-    const result =
-      seed === null
-        ? await fitScaleAsync(probe, ah, stale, min, max)
-        : await fitScaleFromSeedAsync(probe, ah, stale, seed, min, max);
+    const seedKey = fitSeedKey(location.pathname, contentKey, aw, ah);
+    const seed =
+      keptFitSeed(seedKey) ??
+      (lastFit?.area === `${aw}x${ah}` ? lastFit.scale : null);
+    // No seed: start at the designed size, which the content was laid out
+    // for, and step from there.
+    const result = await fitScaleFromSeedAsync(
+      probe,
+      ah,
+      stale,
+      seed ?? Math.min(max, Math.max(min, 1)),
+      min,
+      max
+    );
     if (!result || !inner) return;
     // Even the smallest figures overflow: the box pans anyway, so draw them
     // at a size that reads on a phone instead of the floor.
@@ -184,7 +204,10 @@
     lastHeight = inner.offsetHeight;
     lastArea = `${aw}x${ah}`;
     lastKey = contentKey;
-    if (result.fits) lastFit = { area: lastArea, scale: final };
+    if (result.fits) {
+      lastFit = { area: lastArea, scale: final };
+      keepFitSeed(seedKey, final);
+    }
     fitted = true;
     fitting = false;
     ready = true;

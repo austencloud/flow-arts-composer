@@ -18,10 +18,10 @@
   Remounting on the new sequence id gives each draw that first render, so every
   click cascades exactly as it does in the app.
 
-  Engine, grid, and player chunks are all dynamically imported so the
-  prerendered page pays nothing until the section is reached (grid/player mount
-  on idle, seeded with the page's per-visit generated sequence; the engine chunk
-  loads on the first button tap). The presentation stage reserves a bounded
+  Grid and player chunks are dynamically imported so the prerendered page pays
+  nothing until the section is reached (grid/player mount on idle, seeded with
+  the page's per-visit generated sequence). A tap rolls in the hero's worker,
+  which is already warm by then (composer-demo-generation.ts). The presentation stage reserves a bounded
   footprint so nothing shifts while those chunks arrive.
 -->
 <script lang="ts">
@@ -246,7 +246,12 @@
 
   <div class="demo-footer">
     <div class="action-row">
-      <PanelButton variant="primary" onclick={generate} disabled={generating}>
+      <PanelButton
+        variant="primary"
+        onclick={generate}
+        disabled={generating}
+        ariaBusy={generating}
+      >
         <i
           class="fas {generating ? 'fa-circle-notch fa-spin' : 'fa-dice'}"
           aria-hidden="true"

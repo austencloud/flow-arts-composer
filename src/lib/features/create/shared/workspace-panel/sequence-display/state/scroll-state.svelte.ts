@@ -73,9 +73,10 @@ export function createScrollState() {
       scrollbarCheckFrame = null;
     }
     scrollContainerRef = element;
-    if (element) {
-      checkScrollbar();
-    }
+    // Wait for the frame: the grid mounts in the same task as the rest of the
+    // workspace (Stop swaps it back in), and reading its overflow here forced
+    // a whole-page layout that the frame then redid.
+    if (element) scheduleScrollbarCheck();
   }
 
   /**

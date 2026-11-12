@@ -52,6 +52,7 @@ import {
 } from "#lib/shared/library/services/saved-sequence-ledger.js";
 import { clearSequenceDeletionIntent } from "#lib/shared/library/services/sequence-persistence-coordinator.js";
 import { reportPostHogLifecycleEvent } from "#lib/shared/analytics/services/posthog-lifecycle-reporter.js";
+import { trackSequenceKept } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
@@ -497,6 +498,20 @@ export class LibrarySaveService {
         error
       );
     }
+
+    // The lifecycle event above needs an account to own it, so a guest's save
+    // never reaches PostHog through it. This client event counts every save,
+    // guest or member. `named` marks a save where the person typed a title;
+    // there is no separate rename flow, so naming only happens here.
+    void trackSequenceKept("library_save", {
+      sequenceId,
+      sequenceLength: sequenceToSave.sequenceLength ?? 0,
+      isPublic: landedVisibility === "public",
+      durability: isFullAccount ? "cloud" : "local",
+      source: options.analyticsSource ?? "unspecified",
+      named: Boolean(displayName?.trim()),
+      ...(copyOf && { copied: true }),
+    });
 
     // Value-moment nudge: a guest just saved successfully. Encourage account
     // creation once per device. Members (full accounts) never see this.

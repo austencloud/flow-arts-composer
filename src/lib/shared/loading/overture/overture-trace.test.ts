@@ -3,24 +3,31 @@ import {
   composeFrame,
   createFrameState,
   cumulativeLengths,
+  fitLetterRow,
   headAt,
+  overtureColors,
   overtureLayout,
   pointAt,
   preparePath,
   prepareScene,
   type FrameView,
   type OvertureContext,
+  type OvertureOverlapLayers,
   type OverturePoint,
   type OvertureScene,
 } from "./overture-trace";
 
-/** A canvas stand-in that records strokes, fills and text. */
+/** A canvas stand-in that records strokes, fills, rect fills, images and text. */
 function recordingContext() {
   const strokes: { width: number; style: unknown; points: number }[] = [];
   const texts: string[] = [];
+  const placed: { text: string; x: number; alpha: number }[] = [];
+  const rects: { style: unknown; op: string }[] = [];
+  const images: { image: unknown; op: string; alpha: number }[] = [];
   let points = 0;
   const ctx = {
     globalAlpha: 1,
+    globalCompositeOperation: "source-over",
     strokeStyle: "",
     fillStyle: "",
     lineWidth: 1,
@@ -35,6 +42,16 @@ function recordingContext() {
     restore() {},
     setTransform() {},
     clearRect() {},
+    fillRect() {
+      rects.push({ style: ctx.fillStyle, op: ctx.globalCompositeOperation });
+    },
+    drawImage(image: unknown) {
+      images.push({
+        image,
+        op: ctx.globalCompositeOperation,
+        alpha: ctx.globalAlpha,
+      });
+    },
     translate() {},
     rotate() {},
     scale() {},
@@ -52,13 +69,34 @@ function recordingContext() {
       strokes.push({ width: ctx.lineWidth, style: ctx.strokeStyle, points });
     },
     fill() {},
-    fillText(text: string) {
+    fillText(text: string, x: number) {
       texts.push(text);
+      placed.push({ text, x, alpha: ctx.globalAlpha });
     },
     measureText: (text: string) => ({ width: 10 * text.length }),
     createRadialGradient: () => ({ addColorStop() {} }),
   } satisfies OvertureContext;
-  return { ctx, strokes, texts };
+  return { ctx, strokes, texts, placed, rects, images };
+}
+
+/** Two recording masks standing in for the worker's OffscreenCanvases. */
+function overlapLayers() {
+  const left = recordingContext();
+  const right = recordingContext();
+  const layers: OvertureOverlapLayers = {
+    left: { canvas: "left-canvas", ctx: left.ctx },
+    right: { canvas: "right-canvas", ctx: right.ctx },
+    width: 800,
+    height: 600,
+  };
+  return { layers, left, right };
+}
+
+/** A two-hand scene whose right line runs parallel to the left, 5 units down. */
+function twoHandScene(): OvertureScene {
+  const scene = lineScene(["A", "B"], 2);
+  scene.right = [scene.left[0]!.map(([x, y]) => [x, y + 5] as OverturePoint)];
+  return scene;
 }
 
 /** A straight-line scene: each beat is `spb` segments of one unit. */
@@ -277,6 +315,72 @@ describe("composeFrame", () => {
   });
 });
 
+describe("a letter row too long for the screen", () => {
+  const glyph = 10; // measureText: 10 px per character at the layout's size
+
+  it("leaves a short row at full size, centred", () => {
+    const layout = overtureLayout(800, 600);
+    const fit = fitLetterRow([glyph, glyph, glyph], 0.12, 0, layout, 800);
+    expect(fit.fontPx).toBe(layout.fontPx);
+    expect(fit.target).toBe(0);
+  });
+
+  it("shrinks a row a little wider than the mandala until it fits", () => {
+    const layout = overtureLayout(1600, 1000);
+    const widths = Array.from({ length: 40 }, () => 16);
+    const fit = fitLetterRow(widths, 0.12, 0, layout, 1600);
+    expect(fit.fontPx).toBeLessThan(layout.fontPx);
+    expect(fit.total).toBeCloseTo(layout.size, 6);
+    expect(fit.target).toBe(0);
+  });
+
+  it("windows a 40-beat freeform word on a phone: every glyph drawn stays inside the mandala's width and the newest letter is shown", () => {
+    const letters = Array.from({ length: 40 }, (_, i) =>
+      String.fromCharCode(65 + (i % 26))
+    );
+    const prepared = prepareScene(lineScene(letters, 40), "dark");
+    const layout = overtureLayout(390, 844);
+    const v = view({ width: 390, height: 844, layout });
+    const state = createFrameState({ phone: true });
+    const half = Math.min(layout.size, 390 - 2 * layout.fontPx) / 2;
+    let now = 1000;
+    for (let b = 1; b <= 40; b++) {
+      // Let the row settle on each beat, as a real boot would between beats.
+      let placed: { text: string; x: number; alpha: number }[] = [];
+      for (let f = 0; f < 60; f++) {
+        const rec = recordingContext();
+        composeFrame(rec.ctx, prepared, b / 40, (now += 16), v, state);
+        placed = rec.placed;
+      }
+      const scale = layout.fontPx * 0.62 / layout.fontPx;
+      for (const g of placed) {
+        expect(g.x).toBeGreaterThanOrEqual(layout.cx - half - 1e-6);
+        expect(g.x + glyph * scale).toBeLessThanOrEqual(layout.cx + half + 1e-6);
+      }
+      const newest = placed.find((g) => g.text === letters[b - 1]);
+      expect(newest?.alpha ?? 0).toBeGreaterThan(0.3);
+    }
+  });
+
+  it("draws the start of a windowed row under reduced motion", () => {
+    const letters = Array.from({ length: 40 }, () => "Q");
+    letters[0] = "A";
+    const prepared = prepareScene(lineScene(letters, 40), "dark");
+    const layout = overtureLayout(390, 844);
+    const { ctx, placed } = recordingContext();
+    composeFrame(
+      ctx,
+      prepared,
+      1,
+      1000,
+      view({ width: 390, height: 844, layout, lettersStill: true }),
+      createFrameState({ phone: true })
+    );
+    expect(placed[0]!.text).toBe("A");
+    expect(placed[0]!.alpha).toBe(1);
+  });
+});
+
 describe("overtureLayout", () => {
   it("keeps the letters clear of the low capsule on short screens", () => {
     for (const [w, h] of [
@@ -370,5 +474,112 @@ describe("lapping a long boot", () => {
     expect(() =>
       composeFrame(strictContext(), prepared, 0.5, 100, view, state)
     ).not.toThrow();
+  });
+});
+
+describe("prop colours", () => {
+  it("accepts only a pair of six-digit hex colours", () => {
+    expect(overtureColors({ left: "#A855F7", right: "#22c55e" })).toEqual({
+      left: "#a855f7",
+      right: "#22c55e",
+    });
+    expect(overtureColors(null)).toBeNull();
+    expect(overtureColors({ left: "#a855f7" })).toBeNull();
+    expect(overtureColors({ left: "purple", right: "#22c55e" })).toBeNull();
+    expect(overtureColors({ left: "#abc", right: "#22c55e" })).toBeNull();
+  });
+
+  it("draws the hands in the user's colours on either surface, mixed where they cross", () => {
+    const colors = { left: "#a855f7", right: "#22c55e" };
+    for (const surface of ["dark", "light"] as const) {
+      const prepared = prepareScene(twoHandScene(), surface, colors);
+      expect(prepared.tips.map((tip) => tip.color)).toEqual([
+        "#a855f7",
+        "#22c55e",
+      ]);
+      expect(prepared.tips[0]!.rgb).toEqual([168, 85, 247]);
+      // The channel-wise mean, as applyMandalaHandColors mixes them.
+      expect(prepared.overlap).toBe("#658dab");
+    }
+  });
+
+  it("keeps the surface's blue, red and purple without user colours", () => {
+    const dark = prepareScene(twoHandScene(), "dark");
+    expect(dark.tips.map((tip) => tip.color)).toEqual(["#818cf8", "#f87171"]);
+    expect(dark.overlap).toBe("#a78bfa");
+    const light = prepareScene(twoHandScene(), "light", null);
+    expect(light.tips.map((tip) => tip.color)).toEqual(["#3D44B8", "#DC2626"]);
+    expect(light.overlap).toBe("#6d28d9");
+  });
+});
+
+describe("overlap pass", () => {
+  it("masks each hand, intersects them and lays the mix over the strokes", () => {
+    const prepared = prepareScene(twoHandScene(), "dark", {
+      left: "#a855f7",
+      right: "#22c55e",
+    });
+    const { layers, left, right } = overlapLayers();
+    const state = createFrameState();
+    state.overlap = layers;
+    const main = recordingContext();
+    composeFrame(main.ctx, prepared, 0.5, 0, view({ alpha: 0.8 }), state);
+    // One crisp stroke per hand on its own mask, as wide as the main crisp pass.
+    expect(left.strokes).toHaveLength(1);
+    expect(right.strokes).toHaveLength(1);
+    expect(left.strokes[0]!.width).toBe(main.strokes[2]!.width);
+    // Left mask keeps only what the right mask also covers, then takes the mix.
+    expect(left.images).toEqual([
+      { image: "right-canvas", op: "destination-in", alpha: 1 },
+    ]);
+    expect(left.rects).toEqual([{ style: "#658dab", op: "source-in" }]);
+    // The main canvas gets that mask once, at the layer's own opacity.
+    expect(main.images).toEqual([
+      { image: "left-canvas", op: "source-over", alpha: 0.8 },
+    ]);
+    // Nothing is drawn to the right mask but its stroke.
+    expect(right.images).toEqual([]);
+    expect(right.rects).toEqual([]);
+  });
+
+  it("skips the pass with one hand, without layers, or before the trace starts", () => {
+    const { layers, left } = overlapLayers();
+    const state = createFrameState();
+    state.overlap = layers;
+    const oneHand = recordingContext();
+    composeFrame(
+      oneHand.ctx,
+      prepareScene(lineScene(["A", "B"], 2), "dark"),
+      0.5,
+      0,
+      view(),
+      state
+    );
+    expect(oneHand.images).toEqual([]);
+    expect(left.strokes).toEqual([]);
+
+    const untraced = recordingContext();
+    composeFrame(
+      untraced.ctx,
+      prepareScene(twoHandScene(), "dark"),
+      0,
+      0,
+      view(),
+      state
+    );
+    expect(untraced.images).toEqual([]);
+
+    const noLayers = recordingContext();
+    composeFrame(
+      noLayers.ctx,
+      prepareScene(twoHandScene(), "dark"),
+      0.5,
+      0,
+      view(),
+      createFrameState()
+    );
+    expect(noLayers.images).toEqual([]);
+    // The crisp strokes are still there.
+    expect(noLayers.strokes.length).toBeGreaterThanOrEqual(4);
   });
 });

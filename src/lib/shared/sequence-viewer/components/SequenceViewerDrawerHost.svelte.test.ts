@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   updateSettings: vi.fn(),
   openSequenceOverlay: vi.fn(),
   removeCurrentUrlParams: vi.fn(),
+  fetchPublicShortCodeRecord: vi.fn(),
+}));
+
+vi.mock("#lib/shared/qr/services/public-short-code-record-reader.js", () => ({
+  fetchPublicShortCodeRecord: mocks.fetchPublicShortCodeRecord,
 }));
 
 vi.mock("$app/navigation", () => ({
@@ -91,6 +96,7 @@ import {
   overlayStateStub,
 } from "./__test-stubs__/sequence-overlay-state-stub.svelte";
 import SequenceViewerDrawerHost from "./SequenceViewerDrawerHost.svelte";
+import { prefetchViewerLink } from "../services/viewer-link-prefetch";
 
 // A named export from the stub's module script. Plain `tsc` types every
 // .svelte import as a default export only, so name its shape here.
@@ -139,6 +145,40 @@ describe("SequenceViewerDrawerHost URL bootstrap", () => {
       rightPropType: PropType.CLUB,
       catDogMode: false,
     });
+  });
+
+  // The app route's load reads the code while the app boots. Dropping the
+  // hand-off would still open the sequence, just seconds later, so nothing
+  // but this test would notice.
+  it("resolves an app link with the record the route prefetched", async () => {
+    const record = {
+      sequence: "CAB",
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+    };
+    const hydratedSequence = { id: "hydrated-prefetched" };
+    mocks.fetchPublicShortCodeRecord.mockResolvedValue(record);
+    mocks.resolveShortCodeWithRecord.mockResolvedValue({
+      sequence: { id: "resolved-prefetched" },
+      record,
+    });
+    mocks.hydrateSequence.mockResolvedValue(hydratedSequence);
+    window.history.replaceState({}, "", "/browse/gallery?v=LINK42");
+
+    prefetchViewerLink("LINK42");
+    render(SequenceViewerDrawerHost);
+
+    await vi.waitFor(() => {
+      expect(mocks.openSequenceOverlay).toHaveBeenCalledWith(
+        hydratedSequence,
+        expect.objectContaining({ shortCode: "LINK42" })
+      );
+    });
+    expect(mocks.fetchPublicShortCodeRecord).toHaveBeenCalledTimes(1);
+    expect(mocks.resolveShortCodeWithRecord).toHaveBeenCalledWith(
+      "LINK42",
+      record
+    );
   });
 
   it("opens a sequence when a QR deep link arrives after the host mounted", async () => {

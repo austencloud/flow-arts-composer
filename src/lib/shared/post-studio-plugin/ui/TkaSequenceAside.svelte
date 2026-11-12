@@ -10,7 +10,13 @@
   import { postCardHighlightedStepIndex } from "./post-card-highlight";
   import { tkaEditorOf } from "./tka-editor-context";
   import { createPerformerSequences } from "../performer-sequences.svelte";
-  import { backPerformerName, postFollowers } from "../tunnel-performers";
+  import {
+    FRONT_PROP_COLORS,
+    backPerformerName,
+    followerPropColors,
+    postAnimationPropType,
+    postFollowers,
+  } from "../tunnel-performers";
 
   /**
    * The post's sequence beside the preview while editing, its step lit as
@@ -95,10 +101,27 @@
   /** The source behind the labeled sheet; the tunnel QR names its code. */
   const sourceSequence = $derived(facts?.sequence ?? null);
 
+  // The card draws the prop the post's animation draws: a prop picked on the
+  // animation clip, else the post's own.
+  const animationPropType = $derived(postAnimationPropType(editor.project));
   const cardPropTypes = $derived({
-    left: options?.leftPropTypeOverride ?? options?.propTypeOverride,
-    right: options?.rightPropTypeOverride ?? options?.propTypeOverride,
+    left:
+      animationPropType ??
+      options?.leftPropTypeOverride ??
+      options?.propTypeOverride,
+    right:
+      animationPropType ??
+      options?.rightPropTypeOverride ??
+      options?.propTypeOverride,
   });
+  // On a tunnel each performer keeps their place's colors on their own sheet.
+  const shownColors = $derived(
+    followers.length === 0
+      ? undefined
+      : typeof shownView === "number"
+        ? followerPropColors(shownView, followers.length)
+        : FRONT_PROP_COLORS
+  );
 </script>
 
 {#if sequence}
@@ -148,6 +171,7 @@
           showLoopGlyph={options?.showLoopGlyph ?? true}
           leftPropType={cardPropTypes.left}
           rightPropType={cardPropTypes.right}
+          primaryPropColors={shownColors}
           forceContain
         />
       {/if}

@@ -38,6 +38,8 @@ export type ActivityEventType =
   | "sequence_play" // Animation playback
   | "sequence_generate" // Auto-generation
   | "sequence_remix_started"
+  // A person kept something: saved, exported, shared or published. Never autosave.
+  | "sequence_kept"
   | "composition_saved"
   | "composition_deleted"
   | "composition_favorite_changed"

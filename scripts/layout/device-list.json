@@ -1,0 +1,15 @@
+{
+  "source": "docs/architecture/layout-law.md, section Device list. Change both in one commit; tests/unit/layout/device-list.test.ts proves they match.",
+  "devices": [
+    { "name": "Small phone", "width": 375, "height": 667 },
+    { "name": "Fold cover, upright", "width": 412, "height": 915 },
+    { "name": "Fold cover, sideways", "width": 915, "height": 412 },
+    { "name": "Phone, sideways", "width": 960, "height": 412 },
+    { "name": "Fold unfolded", "width": 707, "height": 772 },
+    { "name": "Tablet, upright", "width": 820, "height": 1180 },
+    { "name": "Laptop", "width": 1440, "height": 900 },
+    { "name": "4K at 200% scaling", "width": 1920, "height": 1080 },
+    { "name": "4K at 150% scaling", "width": 2560, "height": 1440 },
+    { "name": "4K at 100% scaling", "width": 3840, "height": 2160 }
+  ]
+}

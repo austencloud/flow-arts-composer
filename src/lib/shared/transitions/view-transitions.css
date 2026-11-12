@@ -226,6 +226,17 @@ html.hand-grid-grow [inert] [data-hand-grid="map"] {
   animation-timing-function: var(--ease-out);
 }
 
+/* The box clips both faces to its own shape. The card and the panel differ in
+   aspect, so an unclipped face spills past the box: the panel's dark picture
+   showed as square corners around the shrinking card. The box's corners and
+   shadow change from the card's to the panel's, set from
+   generate-card-morph.ts. */
+html.generate-card-morph-active::view-transition-group(generate-card-customize),
+html.generate-card-morph-active::view-transition-group(generate-card-loop),
+html.generate-card-morph-active::view-transition-group(generate-card-preset) {
+  overflow: clip;
+}
+
 /* Every expandable card is named before the click so any one can become the
    morph source. Keep the chosen card above its stationary siblings throughout
    the handoff; DOM order otherwise lets a later card (notably LOOP) float over

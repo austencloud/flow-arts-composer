@@ -5,7 +5,13 @@
  * Ensures every authenticated user has a Firestore profile document.
  */
 
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocFromServer,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { type User } from "firebase/auth";
 import { getAuthInstance, getFirestoreInstance } from "../firebase";
 import { getProviderIds } from "./profile-picture-manager";
@@ -22,6 +28,7 @@ import {
 import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
 import { runProfileSyncExclusively } from "./profile-sync-lock";
+import { createProfileOnce } from "./profile-create-replay";
 import { isPermissionDeniedError } from "../utils/is-permission-denied-error";
 import { rememberAccountProfile } from "../state/account-profile-snapshot";
 
@@ -35,6 +42,7 @@ import {
   getCurrentPostHogSessionId,
 } from "#lib/shared/analytics/services/posthog.js";
 import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
+import { isFirestoreOfflineError } from "../utils/is-firestore-offline-error";
 import { refreshPublicSequenceOwnerProfile } from "#lib/shared/library/services/public-sequence-persister.js";
 
 /**
@@ -203,10 +211,15 @@ export class UserDocumentManager {
           path: `users/${user.uid}`,
         };
         const newProfile = newPublicProfile(user, displayName, serverTimestamp);
-        await retryAuthenticatedFirestoreOperation(user, async () => {
-          if (user.isAnonymous) await setDoc(userDocRef, newProfile);
-          else await claimHandleFromName(user.uid, authName, newProfile);
-        });
+        await retryAuthenticatedFirestoreOperation(user, () =>
+          createProfileOnce(
+            async () => {
+              if (user.isAnonymous) await setDoc(userDocRef, newProfile);
+              else await claimHandleFromName(user.uid, authName, newProfile);
+            },
+            async () => (await getDocFromServer(userDocRef)).exists()
+          )
+        );
 
         await mergePrivateProfile({
           email: user.email ?? null,
@@ -470,6 +483,14 @@ export class UserDocumentManager {
         isPermissionDeniedError(error) &&
         auth.currentUser?.uid !== user.uid
       ) {
+        return;
+      }
+      // Lost connection mid-sync: nothing is broken, and the next sign-in or
+      // page load runs the sync again. A warning, not a reported exception.
+      if (isFirestoreOfflineError(error)) {
+        console.warn(
+          `[UserDocumentManager] ${currentStep.message} (offline); will retry on next load`
+        );
         return;
       }
       const reportedError =

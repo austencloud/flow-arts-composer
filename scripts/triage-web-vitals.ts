@@ -10,7 +10,7 @@
  * triage-sessions.ts. Likely crawler sessions are dropped with the same rule
  * (`isLikelyCrawlerSession`); pass --include-crawlers to keep them.
  */
-import { isLikelyCrawlerSession } from "../src/lib/server/analytics/session-triage-queries.js";
+import { isLikelyCrawlerSession } from "../src/lib/server/analytics/crawler-sessions.js";
 import {
   aggregateVitals,
   buildVitalsSessionsQuery,

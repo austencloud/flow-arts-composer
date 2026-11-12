@@ -2,7 +2,7 @@
 status: backlog
 value: 2
 effort: S
-remaining: "Built on codex/release-show-me, not merged; Austen's look at the UI is owed. Left: the release.js highlight picker still writes the legacy highlights array instead of highlight: true on entries; no release has used surface/anchor/callout yet, so Show me, the arrival ring and the callout are untested against real notes; browser pass over the modal, Release Notes tab, dot and callout at the required viewports not done."
+remaining: "Built on codex/release-show-me, not merged; Austen's look at the UI is owed. Left: no release has used surface/anchor/callout or the 2026-11-11 highlight flag from release.js yet, so Show me, the arrival ring and the callout are untested against real notes; browser pass over the modal, Release Notes tab, dot and callout at the required viewports not done."
 depends_on: ''
 plan_path: ''
 tags: []
@@ -12,6 +12,8 @@ work_state: verification
 
 # Release Notes Deep-Linking + Discovery — Design
 
+> 2026-11-11: `release.js` marks highlights on the entries. `--highlights` and the interactive picker set `highlight: true` through `applyHighlightSelection` (`scripts/lib/release-module-gate.mjs`), before the arrival audit for a custom changelog, and the legacy `highlights` text list is no longer written. The gate unit tests cover the selection and its path through the audit and `toPublicChangelog`; the script was not run, since it needs Firebase credentials. The Show me code is on `main` as of snapshot 3e353c8c78.
+>
 > 2026-11-07 triage: Built on codex/release-show-me (not merged). toPublicChangelog keeps surface, and on highlights anchor and callout; the release audit blocks an anchor missing from src/. Show me (LinkChip) renders in What's New and Release Notes only for live, open destinations; releaseTourState rings the data-release-anchor or shows the callout. The toast keeps its own once-per-release mark; reading happens on open; an unread dot sits on the account popover version, the drawer Release Notes action and the Preferences row; skipped releases roll up in one sheet. The SW reload prompt names a release the deploy carries. npm run release:debt reports un-noted shipped work and never gates. Left: highlight picker still writes the legacy array; Austen's look and the viewport pass. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-07-28

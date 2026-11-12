@@ -1,5 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { followScreen, readScreenParam } from "./guide-screen-url";
+import {
+  followScreen,
+  readScreenParam,
+  screenRoom,
+  tighterRoom,
+} from "./guide-screen-url";
+
+describe("screenRoom bandShowsTagline", () => {
+  it("is off on a short window and on in a tall one", () => {
+    expect(screenRoom(375, 667).bandShowsTagline).toBe(false);
+    expect(screenRoom(960, 412).bandShowsTagline).toBe(false);
+    expect(screenRoom(1440, 900).bandShowsTagline).toBe(true);
+    expect(screenRoom(1000, 800).bandShowsTagline).toBe(true);
+  });
+  it("survives a tighter room", () => {
+    expect(tighterRoom(screenRoom(375, 667), 2).bandShowsTagline).toBe(false);
+    expect(tighterRoom(screenRoom(1440, 900), 2).bandShowsTagline).toBe(true);
+  });
+});
 
 describe("followScreen", () => {
   const phone = [

@@ -35,7 +35,10 @@
  *   node scripts/release.js --version 0.2.0    - Manual version
  *   node scripts/release.js --confirm          - Execute release (requires audited --changelog)
  *   node scripts/release.js --changelog file.json - Use audience-audited user-facing entries
- *   node scripts/release.js --highlights 1,3,4   - Select highlight indices (comma-separated, or "none")
+ *   node scripts/release.js --highlights 1,3,4   - Mark entries as highlights: 1-based positions among the
+ *                                                added/improved entries, "all" or "none". Sets
+ *                                                highlight: true on those entries; a manifest may also
+ *                                                set it itself
  *   node scripts/release.js --hero-image <url> [--hero-alt "text"] - Picture of the lead highlight for the
  *                                                release email (make it with scripts/release-hero.mjs)
  *   node scripts/release.js --from-main        - Release directly from main (skip branch workflow)
@@ -59,6 +62,7 @@ import {
   gateCommits,
   auditChangelogEntries,
   auditReleaseArrivals,
+  applyHighlightSelection,
   loadReleaseAnchors,
   toPublicChangelog,
 } from "./lib/release-module-gate.mjs";
@@ -102,9 +106,9 @@ function askQuestion(rl, question) {
 
 /**
  * Prompt user to select highlights from changelog entries
- * Enhanced flow with better visuals and more options
  * @param {Array} changelogEntries - The changelog entries to suggest as highlights
- * @returns {Promise<string[]>} - Selected highlights (may be empty)
+ * @returns {Promise<string>} - The selection as applyHighlightSelection reads it:
+ *   1-based positions among the added/improved entries, "all", or "none"
  */
 async function promptForHighlights(changelogEntries) {
   // Get potential highlights (features and major improvements)
@@ -114,15 +118,16 @@ async function promptForHighlights(changelogEntries) {
 
   if (potentialHighlights.length === 0) {
     console.log("\n📌 No feature/improvement entries to highlight.\n");
-    return [];
+    return "none";
   }
 
   console.log("\n" + "═".repeat(70));
   console.log("⭐ HIGHLIGHT SELECTION");
   console.log("═".repeat(70));
   console.log(
-    '\nHighlights appear prominently at the top of the "What\'s New" modal.'
+    "\nA highlight is marked on its entry and carries that entry's \"Show me\""
   );
+  console.log("arrival (anchor or callout) when the manifest gives one.");
   console.log("Select items that are genuinely exciting for users.\n");
 
   console.log("─".repeat(70));
@@ -140,64 +145,23 @@ async function promptForHighlights(changelogEntries) {
   console.log("  Options:\n");
   console.log("    • Enter numbers separated by commas (e.g., 1,3)");
   console.log("    • Enter 'all' to select all entries");
-  console.log("    • Enter 'none' or 0 for no highlights");
-  console.log("    • Enter 'custom' to write your own highlight text\n");
+  console.log("    • Enter 'none' or 0 for no highlights\n");
 
   const rl = createPrompt();
 
   try {
-    const answer = await askQuestion(
-      rl,
-      "Your selection: "
+    const answer = (await askQuestion(rl, "Your selection: ")).trim();
+    const chosen = applyHighlightSelection(changelogEntries, answer).filter(
+      (e) => e.highlight === true
     );
-
-    const trimmedAnswer = answer.trim().toLowerCase();
-
-    // No highlights
-    if (trimmedAnswer === "0" || trimmedAnswer === "none" || trimmedAnswer === "") {
-      console.log("\n✓ No highlights selected.\n");
-      return [];
-    }
-
-    // All highlights
-    if (trimmedAnswer === "all") {
-      const allHighlights = potentialHighlights.map((h) => h.text);
-      console.log("\n✓ Selected ALL highlights:");
-      allHighlights.forEach((h) => console.log(`   • ${h}`));
-      console.log("");
-      return allHighlights;
-    }
-
-    // Custom highlight
-    if (trimmedAnswer === "c" || trimmedAnswer === "custom") {
-      const customText = await askQuestion(rl, "Enter custom highlight text: ");
-      if (customText && customText.trim()) {
-        console.log(`\n✓ Custom highlight: "${customText.trim()}"\n`);
-        return [customText.trim()];
-      }
-      console.log("\n✓ No highlight entered.\n");
-      return [];
-    }
-
-    // Parse comma-separated numbers
-    const selectedIndices = answer
-      .split(",")
-      .map((s) => parseInt(s.trim()) - 1)
-      .filter((i) => i >= 0 && i < potentialHighlights.length);
-
-    const selectedHighlights = selectedIndices.map(
-      (i) => potentialHighlights[i].text
-    );
-
-    if (selectedHighlights.length > 0) {
+    if (chosen.length > 0) {
       console.log("\n✓ Selected highlights:");
-      selectedHighlights.forEach((h) => console.log(`   • ${h}`));
+      chosen.forEach((h) => console.log(`   • ${h.text}`));
       console.log("");
     } else {
-      console.log("\n⚠️ No valid selections. Enter numbers from the list above.\n");
+      console.log("\n✓ No highlights selected.\n");
     }
-
-    return selectedHighlights;
+    return answer;
   } finally {
     rl.close();
   }
@@ -373,10 +337,14 @@ function displayJargonWarnings(issues) {
 /**
  * Enforce the private audience/surface metadata required on a final custom
  * changelog, then strip it before the notes are displayed or published.
+ * Highlights are flags on entries: the manifest may set `highlight: true`
+ * itself and `--highlights` adds to that, before the audit, so an entry that
+ * carries an anchor or callout is already a highlight when the audit reads it.
  */
-function prepareCustomChangelog(entries) {
+function prepareCustomChangelog(entries, highlightsArg = null) {
   let audit;
   try {
+    entries = applyHighlightSelection(entries, highlightsArg);
     audit = auditChangelogEntries(entries, {
       productionModules: loadProductionModules(),
       guestModuleAccess: loadGuestModuleAccess(),
@@ -412,9 +380,10 @@ function prepareCustomChangelog(entries) {
     return null;
   }
 
+  const highlightCount = entries.filter((e) => e.highlight === true).length;
   console.log(
     `✓ Changelog visibility audit: ${audit.guestCount} guest-visible, ` +
-      `${audit.accountCount} sign-in required\n`
+      `${audit.accountCount} sign-in required, ${highlightCount} highlighted\n`
   );
   return toPublicChangelog(entries);
 }
@@ -696,8 +665,7 @@ function withHeroImage(versionData) {
 async function prepareFirestoreRelease(
   version,
   changelogEntries,
-  feedbackItems,
-  highlights = []
+  feedbackItems
 ) {
   const batch = db.batch();
 
@@ -729,11 +697,8 @@ async function prepareFirestoreRelease(
     releasedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  // Only include highlights if there are any (keeps data clean)
-  if (highlights.length > 0) {
-    versionData.highlights = highlights;
-  }
-
+  // Highlights ride on the entries (`highlight: true`). The parallel
+  // `highlights` text list is legacy: nothing reads it, so it is not written.
   batch.set(versionRef, withHeroImage(versionData));
 
   // Commit batch
@@ -744,7 +709,7 @@ async function prepareFirestoreRelease(
  * Create version document in Firestore (for git history mode)
  * Creates version record without archiving feedback items
  */
-async function createFirestoreVersion(version, changelogEntries, highlights = []) {
+async function createFirestoreVersion(version, changelogEntries) {
   const versionRef = db.collection("versions").doc(version);
 
   const versionData = {
@@ -756,11 +721,6 @@ async function createFirestoreVersion(version, changelogEntries, highlights = []
     source: "git-history", // Mark as generated from git history
   };
 
-  // Only include highlights if there are any
-  if (highlights.length > 0) {
-    versionData.highlights = highlights;
-  }
-
   // Use set with merge to handle both create and update scenarios
   await versionRef.set(withHeroImage(versionData), { merge: true });
 }
@@ -769,7 +729,7 @@ async function createFirestoreVersion(version, changelogEntries, highlights = []
  * Update release notes for an existing version
  * Updates both Firestore and GitHub release
  */
-async function updateReleaseNotes(version, changelogEntries, highlights = []) {
+async function updateReleaseNotes(version, changelogEntries) {
   console.log(`\n📝 Updating release notes for v${version}...\n`);
 
   // 1. Update Firestore
@@ -779,10 +739,6 @@ async function updateReleaseNotes(version, changelogEntries, highlights = []) {
     changelogEntries,
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
-
-  if (highlights.length > 0) {
-    updateData.highlights = highlights;
-  }
 
   await versionRef.set(updateData, { merge: true });
 
@@ -922,15 +878,15 @@ function popStash() {
 async function recordFirestoreRelease(
   version,
   changelog,
-  { feedbackItems, selectedHighlights, useGitHistory }
+  { feedbackItems, useGitHistory }
 ) {
   if (!useGitHistory && feedbackItems.length > 0) {
     console.log("✓ Archiving feedback in Firestore...");
-    await prepareFirestoreRelease(version, changelog, feedbackItems, selectedHighlights);
+    await prepareFirestoreRelease(version, changelog, feedbackItems);
   } else {
     // Create version document even with 0 feedback (changelog still needs to be stored)
     console.log("✓ Creating version record in Firestore...");
-    await createFirestoreVersion(version, changelog, selectedHighlights);
+    await createFirestoreVersion(version, changelog);
   }
 }
 
@@ -1248,27 +1204,13 @@ async function main() {
     }
 
     try {
-      const changelog = JSON.parse(readFileSync(changelogFile, "utf8"));
+      // --highlights marks the entries themselves, as in a release.
+      const changelog = applyHighlightSelection(
+        JSON.parse(readFileSync(changelogFile, "utf8")),
+        highlightsArg
+      );
 
-      // Parse highlights if provided
-      let highlights = [];
-      if (highlightsArg && highlightsArg !== "none" && highlightsArg !== "0") {
-        const potentialHighlights = changelog
-          .filter((e) => e.category === "added" || e.category === "improved")
-          .map((e) => e.text);
-
-        if (highlightsArg === "all") {
-          highlights = potentialHighlights;
-        } else {
-          const indices = highlightsArg
-            .split(",")
-            .map((s) => parseInt(s.trim()) - 1)
-            .filter((i) => i >= 0 && i < potentialHighlights.length);
-          highlights = indices.map((i) => potentialHighlights[i]);
-        }
-      }
-
-      await updateReleaseNotes(updateNotesVersion, changelog, highlights);
+      await updateReleaseNotes(updateNotesVersion, changelog);
       process.exit(0);
     } catch (error) {
       console.error(`❌ Failed to update release notes: ${error.message}`);
@@ -1332,7 +1274,7 @@ async function main() {
   if (changelogFile && existsSync(changelogFile)) {
     try {
       const customEntries = JSON.parse(readFileSync(changelogFile, "utf8"));
-      changelog = prepareCustomChangelog(customEntries);
+      changelog = prepareCustomChangelog(customEntries, highlightsArg);
       if (!changelog) process.exit(1);
       useCustomChangelog = true;
       console.log(`✓ Using custom changelog from ${changelogFile}`);
@@ -1479,44 +1421,21 @@ async function main() {
     process.exit(0);
   }
 
-  // 5. Get highlights (from CLI flag or interactive prompt)
-  let selectedHighlights = [];
-  if (!useGitHistory && feedbackItems.length > 0) {
-    // Get potential highlights (features and major improvements)
-    const potentialHighlights = changelog
-      .filter((e) => e.category === "added" || e.category === "improved")
-      .map((e) => e.text);
-
-    if (highlightsArg !== null) {
-      // Use CLI-provided highlights (non-interactive mode for Claude)
-      if (highlightsArg === "none" || highlightsArg === "0") {
-        console.log("✓ No highlights selected (via --highlights flag)\n");
-        selectedHighlights = [];
-      } else if (highlightsArg === "all") {
-        // Select all potential highlights
-        selectedHighlights = potentialHighlights;
-        console.log("✓ Selected ALL highlights (via --highlights all):");
-        selectedHighlights.forEach((h) => console.log(`   • ${h}`));
-        console.log("");
-      } else {
-        // Parse comma-separated indices (1-based)
-        const indices = highlightsArg
-          .split(",")
-          .map((s) => parseInt(s.trim()) - 1)
-          .filter((i) => i >= 0 && i < potentialHighlights.length);
-
-        selectedHighlights = indices.map((i) => potentialHighlights[i]);
-
-        if (selectedHighlights.length > 0) {
-          console.log("✓ Selected highlights (via --highlights flag):");
-          selectedHighlights.forEach((h) => console.log(`   • ${h}`));
-          console.log("");
-        }
-      }
-    } else {
-      // Interactive mode (fallback)
-      selectedHighlights = await promptForHighlights(changelog);
-    }
+  // 5. Highlights ride on the entries themselves (`highlight: true`). A
+  // custom changelog got them in prepareCustomChangelog, from its manifest
+  // and --highlights. A feedback-built changelog has no manifest to carry
+  // the flag, so it takes --highlights or the interactive picker here.
+  if (!useCustomChangelog && !useGitHistory && feedbackItems.length > 0) {
+    changelog = applyHighlightSelection(
+      changelog,
+      highlightsArg ?? (await promptForHighlights(changelog))
+    );
+  }
+  const highlighted = changelog.filter((e) => e.highlight === true);
+  if (highlighted.length > 0) {
+    console.log("✓ Highlights:");
+    highlighted.forEach((h) => console.log(`   • ${h.text}`));
+    console.log("");
   }
 
   // 6. Execute release
@@ -1525,7 +1444,6 @@ async function main() {
   if (tagMergedMain) {
     await releaseMergedMain(suggestedVersion, changelog, {
       feedbackItems,
-      selectedHighlights,
       useGitHistory,
     });
     process.exit(0);
@@ -1566,7 +1484,6 @@ async function main() {
   // Prepare Firestore
   await recordFirestoreRelease(suggestedVersion, changelog, {
     feedbackItems,
-    selectedHighlights,
     useGitHistory,
   });
 

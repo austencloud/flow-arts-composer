@@ -3,7 +3,7 @@
 //   node scripts/_capture-once.mjs <url> <outPng> [waitMs]
 import { chromium } from "playwright-core";
 
-const url = process.argv[2] ?? "http://127.0.0.1:5173/guide/codex/parity";
+const url = process.argv[2] ?? "http://127.0.0.1:5173/test/codex-parity";
 const out = process.argv[3] ?? "/tmp/capture.png";
 const waitMs = Number(process.argv[4] ?? 7000);
 

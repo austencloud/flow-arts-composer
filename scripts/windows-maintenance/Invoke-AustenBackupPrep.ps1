@@ -33,6 +33,11 @@ $workingStateRoot = Join-Path $cloudStageRoot 'Development\TKA Working State'
 $workingStateDestination = Join-Path $workingStateRoot $runId
 $resultPath = Join-Path $workingStateDestination 'prep-result.json'
 $latestResultPath = Join-Path $cloudStageRoot 'latest-backup-prep.json'
+# The protected nightly run copies D: into this folder on F: and never deletes
+# there, so a bundle found here with the same length and write time is safe.
+$archivedWorkingStateRoot = "F:\Automated Backups\$env:COMPUTERNAME\D\_DOCUMENTS\Computer Backup\$env:COMPUTERNAME\Development\TKA Working State"
+# Room the next bundle needs on D: beyond its expected size.
+$bundleHeadroomBytes = 2GB
 $copyResults = [System.Collections.Generic.List[object]]::new()
 $result = [ordered]@{
     RunId = $runId
@@ -45,6 +50,8 @@ $result = [ordered]@{
     UntrackedFiles = 0
     SkippedReparseFiles = @()
     BundleBytes = $null
+    StagedBundlesRemoved = 0
+    StagedBundleBytesRemoved = 0
     ICloudManifestFiles = $null
     CrossDeviceManifestFiles = $null
     Passed = $false
@@ -129,6 +136,64 @@ function Write-ProviderManifest {
 
     $rows | Export-Csv -LiteralPath $Destination -NoTypeInformation -Encoding utf8
     $rows.Count
+}
+
+# Each night's bundle is a full copy of the repository history, about 7 GB.
+# They used to stay on D: forever; on 2026-11-10 D: was down to 1 GB free and
+# the bundle step failed, so the protected backup never started. A staged
+# bundle is removed only once F: holds a copy with the same length and write
+# time (robocopy keeps both), and the newest staged bundle always stays.
+function Remove-ArchivedStagedBundles {
+    $removed = 0
+    $removedBytes = [long]0
+    $runFolders = @(
+        Get-ChildItem -LiteralPath $workingStateRoot -Directory -ErrorAction Stop |
+            Where-Object { $_.Name -ne $runId } |
+            Sort-Object Name -Descending
+    )
+    $newestWithBundle = $runFolders |
+        Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'tka-platform.bundle') -PathType Leaf } |
+        Select-Object -First 1
+
+    foreach ($folder in $runFolders) {
+        if ($null -ne $newestWithBundle -and $folder.Name -eq $newestWithBundle.Name) {
+            continue
+        }
+        $stagedPath = Join-Path $folder.FullName 'tka-platform.bundle'
+        if (-not (Test-Path -LiteralPath $stagedPath -PathType Leaf)) {
+            continue
+        }
+        $archivedPath = Join-Path $archivedWorkingStateRoot "$($folder.Name)\tka-platform.bundle"
+        if (-not (Test-Path -LiteralPath $archivedPath -PathType Leaf)) {
+            continue
+        }
+
+        $staged = Get-Item -LiteralPath $stagedPath -Force
+        $archived = Get-Item -LiteralPath $archivedPath -Force
+        if ($staged.Length -ne $archived.Length -or $staged.LastWriteTimeUtc -ne $archived.LastWriteTimeUtc) {
+            Write-AustenBackupLog -LogPath $logPath -Message "STAGED BUNDLE KEPT run=$($folder.Name) reason=archive copy differs" | Out-Null
+            continue
+        }
+
+        Remove-Item -LiteralPath $stagedPath -Force
+        $removed++
+        $removedBytes += $staged.Length
+        Write-AustenBackupLog -LogPath $logPath -Message "STAGED BUNDLE REMOVED run=$($folder.Name) bytes=$($staged.Length) archived=$archivedPath" | Out-Null
+    }
+
+    $result.StagedBundlesRemoved = $removed
+    $result.StagedBundleBytesRemoved = $removedBytes
+}
+
+function Assert-BundleSpace {
+    $lastBundle = Get-ChildItem -LiteralPath $workingStateRoot -Recurse -File -Filter 'tka-platform.bundle' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    $expectedBytes = if ($null -ne $lastBundle) { $lastBundle.Length } else { 8GB }
+    $freeBytes = (Get-PSDrive -Name D).Free
+    if ($freeBytes -lt ($expectedBytes + $bundleHeadroomBytes)) {
+        throw ("D: has {0:N1} GB free; the Git bundle needs about {1:N1} GB. Free space on D: (staged bundles already on F: were removed)." -f ($freeBytes / 1GB), (($expectedBytes + $bundleHeadroomBytes) / 1GB))
+    }
 }
 
 $mutex = $null
@@ -216,6 +281,9 @@ try {
 
     $result.UntrackedFiles = $copiedUntrackedFiles
     $result.SkippedReparseFiles = @($skippedReparseFiles)
+
+    Remove-ArchivedStagedBundles
+    Assert-BundleSpace
 
     $bundlePath = Join-Path $workingStateDestination 'tka-platform.bundle'
     Invoke-SafeGit -Arguments @('bundle', 'create', $bundlePath, '--all') | Out-Null

@@ -156,9 +156,6 @@ describe("SequenceViewerShell host contract", () => {
       staticImport(viewerMotionSurfaceSource, "SceneControlWorkspace.svelte")
     ).toBe(false);
     expect(
-      staticImport(viewerSplitPaneSource, "scene-asset-preloader.svelte.js")
-    ).toBe(false);
-    expect(
       staticImport(
         read("src/lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.ts"),
         "get-offline-3d-exporter.js"

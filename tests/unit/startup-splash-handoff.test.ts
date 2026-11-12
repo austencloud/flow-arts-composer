@@ -55,6 +55,18 @@ describe("startup splash handoff", () => {
       expect(page.window.eval('__tkaBootMessage("Almost there")')).toBe(
         german ? "Gleich geschafft" : "Almost there"
       );
+      expect(
+        page.window.eval(
+          '__tkaBootMessage("Still loading. This is taking longer than usual.")'
+        )
+      ).toBe(
+        german
+          ? "Lädt noch. Das dauert länger als üblich."
+          : "Still loading. This is taking longer than usual."
+      );
+      expect(page.window.eval('__tkaBootMessage("Reload")')).toBe(
+        german ? "Neu laden" : "Reload"
+      );
     }
   );
 

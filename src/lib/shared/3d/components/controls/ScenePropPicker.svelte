@@ -39,7 +39,10 @@
     writeFinish,
     type PropBuildPatchSink,
   } from "./scene-prop-build-writes";
-  import { syncTriangleGripToScene } from "./scene-prop-picker-grip-sync.svelte";
+  import {
+    syncTriadBuildToScene,
+    syncTriangleGripToScene,
+  } from "./scene-prop-picker-grip-sync.svelte";
 
   interface Props {
     /** Null means All Performers currently contains more than one prop type. */
@@ -73,6 +76,7 @@
   // A performer-scoped host still keeps its own build in `build` above; this
   // effect only ever writes the scene default, never a performer override.
   $effect(syncTriangleGripToScene);
+  $effect(syncTriadBuildToScene);
   const scenePropType = $derived(
     currentProp === null ? null : toScenePropType(currentProp)
   );

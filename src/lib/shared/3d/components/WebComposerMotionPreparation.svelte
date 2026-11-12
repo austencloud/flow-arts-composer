@@ -10,6 +10,11 @@
     isCurrentMotionCaptureJob,
     planWebMotionPreparation,
   } from "./web-motion-preparation-plan";
+  import { isBootProfileEnabled } from "../scene-boot/boot-profiler";
+  import {
+    sha256,
+    stableStringify,
+  } from "../../../../../unreal/Shared/Tools/capture-provenance.mjs";
 
   // Bakes performer motion behind the scenes. Nothing here is shown: the live
   // performer plays the whole time, and the baked clip takes over silently
@@ -19,11 +24,18 @@
   let {
     requests,
     cacheRevision,
+    mayBake,
     onCacheChange,
     onCapturingChange,
   }: {
     requests: Request[];
     cacheRevision: number;
+    /**
+     * False while the scene is still loading. Saved clips are still read back
+     * from the device, but nothing is baked: the hidden capture scene would
+     * share the main thread with the scene the curtain is waiting on.
+     */
+    mayBake: boolean;
     onCacheChange: () => void;
     /** True while a hidden capture scene is mounted and competing for this thread. */
     onCapturingChange?: (capturing: boolean) => void;
@@ -75,7 +87,9 @@
       readFromDevice(request.signature);
     }
   });
-  const nextRequest = $derived(failure ? undefined : plan.next);
+  const nextRequest = $derived(
+    failure || !mayBake ? undefined : plan.next
+  );
   $effect(() => {
     const capturing = !!nextRequest;
     if (capturing === reportedCapturing) return;
@@ -96,8 +110,33 @@
     });
   }
 
+  /**
+   * Boot profiling only: lists each finished bake with its duration and a hash
+   * of its frames, so a change to the bake can be shown not to change the clip.
+   */
+  function recordBakeForProfile(
+    signature: string,
+    startedAt: number,
+    frames: unknown[]
+  ): void {
+    if (!isBootProfileEnabled()) return;
+    const ms = Math.round(performance.now() - startedAt);
+    void sha256(stableStringify(frames)).then((framesHash: string) => {
+      const target = window as unknown as {
+        __composerMotionBakes?: object[];
+      };
+      (target.__composerMotionBakes ??= []).push({
+        signature,
+        ms,
+        frameCount: frames.length,
+        framesHash,
+      });
+    });
+  }
+
   function captureJob(request: Request) {
     const signature = request.signature;
+    const startedAt = performance.now();
     const generation = attempt;
     const keys = requestKeys;
     const current = () =>
@@ -111,6 +150,11 @@
       options: request.options,
       onComplete: (bundle: object, pose: CapturedPoseClip) => {
         if (!current()) return;
+        recordBakeForProfile(
+          signature,
+          startedAt,
+          (bundle as { frames: unknown[] }).frames
+        );
         cache.set(signature, bundle, pose);
         onCacheChange();
         store.save(signature, pose).catch((error: unknown) => {

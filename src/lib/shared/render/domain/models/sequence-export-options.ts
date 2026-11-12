@@ -1,6 +1,7 @@
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import type { TriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
 import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
@@ -72,6 +73,7 @@ export interface SequenceExportOptions {
      */
     triangleGrip?: TriangleGrip;
     buugengStyle?: BuugengStyle;
+    triadBuild?: TriadBuild;
     primaryPropColors?: { left: string; right: string } | null;
     showTKA?: boolean;
     showTnD?: boolean;

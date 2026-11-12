@@ -208,7 +208,8 @@ a float, and unequal turn rates have no prop element and draw nothing.
 
 ## 6. Controls and Selection
 
-Actions must look actionable before hover. The minimum pointer target is 44px.
+Actions must look actionable before hover. Tap sizes follow
+[layout-law.md](layout-law.md).
 Short actions size to their content instead of expanding across available
 space.
 
@@ -300,7 +301,7 @@ Responsive design handles four separate concerns:
 
 1. logical control and text size;
 2. composition;
-3. reading measure;
+3. reading (text fills its box; long lines are fixed by arrangement);
 4. presentation distance.
 
 Do not solve a wide display by enlarging every control and label. Keep logical
@@ -314,8 +315,8 @@ Mobile keeps the same capability ownership. It may stack, move controls into a
 drawer, or give a tool the full screen, but it should not hide core capability
 to make the screenshot cleaner.
 
-Review at 375x667, 960x412, 820x1180, 1440x900, 1920x1080, 2560x1440, and
-3840x2160, plus 200 percent zoom. Check the composition at each size instead of
+Review at every size on the device list in [layout-law.md](layout-law.md),
+plus 200 percent zoom. Check the composition at each size instead of
 only proving that nothing overflows.
 
 ## 11. Canonical Patterns Seen in the Product
@@ -381,7 +382,7 @@ Before approving a new or substantially restyled surface, verify:
 - Theme surfaces remain matte, contrast-aware, and free of content blur.
 - No container has a decorative colored edge strip.
 - Color belongs to an artifact, icon, semantic action, or whole state.
-- Actions look actionable and meet the 44px target.
+- Actions look actionable and meet the tap-size floor.
 - Shared primitives own familiar controls and interaction behavior.
 - Selection affects the whole object and has a non-color cue.
 - Structural changes use the canonical motion system.

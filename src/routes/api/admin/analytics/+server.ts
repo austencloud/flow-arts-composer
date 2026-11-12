@@ -21,6 +21,7 @@ import {
   personIdentityFilter,
   pulseProdFilter,
 } from "#lib/server/analytics/hogql-shared.js";
+import { crawlerSessionExclusion } from "#lib/server/analytics/crawler-sessions.js";
 
 const POSTHOG_API_BASE = "https://us.i.posthog.com/api";
 
@@ -602,6 +603,7 @@ function buildPulseOverviewQuery(): string {
     FROM events
     WHERE timestamp > now() - interval 30 day
       AND ${pulseProdFilter()}
+      AND ${crawlerSessionExclusion("now() - interval 30 day")}
   `;
 }
 
@@ -620,6 +622,7 @@ function buildPulseBreakdownQuery(dimension: PulseDimension): string {
     WHERE event = '$pageview'
       AND timestamp > now() - interval 30 day
       AND ${pulseProdFilter()}
+      AND ${crawlerSessionExclusion("now() - interval 30 day")}
     GROUP BY name
     HAVING name IS NOT NULL AND name != '' AND name != ', '
     ORDER BY visitors DESC
@@ -640,6 +643,7 @@ function buildPulseFeedQuery(limit: number): string {
     WHERE event IN ('session_start', 'card_scanned', 'sequence_save', 'collection_create', '$identify')
       AND timestamp > now() - interval 14 day
       AND ${pulseProdFilter()}
+      AND ${crawlerSessionExclusion("now() - interval 14 day")}
     ORDER BY timestamp DESC
     LIMIT ${Math.min(limit, 100)}
   `;
@@ -653,6 +657,7 @@ function buildPulseLiveQuery(): string {
     FROM events
     WHERE timestamp > now() - interval 5 minute
       AND ${pulseProdFilter()}
+      AND ${crawlerSessionExclusion("now() - interval 5 minute")}
   `;
 }
 

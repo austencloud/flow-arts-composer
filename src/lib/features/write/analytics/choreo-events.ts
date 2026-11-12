@@ -1,4 +1,7 @@
-import { logActivity } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+import {
+  logActivity,
+  trackSequenceKept,
+} from "#lib/shared/analytics/services/posthog-activity-logger.js";
 
 export function trackChoreoSheetSaved(properties: {
   sheetId: string;
@@ -30,5 +33,10 @@ export function trackChoreoSheetExported(properties: {
     page_count: properties.pageCount,
     sequence_count: properties.sequenceCount,
     export_format: "pdf",
+  });
+  void trackSequenceKept("export", {
+    subject: "choreo_sheet",
+    sheet_id: properties.sheetId,
+    exportFormat: "pdf",
   });
 }

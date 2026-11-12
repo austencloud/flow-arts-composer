@@ -26,12 +26,15 @@ export function taglineInIntro(
 ): TaglineInIntro {
   const tag = stripHtml(tagline);
   if (!tag) return "none";
-  // Every paragraph of the intro counts: the run of prose before the first
+  // Headings before the first prose (the page title, a section heading) are
+  // skipped. Every paragraph of the intro counts: the run of prose before the first
   // heading or figure (LOOPs' tagline is its second paragraph).
   let found: TaglineInIntro = "none";
+  let seenProse = false;
   for (const b of content) {
-    if (b.kind === "heading" && b.level === 1) continue;
+    if (!seenProse && b.kind === "heading") continue;
     if (b.kind !== "prose") break;
+    seenProse = true;
     const intro = stripHtml(localizeLevel1Text(b.html));
     if (intro === tag) return "same";
     if (intro.includes(tag)) found = "contains";

@@ -5,6 +5,7 @@
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+  import type { TriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import { localizedPropName } from "./localized-prop-name";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -26,6 +27,7 @@
     fanAppearance,
     triangleGrip,
     buugengStyle,
+    triadBuild,
     recipeOverrides,
     colors,
     singleHand,
@@ -47,6 +49,7 @@
     fanAppearance: FanAppearance;
     triangleGrip?: TriangleGrip;
     buugengStyle?: BuugengStyle;
+    triadBuild?: TriadBuild;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
     singleHand?: "left" | "right";
@@ -87,6 +90,7 @@
       {fanAppearance}
       {triangleGrip}
       {buugengStyle}
+      {triadBuild}
       {recipeOverrides}
     />
   {/snippet}

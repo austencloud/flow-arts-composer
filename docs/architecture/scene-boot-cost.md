@@ -48,6 +48,25 @@ It also reports `blockedMs` (union of long tasks), `unexplainedBlockedMs`
 and `idleMs`. The report publishes to `window.__sceneBootProfile` and prints
 to the console at reveal.
 
+The in-app profiler answers "which kind of GPU or network call". For "which
+JavaScript", two scripts drive the agent Chrome (CDP 9222) from outside:
+
+- `scripts/scene-boot/profile-3d.mjs <url> <out.cpuprofile> [--port 9222] [--fresh]`
+  opens the route, brings the tab to the front, clicks "Enter 3D" with the V8
+  CPU profiler running, stops at `window.__sceneBoot.revealedAt`, and prints
+  the boot report, finger-contact self time before and after reveal, any
+  `window.__composerMotionBakes` entries, and the top self-time functions.
+  `--fresh` uses a new browser context, so IndexedDB (saved baked poses) and
+  the HTTP cache are empty: the cold case. Without it the run is warm.
+  `--after-ms <n>` keeps profiling past the reveal, and the output then splits
+  finger time between the live rig and the hidden bake scene. `--seed` fixes
+  `Math.random` so every run and server gets the same demo sequence, and
+  `--hold-hero` holds the /composer hero act so its sequence swaps don't
+  restart the bake. Use all three to time or hash a bake.
+- `scripts/scene-boot/analyze.mjs <file.cpuprofile> [--reveal-ms <n>]` prints
+  busy, finger and GL-program time per second, the longest busy stretches, and
+  the call chains into the finger code.
+
 Interval math lives in `boot-interval-math.ts` and is unit-tested.
 `tests/unit/boot-profiler.test.ts` exists because `npm run check` does **not**
 typecheck a plain `.ts` file reachable only through a Svelte import graph — a
@@ -346,6 +365,100 @@ exceptional worker/context under the already-visible poster. Ordinary switches
 continue to reuse the persistent context. This prevents an abandoned Ocean
 parse from delaying a later Void choice while preserving the one-context
 steady-state ceiling.
+
+## Motion bake on the main thread, measured 2026-11-08
+
+The 3D viewer's curtain stayed up 10 to 60 s. Boot profiles of
+`/composer?bootprofile=1` attributed the main thread like this:
+
+| Self time on the main thread during boot                             | Live site | Dev   |
+| -------------------------------------------------------------------- | --------- | ----- |
+| `fingerTriangleClearance` + `posedVertex` (FingerAnimator, scene-3d) | 10.1 s    | 8.9 s |
+| GL program link (`getProgramInfoLog`, the known cost above)          | 1.0 s     | 4.8 s |
+| Garbage collector                                                    | 2.7 s     | —     |
+
+On the live site the `assets` phase was blocked for 14.3 of its 15.4 s, the
+frame gate capped, and the longest tasks ran 5.0 s and 4.1 s. Two finger
+solvers shared the thread. The visible rig solves every frame until its baked
+clip lands. `WebComposerMotionPreparation` mounted the hidden capture scene
+during boot, behind the curtain. That scene runs 90 settle frames, the loop
+warm-ups, and two scheduler passes per recorded frame, and it solved fingers
+on all of them. Only the second pass of each sample is recorded.
+
+### The two rules
+
+1. **The bake starts after the curtain is down and the page is still.**
+   `Viewer3DCanvas` latches `mayBake` once the scene is revealed and
+   `whenPageStill(300)` resolves, or 2,000 ms after reveal if the page never
+   settles (`mayStartMotionBake` in `web-motion-preparation-plan.ts`). Device
+   lookups still run from mount, so a clip saved on an earlier visit lands as
+   early as before.
+2. **The capture scene solves finger contacts only on the pass it records.**
+   Avatar3D's `solveFingerContacts` prop (default on, carried in the scene-3d
+   patch) is off through `settleCapturePose` and the first `sampleFrame` pass.
+   Those frames settle IK and body state, which never read the finger solve.
+
+### Result: the bake's output is unchanged and costs less
+
+The seeded composer demo (480 frames) bakes to frames hash `ec99da64…1efa`
+before and after both changes, on the primary server and the worktree alike.
+A full bake on one server, measured with `--seed --hold-hero --after-ms 90000`:
+
+| Bake                 | Wall time | Bake-scene self time | Bake-scene finger time |
+| -------------------- | --------- | -------------------- | ---------------------- |
+| Every pass solves    | 61.3 s    | 29.8 s               | 11.3 s                 |
+| Recorded pass solves | 46.5 s    | 17.1 s (−42%)        | 3.2 s                  |
+
+### Boot before and after
+
+Before is the primary dev server (5173) on `main`. After is a worktree server
+(5191) carrying both rules. Cold runs use `--fresh`.
+
+| Run            | Reveal | Assets | Settle | Gate   | Longest tasks (ms) | Bake-scene self before reveal |
+| -------------- | ------ | ------ | ------ | ------ | ------------------ | ----------------------------- |
+| Before, cold 1 | 15.7 s | 9.3 s  | 2.1 s  | capped | 2580, 2357, 1200   | 1.8–2.7 s in every run        |
+| Before, cold 2 | 13.2 s | 7.7 s  | 0.9 s  | passed | 1981, 1776, 1141   |                               |
+| Before, warm 1 | 12.4 s | 6.7 s  | 0.9 s  | passed | 1784, 1669, 969    |                               |
+| Before, warm 2 | 12.6 s | 6.7 s  | 0.7 s  | passed | 1857, 1712, 905    |                               |
+| After, cold 1  | 14.2 s | 7.0 s  | 1.1 s  | passed | 2581, 1994, 1896   | 0 in every run                |
+| After, cold 2  | 14.9 s | 7.1 s  | 1.2 s  | passed | 2627, 2020, 1743   |                               |
+| After, warm 1  | 14.7 s | 6.4 s  | 1.0 s  | passed | 2076, 1978, 1423   |                               |
+| After, warm 2  | 14.3 s | 6.0 s  | 1.1 s  | passed | 1914, 1751, 1214   |                               |
+
+Finger self time before reveal went from 3.0–4.5 s (1.3–2.0 s of it the bake
+scene's) to 1.6–1.7 s, all of it the live rig.
+
+The two servers are not directly comparable. On 5191, GL program linking
+before reveal took 4.8–7.0 s, against 1.5–2.2 s on 5173, with or without the
+gate. So the gap belongs to the origin or server, not the change. The fair
+comparison runs both on 5191. With main's behaviour (`mayBake` forced on,
+scene-3d unpatched) the reveal took 21.3–22.9 s, assets 10.2–10.6 s and
+settle 2.9–4.1 s, and the gate capped in all four runs. With both rules the
+reveal took 14.2–14.9 s, and the gate passed in all four.
+
+### Findings and remaining levers
+
+- On `/composer` the hero act swaps the demo sequence after every pass, and
+  each swap restarts the bake, so a bake there rarely finishes. That was so
+  before this change too. The profiler's `--hold-hero` exists to measure
+  around it.
+- On skipped passes, Avatar3D's `onContactReport` reads a finger report from
+  the last solved frame. The capture path does not subscribe to it.
+- The live rig's own per-frame solve (125-point seed grid, coordinate
+  descent, triangle clearance) is the remaining finger cost before reveal:
+  1.6–1.7 s. This change does not touch it.
+- The PostHog session recorder spends about 0.7 s in the first seconds of
+  the live boot.
+
+### Since 2026-11-09: strict contact is opt-in
+
+A separate change the next day made legacy finger contact the default
+(`performerContactMode` on `Viewer3DCanvas`, `shouldPrepareWebMotion`). The
+shipping viewers no longer mount the hidden bake or run the strict solver on
+the visible rig, so their boot carries neither cost above. The two rules now
+govern only a host that opts into `"prop-authoritative"` contact, and every
+`NativeCaptureScene` capture, where the recorded-pass rule still cuts bake
+time by about 40% with the same frames.
 
 ## Related
 

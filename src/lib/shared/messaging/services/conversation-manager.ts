@@ -24,6 +24,7 @@ import {
   refreshParticipantInfo,
 } from "./conversation-mappers";
 import { GroupConversationManager } from "./group-conversation-manager";
+import { readDirectConversation } from "./read-direct-conversation";
 import type {
   Conversation,
   ConversationPreview,
@@ -203,9 +204,11 @@ export class ConversationManager {
         CONVERSATIONS_COLLECTION,
         conversationId
       );
-      const existingDoc = await getDoc(conversationRef);
+      const existingDoc = await readDirectConversation(() =>
+        getDoc(conversationRef)
+      );
 
-      if (existingDoc.exists()) {
+      if (existingDoc?.exists()) {
         const conversation = mapDocToConversation(
           existingDoc.id,
           existingDoc.data()
@@ -289,8 +292,10 @@ export class ConversationManager {
         CONVERSATIONS_COLLECTION,
         conversationId
       );
-      const snapshot = await getDoc(conversationRef);
-      return snapshot.exists() ? conversationId : null;
+      const snapshot = await readDirectConversation(() =>
+        getDoc(conversationRef)
+      );
+      return snapshot?.exists() ? conversationId : null;
     } catch (error) {
       console.error(
         "[ConversationManager] Failed to check conversation exists:",

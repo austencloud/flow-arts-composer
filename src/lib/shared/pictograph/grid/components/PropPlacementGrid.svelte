@@ -886,6 +886,48 @@
       display: inline;
     }
   }
+  /* A phone's step editor can leave the board barely 120px of height (the
+     hand controls below take the rest). Stacked, the prompt line plus the
+     8rem board floor ran past the bottom and the board was cut in half
+     (a scan visitor on a 392x735 phone, 2026-11-10). That short, the prompt
+     sits beside the board and the board shrinks to the height there is. */
+  @container (max-height: 220px) {
+    .placement-grid,
+    .placement-grid.has-tray {
+      grid-template-areas:
+        "board prompt"
+        "board tray";
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: 1fr auto;
+      align-items: center;
+      gap: 0.25rem 0.75rem;
+      width: 100%;
+    }
+
+    .placement-grid .prompt-text,
+    .placement-grid.complete.aiming .prompt-text {
+      display: flex;
+      grid-column: auto;
+      justify-content: flex-start;
+      text-align: start;
+    }
+
+    .placement-grid.complete.has-tray .controls-tray {
+      grid-column: auto;
+      justify-self: start;
+    }
+
+    .grid-area {
+      width: 100cqh;
+      height: 100cqh;
+      min-height: 0;
+    }
+
+    .grid-wrapper {
+      min-width: 0;
+    }
+  }
+
   .placement-grid.board-only {
     grid-template-areas: "board";
     grid-template-columns: minmax(0, 1fr);

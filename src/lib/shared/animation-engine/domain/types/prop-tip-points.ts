@@ -592,6 +592,9 @@ export const PROP_RENDER_KEY_TIP_POINTS: Record<string, PropTipConfig> = {
       { points: points.map((point) => ({ ...point })) },
     ])
   ),
+  // Triad builds (triad__fire, bigtriad__day) need no table: the generator
+  // lands every arm end on the notation triad's tip points, so the base-key
+  // fallback answers for them.
 };
 
 // Callback injection avoids a circular dependency on the feature layer.

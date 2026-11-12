@@ -26,7 +26,6 @@
   } from "#lib/shared/qr/services/short-code-manager.js";
   import { isInlineEncoded } from "#lib/shared/navigation/services/inline-qr-envelope.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
   import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
   import { createRouteLoadFence } from "#lib/shared/navigation/services/route-load-fence.js";
   import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
@@ -86,7 +85,6 @@
     initialScanPlaybackBpm,
     saveScanPlaybackBpm,
   } from "#lib/shared/sequence-viewer/services/scan-playback-tempo.js";
-  import { setGuideScanIntent } from "../../(public)/guide/level-1/_data/guide-scan-intent";
 
   // This standalone route never mounts MainApplication's composition root, so
   // nothing registered the library repository
@@ -465,27 +463,18 @@
     void ctx.handleExport();
   }
 
-  // The letter index is built from the whole Codex letter table (about
-  // 215 KB), which only this tap needs, so it loads here, not with the scan.
-  async function seeInGuide(): Promise<void> {
+  // Opens the public Codex on the sequence's first letter. It used to open
+  // /learn/guide/codex, which boots the whole app (20 s on a throttled phone,
+  // most of a minute on a scanner's real one, 2026-11-10) and then showed
+  // only a card pointing at /codex. /codex is a light public page, so a scan
+  // visitor goes from the card to the letter without the app boot.
+  // The Codex letter table is about 215 KB and only this tap needs it, so it
+  // loads here, not with the scan.
+  async function lookUpLetters(): Promise<void> {
     const current = sequence;
     if (!current) return;
-    const { guideTargetForLetter, GUIDE_CODEX_SLUG } = await import(
-      "../../(public)/guide/level-1/_data/guide-content-index"
-    );
-    const label =
-      current.steps?.length === 1
-        ? stripWordNotation(current.word).trim()
-        : "";
-    const target = label ? guideTargetForLetter(label) : null;
-    if (target?.cellKey) {
-      setGuideScanIntent({ slug: target.slug, cellKey: target.cellKey });
-      void goto(`/learn/guide/${target.slug}`);
-      return;
-    }
-
-    setGuideScanIntent({ slug: GUIDE_CODEX_SLUG, sequence: current });
-    void goto(`/learn/guide/${GUIDE_CODEX_SLUG}`);
+    const { codexHrefForSteps } = await import("./codex-link");
+    void goto(codexHrefForSteps(current.steps ?? []));
   }
 
   /**
@@ -876,7 +865,7 @@
           openAppHref={scanOpenAppHref}
           onAccountSignIn={scanOriginCode ? ctx.openSignInPrompt : undefined}
           guideAction={scanOriginCode
-            ? { label: "See it in the Guide", onSelect: seeInGuide }
+            ? { label: "Look up the letters", onSelect: lookUpLetters }
             : null}
           exportOverrides={scanOriginCode
             ? {

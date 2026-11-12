@@ -27,6 +27,9 @@ export const load: PageLoad = ({ params }) => {
   }
   // A print page the web folds into another opens that page's screen.
   const folded = GUIDE_BODY_PAGES.find((page) => page.id === params.slug)?.web;
+  if (folded && "href" in folded) {
+    redirect(308, folded.href);
+  }
   if (folded) {
     const screen = folded.screen ? `?screen=${folded.screen}` : "";
     redirect(308, `/guide/level-1/${folded.into}${screen}`);

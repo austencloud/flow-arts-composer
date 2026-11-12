@@ -602,7 +602,7 @@
     {#if filtering}
       <p class="filter-status" aria-live="polite">
         {matchCount} of {data.total} terms match "{query.trim()}".{#if codexSearchLetter}
-          Letter Codex also matches {codexSearchLetter}.{/if}
+          Codex also matches {codexSearchLetter}.{/if}
       </p>
     {:else if view !== "landing"}
       <div
@@ -630,7 +630,7 @@
         <div class="term-index">
           {#if filtering && codexSearchLetter}
             <a class="codex-search-result" href={codexHref(codexSearchLetter)}>
-              <span class="codex-result-kicker">Letter Codex</span>
+              <span class="codex-result-kicker">Codex</span>
               <strong>{codexSearchLetter}</strong>
               <span>Open its pictographs and variations</span>
               <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>

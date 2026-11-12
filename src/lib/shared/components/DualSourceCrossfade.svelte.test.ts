@@ -121,3 +121,78 @@ describe("stateful scene handoff", () => {
     await expect.poll(() => onsettled.mock.calls.at(-1)?.[0]).toBe("first");
   });
 });
+
+describe("deferring the inert swap to the settle", () => {
+  const sourceOf = (scene: string) =>
+    document.querySelector(`[data-scene="${scene}"]`)!.closest(".source")!;
+  const pointerEventsOf = (scene: string) =>
+    getComputedStyle(sourceOf(scene)).pointerEvents;
+
+  // Create's Play: flipping `inert` restyles the whole step grid (about
+  // 1,260 elements), which in the tap or the movement cost a long frame. Pointer input still has to
+  // move to the shown side at once, so a tap cannot land on the leaving one.
+  it("blocks pointer input at once and swaps inert only when the panels settle", async () => {
+    const screen = render(DualSourceCrossfade, {
+      first,
+      second,
+      active: "first",
+      settleInert: true,
+    });
+    const stage = screen.container as HTMLElement;
+    await frames();
+    expect(sourceOf("second").hasAttribute("inert")).toBe(true);
+
+    stage.setAttribute("data-panel-motion", "compositor");
+    await screen.rerender({ active: "second" });
+    await frames();
+    expect(pointerEventsOf("first"), "the leaving side takes no taps").toBe(
+      "none"
+    );
+    expect(pointerEventsOf("second")).toBe("auto");
+    // A tap aimed at the leaving canvas reaches nothing inside its source.
+    const aim = document
+      .querySelector('[data-scene="first"]')!
+      .getBoundingClientRect();
+    const hits = document.elementsFromPoint(
+      aim.left + aim.width / 2,
+      aim.top + aim.height / 2
+    );
+    expect(hits.length).toBeGreaterThan(0);
+    expect(
+      hits.filter((hit) => sourceOf("first").contains(hit)),
+      "a tap on the leaving side lands on nothing in it"
+    ).toEqual([]);
+    expect(
+      sourceOf("first").hasAttribute("inert"),
+      "no inert restyle during the movement"
+    ).toBe(false);
+    expect(sourceOf("second").hasAttribute("inert")).toBe(true);
+
+    // The fade ends while the panels are still moving: still no swap.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(sourceOf("first").hasAttribute("inert")).toBe(false);
+
+    stage.removeAttribute("data-panel-motion");
+    stage.dispatchEvent(new Event("panelsettle", { bubbles: true }));
+    await tick();
+    expect(sourceOf("first").hasAttribute("inert")).toBe(true);
+    expect(sourceOf("first").getAttribute("aria-hidden")).toBe("true");
+    expect(sourceOf("second").hasAttribute("inert")).toBe(false);
+  });
+
+  it("swaps inert after the fade when no panel is moving", async () => {
+    const screen = render(DualSourceCrossfade, {
+      first,
+      second,
+      active: "first",
+      settleInert: true,
+    });
+    await frames();
+    await screen.rerender({ active: "second" });
+    expect(sourceOf("first").hasAttribute("inert")).toBe(false);
+    await expect
+      .poll(() => sourceOf("first").hasAttribute("inert"), { timeout: 1500 })
+      .toBe(true);
+    expect(sourceOf("second").hasAttribute("inert")).toBe(false);
+  });
+});

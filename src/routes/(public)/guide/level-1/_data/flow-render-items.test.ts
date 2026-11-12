@@ -5,6 +5,7 @@ import { stripHtml } from "./flow-intro";
 import { GUIDE_CONTENT } from "./guide-content";
 import { hmGammaContent } from "./content/hm-gamma.content";
 import { negativeSpaceContent } from "./content/negative-space.content";
+import { staffMotionsContent } from "./content/staff-motions.content";
 import { screenRoom, type ScreenRoom } from "../../_components/fit/guide-screen-url";
 
 const card = (caption: string): GuideBlock =>
@@ -44,6 +45,7 @@ const room = (over: Partial<ScreenRoom> = {}): ScreenRoom => ({
   alone: 800,
   stripCols: 8,
   stripRowChars: 100,
+  bandShowsTagline: true,
   ...over,
 });
 
@@ -115,6 +117,24 @@ describe("flowRenderItems", () => {
       room: room({ beside: 200 }),
     });
     expect(textOf(items)).toEqual([`[B: ${one}]`, `[B: ${two}]`]);
+  });
+  it("never cuts inside a bullet line or leaves a bare bullet at a screen edge", () => {
+    const bullets = [
+      `• ${"a".repeat(90)}. ${"b".repeat(90)}.`,
+      `• ${"c".repeat(90)}. ${"d".repeat(90)}.`,
+      `• ${"e".repeat(90)}. ${"f".repeat(90)}.`,
+    ];
+    const items = flowRenderItems([p(bullets.join("<br>")), card("B")], "", undefined, {
+      room: room({ beside: 200 }),
+    });
+    const pieces = items.flatMap((it) =>
+      it.type === "showcase"
+        ? it.text.flatMap((b) => (b.kind === "prose" ? [b.html] : []))
+        : []
+    );
+    expect(pieces).toEqual(bullets);
+    expect(new Set(items.map((it) => it.screen)).size).toBeGreaterThan(1);
+    for (const html of pieces) expect(stripHtml(html)).not.toBe("•");
   });
   it("hands notes past a figure's room to the next figure", () => {
     const items = flowRenderItems(
@@ -241,13 +261,69 @@ describe("flowScreens", () => {
     expect(labels[0]).toBe("One");
     expect(labels[labels.length - 1]).toBe("AABB ×2");
   });
+  it("never names the first screen after a strip caption", () => {
+    const items = flowRenderItems([p("Words."), card("Start + steps 1–4")], "", undefined, {
+      room: room(),
+    });
+    expect(flowScreens(items).map((s) => s.label)).toEqual(["Intro"]);
+    expect(flowScreens(items, "Hello").map((s) => s.label)).toEqual(["Hello"]);
+  });
+  it("still names a first screen by its heading and later screens by caption", () => {
+    const items = flowRenderItems(
+      [h("Start here"), card("One"), p("More."), card("Anti→Pro")],
+      "",
+      undefined,
+      { room: room() }
+    );
+    expect(flowScreens(items).map((s) => s.label)).toEqual(["Start here", "Anti→Pro"]);
+  });
   it("falls back to Intro on a first screen with nothing to name it", () => {
     const items = flowRenderItems([p("Words.")], "", undefined, { room: room() });
     expect(flowScreens(items).map((s) => s.label)).toEqual(["Intro"]);
   });
 });
 
+describe("the opening sentence on a short window", () => {
+  // Staff Motions' shape: title, two section headings, the tagline as prose.
+  const tagline = "During a shift, a prop can rotate in one of two directions.";
+  const content: GuideBlock[] = [
+    { kind: "heading", level: 1, text: "Staff Motions" },
+    h("Shift"),
+    p(tagline),
+    h("Prospin"),
+    card("Prospin"),
+  ];
+  const proseTexts = (r?: ScreenRoom) =>
+    flowRenderItems(content, tagline, undefined, r ? { room: r } : {})
+      .filter((it) => it.type === "block" && it.block.kind === "prose")
+      .map((it) => (it as { block: { html: string } }).block.html);
+  const showcaseTexts = (r: ScreenRoom) =>
+    flowRenderItems(content, tagline, undefined, { room: r })
+      .flatMap((it) => (it.type === "showcase" ? it.text : []))
+      .filter((b) => b.kind === "prose")
+      .map((b) => (b as { html: string }).html);
+  const shown = (r: ScreenRoom) => [...proseTexts(r), ...showcaseTexts(r)];
+
+  it("keeps the intro paragraph in a 375x667 room", () => {
+    expect(shown(screenRoom(375, 667))).toContain(tagline);
+  });
+  it("drops it in a 1000x800 room, where the title band shows it", () => {
+    expect(shown(screenRoom(1000, 800))).not.toContain(tagline);
+  });
+  it("drops it with no room at all, as before", () => {
+    expect(proseTexts()).not.toContain(tagline);
+  });
+});
+
 describe("the Negative Space page", () => {
+  it("names the phone's opening screens Intro, not the strip caption", () => {
+    const items = flowRenderItems(negativeSpaceContent, "", undefined, {
+      room: screenRoom(375, 667),
+    });
+    const labels = flowScreens(items).map((s) => s.label);
+    expect(labels.slice(0, 3)).toEqual(["Intro", "Intro", "Intro"]);
+    expect(labels).not.toContain("Start + steps 1–4");
+  });
   it("keeps every word on a screen with a figure in a large window", () => {
     const items = flowRenderItems(negativeSpaceContent, "", undefined, {
       room: screenRoom(1440, 900),
@@ -255,6 +331,44 @@ describe("the Negative Space page", () => {
     const screens = flowScreens(items);
     expect(screens.every((s) => s.items.some((i) => items[i]!.type === "showcase"))).toBe(true);
     expect(textOf(items).join(" ")).toContain("learn these two first");
+  });
+});
+
+// The figure card rebuild (approved mock A, 2026-11-11): one screen per
+// section on a desktop; on a phone a section runs over as many screens as its
+// words need, each with the card and the section's name.
+describe("the Staff Motions page", () => {
+  const cut = (w: number, h: number) => {
+    const items = flowRenderItems(staffMotionsContent, "", undefined, {
+      room: screenRoom(w, h),
+    });
+    return { items, screens: flowScreens(items) };
+  };
+  const SECTIONS = ["Shift", "Prospin", "Antispin", "Dash", "Prospin and Inspin"];
+
+  it("has five screens named for its sections in a desktop room", () => {
+    expect(cut(1000, 800).screens.map((s) => s.label)).toEqual(SECTIONS);
+    expect(cut(1440, 900).screens.map((s) => s.label)).toEqual(SECTIONS);
+  });
+
+  it("gives every phone screen a figure and keeps a section's screens together", () => {
+    const { items, screens } = cut(375, 667);
+    expect(screens.every((s) => s.items.some((i) => isFigureItem(items[i]!)))).toBe(true);
+    const runs = screens
+      .map((s) => s.label)
+      .filter((label, n, all) => label !== all[n - 1]);
+    expect(runs).toEqual(SECTIONS);
+  });
+
+  it("splits a phone screen at a sentence, never inside one", () => {
+    const { items } = cut(375, 667);
+    const prose = items.flatMap((it) =>
+      (it.type === "showcase" ? it.text : [it.block]).flatMap((b) =>
+        b.kind === "prose" ? [stripHtml(b.html).trim()] : []
+      )
+    );
+    expect(prose.length).toBeGreaterThan(0);
+    for (const text of prose) expect(text).toMatch(/[.!?]$/);
   });
 });
 

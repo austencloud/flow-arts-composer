@@ -12,14 +12,17 @@
 
 <script lang="ts">
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { tunnelPropNudges } from "../tunnel-prop-nudges";
+  import { FRONT_PROP_COLORS } from "../tunnel-performers";
 
   /**
    * Every performer's pose on one grid, front first, the others on top in
    * their tunnel colors: one landing of the whole tunnel. Without the grid,
    * the poses lay over a card cell that already draws it. With `frontDrawn`
    * the card cell draws the front pose too; it is passed only so the staffs
-   * drawn here slide off the front pair's.
+   * drawn here slide off the front pair's. Every pose draws `propTypes`, the
+   * post's prop, never the viewer's own default.
    */
   let {
     poses,
@@ -66,8 +69,10 @@
           stepNumberOverride={false}
           showArrow={true}
           showProps={true}
-          leftColorOverride={pose.left}
-          rightColorOverride={pose.right}
+          leftPropTypeOverride={propTypes?.left as PropType | undefined}
+          rightPropTypeOverride={propTypes?.right as PropType | undefined}
+          leftColorOverride={pose.left ?? (index === 0 ? FRONT_PROP_COLORS.left : undefined)}
+          rightColorOverride={pose.right ?? (index === 0 ? FRONT_PROP_COLORS.right : undefined)}
           propNudges={nudges[index]}
         />
       </div>

@@ -93,6 +93,28 @@ const PREFETCH_HEARTBEAT_MS = 3_000;
 const PREFETCH_HEARTBEAT_MAX_MS = 60_000;
 
 /**
+ * Await `work`, calling `beat` every PREFETCH_HEARTBEAT_MS while it runs, for
+ * at most PREFETCH_HEARTBEAT_MAX_MS. The same bounded sign of life the
+ * prefetch burst gives, for one cell's render: a cell whose placement data is
+ * still downloading is slow, not wedged.
+ */
+async function withHeartbeat<T>(
+  work: Promise<T>,
+  beat: (() => void) | undefined
+): Promise<T> {
+  if (!beat) return work;
+  const startedAt = Date.now();
+  const heartbeat = setInterval(() => {
+    if (Date.now() - startedAt < PREFETCH_HEARTBEAT_MAX_MS) beat();
+  }, PREFETCH_HEARTBEAT_MS);
+  try {
+    return await work;
+  } finally {
+    clearInterval(heartbeat);
+  }
+}
+
+/**
  * The visibility one cell is rasterized with. Shared by the serial raster loop
  * and the parallel asset prefetch so both derive the same preparer cache key.
  * If the two ever drifted, the prefetch would silently warm nothing.
@@ -259,6 +281,7 @@ export class ImageComposer {
         // deck or print render keeps the notation corner grip.
         triangleGrip: overrides.triangleGrip,
         buugengStyle: overrides.buugengStyle,
+        triadBuild: overrides.triadBuild,
         primaryPropColors: overrides.primaryPropColors,
         showTKA: overrides.showTKA,
         showTnD: overrides.showTnD,
@@ -299,6 +322,7 @@ export class ImageComposer {
       fanAppearance: appSettings.fanAppearance,
       triangleGrip: appSettings.triangleGrip,
       buugengStyle: appSettings.buugengStyle,
+      triadBuild: appSettings.triadBuild,
       primaryPropColors: appSettings.primaryPropColors,
       showTKA: visibilityManager.getGlyphVisibility("tkaGlyph"),
       showTnD: visibilityManager.getGlyphVisibility("tndGlyph"),
@@ -321,6 +345,7 @@ export class ImageComposer {
         fanAppearance: overrides.fanAppearance ?? globalSettings.fanAppearance,
         triangleGrip: overrides.triangleGrip ?? globalSettings.triangleGrip,
         buugengStyle: overrides.buugengStyle ?? globalSettings.buugengStyle,
+        triadBuild: overrides.triadBuild ?? globalSettings.triadBuild,
         primaryPropColors:
           overrides.primaryPropColors !== undefined
             ? overrides.primaryPropColors
@@ -507,20 +532,38 @@ export class ImageComposer {
 
     onProgress?.({ current: 0, total: totalItems, stage: "rendering" });
 
+    // A cell can wait on its own placement data (the special-placement file
+    // for its letter loads on first use), which the prefetch above does not
+    // always warm. On a slow phone that wait ran past the 15 s inactivity
+    // deadline: production timeouts on /composer on 2026-11-07 all stalled at
+    // "rendering 2 of 5" in this loop. Repeat the last progress mark while a
+    // cell is in flight so slow work is not mistaken for a wedged render.
+    const reportRendering = onProgress
+      ? () =>
+          onProgress({
+            current: renderedCount,
+            total: totalItems,
+            stage: "rendering",
+          })
+      : undefined;
+
     if (startPlacementData) {
       const startStepNumber = options.addStepNumbers ? 0 : undefined;
-      await this.renderPictographAt(
-        ctx,
-        withJoin(startPlacementData),
-        0,
-        0,
-        stepSize,
-        startStepNumber,
-        gridOffsetY,
-        visibilitySettings,
-        effectiveLeftPropType,
-        effectiveRightPropType,
-        gridOffsetX
+      await withHeartbeat(
+        this.renderPictographAt(
+          ctx,
+          withJoin(startPlacementData),
+          0,
+          0,
+          stepSize,
+          startStepNumber,
+          gridOffsetY,
+          visibilitySettings,
+          effectiveLeftPropType,
+          effectiveRightPropType,
+          gridOffsetX
+        ),
+        reportRendering
       );
       renderedCount++;
       onProgress?.({
@@ -542,18 +585,21 @@ export class ImageComposer {
       const col = startColumn + (i % stepsPerRow);
       const row = startRow + Math.floor(i / stepsPerRow);
       const stepNumber = options.addStepNumbers ? i + 1 : undefined;
-      await this.renderPictographAt(
-        ctx,
-        withJoin(stepData),
-        col,
-        row,
-        stepSize,
-        stepNumber,
-        gridOffsetY,
-        visibilitySettings,
-        effectiveLeftPropType,
-        effectiveRightPropType,
-        gridOffsetX
+      await withHeartbeat(
+        this.renderPictographAt(
+          ctx,
+          withJoin(stepData),
+          col,
+          row,
+          stepSize,
+          stepNumber,
+          gridOffsetY,
+          visibilitySettings,
+          effectiveLeftPropType,
+          effectiveRightPropType,
+          gridOffsetX
+        ),
+        reportRendering
       );
 
       const beatDuration = beat.duration ?? 1;
@@ -677,6 +723,7 @@ export class ImageComposer {
       // side-grip export to a corner-grip card cell, or the reverse.
       triangleGrip: visibilitySettings.triangleGrip,
       buugengStyle: visibilitySettings.buugengStyle,
+      triadBuild: visibilitySettings.triadBuild,
       size: stepSize,
       leftPropType: leftProp,
       rightPropType: rightProp,
@@ -1135,6 +1182,9 @@ export class ImageComposer {
       buugengStyle: visibilitySettings.handPathMode
         ? undefined
         : visibilitySettings.buugengStyle,
+      triadBuild: visibilitySettings.handPathMode
+        ? undefined
+        : visibilitySettings.triadBuild,
       leftPropType: visibilitySettings.leftPropType,
       rightPropType: visibilitySettings.rightPropType,
       handPathMode: visibilitySettings.handPathMode ?? false,
@@ -1210,14 +1260,8 @@ export class ImageComposer {
         () => onSettled?.(),
         () => onSettled?.()
       );
-    const startedAt = Date.now();
-    const heartbeat = onSettled
-      ? setInterval(() => {
-          if (Date.now() - startedAt < PREFETCH_HEARTBEAT_MAX_MS) onSettled();
-        }, PREFETCH_HEARTBEAT_MS)
-      : undefined;
-    try {
-      await Promise.all([
+    await withHeartbeat(
+      Promise.all([
         quietly(this.ensureCanvas2DInitialized()),
         ...(preparesCells
           ? cells.map((cell) =>
@@ -1229,10 +1273,9 @@ export class ImageComposer {
           quietly(loader.getTurnNumberImage(value))
         ),
         ...(needsHalfMark ? [quietly(loader.getHalfMarkImage())] : []),
-      ]);
-    } finally {
-      if (heartbeat !== undefined) clearInterval(heartbeat);
-    }
+      ]),
+      onSettled
+    );
   }
 
   private async renderPictographWithLayerCompositor(

@@ -41,6 +41,15 @@ param(
   [string]$Url = "https://localhost:5173"
 )
 
+# Marks this browser so production analytics leaves it out: no PostHog
+# capture, no visit alert. See src/lib/shared/analytics/agent-browser.ts.
+function Set-AgentBrowserMark {
+  & node (Join-Path $PSScriptRoot "mark-agent-browser.mjs") $Port
+  if ($LASTEXITCODE -ne 0) {
+    Write-Warning "Could not set the agent-browser analytics mark; production visits from this browser will count as visitors."
+  }
+}
+
 $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 if (-not (Test-Path $chrome)) {
   Write-Error "Chrome not found at $chrome"
@@ -107,6 +116,7 @@ try {
 
     Write-Host "Shared debug Chrome already running on port $Port." -ForegroundColor Green
     Write-Host $existingResponse.Content
+    Set-AgentBrowserMark
     exit 0
   }
 
@@ -129,6 +139,7 @@ try {
       $response = Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 "http://127.0.0.1:$Port/json/version"
       Write-Host "Shared debug Chrome ready on port $Port (profile: $UserDataDir\$ProfileDirectory)" -ForegroundColor Green
       Write-Host $response.Content
+      Set-AgentBrowserMark
       exit 0
     } catch { }
   }

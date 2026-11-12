@@ -1,7 +1,7 @@
 // Crop and zoom specific sections of the parity page for comparison
 import { chromium } from "playwright-core";
 
-const url = process.argv[2] ?? "http://localhost:5173/guide/codex/parity";
+const url = process.argv[2] ?? "http://localhost:5173/test/codex-parity";
 const out = process.argv[3] ?? "C:/tka-platform/static/test/parity-zoom.png";
 // region: "type1-alpha", "type1-beta", "type2", "type3", "type4-6"
 const region = process.argv[4] ?? "type1-alpha";

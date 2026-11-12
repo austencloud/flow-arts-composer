@@ -402,6 +402,11 @@ center label opens an anchored popover with all four orientations.
     align-items: center;
     justify-content: center;
     -webkit-tap-highlight-color: transparent;
+    /* People tap the arrows several times fast to walk through the cycle.
+       Without this a phone reads the second tap of a pair as a double-tap
+       zoom gesture and drops it, so the label stops keeping up with the
+       taps and the arrow feels dead. */
+    touch-action: manipulation;
     transition: background var(--transition-fast);
   }
 

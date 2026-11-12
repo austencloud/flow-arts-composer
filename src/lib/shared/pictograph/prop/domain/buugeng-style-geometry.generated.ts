@@ -12,10 +12,10 @@ export interface BuugengStyleTip {
 export const BUUGENG_STYLE_TIP_POINTS = {
   buugeng__crescent: [{ dx: 115.31, dy: -17.43 }, { dx: -115.31, dy: 17.43 }],
   buugeng__perforated: [{ dx: 115.31, dy: -17.43 }, { dx: -115.31, dy: 17.43 }],
-  buugeng__fire: [{ dx: 109.67, dy: -16.58 }, { dx: -109.67, dy: 16.58 }],
+  buugeng__fire: [{ dx: 109.22, dy: -16.51 }, { dx: -109.22, dy: 16.51 }],
   buugeng__filigree: [{ dx: 111.77, dy: -16.89 }, { dx: -111.77, dy: 16.89 }],
   bigbuugeng__crescent: [{ dx: 248.72, dy: -37.59 }, { dx: -248.72, dy: 37.59 }],
   bigbuugeng__perforated: [{ dx: 248.72, dy: -37.59 }, { dx: -248.72, dy: 37.59 }],
-  bigbuugeng__fire: [{ dx: 236.57, dy: -35.75 }, { dx: -236.57, dy: 35.75 }],
+  bigbuugeng__fire: [{ dx: 235.59, dy: -35.61 }, { dx: -235.59, dy: 35.61 }],
   bigbuugeng__filigree: [{ dx: 241.09, dy: -36.44 }, { dx: -241.09, dy: 36.44 }],
 } as const satisfies Record<string, readonly BuugengStyleTip[]>;

@@ -14,6 +14,7 @@ import {
   auditChangelogEntries,
   toPublicChangelog,
   auditReleaseArrivals,
+  applyHighlightSelection,
   parseReleaseAnchors,
   DARK_DENYLIST,
 } from "../../scripts/lib/release-module-gate.mjs";
@@ -697,6 +698,62 @@ describe("auditReleaseArrivals", () => {
         `<button data-release-anchor="mirror-button">x</button><div data-release-anchor='a-2'></div>`
       )
     ).toEqual(["mirror-button", "a-2"]);
+  });
+});
+
+describe("applyHighlightSelection", () => {
+  const entries = [
+    { category: "fixed", text: "F1." },
+    { category: "added", text: "A1." },
+    { category: "improved", text: "I1." },
+    { category: "added", text: "A2.", highlight: true },
+  ];
+  const flags = (selection: string | null | undefined) =>
+    applyHighlightSelection(entries, selection).map(
+      (e: { highlight?: boolean }) => e.highlight === true
+    );
+
+  it("flags 1-based positions among the added and improved entries only", () => {
+    expect(flags("1,3")).toEqual([false, true, false, true]);
+    // The manifest it was handed is not changed.
+    expect(entries[1]).toEqual({ category: "added", text: "A1." });
+  });
+
+  it("keeps the manifest's own highlights with none, 0 or nothing, and flags all with all", () => {
+    for (const selection of ["none", "0", "", null, undefined]) {
+      expect(flags(selection)).toEqual([false, false, false, true]);
+    }
+    expect(flags("all")).toEqual([false, true, true, true]);
+  });
+
+  it("ignores out-of-range and non-numeric picks", () => {
+    expect(flags("9,x,2")).toEqual([false, false, true, true]);
+  });
+
+  it("makes a flagged entry carry its arrival through the public changelog", () => {
+    const surface = { module: "create", tab: "generate" };
+    const manifest = [
+      {
+        category: "added",
+        text: "A.",
+        audience: "guest",
+        surface,
+        anchor: "a",
+      },
+    ];
+    // Unflagged, the anchor is an audit error and is stripped on publish.
+    expect(auditReleaseArrivals(manifest, new Set(["a"]))).toHaveLength(1);
+    expect(toPublicChangelog(manifest)[0]).not.toHaveProperty("anchor");
+
+    const flagged = applyHighlightSelection(manifest, "1");
+    expect(auditReleaseArrivals(flagged, new Set(["a"]))).toEqual([]);
+    expect(toPublicChangelog(flagged)[0]).toEqual({
+      category: "added",
+      text: "A.",
+      surface,
+      highlight: true,
+      anchor: "a",
+    });
   });
 });
 

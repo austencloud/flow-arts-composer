@@ -50,6 +50,20 @@
         return null;
       }
     }
+    // The user's prop colours, from the settings the app persists
+    // (`primaryPropColors` in tka-modern-web-settings); the worker checks
+    // them. Null means the surface's blue and red.
+    function colors() {
+      try {
+        var settings = JSON.parse(read("tka-modern-web-settings") || "null");
+        var pair = settings && settings.primaryPropColors;
+        return pair && pair.left && pair.right
+          ? { left: String(pair.left), right: String(pair.right) }
+          : null;
+      } catch (e) {
+        return null;
+      }
+    }
     function size() {
       return config.canvas
         ? [canvas.clientWidth, canvas.clientHeight]
@@ -124,6 +138,7 @@
             (screen.getAttribute("data-surface") === "light"
               ? "light"
               : "dark"),
+          colors: config.colors !== undefined ? config.colors : colors(),
           reduced:
             config.reduced !== undefined
               ? Boolean(config.reduced)

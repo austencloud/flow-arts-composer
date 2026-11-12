@@ -171,3 +171,91 @@ four times and dismiss time per case; frame-check result per case; bar
 stall numbers; cap test; the new default profile value for `composed`;
 frame strip paths; gate lines; deviations; follow-ups (other modules that
 pop in); merge SHA.
+
+## 2026-11-11: the module waits until it is drawn, never on a timer
+
+Austen opened Browse sequences in a preview whose Vite server had restarted a
+minute earlier. After a long wait on the boot screen it left, and the page
+showed the sky, the side bar and nothing else: "it still puts me in a place
+where there's nothing on the screen." The `module-view` hold had a 15 s limit
+(`FIRST_VIEW_WAIT_MS`, raised from 4 s on 2026-10-31). A warm reload reports
+`ready` from the boot snapshot at mount, so the 15 s started almost at once,
+and Browse's code took over 30 s to arrive. The screen timed out onto
+`SharedShellSkeleton`.
+
+What changed:
+
+- `module-view` waits until released. `__tkaBootHold(name, "until-released")`
+  (and `holdBootScreen(name, UNTIL_RELEASED)` in `boot-screen.ts`) has no
+  deadline: it is never marked `timedOut`, and with only such holds open no
+  cap timer is set (the earliest deadline is Infinity, so no timer at all).
+  It ends at the `BootHoldRelease` sites in `ModuleRenderer` (the module's
+  view, its load error, its sign-in gate) or when initialization fails.
+  Every other hold keeps its limits; Create's `create-workspace` still uses
+  `FIRST_VIEW_WAIT_MS`.
+- A long wait instead of a hand-over to nothing. When an until-released hold
+  is still open 15 s after `ready`, the status crossfades to "Still loading.
+  This is taking longer than usual." and a Reload button fades in under the
+  capsule (beside it on screens under 600 px tall, so the capsule stays where
+  the Overture's letter row expects it). The button is placed from first
+  paint and fades on opacity only; reduced motion shows it at once. German
+  strings are in the boot script's table. The Overture keeps lapping the
+  finished mandala through the wait (checked at 20 s).
+- The stored profile's `composed` is clamped to `ready` + 4 s, so a slow boot
+  does not make the next boot's fill crawl toward a far-off end. Without the
+  clamp a 40 s `composed` left the next fill under a tenth of the bar at
+  `ready`.
+
+Routes: only the catch-all app route (`src/routes/[...appPath]`, through
+`AppShellLoader`) mounts `MainApplication`. Every `ModuleRenderer` branch
+either reaches a `BootHoldRelease` or is a loading state that ends when the
+module chunk or `activeModule` arrives; a load that never ends now shows the
+long wait and its Reload button.
+
+Proof: `node scripts/boot-handoff-check.mjs` loads
+`/browse/explore/sequences` with Browse's code held until 30 s after
+navigation. On the old behaviour the screen left at 16.8 s and the shell
+skeleton was exposed from then on (FAIL); with the change the long wait
+showed at about 17 s and the screen left at 30.5 s onto Browse's header and
+tiles, the skeleton never exposed (PASS).
+
+## 2026-11-11 (later): no give-up timer before ready either
+
+The last timer that could take the screen away was the 15 s safety net for a
+`ready` that never came. When the app's own startup code was slow, it added
+`loaded` at 15 s and left the visitor on an empty page.
+
+What changed:
+
+- At 15 s from page start with no `ready` (`__tkaNoReadyYet`, timed from
+  `__tkaLongWaitMs`), the screen shows the same long wait (message, Reload
+  button, `data-long-wait`, `long-wait` mark) and keeps covering the page.
+  It does not add `loaded` and does not end the Overture, which keeps
+  lapping. It leaves by the normal path, when `ready` arrives and the holds
+  clear. If a route had already removed or hidden the screen, it only stops
+  the bar's ticker and ends the Overture. After `ready` the long wait still
+  needs an open until-released hold; the before-`ready` case is its own
+  branch. No code writes `timeout-dismiss` any more; the Overture bench reads
+  `long-wait` instead.
+- Pages that never mount the app shell relied on that timer. Only
+  `[...appPath]` reports `ready`, so `/start` (the festival signup QR page),
+  `/admin/*`, `/coven`, `/endless-spinner`, the internal tools, `/tunnel`, a
+  landing route missing from app.html's list, and error pages sat behind the
+  screen for 15 s. The root layout now calls `finishBootScreen()` for any
+  route other than the shell once the container is up, and at once when
+  startup failed (`containerError`) or the page is an error page. The
+  shell's chunk-load error (`AppShellLoader`) and `MainApplication`'s
+  `ErrorScreen` release it too.
+- If the app's code never arrives, or throws before the layout mounts,
+  nothing can report: the visitor gets the long wait and Reload, never an
+  empty page.
+
+Proof: `node scripts/boot-handoff-check.mjs` now runs two cases at 1280x800
+and 390x844. `browse-late` holds Browse's code until 30 s, as before.
+`startup-late` holds `MainApplication.svelte`, so `ready` arrives at about
+30.5 s. On the old code `startup-late` fails: the screen left at 15.0 to
+15.1 s with nothing drawn. On the new code both cases pass, with the long wait
+from 16 s and the screen leaving at about 31.6 s onto Browse. The script now
+pauses only the held URLs, through CDP Fetch patterns.
+`page.setRequestInterception` also paused the Overture worker's requests,
+which is the likely reason some earlier runs showed no mandala.

@@ -92,6 +92,12 @@
   let captureClockOriginMs = 0;
   let gripRevision = 0;
   let gripAttachment: ReturnType<typeof captureGripAttachment> | undefined;
+  // Closing the fingers around the staff is most of a capture pass, and only
+  // the second pass of sampleFrame is recorded. The warm-up frames and the
+  // first pass exist to settle IK and body state, which never read the solved
+  // fingers, so they hold the authored grip. Props reach the rig on the next
+  // flush, so this flips before the tick() that precedes the pass it governs.
+  let solveFingerContacts = $state(false);
 
   // The rig must not accumulate an arbitrary number of live idle/mixer frames
   // while its asynchronous assets load. Manual capture owns the first frame.
@@ -137,6 +143,7 @@
     loopWarmupTimes: readonly number[] = [], loopDurationSeconds = 0,
     onWarmupProgress?: (frame: number, total: number) => void
   ): Promise<void> {
+    solveFingerContacts = false;
     performer.seekScore(0);
     await tick();
     const frameMs = 1000 / 30;
@@ -182,13 +189,16 @@
     // seekScore wraps an exact sequence endpoint to its first pose. A one-shot
     // capture samples immediately before that wrap and holds it at the end.
     const score = terminal ? elapsedScore - 1e-8 : elapsedScore;
+    solveFingerContacts = false;
     performer.seekScore(score);
     await tick();
     const ms = captureClockOriginMs + (timeSeconds === frame / 30
       ? frame * (1000 / 30) : timeSeconds * 1000);
     runCaptureScheduler(scheduler, ms);
     resetFrameInvalidation();
-    // The first pass applies score-driven state; the second settles IK and grip correction.
+    // The first pass applies score-driven state; the second settles IK and
+    // grip correction, and is the one recorded, so only it solves fingers.
+    solveFingerContacts = true;
     await tick();
     const previousGripRevision = gripRevision;
     runCaptureScheduler(scheduler, ms);
@@ -221,6 +231,7 @@
   beatPlaneOverrides={props.beatPlaneOverrides}
   sequence={props.sequence}
   capturePlane={props.capturePlane}
+  {solveFingerContacts}
   staffPalmLock={props.staffPalmLock === true}
   active={false}
   playbackSpeed={motionOptions.playbackSpeed}

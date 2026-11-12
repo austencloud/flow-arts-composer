@@ -52,6 +52,7 @@ with pre-prepared data for better performance.
   } from "../../prop/domain/fan-appearance";
   import { normalizeTriangleGrip } from "../../prop/domain/triangle-appearance";
   import { normalizeBuugengStyle } from "../../prop/domain/buugeng-appearance";
+  import { normalizeTriadBuild } from "../../prop/domain/triad-build";
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
   import type { PropPosition } from "../../prop/domain/models/prop-position";
   import {
@@ -509,6 +510,9 @@ with pre-prepared data for better performance.
   const effectiveBuugengStyle = $derived(
     normalizeBuugengStyle(getSettings().buugengStyle)
   );
+  const effectiveTriadBuild = $derived(
+    normalizeTriadBuild(getSettings().triadBuild)
+  );
 
   // Create a stable key for data preparation dependencies
   // Include effectiveDarkMode so that when it changes (via prop OR global toggle), we re-prepare with correct colors
@@ -576,6 +580,7 @@ with pre-prepared data for better performance.
       ),
       triangleGrip: effectiveTriangleGrip,
       buugengStyle: effectiveBuugengStyle,
+      triadBuild: effectiveTriadBuild,
       darkMode: effectiveDarkMode, // Include effective dark mode for color-correct preparation
       leftMotion: leftFingerprint,
       rightMotion: rightFingerprint,
@@ -656,6 +661,7 @@ with pre-prepared data for better performance.
           ),
           triangleGrip: effectiveTriangleGrip,
       buugengStyle: effectiveBuugengStyle,
+          triadBuild: effectiveTriadBuild,
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,
         };

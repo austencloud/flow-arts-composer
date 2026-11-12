@@ -144,7 +144,7 @@ describe("public glossary taxonomy", () => {
     const publicTerms = groups.flatMap((group) => group.terms);
 
     expect(groups.find((group) => group.key === "letter")).toBeUndefined();
-    expect(codex.label).toBe("Letter Codex");
+    expect(codex.label).toBe("Codex");
     // The Codex draws the Level 1 dataframe and only that.
     expect(codex.letters).toHaveLength(47);
     expect(codex.letters).not.toContain("τ-");

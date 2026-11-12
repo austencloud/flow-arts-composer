@@ -482,6 +482,7 @@
           fanAppearance={settings.fanAppearance}
           triangleGrip={settings.triangleGrip}
           buugengStyle={settings.buugengStyle}
+          triadBuild={settings.triadBuild}
           showShortcuts={hasKeyboard}
           onApply={applyPreset}
           onSave={savePreset}

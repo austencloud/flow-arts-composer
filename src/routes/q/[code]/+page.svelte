@@ -4,6 +4,10 @@
   import { onMount } from "svelte";
   import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import {
+    buildSequenceTitle,
+    DEFAULT_OG_IMAGE,
+  } from "../../sequence/[id]/sequence-seo";
 
   let { data } = $props();
 
@@ -18,11 +22,16 @@
 
   const title = $derived(
     displayWord
-      ? isSolo
-        ? `${displayWord}: Solo Flow Choreography | Flow Arts Composer`
-        : `${displayWord}: Flow Arts Sequence | Flow Arts Composer`
+      ? buildSequenceTitle(
+          displayWord,
+          data.meta?.creator ?? null,
+          isSolo ? "Solo Flow Choreography" : "Flow Arts Sequence"
+        )
       : "Scanned Sequence | Flow Arts Composer"
   );
+  // One share image across the site: the code's own thumbnail, else the
+  // default every other page uses.
+  const ogImage = $derived(data.meta?.thumbnailUrl ?? DEFAULT_OG_IMAGE);
   const description = $derived(
     displayWord
       ? isSolo
@@ -77,21 +86,9 @@
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:url" content={canonical} />
-  {#if data.meta?.thumbnailUrl}
-    <meta property="og:image" content={data.meta.thumbnailUrl} />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content={data.meta.thumbnailUrl} />
-  {:else}
-    <meta
-      property="og:image"
-      content="https://tkaflowarts.com/og-default.png"
-    />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:image"
-      content="https://tkaflowarts.com/og-default.png"
-    />
-  {/if}
+  <meta property="og:image" content={ogImage} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content={ogImage} />
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
 </svelte:head>

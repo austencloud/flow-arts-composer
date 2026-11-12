@@ -16,10 +16,14 @@
   import { browser } from "$app/env";
   import { page } from "$app/state";
   import type { PageData } from "./$types";
+  import { pageBootsInto3D } from "#lib/shared/sequence-viewer/services/viewer-boot-3d.js";
+  import { preloadViewer3DCode } from "#lib/shared/3d/scene-boot/viewer-3d-code-prefetch.js";
 
   let { data }: { data: PageData } = $props();
 
   const routeId = $derived(page.params.id);
+  // Same early 3D code start as /sequence/[id] (viewer-3d-code-prefetch.ts).
+  if (browser && pageBootsInto3D()) preloadViewer3DCode();
 </script>
 
 <svelte:head>

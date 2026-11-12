@@ -265,8 +265,8 @@ h6 {
 
   /* Touch Target - WCAG 2.5.8 AA compliant (44px minimum) */
   --min-touch-target: 44px;
-  --alt-touch-target: 36px; /* For less critical elements */
-  --min-touch-target-compact: 32px; /* Viewport overlay controls only */
+  --alt-touch-target: 36px; /* Phone control size (layout law, Tap size) */
+  --min-touch-target-compact: 32px; /* Phone control size where the hero needs the room (layout law, Tap size) */
 
   /* The video editor package imports its own copy of the drawer stylesheet,
      which loads globally after ours and reads these tokens with no fallback.

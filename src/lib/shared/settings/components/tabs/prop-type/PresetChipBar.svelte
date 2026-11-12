@@ -18,6 +18,7 @@
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+  import type { TriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
   import type { PropPreset } from "../../../domain/app-settings";
   import {
     presetLabel,
@@ -36,6 +37,7 @@
     fanAppearance,
     triangleGrip,
     buugengStyle,
+    triadBuild,
     showShortcuts = false,
     onApply,
     onSave,
@@ -54,6 +56,7 @@
     fanAppearance?: FanAppearance | null;
     triangleGrip?: TriangleGrip | null;
     buugengStyle?: BuugengStyle | null;
+    triadBuild?: TriadBuild | null;
     /** Show Alt-key slot marks and the shortcut hint. */
     showShortcuts?: boolean;
     onApply: (index: number) => void;
@@ -165,6 +168,7 @@
         {fanAppearance}
         {triangleGrip}
         {buugengStyle}
+        {triadBuild}
         onclick={() => handleChip(index)}
       />
     {/each}

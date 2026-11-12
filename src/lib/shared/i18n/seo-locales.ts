@@ -31,7 +31,6 @@ const EXCLUDED_PREFIXES = [
   "/guide/level-1/cover-lab",
   "/guide/level-2/print",
   "/guide/level-2/book",
-  "/codex/parity",
   "/codex/poster",
   "/codex/print",
 ];

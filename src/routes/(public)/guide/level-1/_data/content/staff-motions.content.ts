@@ -141,51 +141,54 @@ export const SHIFT_DEMOS = {
   },
 };
 
+/**
+ * The figure card for one row (2026-11-11): the player over its two-cell
+ * strip, Start and step 1, the pictograph's own labels. The strip shows the
+ * same two pictographs the player plays. Plays once and stops.
+ */
+const figure = (row: RowDef, figureTitle?: string): GuideBlock => ({
+  kind: "pictographGroup",
+  items: rowSequenceItems(row),
+  layout: "strip",
+  card: true,
+  figureCard: true,
+  numbered: true,
+  render: RENDER,
+  ...(figureTitle ? { figureTitle } : {}),
+});
+
 // Verbatim prose lifted from _pages/StaffMotionsPage.svelte (Austen's words - never AI-written).
+// Three sentences reworded with his approval on 2026-11-11 (the full stops
+// and the dropped bullet labels); the print sheet keeps its own wording.
 export const staffMotionsContent: GuideBlock[] = [
   { kind: "heading", level: 1, text: "Staff Motions" },
 
   { kind: "heading", level: 2, text: "Shift" },
   {
     kind: "prose",
-    html: "During a shift, a prop can rotate in one of two directions - Prospin or Antispin",
+    html: "During a shift, a prop can rotate in one of two directions - Prospin or Antispin.",
   },
+  // The opener: both shifts side by side, each under its own name.
+  figure(ROWS[0]!, "Prospin"),
+  figure(ROWS[1]!, "Antispin"),
 
-  { kind: "heading", level: 3, text: "Prospin" },
+  { kind: "heading", level: 3, text: "Prospin", kicker: "Shift" },
   {
     kind: "prose",
-    html: "• <strong>Prospin</strong> - The prop rotates the same direction as the handpath<br>A 90 degree isolation is our base unit of a prospin.",
+    html: "The prop rotates the same direction as the handpath.<br>A 90 degree isolation is our base unit of a prospin.",
   },
-  {
-    kind: "pictographGroup",
-    items: SHIFT_DEMOS.pro.items,
-    flowCols: 3,
-    layout: "strip",
-    card: true,
-    sequenceItems: SHIFT_DEMOS.pro.sequenceItems,
-    render: SHIFT_DEMOS.pro.render,
-    caption: "start · end · combined",
-  },
+  figure(ROWS[0]!),
   {
     kind: "prose",
     html: "In a base isolation, the thumb orientation remains the same for the entire motion.",
   },
 
-  { kind: "heading", level: 3, text: "Antispin" },
+  { kind: "heading", level: 3, text: "Antispin", kicker: "Shift" },
   {
     kind: "prose",
-    html: "• <strong>Antispin</strong> - The prop rotates in the opposite direction of the handpath<br>A 90 degree antispin is our base unit of antispin.",
+    html: "The prop rotates in the opposite direction of the handpath.<br>A 90 degree antispin is our base unit of antispin.",
   },
-  {
-    kind: "pictographGroup",
-    items: SHIFT_DEMOS.anti.items,
-    flowCols: 3,
-    layout: "strip",
-    card: true,
-    sequenceItems: SHIFT_DEMOS.anti.sequenceItems,
-    render: SHIFT_DEMOS.anti.render,
-    caption: "start · end · combined",
-  },
+  figure(ROWS[1]!),
   {
     kind: "prose",
     html: "In an antispin, the ends swap orientation. Here, it moves from thumb in to thumb out.",
@@ -196,16 +199,7 @@ export const staffMotionsContent: GuideBlock[] = [
     kind: "prose",
     html: "In a base dash, the thumb ends also swap orientation.",
   },
-  {
-    kind: "pictographGroup",
-    items: rowItems(ROWS[2]!),
-    flowCols: 3,
-    layout: "strip",
-    card: true,
-    sequenceItems: rowSequenceItems(ROWS[2]!),
-    render: RENDER,
-    caption: "start · end · combined",
-  },
+  figure(ROWS[2]!),
   {
     kind: "prose",
     html: "Halfway through the motion, the center of the staff is at the grid’s center point.",
@@ -213,6 +207,7 @@ export const staffMotionsContent: GuideBlock[] = [
 
   // Web only, not on the printed sheet: the note that was the standalone
   // /guide/prospin-and-inspin page until 2026-10-11, in that page's words.
+  // It shows the prospin, the motion it names.
   { kind: "heading", level: 2, text: "Prospin and Inspin" },
   {
     kind: "prose",
@@ -226,4 +221,5 @@ export const staffMotionsContent: GuideBlock[] = [
     kind: "prose",
     html: "In and out already name orientations here, like thumb in and thumb out, so Inspin reads like one of them. Pro isn't an orientation. Prospin only says which way the prop spins.",
   },
+  figure(ROWS[0]!),
 ];

@@ -242,15 +242,45 @@ describe("ViewerOverflowMenu display rows", () => {
 
     await page.getByRole("button", { name: /^Props/ }).click();
     await page.getByRole("button", { name: "Change my props" }).click();
-    await page.getByRole("button", { name: /Buugeng/ }).click();
+    await page.getByRole("button", { name: "Select Quiad prop type" }).click();
 
     expect(mocks.updateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
-        leftPropType: "buugeng",
-        rightPropType: "buugeng",
+        leftPropType: "quiad",
+        rightPropType: "quiad",
         catDogMode: false,
         propViewingMode: "my-props",
       })
+    );
+    await expect
+      .element(page.getByRole("radio", { name: /^My props/ }))
+      .toHaveFocus();
+  });
+
+  // A family opens its styles, and a prop with more to choose opens that
+  // page, instead of the tap picking the last one used.
+  it("drills into a family and a prop's own choices before finishing", async () => {
+    mocks.updateSettings.mockClear();
+    await openMenu({ propViewing: {}, propsSummary: "Double Staff" });
+
+    await page.getByRole("button", { name: /^Props/ }).click();
+    await page.getByRole("button", { name: "Change my props" }).click();
+    await page.getByRole("button", { name: "Select Buugeng prop type" }).click();
+
+    expect(mocks.updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ leftPropType: "buugeng" })
+    );
+    await expect
+      .element(page.getByRole("region", { name: /Buugeng/ }))
+      .toBeInTheDocument();
+    expect(page.getByRole("radio", { name: /^My props/ }).query()).toBeNull();
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await page.getByRole("button", { name: "Choose Club style" }).click();
+    await page.getByRole("button", { name: "Select Classic Club prop type" }).click();
+
+    expect(mocks.updateSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ leftPropType: "classic_club" })
     );
     await expect
       .element(page.getByRole("radio", { name: /^My props/ }))

@@ -127,6 +127,26 @@
 
   let open = $state(false);
   let fit = $state<EffectQuickPickerFit | null>(null);
+  /** Whether the floating layer exists: from the open until its fade-out
+   *  ends. A force-mounted popover that stays in the page while closed keeps
+   *  floating-ui re-placing it on every frame its anchor moves, and Play's
+   *  panel slide moves the anchor on every frame. */
+  let layerMounted = $state(false);
+  let unmountTimer: ReturnType<typeof setTimeout> | undefined;
+  $effect.pre(() => {
+    if (open) {
+      clearTimeout(unmountTimer);
+      layerMounted = true;
+      return;
+    }
+    // The fade-out unmounts it; this catches a close with nothing showing.
+    clearTimeout(unmountTimer);
+    unmountTimer = setTimeout(
+      () => (layerMounted = false),
+      DURATION.normal + 200
+    );
+    return () => clearTimeout(unmountTimer);
+  });
   let triggerEl = $state<HTMLElement | null>(null);
   let contentEl = $state<HTMLElement | null>(null);
   let scrollerEl = $state<HTMLElement | null>(null);
@@ -472,165 +492,172 @@
     {/snippet}
   </Popover.Trigger>
 
-  <Popover.Portal>
-    <Popover.Content
-      bind:ref={contentEl}
-      forceMount
-      customAnchor={anchor}
-      side={placement}
-      align={fit?.arrangement === "side" ? "end" : "center"}
-      sideOffset={fit?.arrangement === "side"
-        ? QUICK_PICKER_OFFSET
-        : fit?.side === "below"
-          ? QUICK_PICKER_STRIP_GAP
-          : 0}
-      collisionBoundary={bounds ?? undefined}
-      collisionPadding={QUICK_PICKER_EDGE}
-      avoidCollisions={fit?.arrangement === "side"}
-      onOpenAutoFocus={focusSelected}
-    >
-      {#snippet child({ open: shown, wrapperProps, props })}
-        <!-- bits-ui copies the content's z-index onto this wrapper's inline
+  {#if layerMounted}
+    <Popover.Portal>
+      <Popover.Content
+        bind:ref={contentEl}
+        forceMount
+        customAnchor={anchor}
+        side={placement}
+        align={fit?.arrangement === "side" ? "end" : "center"}
+        sideOffset={fit?.arrangement === "side"
+          ? QUICK_PICKER_OFFSET
+          : fit?.side === "below"
+            ? QUICK_PICKER_STRIP_GAP
+            : 0}
+        collisionBoundary={bounds ?? undefined}
+        collisionPadding={QUICK_PICKER_EDGE}
+        avoidCollisions={fit?.arrangement === "side"}
+        onOpenAutoFocus={focusSelected}
+      >
+        {#snippet child({ open: shown, wrapperProps, props })}
+          <!-- bits-ui copies the content's z-index onto this wrapper's inline
              style; the directive overrides it so the picker paints above the
              workspace. -->
-        <div {...wrapperProps} style:z-index="var(--z-dropdown, 1000)">
-          {#if shown && fit}
-            <div
-              {...props}
-              class="fx-quick-panel"
-              class:side={fit.arrangement === "side"}
-              class:grid={fit.arrangement === "grid"}
-              class:strip={fit.arrangement === "strip"}
-              class:above={fit.arrangement !== "side" && fit.side === "above"}
-              class:below={fit.arrangement !== "side" && fit.side === "below"}
-              class:dock={fit.arrangement !== "side" && fit.side === "dock"}
-              role="dialog"
-              aria-label={t("effect_deep_effects")}
-              style:width={fit.arrangement === "side"
-                ? `${fit.width}px`
-                : "var(--bits-popover-anchor-width)"}
-              style:height={fit.arrangement === "grid" ||
-              (fit.arrangement === "side" && fit.height)
-                ? `${fit.height}px`
-                : undefined}
-              style:min-height={fit.arrangement === "strip"
-                ? `${fit.height}px`
-                : undefined}
-              style:--dock-left={fit.arrangement !== "side" &&
-              fit.side === "dock"
-                ? `${dockInset.left}px`
-                : undefined}
-              style:--dock-right={fit.arrangement !== "side" &&
-              fit.side === "dock"
-                ? `${dockInset.right}px`
-                : undefined}
-              in:flyFade={{ ...motion, duration: DURATION.normal }}
-              out:flyFade={{ ...motion, duration: DURATION.fast }}
-            >
-              {#if fit.arrangement !== "strip"}
-                {@const narrow = fit.arrangement === "side" && fit.scrolls}
-                {@const scrolls = fit.scrolls}
-                <div class="fx-quick-head">
-                  <span class="fx-quick-title">{t("effect_deep_effects")}</span>
-                  <div class="fx-quick-head-end">
-                    <!-- A narrow panel has no room for "Turn off Bubbles":
+          <div {...wrapperProps} style:z-index="var(--z-dropdown, 1000)">
+            {#if shown && fit}
+              <div
+                {...props}
+                class="fx-quick-panel"
+                class:side={fit.arrangement === "side"}
+                class:grid={fit.arrangement === "grid"}
+                class:strip={fit.arrangement === "strip"}
+                class:above={fit.arrangement !== "side" && fit.side === "above"}
+                class:below={fit.arrangement !== "side" && fit.side === "below"}
+                class:dock={fit.arrangement !== "side" && fit.side === "dock"}
+                role="dialog"
+                aria-label={t("effect_deep_effects")}
+                style:width={fit.arrangement === "side"
+                  ? `${fit.width}px`
+                  : "var(--bits-popover-anchor-width)"}
+                style:height={fit.arrangement === "grid" ||
+                (fit.arrangement === "side" && fit.height)
+                  ? `${fit.height}px`
+                  : undefined}
+                style:min-height={fit.arrangement === "strip"
+                  ? `${fit.height}px`
+                  : undefined}
+                style:--dock-left={fit.arrangement !== "side" &&
+                fit.side === "dock"
+                  ? `${dockInset.left}px`
+                  : undefined}
+                style:--dock-right={fit.arrangement !== "side" &&
+                fit.side === "dock"
+                  ? `${dockInset.right}px`
+                  : undefined}
+                in:flyFade|global={{ ...motion, duration: DURATION.normal }}
+                out:flyFade={{ ...motion, duration: DURATION.fast }}
+                onoutroend={() => {
+                  if (!open) layerMounted = false;
+                }}
+              >
+                {#if fit.arrangement !== "strip"}
+                  {@const narrow = fit.arrangement === "side" && fit.scrolls}
+                  {@const scrolls = fit.scrolls}
+                  <div class="fx-quick-head">
+                    <span class="fx-quick-title"
+                      >{t("effect_deep_effects")}</span
+                    >
+                    <div class="fx-quick-head-end">
+                      <!-- A narrow panel has no room for "Turn off Bubbles":
                          it shows Off, or only the glyph where narrower still,
                          and keeps the full name for assistive technology. -->
-                    <button
-                      type="button"
-                      class="fx-quick-off"
-                      class:active={!effectOn}
-                      aria-pressed={!effectOn}
-                      aria-label={narrow ? offLabel : undefined}
-                      data-quick-off
-                      onclick={turnOff}
-                    >
-                      <i class="fas fa-power-off" aria-hidden="true"></i>
-                      <span>{narrow ? t("effect_deep_off") : offLabel}</span>
-                    </button>
-                    {@render closeButton()}
-                  </div>
-                </div>
-                <div
-                  class="fx-quick-grid"
-                  class:scrolls
-                  class:fill={fit.catalog?.fill}
-                  class:fade-start={fit.arrangement === "grid" && edges.start}
-                  class:fade-end={fit.arrangement === "grid" && edges.end}
-                  bind:this={scrollerEl}
-                  use:scrollEdges={{
-                    onChange: (next) => (edges = next),
-                    axis: "y",
-                  }}
-                >
-                  <EffectSelector
-                    {activeEffect}
-                    onSelect={select}
-                    onPrewarm={prewarm}
-                    catalog={fit.catalog}
-                    {portrait}
-                  />
-                </div>
-              {:else}
-                {@const tile = pictureTileHeight(fit.catalog.portrait)}
-                <!-- Off stands the full height of the rows, both of them on a
-                     two-row strip. -->
-                <button
-                  type="button"
-                  class="fx-quick-off-tile"
-                  class:active={!effectOn}
-                  aria-pressed={!effectOn}
-                  aria-label={offLabel}
-                  data-quick-off
-                  style:height="{fit.rows === 2
-                    ? 2 * tile + fit.catalog.gap
-                    : tile}px"
-                  onclick={turnOff}
-                >
-                  <i class="fas fa-power-off" aria-hidden="true"></i>
-                  <span>{t("effect_deep_off")}</span>
-                </button>
-                <div class="fx-quick-scroll" class:one-row={fit.rows === 1}>
-                  <div
-                    class="fx-quick-scroller"
-                    class:fade-start={edges.start}
-                    class:fade-end={edges.end}
-                    style:scroll-padding-inline="{QUICK_PICKER_STRIP_EDGE_CLEAR}px
-                    {QUICK_PICKER_STRIP_END_CLEAR}px"
-                    bind:this={scrollerEl}
-                    use:wheelScrollsSideways
-                    use:scrollEdges={(next) => (edges = next)}
-                  >
-                    <!-- The track ends a disc's width past its last tile, so
-                         the row scrolled all the way shows that tile clear of
-                         the close disc. -->
-                    <div
-                      class="fx-quick-track"
-                      class:two-row={fit.rows === 2}
-                      style:width="{fit.trackWidth}px"
-                      style:padding-inline-end="{QUICK_PICKER_CLOSE_DISC +
-                        fit.catalog.gap}px"
-                    >
-                      <EffectSelector
-                        {activeEffect}
-                        onSelect={select}
-                        onPrewarm={prewarm}
-                        catalog={fit.catalog}
-                        {portrait}
-                      />
+                      <button
+                        type="button"
+                        class="fx-quick-off"
+                        class:active={!effectOn}
+                        aria-pressed={!effectOn}
+                        aria-label={narrow ? offLabel : undefined}
+                        data-quick-off
+                        onclick={turnOff}
+                      >
+                        <i class="fas fa-power-off" aria-hidden="true"></i>
+                        <span>{narrow ? t("effect_deep_off") : offLabel}</span>
+                      </button>
+                      {@render closeButton()}
                     </div>
                   </div>
-                  {#if edges.start}{@render arrow(-1)}{/if}
-                  {#if edges.end}{@render arrow(1)}{/if}
-                </div>
-                {@render closeButton()}
-              {/if}
-            </div>
-          {/if}
-        </div>
-      {/snippet}
-    </Popover.Content>
-  </Popover.Portal>
+                  <div
+                    class="fx-quick-grid"
+                    class:scrolls
+                    class:fill={fit.catalog?.fill}
+                    class:fade-start={fit.arrangement === "grid" && edges.start}
+                    class:fade-end={fit.arrangement === "grid" && edges.end}
+                    bind:this={scrollerEl}
+                    use:scrollEdges={{
+                      onChange: (next) => (edges = next),
+                      axis: "y",
+                    }}
+                  >
+                    <EffectSelector
+                      {activeEffect}
+                      onSelect={select}
+                      onPrewarm={prewarm}
+                      catalog={fit.catalog}
+                      {portrait}
+                    />
+                  </div>
+                {:else}
+                  {@const tile = pictureTileHeight(fit.catalog.portrait)}
+                  <!-- Off stands the full height of the rows, both of them on a
+                     two-row strip. -->
+                  <button
+                    type="button"
+                    class="fx-quick-off-tile"
+                    class:active={!effectOn}
+                    aria-pressed={!effectOn}
+                    aria-label={offLabel}
+                    data-quick-off
+                    style:height="{fit.rows === 2
+                      ? 2 * tile + fit.catalog.gap
+                      : tile}px"
+                    onclick={turnOff}
+                  >
+                    <i class="fas fa-power-off" aria-hidden="true"></i>
+                    <span>{t("effect_deep_off")}</span>
+                  </button>
+                  <div class="fx-quick-scroll" class:one-row={fit.rows === 1}>
+                    <div
+                      class="fx-quick-scroller"
+                      class:fade-start={edges.start}
+                      class:fade-end={edges.end}
+                      style:scroll-padding-inline="{QUICK_PICKER_STRIP_EDGE_CLEAR}px
+                      {QUICK_PICKER_STRIP_END_CLEAR}px"
+                      bind:this={scrollerEl}
+                      use:wheelScrollsSideways
+                      use:scrollEdges={(next) => (edges = next)}
+                    >
+                      <!-- The track ends a disc's width past its last tile, so
+                         the row scrolled all the way shows that tile clear of
+                         the close disc. -->
+                      <div
+                        class="fx-quick-track"
+                        class:two-row={fit.rows === 2}
+                        style:width="{fit.trackWidth}px"
+                        style:padding-inline-end="{QUICK_PICKER_CLOSE_DISC +
+                          fit.catalog.gap}px"
+                      >
+                        <EffectSelector
+                          {activeEffect}
+                          onSelect={select}
+                          onPrewarm={prewarm}
+                          catalog={fit.catalog}
+                          {portrait}
+                        />
+                      </div>
+                    </div>
+                    {#if edges.start}{@render arrow(-1)}{/if}
+                    {#if edges.end}{@render arrow(1)}{/if}
+                  </div>
+                  {@render closeButton()}
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/snippet}
+      </Popover.Content>
+    </Popover.Portal>
+  {/if}
 </Popover.Root>
 
 <style>

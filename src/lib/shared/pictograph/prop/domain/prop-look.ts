@@ -14,6 +14,13 @@ import {
   resolveBuugengRenderKey,
   type BuugengStyle,
 } from "./buugeng-appearance";
+import {
+  isBuiltTriadPropType,
+  normalizeTriadBuild,
+  resolveTriadRenderKey,
+  triadBuildArtwork,
+  type TriadBuild,
+} from "./triad-build";
 import { HOOP_FAMILY_GLYPH_CROPS } from "./hoop-family-geometry.generated";
 import {
   isTrianglePropType,
@@ -30,6 +37,7 @@ export interface PropRenderAppearance {
   fanAppearance?: FanAppearance | null;
   triangleGrip?: TriangleGrip | null;
   buugengStyle?: BuugengStyle | null;
+  triadBuild?: TriadBuild | null;
 }
 
 /**
@@ -58,6 +66,12 @@ export function resolvePropRenderKey(
     return resolveBuugengRenderKey(
       normalized,
       normalizeBuugengStyle(appearance.buugengStyle)
+    );
+  }
+  if (isBuiltTriadPropType(normalized)) {
+    return resolveTriadRenderKey(
+      normalized,
+      normalizeTriadBuild(appearance.triadBuild)
     );
   }
   return normalized;
@@ -303,6 +317,15 @@ export function propTileArtwork(
       prelit: false,
     };
   }
+  if (isBuiltTriadPropType(normalized)) {
+    // A build keeps the plain button frame, but its wicks and heads are
+    // neutral material, so it shows in color rather than as a silhouette.
+    const build = normalizeTriadBuild(appearance.triadBuild);
+    const href = triadBuildArtwork(normalized, build, "buttons");
+    return href
+      ? { href, styled: true, prelit: false }
+      : { href: fallback, styled: false, prelit: false };
+  }
   return { href: fallback, styled: false, prelit: false };
 }
 
@@ -326,7 +349,8 @@ export function propGlyphArtwork(
     };
   }
   const art = propTileArtwork(propType, side, appearance, fallback);
-  return art.styled
+  // A triad build shares the notation glyph's frame, so the glyph crop holds.
+  return art.styled && !isBuiltTriadPropType(propType)
     ? art
     : { ...art, crop: NOTATION_GLYPH_CROPS[propType.toLowerCase()] };
 }

@@ -3,6 +3,8 @@
   import { useGltf, useMeshopt } from "@threlte/extras";
   import type { Mesh } from "three";
   import ForestAtmosphereMaterials from "./ForestAtmosphereMaterials.svelte";
+  import { getStageDirectionCuesShown } from "../../../context/stage-direction-cues-context";
+  import { setStageDirectionCueVisibility } from "../../domain/stage-direction-cues";
   import type { ForestMaterialResponseConfig } from "../../domain/models/scene-configs/forest-scene-config";
 
   interface Props {
@@ -48,6 +50,12 @@
 
     readinessReported = true;
     onReady?.();
+  });
+
+  const directionCuesShown = getStageDirectionCuesShown();
+  $effect(() => {
+    const shown = directionCuesShown();
+    if ($forestStage) setStageDirectionCueVisibility($forestStage.scene, shown);
   });
 
   $effect(() => {

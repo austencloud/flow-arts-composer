@@ -30,6 +30,7 @@ import type { PropType } from "../../prop/domain/enums/prop-type";
 import type { FanAppearance } from "../../prop/domain/fan-appearance";
 import type { TriangleGrip } from "../../prop/domain/triangle-appearance";
 import type { BuugengStyle } from "../../prop/domain/buugeng-appearance";
+import type { TriadBuild } from "../../prop/domain/triad-build";
 
 // Re-export for convenience
 export type { PreparedPictographData };
@@ -56,6 +57,11 @@ export interface PrepareOptions {
    * which printed and scanned cards keep.
    */
   buugengStyle?: BuugengStyle;
+  /**
+   * The triad's physical build. Omitted means Pictograph, the notation glyph,
+   * which printed and scanned cards keep.
+   */
+  triadBuild?: TriadBuild;
   /**
    * Explicit prop type for the performer's left hand.
    * When provided, this value is used directly. When omitted, falls back to global settings.

@@ -17,8 +17,12 @@ import { dirname, join, resolve } from "node:path";
 // worktree on this machine sees them. Keyed by tree, not commit: GitHub main
 // moving gives the snapshot a new parent and sha but the same files.
 function greenListPath() {
+  // Every spawn in this file sets windowsHide. Under pm2 (preflight-watch.mjs)
+  // there is no console to inherit, so an unhidden child opens its own
+  // focus-stealing window.
   const common = spawnSync("git", ["rev-parse", "--git-common-dir"], {
     encoding: "utf8",
+    windowsHide: true,
   }).stdout.trim();
   return resolve(common, "publish-preflight-green.txt");
 }
@@ -84,6 +88,7 @@ export function d2Reachable() {
   const probe = spawnSync(sshBin, [...SSH, "echo ok"], {
     encoding: "utf8",
     timeout: 30_000,
+    windowsHide: true,
   });
   return probe.status === 0 && /ok/.test(probe.stdout ?? "");
 }
@@ -123,7 +128,7 @@ function streamD2Run(argv) {
     const child = spawn(
       "pwsh",
       ["-NoProfile", "-File", "scripts/d2-run.ps1", ...argv],
-      { stdio: ["ignore", "pipe", "pipe"] }
+      { stdio: ["ignore", "pipe", "pipe"], windowsHide: true }
     );
     let output = "";
     for (const stream of [child.stdout, child.stderr]) {
@@ -215,6 +220,7 @@ export function listPreflightJobs(key) {
   const probe = spawnSync(sshBin, [...SSH, jobListing(key)], {
     encoding: "utf8",
     timeout: 60_000,
+    windowsHide: true,
   });
   return probe.status === 0 ? parseJobList(probe.stdout ?? "") : null;
 }

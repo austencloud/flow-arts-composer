@@ -1,6 +1,7 @@
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import type { TriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { PropType } from "../../pictograph/prop/domain/enums/prop-type";
@@ -77,6 +78,7 @@ export interface LayerRenderOptions {
   /** Triangle grip the pictograph was prepared with. Base-layer identity. */
   triangleGrip?: TriangleGrip;
   buugengStyle?: BuugengStyle;
+  triadBuild?: TriadBuild;
   primaryPropColors?: { left: string; right: string } | null;
   size: number;
   /** Width multiplier for duration-expanded cells (1 = square, 2 = double-wide). Default: 1 */

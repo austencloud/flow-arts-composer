@@ -51,6 +51,18 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
+  /* The dialog listens for taps (outside closes it), so a phone flashed the
+     whole sheet on every tap, the QR code included, as if it were a button.
+     Only real controls keep the tap flash. */
+  :global(dialog.base-modal.share-sheet-modal) {
+    -webkit-tap-highlight-color: transparent;
+  }
+  :global(
+    dialog.base-modal.share-sheet-modal
+      :is(button, a[href], [role="button"], label, summary)
+  ) {
+    -webkit-tap-highlight-color: initial;
+  }
   :global(dialog.base-modal.share-sheet-modal[data-size]) {
     width: min(63rem, calc(100vw - 3rem));
     max-width: none;

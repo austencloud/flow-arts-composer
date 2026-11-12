@@ -75,6 +75,23 @@ export function stage3DPerformerSteps(
 }
 
 /**
+ * The character each performer wears on the 3D stage, front first: the
+ * clip's cast where it names a character the catalog knows, else null (the
+ * viewer's default figure). `knownIds` is the catalog's ids, passed in so
+ * this module stays free of the scene package.
+ */
+export function stage3DCastCharacters(
+  stage: Pick<PostStage3D, "cast">,
+  performerCount: number,
+  knownIds: ReadonlySet<string>
+): (string | null)[] {
+  return Array.from({ length: performerCount }, (_, index) => {
+    const character = stage.cast?.[index]?.character;
+    return character && knownIds.has(character) ? character : null;
+  });
+}
+
+/**
  * The orbit camera's turn, in radians, at a post time: zero where the clip
  * starts, one full turn every `secondsPerTurn`. Earlier times turn it back,
  * so scrubbing backwards unwinds the orbit.

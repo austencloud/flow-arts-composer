@@ -159,6 +159,7 @@ export class CellPreWarmer {
       fanAppearance: settingsService.settings.fanAppearance,
       triangleGrip: settingsService.settings.triangleGrip,
       buugengStyle: settingsService.settings.buugengStyle,
+      triadBuild: settingsService.settings.triadBuild,
       primaryPropColors: settingsService.settings.primaryPropColors,
       ...buildCellRenderOptions({
         cellSize: 240,

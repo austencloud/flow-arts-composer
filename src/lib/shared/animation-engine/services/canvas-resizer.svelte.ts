@@ -21,7 +21,6 @@ import {
 /** Below this the stale-raster correction is invisible, so it is left off. */
 const STALE_SCALE_EPSILON = 0.001;
 
-
 /**
  * How long the observed size has to hold still before the canvas is rebuilt at
  * it. Long enough to swallow every frame of a CSS transition, short enough that
@@ -108,8 +107,17 @@ export class CanvasResizer {
     this.teardown();
 
     if (typeof ResizeObserver !== "undefined" && this.container) {
-      this.resizeObserver = new ResizeObserver(() => {
-        this.handleResize();
+      // The wrapper has no padding or border, so its content box is the box
+      // the canvases fill. Reading clientWidth here instead forced a layout on
+      // every frame a panel slid, since other observers write the DOM first.
+      this.resizeObserver = new ResizeObserver((entries) => {
+        const box = entries[entries.length - 1]?.contentRect;
+        // Rounded like clientWidth, so both paths size the canvases alike.
+        this.handleResize(
+          box
+            ? { width: Math.round(box.width), height: Math.round(box.height) }
+            : undefined
+        );
       });
       this.resizeObserver.observe(this.container);
     }
@@ -251,9 +259,9 @@ export class CanvasResizer {
    * The first observation is not deferred: the canvas would otherwise sit at
    * DEFAULT_CANVAS_SIZE and pop.
    */
-  private handleResize(): void {
+  private handleResize(box?: { width: number; height: number }): void {
     // Runs before paint, every frame a box animates, whatever the raster does.
-    this.fitStaleRasters();
+    this.fitStaleRasters(box);
     if (this.paused) return;
 
     if (this.observationSuppressed()) {
@@ -302,14 +310,18 @@ export class CanvasResizer {
    * each canvas so its square matches the box's, and clip what the larger
    * scale would push past the box.
    */
-  private fitStaleRasters(): void {
+  private fitStaleRasters(box?: { width: number; height: number }): void {
     const container = this.container;
     if (!container?.children) return;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    const width = box?.width ?? container.clientWidth;
+    const height = box?.height ?? container.clientHeight;
     for (const canvas of container.children) {
       if (!(canvas instanceof HTMLCanvasElement)) continue;
-      if (canvas.dataset.animationLayer === "props" && width > 0 && height > 0) {
+      if (
+        canvas.dataset.animationLayer === "props" &&
+        width > 0 &&
+        height > 0
+      ) {
         // The props raster is the engine's square. Give its element that
         // square instead of the whole box: it looks the same as contain, and
         // session replay snapshots a canvas at its element's size, so a

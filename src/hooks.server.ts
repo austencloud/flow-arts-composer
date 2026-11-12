@@ -15,6 +15,7 @@ import {
 import { normalizeModuleId } from "#lib/shared/navigation/config/module-definitions.js";
 import { inlineSelfTimingBar } from "#lib/server/performance/self-timing-bar-inline.js";
 import { inlineOverture } from "#lib/server/performance/overture-inline.js";
+import { injectAppShellHead } from "#lib/server/seo/app-shell-head.js";
 import { guardInternalRoute } from "./config/build-flags";
 import { getRequestEvent, read } from "$app/server";
 import { rtlLocales } from "#lib/shared/i18n/i18n.svelte.js";
@@ -246,11 +247,17 @@ export const handle: Handle = async ({ event, resolve }) => {
   // Resolve the request with security headers
   const routePath = event.route?.id === "/" ? "/" : event.url.pathname;
   const transformLandingChunk = createLandingPageTransformer(routePath);
+  // The client-only app shell never renders its own head; give link previews
+  // a title, description and image (see app-shell-head.ts).
+  const isAppShell = event.route?.id === "/[...appPath]";
   const response = await resolve(event, {
     preload: (asset) => shouldPreloadRouteAsset(routePath, asset),
-    transformPageChunk: (chunk) => {
+    transformPageChunk: ({ html: chunk, done }) => {
+      const shellChunk = isAppShell
+        ? injectAppShellHead(chunk, event.url.pathname)
+        : chunk;
       const html = inlineOverture(
-        inlineSelfTimingBar(transformLandingChunk(chunk))
+        inlineSelfTimingBar(transformLandingChunk({ html: shellChunk, done }))
       );
       const lang = localizedLocale;
       if (!lang) return html;

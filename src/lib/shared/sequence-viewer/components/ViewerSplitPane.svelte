@@ -540,17 +540,6 @@
   });
   $effect(() => () => clearTimeout(resizeResumeTimer));
 
-  const needs3D = $derived(
-    splitConfig.leftPane === "animation-3d" ||
-      splitConfig.rightPane === "animation-3d"
-  );
-  $effect(() => {
-    // The preloader imports three.js, so a 2D viewer leaves it unloaded.
-    if (needs3D)
-      void import("#lib/shared/3d/services/scene-asset-preloader.svelte.js").then(
-        (preloader) => preloader.startSceneAssetPreload()
-      );
-  });
   const needsTunnel = $derived(
     splitConfig.leftPane === "tunnel" || splitConfig.rightPane === "tunnel"
   );

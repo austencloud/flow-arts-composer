@@ -698,8 +698,15 @@ type CreateWorkerPerformer = (
   snapshot: WorkerPerformerSnapshot
 ) => Promise<WorkerPerformerLike>;
 
+/**
+ * Owns the worker's performers. It can start before the world exists: built
+ * with no scene, performers collect in a detached holding group, so the avatar
+ * download and skinning setup run while the environment loads. `attachTo`
+ * then moves every performer into the world's scene, and later ones are added
+ * there directly.
+ */
 export class WorkerPerformerStage {
-  private readonly scene: Scene;
+  private parent: Scene | Group;
   private readonly createPerformer: CreateWorkerPerformer;
   private performers = new Map<string, WorkerPerformerLike>();
   private pending = new Map<string, Promise<void>>();
@@ -709,11 +716,23 @@ export class WorkerPerformerStage {
   private disposed = false;
 
   constructor(
-    scene: Scene,
+    scene: Scene | null = null,
     createPerformer: CreateWorkerPerformer = WorkerPerformer.create
   ) {
-    this.scene = scene;
+    this.parent = scene ?? new Group();
     this.createPerformer = createPerformer;
+  }
+
+  /** Whether performers already live in a world scene. */
+  get attached(): boolean {
+    return (this.parent as Scene).isScene === true;
+  }
+
+  /** Move every performer, built or still loading, into the world's scene. */
+  attachTo(scene: Scene): void {
+    if (this.disposed || this.parent === scene) return;
+    this.parent = scene;
+    for (const performer of this.performers.values()) scene.add(performer.root);
   }
 
   async setSnapshots(next: readonly WorkerPerformerSnapshot[]): Promise<void> {
@@ -770,7 +789,7 @@ export class WorkerPerformerStage {
         }
         performer.setEffectSourceIdBase?.(effectSourceIdBase);
         this.performers.set(snapshot.id, performer);
-        this.scene.add(performer.root);
+        this.parent.add(performer.root);
         performer.setSnapshot(latest);
       })
       .finally(() => {

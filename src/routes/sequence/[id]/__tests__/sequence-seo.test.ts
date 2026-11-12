@@ -44,7 +44,9 @@ describe("sequence route indexing", () => {
     expect(seo.canonical).toBe(
       "https://tkaflowarts.com/sequence/tnd-split-same-aaaa"
     );
-    expect(seo.title).toBe("A Flow Arts Sequence | Flow Arts Composer");
+    expect(seo.title).toBe(
+      "A by TKA System: Flow Arts Sequence | Flow Arts Composer"
+    );
     expect(seo.description).toContain("4-step flow arts sequence");
     expect(seo.description).toContain("submitted by TKA System");
     expect(seo.description).toContain(curatedMeta.deckName);

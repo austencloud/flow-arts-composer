@@ -688,7 +688,7 @@ export const CHOREO_CARD_TABS: Section[] = [
     id: "codex",
     labelKey: "tab_choreo_card_codex",
     descKey: "tab_desc_choreo_card_codex",
-    label: "Codex Print",
+    label: "Codex Cards",
     icon: '<i class="fas fa-book-open" aria-hidden="true"></i>',
     description: "Print the Double-Staff codex as cut-out reference cards",
     color: "#8b5cf6",

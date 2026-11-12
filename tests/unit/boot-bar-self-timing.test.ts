@@ -33,7 +33,8 @@ const loadingScript = [
 const SCREEN =
   '<div id="app-loading" aria-valuenow="5"><div id="boot-capsule">' +
   '<div class="boot-capsule-fill" id="loading-bar-fill"></div>' +
-  '<span id="loading-text"></span></div></div>';
+  '<span id="loading-text"></span></div>' +
+  '<button type="button" id="boot-reload" class="boot-reload">Reload</button></div>';
 
 type Timeline = Array<[number, string]>;
 
@@ -52,6 +53,7 @@ interface Probe {
     name: string;
     at: number;
     waitMs?: number;
+    untilReleased?: true;
     releasedAt?: number;
     timedOut?: true;
   }>;
@@ -213,8 +215,12 @@ function boot(
     value: (name: string) => marks.push(name),
   });
   const timers: Timer[] = [];
-  win.setTimeout = (run: () => void, ms = 0) =>
-    timers.push({ run, at: clock + ms, every: null, live: true });
+  /** Every delay the page asked setTimeout for. */
+  const delays: number[] = [];
+  win.setTimeout = (run: () => void, ms = 0) => {
+    delays.push(ms);
+    return timers.push({ run, at: clock + ms, every: null, live: true });
+  };
   win.setInterval = (run: () => void, ms: number) =>
     timers.push({ run, at: clock + ms, every: ms, live: true });
   win.clearTimeout = win.clearInterval = (id?: number) => {
@@ -407,6 +413,7 @@ function boot(
     fill,
     text,
     marks,
+    delays,
     moves,
     placements,
     transitions,
@@ -1168,6 +1175,149 @@ describe("boot holds and the composed milestone", () => {
     expect(loaded(other)).toBe(true);
   });
 
+  it("keeps an until-released hold past ready + 15 s and past 60 s, and leaves when it is released", () => {
+    // Austen, 2026-11-11: a restarted Vite server took over 30 s to send
+    // Browse's code, the 15 s module-view limit ran out, and the screen left
+    // on the empty shell skeleton.
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const release = run.win.__tkaBootHold("module-view", "until-released");
+    run.replay([[4370, "ready"]]);
+    run.advance(4370 + 15001);
+    expect(loaded(run)).toBe(false);
+    run.advance(4370 + 60001);
+    expect(loaded(run)).toBe(false);
+    expect(run.marks).not.toContain("boot:splash:hold-cap");
+    expect(run.marks).not.toContain("boot:splash:timeout-dismiss");
+    expect(run.probe().holds).toEqual([
+      { name: "module-view", at: 1108, untilReleased: true },
+    ]);
+
+    run.advance(4370 + 61000);
+    release();
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "composed")).toBe(65370);
+    expect(dismissals(run)).toHaveLength(1);
+    // No timer was ever asked for an endless (or NaN) wait.
+    expect(run.delays.every((ms) => Number.isFinite(ms))).toBe(true);
+  });
+
+  it("never schedules a timer for Infinity while only until-released holds are open", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    run.win.__tkaBootHold("module-view", "until-released");
+    run.replay([[4370, "ready"]]);
+    // A second until-released hold asked for after ready reschedules too.
+    run.advance(5000);
+    run.win.__tkaBootHold("late-view", "until-released");
+    run.advance(4370 + 90000);
+    expect(loaded(run)).toBe(false);
+    expect(run.delays.every((ms) => Number.isFinite(ms))).toBe(true);
+  });
+
+  it("shows the long wait at ready + 15 s, not before, with the Reload button", () => {
+    const run = boot({ profile: devWarmProfile() });
+    const reload = run.win.document.getElementById("boot-reload")!;
+    run.replay(DEV_WARM.slice(0, 3));
+    run.win.__tkaBootHold("module-view", "until-released");
+    run.replay([[4370, "ready"]]);
+    run.advance(4370 + 14999);
+    expect(run.screen.hasAttribute("data-long-wait")).toBe(false);
+    expect(run.text.textContent).not.toContain("Still loading");
+    expect(run.marks).not.toContain("boot:splash:long-wait");
+
+    run.advance(4370 + 15000);
+    expect(run.screen.hasAttribute("data-long-wait")).toBe(true);
+    expect(run.marks).toContain("boot:splash:long-wait");
+    // The status crossfades: out, then the new words.
+    run.advance(4370 + 15200);
+    expect(run.text.textContent).toBe(
+      "Still loading. This is taking longer than usual."
+    );
+    expect(reload.tagName).toBe("BUTTON");
+    expect(reload.textContent).toBe("Reload");
+    // "Almost there" never replaces the long wait's words.
+    run.advance(4370 + 40000);
+    expect(run.text.textContent).toBe(
+      "Still loading. This is taking longer than usual."
+    );
+    expect(loaded(run)).toBe(false);
+  });
+
+  it("shows the long wait at once under reduced motion", () => {
+    const run = boot({ profile: devWarmProfile(), reduceMotion: true });
+    run.replay(DEV_WARM.slice(0, 3));
+    run.win.__tkaBootHold("module-view", "until-released");
+    run.replay([[4370, "ready"]]);
+    run.advance(4370 + 15000);
+    expect(run.text.textContent).toBe(
+      "Still loading. This is taking longer than usual."
+    );
+  });
+
+  it("shows no long wait when the until-released hold let go in time", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const release = run.win.__tkaBootHold("module-view", "until-released");
+    run.win.__tkaBootHold("create-workspace", 15000);
+    run.replay([[4370, "ready"]]);
+    run.advance(6000);
+    release();
+    run.advance(4370 + 15000);
+    expect(loaded(run)).toBe(true);
+    expect(run.screen.hasAttribute("data-long-wait")).toBe(false);
+    expect(run.marks).not.toContain("boot:splash:long-wait");
+  });
+
+  it("still times out bounded holds at their limits beside an until-released one", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const releaseView = run.win.__tkaBootHold("module-view", "until-released");
+    run.win.__tkaBootHold("create-previews");
+    run.win.__tkaBootHold("create-workspace", 15000);
+    run.replay([[4370, "ready"]]);
+    run.advance(4370 + 4000);
+    expect(run.probe().holds[1]).toMatchObject({ timedOut: true });
+    expect(run.probe().holds[2]!.timedOut).toBeUndefined();
+    run.advance(4370 + 15000);
+    expect(run.probe().holds[2]).toMatchObject({ timedOut: true });
+    expect(run.probe().holds[0]!.timedOut).toBeUndefined();
+    expect(loaded(run)).toBe(false);
+    run.advance(4370 + 20000);
+    releaseView();
+    expect(loaded(run)).toBe(true);
+    expect(dismissals(run)).toHaveLength(1);
+    expect(run.delays.every((ms) => Number.isFinite(ms))).toBe(true);
+  });
+
+  it("stores a slow boot's composed at most 4 s past ready, so the next fill does not crawl", () => {
+    const slow = boot({ profile: devWarmProfile() });
+    slow.replay(DEV_WARM.slice(0, 3));
+    const release = slow.win.__tkaBootHold("module-view", "until-released");
+    slow.replay([[4370, "ready"]]);
+    slow.advance(4370 + 40000);
+    release();
+    expect(slow.stored()!.t).toMatchObject({ ready: 4370, composed: 8370 });
+
+    // A boot inside the limit keeps its own composed.
+    const quick = boot({ profile: devWarmProfile() });
+    quick.replay(DEV_WARM.slice(0, 3));
+    const quickRelease = quick.win.__tkaBootHold("module-view");
+    quick.replay([[4370, "ready"]]);
+    quick.advance(4370 + 2500);
+    quickRelease();
+    expect(quick.stored()!.t.composed).toBe(6870);
+
+    // The next boot replays the clamped profile: by ready the fill has
+    // covered most of the bar, not the tenth a 40 s composed would allow.
+    const next = boot({ profile: slow.stored()! });
+    next.replay(DEV_WARM.slice(0, 3));
+    next.win.__tkaBootHold("module-view", "until-released");
+    next.replay([[4370, "ready"]]);
+    next.advance(4370 + 50);
+    expect(next.width()).toBeGreaterThan(40);
+  });
+
   it("leaves at once under reduced motion when the last hold releases", () => {
     const run = boot({ reduceMotion: true });
     run.replay(DEV_WARM.slice(0, 3));
@@ -1179,5 +1329,129 @@ describe("boot holds and the composed milestone", () => {
     release();
     expect(run.width()).toBe(100);
     expect(run.screen.isConnected).toBe(false);
+  });
+});
+
+/**
+ * No ready yet. The screen never leaves on a timer (Austen, 2026-11-11): at
+ * 15 s from page start it shows the long wait and keeps covering the page.
+ */
+describe("no ready: the long wait, never a give-up timer", () => {
+  const loaded = (run: ReturnType<typeof boot>) =>
+    run.screen.classList.contains("loaded");
+  const longWait = (run: ReturnType<typeof boot>) =>
+    run.screen.hasAttribute("data-long-wait");
+  const STILL = "Still loading. This is taking longer than usual.";
+  // The early milestones a slow app still reports before its code arrives.
+  const EARLY = DEV_WARM.slice(0, 3);
+
+  it("shows the long wait at 15 s with no ready and stays up past 60 s", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(EARLY);
+    run.advance(14999);
+    expect(longWait(run)).toBe(false);
+    run.advance(15000);
+    expect(longWait(run)).toBe(true);
+    expect(run.marks).toContain("boot:splash:long-wait");
+    run.advance(15400);
+    expect(run.text.textContent).toBe(STILL);
+    expect(loaded(run)).toBe(false);
+    run.advance(60000);
+    expect(loaded(run)).toBe(false);
+    expect(run.screen.isConnected).toBe(true);
+    expect(run.marks).not.toContain("boot:splash:timeout-dismiss");
+  });
+
+  it("keeps the Overture lapping in the long wait", () => {
+    const run = boot({ profile: devWarmProfile() });
+    const calls: string[] = [];
+    run.win.__tkaOverture = (type: string) => calls.push(type);
+    run.replay(EARLY);
+    run.advance(60000);
+    expect(calls).not.toContain("finish");
+  });
+
+  it("leaves at module-view's release (25 s) after a late ready (20 s), not before", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(EARLY);
+    run.advance(15000);
+    expect(longWait(run)).toBe(true);
+    const release = run.win.__tkaBootHold("module-view", "until-released");
+    run.replay([[20000, "ready"]]);
+    expect(loaded(run)).toBe(false);
+    run.advance(24999);
+    expect(loaded(run)).toBe(false);
+    run.advance(25000);
+    release();
+    expect(loaded(run)).toBe(true);
+    expect(run.probe().milestones.find((m) => m.name === "composed")?.t).toBe(
+      25000
+    );
+  });
+
+  it("leaves at a late ready (20 s) when nothing holds", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(EARLY);
+    run.advance(19999);
+    expect(loaded(run)).toBe(false);
+    run.replay([[20000, "ready"]]);
+    expect(loaded(run)).toBe(true);
+    expect(run.probe().milestones.find((m) => m.name === "composed")?.t).toBe(
+      20000
+    );
+  });
+
+  it("only ends the Overture when the route removed or hid the screen before 15 s", () => {
+    for (const how of ["removed", "hidden"] as const) {
+      const run = boot({ profile: devWarmProfile() });
+      const calls: string[] = [];
+      run.win.__tkaOverture = (type: string) => calls.push(type);
+      run.replay(EARLY);
+      run.advance(8000);
+      if (how === "removed") run.screen.remove();
+      else run.screen.style.display = "none";
+      run.advance(14999);
+      expect(calls).not.toContain("finish");
+      run.advance(15000);
+      expect(calls).toContain("finish");
+      expect(longWait(run)).toBe(false);
+      expect(run.marks).not.toContain("boot:splash:long-wait");
+      expect(run.text.textContent).not.toBe(STILL);
+    }
+  });
+
+  it("shows the long wait's words at once under reduced motion", () => {
+    const run = boot({ profile: devWarmProfile(), reduceMotion: true });
+    run.replay(EARLY);
+    run.advance(15000);
+    expect(longWait(run)).toBe(true);
+    expect(run.text.textContent).toBe(STILL);
+    expect(run.win.document.getElementById("boot-reload")!.textContent).toBe(
+      "Reload"
+    );
+    run.advance(60000);
+    expect(loaded(run)).toBe(false);
+    expect(run.screen.isConnected).toBe(true);
+  });
+
+  it("has no timeout-dismiss and no timer that adds `loaded` in app.html", () => {
+    const source = readFileSync("src/app.html", "utf8");
+    expect(source).not.toContain("timeout-dismiss");
+    // Each setTimeout call's whole argument list, by bracket matching.
+    const calls: string[] = [];
+    for (const match of source.matchAll(/setTimeout\s*\(/g)) {
+      let depth = 0;
+      let end = match.index! + match[0].length - 1;
+      for (; end < source.length; end++) {
+        const ch = source[end];
+        if (ch === "(") depth++;
+        else if (ch === ")" && --depth === 0) break;
+      }
+      calls.push(source.slice(match.index!, end + 1));
+    }
+    expect(calls.length).toBeGreaterThan(0);
+    for (const call of calls) {
+      expect(call).not.toMatch(/classList\.add\(\s*["']loaded["']\s*\)/);
+    }
   });
 });

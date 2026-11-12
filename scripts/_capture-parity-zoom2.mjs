@@ -1,7 +1,7 @@
 // Zoom into the render column of the parity page for detailed comparison
 import { chromium } from "playwright-core";
 
-const url = process.argv[2] ?? "http://localhost:5173/guide/codex/parity";
+const url = process.argv[2] ?? "http://localhost:5173/test/codex-parity";
 const out = process.argv[3] ?? "C:/tka-platform/static/test/parity-zoom2.png";
 const section = process.argv[4] ?? "render-sheet1-top";
 const waitMs = Number(process.argv[5] ?? 14000);

@@ -16,6 +16,7 @@ import {
 import {
   STAGE_3D_FALLBACK_SECONDS_PER_TURN,
   postPerformerPositions,
+  stage3DCastCharacters,
   stage3DOrbitAngle,
   stage3DPerformerSteps,
   stage3DSecondsPerTurn,
@@ -310,5 +311,42 @@ describe("a 3D clip running over the end card", () => {
     expect(after!.useResolvedTimeMap).toBe(true);
     expect(after!.timeMapRole).toBe(over!.timeMapRole);
     expect(after!.sourceOut.value).toBeCloseTo(over!.sourceOut.value);
+  });
+});
+
+describe("a 3D clip's cast", () => {
+  const known = new Set(["ch22", "personal-metaperson"]);
+
+  it("dresses each performer in the character the clip names, front first", () => {
+    const stage = PostStage3DSchema.parse({
+      shot: "orbit",
+      cast: [{ character: "ch22" }, { character: "personal-metaperson" }],
+    });
+    expect(stage3DCastCharacters(stage, 2, known)).toEqual([
+      "ch22",
+      "personal-metaperson",
+    ]);
+  });
+
+  // An old file, a typo or a character dropped from the catalog must not
+  // fail the post: that performer keeps the default figure.
+  it("leaves a performer the cast misses or misnames as the default figure", () => {
+    const stage = PostStage3DSchema.parse({
+      shot: "front",
+      cast: [{ character: "no-such-person" }],
+    });
+    expect(stage3DCastCharacters(stage, 2, known)).toEqual([null, null]);
+    expect(stage3DCastCharacters({}, 1, known)).toEqual([null]);
+  });
+
+  it("refuses more cast than the stage can hold, and unknown keys", () => {
+    const tooMany = Array.from({ length: 9 }, () => ({ character: "ch22" }));
+    expect(
+      PostStage3DSchema.safeParse({ shot: "front", cast: tooMany }).success
+    ).toBe(false);
+    expect(
+      PostStage3DSchema.safeParse({ shot: "front", cast: [{ who: "ch22" }] })
+        .success
+    ).toBe(false);
   });
 });

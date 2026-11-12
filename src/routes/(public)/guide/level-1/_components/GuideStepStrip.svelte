@@ -40,6 +40,7 @@
     availableWidth,
     minCell = 104,
     maxCell = 132,
+    fill = false,
   }: {
     items: PictographData[];
     /**
@@ -81,6 +82,14 @@
      */
     minCell?: number;
     maxCell?: number;
+    /**
+     * The start box and the steps share the strip's whole width in one row,
+     * each cell square, no outer frame of their own, hairline seams between
+     * them, and the playing step ringed inside its cell: the strip under the
+     * player in the figure card (SequenceShowcase's "card" variant), whose
+     * frame is the card's. Needs no measuring, so the first paint is final.
+     */
+    fill?: boolean;
   } = $props();
 
   const r = $derived({
@@ -135,6 +144,7 @@
   const layout = $derived.by(() => {
     const n = steps.length;
     if (!n) return { mode: "none" as Mode, rows: [] as PictographData[][], cols: 1, cellW: 0 };
+    if (fill) return { mode: (startBox ? "column" : "none") as Mode, rows: [steps], cols: n, cellW: 0 };
     if (!measuredW) return { mode: "scroll" as Mode, rows: [steps], cols: n, cellW: 0 };
     // This is a WIDE band, not a portrait card: prefer the WIDEST layout that
     // fits - one row when it fits, else the widest EVEN divisor of the step
@@ -214,7 +224,7 @@
   </div>
 {/snippet}
 
-<figure class="guide-step-strip" class:grows={maxCell > 132} role="group" aria-label={caption ?? "Sequence"} bind:clientWidth={ownW}>
+<figure class="guide-step-strip" class:grows={maxCell > 132} class:fill role="group" aria-label={caption ?? "Sequence"} bind:clientWidth={ownW}>
   {#if layout.mode === "scroll"}
     <!-- Pre-measurement fallback (SSR / no-JS): aside above, everything in one
          scrollable row rather than overflowing the page. Vanishes once measured. -->
@@ -242,7 +252,7 @@
       {:else if startAside}
         <div class="start-aside bare">{@render startAside()}</div>
       {/if}
-      <div class="rows">
+      <div class="rows" style:flex-grow={fill ? layout.cols : undefined}>
         {#each layout.rows as row, ri (ri)}
           <div class="strip">
             {#each row as pos, ci (pos.id ?? ri * layout.cols + ci)}
@@ -417,6 +427,90 @@
   }
   .pic-card :global(.pictograph-wrapper) {
     max-width: none !important;
+  }
+  /* ── Fill (the figure card's strip): one row across the card, the start
+     box and each step an equal square share of the width. The card draws the
+     frame and its seam over the strip; the cells draw only the seams between
+     them. */
+  .guide-step-strip.fill {
+    margin: 0;
+    gap: 0;
+  }
+  .fill .unit {
+    width: 100%;
+  }
+  .fill .start-slot {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .fill .rows {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .fill .strip {
+    width: 100%;
+  }
+  .fill .strip-cell {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+  .fill .pic-card,
+  .fill .start-slot .pic-card,
+  .fill.guide-step-strip .start-column .start-slot .pic-card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .fill .rows .pic-card,
+  .fill .strip-cell + .strip-cell .pic-card {
+    border-inline-start: 1px solid var(--seam, color-mix(in oklab, var(--ink, #1a1a1a) 16%, transparent));
+  }
+  .fill .unit:not(.start-column) .strip-cell:first-child .pic-card {
+    border-inline-start: none;
+  }
+  .fill .pic-card :global(.pictograph-wrapper) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    max-width: none;
+  }
+  /* The playing step's ring sits inside its cell, so the card's edge can
+     never cut it (guide.css draws it outside, scaled up, on other strips). */
+  .fill .pic-card.guide-step-active {
+    transform: none;
+    box-shadow: none;
+    animation: none;
+  }
+  .fill .pic-card.guide-step-active::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 3px solid rgba(251, 191, 36, 0.9);
+    box-shadow: inset 0 0 10px rgba(251, 191, 36, 0.45);
+    pointer-events: none;
+    animation: fill-ring-in var(--duration-normal) var(--ease-standard-out) both;
+  }
+  /* A ring in one of the card's bottom corners follows the card's rounding
+     (the host sets --fill-corner). */
+  .fill .start-slot .pic-card::after {
+    border-end-start-radius: var(--fill-corner, 0px);
+  }
+  .fill .strip-cell:last-child .pic-card::after {
+    border-end-end-radius: var(--fill-corner, 0px);
+  }
+  @keyframes fill-ring-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fill .pic-card.guide-step-active::after {
+      animation: none;
+    }
   }
   figcaption {
     font-size: 1rem;

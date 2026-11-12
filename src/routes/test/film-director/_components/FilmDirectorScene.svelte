@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
+  import type { PerspectiveCamera, WebGLRenderer } from "three";
 
   import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
   import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
@@ -396,9 +397,50 @@
     snapshotFading = false;
   }
 
+  // Cast readiness from the viewer, for the recorder's scene-change wait.
+  let readyPerformers = 0;
+  let totalPerformers = 0;
+
+  const recordingFrame = $derived(director.recordingFrame);
+  let windowWidth = $state(0);
+  let windowHeight = $state(0);
+  const recordingScale = $derived(
+    recordingFrame && windowWidth > 0 && windowHeight > 0
+      ? Math.min(
+          1,
+          windowWidth / recordingFrame.width,
+          windowHeight / recordingFrame.height
+        )
+      : 1
+  );
+
   onMount(() => {
     transitionProfiler.start();
     director.setPosterSource(() => viewer.webglCanvas);
+    director.setRecordingHost({
+      canvas: () => viewer.webglCanvas,
+      drive: () => {
+        const runFrame = viewer.threlteRunFrame;
+        const pauseAutoLoop = viewer.threltePauseAutoLoop;
+        const resumeAutoLoop = viewer.threlteResumeAutoLoop;
+        const renderer = viewer.threlteRenderer as WebGLRenderer | null;
+        if (!runFrame || !pauseAutoLoop || !resumeAutoLoop || !renderer)
+          return null;
+        return {
+          runFrame,
+          pauseAutoLoop,
+          resumeAutoLoop,
+          renderer,
+          camera: viewer.threlteCamera as PerspectiveCamera | null,
+        };
+      },
+      appliedSceneId: () => appliedSceneId,
+      castReady: () =>
+        totalPerformers ===
+          director.frame.scene.performance.performers.length &&
+        readyPerformers >= totalPerformers,
+      sequencesReady: () => sequenceLibrary.prepare(director.film),
+    });
     const observer = new ResizeObserver(([entry]) => {
       if (!entry || entry.contentRect.height <= 0) return;
       viewportAspectRatio = entry.contentRect.width / entry.contentRect.height;
@@ -408,6 +450,7 @@
       observer.disconnect();
       transitionProfiler.destroy();
       director.setPosterSource(null);
+      director.setRecordingHost(null);
     };
   });
 
@@ -554,9 +597,19 @@
   });
 </script>
 
+<svelte:window bind:innerWidth={windowWidth} bind:innerHeight={windowHeight} />
+
+<!-- While recording, the stage is laid out at exactly the output size in CSS
+     pixels, so the viewer's camera aspect and framing are the file's, and is
+     only scaled down to fit the window for whoever is watching. A transform
+     does not change layout size, so the renderer still sees the full size. -->
 <div
   bind:this={sceneElement}
   class="director-scene"
+  class:recording={recordingFrame !== null}
+  style:width={recordingFrame ? `${recordingFrame.width}px` : undefined}
+  style:height={recordingFrame ? `${recordingFrame.height}px` : undefined}
+  style:transform={recordingFrame ? `scale(${recordingScale})` : undefined}
   data-director-scene={director.frame.scene.id}
   data-director-scene-ready={director.sceneReady}
   aria-hidden="true"
@@ -571,6 +624,12 @@
     hideOverlays={true}
     hidePerformerBadges={true}
     hideOrientationHelpers={true}
+    cleanFrame={recordingFrame !== null}
+    framePacedCapture={recordingFrame !== null}
+    onPerformerReadinessChange={(ready, total) => {
+      readyPerformers = ready;
+      totalPerformers = total;
+    }}
     fullScreen={true}
     enableEffects={true}
     enablePerformerLocomotion={true}
@@ -608,7 +667,7 @@
      component establishes. The offset is the measured band the transport
      occupies. Save scene is off: the film panel owns saving here, and two save
      buttons that write different things is the confusion this replaced. -->
-{#if director.preparation.complete}
+{#if director.preparation.complete && !director.recordingFrame}
   <SceneControlWorkspace
     bottomOffset="calc(var(--director-transport-reserve, 9.5rem) + 0.75rem)"
     leftOffset="calc(var(--director-exit-reserve, 8rem) + 0.75rem)"
@@ -636,6 +695,13 @@
     min-height: 0;
     overflow: hidden;
     background: #070812;
+  }
+
+  .director-scene.recording {
+    inset: auto;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
   }
 
   .editorial-fade {

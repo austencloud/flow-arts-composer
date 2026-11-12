@@ -126,6 +126,7 @@
       fanAppearance: getSettings?.().fanAppearance ?? null,
       triangleGrip: getSettings?.().triangleGrip ?? null,
       buugengStyle: getSettings?.().buugengStyle ?? null,
+      triadBuild: getSettings?.().triadBuild ?? null,
     }
   );
   const leftGlyph = $derived(

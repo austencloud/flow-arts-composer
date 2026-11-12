@@ -75,8 +75,9 @@ unless a higher-priority platform or safety instruction conflicts.
   test plus the narrowest relevant type, lint, or build check.
 - Visual changes need direct browser inspection when they alter geometry,
   responsiveness, element count, structure, or a reported visual defect. Use
-  the viewport tiers that can exercise the changed behavior; use the full seven
-  viewport matrix for new surfaces or cross-breakpoint layout work.
+  the viewport tiers that can exercise the changed behavior; use the full device
+  list in `docs/architecture/layout-law.md` for new surfaces or
+  cross-breakpoint layout work.
 - New surfaces, substantial restyles, and aesthetic reviews also use
   `.agents/skills/ui-bust/SKILL.md`. Functional and responsive checks do not
   establish aesthetic acceptance; check the dated research ledger through that
@@ -98,7 +99,7 @@ Read only the row that matches the task. Do not scan `.claude/rules/` generally.
 | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Worktree, commit, integration                                     | `.claude/rules/worktree-workflow.md`, `.claude/rules/commit-only-your-own-changes.md`                                              |
 | Tests or verification strategy                                    | `.agents/skills/testing/SKILL.md`, `.claude/rules/verification-protocol.md`                                                        |
-| UI layout, CSS, motion, responsive structure                      | `src/AGENTS.md`, `docs/architecture/visual-design-canon.md`                                                                        |
+| UI layout, CSS, motion, responsive structure                      | `docs/architecture/layout-law.md`, `src/AGENTS.md`, `docs/architecture/visual-design-canon.md`                                     |
 | New UI, substantial restyle, aesthetic review or research refresh | `.agents/skills/ui-bust/SKILL.md`, `docs/architecture/visual-review.md`                                                            |
 | Sharing, downloads, export, device transfer, publishing           | `docs/architecture/sharing-export-experience.md`, `src/lib/shared/share/AGENTS.md`                                                 |
 | 3D environment design, art revisions, or scene review             | `src/lib/shared/3d/AGENTS.md`, `docs/architecture/scene-design-brief.md`                                                           |

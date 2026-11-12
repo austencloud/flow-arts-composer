@@ -9,8 +9,8 @@ Primary and standalone actions look interactive without hover:
 
 - use a semantic `<button>`, or a semantic `<a>` styled as a button when it
   navigates;
-- use the existing button primitive, visible focus, sufficient contrast, and a
-  44px touch-target floor;
+- use the existing button primitive, visible focus, sufficient contrast, and
+  the tap-size floor in `docs/architecture/layout-law.md`;
 - links are pills, never text: `LinkChip` for standalone links and
   `LinkChip size="inline"` for mentions inside a sentence. See
   `no-text-links.md`.

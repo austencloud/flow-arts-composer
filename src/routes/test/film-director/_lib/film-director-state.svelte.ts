@@ -15,6 +15,7 @@ import {
 } from "./film-director-edit";
 import type { FilmDirectorInput } from "./film-director-schema";
 import { getFilmDirectorWarmupStepCount } from "./film-director-warmup-plan";
+import type { FilmRecordingHost } from "./film-director-recorder.svelte";
 
 function explainValidationError(error: unknown): string {
   if (!(error instanceof ZodError)) {
@@ -99,6 +100,13 @@ export function createFilmDirectorState(
   let lastEditError = $state<string | null>(null);
   let frameRequest: number | null = null;
   let lastFrameTime: number | null = null;
+  /**
+   * True while something other than the rAF clock owns the playhead: the
+   * recorder seeks to each output frame's exact time itself. The film stays
+   * in its playing state, because effects and live poses only draw while it
+   * plays, but `tick` stops moving the playhead.
+   */
+  let externalClock = $state(false);
 
   /**
    * A manual camera layer standing in for one scene's own while a key is being
@@ -436,7 +444,7 @@ export function createFilmDirectorState(
     );
     lastFrameTime = timestamp;
 
-    if (isPlaying) {
+    if (isPlaying && !externalClock) {
       const next = playheadSeconds + deltaSeconds;
       // A soloed scene loops regardless of the film's own playback mode: the
       // point of solo is to watch one capability repeat, and stopping at the
@@ -450,6 +458,13 @@ export function createFilmDirectorState(
       }
     }
     frameRequest = requestAnimationFrame(tick);
+  }
+
+  function setExternalClock(value: boolean): void {
+    externalClock = value;
+    // Back on the rAF clock, the first delta must not count the whole time
+    // the recorder held the playhead.
+    lastFrameTime = null;
   }
 
   function start(): void {
@@ -478,6 +493,27 @@ export function createFilmDirectorState(
 
   function readPosterSource(): HTMLCanvasElement | null {
     return posterSource?.() ?? null;
+  }
+
+  // Same arrangement for the recorder: the scene owns the viewer and the
+  // render loop, so it registers what the recorder needs to drive them.
+  let recordingHost = $state.raw<FilmRecordingHost | null>(null);
+
+  function setRecordingHost(host: FilmRecordingHost | null): void {
+    recordingHost = host;
+  }
+
+  /**
+   * The output size while a recording runs, or null. Set means clean frames:
+   * the workbench drops its controls, the scene sizes the stage to exactly
+   * this, and the viewer stops drawing its rings and hints.
+   */
+  let recordingFrame = $state<{ width: number; height: number } | null>(null);
+
+  function setRecordingFrame(
+    frame: { width: number; height: number } | null
+  ): void {
+    recordingFrame = frame;
   }
 
   return {
@@ -565,6 +601,21 @@ export function createFilmDirectorState(
     toggleEditor,
     setPosterSource,
     readPosterSource,
+    /** What the scene registered for the recorder, or null before it mounts. */
+    get recordingHost() {
+      return recordingHost;
+    },
+    setRecordingHost,
+    /** The output size while recording, or null when the page is live. */
+    get recordingFrame() {
+      return recordingFrame;
+    },
+    setRecordingFrame,
+    /** True while the recorder, not the rAF clock, moves the playhead. */
+    get externalClock() {
+      return externalClock;
+    },
+    setExternalClock,
     start,
     destroy,
   };

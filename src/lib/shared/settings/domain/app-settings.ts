@@ -18,6 +18,7 @@ import { normalizeLegacyPropConfig } from "@tka/tka-types";
 import type { FanAppearance } from "../../pictograph/prop/domain/fan-appearance";
 import type { TriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";
 import type { BuugengStyle } from "../../pictograph/prop/domain/buugeng-appearance";
+import type { TriadBuild } from "../../pictograph/prop/domain/triad-build";
 import { resolveViewerCustomColorPair, type ViewerCustomColorPair } from "../../sequence-viewer/domain/viewer-custom-colors";
 
 /**
@@ -49,6 +50,8 @@ export interface AppSettings {
   triangleGrip?: TriangleGrip;
   /** The cut of buugeng and big buugeng blades. A look only, never notation. */
   buugengStyle?: BuugengStyle;
+  /** The physical build triad and big triad are drawn as. A look only, never notation. */
+  triadBuild?: TriadBuild;
   catDogMode?: boolean; // Whether CatDog Mode is enabled in prop type settings
   leftBuugengFlipped?: boolean; // Flip buugeng for blue hand (asymmetric prop)
   rightBuugengFlipped?: boolean; // Flip buugeng for red hand (asymmetric prop)

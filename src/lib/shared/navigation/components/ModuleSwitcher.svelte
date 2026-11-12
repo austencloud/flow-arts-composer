@@ -35,12 +35,9 @@
   import ReleaseUnreadDot from "../../settings/components/ReleaseUnreadDot.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import {
-    growFade,
-    popIn,
-    motionDuration,
-  } from "#lib/shared/transitions/motion.js";
+  import { popIn, motionDuration } from "#lib/shared/transitions/motion.js";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
   import { navigationState } from "../state/navigation-state.svelte";
   import { getAccessibleSectionsForModule } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
 
@@ -97,6 +94,7 @@
   });
 
   $effect(() => () => headerMotion.cancel());
+
   const localizedCurrentModuleName = $derived.by(() => {
     const module = modules.find(
       (item: ModuleDefinition) => item.id === currentModule
@@ -223,6 +221,37 @@
     isOpen = true;
   }
 
+  // Sign in opens its form in place. Fetched only on the press, the first
+  // press showed a "Loading" line for a moment: the list's box eased down to
+  // that line and then back up to the form, and the second ease ran behind
+  // the form's own and overflowed the list. Once the drawer has settled for
+  // someone signed out, fetch the form so the press goes straight to it.
+  let inlineAuthLoad: Promise<void> | null = null;
+  function loadInlineAuth(): Promise<void> {
+    inlineAuthLoad ??= import("../../auth/components/AuthModal.svelte").then(
+      (module) => {
+        InlineAuthComponent ??= module.default;
+      },
+      (error: unknown) => {
+        inlineAuthLoad = null;
+        throw error;
+      }
+    );
+    return inlineAuthLoad;
+  }
+
+  $effect(() => {
+    if (!isOpen || isFullAccount || InlineAuthComponent) return;
+    let cancelled = false;
+    void whenMotionSettled().then(() => {
+      // A failed warm-up is retried by the press, which reports its own error.
+      if (!cancelled) loadInlineAuth().catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  });
+
   async function handleSignIn() {
     hapticService?.trigger("selection");
     trackAuthSurfaceOpened({
@@ -232,9 +261,7 @@
     });
     authView = true;
     listScroller?.scrollTo({ top: 0 });
-    InlineAuthComponent ??= (
-      await import("../../auth/components/AuthModal.svelte")
-    ).default;
+    await loadInlineAuth();
     await tick();
     if (isOpen && authView) authBackButton?.focus();
   }
@@ -423,19 +450,28 @@
                 : t("nav_ui_navigation")}
           </h2>
         </Crossfade>
-        {#if !authView}
-          <div class="current-location" transition:growFade>
-            <div class="module-name">
-              <Crossfade key={selectedModuleId ?? localizedCurrentModuleName}>
-                {selectedModule
-                  ? t("nav_ui_choose_a_destination")
-                  : t("nav_current_module", {
-                      module: localizedCurrentModuleName,
-                    })}
-              </Crossfade>
+        <!-- Comes and goes with the Sign in view on the list's clock; see the
+             account footer below. -->
+        <Crossfade
+          key={authView}
+          mode="swap"
+          duration={DURATION.normal}
+          animateHeight
+        >
+          {#if !authView}
+            <div class="current-location">
+              <div class="module-name">
+                <Crossfade key={selectedModuleId ?? localizedCurrentModuleName}>
+                  {selectedModule
+                    ? t("nav_ui_choose_a_destination")
+                    : t("nav_current_module", {
+                        module: localizedCurrentModuleName,
+                      })}
+                </Crossfade>
+              </div>
             </div>
-          </div>
-        {/if}
+          {/if}
+        </Crossfade>
       </div>
       <button
         class="close-button"
@@ -508,90 +544,100 @@
       </Crossfade>
     </div>
 
-    <!-- Account Footer -->
-    {#if !authView}
-      <div
-        class="account-footer"
-        transition:growFade
-        inert={authView}
-        onoutrostart={(event) =>
-          ((event.currentTarget as HTMLElement).inert = true)}
-        onintrostart={(event) =>
-          ((event.currentTarget as HTMLElement).inert = false)}
+    <!-- Account Footer. It and the header's location line come and go with the
+         Sign in view on the list's clock: a swap Crossfade like the list's,
+         keyed in the same commit, holds its height while the old view fades
+         out and then eases on the same frames as the list's box. Moved on a
+         clock of their own, they change the room the list has while its box
+         still holds the old height: at the sheet's height cap the list
+         overflowed and flashed a scrollbar, and below it the sheet grew and
+         then shrank (or the reverse) instead of moving once. A Svelte
+         transition cannot keep this step: it starts a frame or two after the
+         commit. The leaving layer turns inert in the Crossfade. -->
+    <div class="account-footer-slot">
+      <Crossfade
+        key={authView}
+        mode="swap"
+        duration={DURATION.normal}
+        animateHeight
       >
-        <AccountRow
-          variant="drawer"
-          onSignIn={handleSignIn}
-          onclick={userPreviewState.isActive
-            ? undefined
-            : isFullAccount
-              ? handleProfileTap
-              : closeDrawer}
-        />
-        <Crossfade key={isFullAccount} animateHeight>
-          <div
-            class="account-footer-actions"
-            class:full-account={isFullAccount}
-          >
-            {#if isFullAccount}
-              <button
-                class="drawer-action inbox"
-                onclick={handleInboxClick}
-                aria-label={t("module_inbox")}
+        {#if !authView}
+          <div class="account-footer">
+            <AccountRow
+              variant="drawer"
+              onSignIn={handleSignIn}
+              onclick={userPreviewState.isActive
+                ? undefined
+                : isFullAccount
+                  ? handleProfileTap
+                  : closeDrawer}
+            />
+            <Crossfade key={isFullAccount} animateHeight>
+              <div
+                class="account-footer-actions"
+                class:full-account={isFullAccount}
               >
-                <div class="drawer-action-icon-wrapper">
-                  <i class="fas fa-inbox" aria-hidden="true"></i>
-                  {#if hasUnread && unreadCount > 0}
-                    <div class="drawer-unread-badge" transition:popIn>
-                      <Crossfade key={unreadCount}
-                        >{unreadCount > 99 ? "99+" : unreadCount}</Crossfade
-                      >
+                {#if isFullAccount}
+                  <button
+                    class="drawer-action inbox"
+                    onclick={handleInboxClick}
+                    aria-label={t("module_inbox")}
+                  >
+                    <div class="drawer-action-icon-wrapper">
+                      <i class="fas fa-inbox" aria-hidden="true"></i>
+                      {#if hasUnread && unreadCount > 0}
+                        <div class="drawer-unread-badge" transition:popIn>
+                          <Crossfade key={unreadCount}
+                            >{unreadCount > 99 ? "99+" : unreadCount}</Crossfade
+                          >
+                        </div>
+                      {/if}
                     </div>
-                  {/if}
-                </div>
-                <span>{t("module_inbox")}</span>
-              </button>
-            {/if}
-            <button
-              class="drawer-action"
-              onclick={handleAccountSettings}
-              aria-label={t("module_settings")}
-            >
-              <i class="fas fa-cog" aria-hidden="true"></i>
-              <span>{t("module_settings")}</span>
-            </button>
-            <button
-              class="drawer-action release-notes"
-              onclick={handleWhatsNew}
-              aria-label={t("nav_ui_open_release_notes")}
-            >
-              <i class="fas fa-gift" aria-hidden="true"></i>
-              <span
-                >{t("tab_settings_release_notes")}<ReleaseUnreadDot /></span
-              >
-            </button>
-            <button
-              class="drawer-action support"
-              onclick={() => supportModalState.show()}
-              aria-label={t("tab_community_support")}
-            >
-              <i class="fas fa-heart" aria-hidden="true"></i>
-              <span>{t("tab_community_support")}</span>
-            </button>
-            {#if isFullAccount}
-              <button
-                class="drawer-action sign-out"
-                onclick={handleSignOut}
-                aria-label={t("nav_ui_sign_out")}
-              >
-                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-                <span>{t("nav_ui_sign_out")}</span>
-              </button>
-            {/if}
+                    <span>{t("module_inbox")}</span>
+                  </button>
+                {/if}
+                <button
+                  class="drawer-action"
+                  onclick={handleAccountSettings}
+                  aria-label={t("module_settings")}
+                >
+                  <i class="fas fa-cog" aria-hidden="true"></i>
+                  <span>{t("module_settings")}</span>
+                </button>
+                <button
+                  class="drawer-action release-notes"
+                  onclick={handleWhatsNew}
+                  aria-label={t("nav_ui_open_release_notes")}
+                >
+                  <i class="fas fa-gift" aria-hidden="true"></i>
+                  <span
+                    >{t("tab_settings_release_notes")}<ReleaseUnreadDot /></span
+                  >
+                </button>
+                <button
+                  class="drawer-action support"
+                  onclick={() => supportModalState.show()}
+                  aria-label={t("tab_community_support")}
+                >
+                  <i class="fas fa-heart" aria-hidden="true"></i>
+                  <span>{t("tab_community_support")}</span>
+                </button>
+                {#if isFullAccount}
+                  <button
+                    class="drawer-action sign-out"
+                    onclick={handleSignOut}
+                    aria-label={t("nav_ui_sign_out")}
+                  >
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                    <span>{t("nav_ui_sign_out")}</span>
+                  </button>
+                {/if}
+              </div>
+            </Crossfade>
           </div>
-        </Crossfade>
-      </div>
-    {/if}
+        {/if}
+      </Crossfade>
+    </div>
   </div>
 </Drawer>
 
@@ -932,10 +978,13 @@
     }
   }
 
-  .account-footer {
+  .account-footer-slot {
     flex-shrink: 0;
     /* The side drawer is full height; keep the footer at its bottom edge. */
     margin-top: auto;
+  }
+
+  .account-footer {
     padding: 10px 20px max(12px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--theme-stroke);
     display: flex;

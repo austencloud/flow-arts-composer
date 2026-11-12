@@ -46,7 +46,6 @@ function options(
     assets: {
       authoredScene,
       earthTexture: new Texture(),
-      moonTexture: new Texture(),
     },
     audienceLoader: audienceLoader(),
     random: () => 0.25,

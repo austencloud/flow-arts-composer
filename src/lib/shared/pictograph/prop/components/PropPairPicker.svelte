@@ -4,7 +4,9 @@
   The one place a left and right prop get chosen: Both, Left or Right, then
   the prop grid. It holds no pair of its own. A pick hands the new pair to the
   host, which decides what happens next (a saved field keeps it, the viewing
-  props apply it at once). Hosts: PropPairDialog and the viewer's dots menu.
+  props apply it at once). A prop with more to choose (Fan's build, a size, a
+  grip, a blade style) opens that page and the picker stays; onDone says the
+  choice is finished. Hosts: PropPairDialog and the viewer's dots menu.
 -->
 <script lang="ts">
   import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
@@ -18,6 +20,7 @@
     showColors = false,
     dense = false,
     onPick,
+    onDone,
   }: {
     value: ResolvedPropConfig;
     /** One plain sentence saying what the chosen pair is for. */
@@ -26,7 +29,10 @@
     showColors?: boolean;
     /** Every prop at a glance, for a host as narrow as a phone menu. */
     dense?: boolean;
+    /** Every pick, at once, including one that opens more choices. */
     onPick: (next: ResolvedPropConfig) => void;
+    /** The pick left nothing more to choose: the host may close. */
+    onDone?: () => void;
   } = $props();
 
   let hand = $state<"both" | "left" | "right">("both");
@@ -56,7 +62,6 @@
     variant="inline"
     scrollMode="host"
     flat={dense}
-    showAppearance={false}
     {showColors}
     onSelect={(prop) => {
       const leftPropType = hand === "right" ? value.leftPropType : prop;
@@ -67,6 +72,7 @@
         catDogMode: leftPropType !== rightPropType,
       });
     }}
+    onChoiceDone={() => onDone?.()}
   />
 </div>
 

@@ -129,6 +129,36 @@ const FALLBACK_ASPECT_RATIO = 16 / 9;
 const CINEMA_SSAA = 2;
 const CINEMA_SUB_FRAMES = 4;
 
+/** One frame the driven loop asks for. */
+export interface DrivenExportFrame {
+  /** Zero-based output frame number. */
+  index: number;
+  /** Exactly `index / fps` seconds. */
+  timeSeconds: number;
+  /** A monotonic timestamp for the render scheduler, `1000 / fps` apart. */
+  timeMs: number;
+}
+
+export interface DrivenExportDependencies {
+  width: number;
+  height: number;
+  fps: number;
+  totalFrames: number;
+  /** Defaults to `calculateBitrate(width, height, fps)`. */
+  bitrate?: number;
+  pauseAutoLoop: () => void;
+  resumeAutoLoop: () => void;
+  /** Runs just before the live loop resumes, after success, error or cancel. */
+  beforeResume?: () => void;
+  /**
+   * Draw one frame and return the canvas to capture. It must still hold the
+   * frame when the promise settles: a 2D canvas always does, and a WebGL
+   * canvas without preserveDrawingBuffer does only when the render was the
+   * last thing done before returning, in the same task.
+   */
+  renderFrame: (frame: DrivenExportFrame) => Promise<HTMLCanvasElement>;
+}
+
 export class Offline3DExporter {
   private shouldCancel = false;
 
@@ -168,35 +198,8 @@ export class Offline3DExporter {
       );
     }
 
-    // Capture owns the readout until the last frame is handed over; the encoder
-    // owns it after. Without the gate the two interleave and the label flips
-    // between "Rendering frames" and "Encoding video" several times a second,
-    // and the encoder's (lower) count keeps yanking the ring backwards.
-    let captureComplete = false;
-    let encodedSoFar = 0;
-    this.backgroundEncoder.onProgress = (frameIndex, total) => {
-      encodedSoFar = frameIndex;
-      if (!captureComplete) return;
-      onProgress({
-        progress: frameIndex / total,
-        stage: "encoding",
-        currentFrame: frameIndex,
-        totalFrames: total,
-      });
-    };
-
-    const diag = new ExportDiagnostics(
-      width,
-      height,
-      fps,
-      totalFrames,
-      this.capturer.preferredKind
-    );
-
     const keyframes = deps.cameraKeyframes.keyframes;
-    const frameDurationMs = 1000 / fps;
-    const subFrameDurationMs = frameDurationMs / subFrames;
-    let monotonicTime = performance.now();
+    const subFrameDurationMs = 1000 / fps / subFrames;
 
     // ── Cinema mode setup ─────────────────────────────────────────
     // Save original renderer state so we can restore it later.
@@ -229,8 +232,148 @@ export class Offline3DExporter {
       deps.renderer.setSize(width * ssaa, height * ssaa, false);
     }
 
+    deps.setExporting(true);
+    return this.exportDriven(
+      {
+        width,
+        height,
+        fps,
+        totalFrames,
+        bitrate,
+        pauseAutoLoop: deps.pauseAutoLoop,
+        resumeAutoLoop: deps.resumeAutoLoop,
+        beforeResume: () => {
+          deps.setExportCurrentStep(null);
+          deps.setExporting(false);
+          // Restore renderer size/pixel ratio - even if export threw or was
+          // cancelled - so the live scene keeps rendering at the right size.
+          if (cinema) {
+            deps.renderer.setPixelRatio(origPixelRatio);
+            deps.renderer.setSize(origSize.x, origSize.y, false);
+          }
+        },
+        renderFrame: async ({ timeSeconds: animationTime, timeMs }) => {
+          if (compositorCtx) {
+            // Reset the compositor for this output frame. We want to
+            // start with a blank slate so the running-alpha average is
+            // built from the subFrames sub-renders and nothing else.
+            compositorCtx.globalAlpha = 1;
+            compositorCtx.clearRect(0, 0, width, height);
+          }
+
+          for (let sub = 0; sub < subFrames; sub++) {
+            // Sub-frame timing: evenly distribute sub-renders across the
+            // shutter interval [T, T+Δ). When subFrames=1 this reduces to
+            // subTime = animationTime, matching standard behaviour.
+            const subTime = animationTime + sub / (fps * subFrames);
+            const subStep = subTime * deps.beatsPerSecond;
+
+            // 1. Advance animation step for this sub-frame.
+            deps.setExportCurrentStep(subStep);
+
+            // 2. Interpolate camera at sub-frame time.
+            const cam = interpolateKeyframes(keyframes, subTime);
+            deps.camera.position.set(
+              cam.position[0],
+              cam.position[1],
+              cam.position[2]
+            );
+            deps.camera.quaternion.set(
+              cam.quaternion[0],
+              cam.quaternion[1],
+              cam.quaternion[2],
+              cam.quaternion[3]
+            );
+            deps.camera.fov = cam.fov;
+            deps.camera.updateProjectionMatrix();
+
+            // 3. Flush Svelte reactive state → components before Threlte's
+            //    useTask callbacks read it.
+            await tick();
+
+            // 4. Run Threlte's full pipeline synchronously - puppet loop,
+            //    IK, effects, render.
+            deps.runFrame(timeMs + sub * subFrameDurationMs);
+
+            if (compositorCtx) {
+              // Composite sub-render into motion-blur accumulator.
+              // Running alpha = 1/(sub+1) gives a mathematically exact
+              // uniform average across subFrames sub-renders using plain
+              // source-over blending. `drawImage` with differing source
+              // and dest sizes performs the SSAA downsample in-browser.
+              compositorCtx.globalAlpha = 1 / (sub + 1);
+              compositorCtx.drawImage(deps.webglCanvas, 0, 0, width, height);
+
+              // Cinema has already copied this sub-render into its
+              // persistent 2D accumulator, so it can yield safely before the
+              // next expensive render. Standard mode must have Three's
+              // nonpersistent framebuffer read first, which the driven loop
+              // does as soon as this returns.
+              await yieldToEventLoop();
+              this.throwIfCancelled();
+            }
+          }
+
+          return compositor ?? deps.webglCanvas;
+        },
+      },
+      onProgress
+    );
+  }
+
+  /**
+   * The frame-paced loop on its own, driven by an outside clock.
+   *
+   * The caller owns what a frame shows: `renderFrame` gets the frame's exact
+   * time (`index / fps` seconds) and a monotonic scheduler timestamp, and
+   * returns the canvas to capture. This loop owns the rest: pausing the live
+   * rAF loop, starting the encoder, capturing, keeping the encoder queue
+   * bounded, progress, and cancellation. `exportOffline` is one caller (one
+   * take of one sequence); the Film Director's recorder is another (a whole
+   * film, scene changes and all).
+   */
+  async exportDriven(
+    deps: DrivenExportDependencies,
+    onProgress: (progress: VideoExportProgress) => void
+  ): Promise<Blob> {
+    this.shouldCancel = false;
+
+    const { width, height, fps, totalFrames } = deps;
+    const bitrate = deps.bitrate ?? calculateBitrate(width, height, fps);
+
+    // Capture owns the readout until the last frame is handed over; the encoder
+    // owns it after. Without the gate the two interleave and the label flips
+    // between "Rendering frames" and "Encoding video" several times a second,
+    // and the encoder's (lower) count keeps yanking the ring backwards.
+    let captureComplete = false;
+    let encodedSoFar = 0;
+    this.backgroundEncoder.onProgress = (frameIndex, total) => {
+      encodedSoFar = frameIndex;
+      if (!captureComplete) return;
+      onProgress({
+        progress: frameIndex / total,
+        stage: "encoding",
+        currentFrame: frameIndex,
+        totalFrames: total,
+      });
+    };
+
+    const diag = new ExportDiagnostics(
+      width,
+      height,
+      fps,
+      totalFrames,
+      this.capturer.preferredKind
+    );
+
+    const frameDurationMs = 1000 / fps;
+    let monotonicTime = performance.now();
+
     try {
-      deps.setExporting(true);
+      if (totalFrames <= 0) {
+        throw new Error(`Cannot export: 0 frames (fps=${fps})`);
+      }
+
       // Stop the native rAF loop BEFORE the heavy encoder init, not just before
       // the capture loop. Spawning the export worker loads the (large) mediabunny
       // module and configures WebCodecs; doing that while the live 3D scene is
@@ -261,75 +404,17 @@ export class Offline3DExporter {
 
         diag.startFrame();
 
-        const animationTime = frameIndex / fps;
-
-        if (compositorCtx) {
-          // Reset the compositor for this output frame. We want to
-          // start with a blank slate so the running-alpha average is
-          // built from the subFrames sub-renders and nothing else.
-          compositorCtx.globalAlpha = 1;
-          compositorCtx.clearRect(0, 0, width, height);
-        }
-
-        for (let sub = 0; sub < subFrames; sub++) {
-          // Sub-frame timing: evenly distribute sub-renders across the
-          // shutter interval [T, T+Δ). When subFrames=1 this reduces to
-          // subTime = animationTime, matching standard behaviour.
-          const subTime = animationTime + sub / (fps * subFrames);
-          const subStep = subTime * deps.beatsPerSecond;
-
-          // 1. Advance animation step for this sub-frame.
-          deps.setExportCurrentStep(subStep);
-
-          // 2. Interpolate camera at sub-frame time.
-          const cam = interpolateKeyframes(keyframes, subTime);
-          deps.camera.position.set(
-            cam.position[0],
-            cam.position[1],
-            cam.position[2]
-          );
-          deps.camera.quaternion.set(
-            cam.quaternion[0],
-            cam.quaternion[1],
-            cam.quaternion[2],
-            cam.quaternion[3]
-          );
-          deps.camera.fov = cam.fov;
-          deps.camera.updateProjectionMatrix();
-
-          // 3. Flush Svelte reactive state → components before Threlte's
-          //    useTask callbacks read it.
-          await tick();
-
-          // 4. Run Threlte's full pipeline synchronously - puppet loop,
-          //    IK, effects, render.
-          deps.runFrame(monotonicTime + sub * subFrameDurationMs);
-
-          if (compositorCtx) {
-            // Composite sub-render into motion-blur accumulator.
-            // Running alpha = 1/(sub+1) gives a mathematically exact
-            // uniform average across subFrames sub-renders using plain
-            // source-over blending. `drawImage` with differing source
-            // and dest sizes performs the SSAA downsample in-browser.
-            compositorCtx.globalAlpha = 1 / (sub + 1);
-            compositorCtx.drawImage(deps.webglCanvas, 0, 0, width, height);
-          }
-
-          // Cinema has already copied this sub-render into its persistent 2D
-          // accumulator, so it can yield safely before the next expensive
-          // render. Standard mode must synchronously read Three's
-          // nonpersistent framebuffer first.
-          if (compositorCtx) {
-            await yieldToEventLoop();
-            this.throwIfCancelled();
-          }
-        }
+        const timeSeconds = frameIndex / fps;
+        const captureCanvas = await deps.renderFrame({
+          index: frameIndex,
+          timeSeconds,
+          timeMs: monotonicTime,
+        });
 
         diag.markDrawImage();
 
-        // 5. Capture the finished output frame.
-        const captureCanvas = compositor ?? deps.webglCanvas;
-        const timestampMicros = Math.round(animationTime * 1_000_000);
+        // Capture the finished output frame.
+        const timestampMicros = Math.round(timeSeconds * 1_000_000);
         const isKeyframe = frameIndex % KEYFRAME_INTERVAL === 0;
         const frame = this.capturer.capture(captureCanvas, timestampMicros);
         diag.markCapture();
@@ -337,13 +422,11 @@ export class Offline3DExporter {
         this.backgroundEncoder.addFrameCaptured(frame, frameIndex, isKeyframe);
         diag.markAddFrame();
 
-        // Standard mode yields after the synchronous canvas read. Cancellation
-        // still lands before another render starts, without paying for a
-        // duplicate composed render or risking a discarded framebuffer.
-        if (!compositorCtx) {
-          await yieldToEventLoop();
-          this.throwIfCancelled();
-        }
+        // Yield after the synchronous canvas read. Cancellation still lands
+        // before another render starts, without paying for a duplicate
+        // composed render or risking a discarded framebuffer.
+        await yieldToEventLoop();
+        this.throwIfCancelled();
 
         // Keep transferred GPU frames bounded. If encoding falls behind, this
         // wait is cancellation-aware and prevents the queued frames themselves
@@ -351,7 +434,6 @@ export class Offline3DExporter {
         await this.backgroundEncoder.waitForFrameQueue(6);
         this.throwIfCancelled();
 
-        // 6. Progress report.
         onProgress({
           progress: frameIndex / totalFrames,
           stage: "capturing",
@@ -389,18 +471,9 @@ export class Offline3DExporter {
       }
       throw err;
     } finally {
-      deps.setExportCurrentStep(null);
-      deps.setExporting(false);
-
-      // Restore renderer size/pixel ratio - even if export threw or was
-      // cancelled - so the live scene keeps rendering at the right size.
-      if (cinema) {
-        deps.renderer.setPixelRatio(origPixelRatio);
-        deps.renderer.setSize(origSize.x, origSize.y, false);
-      }
-
-      // Always resume the native loop last, once the renderer is back
-      // to its live size.
+      deps.beforeResume?.();
+      // Always resume the native loop last, once the caller has put the
+      // renderer back to its live size.
       deps.resumeAutoLoop();
     }
   }

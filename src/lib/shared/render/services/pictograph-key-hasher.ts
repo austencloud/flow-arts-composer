@@ -18,6 +18,10 @@ import {
   renderedBuugengStyle,
   type BuugengStyle,
 } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import {
+  renderedTriadBuild,
+  type TriadBuild,
+} from "#lib/shared/pictograph/prop/domain/triad-build.js";
 import { gridJoinKey, isGridJoin } from "@tka/render-core";
 // getSettings loaded dynamically to avoid pulling $app/env into worker bundle
 
@@ -64,6 +68,8 @@ interface PictographKeyInput {
     triangleGrip?: "side";
     // Present only when a buugeng is drawn in a non-classic style.
     buugengStyle?: Exclude<BuugengStyle, "classic">;
+    // Present only when a triad is drawn as Fire or Day.
+    triadBuild?: Exclude<TriadBuild, "pictograph">;
     primaryPropColors?: { left: string; right: string };
     primaryPropColorRevision?: string;
     showTKA: boolean;
@@ -311,6 +317,12 @@ export class PictographKeyHasher {
           resolvedLeftProp,
           resolvedRightProp,
         ]);
+    const triadBuild = visibility.handPathMode
+      ? undefined
+      : renderedTriadBuild(visibility.triadBuild, [
+          resolvedLeftProp,
+          resolvedRightProp,
+        ]);
     const turnGlyphRevision = getTurnGlyphRevision(
       data,
       visibility.showTKA ?? true
@@ -348,6 +360,7 @@ export class PictographKeyHasher {
           }),
         ...(triangleGrip && { triangleGrip }),
         ...(buugengStyle && { buugengStyle }),
+        ...(triadBuild && { triadBuild }),
         ...(visibility.primaryPropColors && {
           primaryPropColors: visibility.primaryPropColors,
           primaryPropColorRevision: "material-colors-v2",

@@ -19,6 +19,7 @@
   import { BackgroundType } from "@austencloud/backgrounds";
   import Environment3D from "../environments/components/Environment3D.svelte";
   import { getViewer3DContext } from "../context/viewer-3d-context";
+  import { setStageDirectionCuesContext } from "../context/stage-direction-cues-context";
   import { getSceneFeatureContext } from "../scene-features/context/scene-feature-context";
   import SeatedAudience3D from "./SeatedAudience3D.svelte";
   import { Plane, GRID_OFFSETS } from "@austencloud/scene-3d";
@@ -124,6 +125,13 @@
     /** Keep dictated plane grids but drop the center sphere and axis arrows,
      *  for film surfaces where planes are scenery, not editor reference. */
     hideOrientationHelpers?: boolean;
+    /**
+     * Nothing but the film: no selection or hover rings, no move hint or
+     * placement prompt, no performer numbers, no stage direction cues (the
+     * footlight strip and downstage triangle). Authored plane grids stay, since
+     * a film that shows planes means to. See Viewer3DCanvas.
+     */
+    cleanFrame?: boolean;
     /** Skip the effects runtime entirely in prop/model inspection surfaces. */
     enableEffects?: boolean;
     /** Stationary stage casts can skip walk, jump, and foot-planting setup. */
@@ -207,6 +215,7 @@
     hideSceneMarkers = false,
     hidePerformerBadges = false,
     hideOrientationHelpers = false,
+    cleanFrame = false,
     enableEffects = true,
     enablePerformerLocomotion = true,
     weldPerformerGrip = false,
@@ -243,6 +252,8 @@
     sequenceData ? isSeamlesslyLoopable(sequenceData) : false
   );
   const sceneFeatures = getSceneFeatureContext();
+  // A clean frame (a film recording) drops the stage direction cues too.
+  setStageDirectionCuesContext(() => !cleanFrame);
   let sceneEffectsManager = $state<SceneEffectsManager3D | null>(null);
   let effectsReadyToken = 0;
 
@@ -839,7 +850,7 @@
 
   <T.PointLight
     position={selectedPerformerLightPosition}
-    intensity={selectedPerformer ? 6 : 0}
+    intensity={selectedPerformer && !cleanFrame ? 6 : 0}
     color={0xfff5e6}
     distance={5}
     decay={1.5}
@@ -859,7 +870,7 @@
           groundY={performerGroundLevel}
           register={performerInteraction.registerPickTarget}
         />
-        {#if performerInteraction.hoveredIndex === i || performerInteraction.draggingIndex === i}
+        {#if !cleanFrame && (performerInteraction.hoveredIndex === i || performerInteraction.draggingIndex === i)}
           <PerformerHoverRing
             position={performer.position}
             groundY={performerGroundLevel}
@@ -868,7 +879,7 @@
           />
         {/if}
       {/if}
-      {#if renderEntry.presencePhase !== "exiting" && selectedPerformerIndices.has(i) && !viewer3DState.isAllPerformersSelected}
+      {#if !cleanFrame && renderEntry.presencePhase !== "exiting" && selectedPerformerIndices.has(i) && !viewer3DState.isAllPerformersSelected}
         {@const selectionColor = Number.parseInt(
           getPerformerColor(i).slice(1),
           16
@@ -1142,7 +1153,7 @@
         {/key}
       {/if}
 
-      {#if renderEntry.presencePhase !== "exiting" && viewer3DState.isAllPerformersSelected}
+      {#if !cleanFrame && renderEntry.presencePhase !== "exiting" && viewer3DState.isAllPerformersSelected}
         <T.Mesh
           position={[
             performer.position.x,
@@ -1160,7 +1171,7 @@
         </T.Mesh>
       {/if}
 
-      {#if renderEntry.presencePhase !== "exiting" && !hideSceneMarkers && !hidePerformerBadges}
+      {#if !cleanFrame && renderEntry.presencePhase !== "exiting" && !hideSceneMarkers && !hidePerformerBadges}
         <!-- Floating numbered badge above performer head -->
         <T.Group
           position.x={performer.position.x}
@@ -1178,7 +1189,7 @@
     </T.Group>
   {/each}
 
-  {#if performerInteraction && selectionMoveHint && !hideSceneMarkers && !viewer3DState.performerSelectionMode}
+  {#if !cleanFrame && performerInteraction && selectionMoveHint && !hideSceneMarkers && !viewer3DState.performerSelectionMode}
     {#key selectionMoveHint.key}
       <PerformerMoveHint
         position={selectionMoveHint.position}
@@ -1188,7 +1199,7 @@
       />
     {/key}
   {/if}
-  {#if performerInteraction?.placing}
+  {#if !cleanFrame && performerInteraction?.placing}
     <HTML
       fullscreen
       calculatePosition={(_object, _camera, size) => [

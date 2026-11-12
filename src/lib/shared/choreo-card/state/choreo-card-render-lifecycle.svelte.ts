@@ -14,6 +14,7 @@ export interface ChoreoCardRenderLifecycleDeps {
   readonly fanAppearance?: import("#lib/shared/pictograph/prop/domain/fan-appearance.js").FanAppearance;
   readonly triangleGrip?: import("#lib/shared/pictograph/prop/domain/triangle-appearance.js").TriangleGrip;
   readonly buugengStyle?: import("#lib/shared/pictograph/prop/domain/buugeng-appearance.js").BuugengStyle;
+  readonly triadBuild?: import("#lib/shared/pictograph/prop/domain/triad-build.js").TriadBuild;
   readonly primaryPropColors?: { left: string; right: string } | null;
   readonly sequence: SequenceData;
   readonly handPathMode?: boolean;
@@ -77,6 +78,7 @@ export function createChoreoCardRenderLifecycle(
       fanAppearance: deps.fanAppearance,
       triangleGrip: deps.triangleGrip,
       buugengStyle: deps.buugengStyle,
+      triadBuild: deps.triadBuild,
       primaryPropColors: deps.primaryPropColors,
       leftPropType: deps.leftPropType,
       rightPropType: deps.rightPropType,

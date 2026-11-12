@@ -5,15 +5,20 @@
   import TunnelPoseCell, { type TunnelPose } from "./TunnelPoseCell.svelte";
   import { createPerformerSequences } from "../performer-sequences.svelte";
   import { performerSequence } from "../performer-sequence";
-  import { followerPropColors, type PostFollower } from "../tunnel-performers";
+  import {
+    FRONT_PROP_COLORS,
+    followerPropColors,
+    type PostFollower,
+  } from "../tunnel-performers";
   import { tapGuidePoses } from "../tap-guide";
   import { tunnelPropNudges } from "../tunnel-prop-nudges";
   import { setCellPropNudges } from "#lib/shared/sequence-viewer/cell-prop-nudge-context";
   import { findPartnerTunnelUrl } from "#lib/shared/sequence-viewer/tunnel/partner-tunnel.js";
 
   /**
-   * The whole tunnel on one card: the front performer's sheet with every
-   * performer behind drawn into each cell in tunnel colors, each performer's
+   * The whole tunnel on one card: the front performer's sheet in red and
+   * blue with every performer behind drawn into each cell in tunnel colors
+   * (the viewer's own prop colors never apply here), each performer's
    * mandala in the empty cells under Start, and a QR to the tunnel page. The
    * post's side panel and its card clip both draw this, so the end card of a
    * tunnel post shows the tunnel, not the front performer alone.
@@ -53,7 +58,7 @@
   );
 
   const mandalaFills = $derived([
-    { sequence, colors: null },
+    { sequence, colors: FRONT_PROP_COLORS },
     ...followers.flatMap((_, index) => {
       const of = followerSequences.current?.[index];
       return of
@@ -147,6 +152,7 @@
   {...cardProps}
   {leftPropType}
   {rightPropType}
+  primaryPropColors={FRONT_PROP_COLORS}
   cellOverlay={tunnelOverlay}
   showMandala
   {mandalaFills}

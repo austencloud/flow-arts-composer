@@ -2,9 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logActivity: vi.fn(),
+  trackSequenceKept: vi.fn(),
 }));
 
-import { logActivity } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+import {
+  logActivity,
+  trackSequenceKept,
+} from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import {
   trackArenaMatchupSkipped,
   trackArenaVoteCompleted,
@@ -232,6 +236,13 @@ describe("production module decision events", () => {
         },
       ],
       ["choreo_sheet_deleted", "sequence", { sheet_id: "sheet-1" }],
+    ]);
+    // Only the PDF export counts as keeping something; save and delete do not.
+    expect(vi.mocked(trackSequenceKept).mock.calls).toEqual([
+      [
+        "export",
+        { subject: "choreo_sheet", sheet_id: "sheet-1", exportFormat: "pdf" },
+      ],
     ]);
   });
 });

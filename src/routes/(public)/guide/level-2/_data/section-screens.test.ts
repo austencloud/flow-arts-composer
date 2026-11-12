@@ -25,6 +25,7 @@ const room = (over: number, alone = over): ScreenRoom => ({
   alone,
   stripCols: 8,
   stripRowChars: 100,
+  bandShowsTagline: true,
 });
 
 describe("splitSections", () => {

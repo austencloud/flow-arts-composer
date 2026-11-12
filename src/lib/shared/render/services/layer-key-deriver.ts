@@ -16,6 +16,10 @@ import {
   type BuugengStyle,
 } from "../../pictograph/prop/domain/buugeng-appearance";
 import {
+  renderedTriadBuild,
+  type TriadBuild,
+} from "../../pictograph/prop/domain/triad-build";
+import {
   isVisibleMotion,
   type MotionData,
 } from "../../pictograph/shared/domain/models/motion-data";
@@ -29,6 +33,8 @@ export interface BaseLayerKeyComponents {
   triangleGrip?: "side";
   // Likewise a buugeng drawn in a non-classic style.
   buugengStyle?: Exclude<BuugengStyle, "classic">;
+  // And a triad drawn as a physical build.
+  triadBuild?: Exclude<TriadBuild, "pictograph">;
   leftPropType: string;
   rightPropType: string;
   // Chirality mirrors the prop AND (via the preparer) can collapse the beta
@@ -131,11 +137,15 @@ export function getBaseLayerComponents(
   const buugengStyle = options.handPathMode
     ? undefined
     : renderedBuugengStyle(options.buugengStyle, [leftPropType, rightPropType]);
+  const triadBuild = options.handPathMode
+    ? undefined
+    : renderedTriadBuild(options.triadBuild, [leftPropType, rightPropType]);
   return {
     motionHash: deriveMotionHash(pictograph),
     ...(options.fanAppearance && { fanAppearance: JSON.stringify(options.fanAppearance) }),
     ...(triangleGrip && { triangleGrip }),
     ...(buugengStyle && { buugengStyle }),
+    ...(triadBuild && { triadBuild }),
     leftPropType,
     rightPropType,
     leftBuugengFlipped: options.leftBuugengFlipped ?? false,

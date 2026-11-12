@@ -74,6 +74,7 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import GuideFitBox from "./GuideFitBox.svelte";
+  import GuideLoadingMandala from "./GuideLoadingMandala.svelte";
   import {
     followScreen,
     readScreenParam,
@@ -183,6 +184,9 @@
   // paint. Every other first paint leaves from out of sight, so its fade-out
   // never flashes it.
   const firstShows = $derived(steadyHead && !bodyHead);
+  // While the body has nothing to show (its first paint out of sight, the
+  // live frame still fitting), the boot mandala traces in its place.
+  const waiting = $derived(!handedOver && !firstShows);
   let direction = $state<1 | -1>(1);
   let pillRow = $state<HTMLElement>();
   const count = $derived(labels.length);
@@ -370,6 +374,11 @@
   </header>
 
   <div class="body">
+    {#if waiting}
+      <div class="waiting" out:opaqueFade={{ duration: DURATION.fast }}>
+        <GuideLoadingMandala />
+      </div>
+    {/if}
     {#if live && bodyHead}
       <!-- The page's screen stays mounted; it crossfades its own card and
            words, and its title and list hold still. -->
@@ -408,6 +417,9 @@
             .guide-screens .first,
             .guide-screens .pills {
               opacity: 1 !important;
+            }
+            .guide-screens .waiting {
+              display: none;
             }
           </style>
         </noscript>
@@ -676,6 +688,11 @@
     padding: clamp(0.25rem, 1vh, 1rem) clamp(0.5rem, 2vw, 3rem);
     overflow: hidden;
   }
+  .waiting {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
   /* The first paint's frame: GuideFitBox's box at the figures' designed
      size (--fit 1), so the live frame takes over in place. */
   .first {
@@ -842,7 +859,10 @@
     }
   }
   /* A short window (a phone, the Fold inner screen in landscape) spends its
-     height on the screen itself: no kicker or tagline line. */
+     height on the screen itself: no kicker or tagline line. Twin of
+     `bandShowsTagline` in guide-screen-url.ts (`screenRoom`), which keeps the
+     opening paragraph on the page while this hides the tagline: change the
+     700px line in both places. */
   @media (max-height: 700px) {
     .kicker,
     .subtitle {

@@ -27,6 +27,17 @@ import {
   replayCanvasFps,
   setReplayRecordingProbe,
 } from "#lib/shared/analytics/replay-recording.js";
+import { isThisAnAgentBrowser } from "#lib/shared/analytics/agent-browser.js";
+import {
+  isInternalBrowser,
+  markInternalBrowser,
+} from "#lib/shared/analytics/internal-browser.js";
+import {
+  armReplayHold,
+  replayHoldReleasedEarly,
+  shouldHoldReplay,
+} from "#lib/shared/analytics/services/replay-hold.js";
+import { pageBootsInto3D } from "#lib/shared/sequence-viewer/services/viewer-boot-3d.js";
 
 // src/env.ts declares the PostHog values static, so they are inlined at build
 // time. Capacitor serves a static bundle with no Worker behind it, and inlined
@@ -266,6 +277,9 @@ export const redactEmailsFromElements: BeforeSendFn = (
   return event;
 };
 
+/** PostHog `before_send` hook for agent browsers: nothing leaves the page. */
+const dropEverything: BeforeSendFn = () => null;
+
 /**
  * A document rendered as a DEMONSTRATION of a page rather than a visit to it.
  * Read from the live URL, so it covers the iframe's own document regardless of
@@ -323,7 +337,22 @@ async function initializePostHog(): Promise<void> {
   // Dev sessions poisoned the project: 80% of $exception volume was localhost
   // Vite HMR noise, and dev clicks/pageviews skewed every user metric. In dev,
   // keep PostHog alive for feature flags but capture nothing.
-  const captureEnabled = !import.meta.env.DEV;
+  // Our own agent browsers keep flags too but send nothing at all: a run
+  // against production is not a visitor (see agent-browser.ts).
+  const agentBrowser = isThisAnAgentBrowser();
+  const captureEnabled = !import.meta.env.DEV && !agentBrowser;
+  // On a direct 3D open, replay waits for the scene (see replay-hold.ts).
+  // Same capability test as supportsWorkerEnvironmentRenderer, inlined so
+  // analytics does not import the 3D renderer service.
+  const holdReplay = shouldHoldReplay({
+    recordingAllowed: captureEnabled,
+    bootsInto3D: pageBootsInto3D(),
+    workerRendererSupported:
+      typeof Worker !== "undefined" &&
+      typeof HTMLCanvasElement !== "undefined" &&
+      "transferControlToOffscreen" in HTMLCanvasElement.prototype,
+    releasedEarly: replayHoldReleasedEarly(),
+  });
 
   posthog.init(env.PUBLIC_POSTHOG_KEY, {
     api_host: resolvePostHogApiHost(
@@ -348,7 +377,9 @@ async function initializePostHog(): Promise<void> {
 
     // Session recording sends large payloads that trigger 413 errors on
     // localhost (CORS + Content Too Large). Only record in production.
-    disable_session_recording: import.meta.env.DEV,
+    // A held replay is started later by the hold, through the same
+    // startSessionRecording() call, so sampling and remote config still apply.
+    disable_session_recording: import.meta.env.DEV || agentBrowser || holdReplay,
 
     // Autocapture clicks, form submissions, etc. (prod only)
     autocapture: captureEnabled,
@@ -406,14 +437,22 @@ async function initializePostHog(): Promise<void> {
     // Registered unconditionally (not gated on captureEnabled): capture_exceptions
     // is already false in dev, so this never sees a $exception there anyway, and
     // the hook must be present the moment prod traffic starts flowing.
-    before_send: [dropKnownNoise, redactEmailsFromElements],
+    // In an agent browser, dropEverything also stops the manual captures and
+    // $identify calls that the captureEnabled switches above do not cover.
+    before_send: agentBrowser
+      ? [dropEverything]
+      : [dropKnownNoise, redactEmailsFromElements],
 
     // Load feature flags immediately
     loaded: (posthog) => {
+      // Before the first $pageview too, so a signed-out visit from Austen's
+      // own browser is filtered from its very first event.
+      registerInternalBrowser(posthog);
       // Scan attribution must be registered here, before posthog-js schedules
       // the initial $pageview immediately after this callback returns.
       notifyPostHogReady(posthog);
       setReplayRecordingProbe(() => posthog.sessionRecordingStarted());
+      if (holdReplay) armReplayHold(() => posthog.startSessionRecording());
       // Reload feature flags to ensure fresh state
       posthog.reloadFeatureFlags();
     },
@@ -446,6 +485,10 @@ export function identifyUser(
 
   const identify = (instance: PostHogReadyClient) => {
     cancelPendingIdentification = null;
+    if (properties?.isAdmin) {
+      markInternalBrowser();
+      registerInternalBrowser(instance);
+    }
     instance.identify(userId, {
       email: properties?.email,
       name: properties?.name,
@@ -455,6 +498,8 @@ export function identifyUser(
       is_premium: properties?.isPremium,
       is_tester: properties?.isTester,
       is_admin: properties?.isAdmin,
+      // Only ever true; an ordinary account never gets the key at all.
+      ...(properties?.isAdmin ? { is_internal: true } : {}),
     });
 
     identified = true;
@@ -483,6 +528,23 @@ export function resetUser(): void {
 
   identified = false;
   posthog.reset();
+  // reset() clears super properties along with the identity. Put the
+  // internal mark back so the signed-out visit that follows stays filtered.
+  registerInternalBrowser(posthog);
+}
+
+/**
+ * Tag every later event from a browser an admin has used. A super property,
+ * not a person property: it rides on anonymous events too, which is the gap
+ * `is_admin` leaves (see internal-browser.ts).
+ */
+function registerInternalBrowser(instance: PostHogReadyClient): void {
+  if (!isInternalBrowser()) return;
+  try {
+    instance.register({ is_internal: true });
+  } catch (error) {
+    console.warn("[posthog] could not mark internal browser", error);
+  }
 }
 
 /**

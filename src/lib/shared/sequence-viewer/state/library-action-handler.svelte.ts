@@ -18,6 +18,7 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { trackSequenceKept } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 import {
@@ -148,6 +149,11 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     try {
       const repo = getLibraryRepository() as LibraryRepository;
       await repo.publishSequence(sequence.id);
+      void trackSequenceKept("publish", {
+        sequenceId: sequence.id,
+        sequenceLength: sequence.steps.length,
+        isPublic: true,
+      });
     } catch (e) {
       console.error("[Orchestrator] publishSequence FAILED:", e);
       showToast("Failed to publish sequence", "error");

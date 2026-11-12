@@ -2,7 +2,10 @@
   DurationControl.svelte
 
   Beat duration stepper. Same grammar as the turns stepper (− value +), with a
-  coarse ≪ ≫ pair (±0.5) beside the fine ± pair (±0.1). Tap the value to type
+  coarse ≪ ≫ pair (±0.5) beside the fine ± pair (±0.1). Holding a button
+  repeats its step through the shared holdRepeat action, and a held fine
+  button moves to the coarse step after two seconds, so 1× to 3× is one
+  press, not twenty taps. Tap the value to type
   an exact number (e.g. 1.67). Minimum duration is 1.0 (square pictograph).
 
   Layouts:
@@ -14,6 +17,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { holdRepeat } from "#lib/shared/ui/hold-repeat.js";
   import { formatDurationDisplay } from "../../utils/duration-display";
   import {
     MIN_DURATION,
@@ -96,7 +100,10 @@
     <button
       class="ctrl-btn coarse-down"
       aria-label={t("create_ui_decrease_duration_by_half_beat")}
-      onclick={() => handleChange(-DURATION_STEP_COARSE)}
+      use:holdRepeat={{
+        step: DURATION_STEP_COARSE,
+        onStep: (step) => handleChange(-step),
+      }}
       disabled={!canDecrease}
     >
       <i class="fas fa-angles-left" aria-hidden="true"></i>
@@ -106,7 +113,11 @@
     <button
       class="ctrl-btn fine-down"
       aria-label={t("create_ui_decrease_duration_by_tenth")}
-      onclick={() => handleChange(-DURATION_STEP_FINE)}
+      use:holdRepeat={{
+        step: DURATION_STEP_FINE,
+        fastStep: DURATION_STEP_COARSE,
+        onStep: (step) => handleChange(-step),
+      }}
       disabled={!canDecrease}
     >
       <i class="fas fa-minus" aria-hidden="true"></i>
@@ -142,7 +153,11 @@
     <button
       class="ctrl-btn fine-up"
       aria-label={t("create_ui_increase_duration_by_tenth")}
-      onclick={() => handleChange(DURATION_STEP_FINE)}
+      use:holdRepeat={{
+        step: DURATION_STEP_FINE,
+        fastStep: DURATION_STEP_COARSE,
+        onStep: (step) => handleChange(step),
+      }}
       disabled={!canIncrease}
     >
       <i class="fas fa-plus" aria-hidden="true"></i>
@@ -152,7 +167,10 @@
     <button
       class="ctrl-btn coarse-up"
       aria-label={t("create_ui_increase_duration_by_half_beat")}
-      onclick={() => handleChange(DURATION_STEP_COARSE)}
+      use:holdRepeat={{
+        step: DURATION_STEP_COARSE,
+        onStep: (step) => handleChange(step),
+      }}
       disabled={!canIncrease}
     >
       <i class="fas fa-angles-right" aria-hidden="true"></i>
@@ -329,6 +347,13 @@
     color: var(--theme-text, rgba(255, 255, 255, 0.9));
     font-size: 1.1rem;
     cursor: pointer;
+    /* Repeated taps must each land: without this a phone takes the second of
+       two quick taps as a double-tap zoom and drops it. A held press must not
+       start a text selection or the iOS callout either. */
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
     transition:
       background var(--duration-fast) var(--ease-standard),
       border-color var(--duration-fast) var(--ease-standard),

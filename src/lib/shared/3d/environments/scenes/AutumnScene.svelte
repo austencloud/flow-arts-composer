@@ -7,6 +7,7 @@
 
   import { tryGetAdaptiveQualityContext } from "../../context/adaptive-quality-context";
   import { getSceneFeatureContext } from "../../scene-features/context/scene-feature-context";
+  import { setStageDirectionCueVisibility } from "../domain/stage-direction-cues";
   import {
     createDefaultAutumnConfig,
     type AutumnSceneConfig,
@@ -173,6 +174,10 @@
   $effect(() => world?.setActive(active));
   $effect(() => world?.setConfig(sceneConfig));
   $effect(() => world?.setGroundY(groundY));
+  // Cues are built once; a recording hides them without a rebuild.
+  $effect(() => {
+    if (world) setStageDirectionCueVisibility(world.root, showDirectionCues);
+  });
   $effect(() => world?.setMotionScale(motionScale));
   $effect(() => world?.setPerformers(performerPositions));
   $effect(() => world?.setTier(tier));

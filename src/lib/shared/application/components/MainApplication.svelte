@@ -54,7 +54,8 @@
   import { getContext, onMount } from "svelte";
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
   import {
-    FIRST_VIEW_WAIT_MS,
+    UNTIL_RELEASED,
+    finishBootScreen,
     holdBootScreen,
     releaseBootHold,
   } from "#lib/shared/application/services/boot-screen.js";
@@ -129,12 +130,18 @@
   // has mounted. Held here, before anything can report ready, because on a
   // cold boot ready arrives while the auth spinner below still stands in for
   // MainInterface. A warm reload announces ready from the boot snapshot,
-  // before the module has even started loading, so this hold gets the first
-  // view's long wait: on a slow boot the screen would otherwise leave on an
-  // empty backdrop before the module could take holds of its own.
-  holdBootScreen("module-view", FIRST_VIEW_WAIT_MS);
+  // before the module has even started loading, so this hold has no time
+  // limit: a timed one let a slow module load (a restarted dev server, a bad
+  // network) hand over to an empty backdrop. It ends when ModuleRenderer
+  // shows the view, its error or its sign-in gate, or when initialization
+  // fails below; past ready + 15 s the boot screen offers a Reload.
+  holdBootScreen("module-view", UNTIL_RELEASED);
+  // A failed start never reports ready; its ErrorScreen is the page, so
+  // let the boot screen go as well.
   $effect(() => {
-    if (initializationError) releaseBootHold("module-view");
+    if (!initializationError) return;
+    releaseBootHold("module-view");
+    finishBootScreen();
   });
 
   // Root tokens also reach menus and editors rendered through portals.

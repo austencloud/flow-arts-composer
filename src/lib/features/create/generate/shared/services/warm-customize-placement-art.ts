@@ -24,6 +24,7 @@ import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/stat
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { normalizeBuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import { normalizeTriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
 import * as TKAGlyphModule from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
@@ -52,6 +53,7 @@ async function warm(gridMode: GridMode): Promise<void> {
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
     buugengStyle: normalizeBuugengStyle(settings.buugengStyle),
+    triadBuild: normalizeTriadBuild(settings.triadBuild),
     showLeftMotion: true,
     showRightMotion: true,
   };

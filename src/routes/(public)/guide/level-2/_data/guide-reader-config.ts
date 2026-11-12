@@ -24,5 +24,4 @@ export const LEVEL2_READER_CONFIG: GuideReaderConfig = {
   hrefFor: () => "#",
   levelLabel: "Level 2",
   enableDeepLinks: false,
-  isCodexSlug: () => false,
 };

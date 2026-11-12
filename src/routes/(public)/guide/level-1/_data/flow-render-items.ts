@@ -140,7 +140,9 @@ export function flowRenderItems(
   const intro = taglineInIntro(content, tagline);
   const inHero = taglineInHero(tagline, room);
   const dropBlock =
-    intro === "same" && inHero ? introBlock(content, tagline) : null;
+    intro === "same" && inHero && (room?.bandShowsTagline ?? true)
+      ? introBlock(content, tagline)
+      : null;
   const blocks: GuideBlock[] = [];
   // A long tagline the page does not repeat becomes its first words.
   if (intro === "none" && !inHero && !pageRepeats(content, tagline))
@@ -210,9 +212,11 @@ function introBlock(
   tagline: string
 ): GuideBlock | null {
   const tag = stripHtml(tagline);
+  let seenProse = false;
   for (const b of content) {
-    if (b.kind === "heading" && b.level === 1) continue;
+    if (!seenProse && b.kind === "heading") continue;
     if (b.kind !== "prose") return null;
+    seenProse = true;
     if (stripHtml(b.html) === tag) return b;
   }
   return null;
@@ -242,8 +246,17 @@ export const isBareStrip = (it: FlowRenderItem) =>
   it.block.layout === "strip" &&
   !it.block.card;
 
+/**
+ * A figure card in a run of them (the Staff Motions opener): it owns no
+ * words, so the run shares one screen side by side, each under its own
+ * small title (2026-11-11).
+ */
+export const isFigureCardInRun = (it: FlowRenderItem) =>
+  it.type === "showcase" && !!it.card.figureCard && it.text.length === 0;
+
 /** Figures that pack together on one screen while their tiles fit. */
-export const isPackable = (it: FlowRenderItem) => isGallery(it) || isBareStrip(it);
+export const isPackable = (it: FlowRenderItem) =>
+  isGallery(it) || isBareStrip(it) || isFigureCardInRun(it);
 
 const headingOf = (it: FlowRenderItem): string | null => {
   if (it.type === "block")
@@ -272,6 +285,8 @@ type FigureStop = {
 };
 
 const HEADING_COST = 70;
+// The small section label over a heading ("Shift" over "Prospin").
+const KICKER_COST = 20;
 const GLYPH_COST = 110;
 const PARAGRAPH_COST = 20;
 const SHORT_PARAGRAPH = 40;
@@ -281,7 +296,8 @@ const MIN_WORDS = 120;
 const LEAD_NOTE: GuideBlock = { kind: "prose", html: "" };
 
 function wordCost(b: GuideBlock): number {
-  if (b.kind === "heading") return HEADING_COST;
+  if (b.kind === "heading")
+    return HEADING_COST + (b.kicker ? KICKER_COST : 0);
   if (b.kind === "glyphImage") return GLYPH_COST;
   if (b.kind === "printOnly") return wordsCost(b.flow);
   if (b.kind === "prose")
@@ -319,6 +335,8 @@ function stripCost(card: CardBlock, room: ScreenRoom): number {
 
 /** What a card's own figure takes from the words beside it. */
 function figureCost(card: CardBlock, room: ScreenRoom): number {
+  // A figure card's room for words is its own (room.card).
+  if (card.figureCard) return 0;
   const poolWords = hasPoolWords(card)
     ? Math.max(...card.pool!.entries.map((e) => stripHtml(e.proseHtml).length)) +
       120
@@ -336,29 +354,73 @@ const balanced = (html: string) =>
 /** A paragraph's sentences, its line breaks counting as breaks between them. */
 function proseSentences(html: string): string[] {
   const lines = html.split(/(?:<br\s*\/?>\s*)+/i).filter((l) => l.trim());
-  return (lines.every(balanced) ? lines : [html]).flatMap(htmlSentences);
+  // A bullet line is one piece: cut inside it and a screen could end on half
+  // a list item or start on a bare "•".
+  return (lines.every(balanced) ? lines : [html]).flatMap((l) =>
+    /^(?:\s|<[^>]+>)*•/.test(l) ? [l.trim()] : htmlSentences(l)
+  );
 }
 
-/** A paragraph longer than a screen breaks at its sentences. */
+/** The paragraph a sentence piece was cut from (`rejoinSentences`). */
+const pieceSource = new WeakMap<GuideBlock, GuideBlock & { kind: "prose" }>();
+
+/**
+ * A paragraph longer than a screen breaks at its sentences. `splitOver`
+ * (default: the budget) is the cost past which a paragraph breaks.
+ */
 function wordPieces(
   blocks: readonly GuideBlock[],
-  budget: number
+  budget: number,
+  splitOver = budget
 ): PackPiece<GuideBlock>[] {
   return blocks.flatMap((b) => {
     const cost = wordCost(b);
     const parts =
-      b.kind === "prose" && cost > budget ? proseSentences(b.html) : [];
+      b.kind === "prose" && cost > splitOver ? proseSentences(b.html) : [];
     if (b.kind !== "prose" || parts.length < 2)
       return [{ piece: b, cost, leads: b.kind !== "prose" || isLeadIn(b) }];
+    // Broken early (a figure card), its sentences join up again when they
+    // land together, so only the first pays for starting a paragraph.
+    const rejoins = splitOver < budget;
     return parts.map((html, n) => {
       const piece = { ...b, html };
+      pieceSource.set(piece, b);
       return {
         piece,
-        cost: wordCost(piece),
+        cost: rejoins && n > 0 ? stripHtml(html).length : wordCost(piece),
         leads: n === parts.length - 1 && isLeadIn(b),
       };
     });
   });
+}
+
+/**
+ * Sentences of one paragraph that land on the same screen read as that
+ * paragraph again, its own breaks kept; a whole paragraph is the paragraph.
+ */
+function rejoinSentences(part: readonly GuideBlock[]): GuideBlock[] {
+  const out: GuideBlock[] = [];
+  for (let i = 0; i < part.length; ) {
+    const src = pieceSource.get(part[i]!);
+    if (!src) {
+      out.push(part[i++]!);
+      continue;
+    }
+    const run: GuideBlock[] = [];
+    while (i < part.length && pieceSource.get(part[i]!) === src)
+      run.push(part[i++]!);
+    const htmls = run.map((b) => (b as { html: string }).html);
+    const from = src.html.indexOf(htmls[0]!);
+    let end = from;
+    for (const h of htmls) {
+      const at = end < 0 ? -1 : src.html.indexOf(h, end);
+      end = at < 0 ? -1 : at + h.length;
+    }
+    const html =
+      from >= 0 && end >= 0 ? src.html.slice(from, end) : htmls.join(" ");
+    out.push(html.trim() === src.html.trim() ? src : { ...src, html });
+  }
+  return out;
 }
 
 /**
@@ -379,18 +441,23 @@ function cutForRoom(
 ): FlowRenderItem[] {
   const stops: FigureStop[] = [];
   let pending: GuideBlock[] = [];
+  // A showcase that owns its words: one figure with a text column.
+  const ownsWords = (it: FlowRenderItem) =>
+    it.type === "showcase" && !isFigureCardInRun(it);
   const budgetOf = (stop: FigureStop): number => {
     const first = stop.figures[0]!;
-    return first.type === "showcase"
-      ? Math.max(room.beside - figureCost(first.card, room), MIN_WORDS)
-      : room.over;
+    if (!ownsWords(first) || first.type !== "showcase") return room.over;
+    // A figure card holds one size on every screen its words run across,
+    // so its words get the room beside it or over it, and no less.
+    if (first.card.figureCard) return room.card ?? room.beside;
+    return Math.max(room.beside - figureCost(first.card, room), MIN_WORDS);
   };
   const stopWords = (stop: FigureStop): number => {
     const first = stop.figures[0]!;
     return (
       wordsCost(stop.before) +
       wordsCost(stop.after) +
-      (first.type === "showcase" ? wordsCost(first.text) : 0)
+      (first.type === "showcase" && ownsWords(first) ? wordsCost(first.text) : 0)
     );
   };
 
@@ -450,7 +517,28 @@ function cutForRoom(
     // The first screen shares its room with the page's lead note, if any:
     // the note goes in as a piece of words ahead of the rest, then leaves.
     const lead = stop === stops[0] ? (room.lead ?? 0) : 0;
+    // A figure card keeps one size on every screen, so words that overflow
+    // its room break at any sentence, not only inside a paragraph longer
+    // than a screen; sentences that land together join up again.
+    const figureCard =
+      first.type === "showcase" && ownsWords(first) && !!first.card.figureCard;
     const pack = (blocks: readonly GuideBlock[], b: number): GuideBlock[][] => {
+      if (figureCard) {
+        // Whole paragraphs first: they read best. Sentences break only when
+        // a screen of whole paragraphs would run past the card's room, or
+        // when breaking them saves a screen.
+        const whole = packPieces(wordPieces(blocks, b), b);
+        if (wordsCost(blocks) <= b) return whole;
+        const split = packPieces(wordPieces(blocks, b, 0), b).map(
+          rejoinSentences
+        );
+        // A short tail joins the screen before it (packPieces) and can run
+        // that screen past the room; a cut that does is no saving.
+        const fits = (parts: GuideBlock[][]) =>
+          parts.every((part) => wordsCost(part) <= b);
+        if (!fits(whole)) return split;
+        return whole.length <= split.length || !fits(split) ? whole : split;
+      }
       const pieces = wordPieces(blocks, b);
       if (!lead) return packPieces(pieces, b);
       const parts = packPieces(
@@ -461,7 +549,7 @@ function cutForRoom(
       parts[0] = parts[0]!.filter((p) => p !== LEAD_NOTE);
       return parts;
     };
-    if (first.type === "showcase") {
+    if (first.type === "showcase" && ownsWords(first)) {
       const words = [...stop.before, ...first.text, ...stop.after];
       // A pool's own words change length as it cycles. When the longest of them
       // and the page's words won't share a screen, the page's words run first
@@ -519,7 +607,8 @@ export type FlowScreen = {
  * Groups cut items into screens. A screen's label is its heading; a screen
  * that goes on with the figure before it keeps that screen's label; otherwise
  * the plain part of its figure's caption, else the label before it. A screen
- * is never "Part 4". The first screen falls back to `introLabel`.
+ * is never "Part 4". The first screen is named by its heading, else
+ * `introLabel`, never by a caption.
  */
 export function flowScreens(
   items: readonly FlowRenderItem[],
@@ -536,7 +625,7 @@ export function flowScreens(
     it.type === "showcase" ? it.card : isFigure(it) ? it.block : null;
   let previous = introLabel;
   let previousFigure: unknown = null;
-  return [...groups.values()].map((group) => {
+  return [...groups.values()].map((group, n) => {
     const all = group.map((idx) => items[idx]!);
     const figure = all.map(figureKey).find((k) => k !== null) ?? null;
     const heading = all.map(headingOf).find((h) => h !== null);
@@ -544,7 +633,14 @@ export function flowScreens(
       .map((it) => captionLabel(captionOf(it)))
       .find((c) => c !== null);
     const goesOn = figure !== null && figure === previousFigure;
-    const label = heading ?? (goesOn ? previous : caption) ?? previous;
+    // The first screen shares its room with the intro words, and the first
+    // strip's own heading only arrives on the next screen, so its caption
+    // ("Start + steps 1–4") would name the whole opening. It takes the intro
+    // label instead.
+    const label =
+      n === 0
+        ? (heading ?? introLabel)
+        : (heading ?? (goesOn ? previous : caption) ?? previous);
     previous = label;
     previousFigure = figure;
     return { items: group, label };

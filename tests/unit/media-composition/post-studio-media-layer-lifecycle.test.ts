@@ -5,6 +5,7 @@ import { mountPlaybackMediaLayer } from "./post-studio-media-layer-harness.svelt
 import {
   previewClockStep,
   FOLLOW_AHEAD_SECONDS,
+  PRESENTING_CAPTURE_INTERVAL_MS,
 } from "@austencloud/video-editor/render";
 
 vi.mock(
@@ -168,20 +169,28 @@ describe("Post Studio playback media lifetime", () => {
     const h = mountPlaybackMediaLayer();
     mounted.push(h);
     present(0);
-    expect(h.canvas.style.visibility).toBe("visible");
+    // The first frame is copied to the retained picture, then the playing
+    // video shows its own frames and the picture steps aside.
+    expect(drawImage).toHaveBeenCalled();
+    expect(h.canvas.style.visibility).toBe("hidden");
     cancelFrame.mockClear();
     const requests = [...pendingFrames.keys()];
     for (let frame = 1; frame <= 60; frame += 1) {
       h.video.currentTime = frame / 60;
       h.tick(frame / 60);
-      expect(h.canvas.style.visibility).toBe("visible");
     }
     expect(cancelFrame).not.toHaveBeenCalled();
     expect([...pendingFrames.keys()]).toEqual(requests);
+    // While the video presents, the picture is only refreshed on an interval.
     const paints = drawImage.mock.calls.length;
+    const later = performance.now() + PRESENTING_CAPTURE_INTERVAL_MS + 1;
+    vi.spyOn(performance, "now").mockReturnValue(later);
     present(1);
     expect(drawImage.mock.calls.length).toBeGreaterThan(paints);
     expect(h.video.playbackRate).toBe(1);
+    // The retained picture survived the rebinds: pausing puts it back on top.
+    h.setPlaying(false);
+    expect(h.canvas.style.visibility).toBe("visible");
   });
 
   it("invalidates the old source's callbacks only when the source actually changes", () => {
@@ -201,7 +210,11 @@ describe("Post Studio playback media lifetime", () => {
     );
     flushSync();
     expect(drawImage.mock.calls.length).toBe(paints);
+    // The new source's own frame paints, then its video presents itself.
     present(0);
+    expect(drawImage.mock.calls.length).toBeGreaterThan(paints);
+    expect(h.canvas.style.visibility).toBe("hidden");
+    h.setPlaying(false);
     expect(h.canvas.style.visibility).toBe("visible");
   });
 

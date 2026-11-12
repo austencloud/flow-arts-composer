@@ -110,7 +110,7 @@
 
 <div class="codex-print">
   <header class="head">
-    <h1>Codex Print</h1>
+    <h1>Codex Cards</h1>
     <p class="lede">
       The full Double-Staff codex as cut-out reference cards. Four per sheet,
       double-sided: Types&nbsp;1–2 on the front, Types&nbsp;3–6 on the back,

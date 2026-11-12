@@ -18,6 +18,7 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ScanSequenceLoader from "./ScanSequenceLoader.svelte";
   import { loadSequenceViewerContent } from "../services/prefetch-sequence-viewer";
+  import { takePrefetchedViewerRecord } from "../services/viewer-link-prefetch";
   import {
     getSequenceOverlayState,
     closeSequenceOverlay,
@@ -556,8 +557,12 @@
 
       markNativeScanTransitionStage(code, "shortcode-resolve-start");
       const manager = getShortCodeManager();
-      const { sequence: resolved, record } =
-        await manager.resolveShortCodeWithRecord(code);
+      // The app route's load started this read as the page opened; without
+      // it the resolver runs its own lookup ladder.
+      const prefetched = await takePrefetchedViewerRecord(code);
+      const { sequence: resolved, record } = prefetched
+        ? await manager.resolveShortCodeWithRecord(code, prefetched)
+        : await manager.resolveShortCodeWithRecord(code);
       if (!resolved) {
         stripInvalidV(code);
         return;

@@ -24,6 +24,7 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { yieldToScheduler } from "#lib/shared/foundation/utils/background-scheduling.js";
 
 const MAX_ROLLS = 10;
@@ -60,6 +61,11 @@ export interface PerVisitDemoOptions {
    * it crosses the worker boundary with the rest of the options.
    */
   continuity?: PerVisitContinuity;
+  /**
+   * Pins the level instead of drawing one. The /composer Generate demo has
+   * always shown intermediate sequences; the hero leaves this unset.
+   */
+  difficulty?: DifficultyLevel;
 }
 
 export type PerVisitContinuity = "smooth" | "mixed";
@@ -99,6 +105,7 @@ export async function rollPerVisitDemo(
   ] as const;
   const random = options?.random ?? Math.random;
   const difficulty =
+    options?.difficulty ??
     difficultyPool[Math.floor(random() * difficultyPool.length)] ??
     models.DifficultyLevel.INTERMEDIATE;
 

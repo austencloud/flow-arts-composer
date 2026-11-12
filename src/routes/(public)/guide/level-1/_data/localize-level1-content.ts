@@ -314,12 +314,15 @@ const keyByText = {
   "<em>(Rotated + Mirrored + Swapped LOOP)</em>": "verified_level1_sixteen_count_273",
   "Staff Motions": "verified_level1_staff_motions_274",
   "During a shift, a prop can rotate in one of two directions - Prospin or Antispin": "verified_level1_staff_motions_275",
+  "During a shift, a prop can rotate in one of two directions - Prospin or Antispin.": "verified_level1_staff_motions_shift_intro",
   "Prospin": "verified_level1_staff_motions_276",
   "• <strong>Prospin</strong> - The prop rotates the same direction as the handpath<br>A 90 degree isolation is our base unit of a prospin.": "verified_level1_staff_motions_277",
+  "The prop rotates the same direction as the handpath.<br>A 90 degree isolation is our base unit of a prospin.": "verified_level1_staff_motions_prospin_rule",
   "start · end · combined": "verified_level1_staff_motions_278",
   "In a base isolation, the thumb orientation remains the same for the entire motion.": "verified_level1_staff_motions_279",
   "Antispin": "verified_level1_staff_motions_280",
   "• <strong>Antispin</strong> - The prop rotates in the opposite direction of the handpath<br>A 90 degree antispin is our base unit of antispin.": "verified_level1_staff_motions_281",
+  "The prop rotates in the opposite direction of the handpath.<br>A 90 degree antispin is our base unit of antispin.": "verified_level1_staff_motions_antispin_rule",
   "In an antispin, the ends swap orientation. Here, it moves from thumb in to thumb out.": "verified_level1_staff_motions_282",
   "Prospin and Inspin name the same motion: the prop rotates the same direction as the handpath. Most poi spinners say Inspin. The Kinetic Alphabet says Prospin.": "guide_prospin_intro",
   "Pro and anti are opposites, with and against, so the pair sorts every shift the way the motion does: with the handpath or against it.": "guide_prospin_why_pair",
@@ -513,7 +516,11 @@ export function localizeLevel1SelectionLabel(label: string): string {
 export function localizeLevel1Block(block: GuideBlock): GuideBlock {
   switch (block.kind) {
     case "heading":
-      return { ...block, text: localizeLevel1Text(block.text) };
+      return {
+        ...block,
+        text: localizeLevel1Text(block.text),
+        ...(block.kicker ? { kicker: localizeLevel1Text(block.kicker) } : {}),
+      };
     case "prose":
       return { ...block, html: localizeLevel1Text(block.html) };
     case "glyphImage":
@@ -525,6 +532,9 @@ export function localizeLevel1Block(block: GuideBlock): GuideBlock {
       return {
         ...block,
         caption: block.caption ? localizeLevel1Text(block.caption) : undefined,
+        ...(block.figureTitle
+          ? { figureTitle: localizeLevel1Text(block.figureTitle) }
+          : {}),
         pool: block.pool && {
           ...block.pool,
           entries: block.pool.entries.map((entry) => ({

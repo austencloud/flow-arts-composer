@@ -137,6 +137,7 @@
     type FanAppearance,
   } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import { applyTriadBuildToScene } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 
   import { createPlaybackController } from "./playback-controller.svelte";
   import { createExportCoordinator } from "./export-coordinator.svelte";
@@ -498,6 +499,17 @@
         triangleGrip: propFinishState.triangleGrip,
       });
     }
+  });
+
+  // A triad build picked in 2D (Fire or Day) becomes the scene's finish
+  // default once 3D has loaded. One way and only when the setting changes:
+  // the scene's finish is read untracked, so its own Fire/Day control keeps
+  // working (see syncTriadBuildToScene in scene-prop-picker-grip-sync).
+  $effect(() => {
+    const finishState = viewer3D.propFinishState;
+    if (!finishState) return;
+    const build = getSettings().triadBuild;
+    untrack(() => applyTriadBuildToScene(finishState, build));
   });
 
   function handleFanAppearanceChange(appearance: FanAppearance): void {

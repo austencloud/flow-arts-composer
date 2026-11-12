@@ -24,6 +24,58 @@ transport is the same catalog as a panel, grouped by each scene's `category`
 authored `intent` printed on its card. Proving Grounds is a reference to browse
 by subject, not a film to watch front to back.
 
+## Recording a film to video
+
+Added 2026-11-11. A film can be recorded to an MP4, one exact frame at a time,
+so the file plays smoothly however slowly the machine draws:
+
+```
+node scripts/record-film.mjs --origin http://127.0.0.1:<task port> \
+  --film two-lines-one-circle [--fps 60] [--w 1920 --h 1080] [--from 2 --to 6]
+```
+
+`--film` takes a demo id or a path to a film JSON file. The script opens a
+private headless Chrome, records, and prints the saved path
+(`%TEMP%/tka-release-media/<name>.mp4`) and the time taken. It refuses the
+shared 5173 server; run a dev server from your own worktree. The page side is
+`window.__filmRecorder.record(options)` with its status on
+`[data-film-recorder-status]`, both dev only. The frame schedule lives in
+`src/routes/test/film-director/_lib/film-recording-plan.ts` and the recorder
+in `film-director-recorder.svelte.ts` beside it. It reuses the app's encoder
+through `Offline3DExporter.exportDriven`.
+
+What a director needs to know:
+
+- **Speed.** Measured on d1 on 2026-11-11: a 32 second, three scene film at
+  1920 by 1080 and 60 fps took 46 seconds from start to saved file, about
+  1.4 seconds per second of film. Short recordings cost more per second
+  (5 seconds of film took 17), because loading the page, preparing the film
+  and settling each scene take a fixed 10 to 15 seconds.
+- **Keep the server still.** Anything that makes the dev server reload the
+  page (an edit, or a Vitest or svelte-check run regenerating `.svelte-kit`
+  in the same worktree) throws the recording away. The script notices and
+  starts again, up to three times.
+- **Frame rate.** 60 (default) or 30. Every frame shows the film at exactly
+  `from + index / fps` seconds.
+- **Sizes.** Width and height must both be even, each between 64 and 4096,
+  and at most 8192 macroblocks of 16 by 16 pixels in all (H.264 level 4.0).
+  1920 by 1080 and 1080 by 1920 fit; 2044 by 1080 and anything larger fail
+  with a message before any frame is drawn. The camera keeps the film's
+  framing, so a tall cut of a film framed wide shows a narrower slice of it.
+- **Clean frames.** The recording hides the workbench chrome, selection and
+  hover rings, performer numbers, move hints and the stage direction cues
+  (footlight strip, edge bars and downstage triangle). Plane grids a scene
+  asks for in `location.visiblePlanes` stay, since the film means to show
+  them.
+- **Scene changes.** At the first frame of each scene the recorder waits until
+  the world has settled and every character is in, then holds about a second
+  more so the character fade-in finishes. Dissolves and fades through black
+  are drawn on film time. A recording that starts partway into a dissolve
+  shows the incoming scene without the blend.
+- **What does not record.** Sound. Anything the live page draws as page
+  overlay rather than in the 3D scene, apart from the dissolve and the fade
+  to black.
+
 ## Directive-capable axes
 
 These support the full directive grammar (literal, `pick: "any"`,

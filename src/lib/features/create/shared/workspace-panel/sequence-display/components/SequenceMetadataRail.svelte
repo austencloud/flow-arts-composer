@@ -50,7 +50,13 @@
     <DifficultyBadge level={difficultyLevel} size="20px" fontSize="12px" />
   </div>
 
-  <div class="loop-slot" class:visible={hasLoop} aria-hidden={!hasLoop}>
+  <!-- Rides a PanelGroup compositor edge, like the workspace title. -->
+  <div
+    class="loop-slot"
+    class:visible={hasLoop}
+    aria-hidden={!hasLoop}
+    data-panel-flip="sequence-loop"
+  >
     <LOOPIconStrip
       activeComponents={loopComponents}
       rotationPeriod={loopDisplay?.rotationPeriod ?? period ?? undefined}

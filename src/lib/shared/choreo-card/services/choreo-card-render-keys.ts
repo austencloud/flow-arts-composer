@@ -7,6 +7,10 @@ import {
   normalizeBuugengStyle,
   type BuugengStyle,
 } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import {
+  normalizeTriadBuild,
+  type TriadBuild,
+} from "#lib/shared/pictograph/prop/domain/triad-build.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -15,6 +19,7 @@ export interface ChoreoCardRenderKeyInputs {
   fanAppearance?: FanAppearance;
   triangleGrip?: TriangleGrip;
   buugengStyle?: BuugengStyle;
+  triadBuild?: TriadBuild;
   primaryPropColors?: { left: string; right: string } | null;
   sequence: SequenceData | null | undefined;
   handPathMode?: boolean;
@@ -110,7 +115,11 @@ export function buildChoreoCardRenderKeys(
   const buugengStyle = normalizeBuugengStyle(i.buugengStyle);
   const styleKey =
     buugengStyle === "classic" ? "" : `-buugeng:${buugengStyle}`;
-  const imageKey = `${i.fanAppearance ? JSON.stringify(i.fanAppearance) : ""}${i.sequence?.id ?? ""}-${sequenceContentKey}-${stepCount}-${i.leftPropType}-${i.rightPropType}-${i.catDogModeEnabled}-${i.showStepNumbers}-${i.showNonRadial}-${i.handPointVis}-${i.showTKA}-${i.showReversals}-${durationKey}-mv:${i.showLeftMotion ? "1" : "0"}${i.showRightMotion ? "1" : "0"}-ch:${ch}-gv:${gv}${paletteKey}${gripKey}${styleKey}${viewKey}`;
+  // A triad build likewise; Pictograph adds nothing.
+  const triadBuild = normalizeTriadBuild(i.triadBuild);
+  const triadKey =
+    triadBuild === "pictograph" ? "" : `-triad:${triadBuild}`;
+  const imageKey = `${i.fanAppearance ? JSON.stringify(i.fanAppearance) : ""}${i.sequence?.id ?? ""}-${sequenceContentKey}-${stepCount}-${i.leftPropType}-${i.rightPropType}-${i.catDogModeEnabled}-${i.showStepNumbers}-${i.showNonRadial}-${i.handPointVis}-${i.showTKA}-${i.showReversals}-${durationKey}-mv:${i.showLeftMotion ? "1" : "0"}${i.showRightMotion ? "1" : "0"}-ch:${ch}-gv:${gv}${paletteKey}${gripKey}${styleKey}${triadKey}${viewKey}`;
   // startPlacementLayout (row vs column) changes where the start cell sits and
   // therefore where every step cell AND the QR cell land. It's in the CONTENT
   // (layout) key but NOT imageKey/gridStableKey/structuralKey: a pure row↔column

@@ -38,8 +38,13 @@
   import Viewer3DScene from "./Viewer3DScene.svelte";
   import type { PerformerPropColors } from "../rendering/performer-prop-tint";
   import WebComposerMotionPreparation from "./WebComposerMotionPreparation.svelte";
+  import {
+    MOTION_BAKE_AFTER_REVEAL_CAP_MS,
+    mayStartMotionBake,
+    shouldPrepareWebMotion,
+  } from "./web-motion-preparation-plan";
+  import { whenPageStill } from "#lib/shared/foundation/utils/background-scheduling.js";
   import type { composerCaptureRequest } from "../unreal/domain/composer-capture-request";
-  import { shouldPrepareWebMotion } from "./web-motion-preparation-plan";
   import Viewer3DCamera from "./Viewer3DCamera.svelte";
   import Viewer3DCanvasRef from "./Viewer3DCanvasRef.svelte";
   import PerfMonitor from "./PerfMonitor.svelte";
@@ -99,6 +104,7 @@
   import type { WorkerSceneSwitchSnapshot } from "../worker-renderer/services/worker-environment-renderer";
   import { supportsWorkerEnvironmentRenderer } from "../worker-renderer/services/worker-environment-renderer";
   import { resolveWorkerScenePreparationProgress } from "../worker-renderer/domain/worker-scene-preparation-progress";
+  import { releaseReplayHold } from "#lib/shared/analytics/services/replay-hold.js";
 
   interface Props {
     sequenceData: SequenceData | null;
@@ -115,6 +121,24 @@
     hidePerformerBadges?: boolean;
     /** Show dictated plane grids without the center sphere and axis arrows. */
     hideOrientationHelpers?: boolean;
+    /**
+     * Draw nothing but the film: no selection or hover rings under performers,
+     * no move hint or placement prompt, no performer numbers, no stage
+     * direction cues. For recording a film to video, where cropping cannot
+     * remove what is drawn in the scene.
+     */
+    cleanFrame?: boolean;
+    /**
+     * Frames are being stepped by an outside clock (a recorder), so their
+     * timing says nothing about load. Holds the adaptive quality governor
+     * still instead of letting it lower resolution or shadows mid-recording.
+     */
+    framePacedCapture?: boolean;
+    /** How many performers on stage have their character in, of how many. */
+    onPerformerReadinessChange?: (
+      readyCount: number,
+      totalCount: number
+    ) => void;
     fullScreen?: boolean;
     onExitFullScreen?: () => void;
     onRendererReady?: (renderer: WebGLRenderer | null) => void;
@@ -218,6 +242,9 @@
     hideSceneMarkers = false,
     hidePerformerBadges = false,
     hideOrientationHelpers = false,
+    cleanFrame = false,
+    framePacedCapture = false,
+    onPerformerReadinessChange,
     fullScreen = false,
     onExitFullScreen,
     onRendererReady,
@@ -514,10 +541,30 @@
     buildOpening = !workerEligible;
   });
 
+  // The main-thread <Canvas> below is about to create its WebGL context. A
+  // direct 3D open holds session recording back for the worker path; this
+  // canvas instead needs recording running first, because rrweb only forces
+  // preserveDrawingBuffer on contexts created while it records, and without
+  // it the canvas replays black (analytics/services/replay-hold.ts).
+  const mountsMainThreadCanvas = $derived(
+    canRenderScene &&
+      !useUnreal &&
+      (buildOpening === true ||
+        ((renderEmptyScene ||
+          canvasMountReady ||
+          revealMode === "streaming") &&
+          !(workerHostExact && workerEnvironment && sequenceData)))
+  );
   // Production viewers give their curtain one frame to paint before WebGL
   // starts. A focused scene workbench has no curtain, so delaying the canvas
   // only creates a fake blank loading step.
   let canvasMountReady = $state(false);
+
+  // Declared after canvasMountReady on purpose: $effect.pre runs at once, so
+  // everything mountsMainThreadCanvas reads must already exist.
+  $effect.pre(() => {
+    if (mountsMainThreadCanvas) releaseReplayHold("main-thread-renderer");
+  });
 
   // Read `?gait=1` once, on the client, where a URL exists. Doing it here
   // rather than at module scope keeps SSR from deciding the answer for a
@@ -623,6 +670,7 @@
   ): void {
     readyPerformerCount = readyCount;
     totalPerformerCount = totalCount;
+    onPerformerReadinessChange?.(readyCount, totalCount);
   }
 
   $effect(() => {
@@ -791,10 +839,39 @@
   });
 
   let curtainRevealed = $state(false);
+  const sceneRevealed = $derived(
+    sceneReady && (revealMode !== "gated" || curtainRevealed)
+  );
   $effect(() => {
-    onSceneRevealedChange?.(
-      sceneReady && (revealMode !== "gated" || curtainRevealed)
-    );
+    onSceneRevealedChange?.(sceneRevealed);
+  });
+
+  // Baking motion mounts a second hidden scene on this thread. During boot it
+  // took the curtain from a few seconds to tens of seconds, so it waits until
+  // the scene is showing and the page is still, or the cap after reveal has
+  // passed. Saved clips are still read back from the device meanwhile. Latched:
+  // once baking may start it is never held back again.
+  let motionBakeAllowed = $state(false);
+  $effect(() => {
+    if (motionBakeAllowed || !sceneRevealed) return;
+    const revealedAt = performance.now();
+    let pageStill = false;
+    let cancelled = false;
+    const decide = (): void => {
+      if (cancelled) return;
+      if (mayStartMotionBake(revealedAt, pageStill, performance.now()))
+        motionBakeAllowed = true;
+    };
+    void whenPageStill(300).then(() => {
+      pageStill = true;
+      decide();
+    });
+    // A frame past the cap, so timer and clock rounding cannot land just short.
+    const cap = setTimeout(decide, MOTION_BAKE_AFTER_REVEAL_CAP_MS + 16);
+    return () => {
+      cancelled = true;
+      clearTimeout(cap);
+    };
   });
 
   // The 2D animated backdrop keeps repainting a viewport-sized canvas behind
@@ -933,6 +1010,7 @@
                 sceneReady &&
                   isPlaying &&
                   !viewer3DState.isExporting &&
+                  !framePacedCapture &&
                   !motionPreparing &&
                   (typeof document === "undefined" ||
                     document.visibilityState === "visible")
@@ -951,6 +1029,7 @@
               adaptive={sceneReady &&
                 isPlaying &&
                 !viewer3DState.isExporting &&
+                !framePacedCapture &&
                 !motionPreparing}
               active={Boolean(onPerformanceSample) && sceneReady}
               warmupMs={performanceWarmupMs}
@@ -1006,6 +1085,7 @@
                   {hideSceneMarkers}
                   {hidePerformerBadges}
                   {hideOrientationHelpers}
+                  {cleanFrame}
                   {weldPerformerGrip}
                   {enableEffects}
                   {enablePerformerLocomotion}
@@ -1038,6 +1118,7 @@
             <WebComposerMotionPreparation
               requests={webCaptureRequests}
               cacheRevision={motionCacheRevision}
+              mayBake={motionBakeAllowed}
               onCacheChange={() => {
                 motionCacheRevision += 1;
               }}

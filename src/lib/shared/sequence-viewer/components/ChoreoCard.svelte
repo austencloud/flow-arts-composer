@@ -38,6 +38,7 @@
   import { CANONICAL_CARD_VISIBILITY } from "#lib/shared/render/services/cloud-cell-key.js";
   import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import { normalizeBuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+  import { normalizeTriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
   import { handLegendFor } from "../services/hand-legend";
@@ -890,6 +891,14 @@
           visibilityOverrides?.buugengStyle ?? getSettings().buugengStyle
         )
   );
+  // And the triad build: a scanned card keeps the printed Pictograph glyph.
+  const cardTriadBuild = $derived(
+    cloudProbeEnabled
+      ? undefined
+      : normalizeTriadBuild(
+          visibilityOverrides?.triadBuild ?? getSettings().triadBuild
+        )
+  );
 
   /**
    * Build render options from current component state (delegates to extracted pure function)
@@ -926,6 +935,7 @@
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
       triangleGrip: cardTriangleGrip,
       buugengStyle: cardBuugengStyle,
+      triadBuild: cardTriadBuild,
       primaryPropColors: effectivePrimaryPropColors,
       // A scan represents the printed card, not the scanner's personal export
       // toggles. Pin the same canonical visibility used when QR creation
@@ -988,6 +998,7 @@
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
       triangleGrip: cardTriangleGrip,
       buugengStyle: cardBuugengStyle,
+      triadBuild: cardTriadBuild,
       primaryPropColors: effectivePrimaryPropColors,
       sequence: cardSequence,
       leftPropType,

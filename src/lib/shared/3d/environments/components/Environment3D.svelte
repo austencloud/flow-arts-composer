@@ -19,6 +19,7 @@
   import { T, useTask, useThrelte } from "@threlte/core";
   import { onDestroy, untrack } from "svelte";
   import { getSceneFeatureContext } from "../../scene-features/context/scene-feature-context";
+  import { getStageDirectionCuesShown } from "../../context/stage-direction-cues-context";
   import { getStageCoordinateFrame } from "../domain/stage-coordinate-frame";
   import { tryGetEnvironmentTransitionVisualContext } from "../context/environment-transition-visual-context";
   import { loadAutumnSceneModule } from "../scenes/autumn/runtime/autumn-scene-module";
@@ -109,6 +110,10 @@
   const scene = resolveThrelteScene(sceneValue);
   const renderer = resolveThrelteRenderer(rendererValue);
   const sceneFeatures = getSceneFeatureContext();
+  const viewerCuesShown = getStageDirectionCuesShown();
+  const directionCuesShown = $derived(
+    sceneFeatures.isEnabled("stage") && viewerCuesShown()
+  );
   // Full viewer canvases provide the shader readiness signal. Smaller embedded
   // canvases can still mount Environment3D safely; their incoming world takes
   // over as soon as its assets report ready.
@@ -412,7 +417,7 @@
           {stageWidth}
           {stageDepth}
           {stageZOffset}
-          showDirectionCues={sceneFeatures.isEnabled("stage")}
+          showDirectionCues={directionCuesShown}
         />
       {:catch}
         <!-- The viewer's scene-feature boundary owns the retry UI. -->
@@ -574,7 +579,7 @@
             {stageWidth}
             {stageDepth}
             {stageZOffset}
-            showDirectionCues={sceneFeatures.isEnabled("stage")}
+            showDirectionCues={directionCuesShown}
           />
         {:catch}
           <!-- loadWorld reported the failure; the shown world stays. -->

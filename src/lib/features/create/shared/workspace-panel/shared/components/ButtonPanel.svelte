@@ -188,8 +188,11 @@
       class:compact-rail={compact}
       transition:opaqueFade={{ duration: DURATION.normal }}
     >
+      <!-- Each zone rides a PanelGroup compositor edge (data-panel-flip): when
+           Play or Stop moves the workspace edge, the zones travel to their new
+           place by translate instead of jumping with the layout. -->
       <!-- LEFT ZONE: destructive document actions -->
-      <div class="left-zone">
+      <div class="left-zone" data-panel-flip="button-left">
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence}
             <div
@@ -208,7 +211,7 @@
              never moves Play off center and is one tap from the full viewer
              (and its 3D view). Play's Stop, Retry and Cancel states swap
              inside the button. -->
-        <div class="center-zone">
+        <div class="center-zone" data-panel-flip="button-center">
           {#each centerButtons as btn (btn.id)}
             {#if btn.id === "view" && showViewSequenceButton && onViewSequence}
               <div
@@ -255,7 +258,7 @@
       </div>
 
       <!-- RIGHT ZONE: order/membership from the shared layout -->
-      <div class="right-zone">
+      <div class="right-zone" data-panel-flip="button-right">
         {#each rightButtons as btn (btn.id)}
           {#if btn.id === "sequence-actions" && showSequenceActions}
             <div

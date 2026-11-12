@@ -351,7 +351,7 @@ export async function createCosmicEnvironmentWorld(
   const fog = new FogExp2(new Color(config.fog.color), config.fog.density);
   const animated: CosmicWorldElement[] = [];
 
-  const sky = createCosmicSky(config.sky, assets.moonTexture);
+  const sky = createCosmicSky(config.sky);
   const nebula = createCosmicNebula(config.nebula);
   const authoredRoot = new Group();
   authoredRoot.name = "CosmicReliquaryRoot";

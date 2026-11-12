@@ -13,6 +13,8 @@
  */
 
 import { getCurrentPostHogSessionId } from "./posthog";
+import { isThisAnAgentBrowser } from "../agent-browser";
+import { VISIT_STATE_KEY } from "../internal-browser";
 
 const LIVE_HOSTS: ReadonlySet<string> = new Set([
   "tkaflowarts.com",
@@ -25,7 +27,8 @@ const VISIT_GAP_MS = 30 * 60 * 1000;
 /** QR-code landings already raise their own scan alert. */
 const UNREPORTED_PREFIXES = ["/q/", "/admin"];
 
-const STATE_KEY = "tka-visit-report";
+// Shared with internal-browser.ts, which reads the `admin` flag for PostHog.
+const STATE_KEY = VISIT_STATE_KEY;
 const POSTHOG_WAIT_MS = 4000;
 
 interface VisitState {
@@ -175,7 +178,7 @@ export async function reportVisit(): Promise<void> {
   started = true;
 
   if (!LIVE_HOSTS.has(location.hostname)) return;
-  if (navigator.webdriver) return;
+  if (isThisAnAgentBrowser()) return;
   const landingPath = location.pathname;
   if (UNREPORTED_PREFIXES.some((prefix) => landingPath.startsWith(prefix))) {
     return;

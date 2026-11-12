@@ -97,6 +97,124 @@ function runWhenSettled(
   void transition.finished.then(onSettled, onSettled);
 }
 
+const SHAPE = [
+  "borderTopLeftRadius",
+  "borderTopRightRadius",
+  "borderBottomRightRadius",
+  "borderBottomLeftRadius",
+  "boxShadow",
+] as const;
+type Shape = Record<(typeof SHAPE)[number], string>;
+
+function hasRoundCorner(style: CSSStyleDeclaration): boolean {
+  return SHAPE.slice(0, 4).some((corner) => parseFloat(style[corner]) > 0);
+}
+
+/**
+ * The corners and shadow of whatever the eye reads as the card or the panel.
+ * The name sits on the card wrapper, the stage, a panel directly inside the
+ * stage (LOOP, during its own morph) or the tapped tile. That element is often
+ * a plain wrapper, so this steps down through first children, at most two
+ * levels, to the first one that is drawn: rounded, or filled.
+ */
+function surfaceShape(name: string): Shape | null {
+  const named = [
+    ...document.querySelectorAll<HTMLElement>(
+      "[data-card-id], [data-card-id] > *, .tnd-tile[data-morph-source]"
+    ),
+  ].find((element) => getComputedStyle(element).viewTransitionName === name);
+  let element: Element | null | undefined = named;
+  for (let depth = 0; element && depth < 3; depth += 1) {
+    const style = getComputedStyle(element);
+    const filled = style.backgroundColor !== "rgba(0, 0, 0, 0)";
+    if (hasRoundCorner(style) || filled || depth === 2) {
+      return Object.fromEntries(
+        SHAPE.map((property) => [property, style[property]])
+      ) as Shape;
+    }
+    element = element.firstElementChild;
+  }
+  return null;
+}
+
+/** Where the arriving surface's fade first reaches full strength, 0 to 1. */
+function fullStrengthAt(fade: Animation): number {
+  const keyframes = (fade.effect as KeyframeEffect).getKeyframes();
+  const full = keyframes.find(
+    (keyframe) => keyframe.opacity == null || Number(keyframe.opacity) >= 1
+  );
+  return full?.computedOffset ?? 1;
+}
+
+/**
+ * The moving box is clipped (view-transitions.css), so it needs corners, and
+ * the card and its panel do not share them: the card is rounded all round,
+ * while a phone's bottom panel is square where it meets the screen edge. The
+ * clip also cuts off the shadow drawn into the panel's picture, so the box
+ * wears the shadow itself.
+ *
+ * The shape belongs to the surface the eye reads, so it changes on the
+ * arriving surface's fade, not the box's flight: once LOOP's card has faded
+ * fully in over the dark panel (a quarter of the way), the box has the card's
+ * corners, and the panel still under it cannot show past them.
+ */
+function carryShape(
+  transition: ViewTransition,
+  name: string,
+  from: Shape | null
+): void {
+  if (!from || !transition.ready) return;
+  void transition.ready.then(
+    () => {
+      const to = surfaceShape(name);
+      if (!to || SHAPE.every((property) => from[property] === to[property])) {
+        return;
+      }
+      // The arriving surface also runs the browser's blend animation, which
+      // has no opacity; the fade is the one that does.
+      const surface = `::view-transition-new(${name})`;
+      const fade = document.getAnimations().find((animation) => {
+        const effect = animation.effect as KeyframeEffect | null;
+        return (
+          effect?.pseudoElement === surface &&
+          effect.getKeyframes().some((keyframe) => keyframe.opacity != null)
+        );
+      });
+      const timing = fade?.effect?.getTiming();
+      if (!fade || !timing) return;
+      // A CSS animation's curve lives on its keyframes, not its timing.
+      const easing =
+        (fade.effect as KeyframeEffect).getKeyframes()[0]?.easing ?? "linear";
+      const shape = document.documentElement.animate(
+        [
+          { ...from, offset: 0 },
+          { ...to, offset: Math.max(fullStrengthAt(fade), 0.01) },
+          { ...to, offset: 1 },
+        ],
+        {
+          pseudoElement: `::view-transition-group(${name})`,
+          duration: timing.duration,
+          delay: timing.delay,
+          easing,
+          fill: "both",
+        }
+      );
+      // Ride the fade's clock. At ready the fade may not have started yet,
+      // and copying its empty start time would freeze the shape in place.
+      const sync = (): void => {
+        if (fade.startTime !== null) shape.startTime = fade.startTime;
+      };
+      if (fade.startTime !== null) sync();
+      else void fade.ready.then(sync, () => {});
+      // It holds its last frame, and the next morph of this card makes a box
+      // of the same name, so it must not outlive this one.
+      const release = (): void => shape.cancel();
+      void transition.finished.then(release, release);
+    },
+    () => {}
+  );
+}
+
 /**
  * Open or close `host` by running `mutate` inside the card morph when one can
  * run. Returns true when a transition is carrying the change, false when the
@@ -119,6 +237,7 @@ export function morphGenerateCard(
   // the next source. During a morph, the chosen card must paint above those
   // stationary siblings; otherwise a later card such as LOOP briefly crosses
   // in front of the workspace growing out of Timing and direction.
+  const fromShape = surfaceShape(generateCardMorphName(host));
   const releaseMorphLayer = claimMorphLayer(host);
   // The page's start-up jobs wait for the card to land. This morph has no frame
   // time to spare, and a job landing inside it was the first-open stutter.
@@ -150,6 +269,7 @@ export function morphGenerateCard(
   }
   lastRan = transition !== null;
   if (transition) {
+    carryShape(transition, generateCardMorphName(host), fromShape);
     void transition.finished.then(land, land);
   } else {
     land();

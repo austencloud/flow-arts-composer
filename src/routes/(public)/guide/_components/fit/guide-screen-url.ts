@@ -136,10 +136,41 @@ export type ScreenRoom = {
       costs in words. */
   stripCols: number;
   stripRowChars: number;
+  /** Words that share a screen with a figure card (FIGURE_CARD): beside it
+      on a wide window, over it on a small one. Unset: `beside`. */
+  card?: number;
+  /** Whether a figure card has its words beside it (else over it). */
+  cardBeside?: boolean;
   /** Words a note above the first screen's content takes (a page's "Video
       coming" note), so that screen is cut with room for it. */
   lead?: number;
+  /** Whether the title band has a tagline line at this window height. Its
+      twin is the `@media (max-height: 700px)` rule in GuideScreens.svelte
+      that hides the subtitle; the two must name the same line. */
+  bandShowsTagline: boolean;
 };
+
+/** Windows this tall or shorter hide the title band's tagline. Twin of the
+    `@media (max-height: 700px)` rule in GuideScreens.svelte. */
+const BAND_TAGLINE_HIDDEN_MAX_H = 700;
+
+/**
+ * The figure card's geometry (SequenceShowcase's "card" variant), shared by
+ * the cut and the drawing so they agree. The card is 2 wide by 3 tall: the
+ * player's square over a strip of two square cells. Beside its words it
+ * takes the screen's height; over a small window's words it takes this
+ * share of it, and the words get the rest. It sits beside its words when
+ * the window holds the card at full height and a words column at least
+ * WORDS_MIN_PX wide.
+ */
+export const FIGURE_CARD = {
+  aspect: 1.5,
+  besideHeightShare: 0.93,
+  stackedHeightShare: 0.64,
+  gapPx: 60,
+  wordsMinPx: 256,
+  wordsMaxPx: 480,
+} as const;
 
 const LINE_PX = 32.6;
 const CHAR_PX = 7.7;
@@ -223,6 +254,29 @@ export function screenRoom(width: number, height: number): ScreenRoom {
         QUANTUM
     ) * QUANTUM
   );
+  // A figure card at the screen's height, its words beside it; else the
+  // words over a card that takes its share of the height. Over the card the
+  // lines are counted whole, since the words there are a heading and a
+  // sentence or two, not a column.
+  const fullCardW =
+    (frameH * FIGURE_CARD.besideHeightShare) / FIGURE_CARD.aspect;
+  const cardBeside =
+    frameW - FIGURE_CARD.gapPx - fullCardW >= FIGURE_CARD.wordsMinPx;
+  const card = cardBeside
+    ? chars(
+        Math.min(
+          FIGURE_CARD.wordsMaxPx,
+          frameW - FIGURE_CARD.gapPx - fullCardW
+        ),
+        frameH
+      )
+    : Math.max(
+        QUANTUM,
+        Math.floor(frameW / CHAR_PX) *
+          Math.floor(
+            (frameH * (1 - FIGURE_CARD.stackedHeightShare)) / LINE_PX
+          )
+      );
   const cols = Math.max(1, Math.floor(frameW / (MIN_TILE_PX + TILE_GAP_PX)));
   const rows = Math.max(
     1,
@@ -238,6 +292,9 @@ export function screenRoom(width: number, height: number): ScreenRoom {
     stripRowChars: Math.floor(
       ((frameW * 0.6) / CHAR_PX) * (stripRowPx / LINE_PX)
     ),
+    bandShowsTagline: height > BAND_TAGLINE_HIDDEN_MAX_H,
+    card,
+    cardBeside,
   };
 }
 
@@ -256,6 +313,7 @@ export function tighterRoom(room: ScreenRoom, step: number): ScreenRoom {
     over: less(room.over),
     band: less(room.band),
     alone: less(room.alone),
+    ...(room.card === undefined ? {} : { card: less(room.card) }),
     tiles: Math.max(1, Math.floor(room.tiles * k)),
   };
 }

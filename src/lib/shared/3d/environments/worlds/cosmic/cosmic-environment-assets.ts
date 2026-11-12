@@ -11,16 +11,16 @@ import {
 import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-export const COSMIC_RELIQUARY_URL =
-  "/models/cosmic/cosmic-reliquary.glb" as const;
-export const COSMIC_EARTH_TEXTURE_URL =
-  "/textures/cosmic/earth-diffuse.jpg" as const;
-export const COSMIC_MOON_TEXTURE_URL = "/textures/moon.png" as const;
+import {
+  COSMIC_EARTH_TEXTURE_URL,
+  COSMIC_RELIQUARY_URL,
+} from "./cosmic-asset-urls";
+
+export { COSMIC_EARTH_TEXTURE_URL, COSMIC_RELIQUARY_URL };
 
 export interface CosmicEnvironmentAssets {
   authoredScene: Object3D;
   earthTexture: Texture;
-  moonTexture: Texture;
 }
 
 export interface CosmicAssetProgress {
@@ -75,7 +75,7 @@ async function loadUncachedAssets(
   loader.setKTX2Loader(ktx2Loader);
 
   try {
-    const [gltf, earthTexture, moonTexture] = await Promise.all([
+    const [gltf, earthTexture] = await Promise.all([
       loadGltf(loader, ({ loaded, total }) => {
         const fraction = total > 0 ? loaded / total : 0;
         onProgress?.(Math.min(0.7, fraction * 0.7));
@@ -84,12 +84,9 @@ async function loadUncachedAssets(
         onProgress?.(0.3);
         return texture;
       }),
-      // SkyGradient loads this default even when Cosmic has no visible moon.
-      // Preserve that exact production asset lifecycle in both renderers.
-      loadTexture(COSMIC_MOON_TEXTURE_URL),
     ]);
     onProgress?.(1);
-    return { authoredScene: gltf.scene, earthTexture, moonTexture };
+    return { authoredScene: gltf.scene, earthTexture };
   } finally {
     ktx2Loader.dispose();
   }

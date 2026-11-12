@@ -116,7 +116,7 @@ describe("buugeng style appearance", () => {
         const key = `${propType}__${style}`;
         const sprite = resolvePropSvgPath(key);
         expect(sprite).toBe(
-          `/images/props/pictograph/${propType}-${style}.svg?v=3`
+          `/images/props/pictograph/${propType}-${style}.svg?v=4`
         );
         expect(viewBoxOf(sprite)).toBe(plainBox);
         expect(viewBoxOf(`/images/props/pictograph/${propType}.svg`)).toBe(
@@ -152,7 +152,7 @@ describe("buugeng style appearance", () => {
         { buugengStyle: "fire" },
         "/images/props/buttons/buugeng.svg"
       ).href
-    ).toBe("/images/props/buttons/buugeng-fire.svg?v=3");
+    ).toBe("/images/props/buttons/buugeng-fire.svg?v=4");
     expect(
       propTileArtwork(
         "buugeng",

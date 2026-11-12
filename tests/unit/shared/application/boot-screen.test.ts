@@ -6,6 +6,7 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  UNTIL_RELEASED,
   holdBootScreen,
   releaseBootHold,
   runAfterBootScreen,
@@ -169,6 +170,13 @@ describe("holdBootScreen", () => {
     const { registry } = stubRegistry();
     holdBootScreen("create-workspace", 15000);
     expect(registry).toHaveBeenCalledWith("create-workspace", 15000);
+  });
+
+  it("passes an until-released hold to app.html as its own option, not a number", () => {
+    addBootScreen();
+    const { registry } = stubRegistry();
+    holdBootScreen("module-view", UNTIL_RELEASED);
+    expect(registry).toHaveBeenCalledWith("module-view", "until-released");
   });
 
   it("keeps separate names apart", () => {

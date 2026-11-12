@@ -171,6 +171,7 @@ export function buildCardRenderOptions(
       fanAppearance: settings.fanAppearance,
       triangleGrip: settings.triangleGrip,
       buugengStyle: settings.buugengStyle,
+      triadBuild: settings.triadBuild,
       primaryPropColors: settings.primaryPropColors ?? null,
       leftPropType: props.leftPropType,
       rightPropType: props.rightPropType,

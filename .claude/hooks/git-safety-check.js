@@ -2,65 +2,76 @@
 /**
  * Git Safety Hook for Claude Code
  *
- * Blocks dangerous git commands that could destroy uncommitted work,
- * create branches, rewrite history, or force push.
- * Returns exit code 2 to deny the action.
+ * Blocks git commands that destroy uncommitted work, rewrite history, or
+ * force push. Exit code 2 denies the tool call and shows stderr to Claude.
+ *
+ * Worktrees and branches inside them are the normal way to work here, so
+ * `git worktree add`, `git branch` and `git switch -c` are allowed. Switching
+ * or creating a branch in the PRIMARY checkout is still blocked: its `.git`
+ * is a directory, while a worktree's `.git` is a file.
  */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { readHookCommand } from './hook-command.js';
 
 const rules = [
   // Discard uncommitted changes
-  { pattern: /git\s+checkout\s+--\s*\./, msg: "This discards all uncommitted changes." },
-  { pattern: /git\s+checkout\s+--\s+\S/, msg: "This discards uncommitted changes to a file." },
-  { pattern: /git\s+reset\s+--hard/, msg: "This discards all uncommitted changes." },
-  { pattern: /git\s+reset\s+HEAD~/, msg: "This rewrites recent commits and may lose work." },
-  { pattern: /git\s+reset\s+--soft\s+HEAD~/, msg: "This undoes commits. Other sessions' uncommitted work may be affected." },
-  { pattern: /git\s+reset\s+--mixed\s+HEAD~/, msg: "This undoes commits and unstages changes. Other sessions' work may be affected." },
-  { pattern: /git\s+reset\s+HEAD\s+--/, msg: "This unstages files. Check that you're not affecting other sessions' staged work." },
-  { pattern: /git\s+clean\s+-f/, msg: "This permanently deletes untracked files." },
-  { pattern: /git\s+restore\s+--staged\s+\.\s*$/, msg: "This unstages all staged changes." },
-  // Broad git add that catches unrelated files
-  { pattern: /git\s+add\s+-A/, msg: "git add -A stages EVERYTHING including other sessions' work. Add specific files by name." },
-  { pattern: /git\s+add\s+\.\s*($|[;&|])/, msg: "git add . stages EVERYTHING including other sessions' work. Add specific files by name." },
+  { pattern: /git\s+(-C\s+\S+\s+)?checkout\s+--\s*\./, msg: "This discards all uncommitted changes." },
+  { pattern: /git\s+(-C\s+\S+\s+)?checkout\s+--\s+\S/, msg: "This discards uncommitted changes to a file." },
+  { pattern: /git\s+(-C\s+\S+\s+)?reset\s+--hard/, msg: "This discards all uncommitted changes." },
+  { pattern: /git\s+(-C\s+\S+\s+)?reset\s+(--soft\s+|--mixed\s+)?HEAD~/, msg: "This undoes commits and may lose work." },
+  { pattern: /git\s+(-C\s+\S+\s+)?clean\s+-\w*f/, msg: "This permanently deletes untracked files." },
+  { pattern: /git\s+(-C\s+\S+\s+)?restore\s+--staged\s+\.\s*($|[;&|])/, msg: "This unstages all staged changes." },
 
-  // Stash — BLOCKED unless user explicitly confirms all other agents are stopped
-  { pattern: /git\s+stash\b/, msg: "BLOCKED. git stash is unsafe with multiple agents. Austen runs 10+ concurrent agents — stash WILL destroy their uncommitted work. Before asking to override: (1) Tell the user they MUST stop ALL other Claude Code sessions first. (2) Ask them to confirm all sessions are stopped. (3) Only then proceed. Do NOT say 'this won't affect your files' — it WILL." },
+  // Broad staging that sweeps in other sessions' work
+  { pattern: /git\s+(-C\s+\S+\s+)?add\s+(-A|--all|-u)\b/, msg: "Broad staging picks up other sessions' work. Add files by name." },
+  { pattern: /git\s+(-C\s+\S+\s+)?add\s+\.\s*($|[;&|])/, msg: "git add . stages everything, including other sessions' work. Add files by name." },
+  { pattern: /git\s+(-C\s+\S+\s+)?commit\s+(-\w*a\w*|--all)\b/, msg: "git commit -a commits every tracked change. Name the paths: git commit -m \"...\" -- <paths>." },
 
-  // History-rewriting operations that require exclusive git access
-  { pattern: /git\s+lfs\s+migrate\b/, msg: "EXCLUSIVE ACCESS REQUIRED. git lfs migrate rewrites commit history. You MUST tell the user: 'This requires stopping ALL other Claude Code sessions first.' Then confirm they are stopped before proceeding. Do NOT run this while other agents are active." },
-  { pattern: /git\s+rebase\b/, msg: "EXCLUSIVE ACCESS REQUIRED. git rebase rewrites commit history and requires a clean working directory. You MUST tell the user: 'This requires stopping ALL other Claude Code sessions first.'" },
+  // Stash is shared by every worktree and session
+  { pattern: /git\s+(-C\s+\S+\s+)?stash\b(?!\s+list\b)/, msg: "git stash is shared across all sessions and worktrees. It needs Austen's explicit yes in this conversation." },
 
-  // Branch creation (ALL work happens on main per CLAUDE.md)
-  { pattern: /git\s+checkout\s+-b\s/, msg: "Branch creation is forbidden. All work happens on main." },
-  { pattern: /git\s+branch\s+(?!-D\b)\S/, msg: "Branch creation is forbidden. All work happens on main." },
-  { pattern: /git\s+switch\s+-c\s/, msg: "Branch creation is forbidden. All work happens on main." },
-  { pattern: /git\s+worktree\s+add\b/, msg: "Worktree creation is forbidden. All work happens on main." },
-
-  // History rewriting (nuclear options)
-  { pattern: /git\s+filter-repo\b/, msg: "filter-repo rewrites ALL commits and resets the working tree. Extremely destructive." },
-  { pattern: /git\s+filter-branch\b/, msg: "filter-branch rewrites history. Extremely destructive." },
+  // History rewriting
+  { pattern: /git\s+(-C\s+\S+\s+)?lfs\s+migrate\b/, msg: "git lfs migrate rewrites history. It needs every other session stopped and Austen's yes." },
+  { pattern: /git\s+(-C\s+\S+\s+)?filter-repo\b/, msg: "filter-repo rewrites every commit." },
+  { pattern: /git\s+(-C\s+\S+\s+)?filter-branch\b/, msg: "filter-branch rewrites history." },
 
   // Force push
-  { pattern: /git\s+push\s+.*--force/, msg: "Force push can overwrite remote history." },
-  { pattern: /git\s+push\s+-f\b/, msg: "Force push can overwrite remote history." },
+  { pattern: /git\s+(-C\s+\S+\s+)?push\s+.*(--force|-f\b|\s\+\S+)/, msg: "Force push can overwrite remote history." },
+
+  // Guard bypass
+  { pattern: /git\s+.*--no-verify\b/, msg: "--no-verify skips the repository's checks." },
 ];
+
+// Only in the primary checkout: the branch stays on main.
+const primaryOnlyRules = [
+  { pattern: /git\s+(checkout\s+-b|switch\s+-c|switch\s+--create)\s/, msg: "Do not create a branch in the primary checkout. Use a worktree: git worktree add E:/worktrees/tka-platform/<name> -b codex/<name>." },
+  { pattern: /git\s+(switch|checkout)\s+(?!-)(?!main\b)\S+\s*($|[;&|])/, msg: "The primary checkout stays on main. Work on other branches in a worktree." },
+];
+
+function isPrimaryCheckout(cwd) {
+  if (!cwd) return false;
+  try {
+    return fs.statSync(path.join(cwd, '.git')).isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 let input = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
-  try {
-    const toolInput = JSON.parse(input);
-    const command = toolInput.command || '';
+  const { command, cwd } = readHookCommand(input);
+  if (!command) process.exit(0);
 
-    for (const { pattern, msg } of rules) {
-      if (pattern.test(command)) {
-        console.error(`\n⛔ BLOCKED: ${msg}\n\nCommand: ${command}\n\nAsk the user for explicit confirmation before running this.\nRemember: Every modified file = hours of user work.\n`);
-        process.exit(2);
-      }
+  const active = isPrimaryCheckout(cwd) ? [...rules, ...primaryOnlyRules] : rules;
+  for (const { pattern, msg } of active) {
+    if (pattern.test(command)) {
+      console.error(`\nBLOCKED: ${msg}\n\nCommand: ${command.slice(0, 300)}\n\nAsk Austen for an explicit yes before running this. Every modified file is hours of his work.\n`);
+      process.exit(2);
     }
-
-    process.exit(0);
-  } catch (e) {
-    process.exit(0);
   }
+  process.exit(0);
 });

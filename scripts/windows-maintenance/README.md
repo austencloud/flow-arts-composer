@@ -11,6 +11,15 @@ anything from the user profile or repository.
   state on `D:` as Austen, then start the fixed SYSTEM task.
 - On demand after staging: copy fixed sources to the protected `F:` archive as
   SYSTEM.
+
+Google Drive for desktop backs up all of `D:` to Google, so everything staged
+there is the off-site copy. Each night's Git bundle is a full history of about
+7 GB. Before writing a new one, the prep step deletes staged bundles on `D:`
+that already sit on `F:` with the same length and write time, keeping the
+newest. It refuses to start the bundle without room for it. Google keeps a
+deleted file in Drive's trash for 30 days. On `F:`, the main backup keeps the newest seven bundles plus the newest of each
+month and deletes the other bundle files (patches and untracked-file copies stay),
+only after that night's copy is confirmed (log line `ARCHIVED BUNDLE REMOVED`).
 - 4:00 AM Sunday: verify hashes, manifests, agent state, Git recovery data, and
   Google Drive metadata as Austen.
 
@@ -45,7 +54,17 @@ fixed SYSTEM task. Austen cannot modify its action or pass arguments to it.
 ## Run and inspect
 
 `C:\Users\Austen\Documents\PC Maintenance\Scripts\Start-AustenBackup.ps1`
-runs the user-context preparation synchronously, then starts the protected task.
+runs the user-context preparation synchronously, then starts the protected task
+and waits up to 2.5 hours for its result. A failed or unfinished run, a failed
+preparation, or no successful backup in 36 hours shows a Windows notification
+that stays on screen until dismissed. The protected task runs as SYSTEM and
+cannot reach the desktop, so this is the only alert. Pass `-NoWait` to return
+as soon as the task starts.
+
+The C: copy checks its snapshot mount against the newest Claude or Codex
+transcript, falling back to `NTUSER.DAT`. It no longer requires a Codex
+`.jsonl` file. Codex now stores sessions as `.jsonl.zst`, and that requirement
+failed every run from 2026-11-04 to 2026-11-09.
 
 Canonical results are stored under:
 

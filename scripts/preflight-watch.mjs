@@ -190,8 +190,11 @@ const LOG_CAP_BYTES = 256 * 1024;
 
 function realDeps(repo) {
   const git = (...argv) => {
+    // pm2 runs this with no console, so a child spawned without windowsHide
+    // gets its own Windows Terminal window and steals focus every minute.
     const result = spawnSync("git", ["-C", repo, ...argv], {
       encoding: "utf8",
+      windowsHide: true,
     });
     return result.status === 0 ? result.stdout.trim() : null;
   };

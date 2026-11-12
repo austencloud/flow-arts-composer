@@ -18,7 +18,11 @@
     controlLeave,
     type ControlPresenceParams,
   } from "#lib/shared/transitions/control-presence.js";
-  import { growFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import {
+    growFade,
+    opaqueFade,
+    reducedMotion,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { IToolPanelMethods } from "../types/create-module-types";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
@@ -95,6 +99,11 @@
   let playbackRun = $state(0);
   let playbackStep = $state(0);
   const playbackKeys = new WeakMap<object, string>();
+  // The tools fold for a preview everywhere but the save view, which keeps
+  // its form beside the preview (StandardWorkspaceLayout's tool panel).
+  const playbackFolds = $derived(
+    panelState.isWorkspacePreviewChosen && !panelState.isSaveToLibraryPanelOpen
+  );
   const loadWorkspacePlayback = () =>
     import("../workspace-panel/components/WorkspacePlayback.svelte");
 
@@ -116,18 +125,40 @@
     const key = playbackKey;
     if (!session || !key) return;
 
-    untrack(() => {
-      // Play has always restarted the sequence. Reuse the prepared engine, but
-      // give it a fresh load identity so it returns to the first beat first.
-      playbackRun += 1;
-      readyPlayback = null;
+    const prepare = () =>
+      untrack(() => {
+        // Play has always restarted the sequence. Reuse the prepared engine,
+        // but give it a fresh load identity so it returns to the first beat.
+        playbackRun += 1;
+        readyPlayback = null;
 
-      if (key === retainedPlaybackKey) return;
+        if (key === retainedPlaybackKey) return;
 
-      retainedPlayback = session;
-      retainedPlaybackKey = key;
+        retainedPlayback = session;
+        retainedPlaybackKey = key;
+      });
+
+    // The tools start folding on the tap. Mounting or loading the player in
+    // the same task would hold that first frame back, so the player starts
+    // once the motion's first frame is on screen (two frames later) and
+    // comes forward when it is ready.
+    if (reducedMotion()) {
+      prepare();
+      return;
+    }
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(prepare);
     });
+    return () => cancelAnimationFrame(frame);
   });
+
+  const workspaceSource = $derived<"first" | "second">(
+    playback !== null &&
+      playbackKey === retainedPlaybackKey &&
+      readyPlayback === retainedPlayback
+      ? "second"
+      : "first"
+  );
 
   onDestroy(() => panelState.stopWorkspacePlayback());
 
@@ -345,13 +376,19 @@
          and Close brings it back. Holding the outgoing side spares the hidden
          step grid or animator a re-layout at a size nobody sees. The
          wrapper's overflow: hidden clips a held side larger than the stage. -->
+    <!-- The tools fold as soon as Play is asked for, so the grid keeps its
+         box from that moment (hold) rather than from the swap. The player
+         comes forward as it arrives and recedes as it leaves, a quicker fade
+         out than in, and the inert swap waits until everything is still. -->
     <DualSourceCrossfade
       holdOutgoing
-      active={playback !== null &&
-      playbackKey === retainedPlaybackKey &&
-      readyPlayback === retainedPlayback
-        ? "second"
-        : "first"}
+      hold={playbackFolds ? "first" : null}
+      depth="second"
+      settleInert
+      exitDuration={workspaceSource === "first"
+        ? DURATION.fast
+        : DURATION.normal}
+      active={workspaceSource}
       first={card}
       second={animation}
     />
@@ -385,6 +422,14 @@
   .sequence-header-presence,
   .button-panel-room {
     flex: 0 0 auto;
+  }
+
+  /* Play and Stop move the panel edge on the compositor: the outgoing player
+     keeps its box past the workspace's new edge until the tools cover it
+     (StandardWorkspaceLayout relaxes the clips around this one too). */
+  :global(.panel-group[data-panel-motion="compositor"])
+    .workspace-panel-wrapper {
+    overflow: visible;
   }
 
   /* The same motion as PanelGroup's tracks, which move when the save view

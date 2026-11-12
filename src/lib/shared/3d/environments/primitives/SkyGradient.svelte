@@ -7,8 +7,7 @@
    * and doesn't depend on scene.background timing.
    */
 
-  import { T, useTask, useThrelte } from "@threlte/core";
-  import { useTexture } from "@threlte/extras";
+  import { T, useLoader, useTask, useThrelte } from "@threlte/core";
   import { onDestroy, untrack } from "svelte";
   import {
     SphereGeometry,
@@ -16,6 +15,7 @@
     BackSide,
     Color,
     MathUtils,
+    TextureLoader,
     type Mesh,
     Vector2,
     Vector3,
@@ -69,8 +69,26 @@
   }
 
   const geometry = untrack(() => new SphereGeometry(radius, 32, 32));
-  const moonTexture = useTexture(moon?.texture ?? "/textures/moon.png");
-  const { camera } = useThrelte();
+  const { camera, renderer } = useThrelte();
+  // The moon image is fetched only for a sky that shows one. Cosmic keeps the
+  // moon disabled, and used to download this 1.9 MB default for nothing.
+  // Same loader and colour handling as `useTexture`, made reactive so a moon
+  // enabled later still appears.
+  const moonLoader = useLoader(TextureLoader);
+  const moonTextureUrl = $derived(
+    moon?.enabled ? (moon.texture ?? "/textures/moon.png") : null
+  );
+  const moonTexture = $derived(
+    moonTextureUrl
+      ? moonLoader.load(moonTextureUrl, {
+          transform: (texture) => {
+            texture.colorSpace = renderer.outputColorSpace;
+            texture.needsUpdate = true;
+            return texture;
+          },
+        })
+      : null
+  );
 
   function resolveMoonDirection(config: MoonConfig | null): Vector3 {
     const source = config?.direction ?? config?.position ?? [0, 0.25, -1];

@@ -255,6 +255,7 @@ Delegates all rendering to child components.
         fanAppearance: s.fanAppearance,
         triangleGrip: s.triangleGrip,
         buugengStyle: s.buugengStyle,
+        triadBuild: s.triadBuild,
         leftBuugengFlipped: s.leftBuugengFlipped,
         rightBuugengFlipped: s.rightBuugengFlipped,
         leftPropType: leftPropTypeOverride ?? s.leftPropType,

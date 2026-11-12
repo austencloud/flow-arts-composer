@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   isCurrentMotionCaptureJob,
+  MOTION_BAKE_AFTER_REVEAL_CAP_MS,
+  mayStartMotionBake,
   planWebMotionPreparation,
   shouldPrepareWebMotion,
 } from "../../../src/lib/shared/3d/components/web-motion-preparation-plan";
@@ -109,5 +111,24 @@ describe("Web motion preparation", () => {
     ).toBe(false);
     expect(shouldPrepareWebMotion({ ...live, weldGrip: true })).toBe(false);
     expect(shouldPrepareWebMotion({ ...live, exporting: true })).toBe(false);
+  });
+});
+
+describe("Motion bake start", () => {
+  it("never bakes before the scene is revealed", () => {
+    expect(mayStartMotionBake(null, true, 10_000)).toBe(false);
+  });
+
+  it("bakes once the revealed page is still", () => {
+    expect(mayStartMotionBake(1000, true, 1300)).toBe(true);
+  });
+
+  it("bakes after the cap when the revealed page never falls still", () => {
+    expect(
+      mayStartMotionBake(1000, false, 1000 + MOTION_BAKE_AFTER_REVEAL_CAP_MS - 1)
+    ).toBe(false);
+    expect(
+      mayStartMotionBake(1000, false, 1000 + MOTION_BAKE_AFTER_REVEAL_CAP_MS)
+    ).toBe(true);
   });
 });

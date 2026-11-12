@@ -279,6 +279,103 @@ describe("PropGrid fan look credit", () => {
       .toBeVisible();
     expect(page.getByTestId("buugeng-style-row").elements()).toHaveLength(0);
   });
+
+  // The triad build is a look like the buugeng style: Pictograph, Fire and
+  // Day side by side, a pick reported without changing the prop.
+  it("offers the triad build on the details page and keeps it on Big", async () => {
+    const onSelect = vi.fn();
+    const onChoiceDone = vi.fn();
+    const onTriadBuildChange = vi.fn();
+    const { rerender } = render(PropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect,
+      onChoiceDone,
+      allowedProps: [PropType.TRIAD, PropType.BIGTRIAD],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      triadBuild: "pictograph",
+      onTriadBuildChange,
+    });
+
+    await page
+      .getByRole("button", { name: "Select Triad prop type", exact: true })
+      .click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
+    expect(onChoiceDone).not.toHaveBeenCalled();
+    const row = page.getByTestId("triad-build-row");
+    await expect.element(row).toBeVisible();
+    const builds = row.getByRole("radiogroup", { name: "Build" });
+    expect(
+      builds.getByRole("radio").elements().map((r) => r.textContent?.trim())
+    ).toEqual(["Pictograph", "Fire", "Day"]);
+    await expect
+      .element(builds.getByRole("radio", { name: "Pictograph" }))
+      .toHaveAttribute("aria-checked", "true");
+
+    await builds.getByRole("radio", { name: "Fire" }).click();
+    expect(onTriadBuildChange).toHaveBeenCalledWith("fire");
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
+    expect(onChoiceDone).not.toHaveBeenCalled();
+
+    await page.getByRole("button", { name: "Big" }).click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+    await rerender({ selectedPropType: PropType.BIGTRIAD, triadBuild: "fire" });
+    await expect
+      .element(
+        page
+          .getByTestId("triad-build-row")
+          .getByRole("radio", { name: "Fire" })
+      )
+      .toHaveAttribute("aria-checked", "true");
+  });
+
+  it("puts the triad build on the triad family page, not on Trigeng", async () => {
+    const onChoiceDone = vi.fn();
+    const onTriadBuildChange = vi.fn();
+    const { rerender } = render(PropGrid, {
+      selectedPropType: PropType.TRIGENG,
+      onSelect: vi.fn(),
+      onChoiceDone,
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      triadBuild: "pictograph",
+      onTriadBuildChange,
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    const styles = page.getByRole("region", { name: "Triad styles" });
+    await expect.element(styles).toBeVisible();
+    expect(page.getByTestId("triad-build-row").elements()).toHaveLength(0);
+
+    await page
+      .getByRole("button", { name: "Select Triad prop type", exact: true })
+      .click();
+    expect(onChoiceDone).not.toHaveBeenCalled();
+    await rerender({ selectedPropType: PropType.TRIAD });
+    const row = styles.getByTestId("triad-build-row");
+    await expect.element(row).toBeVisible();
+    await row.getByRole("radio", { name: "Day" }).click();
+    expect(onTriadBuildChange).toHaveBeenCalledWith("day");
+  });
+
+  it("hides the triad build where the host cannot store it", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.TRIAD, PropType.BIGTRIAD],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+    });
+
+    await page
+      .getByRole("button", { name: "Select Triad prop type", exact: true })
+      .click();
+    await expect
+      .element(page.getByRole("button", { name: "Big" }))
+      .toBeVisible();
+    expect(page.getByTestId("triad-build-row").elements()).toHaveLength(0);
+  });
 });
 
 // Austen removed the Version 1 / Version 2 prop versions on 2026-10-27. Each

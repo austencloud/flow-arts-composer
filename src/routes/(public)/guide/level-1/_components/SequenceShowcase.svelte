@@ -57,6 +57,7 @@
     stripUnder = false,
     stripMinCell,
     exampleLine,
+    cardBeside = false,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -79,8 +80,16 @@
      *   watches the motion beside its notation at the same size, with no strip
      *   of start and end poses the animation already shows. `pool` and `strip`
      *   do not apply.
+     * - "card": the figure card (2026-11-11). One frame: the canvas on top and
+     *   its strip under it at the same width, Start and the steps in one row
+     *   of square cells, so a two-step strip makes a card 2 wide by 3 tall.
+     *   The text sits over it, or beside it with `cardBeside`. The card holds
+     *   one size on every screen of a window: a share of the fit box's height
+     *   (--fit-area-h, GuideFitBox). It reads --fit only so a screen whose
+     *   words cannot break smaller may draw it a little smaller. `pool` and `strip` do
+     *   not apply.
      */
-    variant?: "feature" | "compact" | "pair";
+    variant?: "feature" | "compact" | "pair" | "card";
     /**
      * Refreshable example pool. `pool[0]` is the DEFAULT (this component's
      * `sequence`/`items` props - the print example that prerenders). The reader
@@ -151,6 +160,10 @@
      * plain `proseHtml`.
      */
     exampleLine?: Snippet<[number]>;
+    /** Card variant: the text beside the card instead of over it. The page
+        decides from the window's room (screenRoom's cardBeside), so its
+        cut and this layout agree. */
+    cardBeside?: boolean;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
@@ -164,7 +177,7 @@
   // A `strip` override disables the pool (see the prop doc above).
   let exampleIndex = $state(0);
   const effectivePool = $derived(
-    strip || variant === "pair" ? undefined : pool
+    strip || variant === "pair" || variant === "card" ? undefined : pool
   );
   const hasPool = $derived(!!effectivePool && effectivePool.length > 1);
   const total = $derived(effectivePool?.length ?? 1);
@@ -390,11 +403,26 @@
   class="showcase"
   class:compact={variant === "compact"}
   class:pair={variant === "pair"}
+  class:card={variant === "card"}
   class:has-strip={!!strip}
   bind:this={rootEl}
   bind:clientWidth={showcaseW}
 >
-  {#if variant === "pair"}
+  {#if variant === "card"}
+    <!-- Text first in the DOM (prose before the figure for readers); beside,
+         the card sits visually left. -->
+    <div class="card-band" class:beside={cardBeside}>
+      {#if text}
+        <div class="card-words">{@render text()}</div>
+      {/if}
+      <div class="figure-card" class:in-view={inView}>
+        <div class="canvas-box">
+          {@render player()}
+        </div>
+        <GuideStepStrip {items} {numbered} {render} {picTheme} {activeBeat} fill />
+      </div>
+    </div>
+  {:else if variant === "pair"}
     <!-- Text on top, then the canvas and the pictograph that draws the whole
          motion as two equal squares. -->
     <div class="pair-text">
@@ -806,6 +834,99 @@
     }
   }
 
+  /* ── Card: the canvas over its strip in one frame, the player's own
+     hairline and rounding round the whole card, a seam between the canvas
+     and the strip. Width: a share of the fit box's height, so every screen of a
+     window draws the card at one size, capped by the room across. The
+     --fit term binds only on a screen whose words overflow that share. */
+  .card {
+    --card-gap: clamp(1.5rem, 6cqw, 3.75rem);
+    --card-words-min: 16rem;
+    gap: 0;
+  }
+  .card-band {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .card-band.beside {
+    flex-direction: row-reverse;
+    justify-content: center;
+    gap: var(--card-gap);
+  }
+  .card-words {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    min-width: 0;
+  }
+  .card-band.beside .card-words {
+    flex: 0 1 30rem;
+    min-width: var(--card-words-min);
+  }
+  .figure-card {
+    --fill-corner: 12.5px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    /* A host that sizes the card itself (FlowFrame's side-by-side pair)
+       sets --card-w. */
+    width: var(
+      --card-w,
+      min(
+        calc(14rem * var(--fit, 1)),
+        calc(var(--fit-area-h, 100vh) * 0.64 / 1.5),
+        100cqw
+      )
+    );
+    border-radius: 14px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--ink, #1a1a1a) 6%, transparent);
+    border: 1.5px solid
+      color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
+    transition:
+      border-color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard);
+  }
+  .card-band.beside .figure-card {
+    width: var(
+      --card-w,
+      min(
+        calc(14rem * var(--fit, 1)),
+        calc(var(--fit-area-h, 100vh) * 0.93 / 1.5),
+        calc(100cqw - var(--card-gap) - var(--card-words-min))
+      )
+    );
+  }
+  .figure-card.in-view {
+    border-color: color-mix(in srgb, var(--semantic-warning) 42%, transparent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .figure-card:hover {
+      border-color: color-mix(
+        in srgb,
+        var(--semantic-warning) 85%,
+        transparent
+      );
+      box-shadow:
+        0 0 12px color-mix(in srgb, var(--semantic-warning) 38%, transparent),
+        0 0 24px color-mix(in srgb, var(--semantic-warning) 16%, transparent);
+    }
+  }
+  .figure-card .canvas-box,
+  .figure-card .canvas-box:hover {
+    flex: none;
+    width: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    border-block-end: 1px solid
+      color-mix(in oklab, var(--ink, #1a1a1a) 16%, transparent);
+  }
+
   /* ── Pair: text over two equal squares at every width. In a host grid the
      showcase spans two of the host's rows as a subgrid, so pairs placed side
      by side keep their squares level when one text runs a line longer. A
@@ -867,7 +988,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .canvas-box {
+    .canvas-box,
+    .figure-card {
       transition: none;
     }
   }

@@ -1,4 +1,4 @@
-// Builds the duplex "Codex Print" sheet entirely in the browser.
+// Builds the duplex "Codex Cards" sheet entirely in the browser.
 //
 // Front sheets = Double-Staff Type 1-2, back sheets = Type 3-6 (columns mirrored
 // for long-edge duplex), so each cut card is Type 1-2 front / Type 3-6 back.

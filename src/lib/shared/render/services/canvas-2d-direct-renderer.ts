@@ -246,6 +246,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
           fanAppearance: options.visibility.fanAppearance,
           triangleGrip: options.visibility.triangleGrip,
           buugengStyle: options.visibility.buugengStyle,
+          triadBuild: options.visibility.triadBuild,
           themeMode: options.visibility.darkMode ? "dark" : "light",
           leftPropType: options.visibility.leftPropType,
           rightPropType: options.visibility.rightPropType,

@@ -59,7 +59,6 @@ export const PROTECTED_ROUTES = [
   "/(public)/faq",
   "/(public)/guide",
   "/(public)/codex",
-  "/(public)/codex/parity",
   "/(public)/codex/poster",
   "/(public)/guide/codex",
   "/(public)/guide/level-1/[slug]",

@@ -23,6 +23,11 @@ import * as env from "$app/env/public";
 import { isScannableShortCode } from "#lib/shared/qr/domain/physical-card.js";
 import { fetchPublicShortCodeRecord } from "#lib/shared/qr/services/public-short-code-record-reader.js";
 import { prepareScanViewerPayload } from "#lib/server/scan/scan-viewer-payload-preparer.js";
+import {
+  deriveShortCodeMeta,
+  shortCodeRouteMeta,
+  withSourceAttribution,
+} from "./short-code-meta";
 
 // Same project id the /q load and the client Firebase config use.
 const PROJECT_ID = env.PUBLIC_FIREBASE_PROJECT_ID || "the-kinetic-alphabet";
@@ -56,17 +61,27 @@ function buildInlineMeta(
   };
 }
 
+interface PreparedShortCode {
+  meta: SequenceRouteMeta;
+  sequence: SequenceData | null;
+}
+
 /**
  * A shared link names its sequence by short code. The browser used to resolve
  * that code itself, which waited for the Firestore SDK to boot and then parsed
  * every pictograph dataframe to letter the steps: about ten seconds on a phone
  * before the stage drew. The record is public, so read and hydrate it here,
  * beside the link-preview lookup, and send the playable sequence with the page.
+ *
+ * The same record names the sequence for the link preview. Its author and
+ * thumbnail come from the sequence the code was minted from when the code
+ * lacks them; that read runs beside the hydration, not after it.
  * Any miss returns null and the browser keeps its full resolver.
  */
-async function prepareShortCodeSequence(
-  code: string
-): Promise<SequenceData | null> {
+async function prepareShortCode(
+  code: string,
+  platformCredential: string | undefined
+): Promise<PreparedShortCode | null> {
   if (!isScannableShortCode(code)) return null;
   try {
     const record = await fetchPublicShortCodeRecord(code, {
@@ -74,10 +89,27 @@ async function prepareShortCodeSequence(
       timeoutMs: PUBLISHED_META_TIMEOUT_MS,
     });
     if (!record) return null;
-    return (await prepareScanViewerPayload(code, record))?.sequence ?? null;
+    const [sequence, meta] = await Promise.all([
+      prepareScanViewerPayload(code, record).then(
+        (prepared) => prepared?.sequence ?? null,
+        (error: unknown) => {
+          console.error(
+            `[sequence-ssr] short-code preparation failed for "${code}":`,
+            error instanceof Error ? error.message : error
+          );
+          return null;
+        }
+      ),
+      withSourceAttribution(
+        deriveShortCodeMeta(record),
+        record,
+        platformCredential
+      ),
+    ]);
+    return { meta: shortCodeRouteMeta(meta, record, sequence), sequence };
   } catch (error) {
     console.error(
-      `[sequence-ssr] short-code preparation failed for "${code}":`,
+      `[sequence-ssr] short-code read failed for "${code}":`,
       error instanceof Error ? error.message : error
     );
     return null;
@@ -122,14 +154,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
       // the sequence and passed it to the viewer, a shortcode never has
       // release metadata, and the visit is not a crawl target. Waiting on
       // Firestore here held every scanned card on a loading screen.
-      [meta, preparedSequence] = await Promise.all([
-        loadPublishedMeta(
-          parsed.legacyId,
-          fallback,
-          workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
-        ),
-        prepareShortCodeSequence(parsed.legacyId),
+      const credential = workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON;
+      const [published, shortCode] = await Promise.all([
+        loadPublishedMeta(parsed.legacyId, fallback, credential),
+        prepareShortCode(parsed.legacyId, credential),
       ]);
+      const resolvedPublished =
+        published.source === "catalog" || published.source === "public";
+      // A published record of the same id wins; otherwise the code names it.
+      meta = !resolvedPublished && shortCode ? shortCode.meta : published;
+      preparedSequence = shortCode?.sequence ?? null;
     }
   } catch {
     // A malformed route remains viewable as an error state and stays out of search.

@@ -130,6 +130,7 @@ function mapToVisibility(
     fanAppearance: handsView ? undefined : options.fanAppearance,
     triangleGrip: handsView ? undefined : options.triangleGrip,
     buugengStyle: handsView ? undefined : options.buugengStyle,
+    triadBuild: handsView ? undefined : options.triadBuild,
     primaryPropColors: options.primaryPropColors,
     showTKA: options.showTKA ?? true,
     showTnD: options.showTnD ?? false,

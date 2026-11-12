@@ -19,15 +19,10 @@
     layerSequencePosition,
     paintedLabelRegions,
   } from "./tka-canvas-layer";
-  import {
-    postPerformerPositions,
-    stage3DOrbitAngle,
-    stage3DPerformerSteps,
-    stage3DSecondsPerTurn,
-  } from "../stage-3d";
-  import type PostStudioStage3DLayerType from "./PostStudioStage3DLayer.svelte";
+  import { postPerformerPositions, stage3DPerformerSteps } from "../stage-3d";
   import type PostStage3DShotEditorType from "./PostStage3DShotEditor.svelte";
   import { stage3DShotEditor } from "./stage-3d-shot-editor.svelte";
+  import { stage3DSlots } from "./stage-3d-slots.svelte";
   import { createPerformerSequences } from "../performer-sequences.svelte";
   import { postFollowers } from "../tunnel-performers";
   import { sequencePositionToAnimationTime } from "#lib/shared/animation-engine/services/step-calculator.js";
@@ -54,9 +49,6 @@
   const tka = useTkaEditor();
 
   const sequence = $derived(tka.sequence);
-  // A 3D performer dances what the person in the footage really does, not
-  // the drawing flipped to match the camera.
-  const performedSequence = $derived(tka.performedSequence);
   /** The record a scan of the card opens: the source, not a labeled copy. */
   const qrSequence = $derived(tka.qrSequence);
   const qrUrl = $derived(layerQrUrl(sourceItem));
@@ -91,10 +83,6 @@
   const followerSequences = createPerformerSequences(
     () => sequence,
     () => (sourceItem?.kind === "animation" ? sourceItem.followers : undefined)
-  );
-  const performedFollowerSequences = createPerformerSequences(
-    () => (stageItem ? performedSequence : null),
-    () => stageItem?.followers
   );
   const sequencePosition = $derived(performerPositions.sequencePosition);
   const sequencePassIndex = $derived(
@@ -135,43 +123,28 @@
       ? tka.arrangement.marks
       : null
   );
-  /** A 3D animation clip: its stage, its steps and its orbit at this time. */
+  /** A 3D animation clip and its performers' steps at this time. */
   const stageItem = $derived(
     sourceItem?.kind === "animation" && sourceItem.stage3d ? sourceItem : null
   );
   const stageSteps = $derived(
     stage3DPerformerSteps({ sequencePosition, followerPositions })
   );
-  /** The clip's stage, or its draft while the shot editor has it open. */
-  const shownStage = $derived(
-    stageItem
-      ? (stage3DShotEditor.draftFor(stageItem.id) ?? stageItem.stage3d ?? null)
-      : null
-  );
-  const stageOrbitAngle = $derived(
-    stageItem && shownStage
-      ? stage3DOrbitAngle(
-          editor.previewSeconds,
-          stageItem.start,
-          stage3DSecondsPerTurn(editor.project, {
-            ...stageItem,
-            stage3d: shownStage,
-          }),
-          shownStage.orbitDirection ?? 1
-        )
-      : 0
-  );
-  // A post without a 3D clip should not load the 3D viewer.
-  let Stage3DLayer = $state.raw<typeof PostStudioStage3DLayerType | null>(null);
+  // The stage itself is kept by PostStage3DKeeper for the whole post, since
+  // it takes seconds to build; this layer only lends it a slot to show in,
+  // and tells it the performers' steps at this post time.
+  let stageSlot = $state<HTMLDivElement | null>(null);
   $effect(() => {
-    if (binding.renderMode !== "scene-3d" || !stageItem || Stage3DLayer) return;
-    let current = true;
-    void import("./PostStudioStage3DLayer.svelte").then((module) => {
-      if (current) Stage3DLayer = module.default;
+    const slot = stageSlot;
+    const id = stageItem?.id;
+    if (!slot || !id) return;
+    stage3DSlots.publish(id, {
+      slot,
+      performerSteps: stageSteps,
+      exporting,
+      exportSize: exportSize ?? null,
     });
-    return () => {
-      current = false;
-    };
+    return () => stage3DSlots.release(id, slot);
   });
 
   const shotEditorOpen = $derived(
@@ -221,28 +194,10 @@
       editing={arrangementMarks}
     />
   {/if}
-{:else if binding.renderMode === "scene-3d" && stageItem?.stage3d && performedSequence}
-  {#if Stage3DLayer}
-    <Stage3DLayer
-      itemId={stageItem.id}
-      sequence={performedSequence}
-      followerSequences={performedFollowerSequences.current}
-      swapHandColors={tka.handsDrawnSwapped}
-      followerCount={stageItem.followers?.length ?? 0}
-      performerSteps={stageSteps}
-      stage={stageItem.stage3d}
-      orbitAngle={stageOrbitAngle}
-      postSeconds={editor.previewSeconds}
-      leftPropType={cardRenderOptions?.leftPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
-      rightPropType={cardRenderOptions?.rightPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
-      {exporting}
-      {exportSize}
-    />
-    {#if shotEditorOpen && ShotEditor && !exporting}
-      <ShotEditor {editor} item={stageItem} />
-    {/if}
+{:else if binding.renderMode === "scene-3d" && stageItem?.stage3d}
+  <div class="stage-slot" bind:this={stageSlot}></div>
+  {#if shotEditorOpen && ShotEditor && !exporting}
+    <ShotEditor {editor} item={stageItem} />
   {/if}
 {:else if binding.renderMode === "mandala" && mandalaItem}
   <PostStudioShiftingMandalaLayer
@@ -267,6 +222,7 @@
     {tunnelHook}
     {followerPositions}
     followerSequences={followerSequences.current}
+    part={sourceItem?.kind === "animation" ? sourceItem.part : undefined}
     {chromeOpacity}
     {mandalaIn}
     {lookBlend}
@@ -306,3 +262,10 @@
       cardRenderOptions?.propTypeOverride}
   />
 {/if}
+
+<style>
+  .stage-slot {
+    position: absolute;
+    inset: 0;
+  }
+</style>

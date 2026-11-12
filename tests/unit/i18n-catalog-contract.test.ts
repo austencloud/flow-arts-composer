@@ -567,13 +567,19 @@ describe("translation catalog contracts", () => {
       string,
       string
     >;
-    // The screen shows only these two; __tkaLoadProgress messages feed the
-    // boot profiler and never render.
+    // The screen shows only these: two statuses, the long wait's status and
+    // its Reload button. __tkaLoadProgress messages feed the boot profiler
+    // and never render.
     const messages = [...html.matchAll(/__tkaBootMessage\("([^"]+)"\)/g)].map(
       (m) => m[1]!
     );
     expect(new Set(messages)).toEqual(
-      new Set(["Opening Flow Arts Composer", "Almost there"])
+      new Set([
+        "Opening Flow Arts Composer",
+        "Almost there",
+        "Still loading. This is taking longer than usual.",
+        "Reload",
+      ])
     );
     for (const message of messages) {
       expect(boot[message], message).toBeTruthy();

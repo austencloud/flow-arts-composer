@@ -11,6 +11,8 @@
   import { tryGetAdaptiveQualityContext } from "../../../context/adaptive-quality-context";
   import { QualityTier } from "../../../effects/types";
   import { getSceneFeatureContext } from "../../../scene-features/context/scene-feature-context";
+  import { getStageDirectionCuesShown } from "../../../context/stage-direction-cues-context";
+  import { setStageDirectionCueVisibility } from "../../domain/stage-direction-cues";
   import { createDefaultForestFireflyConfig } from "../../domain/models/scene-configs";
   import {
     prefersReducedMotion,
@@ -70,6 +72,8 @@
   const stageError = stage.error;
   const config = createDefaultForestFireflyConfig();
   let world: ForestEnvironmentWorld | null = null;
+  // The Blender stage carries its own direction cues; a recording hides them.
+  const directionCuesShown = getStageDirectionCuesShown();
   let campsiteFailureReported = false;
   let stageFailureReported = false;
 
@@ -129,6 +133,7 @@
       qualityTier: adaptiveQuality?.tier ?? QualityTier.MEDIUM,
       motionScale: resolveMotionScale(prefersReducedMotion()),
     });
+    setStageDirectionCueVisibility(next.root, untrack(directionCuesShown));
     scene.add(next.root);
     world = next;
     return () => {
@@ -140,6 +145,11 @@
 
   $effect(() => {
     world?.setGroundY(groundY);
+  });
+
+  $effect(() => {
+    const shown = directionCuesShown();
+    if (world) setStageDirectionCueVisibility(world.root, shown);
   });
 
   $effect(() => {

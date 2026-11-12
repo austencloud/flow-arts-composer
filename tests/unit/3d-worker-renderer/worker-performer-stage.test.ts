@@ -135,4 +135,66 @@ describe("worker performer stage", () => {
       imperative: [{ renderer: "trail", sourceId: "p1:0:left-end" }],
     });
   });
+
+  // The worker starts the avatar while the environment still loads, before
+  // any world scene exists, then attaches the stage once the world is built.
+  it("builds performers before it has a scene and attaches them later", async () => {
+    const built = {
+      id: "performer-0",
+      root: new Group(),
+      matchesConfiguration: () => true,
+      setSnapshot: vi.fn(),
+      update: vi.fn(),
+      dispose: vi.fn(),
+    };
+    const late = deferred<never>();
+    const lateBuilt = { ...built, id: "performer-1", root: new Group() };
+    const createPerformer = vi.fn(async (next: WorkerPerformerSnapshot) =>
+      next.id === "performer-0" ? (built as never) : late.promise
+    );
+    const stage = new WorkerPerformerStage(null, createPerformer as never);
+    expect(stage.attached).toBe(false);
+
+    const loading = stage.setSnapshots([
+      { ...snapshot(0), id: "performer-0" },
+      { ...snapshot(0), id: "performer-1" },
+    ]);
+    await vi.waitFor(() => expect(built.root.parent).not.toBeNull());
+    expect(built.setSnapshot).toHaveBeenCalled();
+
+    const scene = new Scene();
+    stage.attachTo(scene);
+    expect(stage.attached).toBe(true);
+    expect(scene.children).toContain(built.root);
+
+    // A performer still loading at attach time lands in the scene too.
+    late.resolve(lateBuilt as never);
+    await loading;
+    expect(scene.children).toContain(lateBuilt.root);
+  });
+
+  it("disposes performers that finish after a detached stage was dropped", async () => {
+    const created = deferred<never>();
+    const performer = {
+      id: "performer",
+      root: new Group(),
+      matchesConfiguration: () => true,
+      setSnapshot: vi.fn(),
+      update: vi.fn(),
+      dispose: vi.fn(),
+    };
+    const stage = new WorkerPerformerStage(
+      null,
+      vi.fn(() => created.promise) as never
+    );
+    const loading = stage.setSnapshots([snapshot(0)]);
+    stage.dispose();
+    created.resolve(performer as never);
+    await loading;
+
+    expect(performer.dispose).toHaveBeenCalledTimes(1);
+    const scene = new Scene();
+    stage.attachTo(scene);
+    expect(scene.children).toHaveLength(0);
+  });
 });

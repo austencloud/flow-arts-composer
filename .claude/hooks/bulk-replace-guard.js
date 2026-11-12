@@ -10,6 +10,8 @@
  * BLOCKED: sed piped from find, or sed targeting directories via wildcards/globs
  */
 
+import { readHookCommand } from './hook-command.js';
+
 const rules = [
   // find ... -exec sed — the exact pattern that caused the 2026-05-07 incident
   {
@@ -24,11 +26,18 @@ const rules = [
   // sed -i with a glob/wildcard target (not a single file)
   // Catches: sed -i 's/x/y/' src/lib/**/*.ts, sed -i 's/x/y/' *.svelte
   {
-    pattern: /sed\s+(-i\s+)?'[^']*'\s+\S*\*/,
+    // -i is required: `sed -n '1,5p' docs/*.md` only reads. The shell-snapshots
+    // exemption keeps the onecmd recovery command in the global CLAUDE.md working.
+    pattern: /sed\s+-i\S*\s+(-e\s+)?'[^']*'\s+(?!\S*shell-snapshots)\S*\*/,
     msg: "sed with glob/wildcard targets runs across many files blindly. Fix files individually or use subagents."
   },
   {
-    pattern: /sed\s+(-i\s+)?"[^"]*"\s+\S*\*/,
+    pattern: /sed\s+-i\S*\s+(-e\s+)?"[^"]*"\s+(?!\S*shell-snapshots)\S*\*/,
+    msg: "sed with glob/wildcard targets runs across many files blindly. Fix files individually or use subagents."
+  },
+  {
+    // Unquoted expression: sed -i s/a/b/ src/*.ts
+    pattern: /sed\s+-i\S*\s+(-e\s+)?[^'"\s-]\S*\s+(?!\S*shell-snapshots)\S*\*/,
     msg: "sed with glob/wildcard targets runs across many files blindly. Fix files individually or use subagents."
   },
   // find ... -exec sed with + terminator
@@ -57,19 +66,20 @@ let input = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
-  try {
-    const toolInput = JSON.parse(input);
-    const command = toolInput.command || '';
+  const { command } = readHookCommand(input);
+  if (!command) process.exit(0);
 
-    for (const { pattern, msg } of rules) {
-      if (pattern.test(command)) {
-        console.error(`\n⛔ BLOCKED: ${msg}\n\nCommand: ${command.slice(0, 200)}...\n\nUse the Edit tool for individual files, or dispatch subagents for bulk refactoring.\nThe 2026-05-07 incident proved that global sed ALWAYS causes collateral damage.\n`);
-        process.exit(2);
-      }
+  for (const { pattern, msg } of rules) {
+    if (pattern.test(command)) {
+      console.error(`
+BLOCKED: ${msg}
+
+Command: ${command.slice(0, 200)}
+
+Use the Edit tool for individual files.
+`);
+      process.exit(2);
     }
-
-    process.exit(0);
-  } catch (e) {
-    process.exit(0);
   }
+  process.exit(0);
 });

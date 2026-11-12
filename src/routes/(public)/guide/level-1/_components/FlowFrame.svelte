@@ -18,6 +18,7 @@
   import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { flowProse } from "../_data/flow-prose";
   import { stripToSequence } from "../_data/guide-sequence-adapter";
   import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
@@ -33,6 +34,7 @@
   } from "../_data/localize-level1-content";
   import {
     flowRenderItems,
+    isFigureCardInRun,
     isPackable,
     type FlowRenderItem,
   } from "../_data/flow-render-items";
@@ -63,12 +65,8 @@
   // (dark fill + light grid/props); "light" keeps the print ink-on-white look.
   const picTheme = $derived(darkMode ? "dark" : "light");
 
-  // The prose carries hard <br> line-wraps authored for the fixed-width print
-  // sheet; in the reflow column they force awkward mid-phrase breaks. Drop them so
-  // the text wraps to the column naturally (a flow-only transform - the sheet keeps
-  // its <br>s). Keep every other tag (the red/blue spans, <strong>, <em>).
-  const flowProse = (html: string) =>
-    html.replace(/<br\s*\/?>/gi, " ").replace(/\s{2,}/g, " ");
+  // Print-sheet <br>s become spaces except before a bullet and after a label
+  // line (flow-prose.ts).
 
   // Which text each showcase owns, and how the page splits into screens,
   // live in flow-render-items.ts (pure, tested).
@@ -161,7 +159,20 @@
   class:one-screen={screen !== undefined}
 >
   {#each segments as seg (seg.key)}
-    {#if seg.row}
+    {#if seg.row && seg.row.every((v) => isFigureCardInRun(v.item))}
+      <!-- Figure cards that share a screen: side by side, each under its own
+           small title (the Staff Motions opener). -->
+      <div class="figure-row">
+        {#each seg.row as { item, i } (i)}
+          <div class="figure-slot">
+            {#if item.type === "showcase" && item.card.figureTitle}
+              <h3 class="flow-h3 figure-title">{item.card.figureTitle}</h3>
+            {/if}
+            {@render flowItem(item)}
+          </div>
+        {/each}
+      </div>
+    {:else if seg.row}
       <div class="gallery-row">
         {#each seg.row as { item, i } (i)}
           <div
@@ -185,7 +196,52 @@
 </div>
 
 {#snippet flowItem(item: FlowRenderItem)}
-    {#if item.type === "showcase"}
+    {#if item.type === "showcase" && item.card.figureCard}
+      <!-- The figure card: the player over its own two-cell strip, the words
+           beside it on a wide window and over it on a small one
+           (SequenceShowcase "card"). -->
+      {@const scard = item.card}
+      {@const sseq = groupSequence(scard.sequenceItems ?? scard.items)}
+      {#snippet cardWords()}
+        {#each item.text as tb, m (m)}
+          {#if tb.kind === "heading"}
+            <div class="figure-head">
+              {#if tb.kicker}<p class="flow-kicker">{tb.kicker}</p>{/if}
+              {#if tb.level === 2}
+                <h2 class="flow-h2 showcase-h">{tb.text}</h2>
+              {:else}
+                <h3 class="flow-h2 showcase-h">{tb.text}</h3>
+              {/if}
+            </div>
+          {:else if tb.kind === "prose"}
+            <!-- A figure card's words were written for the screen, not
+                 wrapped by hand for the sheet: their line breaks are meant
+                 (2026-11-11, the approved Prospin and Antispin wording). -->
+            <p class="flow-p showcase-p">
+              {@html tb.html.replace(/\s{2,}/g, " ")}
+            </p>
+          {:else if tb.kind === "glyphImage"}
+            <img class="flow-glyph showcase-glyph" src={tb.src} alt={tb.alt} />
+          {/if}
+        {/each}
+      {/snippet}
+      <div
+        class="flow-showcase figure"
+        class:stacked={!(room?.cardBeside && item.text.length)}
+      >
+        <SequenceShowcase
+          sequence={sseq}
+          items={scard.items}
+          numbered={scard.numbered}
+          loop={scard.loop}
+          render={scard.render}
+          variant="card"
+          cardBeside={!!room?.cardBeside && item.text.length > 0}
+          {picTheme}
+          text={item.text.length ? cardWords : undefined}
+        />
+      </div>
+    {:else if item.type === "showcase"}
       <!-- A word sequence's showcase: square live animation beside the section's
            text, the steps unrolled as a strip beneath. The strip + text are
            prerendered (crawlable); only the animation is browser-gated, inside
@@ -197,6 +253,7 @@
           sequence={sseq}
           items={scard.items}
           numbered={scard.numbered}
+          loop={scard.loop}
           render={scard.render}
           variant={item.variant}
           pool={item.holdPool ? undefined : scard.pool?.entries}
@@ -499,6 +556,40 @@
     margin-inline: calc((100% - min(72rem, 94cqw)) / 2);
     margin-block: 1.9rem;
   }
+  /* The figure card's words: section label and heading centred over the
+     paragraphs. The label is TopicHeader's kicker (small capitals in the
+     quiet ink). Headings of either level read at the section size. */
+  .figure-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    margin-bottom: 0.35rem;
+  }
+  .flow-kicker {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: var(--font-size-compact);
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-dim, #555);
+    text-align: center;
+  }
+  .flow-showcase.figure .figure-head .showcase-h {
+    margin: 0;
+    text-align: center;
+  }
+  /* Words over the card read centred, as every stacked showcase does. */
+  .flow-showcase.figure.stacked .showcase-p {
+    text-align: center;
+  }
+  /* The band's own gap spaces the words from the card; a paragraph's margin
+     under it would add a second gap the cut does not count. */
+  .flow-showcase.figure .showcase-p:last-child {
+    margin-bottom: 0;
+  }
   /* Compact showcases (caption-only) read as figures in the flow, not feature
      bands - tighter rhythm between consecutive ones. */
   .flow-showcase.compact {
@@ -765,6 +856,32 @@
        (2026-11-07, Reversals at 375 wide). Stacked strips that still do
        not fit recut the screen. */
     min-width: min(100%, 18rem);
+  }
+  /* Figure cards side by side: each slot is as wide as its card, which
+     grows with --fit until the screen is full, two to a row. */
+  .figure-row {
+    --pair-gap: clamp(1rem, 6cqw, 4rem);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: var(--pair-gap);
+  }
+  .figure-slot {
+    /* The card fills its slot (SequenceShowcase reads --card-w); the fit
+       search sizes the pair to the screen. */
+    --card-w: 100cqw;
+    flex: none;
+    width: min(calc(14rem * var(--fit, 1)), calc((100cqw - var(--pair-gap)) / 2));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .figure-slot .flow-showcase.figure {
+    width: 100%;
+    margin: 0;
+  }
+  .flow-h3.figure-title {
+    margin: 0 0 0.35rem;
   }
   .flow-strip-slot :global(.guide-step-strip) {
     margin-block: 0.5rem;

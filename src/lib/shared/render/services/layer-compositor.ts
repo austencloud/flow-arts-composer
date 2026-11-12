@@ -405,6 +405,7 @@ export class LayerCompositor {
         fanAppearance: options.fanAppearance,
         triangleGrip: options.triangleGrip,
         buugengStyle: options.buugengStyle,
+        triadBuild: options.triadBuild,
         leftPropType: options.leftPropType,
         rightPropType: options.rightPropType,
         leftBuugengFlipped: options.leftBuugengFlipped,

@@ -53,7 +53,6 @@
 
   function pick(next: ResolvedPropConfig): void {
     value = next;
-    choosing = false;
   }
 </script>
 
@@ -76,7 +75,13 @@
   </PanelButton>
   {#if picker === "inline" && choosing && !disabled}
     <div class="picker" transition:growFade>
-      <PropPairPicker {value} {hint} {showColors} onPick={pick} />
+      <PropPairPicker
+        {value}
+        {hint}
+        {showColors}
+        onPick={pick}
+        onDone={() => (choosing = false)}
+      />
     </div>
   {/if}
 </div>

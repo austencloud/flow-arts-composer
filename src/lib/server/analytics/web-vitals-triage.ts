@@ -15,6 +15,7 @@
  * So the LCP element and INP target are null until that option is enabled.
  */
 import { escapeHogQL, pulseProdFilter } from "./hogql-shared";
+import { CRAWLER_SESSION_COLUMNS as CRAWLER } from "./crawler-sessions";
 import { splitLocalePath } from "../../shared/i18n/seo-locales";
 
 export const VITAL_NAMES = ["LCP", "INP", "CLS"] as const;
@@ -90,10 +91,10 @@ export function buildVitalsSessionsQuery(
   return `
     SELECT
       "$session_id" as session_id,
-      countIf(event = '$pageview') as pageview_count,
-      maxIf(1, toString(properties."$is_identified") IN ('true', '1')) as identified,
-      argMax(properties."$browser_language", timestamp) as locale,
-      argMinIf(properties."$referring_domain", timestamp, event = '$pageview') as referring_domain
+      ${CRAWLER.pageviewCount} as pageview_count,
+      ${CRAWLER.identified} as identified,
+      ${CRAWLER.locale} as locale,
+      ${CRAWLER.referringDomain} as referring_domain
     FROM events
     WHERE timestamp > toDateTime('${since}')
       AND "$session_id" IN (${ids || "''"})

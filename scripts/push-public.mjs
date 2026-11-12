@@ -56,6 +56,8 @@ function git(argv, input, env) {
     input,
     env: env ? { ...process.env, ...env } : process.env,
     maxBuffer: 256 * 1024 * 1024,
+    // preflight-watch.mjs runs this under pm2; see publish-preflight.mjs.
+    windowsHide: true,
   }).trim();
 }
 
@@ -112,6 +114,7 @@ const check = spawnSync(
   ["scripts/private-check.mjs", "--range", `${base}..${snapshot}`],
   {
     stdio: "inherit",
+    windowsHide: true,
   }
 );
 if (check.status !== 0) process.exit(check.status ?? 1);
@@ -177,5 +180,6 @@ if (!doPush) {
 }
 const push = spawnSync("git", ["push", REMOTE, `${snapshot}:refs/heads/main`], {
   stdio: "inherit",
+  windowsHide: true,
 });
 process.exit(push.status ?? 1);

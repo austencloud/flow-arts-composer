@@ -518,6 +518,19 @@
     });
     return () => cancelAnimationFrame(frame);
   });
+  // Play folds the tools away the moment it is asked for, while the player
+  // is still loading, and a failed load brings them back the same way. That
+  // change, and Stop's, moves on the compositor: the panels take their end
+  // layout at once and the tools and the button row travel by transform, so
+  // the motion keeps going while the player mounts. Other causes of the fold
+  // (assemble complete, the save view) keep the layout slide.
+  const isPreviewFold = $derived(panelState.isWorkspacePreviewChosen);
+  let appliedPreviewFold = false;
+  const playFoldMoves = () =>
+    isPreviewFold !== appliedPreviewFold && !isSaveView;
+  $effect(() => {
+    appliedPreviewFold = isPreviewFold;
+  });
   const showHistoryRecovery = $derived(
     !hasWorkspaceContent &&
       !isInputMode &&
@@ -698,8 +711,11 @@
     {/if}
 
     {#if shouldShowWorkspace && !useCompactToolbar && canSaveToLibrary && !controlsStepAside}
+      <!-- Rides a PanelGroup compositor edge (data-panel-flip), like the
+           button row: the workspace takes its end width at once. -->
       <div
         class="workspace-save-action"
+        data-panel-flip="workspace-save"
         in:controlArrive={topControlPresence}
         out:controlLeave={topControlPresence}
       >
@@ -827,6 +843,7 @@
     bind:sizes={panelSizes}
     gap={0}
     holdMotion={holdWorkspaceSlide}
+    compositorEdge={playFoldMoves}
     panels={[
       {
         id: "create-workspace",
@@ -843,7 +860,7 @@
         content: toolPanel,
         defaultSize: defaultPanelSizes[1],
         fixedSize:
-          !isSaveView && (isWorkspacePlayback || isAssembleComplete)
+          !isSaveView && (isPreviewFold || isAssembleComplete)
             ? "0px"
             : undefined,
         resizable: false,
@@ -896,6 +913,18 @@
     overflow: hidden;
     min-width: 0;
     min-height: 0;
+  }
+
+  /* While Play or Stop moves the edge on the compositor, the workspace has
+     already taken its end size. On Stop the outgoing player keeps its larger
+     box, and these clips would cut it off at the new edge before the rising
+     tools reach it. The panel group still clips at its own edge. */
+  :global(.panel-group[data-panel-motion="compositor"])
+    .workspace-container:not(.workspace-collapsed),
+  :global(.panel-group[data-panel-motion="compositor"])
+    .workspace-container
+    > .workspace-content {
+    overflow: visible;
   }
 
   .workspace-container {

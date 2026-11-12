@@ -160,3 +160,40 @@ describe("preflight-watch", () => {
     ).toHaveLength(1);
   });
 });
+
+// pm2 runs the watcher with no console. On Windows a child spawned without
+// windowsHide then opens its own Windows Terminal window and takes focus; the
+// watcher's per-minute git calls did that four times a minute (2026-11-11).
+describe("preflight-watch child processes stay hidden", () => {
+  const files = [
+    "scripts/preflight-watch.mjs",
+    "scripts/lib/publish-preflight.mjs",
+    "scripts/push-public.mjs",
+  ];
+  const call = /(?<![.\w])(spawnSync|spawn|execFileSync|execFile|execSync|exec)\(/g;
+
+  function callsIn(source: string) {
+    const calls: string[] = [];
+    for (const match of source.matchAll(call)) {
+      let depth = 0;
+      let end = match.index + match[0].length - 1;
+      for (; end < source.length; end++) {
+        if (source[end] === "(") depth++;
+        else if (source[end] === ")" && --depth === 0) break;
+      }
+      calls.push(source.slice(match.index, end + 1));
+    }
+    return calls;
+  }
+
+  for (const file of files) {
+    it(`${file} passes windowsHide to every spawn`, async () => {
+      const { readFileSync } = await import("node:fs");
+      const calls = callsIn(readFileSync(file, "utf8"));
+      expect(calls.length).toBeGreaterThan(0);
+      expect(
+        calls.filter((text) => !/windowsHide:\s*true/.test(text))
+      ).toEqual([]);
+    });
+  }
+});

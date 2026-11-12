@@ -38,6 +38,7 @@ $result = [ordered]@{
     SnapshotStage = $null
     CopyResults = @()
     CloudManifestFiles = $null
+    ArchivedBundles = $null
     Passed = $false
     ErrorType = $null
     ErrorMessage = $null
@@ -165,6 +166,54 @@ function Write-ResultFiles {
 function Add-CopyResult {
     param([Parameter(Mandatory)][object]$CopyResult)
     $copyResults.Add($CopyResult)
+}
+
+# Each night's prep stages a ~7 GB Git bundle, and the append-only D: copy keeps
+# every one on F:. Keep the newest $KeepNewest plus the newest of each month, and
+# delete only the bundle file: the run's patch and untracked-file copies stay.
+# Austen approved this rule on 2026-11-11.
+function Remove-OldArchivedBundles {
+    param(
+        [Parameter(Mandatory)][string]$WorkingStateRoot,
+        [int]$KeepNewest = 7
+    )
+
+    $summary = [ordered]@{ Kept = 0; Removed = 0; BytesRemoved = 0 }
+    if (-not (Test-Path -LiteralPath $WorkingStateRoot -PathType Container)) {
+        return $summary
+    }
+
+    $bundles = @(
+        Get-ChildItem -LiteralPath $WorkingStateRoot -Directory -ErrorAction Stop |
+            Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}_\d{6}$' } |
+            Sort-Object Name -Descending |
+            ForEach-Object {
+                $bundle = Join-Path $_.FullName 'tka-platform.bundle'
+                if (Test-Path -LiteralPath $bundle -PathType Leaf) {
+                    [pscustomobject]@{ Run = $_.Name; Month = $_.Name.Substring(0, 7); Item = Get-Item -LiteralPath $bundle -Force }
+                }
+            }
+    )
+
+    $monthsKept = @{}
+    for ($i = 0; $i -lt $bundles.Count; $i++) {
+        $entry = $bundles[$i]
+        $keep = $i -lt $KeepNewest -or -not $monthsKept.ContainsKey($entry.Month)
+        $monthsKept[$entry.Month] = $true
+        if ($keep) {
+            $summary.Kept++
+            continue
+        }
+        if ($entry.Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+            throw "An archived bundle is a reparse point: $($entry.Item.FullName)"
+        }
+        $bytes = $entry.Item.Length
+        Remove-Item -LiteralPath $entry.Item.FullName -Force
+        $summary.Removed++
+        $summary.BytesRemoved += $bytes
+        Write-AustenBackupLog -LogPath $logPath -Message "ARCHIVED BUNDLE REMOVED run=$($entry.Run) bytes=$bytes" | Out-Null
+    }
+    return $summary
 }
 
 $mutex = $null
@@ -307,6 +356,11 @@ try {
         CrossDeviceManifestFiles = $prepResult.CrossDeviceManifestFiles
         Passed = $true
     }
+
+    # Only after tonight's D: copy and prep result are confirmed, so the newest
+    # bundle is already on F: before any older one goes.
+    $result.ArchivedBundles = Remove-OldArchivedBundles `
+        -WorkingStateRoot (Join-Path $localBackupRoot "D\_DOCUMENTS\Computer Backup\$computerName\Development\TKA Working State")
 
     $protectedCloudManifestRoot = Join-Path $localBackupRoot "D\_DOCUMENTS\Computer Backup\$computerName\Manifests"
     $cloudManifestCounts = [ordered]@{}

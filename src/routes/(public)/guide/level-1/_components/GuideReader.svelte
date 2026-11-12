@@ -43,10 +43,6 @@
   } from "../_data/guide-page-links";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
-    consumeGuideScanIntent,
-    fireCodexCell,
-  } from "../_data/guide-scan-intent";
-  import {
     suppressBackground,
     releaseBackground,
   } from "#lib/shared/background/shared/state/background-suppression.svelte.js";
@@ -321,28 +317,6 @@
     const saved = savedCompanion();
     if (saved) void handleSequenceClick(saved);
 
-    // One-shot physical-book scan handoff (guide-scan-intent.ts): a QR scan
-    // stashed a request to reproduce what a tap would do once the reader
-    // mounts. Consumed here (after the deep-link slug landing above has set
-    // activeIndex synchronously), guarded by tick()+rAF so the just-mounted
-    // Codex page (which registers its cell trigger in its own onMount - child
-    // onMounts run before this parent one) has settled before we fire.
-    const scanIntent = config.enableDeepLinks ? consumeGuideScanIntent() : null;
-    if (scanIntent) {
-      await tick();
-      requestAnimationFrame(() => {
-        if (scanIntent.cellKey && config.isCodexSlug(scanIntent.slug)) {
-          fireCodexCell(scanIntent.cellKey);
-        } else if (scanIntent.sequence) {
-          // TODO(guide-companion word-path): auto-open companion for
-          // multi-letter scans. GuideSequenceClick (guide-data-context.ts)
-          // only accepts a flat StepData[] strip, not a raw SequenceData -
-          // wiring this cleanly needs a `sequence` field added to that type,
-          // which is out of scope for this file set. For now the reader lands
-          // on the target page; the user taps the strip to open the companion.
-        }
-      });
-    }
   });
 
   // Live URL sync: the address bar always carries the active page's deep link

@@ -17,6 +17,7 @@
   import { afterNavigate, beforeNavigate, onNavigate, goto } from "$app/navigation";
   import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
   import { page } from "$app/state";
+  import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
   import { dev } from "$app/env";
   import MarketingChrome from "#lib/shared/landing/components/MarketingChrome.svelte";
   import { siteCopyLocale } from "#lib/shared/landing/site-copy.js";
@@ -420,6 +421,21 @@
   // App-mode state
   let containerReady = $state(false);
   let containerError = $state<string | null>(null);
+
+  // Only the app shell ([...appPath]) reports `ready` to the boot screen.
+  // Any other app-mode page (/start, /admin, the internal tools, an error
+  // page) lets it go here once its page is drawn: after the container is up,
+  // or at once when startup failed and the error is what is drawn. These
+  // pages used to wait out a 15 s timer that no longer exists. On landing and
+  // retro routes the screen is already hidden and this does nothing.
+  let bootScreenReleased = false;
+  $effect(() => {
+    if (bootScreenReleased) return;
+    const shell = page.route.id === "/[...appPath]" && !page.error;
+    if (!containerError && (shell || !(containerReady || page.error))) return;
+    bootScreenReleased = true;
+    requestAnimationFrame(() => finishBootScreen());
+  });
 
   // Dynamically loaded app-only components (null until loaded)
   let WarningBannerComp = $state<Component | null>(null);

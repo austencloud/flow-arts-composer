@@ -5,6 +5,13 @@ const mocks = vi.hoisted(() => ({
   getDocument: vi.fn(),
   listDocuments: vi.fn(),
   getFirestoreRest: vi.fn(),
+  prepareScanViewerPayload: vi.fn(),
+}));
+
+// Hydrating a real payload is the preparer's own concern; here it only has to
+// hand back a playable sequence or nothing.
+vi.mock("#lib/server/scan/scan-viewer-payload-preparer.js", () => ({
+  prepareScanViewerPayload: mocks.prepareScanViewerPayload,
 }));
 
 vi.mock("#lib/server/firestore/firestore-rest.js", async () => {
@@ -28,12 +35,15 @@ import { setWorkerEnv } from "#test-helpers/worker-env.js";
 // own exported shapes (same pattern as
 // src/routes/(public)/atlas/glossary-taxonomy.test.ts) keeps the assertions
 // type-checked against the real contract instead of widening to `any`.
-async function loadFixture(
-  event: Parameters<typeof load>[0]
-): Promise<{ meta: SequenceRouteMeta; seo: SequenceSeoDocument }> {
+async function loadFixture(event: Parameters<typeof load>[0]): Promise<{
+  meta: SequenceRouteMeta;
+  seo: SequenceSeoDocument;
+  preparedSequence: unknown;
+}> {
   return (await load(event)) as unknown as {
     meta: SequenceRouteMeta;
     seo: SequenceSeoDocument;
+    preparedSequence: unknown;
   };
 }
 
@@ -67,7 +77,12 @@ function catalogDoc() {
       word: "AAAA",
       ownerDisplayName: "TKA System",
       level: 1,
-      steps: [{ letter: "A" }, { letter: "A" }, { letter: "A" }, { letter: "A" }],
+      steps: [
+        { letter: "A" },
+        { letter: "A" },
+        { letter: "A" },
+        { letter: "A" },
+      ],
       thumbnails: [
         "https://firebasestorage.googleapis.com/v0/b/example/o/card.png?alt=media",
       ],
@@ -76,9 +91,7 @@ function catalogDoc() {
 }
 
 function event(id: string, credential?: string, query = "") {
-  setWorkerEnv(
-    credential ? { FIREBASE_SERVICE_ACCOUNT_JSON: credential } : {}
-  );
+  setWorkerEnv(credential ? { FIREBASE_SERVICE_ACCOUNT_JSON: credential } : {});
   return {
     params: { id },
     url: new URL(`https://tkaflowarts.com/sequence/${id}${query}`),
@@ -124,6 +137,7 @@ describe("/sequence/[id] server load", () => {
     });
     mocks.getDocument.mockResolvedValue(null);
     mocks.listDocuments.mockResolvedValue({ documents: [] });
+    mocks.prepareScanViewerPayload.mockResolvedValue(null);
     publicFetch.mockImplementation(async () => notFound());
     vi.stubGlobal("fetch", publicFetch);
   });
@@ -142,11 +156,11 @@ describe("/sequence/[id] server load", () => {
       return null;
     });
 
-    const result = await loadFixture(event(SEQUENCE_ID, "service-account-json"));
-
-    expect(mocks.getFirestoreRest).toHaveBeenCalledWith(
-      "service-account-json"
+    const result = await loadFixture(
+      event(SEQUENCE_ID, "service-account-json")
     );
+
+    expect(mocks.getFirestoreRest).toHaveBeenCalledWith("service-account-json");
     expect(result.meta).toMatchObject({
       word: "AAAA",
       creator: "TKA System",
@@ -202,7 +216,9 @@ describe("/sequence/[id] server load", () => {
       source: "public",
       letters: ["T", "Z", "Σ"],
     });
-    expect(result.seo.title).toBe("TZΣ Flow Arts Sequence | Flow Arts Composer");
+    expect(result.seo.title).toBe(
+      "TZΣ by Paul: Flow Arts Sequence | Flow Arts Composer"
+    );
     const [url, init] = publicFetch.mock.calls[0]!;
     expect(String(url)).toContain(
       `projects/test-project/databases/(default)/documents/publicSequences/${PUBLIC_ID}?`
@@ -304,7 +320,9 @@ describe("/sequence/[id] server load", () => {
         : null
     );
 
-    const failed = await loadFixture(event(SEQUENCE_ID, "service-account-json"));
+    const failed = await loadFixture(
+      event(SEQUENCE_ID, "service-account-json")
+    );
     const recovered = await loadFixture(
       event(SEQUENCE_ID, "service-account-json")
     );
@@ -313,5 +331,119 @@ describe("/sequence/[id] server load", () => {
     expect(recovered.meta.curated).toBe(true);
     expect(mocks.listDocuments).toHaveBeenCalledTimes(2);
     consoleError.mockRestore();
+  });
+  describe("a short-code id", () => {
+    const CODE = "ACCT";
+    const PREPARED = { word: "ΔΛRZ", steps: [{}, {}, {}, {}] };
+
+    function shortCodeDoc(fields: Record<string, unknown>) {
+      return {
+        name: `projects/test-project/databases/(default)/documents/shortcodes/${CODE}`,
+        fields: toFirestoreFields({ sequence: "encoded-payload", ...fields }),
+      };
+    }
+
+    function serve(docs: Record<string, unknown>) {
+      publicFetch.mockImplementation(async (input) => {
+        const url = String(input);
+        for (const [path, doc] of Object.entries(docs)) {
+          if (url.includes(`/${path}?`)) {
+            return new Response(JSON.stringify(doc), { status: 200 });
+          }
+        }
+        return notFound();
+      });
+    }
+
+    it("names the sequence and borrows the author and image from the sequence it was minted from", async () => {
+      mocks.prepareScanViewerPayload.mockResolvedValue({ sequence: PREPARED });
+      serve({
+        [`shortcodes/${CODE}`]: shortCodeDoc({
+          payloadWord: "ΔΛRZ",
+          payloadStepCount: 4,
+          sourceSequenceId: PUBLIC_ID,
+        }),
+        [`publicSequences/${PUBLIC_ID}`]: {
+          fields: toFirestoreFields({
+            word: "ΔΛRZ",
+            ownerDisplayName: "Paul",
+            thumbnails: [
+              "https://firebasestorage.googleapis.com/v0/b/example/o/acct.png?alt=media",
+            ],
+          }),
+        },
+      });
+
+      const result = await loadFixture(event(CODE, "service-account-json"));
+
+      expect(result.meta).toMatchObject({
+        word: "ΔΛRZ",
+        creator: "Paul",
+        stepCount: 4,
+        source: "shortcode",
+        curated: false,
+      });
+      expect(result.seo.title).toBe(
+        "ΔΛRZ by Paul: Flow Arts Sequence | Flow Arts Composer"
+      );
+      expect(result.seo.description).toContain("submitted by Paul");
+      expect(result.seo.ogImage).toBe(
+        "https://firebasestorage.googleapis.com/v0/b/example/o/acct.png?alt=media"
+      );
+      expect(result.seo.indexable).toBe(false);
+      expect(result.preparedSequence).toBe(PREPARED);
+    });
+
+    it("cleans the code's own text, keeps its author, and refuses an untrusted image", async () => {
+      serve({
+        [`shortcodes/${CODE}`]: shortCodeDoc({
+          payloadWord: "  ΔΛRZ \n",
+          ownerDisplayName: "  Gage\t Smith ",
+          thumbnailUrl: "https://evil.example/thumb.png",
+        }),
+      });
+
+      const result = await loadFixture(event(CODE, "service-account-json"));
+
+      expect(result.meta).toMatchObject({
+        word: "ΔΛRZ",
+        creator: "Gage Smith",
+        thumbnailUrl: null,
+        source: "shortcode",
+      });
+      expect(result.seo.title).toBe(
+        "ΔΛRZ by Gage Smith: Flow Arts Sequence | Flow Arts Composer"
+      );
+      expect(result.seo.ogImage).toBe(
+        "https://tkaflowarts.com/branding/og-image.png"
+      );
+      // No source sequence named, so nothing past the code is read.
+      expect(
+        publicFetch.mock.calls.filter(([url]) =>
+          String(url).includes("/publicSequences/")
+        )
+      ).toHaveLength(1);
+    });
+
+    it("lets a published record with the same id win over the code", async () => {
+      serve({
+        [`shortcodes/${CODE}`]: shortCodeDoc({ payloadWord: "WRONG" }),
+        [`publicSequences/${CODE}`]: {
+          fields: toFirestoreFields({
+            word: "ACCT",
+            ownerDisplayName: "Nick",
+            steps: [{ letter: "A" }],
+          }),
+        },
+      });
+
+      const result = await loadFixture(event(CODE, "service-account-json"));
+
+      expect(result.meta).toMatchObject({
+        word: "ACCT",
+        creator: "Nick",
+        source: "public",
+      });
+    });
   });
 });

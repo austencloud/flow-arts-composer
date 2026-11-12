@@ -1,4 +1,5 @@
 import { STAGE } from "@austencloud/scene-3d/worker";
+import { STAGE_DIRECTION_CUE_ROLE } from "../../domain/stage-direction-cues";
 import {
   BoxGeometry,
   Color,
@@ -170,7 +171,7 @@ export function createAutumnStage(options: AutumnStageOptions): AutumnStage {
       geometry: BufferGeometry,
       position: readonly [number, number, number]
     ): void {
-      mesh(
+      const created = mesh(
         name,
         geometry,
         material(color, {
@@ -180,6 +181,8 @@ export function createAutumnStage(options: AutumnStageOptions): AutumnStage {
         }),
         position
       );
+      // Tagged like the Blender-exported cues so a recording can hide them.
+      created.userData.tka_role = STAGE_DIRECTION_CUE_ROLE;
     }
 
     cue(

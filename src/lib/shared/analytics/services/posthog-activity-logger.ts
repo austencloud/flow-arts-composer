@@ -143,12 +143,39 @@ export async function logSequenceAction(
   await logActivity(eventType, "sequence", { sequenceId, ...metadata });
 }
 
+/**
+ * The ways a person can keep what they made. Autosave is deliberately absent:
+ * it fires on every beat edit, so counting it would make anyone who tapped
+ * twice look like they kept something.
+ */
+export type SequenceKeptKind = "library_save" | "export" | "share" | "publish";
+
+/**
+ * One event for "a person kept something", whatever the route. The lifecycle
+ * `sequence_save` reaches PostHog only for full accounts (guest saves have no
+ * account to own them), and `sequence_autosaved` counts edits, so neither
+ * answers that question. The older per-route events still fire beside this one
+ * because dashboards read them.
+ */
+export async function trackSequenceKept(
+  kind: SequenceKeptKind,
+  metadata?: Partial<ActivityMetadata>
+): Promise<void> {
+  await logActivity("sequence_kept", "sequence", { ...metadata, kind });
+}
+
 /** Log a share action */
 export async function logShareAction(
   action: "sequence_share" | "sequence_export" | "link_copy",
   metadata?: Partial<ActivityMetadata>
 ): Promise<void> {
   await logActivity(action, "share", metadata);
+  // Every caller logs only after the share or download went through, so each
+  // one also counts as the person keeping the sequence.
+  await trackSequenceKept(
+    action === "sequence_export" ? "export" : "share",
+    metadata
+  );
 }
 
 /** Log a settings change */

@@ -79,9 +79,9 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
   },
   "staff-motions": {
     h1: "Staff Motions",
-    tagline: "During a shift, a prop can rotate in one of two directions - Prospin or Antispin",
+    tagline: "During a shift, a prop can rotate in one of two directions - Prospin or Antispin.",
     title: "Staff Motions: Prospin and Antispin · Flow Arts Notation Guide",
-    description: "During a shift, a prop can rotate in one of two directions - Prospin or Antispin",
+    description: "During a shift, a prop can rotate in one of two directions - Prospin or Antispin.",
   },
   "negative-space": {
     h1: "Negative Space and Body Turns",

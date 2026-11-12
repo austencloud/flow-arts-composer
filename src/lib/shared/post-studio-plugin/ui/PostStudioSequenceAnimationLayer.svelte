@@ -46,7 +46,12 @@
   import { sampleTunnelProps } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-sampling.js";
   import type { SequenceFrame } from "@austencloud/video-editor/core";
   import { performerArrows } from "../performer-arrows";
-  import { followerPropColors } from "../tunnel-performers";
+  import {
+    FRONT_PROP_COLORS,
+    castPartDraw,
+    followerPropColors,
+    type PostCastPart,
+  } from "../tunnel-performers";
 
   let {
     sequence,
@@ -66,6 +71,7 @@
     followerPositions = [],
     followerSequences = [],
     followerFrames = [],
+    part = undefined,
     chromeOpacity = 1,
     mandalaIn = 1,
     lookBlend,
@@ -105,6 +111,11 @@
      * arrows in its own colors over the red/blue pair's.
      */
     followerFrames?: readonly SequenceFrame[];
+    /**
+     * Only part of the cast draws: one performer, one hand, or one hand of
+     * one performer. Absent draws everyone.
+     */
+    part?: PostCastPart;
     /** Grid, glyph, step number and progress strip: 0 during the hook, 1 once they have faded in. */
     chromeOpacity?: number;
     /**
@@ -377,19 +388,62 @@
     });
   });
 
+  // Part of the cast: who draws. Without a part everyone does, and nothing
+  // below changes. The engine only draws a layer's hand while the canvas's own
+  // prop on that side is there, so one performer on their own, a follower
+  // too, draws as the canvas's own pair, in their own tunnel colours.
+  const draw = $derived(castPartDraw(part, followerPositions.length));
+  /** The follower drawn as the canvas's own pair, by index; null for the front. */
+  const promoted = $derived(
+    draw.primary !== null && draw.primary > 0 ? draw.primary - 1 : null
+  );
+  const promotedProps = $derived(
+    promoted === null
+      ? null
+      : sampleTunnelProps(
+          followerSequences?.[promoted] ?? sequence,
+          followerPositions[promoted]!
+        )
+  );
+  /** The front's own pair, nulled per hand; nobody when another performer draws. */
+  const frontLeftProp = $derived(
+    draw.primary === 0 && draw.primaryHands.left ? leftProp : null
+  );
+  const frontRightProp = $derived(
+    draw.primary === 0 && draw.primaryHands.right ? rightProp : null
+  );
+  const canvasLeftProp = $derived(
+    promotedProps
+      ? draw.primaryHands.left
+        ? promotedProps.left
+        : null
+      : frontLeftProp
+  );
+  const canvasRightProp = $derived(
+    promotedProps
+      ? draw.primaryHands.right
+        ? promotedProps.right
+        : null
+      : frontRightProp
+  );
+  // A hand-only part still passes every follower's layer, so each keeps the
+  // colour of its place out of the layer count.
   const followerLayers = $derived(
-    followerPositions.map((position, index): AdditionalLayerProps => {
-      const props = sampleTunnelProps(
-        followerSequences?.[index] ?? sequence,
-        position
-      );
-      return {
-        leftProp: props.left,
-        rightProp: props.right,
-        leftPropType: propConfig.leftPropType,
-        rightPropType: propConfig.rightPropType,
-      };
-    })
+    followerPositions.length > 0 && draw.followers.length > 0
+      ? followerPositions.map((position, index): AdditionalLayerProps => {
+          const props = sampleTunnelProps(
+            followerSequences?.[index] ?? sequence,
+            position
+          );
+          const hands = draw.followers[index]!;
+          return {
+            leftProp: hands.left ? props.left : null,
+            rightProp: hands.right ? props.right : null,
+            leftPropType: propConfig.leftPropType,
+            rightPropType: propConfig.rightPropType,
+          };
+        })
+      : []
   );
   const followerArrows = $derived(
     arrowsMounted && followerSequences
@@ -399,16 +453,39 @@
         }))
       : []
   );
+  // With performers behind, the front one is the tunnel's red and blue, not
+  // the viewer's own prop colors.
+  const tunnelFront = $derived(followerPositions.length > 0);
+  /** The canvas's own pair's colours: the front's, or the promoted follower's. */
+  const canvasPropColors = $derived(
+    promoted !== null
+      ? followerPropColors(promoted, followerPositions.length)
+      : tunnelFront
+        ? FRONT_PROP_COLORS
+        : undefined
+  );
+  const frontArrowColors = $derived(
+    tunnelFront ? FRONT_PROP_COLORS : { left: undefined, right: undefined }
+  );
   const extraLayers = $derived(
     followerLayers.length === 0
       ? hookLayers
       : [...hookLayers, ...followerLayers]
   );
+  /**
+   * The engine counts every extra layer as requested but only loads one that
+   * has a prop to draw, so a follower hidden whole never loads. The status has
+   * settled once every layer that draws something has its artwork.
+   */
+  const drawnExtraLayers = $derived(
+    extraLayers.filter((layer) => layer.leftProp || layer.rightProp).length
+  );
   /** Extra performers still loading their prop artwork; an export waits for them. */
   const extrasPending = $derived(
     (Boolean(tunnelHook) && hookCopies.length === 0) ||
-      (followerPositions.length > 0 && followerSequences === null) ||
-      ((Boolean(tunnelHook) || followerPositions.length > 0) &&
+      ((followerLayers.length > 0 || promoted !== null) &&
+        followerSequences === null) ||
+      ((Boolean(tunnelHook) || followerLayers.length > 0) &&
         hookTexturesPending)
   );
 
@@ -459,13 +536,15 @@
       >
         {#key animationAppearance.propType}
           <AnimatorCanvas
-            {leftProp}
-            {rightProp}
+            leftProp={canvasLeftProp}
+            rightProp={canvasRightProp}
             additionalLayers={extraLayers}
+            primaryPropColors={canvasPropColors}
             onAdditionalLayerTextureStatusChange={(status) =>
               (hookTexturesPending =
-                (Boolean(tunnelHook) || followerPositions.length > 0) &&
-                (status.requested === 0 || status.loaded < status.requested))}
+                (Boolean(tunnelHook) || followerLayers.length > 0) &&
+                (status.requested === 0 ||
+                  status.loaded < Math.min(status.requested, drawnExtraLayers)))}
             gridVisible={animationAppearance.gridMode !== "none"}
             {chromeOpacity}
             gridMode={sequence.gridMode ?? null}
@@ -505,6 +584,8 @@
                 leftPropType}
               rightPropTypeOverride={animationAppearance.propType ??
                 rightPropType}
+              leftColorOverride={frontArrowColors.left}
+              rightColorOverride={frontArrowColors.right}
               disableTransitions
               darkMode={animationAppearance.darkMode ?? true}
               transparentBackground
@@ -536,6 +617,8 @@
                 leftPropType}
               rightPropTypeOverride={animationAppearance.propType ??
                 rightPropType}
+              leftColorOverride={frontArrowColors.left}
+              rightColorOverride={frontArrowColors.right}
               disableTransitions
               darkMode={animationAppearance.darkMode ?? true}
               transparentBackground
@@ -676,8 +759,8 @@
       </div>
     {:else if !breakdownMotion && !shared?.ownsCanvas(owner)}
       <AnimatorCanvas
-        {leftProp}
-        {rightProp}
+        leftProp={frontLeftProp}
+        rightProp={frontRightProp}
         additionalLayers={hookLayers}
         onAdditionalLayerTextureStatusChange={(status) =>
           (hookTexturesPending =

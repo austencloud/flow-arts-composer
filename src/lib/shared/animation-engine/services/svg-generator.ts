@@ -35,6 +35,10 @@ import {
   buugengAppearanceArtwork,
   parseBuugengRenderKey,
 } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import {
+  parseTriadRenderKey,
+  triadBuildArtwork,
+} from "#lib/shared/pictograph/prop/domain/triad-build.js";
 
 /**
  * SVG Generator for creating prop staff images and grid
@@ -277,6 +281,16 @@ export function resolvePropSvgPath(
       "pictograph"
     )!;
   }
+  // A triad build is drawn on the plain triad's frame: same box, hand point
+  // and tip reach, so placements, trails and fire hold.
+  const triadRenderKey = parseTriadRenderKey(propTypeLower);
+  if (triadRenderKey) {
+    return triadBuildArtwork(
+      triadRenderKey.propType,
+      triadRenderKey.build,
+      "pictograph"
+    )!;
+  }
   const family = isAnimatedOnlyProp(propTypeLower) ? "animated" : "pictograph";
   return `/images/props/${family}/${propArtworkStem(propTypeLower, side)}.svg`;
 }
@@ -326,6 +340,7 @@ export async function generatePropSvg(
     fanRenderKey?.propType ??
     parseTriangleRenderKey(propTypeLower)?.propType ??
     parseBuugengRenderKey(propTypeLower)?.propType ??
+    parseTriadRenderKey(propTypeLower)?.propType ??
     propTypeLower;
   // A parsed key is a material build by construction: FanRenderKey types
   // `build` as Exclude<FanBuild, "pictograph">, and resolveFanRenderKey returns

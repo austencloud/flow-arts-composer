@@ -42,6 +42,11 @@ import {
   normalizeBuugengStyle,
   type BuugengStyle,
 } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import {
+  DEFAULT_TRIAD_BUILD,
+  normalizeTriadBuild,
+  type TriadBuild,
+} from "#lib/shared/pictograph/prop/domain/triad-build.js";
 
 import type {
   AdditionalLayerTextureStatus,
@@ -62,6 +67,7 @@ export class PropTypeManager {
   private fanAppearanceOverride: FanAppearance | null = null;
   private triangleGrip: TriangleGrip = DEFAULT_TRIANGLE_GRIP;
   private buugengStyle: BuugengStyle = DEFAULT_BUUGENG_STYLE;
+  private triadBuild: TriadBuild = DEFAULT_TRIAD_BUILD;
   trailsSuppressedUntilTextureLoad = false;
 
   // Additional layer texture loading for tunnel mode (indexed by layer)
@@ -156,12 +162,14 @@ export class PropTypeManager {
     propType: string,
     appearance: FanAppearance = this.fanAppearance,
     triangleGrip: TriangleGrip = this.triangleGrip,
-    buugengStyle: BuugengStyle = this.buugengStyle
+    buugengStyle: BuugengStyle = this.buugengStyle,
+    triadBuild: TriadBuild = this.triadBuild
   ): string {
     return resolvePropRenderKey(propType, {
       fanAppearance: appearance,
       triangleGrip,
       buugengStyle,
+      triadBuild,
     });
   }
 
@@ -190,17 +198,22 @@ export class PropTypeManager {
     const nextStyle = normalizeBuugengStyle(
       this.settingsService?.currentSettings?.buugengStyle
     );
+    const nextBuild = normalizeTriadBuild(
+      this.settingsService?.currentSettings?.triadBuild
+    );
     const newLeftRender = this.renderKey(
       newLeft,
       nextAppearance,
       nextGrip,
-      nextStyle
+      nextStyle,
+      nextBuild
     );
     const newRightRender = this.renderKey(
       newRight,
       nextAppearance,
       nextGrip,
-      nextStyle
+      nextStyle,
+      nextBuild
     );
 
     // Check if overrides changed
@@ -236,6 +249,7 @@ export class PropTypeManager {
       this.fanAppearance = nextAppearance;
       this.triangleGrip = nextGrip;
       this.buugengStyle = nextStyle;
+      this.triadBuild = nextBuild;
       state.setLeftPropType(newLeft);
       state.setRightPropType(newRight);
       state.setLegacyPropType(newLeft);
@@ -321,17 +335,22 @@ export class PropTypeManager {
     const settingsStyle = normalizeBuugengStyle(
       this.settingsService?.currentSettings?.buugengStyle
     );
+    const settingsBuild = normalizeTriadBuild(
+      this.settingsService?.currentSettings?.triadBuild
+    );
     const settingsLeftRender = this.renderKey(
       settingsLeft,
       settingsAppearance,
       settingsGrip,
-      settingsStyle
+      settingsStyle,
+      settingsBuild
     );
     const settingsRightRender = this.renderKey(
       settingsRight,
       settingsAppearance,
       settingsGrip,
-      settingsStyle
+      settingsStyle,
+      settingsBuild
     );
     const renderAppearanceChanged =
       this.renderPropTypeLeft !== null &&
@@ -376,6 +395,7 @@ export class PropTypeManager {
       this.fanAppearance = settingsAppearance;
       this.triangleGrip = settingsGrip;
       this.buugengStyle = settingsStyle;
+      this.triadBuild = settingsBuild;
 
       // Invalidate path cache FIRST - it holds pre-computed endpoint positions
       // for the old prop geometry. If the render loop reads stale cache data
@@ -440,7 +460,7 @@ export class PropTypeManager {
     // Signature of every layer's per-hand prop type. Empty entries fall back to
     // the global prop, so an all-default set yields "|"-joined blanks — a
     // performer swapping a prop changes the signature and re-generates sprites.
-    const propSig = `${this.fanAppearance.build}:${this.fanAppearance.frameColor}:${this.fanAppearance.cover}:${this.triangleGrip}:${this.buugengStyle}|${additionalLayers
+    const propSig = `${this.fanAppearance.build}:${this.fanAppearance.frameColor}:${this.fanAppearance.cover}:${this.triangleGrip}:${this.buugengStyle}:${this.triadBuild}|${additionalLayers
       .map((l) => `${l.leftPropType ?? ""}:${l.rightPropType ?? ""}`)
       .join("|")}`;
 
@@ -666,6 +686,7 @@ export class PropTypeManager {
     let appearance = this.fanAppearance;
     let grip = this.triangleGrip;
     let style = this.buugengStyle;
+    let build = this.triadBuild;
 
     const settings = this.settingsService?.currentSettings;
     const hasOverrides =
@@ -695,11 +716,13 @@ export class PropTypeManager {
       );
       grip = normalizeTriangleGrip(settings.triangleGrip);
       style = normalizeBuugengStyle(settings.buugengStyle);
+      build = normalizeTriadBuild(settings.triadBuild);
     }
 
     this.fanAppearance = appearance;
     this.triangleGrip = grip;
     this.buugengStyle = style;
+    this.triadBuild = build;
 
     // Pass dark mode state for prop color selection
     // This allows preview isolation - local preview dark mode instead of global
@@ -710,13 +733,15 @@ export class PropTypeManager {
       leftPropType,
       appearance,
       grip,
-      style
+      style,
+      build
     );
     const rightRenderType = this.renderKey(
       rightPropType,
       appearance,
       grip,
-      style
+      style,
+      build
     );
     this.renderPropTypeLeft = leftRenderType;
     this.renderPropTypeRight = rightRenderType;

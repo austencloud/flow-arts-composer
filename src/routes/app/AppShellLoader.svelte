@@ -8,6 +8,7 @@
     recoverFromModuleChunkFailure,
     resilientLazyImport,
   } from "#lib/shared/hmr-helper.js";
+  import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
 
   let MainApp = $state<Component | null>(null);
   let loadError = $state<unknown>(null);
@@ -30,6 +31,9 @@
       })
       .catch((error: unknown) => {
         loadError = error;
+        // The error and its retry button are the page now; let the boot
+        // screen go so they can be seen.
+        requestAnimationFrame(() => finishBootScreen());
         recoverFromModuleChunkFailure("app-shell");
       })
       .finally(() => {

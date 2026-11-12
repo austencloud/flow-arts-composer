@@ -1,6 +1,7 @@
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import type { TriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 /**
  * Utility for rendering Pictograph component to SVG string
  *
@@ -29,6 +30,7 @@ export interface PictographVisibilityOptions {
   /** Where the hand holds a triangle. Omitted means the corner grip. */
   triangleGrip?: TriangleGrip;
   buugengStyle?: BuugengStyle;
+  triadBuild?: TriadBuild;
   primaryPropColors?: { left: string; right: string } | null;
   showTKA?: boolean; // TKA Glyph includes turn numbers
   showTnD?: boolean;

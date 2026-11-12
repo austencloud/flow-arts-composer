@@ -22,6 +22,7 @@ import {
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 export interface PerVisitDemoRequest {
   id: number;
@@ -31,6 +32,7 @@ export interface PerVisitDemoRequest {
   propType?: PropType;
   startPlacement?: PictographData | null;
   continuity?: PerVisitContinuity;
+  difficulty?: DifficultyLevel;
 }
 
 export type PerVisitDemoResponse =
@@ -44,15 +46,17 @@ const scope = self as unknown as DedicatedWorkerGlobalScope;
 scope.addEventListener(
   "message",
   (event: MessageEvent<PerVisitDemoRequest>) => {
-    const { id, propType, startPlacement, continuity } = event.data ?? {
-      id: -1,
-    };
+    const { id, propType, startPlacement, continuity, difficulty } =
+      event.data ?? {
+        id: -1,
+      };
     void (async () => {
       try {
         const sequence = await rollPerVisitDemo({
           ...(propType ? { propType } : {}),
           ...(startPlacement ? { startPlacement } : {}),
           ...(continuity ? { continuity } : {}),
+          ...(difficulty ? { difficulty } : {}),
         });
         if (!sequence) {
           scope.postMessage({

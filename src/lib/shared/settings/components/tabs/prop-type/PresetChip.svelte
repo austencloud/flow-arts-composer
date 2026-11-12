@@ -15,6 +15,7 @@
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { BuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+  import type { TriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
   import type { PropPreset } from "../../../domain/app-settings";
   import { previewPair } from "./prop-preview-pair";
 
@@ -30,6 +31,7 @@
     fanAppearance,
     triangleGrip,
     buugengStyle,
+    triadBuild,
     onclick,
   }: {
     preset: PropPreset | null;
@@ -49,6 +51,7 @@
     /** The current triangle grip. Not saved in a preset either. */
     triangleGrip?: TriangleGrip | null;
     buugengStyle?: BuugengStyle | null;
+    triadBuild?: TriadBuild | null;
     onclick: () => void;
   } = $props();
 
@@ -60,6 +63,7 @@
     fanAppearance,
     triangleGrip,
     buugengStyle,
+    triadBuild,
   });
 </script>
 

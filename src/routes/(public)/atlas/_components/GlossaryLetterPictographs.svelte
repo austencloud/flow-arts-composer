@@ -28,7 +28,7 @@
       <a
         class="letter-pictograph"
         href={pictograph.href}
-        aria-label={`Open letter ${pictograph.label} in the Letter Codex`}
+        aria-label={`Open letter ${pictograph.label} in the Codex`}
       >
         <CodexCell
           cell={pictograph.cell}

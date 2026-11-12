@@ -53,6 +53,50 @@ Feature code supplies panel definitions and state only:
 Do not animate the same panel again inside its feature. Child content may fade
 or crossfade, but `PanelGroup` owns the structural allocation.
 
+### Compositor edge
+
+A heavy workspace can't afford a layout pass on every frame of a slide, so
+`compositorEdge` opts a group out of the allocation transition. Create's Play
+and Stop are the first users. The mode applies only when the moving panel is
+the last one, has `revealContent`, and a flexible neighbour absorbs the
+change. In any other arrangement the group falls back to the ordinary slide.
+
+- The group takes its end layout once, on the change frame. The moving panel
+  then travels by `transform` from where it stood. Its content stays laid out
+  at the held size until it settles.
+- A descendant marked `data-panel-flip="<key>"` rides the same clock. Mark
+  every control that would otherwise jump with the edge, such as a button row
+  or a header badge. `shared/panels/compositor-travel.ts` owns the travel of
+  the panel and its riders.
+- `data-panel-motion="compositor"` stays on the root until every travel ends,
+  and `PANEL_SETTLE_EVENT` fires once at rest.
+- An interrupting change never replaces a running travel. Each mover is
+  measured just before and just after the layout change, in the same task,
+  with nothing cancelled or seeked in between. The page's animation clock
+  does not move inside a task, so the running travel adds the same offset to
+  both readings and the difference is the pure layout shift. A second
+  animation from that shift to zero runs on the mover's other channel (the
+  CSS `translate` property or `transform`; a rider keeps its resting
+  transform behind the offset). Both stay on the compositor, so a reversal
+  curves instead of jumping. A third change while both channels are busy
+  brings the mover to its present position with `seekToPresent`, measures,
+  and replaces. Stop, the safety timer and the fallback cancel every channel.
+- The page's animation clock also stands still through a long task, and so
+  does the time a frame reports. A correction handled after one (Stop tapped
+  while Play's player mounts) took that stale start and finished before its
+  first frame, so the panel landed in one step. A correction therefore starts
+  on `performance.now()` at the next animation frame, with `fill: backwards`
+  holding its first keyframe until the page's clock catches up. A first travel
+  keeps the start the compositor reports.
+- Under reduced motion the change lands at once.
+
+A heavy source switched beside the edge uses `DualSourceCrossfade` with
+`settleInert`. Pointer input moves to the shown side at once. The `inert` swap,
+which restyles the whole subtree, waits for the group's settle. The fade's
+duration and delay sit on each source, not as custom properties on the root:
+an inherited value that changes with the direction restyles every element in
+both sources.
+
 ## Multi-element recomposition
 
 `createLayoutMotion()` is the generic FLIP owner. It tracks stable dataset keys,

@@ -166,13 +166,21 @@ export class FocusTrap {
       this.container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
     );
 
-    // Filter out elements that are not visible or have display:none
+    // Keep only what Tab would actually visit. When this list disagrees with
+    // the browser's Tab order, the trap misjudges which control is last and
+    // lets the key through, so focus leaves the container.
+    // - Rendered is `getClientRects()`, empty only inside a `display: none`
+    //   subtree. `offsetParent` is also null for a `position: fixed` control
+    //   (a modal's corner Close button), which dropped it from the cycle.
+    // - `tabindex="-1"` still matches the selector's tag clauses (a hidden
+    //   colour input behind a swatch button), but Tab never lands on it.
     return elements.filter((el) => {
+      if (el.getAttribute("tabindex") === "-1") return false;
       const style = window.getComputedStyle(el);
       return (
         style.display !== "none" &&
         style.visibility !== "hidden" &&
-        el.offsetParent !== null
+        el.getClientRects().length > 0
       );
     });
   }

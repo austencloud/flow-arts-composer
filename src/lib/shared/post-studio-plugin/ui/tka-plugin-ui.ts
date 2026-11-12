@@ -18,6 +18,7 @@ import TkaLookPanel from "./TkaLookPanel.svelte";
 import TkaMediaSublayer from "./TkaMediaSublayer.svelte";
 import TkaSequenceAside from "./TkaSequenceAside.svelte";
 import TkaStripGuide from "./TkaStripGuide.svelte";
+import PostStage3DKeeper from "./PostStage3DKeeper.svelte";
 
 /**
  * The post's own title, else its sequence's name or derived word, with a
@@ -90,7 +91,8 @@ export function createTkaPluginUi(): PluginUi {
     // right-clicked, through the facts tka registered for that editor.
     layerContextMenu: (event, editor) =>
       tkaEditorOf(editor)?.openSaveMenu?.(event),
-    canvasOverlays: [TkaStripGuide],
+    // The keeper holds each 3D clip's stage for the whole post.
+    canvasOverlays: [TkaStripGuide, PostStage3DKeeper],
     modes: [TKA_TIMING_MODE],
     // A post with no sequence starts from footage, text or an image.
     emptyHint: (editor, where) => {

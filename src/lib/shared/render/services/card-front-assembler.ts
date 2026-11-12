@@ -234,6 +234,7 @@ export function buildCellLayerOptions(
     fanAppearance: visibility.fanAppearance,
     triangleGrip: visibility.triangleGrip,
     buugengStyle: visibility.buugengStyle,
+    triadBuild: visibility.triadBuild,
     size: stepSize,
     darkMode: visibility.darkMode ?? false,
     showNonRadialPoints: visibility.showNonRadialPoints ?? false,

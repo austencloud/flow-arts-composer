@@ -275,7 +275,7 @@ export const load: PageServerLoad = () => {
     letterTypes,
     codex: {
       key: "letter",
-      label: "Letter Codex",
+      label: "Codex",
       sectionSlug: "cat-letter",
       // The two canonical guide sheets, and nothing else: the Codex is a
       // pictorial index of the Level 1 dataframe.

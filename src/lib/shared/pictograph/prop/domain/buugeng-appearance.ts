@@ -112,7 +112,7 @@ export function buugengAppearanceArtwork(
 ): string | null {
   const normalized = propType.toLowerCase();
   if (!isStyledBuugengPropType(normalized) || style === "classic") return null;
-  return `/images/props/${family}/${normalized}-${style}.svg?v=3`;
+  return `/images/props/${family}/${normalized}-${style}.svg?v=4`;
 }
 
 export interface BuugengStyleOption {

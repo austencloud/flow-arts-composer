@@ -443,14 +443,20 @@ describe("landing shared-element contract", () => {
     const generate = readSource(
       "src/routes/(public)/composer/_components/ComposerGenerateDemo.svelte"
     );
-    const recipe = readSource(
+    // The demo draws through the hero's shared roll, which owns the recipe.
+    const demoGeneration = readSource(
       "src/routes/(public)/composer/_components/composer-demo-generation.ts"
+    );
+    const recipe = readSource(
+      "src/lib/shared/landing/data/per-visit-demo-core.ts"
     );
     const construct = readSource(
       "src/routes/(public)/composer/_sections/ConstructSection.svelte"
     );
 
     expect(generate).toContain("generateComposerDemoSequence()");
+    expect(demoGeneration).toContain("rollInWorker(");
+    expect(demoGeneration).toContain("rollPerVisitDemo(");
     expect(recipe).toContain("turnIntensity: 1.5");
     expect(construct).toContain('{ value: "1.5", label: "1.5" }');
     expect(construct).not.toContain('{ value: "2", label: "2" }');

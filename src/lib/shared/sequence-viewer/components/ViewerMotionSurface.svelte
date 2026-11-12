@@ -21,6 +21,7 @@
   import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import Viewer3DRailHint from "#lib/shared/3d/components/onboarding/Viewer3DRailHint.svelte";
   import { warmSelectedSceneAssets } from "#lib/shared/3d/scene-boot/scene-prefetch.js";
+  import { releaseReplayHold } from "#lib/shared/analytics/services/replay-hold.js";
   import {
     isViewer3DIntroReplayRequested,
     shouldShowViewer3DIntro,
@@ -194,13 +195,37 @@
   // 3D is one click away from here, and its models are the slowest thing in the
   // app to arrive. Pull them into the browser cache while it is idle so the
   // first open spends its curtain on compiling rather than downloading.
+  // Once 3D is open (or has been), the real loaders own those downloads and a
+  // warm-up would only fetch them a second time, plus models the worker world
+  // never loads. So only a visitor on a 2D pane warms. The viewer mounts a
+  // surface per side, so the primary side alone decides, and it also stands
+  // down while the companion side shows 3D; otherwise the hidden companion
+  // would warm during a direct 3D open.
   $effect(() => {
+    if (side !== "left") return;
+    if (splitConfig.rightPane === "animation-3d") return;
+    if (is3DActive || is3DMounted) return;
     warmSelectedSceneAssets();
   });
   let scene3DReady = $state(false);
   // Ready is when the stage is set; revealed is when the loading curtain has
   // opened far enough that the scene is what you see. The rail waits for it.
   let scene3DRevealed = $state(false);
+  // A direct 3D open holds session recording until the scene is up, or until
+  // the visitor leaves 3D first (analytics/services/replay-hold.ts).
+  // The recorder's first full snapshot blocks the main thread (0.6 to 1.0 s
+  // on the d2 preview build), so it starts once the reveal has had time to
+  // play rather than on top of it.
+  $effect(() => {
+    if (!scene3DRevealed) return;
+    const timer = setTimeout(() => releaseReplayHold("scene-revealed"), 1500);
+    return () => clearTimeout(timer);
+  });
+  let was3DActive = false;
+  $effect(() => {
+    if (was3DActive && !is3DActive) releaseReplayHold("left-3d");
+    was3DActive = is3DActive;
+  });
   let animatorReady = $state(false);
   let animatorReadyFrame = 0;
   const preparedTunnelLayers = $derived(

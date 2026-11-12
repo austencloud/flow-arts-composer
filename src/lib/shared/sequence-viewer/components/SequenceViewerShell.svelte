@@ -196,7 +196,7 @@
     /** Demo scans keep the card's prop choice for this viewer visit. */
     demoScanProps?: boolean;
     exportOverrides?: ViewerShellExportOverrides;
-    /** Optional "See it in the Guide" action — host supplies the handler; the
+    /** Optional "Look up the letters" action — host supplies the handler; the
      *  shell renders it in the overflow menu. Omitted → not shown. */
     guideAction?: ViewerShellGuideAction | null;
     /**

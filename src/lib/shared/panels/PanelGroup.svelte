@@ -60,7 +60,11 @@
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
   import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
-  import { flexPresence, growFade } from "#lib/shared/transitions/motion.js";
+  import {
+    EASE_STANDARD,
+    flexPresence,
+    growFade,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import ResizeHandle from "./ResizeHandle.svelte";
   import {
@@ -72,6 +76,10 @@
   } from "./panel-flex";
   // The root's `data-panel-motion` attribute is PANEL_MOTION_ATTRIBUTE.
   import { PANEL_SETTLE_EVENT } from "./panel-motion";
+  import {
+    createCompositorTravel,
+    type TravelMover,
+  } from "./compositor-travel";
 
   interface Props {
     /** Layout direction */
@@ -98,6 +106,17 @@
      * draw of what the panel reveals, out of the slide's frames.
      */
     holdMotion?: boolean;
+    /**
+     * Asked once, when an allocation changes. True moves the edge on the
+     * compositor instead of sliding the layout: the group takes its end
+     * layout in one step, the last panel travels from where it was on screen
+     * by `transform`, and `[data-panel-flip]` descendants ride along by
+     * `translate` on the same clock. Applies only when the last panel is the
+     * one changing, it has `revealContent`, and a neighbour with a flex share
+     * takes up the difference; anything else keeps the layout slide. See
+     * docs/architecture/layout-motion.md.
+     */
+    compositorEdge?: () => boolean;
   }
 
   let {
@@ -109,6 +128,7 @@
     gap = 6,
     flattened = false,
     holdMotion = false,
+    compositorEdge,
   }: Props = $props();
 
   let containerRef = $state<HTMLDivElement | null>(null);
@@ -436,6 +456,10 @@
       const slides = pendingPixelSlides;
       pendingPixelSlides = [];
       for (const slide of slides) startPixelSlide(slide);
+
+      const compositorSlide = pendingCompositorSlide;
+      pendingCompositorSlide = null;
+      if (compositorSlide) startCompositorSlide(compositorSlide);
     });
   });
 
@@ -625,14 +649,87 @@
     );
   }
 
-  function armMotionSafety(): void {
+  function armMotionSafety(extend = false): void {
+    if (!extend) safetyExtended = false;
     if (motionSafety !== null) clearTimeout(motionSafety);
     // transitionend normally settles first. This covers a change the browser
     // had nothing to interpolate, so the group never stays "moving".
     motionSafety = setTimeout(
-      settleMotion,
+      safetyReached,
       DURATION.emphasis + DURATION.normal
     );
+  }
+
+  /**
+   * A compositor travel still running when the safety net comes due on a
+   * visible page is not stuck: an interruption's correction starts after the
+   * frame that first shows it, which can be a long one. Give it one more
+   * term rather than cutting it off a few pixels short. Hidden, it lands.
+   */
+  let safetyExtended = false;
+  function safetyReached(): void {
+    if (
+      travel.running &&
+      !safetyExtended &&
+      document.visibilityState === "visible"
+    ) {
+      safetyExtended = true;
+      armMotionSafety(true);
+      return;
+    }
+    safetyExtended = false;
+    settleMotion();
+  }
+
+  /**
+   * The compositor edge (compositorEdge). The group takes its end layout in
+   * one step; the moving last panel and its riders then travel from where
+   * they were on screen to where they now are, by transform alone, so the
+   * motion keeps running while the page is busy (a player mounting) and no
+   * frame of it lays the page out. While it runs the wrappers drop their
+   * flex transition and their clip: the group's own overflow clips the
+   * travelling panel at its edge, and a neighbour's held content (an outgoing
+   * player keeping its box) stays whole until the travelling panel covers it.
+   */
+  let pendingCompositorSlide: TravelMover[] | null = null;
+  let compositorMoving = $state(false);
+  /**
+   * A panel the compositor edge folded to nothing keeps its content laid out
+   * at the size it left at, clipped by its empty wrapper. Letting that content
+   * fall to zero height re-laid out every card in it as the fold landed, and
+   * again, at full size, in the tap that brought it back.
+   */
+  const parkedPanels = new Map<string | number, number>();
+  /** The travel itself, and how an interruption joins it: see
+   * compositor-travel.ts. */
+  const travel = createCompositorTravel({
+    getRoot: () => containerRef,
+    easing: EASE_STANDARD,
+    getDuration: () => (prefersReducedMotion() ? 0 : DURATION.emphasis),
+    onIdle: compositorTravelDone,
+  });
+
+  /** Drop the compositor travel without settling. */
+  function stopCompositorRun(): void {
+    travel.cancel();
+  }
+
+  function startCompositorSlide(movers: TravelMover[]): void {
+    // The one layout: the end allocation is already declared.
+    travel.play(movers);
+    if (!travel.running) compositorTravelDone();
+  }
+
+  /** Every channel of every mover has come to rest. */
+  function compositorTravelDone(): void {
+    if (pendingCompositorSlide !== null || !compositorMoving) return;
+    compositorMoving = false;
+    if (
+      runningTrackTransitions === 0 &&
+      pixelSlides.size === 0 &&
+      basisHandoffs.size === 0
+    )
+      settleMotion();
   }
 
   function settleMotion(): void {
@@ -640,12 +737,16 @@
     motionSafety = null;
     // A held slide has not started; it re-arms the safety when it does.
     if (heldSlides.size > 0) return;
+    // The safety net reached a compositor travel that never reported its end
+    // (a hidden tab): land it, so the hold below can drop.
+    if (travel.running) stopCompositorRun();
+    compositorMoving = false;
     // After the safety net, a transition whose wrapper left mid-slide never
     // reports its end; start the next motion's count from zero.
     runningTrackTransitions = 0;
     if (!inMotion) return;
     inMotion = false;
-    revealingPanels = new Map();
+    revealingPanels = new Map(parkedPanels);
     containerRef?.dispatchEvent(
       new CustomEvent(PANEL_SETTLE_EVENT, { bubbles: true })
     );
@@ -656,8 +757,14 @@
     void sizes;
     void manuallySizedPanels;
     untrack(() => {
-      if (!containerRef || activeDragIndex !== null || prefersReducedMotion())
+      if (!containerRef || activeDragIndex !== null || prefersReducedMotion()) {
+        // No motion: nothing stays parked, the content takes its real size.
+        if (parkedPanels.size > 0) {
+          parkedPanels.clear();
+          if (!inMotion) revealingPanels = new Map();
+        }
         return;
+      }
 
       let changedCount = 0;
       const revealing = new Map<string | number, number>();
@@ -691,16 +798,48 @@
       // A pixel slide needs the rest of the track to give way around it: one
       // moving panel, and a neighbour with a share to absorb the difference.
       const slide = slides[0];
-      pendingPixelSlides =
+      const singleSlide =
         changedCount === 1 &&
-        slide &&
+        slide !== undefined &&
         panels.some(
           (panel, index) =>
             (panel.id ?? index) !== slide.key &&
             getPanelFlex(panel, index).grow > 0
-        )
-          ? [slide]
-          : [];
+        );
+      const lastKey =
+        panels.length > 0 ? (panels.at(-1)?.id ?? panels.length - 1) : null;
+      const compositor =
+        singleSlide && slide.key === lastKey && compositorEdge?.() === true;
+
+      if (compositor) {
+        // Measure every mover before the layout changes, with any travel in
+        // flight left running: the correction is added on top of it.
+        const movers = travel.capture(slide.element);
+        pixelSlides.get(slide.key)?.();
+        heldSlides.delete(slide.key);
+        pendingCompositorSlide = movers;
+        pendingPixelSlides = [];
+        compositorMoving = true;
+        const held = revealing.get(slide.key);
+        if (slide.to < 0.5 && held !== undefined)
+          parkedPanels.set(slide.key, held);
+        else parkedPanels.delete(slide.key);
+      } else {
+        // A panel parked at nothing stays parked through unrelated changes,
+        // so its content is not laid out again from zero when it next opens.
+        for (const [key, size] of parkedPanels) {
+          const index = panels.findIndex((panel, i) => (panel.id ?? i) === key);
+          const settled = index >= 0 ? settledSizes?.[index] : undefined;
+          if (settled === undefined || settled >= 0.5) parkedPanels.delete(key);
+          else if (!revealing.has(key)) revealing.set(key, size);
+        }
+        // The layout slide measures layout sizes, which a compositor travel
+        // does not move: land any travel first.
+        if (travel.running) stopCompositorRun();
+        compositorMoving = false;
+        pendingCompositorSlide = null;
+        pendingPixelSlides = singleSlide ? [slide] : [];
+      }
 
       inMotion = true;
       revealingPanels = revealing;
@@ -755,6 +894,7 @@
   onDestroy(() => {
     for (const settle of Array.from(basisHandoffs.values())) settle();
     for (const settle of Array.from(pixelSlides.values())) settle();
+    stopCompositorRun();
     if (motionSafety !== null) clearTimeout(motionSafety);
     if (settleCheck !== null) clearTimeout(settleCheck);
   });
@@ -766,8 +906,13 @@
   class:vertical={direction === "vertical"}
   class:dragging={activeDragIndex !== null}
   class:flattened
+  class:compositor-edge={compositorMoving}
   style:--panel-gap="{gap}px"
-  data-panel-motion={inMotion ? "" : undefined}
+  data-panel-motion={inMotion
+    ? compositorMoving
+      ? "compositor"
+      : ""
+    : undefined}
   bind:this={containerRef}
   ontransitionrun={handleTrackTransitionRun}
   ontransitionend={handleTrackTransitionDone}
@@ -875,6 +1020,14 @@
 
   .panel-group.horizontal > .panel-wrapper.revealing > :global(*) {
     width: var(--panel-content-size);
+  }
+
+  /* A compositor edge in motion: the end allocation is already laid out, so
+     no flex transition may run, and the wrappers stop clipping. The group's
+     own overflow clips the travelling panel at its edge. */
+  .panel-group.compositor-edge > .panel-wrapper {
+    transition: none;
+    overflow: visible;
   }
 
   .resize-handle-slot {

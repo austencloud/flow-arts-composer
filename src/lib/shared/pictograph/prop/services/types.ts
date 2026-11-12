@@ -22,6 +22,7 @@ import type { ThemeMode } from "../../../utils/svg-color-utils";
 import type { FanAppearance } from "../domain/fan-appearance";
 import type { TriangleGrip } from "../domain/triangle-appearance";
 import type { BuugengStyle } from "../domain/buugeng-appearance";
+import type { TriadBuild } from "../domain/triad-build";
 
 /**
  * Options for prop SVG loading
@@ -44,4 +45,9 @@ export interface PropSvgLoadOptions {
    * Ignored for props other than buugeng and big buugeng.
    */
   buugengStyle?: BuugengStyle;
+  /**
+   * The triad's physical build. Omitted means Pictograph, the notation glyph.
+   * Ignored for props other than triad and big triad.
+   */
+  triadBuild?: TriadBuild;
 }

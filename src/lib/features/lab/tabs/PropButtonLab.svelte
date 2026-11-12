@@ -664,6 +664,7 @@
                 fanAppearance: getSettings().fanAppearance,
                 triangleGrip: getSettings().triangleGrip,
                 buugengStyle: getSettings().buugengStyle,
+                triadBuild: getSettings().triadBuild,
               }}
               {propType}
               size={isExpanded ? 280 : 100}
@@ -696,6 +697,7 @@
                             fanAppearance: getSettings().fanAppearance,
                             triangleGrip: getSettings().triangleGrip,
                             buugengStyle: getSettings().buugengStyle,
+                            triadBuild: getSettings().triadBuild,
                           }}
                           {propType}
                           size={80}

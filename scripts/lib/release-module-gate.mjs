@@ -750,6 +750,38 @@ export function auditReleaseArrivals(entries, knownAnchors) {
   return errors;
 }
 
+/**
+ * Mark the chosen entries as highlights. A highlight is an entry with
+ * `highlight: true`, not a parallel list of text, so its `surface`, `anchor`
+ * and `callout` travel with it. The selection is what `--highlights` and the
+ * interactive picker give: 1-based positions among the `added` and `improved`
+ * entries, "all", or "none" / "0" / empty. Entries the manifest already
+ * flagged stay flagged. Returns copies; the input is not changed.
+ *
+ * @param {Array} entries
+ * @param {string | null | undefined} selection
+ * @returns {Array}
+ */
+export function applyHighlightSelection(entries, selection) {
+  const copy = entries.map((entry) => ({ ...entry }));
+  const arg = (selection ?? "").trim().toLowerCase();
+  if (arg === "" || arg === "none" || arg === "0") return copy;
+
+  const candidates = copy.filter(
+    (entry) => entry.category === "added" || entry.category === "improved"
+  );
+  const chosen =
+    arg === "all"
+      ? candidates
+      : arg
+          .split(",")
+          .map((part) => parseInt(part.trim(), 10) - 1)
+          .filter((i) => Number.isInteger(i) && i >= 0 && i < candidates.length)
+          .map((i) => candidates[i]);
+  for (const entry of chosen) entry.highlight = true;
+  return copy;
+}
+
 // ── Thin I/O wrappers (not unit-tested; exercised by release.js) ────────────
 
 /**

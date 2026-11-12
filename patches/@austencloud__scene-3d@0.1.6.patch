@@ -5,7 +5,7 @@ diff --git a/dist/index.d.ts.map b/dist/index.d.ts.map
 deleted file mode 100644
 index d554c5bba49036758f9b3c997d025556395cf72b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Avatar3D.svelte b/dist/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8a1107ef3 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..1b0b29ead6153cf88ae7b6e8210d9da29712d806 100644
 --- a/dist/lib/components/Avatar3D.svelte
 +++ b/dist/lib/components/Avatar3D.svelte
 @@ -16,29 +16,53 @@
@@ -118,7 +118,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      /** Enable idle/walk locomotion animation. False for exhibit performers
       *  that should only use IK (no idle animation fighting the pose). */
      enableLocomotion?: boolean;
-@@ -115,20 +164,107 @@
+@@ -115,20 +164,113 @@
      enableRootMotion?: boolean;
      /** Called each frame with the world-space XZ delta from root motion.
       *  The parent applies this to physics for collision-aware movement. */
@@ -179,6 +179,12 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
 +     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
 +     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
++    /** In prop-authoritative contact, whether this frame closes the fingers
++     *  around the staff cylinder. False holds the authored grip that
++     *  `fingerAnimator.update` applied. A capture host turns it off on
++     *  passes it does not record; nothing else in the frame reads the
++     *  solved fingers. Default true. */
++    solveFingerContacts?: boolean;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
 +    /** Reflexively lean the neck and head away from nearby staff shafts. */
@@ -228,7 +234,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      /** Extra forward pitch (radians) applied to Spine1 before arm IK runs.
       *  Positive values lean the torso forward. Used by the collision lab's
       *  lean-forward stance variant. 0 = no external pitch. */
-@@ -149,6 +285,8 @@
+@@ -149,6 +291,8 @@
      /** Fired with the avatar id once a model finishes loading (initial load
       *  or swap). Lets a swap-transition wrapper know when to fade back in. */
      onModelSwapped?: (avatarId: string) => void;
@@ -237,7 +243,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    }
  
    let {
-@@ -166,6 +304,7 @@
+@@ -166,6 +310,7 @@
      isMoving = false,
      moveSpeed = 1,
      moveDirection = { x: 0, z: 1 },
@@ -245,7 +251,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      enableLocomotion = false,
      isGrounded = true,
      verticalVelocity = 0,
-@@ -173,17 +312,41 @@
+@@ -173,17 +318,42 @@
      isJumpRequested = false,
      enableRootMotion = false,
      onRootMotion,
@@ -265,6 +271,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
 +    staffContact = null,
 +    pairSeparation = true,
 +    contactResetKey = 0,
++    solveFingerContacts = true,
 +    onContactReport,
 +    onContactGeometry,
 +    headDodge = false,
@@ -287,7 +294,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    }: Props = $props();
  
    // Current locomotion state - tracked so FootPlanter can decide when to
-@@ -191,12 +354,34 @@
+@@ -191,12 +361,34 @@
    // inside the state machine branch when locomotion is enabled. Defaults
    // to IDLE for avatars without a state machine (exhibit performers).
    let currentLocomotionState: LocomotionState = LocomotionState.IDLE;
@@ -323,7 +330,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    let stateMachine: IAnimationStateMachine | null = null;
    let rootMotionExtractor: IRootMotionExtractor | null = null;
    let footPlanter: IFootPlanter | null = null;
-@@ -210,21 +395,45 @@
+@@ -210,21 +402,45 @@
    // Collision detection - logs when props/arms clip through the avatar body
    const collisionDetector = new CollisionDetector();
    const _boneVecs = {
@@ -381,7 +388,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
    /**
     * Base rotation from the staff's local-Y axis to the "horizontal" axis
-@@ -236,61 +445,337 @@
+@@ -236,61 +452,337 @@
    const STAFF_HORIZONTAL_QUAT = new Quaternion().setFromEuler(
      new Euler(0, 0, Math.PI / 2)
    );
@@ -748,7 +755,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    // Derived values from user proportions
    // avatarHeight is the target height in scene units (cm * CM_TO_UNITS)
    const avatarHeight = $derived(cmToUnits(userProportionsState.heightCm));
-@@ -300,16 +785,74 @@
+@@ -300,16 +792,74 @@
    // If position.y is provided (e.g., from terrain/physics), use it directly
    // Otherwise, use groundY from user proportions (for flat stage mode)
    // feetOffset adjusts so feet touch the ground (it's negative)
@@ -825,7 +832,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    // Load a GLTF model for a specific avatar
    // Uses hot-swap pattern: keeps old avatar visible until new one is ready
    async function loadAvatar(targetAvatarId: string) {
-@@ -319,12 +862,23 @@
+@@ -319,12 +869,23 @@
      if (currentLoadedAvatarId === targetAvatarId) return;
  
      const url = getAvatarModelPath(targetAvatarId);
@@ -850,7 +857,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Scale model to match user's height
        // setHeight() calculates proper scale and stores feet offset
-@@ -333,19 +887,43 @@
+@@ -333,19 +894,43 @@
        // Get the feet offset for positioning (negative value)
        feetOffset = skeletonService.getFeetOffset();
  
@@ -903,7 +910,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
        currentLoadedAvatarId = targetAvatarId;
        modelLoaded = true;
        useProceduralFallback = false;
-@@ -354,22 +932,7 @@
+@@ -354,22 +939,7 @@
        // can fade the avatar back in). Fires on initial load and on every swap.
        onModelSwapped?.(targetAvatarId);
  
@@ -927,7 +934,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Verify arm chains are ready
        const leftChain = skeletonService.getLeftArmChain();
-@@ -388,17 +951,21 @@
+@@ -388,17 +958,21 @@
        // use IK only and don't need idle/walk animations.
        if (enableLocomotion && locomotionAnimator && cachedRoot) {
          // Configure before initialize so clips are prepared correctly
@@ -954,7 +961,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            const hipsBone = locomotionAnimator.getHipsBone();
            if (hipsBone) {
              rootMotionExtractor.initialize(hipsBone);
-@@ -411,23 +978,77 @@
+@@ -411,23 +985,77 @@
          const animBase = "/animations/locomotion-pack/";
          const rmSuffix = enableRootMotion ? "-rm" : "";
  
@@ -1036,7 +1043,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            });
        }
  
-@@ -444,18 +1065,39 @@
+@@ -444,18 +1072,39 @@
          const turnsBase = "/animations/turns/";
          const probeUrl = `${turnsBase}turn-left-90.glb`;
          const rootForTurns = cachedRoot;
@@ -1085,7 +1092,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
                ])
                .then(() => {
                  // Register turn clip contact curves so FootPlanter can query them
-@@ -476,7 +1118,13 @@
+@@ -476,7 +1125,13 @@
        // ikSolver, which is still used by arm IK elsewhere in this file).
        // Gated on enableFootPlanting - off by default so the museum FPS player
        // (which wants responsive code-driven movement) isn't affected.
@@ -1100,7 +1107,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -484,9 +1132,13 @@
+@@ -484,9 +1139,13 @@
        if (fingerAnimator) {
          const skeletonState = skeletonService.getState();
          if (skeletonState.fingerChains) {
@@ -1115,7 +1122,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      } catch (err) {
        console.warn(
          "[Avatar3D] Failed to load avatar model, using procedural fallback:",
-@@ -494,6 +1146,7 @@
+@@ -494,6 +1153,7 @@
        );
        useProceduralFallback = true;
        currentLoadedAvatarId = targetAvatarId; // Prevent infinite retry loop
@@ -1123,7 +1130,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Show user-friendly toast (only once per session)
        if (!hasShownFallbackToast) {
-@@ -502,6 +1155,16 @@
+@@ -502,6 +1162,16 @@
        }
      } finally {
        isLoading = false;
@@ -1140,7 +1147,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
    }
  
-@@ -547,6 +1210,7 @@
+@@ -547,6 +1217,7 @@
      } catch (err) {
        console.error("[Avatar3D] Failed to initialize avatar services:", err);
        useProceduralFallback = true;
@@ -1148,7 +1155,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
    });
  
-@@ -560,6 +1224,15 @@
+@@ -560,6 +1231,15 @@
      }
    });
  
@@ -1164,7 +1171,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    // React to height changes - update avatar scale
    $effect(() => {
      if (!skeletonService || !modelLoaded || useProceduralFallback) return;
-@@ -570,13 +1243,83 @@
+@@ -570,13 +1250,83 @@
  
      // Update feetOffset for positioning (use untrack to prevent re-triggering)
      const newFeetOffset = skeletonService.getFeetOffset();
@@ -1248,7 +1255,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      // Update mocap mixer if playing (runs independently of IK)
      const mixer = mocapHandle?.getMixer();
      if (mixer) {
-@@ -584,28 +1327,38 @@
+@@ -584,28 +1334,38 @@
      }
  
      if (!servicesReady || !animationService || useProceduralFallback) return;
@@ -1298,7 +1305,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
          // Feed state to LocomotionAnimator for clip selection
          locomotionAnimator.setActiveState?.(stateOutput.state);
-@@ -614,6 +1367,7 @@
+@@ -614,6 +1374,7 @@
            speed: stateOutput.animationSpeed,
            facingAngle: stateOutput.facingAngle,
            moveDirection: stateOutput.moveDirection,
@@ -1306,7 +1313,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
          });
          // Track state for FootPlanter (airborne states skip foot planting)
          currentLocomotionState = stateOutput.state;
-@@ -624,9 +1378,19 @@
+@@ -624,9 +1385,19 @@
            speed: moveSpeed,
            facingAngle,
            moveDirection,
@@ -1326,7 +1333,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Turn clip overlay - when a turn is active, overwrite lower-body
        // and spine bones with the turn clip's authored pose at the current
-@@ -639,20 +1403,52 @@
+@@ -639,20 +1410,52 @@
        if (turnRequestProp && turnAnimator?.isReady() && skeletonService) {
          const sample = turnAnimator.sample(turnRequestProp);
          const bones = skeletonService.getState().bones;
@@ -1390,7 +1397,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            }
          }
  
-@@ -681,7 +1477,11 @@
+@@ -681,7 +1484,11 @@
        // displacement needs the same conversion.
        if (rootMotionExtractor?.isReady() && onRootMotion) {
          const localDelta = rootMotionExtractor.extract();
@@ -1403,7 +1410,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            // Convert Mixamo centimeters to scene units.
            // Our avatar is scaled to ~avatarHeight scene units for ~170cm Mixamo model.
            // So 1 Mixamo cm ≈ avatarHeight/170 scene units.
-@@ -708,28 +1508,100 @@
+@@ -708,28 +1515,100 @@
        // clips without authored curves. Gated on enableFootPlanting so the
        // museum FPS player stays fully code-driven.
        if (enableFootPlanting && footPlanter?.isReady()) {
@@ -1509,7 +1516,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
  
      if (redPropAnchorRef && redPropState) {
-@@ -737,6 +1609,10 @@
+@@ -737,6 +1616,10 @@
        redPropAnchorRef.getWorldPosition(redIKTarget);
      } else if (redPropState) {
        redIKTarget.copy(redPropState.worldPosition);
@@ -1520,7 +1527,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
  
      const blueWorldProp = bluePropState
-@@ -746,14 +1622,261 @@
+@@ -746,14 +1629,263 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -1729,11 +1736,13 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
 +      } else {
 +        fingerAnimator.setCylinderContact("right", null);
 +      }
-+      fingerAnimator.solveCylinderContacts(
-+        authoredContactPose?.sculptFingers && cachedRoot
-+          ? (side) => authoredContactPose.sculptFingers!(cachedRoot!, side)
-+          : undefined
-+      );
++      if (solveFingerContacts) {
++        fingerAnimator.solveCylinderContacts(
++          authoredContactPose?.sculptFingers && cachedRoot
++            ? (side) => authoredContactPose.sculptFingers!(cachedRoot!, side)
++            : undefined
++        );
++      }
 +    } else if (fingerAnimator) {
 +      fingerAnimator.setCylinderContactStrict(false);
 +    }
@@ -1782,7 +1791,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
-@@ -768,56 +1891,55 @@
+@@ -768,56 +1900,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -1869,7 +1878,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1947,232 @@
+@@ -825,23 +1956,232 @@
          redSegOrNull = redSeg;
        }
  
@@ -2116,7 +2125,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +2198,16 @@
+@@ -867,20 +2207,16 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -2144,7 +2153,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +2240,19 @@
+@@ -913,13 +2249,19 @@
  </script>
  
  {#if visible}
@@ -2171,7 +2180,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +2273,10 @@
+@@ -940,9 +2282,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -2185,7 +2194,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +2284,7 @@
+@@ -950,6 +2293,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -2194,7 +2203,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/dist/lib/components/Avatar3D.svelte.d.ts b/dist/lib/components/Avatar3D.svelte.d.ts
-index eaae3a65cb08e4a370b4496a2a2c738624d75610..4064ac2baef15a059a209b19f0689c0d0d9efa22 100644
+index eaae3a65cb08e4a370b4496a2a2c738624d75610..c4308082fff9aa8155bfd4044a84961a1380308b 100644
 --- a/dist/lib/components/Avatar3D.svelte.d.ts
 +++ b/dist/lib/components/Avatar3D.svelte.d.ts
 @@ -1,7 +1,9 @@
@@ -2217,7 +2226,7 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..4064ac2baef15a059a209b19f0689c0d
      /** Enable idle/walk locomotion animation. False for exhibit performers
       *  that should only use IK (no idle animation fighting the pose). */
      enableLocomotion?: boolean;
-@@ -48,19 +52,106 @@ interface Props {
+@@ -48,19 +52,109 @@ interface Props {
          z: number;
          yawDelta: number;
      }) => void;
@@ -2275,6 +2284,9 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..4064ac2baef15a059a209b19f0689c0d
 +     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
 +     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
++    /** False skips the finger contact solve this frame (a capture pass that is
++     *  not recorded). Default true. */
++    solveFingerContacts?: boolean;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
 +    /** Reflexively lean the neck and head away from nearby staff shafts. */
@@ -2325,7 +2337,7 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..4064ac2baef15a059a209b19f0689c0d
      /** Extra forward pitch (radians) applied to Spine1 before arm IK runs.
       *  Positive values lean the torso forward. Used by the collision lab's
       *  lean-forward stance variant. 0 = no external pitch. */
-@@ -81,8 +172,9 @@ interface Props {
+@@ -81,8 +175,9 @@ interface Props {
      /** Fired with the avatar id once a model finishes loading (initial load
       *  or swap). Lets a swap-transition wrapper know when to fade back in. */
      onModelSwapped?: (avatarId: string) => void;
@@ -2359,7 +2371,7 @@ diff --git a/dist/lib/components/LimbSegment.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index cde3408aa49f552ba186378457fee937ba0d21ec..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/PerformerRig.svelte b/dist/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbddfcca72b5 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..56c12b5ebf8e165589efc31ab3d3507381b50a7b 100644
 --- a/dist/lib/components/PerformerRig.svelte
 +++ b/dist/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -2483,7 +2495,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -119,23 +165,82 @@
+@@ -119,23 +165,85 @@
       * effect orchestrator can place tip-tracking effects (trails, LED, etc.)
       * in the correct rig-root-local frame without duplicating rig internals.
       */
@@ -2556,6 +2568,9 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
 +    /** Changes whenever the owner seeks playback, forwarded to Avatar3D to
 +     *  clear the animator's contact-recovery memory. */
 +    contactResetKey?: number;
++    /** Forwarded to Avatar3D: false skips the finger contact solve this
++     *  frame (a capture pass that is not recorded). Default true. */
++    solveFingerContacts?: boolean;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
 +    /** Reflexive neck/head dodge, forwarded to Avatar3D. */
@@ -2577,7 +2592,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
    }
  
    let {
-@@ -146,47 +251,95 @@
+@@ -146,47 +254,96 @@
      showAvatar = true,
      showGrid = true,
      showProps = true,
@@ -2630,6 +2645,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
 +    staffContact = null,
 +    pairSeparation = true,
 +    contactResetKey = 0,
++    solveFingerContacts = true,
 +    onContactReport,
 +    onContactGeometry,
 +    headDodge = false,
@@ -2683,7 +2699,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
  
    // Derive mode config and grid offset from the current plane mode
    const modeConfig = $derived(PLANE_MODE_CONFIGS[planeMode]);
-@@ -247,7 +400,23 @@
+@@ -247,7 +404,23 @@
  
    // When a turn is active, enable animation-driven yaw so the rig
    // rotates from the turn clip's root motion rather than snapping.
@@ -2708,7 +2724,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
  
    // Turn completion snap: when turnRequest goes null after being active,
    // snap avatarState to the post-turn heading so the sync effect below
-@@ -259,6 +428,8 @@
+@@ -259,6 +432,8 @@
        // Turn just completed - snap avatarState to post-turn heading
        avatarState.snapFacingAngle(turnTargetHeading);
        turnTargetHeading = null;
@@ -2717,7 +2733,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
      }
    });
  
-@@ -280,56 +451,132 @@
+@@ -280,56 +455,133 @@
    const dualWheelOffset = $derived(staffHalfLength);
    const blueHandPos = $derived({
      x: isDualWheel ? dualWheelOffset : modeConfig.blueLateralOffset,
@@ -2844,6 +2860,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
 +      {posePlayback}
 +      {pairSeparation}
 +      {contactResetKey}
++      {solveFingerContacts}
 +      {authoredContactPose}
 +      {staffContact}
 +      {onContactReport}
@@ -2861,7 +2878,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
                accumulatedYaw += delta.yawDelta;
                onYawIntegrated?.(accumulatedYaw);
              }
-@@ -339,60 +586,62 @@
+@@ -339,60 +591,62 @@
    {/if}
  
    <!-- Grid (consumer-provided via gridSlot) -->
@@ -2959,7 +2976,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
        {@render effectsSlot({
          bluePropState,
 diff --git a/dist/lib/components/PerformerRig.svelte.d.ts b/dist/lib/components/PerformerRig.svelte.d.ts
-index 8caa93994d4c204b5d45daeae8b06c191c822e4f..91df8253a4e373d92a5a1f02d61b30e603ec0814 100644
+index 8caa93994d4c204b5d45daeae8b06c191c822e4f..a57c437758f62a586dbb7c4d955c38fc267745ee 100644
 --- a/dist/lib/components/PerformerRig.svelte.d.ts
 +++ b/dist/lib/components/PerformerRig.svelte.d.ts
 @@ -1,5 +1,6 @@
@@ -3036,7 +3053,7 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..91df8253a4e373d92a5a1f02d61b30e6
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -84,14 +115,69 @@ interface Props {
+@@ -84,14 +115,72 @@ interface Props {
              effectsParentRef: Group | undefined;
          }
      ]>;
@@ -3088,6 +3105,9 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..91df8253a4e373d92a5a1f02d61b30e6
 +    /** Changes whenever the owner seeks playback, forwarded to Avatar3D to
 +     *  clear the animator's contact-recovery memory. */
 +    contactResetKey?: number;
++    /** False skips the finger contact solve this frame (a capture pass that is
++     *  not recorded). Default true. */
++    solveFingerContacts?: boolean;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
 +    /** Reflexive neck/head dodge, forwarded to Avatar3D. */
@@ -21860,7 +21880,7 @@ index 525808ca7068a828865a64e176f7bbd641ccc013..c7749e7724634669fccdaa615fd94ad2
    },
    "files": [
 diff --git a/src/lib/components/Avatar3D.svelte b/src/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8a1107ef3 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..1b0b29ead6153cf88ae7b6e8210d9da29712d806 100644
 --- a/src/lib/components/Avatar3D.svelte
 +++ b/src/lib/components/Avatar3D.svelte
 @@ -16,29 +16,53 @@
@@ -21973,7 +21993,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      /** Enable idle/walk locomotion animation. False for exhibit performers
       *  that should only use IK (no idle animation fighting the pose). */
      enableLocomotion?: boolean;
-@@ -115,20 +164,107 @@
+@@ -115,20 +164,113 @@
      enableRootMotion?: boolean;
      /** Called each frame with the world-space XZ delta from root motion.
       *  The parent applies this to physics for collision-aware movement. */
@@ -22034,6 +22054,12 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
 +     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
 +     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
++    /** In prop-authoritative contact, whether this frame closes the fingers
++     *  around the staff cylinder. False holds the authored grip that
++     *  `fingerAnimator.update` applied. A capture host turns it off on
++     *  passes it does not record; nothing else in the frame reads the
++     *  solved fingers. Default true. */
++    solveFingerContacts?: boolean;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
 +    /** Reflexively lean the neck and head away from nearby staff shafts. */
@@ -22083,7 +22109,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      /** Extra forward pitch (radians) applied to Spine1 before arm IK runs.
       *  Positive values lean the torso forward. Used by the collision lab's
       *  lean-forward stance variant. 0 = no external pitch. */
-@@ -149,6 +285,8 @@
+@@ -149,6 +291,8 @@
      /** Fired with the avatar id once a model finishes loading (initial load
       *  or swap). Lets a swap-transition wrapper know when to fade back in. */
      onModelSwapped?: (avatarId: string) => void;
@@ -22092,7 +22118,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    }
  
    let {
-@@ -166,6 +304,7 @@
+@@ -166,6 +310,7 @@
      isMoving = false,
      moveSpeed = 1,
      moveDirection = { x: 0, z: 1 },
@@ -22100,7 +22126,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      enableLocomotion = false,
      isGrounded = true,
      verticalVelocity = 0,
-@@ -173,17 +312,41 @@
+@@ -173,17 +318,42 @@
      isJumpRequested = false,
      enableRootMotion = false,
      onRootMotion,
@@ -22120,6 +22146,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
 +    staffContact = null,
 +    pairSeparation = true,
 +    contactResetKey = 0,
++    solveFingerContacts = true,
 +    onContactReport,
 +    onContactGeometry,
 +    headDodge = false,
@@ -22142,7 +22169,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    }: Props = $props();
  
    // Current locomotion state - tracked so FootPlanter can decide when to
-@@ -191,12 +354,34 @@
+@@ -191,12 +361,34 @@
    // inside the state machine branch when locomotion is enabled. Defaults
    // to IDLE for avatars without a state machine (exhibit performers).
    let currentLocomotionState: LocomotionState = LocomotionState.IDLE;
@@ -22178,7 +22205,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    let stateMachine: IAnimationStateMachine | null = null;
    let rootMotionExtractor: IRootMotionExtractor | null = null;
    let footPlanter: IFootPlanter | null = null;
-@@ -210,21 +395,45 @@
+@@ -210,21 +402,45 @@
    // Collision detection - logs when props/arms clip through the avatar body
    const collisionDetector = new CollisionDetector();
    const _boneVecs = {
@@ -22236,7 +22263,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
    /**
     * Base rotation from the staff's local-Y axis to the "horizontal" axis
-@@ -236,61 +445,337 @@
+@@ -236,61 +452,337 @@
    const STAFF_HORIZONTAL_QUAT = new Quaternion().setFromEuler(
      new Euler(0, 0, Math.PI / 2)
    );
@@ -22603,7 +22630,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    // Derived values from user proportions
    // avatarHeight is the target height in scene units (cm * CM_TO_UNITS)
    const avatarHeight = $derived(cmToUnits(userProportionsState.heightCm));
-@@ -300,16 +785,74 @@
+@@ -300,16 +792,74 @@
    // If position.y is provided (e.g., from terrain/physics), use it directly
    // Otherwise, use groundY from user proportions (for flat stage mode)
    // feetOffset adjusts so feet touch the ground (it's negative)
@@ -22680,7 +22707,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    // Load a GLTF model for a specific avatar
    // Uses hot-swap pattern: keeps old avatar visible until new one is ready
    async function loadAvatar(targetAvatarId: string) {
-@@ -319,12 +862,23 @@
+@@ -319,12 +869,23 @@
      if (currentLoadedAvatarId === targetAvatarId) return;
  
      const url = getAvatarModelPath(targetAvatarId);
@@ -22705,7 +22732,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Scale model to match user's height
        // setHeight() calculates proper scale and stores feet offset
-@@ -333,19 +887,43 @@
+@@ -333,19 +894,43 @@
        // Get the feet offset for positioning (negative value)
        feetOffset = skeletonService.getFeetOffset();
  
@@ -22758,7 +22785,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
        currentLoadedAvatarId = targetAvatarId;
        modelLoaded = true;
        useProceduralFallback = false;
-@@ -354,22 +932,7 @@
+@@ -354,22 +939,7 @@
        // can fade the avatar back in). Fires on initial load and on every swap.
        onModelSwapped?.(targetAvatarId);
  
@@ -22782,7 +22809,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Verify arm chains are ready
        const leftChain = skeletonService.getLeftArmChain();
-@@ -388,17 +951,21 @@
+@@ -388,17 +958,21 @@
        // use IK only and don't need idle/walk animations.
        if (enableLocomotion && locomotionAnimator && cachedRoot) {
          // Configure before initialize so clips are prepared correctly
@@ -22809,7 +22836,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            const hipsBone = locomotionAnimator.getHipsBone();
            if (hipsBone) {
              rootMotionExtractor.initialize(hipsBone);
-@@ -411,23 +978,77 @@
+@@ -411,23 +985,77 @@
          const animBase = "/animations/locomotion-pack/";
          const rmSuffix = enableRootMotion ? "-rm" : "";
  
@@ -22891,7 +22918,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            });
        }
  
-@@ -444,18 +1065,39 @@
+@@ -444,18 +1072,39 @@
          const turnsBase = "/animations/turns/";
          const probeUrl = `${turnsBase}turn-left-90.glb`;
          const rootForTurns = cachedRoot;
@@ -22940,7 +22967,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
                ])
                .then(() => {
                  // Register turn clip contact curves so FootPlanter can query them
-@@ -476,7 +1118,13 @@
+@@ -476,7 +1125,13 @@
        // ikSolver, which is still used by arm IK elsewhere in this file).
        // Gated on enableFootPlanting - off by default so the museum FPS player
        // (which wants responsive code-driven movement) isn't affected.
@@ -22955,7 +22982,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -484,9 +1132,13 @@
+@@ -484,9 +1139,13 @@
        if (fingerAnimator) {
          const skeletonState = skeletonService.getState();
          if (skeletonState.fingerChains) {
@@ -22970,7 +22997,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      } catch (err) {
        console.warn(
          "[Avatar3D] Failed to load avatar model, using procedural fallback:",
-@@ -494,6 +1146,7 @@
+@@ -494,6 +1153,7 @@
        );
        useProceduralFallback = true;
        currentLoadedAvatarId = targetAvatarId; // Prevent infinite retry loop
@@ -22978,7 +23005,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Show user-friendly toast (only once per session)
        if (!hasShownFallbackToast) {
-@@ -502,6 +1155,16 @@
+@@ -502,6 +1162,16 @@
        }
      } finally {
        isLoading = false;
@@ -22995,7 +23022,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
    }
  
-@@ -547,6 +1210,7 @@
+@@ -547,6 +1217,7 @@
      } catch (err) {
        console.error("[Avatar3D] Failed to initialize avatar services:", err);
        useProceduralFallback = true;
@@ -23003,7 +23030,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
    });
  
-@@ -560,6 +1224,15 @@
+@@ -560,6 +1231,15 @@
      }
    });
  
@@ -23019,7 +23046,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    // React to height changes - update avatar scale
    $effect(() => {
      if (!skeletonService || !modelLoaded || useProceduralFallback) return;
-@@ -570,13 +1243,83 @@
+@@ -570,13 +1250,83 @@
  
      // Update feetOffset for positioning (use untrack to prevent re-triggering)
      const newFeetOffset = skeletonService.getFeetOffset();
@@ -23103,7 +23130,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      // Update mocap mixer if playing (runs independently of IK)
      const mixer = mocapHandle?.getMixer();
      if (mixer) {
-@@ -584,28 +1327,38 @@
+@@ -584,28 +1334,38 @@
      }
  
      if (!servicesReady || !animationService || useProceduralFallback) return;
@@ -23153,7 +23180,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
          // Feed state to LocomotionAnimator for clip selection
          locomotionAnimator.setActiveState?.(stateOutput.state);
-@@ -614,6 +1367,7 @@
+@@ -614,6 +1374,7 @@
            speed: stateOutput.animationSpeed,
            facingAngle: stateOutput.facingAngle,
            moveDirection: stateOutput.moveDirection,
@@ -23161,7 +23188,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
          });
          // Track state for FootPlanter (airborne states skip foot planting)
          currentLocomotionState = stateOutput.state;
-@@ -624,9 +1378,19 @@
+@@ -624,9 +1385,19 @@
            speed: moveSpeed,
            facingAngle,
            moveDirection,
@@ -23181,7 +23208,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
        // Turn clip overlay - when a turn is active, overwrite lower-body
        // and spine bones with the turn clip's authored pose at the current
-@@ -639,20 +1403,52 @@
+@@ -639,20 +1410,52 @@
        if (turnRequestProp && turnAnimator?.isReady() && skeletonService) {
          const sample = turnAnimator.sample(turnRequestProp);
          const bones = skeletonService.getState().bones;
@@ -23245,7 +23272,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            }
          }
  
-@@ -681,7 +1477,11 @@
+@@ -681,7 +1484,11 @@
        // displacement needs the same conversion.
        if (rootMotionExtractor?.isReady() && onRootMotion) {
          const localDelta = rootMotionExtractor.extract();
@@ -23258,7 +23285,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            // Convert Mixamo centimeters to scene units.
            // Our avatar is scaled to ~avatarHeight scene units for ~170cm Mixamo model.
            // So 1 Mixamo cm ≈ avatarHeight/170 scene units.
-@@ -708,28 +1508,100 @@
+@@ -708,28 +1515,100 @@
        // clips without authored curves. Gated on enableFootPlanting so the
        // museum FPS player stays fully code-driven.
        if (enableFootPlanting && footPlanter?.isReady()) {
@@ -23364,7 +23391,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
  
      if (redPropAnchorRef && redPropState) {
-@@ -737,6 +1609,10 @@
+@@ -737,6 +1616,10 @@
        redPropAnchorRef.getWorldPosition(redIKTarget);
      } else if (redPropState) {
        redIKTarget.copy(redPropState.worldPosition);
@@ -23375,7 +23402,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      }
  
      const blueWorldProp = bluePropState
-@@ -746,14 +1622,261 @@
+@@ -746,14 +1629,263 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -23584,11 +23611,13 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
 +      } else {
 +        fingerAnimator.setCylinderContact("right", null);
 +      }
-+      fingerAnimator.solveCylinderContacts(
-+        authoredContactPose?.sculptFingers && cachedRoot
-+          ? (side) => authoredContactPose.sculptFingers!(cachedRoot!, side)
-+          : undefined
-+      );
++      if (solveFingerContacts) {
++        fingerAnimator.solveCylinderContacts(
++          authoredContactPose?.sculptFingers && cachedRoot
++            ? (side) => authoredContactPose.sculptFingers!(cachedRoot!, side)
++            : undefined
++        );
++      }
 +    } else if (fingerAnimator) {
 +      fingerAnimator.setCylinderContactStrict(false);
 +    }
@@ -23637,7 +23666,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
  
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
-@@ -768,56 +1891,55 @@
+@@ -768,56 +1900,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -23724,7 +23753,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1947,232 @@
+@@ -825,23 +1956,232 @@
          redSegOrNull = redSeg;
        }
  
@@ -23971,7 +24000,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +2198,16 @@
+@@ -867,20 +2207,16 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -23999,7 +24028,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +2240,19 @@
+@@ -913,13 +2249,19 @@
  </script>
  
  {#if visible}
@@ -24026,7 +24055,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +2273,10 @@
+@@ -940,9 +2282,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -24040,7 +24069,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +2284,7 @@
+@@ -950,6 +2293,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -24049,7 +24078,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..c7f67467c27556b73e631a021202e1f8
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/src/lib/components/PerformerRig.svelte b/src/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbddfcca72b5 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..56c12b5ebf8e165589efc31ab3d3507381b50a7b 100644
 --- a/src/lib/components/PerformerRig.svelte
 +++ b/src/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -24173,7 +24202,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -119,23 +165,82 @@
+@@ -119,23 +165,85 @@
       * effect orchestrator can place tip-tracking effects (trails, LED, etc.)
       * in the correct rig-root-local frame without duplicating rig internals.
       */
@@ -24246,6 +24275,9 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
 +    /** Changes whenever the owner seeks playback, forwarded to Avatar3D to
 +     *  clear the animator's contact-recovery memory. */
 +    contactResetKey?: number;
++    /** Forwarded to Avatar3D: false skips the finger contact solve this
++     *  frame (a capture pass that is not recorded). Default true. */
++    solveFingerContacts?: boolean;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
 +    /** Reflexive neck/head dodge, forwarded to Avatar3D. */
@@ -24267,7 +24299,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
    }
  
    let {
-@@ -146,47 +251,95 @@
+@@ -146,47 +254,96 @@
      showAvatar = true,
      showGrid = true,
      showProps = true,
@@ -24320,6 +24352,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
 +    staffContact = null,
 +    pairSeparation = true,
 +    contactResetKey = 0,
++    solveFingerContacts = true,
 +    onContactReport,
 +    onContactGeometry,
 +    headDodge = false,
@@ -24373,7 +24406,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
  
    // Derive mode config and grid offset from the current plane mode
    const modeConfig = $derived(PLANE_MODE_CONFIGS[planeMode]);
-@@ -247,7 +400,23 @@
+@@ -247,7 +404,23 @@
  
    // When a turn is active, enable animation-driven yaw so the rig
    // rotates from the turn clip's root motion rather than snapping.
@@ -24398,7 +24431,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
  
    // Turn completion snap: when turnRequest goes null after being active,
    // snap avatarState to the post-turn heading so the sync effect below
-@@ -259,6 +428,8 @@
+@@ -259,6 +432,8 @@
        // Turn just completed - snap avatarState to post-turn heading
        avatarState.snapFacingAngle(turnTargetHeading);
        turnTargetHeading = null;
@@ -24407,7 +24440,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
      }
    });
  
-@@ -280,56 +451,132 @@
+@@ -280,56 +455,133 @@
    const dualWheelOffset = $derived(staffHalfLength);
    const blueHandPos = $derived({
      x: isDualWheel ? dualWheelOffset : modeConfig.blueLateralOffset,
@@ -24534,6 +24567,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
 +      {posePlayback}
 +      {pairSeparation}
 +      {contactResetKey}
++      {solveFingerContacts}
 +      {authoredContactPose}
 +      {staffContact}
 +      {onContactReport}
@@ -24551,7 +24585,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..f49452abf80d04dae25d7c61a562fbdd
                accumulatedYaw += delta.yawDelta;
                onYawIntegrated?.(accumulatedYaw);
              }
-@@ -339,60 +586,62 @@
+@@ -339,60 +591,62 @@
    {/if}
  
    <!-- Grid (consumer-provided via gridSlot) -->

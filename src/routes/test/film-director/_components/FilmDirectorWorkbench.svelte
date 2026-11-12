@@ -10,9 +10,10 @@
   import { captureFilmPoster } from "#lib/features/film-collection/services/capture-film-poster.js";
   import { filmCollectionState } from "#lib/features/film-collection/state/film-collection-state.svelte.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
-  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
   import { setFilmDirectorContext } from "../_lib/film-director-context";
   import { createFilmDirectorState } from "../_lib/film-director-state.svelte";
+  import { createFilmRecorder } from "../_lib/film-director-recorder.svelte";
   import type { FilmDirectorInput } from "../_lib/film-director-schema";
   import {
     filmOriginIsSaved,
@@ -51,6 +52,8 @@
     soloSceneId: initialSceneId,
   });
   setFilmDirectorContext(director);
+  const recorder = createFilmRecorder(director);
+  const recording = $derived(director.recordingFrame !== null);
 
   // The scene's performer bar pins itself to the stage's top-left corner,
   // which is exactly where the back-to-Films button sits. Publish how far in
@@ -219,6 +222,9 @@
     // Dev only.
     if (import.meta.env.DEV) {
       (window as unknown as Record<string, unknown>).__filmDirector = director;
+      // Recording handle for scripts (scripts/record-film.mjs). Dev only,
+      // because the file is saved through a dev-only endpoint.
+      (window as unknown as Record<string, unknown>).__filmRecorder = recorder;
     }
     return director.start();
   });
@@ -271,90 +277,112 @@
     </div>
   {/if}
 
-  <button
-    type="button"
-    class="exit-button"
-    onclick={onExit}
-    bind:this={exitButtonEl}
-    bind:clientWidth={exitButtonWidth}
-  >
-    <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Capabilities
-  </button>
-
-  {#if director.lastEditError}
-    <div class="edit-error" role="alert">
-      <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-      {director.lastEditError}
-    </div>
+  <!-- A recording is read by scripts through these data attributes. The
+       element shows while a recording runs and stays with its outcome after,
+       outside the canvas, so it never lands in a frame. -->
+  {#if recorder.status.phase !== "idle"}
+    <output
+      class="recorder-status"
+      class:failed={recorder.status.phase === "failed"}
+      data-film-recorder-status={recorder.status.phase}
+      data-film-recorder-frame={recorder.status.frame}
+      data-film-recorder-total={recorder.status.totalFrames}
+      data-film-recorder-path={recorder.status.path ?? ""}
+      data-film-recorder-error={recorder.status.error ?? ""}
+      aria-live="polite"
+      transition:flyFade={{ y: 8 }}
+    >
+      {recorder.status.message}
+    </output>
   {/if}
 
-  <FilmDirectorTransport>
-    {#snippet trailing()}
-      <div class="transport-actions">
-        {#if director.soloSceneIndex !== null}
-          <!-- Leaving solo is a one-click move out of the loop and back into the
+  <!-- Clean frames: every control leaves while a recording runs. -->
+  {#if !recording}
+    <button
+      type="button"
+      class="exit-button"
+      onclick={onExit}
+      bind:this={exitButtonEl}
+      bind:clientWidth={exitButtonWidth}
+    >
+      <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      Capabilities
+    </button>
+
+    {#if director.lastEditError}
+      <div class="edit-error" role="alert">
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        {director.lastEditError}
+      </div>
+    {/if}
+
+    <FilmDirectorTransport>
+      {#snippet trailing()}
+        <div class="transport-actions">
+          {#if director.soloSceneIndex !== null}
+            <!-- Leaving solo is a one-click move out of the loop and back into the
                film, so it does not hide behind the index it was entered from.
                growFade on x so the row widens into it rather than snapping. -->
-          <button
-            type="button"
-            class="solo-exit"
-            aria-label="Exit solo and play the whole film"
-            transition:growFade={{ axis: "x" }}
-            onclick={() => director.setSoloScene(null)}
-          >
-            <i class="fas fa-repeat" aria-hidden="true"></i>
-            <span>Exit solo</span>
-          </button>
-        {/if}
+            <button
+              type="button"
+              class="solo-exit"
+              aria-label="Exit solo and play the whole film"
+              transition:growFade={{ axis: "x" }}
+              onclick={() => director.setSoloScene(null)}
+            >
+              <i class="fas fa-repeat" aria-hidden="true"></i>
+              <span>Exit solo</span>
+            </button>
+          {/if}
 
-        <!-- The dock is a peer of the transport rather than a popover, because
+          <!-- The dock is a peer of the transport rather than a popover, because
              it is a work surface: it stays up while the film plays and while
              the rig answers a drag. -->
-        <button
-          type="button"
-          class="scenes-button"
-          class:soloing={channelsOpen}
-          aria-label="Camera channels"
-          aria-pressed={channelsOpen}
-          onclick={() => (channelsOpen = !channelsOpen)}
-        >
-          <i class="fas fa-sliders" aria-hidden="true"></i>
-          <span>Channels</span>
-        </button>
-
-        <!-- A one-scene demo has nothing to pick between, so the control that
-             picks does not appear at all. -->
-        {#if multiScene}
           <button
             type="button"
             class="scenes-button"
-            class:soloing={director.soloSceneIndex !== null}
-            aria-label="Scenes"
-            aria-haspopup="dialog"
-            aria-expanded={sceneIndexOpen}
-            onclick={() => (sceneIndexOpen = true)}
+            class:soloing={channelsOpen}
+            aria-label="Camera channels"
+            aria-pressed={channelsOpen}
+            onclick={() => (channelsOpen = !channelsOpen)}
           >
-            <i class="fas fa-list-ol" aria-hidden="true"></i>
-            <span>Scenes</span>
+            <i class="fas fa-sliders" aria-hidden="true"></i>
+            <span>Channels</span>
           </button>
-        {/if}
 
-        <FilmDirectorFilmPanel
-          {origin}
-          hasPreviousVersion={previousVersionAvailable}
-          busy={saveBusy}
-          onSave={saveFilm}
-          onSaveAsNew={openSaveModal}
-          onRestore={restorePreviousFilm}
-        />
-      </div>
-    {/snippet}
-  </FilmDirectorTransport>
-  <FilmDirectorChannelEditor bind:open={channelsOpen} />
-  <FilmDirectorJsonEditor />
-  {#if multiScene}
-    <FilmDirectorSceneIndex bind:open={sceneIndexOpen} />
+          <!-- A one-scene demo has nothing to pick between, so the control that
+             picks does not appear at all. -->
+          {#if multiScene}
+            <button
+              type="button"
+              class="scenes-button"
+              class:soloing={director.soloSceneIndex !== null}
+              aria-label="Scenes"
+              aria-haspopup="dialog"
+              aria-expanded={sceneIndexOpen}
+              onclick={() => (sceneIndexOpen = true)}
+            >
+              <i class="fas fa-list-ol" aria-hidden="true"></i>
+              <span>Scenes</span>
+            </button>
+          {/if}
+
+          <FilmDirectorFilmPanel
+            {origin}
+            hasPreviousVersion={previousVersionAvailable}
+            busy={saveBusy}
+            onSave={saveFilm}
+            onSaveAsNew={openSaveModal}
+            onRestore={restorePreviousFilm}
+          />
+        </div>
+      {/snippet}
+    </FilmDirectorTransport>
+    <FilmDirectorChannelEditor bind:open={channelsOpen} />
+    <FilmDirectorJsonEditor />
+    {#if multiScene}
+      <FilmDirectorSceneIndex bind:open={sceneIndexOpen} />
+    {/if}
   {/if}
 </main>
 
@@ -569,6 +597,35 @@
     .solo-exit span {
       display: none;
     }
+  }
+
+  .recorder-status {
+    position: absolute;
+    right: max(0.85rem, env(safe-area-inset-right));
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    z-index: 95;
+    max-width: min(40rem, calc(100vw - 1.7rem));
+    padding: 0.55rem 0.85rem;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
+    border-radius: 0.7rem;
+    color: var(--theme-text, #fff);
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, #10111b) 92%,
+      transparent
+    );
+    font-size: var(--font-size-min, 0.875rem);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+    pointer-events: none;
+  }
+
+  .recorder-status.failed {
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-danger, #ff6b6b) 55%,
+      transparent
+    );
   }
 
   .exit-button {

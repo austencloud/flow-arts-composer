@@ -52,7 +52,9 @@
   />
 {/snippet}
 
-<!-- This header belongs to the sequence, so it survives card/player swaps. -->
+<!-- This header belongs to the sequence, so it survives card/player swaps.
+     The title rides a PanelGroup compositor edge (data-panel-flip): when the
+     workspace takes its end width at once, it travels to its new centre. -->
 <div
   class="workspace-sequence-header"
   bind:offsetHeight={headerHeight}
@@ -61,7 +63,7 @@
 >
   {#if showTitle}
     <div class="title-row">
-      <div class="word-label-slot">
+      <div class="word-label-slot" data-panel-flip="sequence-title">
         {@render wordLabel()}
       </div>
     </div>
@@ -73,7 +75,7 @@
     presentation="corners"
   />
   {#if !showTitle}
-    <div class="word-label-slot strip-word">
+    <div class="word-label-slot strip-word" data-panel-flip="sequence-title">
       {@render wordLabel()}
     </div>
   {/if}

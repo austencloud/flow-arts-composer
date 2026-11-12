@@ -8,6 +8,8 @@
   import { provideSequencePageLoading } from "./sequence-page-loading.svelte.js";
   import { markScan } from "#lib/shared/analytics/scan-perf.js";
   import { loadSequenceViewerPage } from "./load-sequence-viewer-page.js";
+  import { pageBootsInto3D } from "#lib/shared/sequence-viewer/services/viewer-boot-3d.js";
+  import { preloadViewer3DCode } from "#lib/shared/3d/scene-boot/viewer-3d-code-prefetch.js";
   import {
     hasSavedFirebaseUser,
     signInWhenIdle,
@@ -49,6 +51,10 @@
   );
   // Set whenever `browser` is; the template awaits it only inside that guard.
   const viewerModule = browser ? loadSequenceViewerPage() : null;
+  // A link that opens straight into 3D starts the 3D canvas code and the
+  // renderer worker script now, beside the viewer, instead of after the
+  // viewer shell mounts. Code only: no worker, no scene downloads.
+  if (browser && pageBootsInto3D()) preloadViewer3DCode();
   let viewerReady = $state(false);
   viewerModule?.then(() => {
     viewerReady = true;

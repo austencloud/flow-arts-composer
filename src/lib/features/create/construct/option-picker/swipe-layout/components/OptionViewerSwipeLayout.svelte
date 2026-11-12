@@ -1039,48 +1039,56 @@ Features:
 
   /* Rail tier: the same navigation shell, stood on its side down the
      picker's left edge, with the carousel taking the rest of the width.
-     Settings and the tabs read from the top; the guide sits at the foot. */
+     Settings, the tabs and the guide stack from the top. The bar is only
+     as tall as they are: on a short rail the tabs shrink to fit, and on a
+     tall one (the Composer's stacked demo on a tablet) they stop at 18rem,
+     about 72px a tab, and the bar ends under the guide button instead of
+     running empty to the foot. */
   .swipe-layout.type-rail {
     flex-direction: row;
   }
 
   .type-rail .utility-shell {
+    display: flex;
+    flex-direction: column;
+    align-self: flex-start;
     width: var(--type-rail-width);
-    height: 100%;
+    max-height: 100%;
     margin-inline: 0;
     transition: none;
   }
 
   .type-rail .utility-surface {
-    height: 100%;
-  }
-
-  .type-rail .type-navigation {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    justify-items: center;
-    align-items: start;
-    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
     min-height: 0;
   }
 
+  .type-rail .type-navigation,
   .type-rail .type-navigation.without-settings {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 1 auto;
+    min-height: 0;
   }
 
-  /* The tabs run the full height between settings and the guide, as four
-     equal rows, instead of bunching under the settings button. A tall rail
-     (the Composer's stacked demo on a tablet) stops them at 18rem, about
-     72px a tab, so they stay a bar of tabs rather than four tall columns. */
+  .type-rail .type-navigation-edge {
+    flex: 0 0 auto;
+  }
+
   .type-rail .type-navigation-selector {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 18rem;
     align-self: stretch;
-    height: 100%;
-    max-height: 18rem;
+    min-height: 0;
   }
 
   .type-rail .type-navigation-selector :global(.segmented-control) {
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     grid-auto-rows: minmax(0, 1fr);
   }
 

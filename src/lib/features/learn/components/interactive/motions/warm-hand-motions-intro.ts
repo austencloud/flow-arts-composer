@@ -21,6 +21,7 @@ import {
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { normalizeBuugengStyle } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+import { normalizeTriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
@@ -41,6 +42,7 @@ async function warm(): Promise<void> {
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
     buugengStyle: normalizeBuugengStyle(settings.buugengStyle),
+    triadBuild: normalizeTriadBuild(settings.triadBuild),
     showLeftMotion: true,
     showRightMotion: false,
   };

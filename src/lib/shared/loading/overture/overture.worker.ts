@@ -44,10 +44,12 @@ import {
   composeFrame,
   createFrameState,
   isOvertureScene,
+  overtureColors,
   overtureLayout,
   prepareScene,
   type FrameState,
   type OvertureContext,
+  type OvertureOverlapLayers,
   type OvertureScene,
   type OvertureSurface,
   type PreparedScene,
@@ -60,6 +62,8 @@ export interface OvertureInit {
   height: number;
   dpr: number;
   surface: OvertureSurface;
+  /** The user's prop colours (settings), or null for the surface's blue and red. */
+  colors?: { left: string; right: string } | null;
   reduced: boolean;
   profile: SelfTimingProfile | null;
   /** Milestones that arrived before the worker was made, ms on the page's clock. */
@@ -128,6 +132,7 @@ let tierWatch = createTierWatch("auto");
 let pixelRatio = 1; // the page's devicePixelRatio, before the tier's cap
 let lastDrawn: number | null = null;
 let fontRequested = false;
+let overlap: OvertureOverlapLayers | null = null;
 let drawn = 0; // frames drawn while tracing, for the fps report
 let drawMs = 0; // their total drawing time, for the report
 const trail: number[] = []; // [ms, traced × 1000] every 250 ms, for the report
@@ -209,6 +214,36 @@ function resize(width: number, height: number, dpr: number): void {
   );
   init.canvas.width = Math.max(1, Math.round(width * init.dpr));
   init.canvas.height = Math.max(1, Math.round(height * init.dpr));
+  sizeOverlap(init.canvas.width, init.canvas.height);
+}
+
+/**
+ * The overlap pass's two masks, kept the backing size. Made once, here in
+ * the worker (the trace module never touches a canvas); absent when the
+ * worker has no OffscreenCanvas, and the crossings stay single-coloured.
+ */
+function sizeOverlap(width: number, height: number): void {
+  if (!overlap) {
+    if (typeof OffscreenCanvas !== "function") return;
+    const layer = () => {
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext("2d") as unknown as OvertureContext | null;
+      return ctx ? { canvas, ctx } : null;
+    };
+    const left = layer();
+    const right = layer();
+    if (!left || !right) return;
+    overlap = { left, right, width, height };
+    if (state) state.overlap = overlap;
+    return;
+  }
+  for (const layer of [overlap.left, overlap.right]) {
+    const canvas = layer.canvas as OffscreenCanvas;
+    canvas.width = width;
+    canvas.height = height;
+  }
+  overlap.width = width;
+  overlap.height = height;
 }
 
 function schedule(): void {
@@ -318,13 +353,15 @@ function frame(): void {
   drawMs += spent;
   // Slow first frames on auto: this device draws the low tier.
   if (tierWatch.frame(spent)) goLow();
-  // Over budget three frames running: halve the sparks, then drop the glow.
+  // Over budget three frames running: halve the sparks, then drop the glow,
+  // then the overlap pass (the crossings keep the right hand's colour).
   if (spent > 12) {
     if (++slowFrames >= 3) {
       slowFrames = 0;
       if (state.maxSparks >= 12)
         state.maxSparks = Math.floor(state.maxSparks / 2);
-      else state.glow = false;
+      else if (state.glow) state.glow = false;
+      else state.overlap = null;
     }
   } else {
     slowFrames = 0;
@@ -368,10 +405,15 @@ async function start(config: OvertureInit): Promise<void> {
     if (!scene) scope.postMessage({ type: "unavailable" });
     return;
   }
-  prepared = prepareScene(scene, config.surface);
+  prepared = prepareScene(
+    scene,
+    config.surface,
+    overtureColors(config.colors)
+  );
   state = createFrameState({
     phone: overtureLayout(config.width, config.height).phone,
   });
+  state.overlap = overlap;
   if (tier === "low") lowTierState(state);
   schedule();
 }

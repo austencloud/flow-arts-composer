@@ -179,6 +179,16 @@ const PostStagePointSchema = z
   .strict();
 
 /**
+ * Who plays one performer on the 3D stage: a character id from the 3D
+ * viewer's catalog. Read leniently, like the environment: an id the catalog
+ * does not know leaves that performer as the default figure, so this file
+ * never imports the scene package.
+ */
+const PostStageCastMemberSchema = z
+  .object({ character: z.string().min(1).max(48).optional() })
+  .strict();
+
+/**
  * An animation clip drawn as the 3D stage instead of the 2D grid: every
  * performer on its own beat from the clip's clock, seen through one shot.
  * Front holds a still camera on the cast; orbit circles it at a steady rate,
@@ -202,6 +212,11 @@ export const PostStage3DSchema = z
       .strict()
       .optional(),
     environment: z.string().min(1).max(32).optional(),
+    /** Who plays each performer, the front one first, then each follower. */
+    cast: z
+      .array(PostStageCastMemberSchema)
+      .max(1 + POST_MAX_FOLLOWERS)
+      .optional(),
     /** Metres between neighbouring performers, front to back. */
     spacing: z
       .number()
@@ -270,6 +285,20 @@ export const PostAnimationItemSchema = z
       )
       .min(1)
       .max(POST_MAX_FOLLOWERS)
+      .optional(),
+    /**
+     * Draw only part of the cast, as one canvas of a disassembled tunnel: one
+     * performer (0 is the front, 1 the first follower, and so on) and, of
+     * whoever is drawn, one hand. Absent draws everyone. The clip keeps its
+     * `followers`, so its clock, each performer's beats behind and each
+     * performer's colours stay the tunnel's.
+     */
+    part: z
+      .object({
+        performer: z.number().int().min(0).max(POST_MAX_FOLLOWERS).optional(),
+        hand: z.enum(["left", "right"]).optional(),
+      })
+      .strict()
       .optional(),
     /** Draw this clip as the 3D stage; absent draws the 2D animation. */
     stage3d: PostStage3DSchema.optional(),

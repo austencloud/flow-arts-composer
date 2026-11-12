@@ -30,6 +30,7 @@
     onclose: () => void;
     /** After the exit, once focus can move. */
     onclosed?: () => void;
+    /** Every pick applies at once; the dialog closes when nothing is left to choose. */
     onPick: (next: ResolvedPropConfig) => void;
   } = $props();
 
@@ -46,12 +47,14 @@
 >
   {#snippet header()}<h2 id={titleId}>{title}</h2>{/snippet}
   <div class="body">
-    <PropPairPicker {value} {hint} {showColors} {onPick} />
+    <PropPairPicker {value} {hint} {showColors} {onPick} onDone={onclose} />
   </div>
   {#snippet footer()}
+    <!-- Picks apply as they are made, so closing keeps them: Done, not
+         Cancel. -->
     <div class="actions">
       <PanelButton variant="secondary" onclick={onclose}
-        >{t("action_cancel")}</PanelButton
+        >{t("shared_controls_done")}</PanelButton
       >
     </div>
   {/snippet}

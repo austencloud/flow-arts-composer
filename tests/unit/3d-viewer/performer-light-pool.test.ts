@@ -28,7 +28,11 @@ describe("performer selection light", () => {
   it("keeps a constant light count while performer rigs enter and leave", () => {
     expect(sceneSource.match(/<T\.PointLight/g)).toHaveLength(1);
     expect(sceneSource).toContain("position={selectedPerformerLightPosition}");
-    expect(sceneSource).toContain("intensity={selectedPerformer ? 6 : 0}");
+    // A clean frame (a film recording) dims the light rather than unmounting
+    // it, so the light count stays the same there too.
+    expect(sceneSource).toContain(
+      "intensity={selectedPerformer && !cleanFrame ? 6 : 0}"
+    );
 
     expect(performerLoop).not.toContain("<T.PointLight");
   });

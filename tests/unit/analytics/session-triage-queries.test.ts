@@ -6,7 +6,6 @@ import {
   toIsoUtc,
   parseTriageEventRow,
   parseTriageSessionRow,
-  isLikelyCrawlerSession,
   type TriageSessionRow,
 } from "#lib/server/analytics/session-triage-queries.js";
 
@@ -163,45 +162,5 @@ describe("parsers normalize timestamps", () => {
       "e_1", "2026-08-01 10:00:00", "$pageview", "/a", "", null, null,
     ]);
     expect(e.occurredAt).toBe("2026-08-01T10:00:00Z");
-  });
-});
-
-describe("isLikelyCrawlerSession", () => {
-  const base: TriageSessionRow = {
-    sessionId: "s_fake",
-    uid: "anon_fake",
-    startedAt: "2026-10-22T10:00:00Z",
-    endedAt: "2026-10-22T10:00:04Z",
-    durationMs: 4000,
-    eventCount: 3,
-    exceptionCount: 1,
-    rageClickCount: 0,
-    deadClickCount: 0,
-    pageviewCount: 1,
-    contentActionCount: 0,
-    topSegments: ["zh"],
-    subSegments: ["guide"],
-    entryPath: "/zh/guide/eight-step",
-    exitPath: "/zh/guide/eight-step",
-    browser: "Chrome",
-    operatingSystem: "Windows",
-    deviceType: "Desktop",
-    locale: "zh-CN",
-    identified: false,
-    referringDomain: "",
-  };
-
-  it("flags one anonymous zh-CN page view with no referrer", () => {
-    expect(isLikelyCrawlerSession(base)).toBe(true);
-    expect(isLikelyCrawlerSession({ ...base, referringDomain: "$direct" })).toBe(true);
-    expect(isLikelyCrawlerSession({ ...base, locale: "zh_cn" })).toBe(true);
-  });
-
-  it("keeps sessions that differ on any one condition", () => {
-    expect(isLikelyCrawlerSession({ ...base, pageviewCount: 2 })).toBe(false);
-    expect(isLikelyCrawlerSession({ ...base, identified: true })).toBe(false);
-    expect(isLikelyCrawlerSession({ ...base, locale: "en-US" })).toBe(false);
-    expect(isLikelyCrawlerSession({ ...base, locale: "zh-TW" })).toBe(false);
-    expect(isLikelyCrawlerSession({ ...base, referringDomain: "www.baidu.com" })).toBe(false);
   });
 });

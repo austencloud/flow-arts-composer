@@ -49,7 +49,8 @@ function buildOGPage(code, meta) {
   const description = meta.creator
     ? `Flow sequence by ${meta.creator}`
     : "Watch this flow sequence";
-  const image = meta.thumbnailUrl || "https://tkaflowarts.com/og-default.png";
+  const image =
+    meta.thumbnailUrl || "https://tkaflowarts.com/branding/og-image.png";
   const url = `https://tkaflowarts.com/q/${code}`;
 
   return `<!DOCTYPE html>

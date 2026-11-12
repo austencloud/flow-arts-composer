@@ -1,5 +1,7 @@
 # Responsive Design Strategy
 
+The rules themselves are stated once, in [layout-law.md](layout-law.md). This page explains the model behind them.
+
 TKA supports small phones, tablets, ordinary desktop windows, and wide
 high-density displays. This is the current architecture reference for responsive
 composition.
@@ -10,7 +12,7 @@ Responsive design has four independent concerns:
 
 1. **Logical size**: controls and type use CSS pixels and `rem`. A wider viewport does not imply a more distant viewer.
 2. **Composition**: available inline space can change columns, rails, gutters, and content bands.
-3. **Reading measure**: prose keeps a comfortable line length instead of stretching across the canvas.
+3. **Reading**: text fills its box at normal size. A line that runs too long is fixed by the arrangement, never by a width cap or bigger type.
 4. **Presentation distance**: larger viewing-distance UI is an explicit mode, not something inferred from viewport width or device-pixel ratio.
 
 Windows display scaling and browser zoom already map logical CSS pixels to a comfortable physical size. A 3840×2160 panel at 150% scaling commonly exposes about 2560×1440 CSS pixels. Do not magnify that viewport again.
@@ -41,7 +43,7 @@ The 1680px and 2600px thresholds are composition vocabulary, not scale modes. Th
 
 Public pages use one capped shell variable, `--shell-w`, for composition. Full-bleed backgrounds may span the viewport while authored content remains in the shell.
 
-Editorial copy fills the width of its assigned shell, section, or grid column. Do not add a second character-count cap to paragraphs inside that space. Feature grids and visual showcases may use separate columns without increasing root type size.
+Editorial copy fills the width of its assigned shell, section, or grid column. Do not add a second character-count cap to paragraphs inside that space. When that width would make lines too long, change the arrangement: add a column or put a figure beside the text. Do not enlarge the type. Feature grids and visual showcases may use separate columns without increasing root type size.
 
 ## Authenticated app
 
@@ -51,7 +53,7 @@ Workspace artifacts such as a stage, pictograph, timeline, or map can use contai
 
 ## Mobile
 
-Mobile and desktop keep functional parity while allowing different layouts. Use the owning shell or component's actual constraint, not one universal mobile breakpoint. Preserve touch targets, safe areas, and readable type even when controls reflow or become full-screen.
+Mobile and desktop keep functional parity while allowing different layouts. Use the owning shell or component's actual constraint, not one universal mobile breakpoint. Keep safe areas, readable type, and the tap sizes in [layout-law.md](layout-law.md) even when controls reflow or become full-screen.
 
 ## Modals
 
@@ -68,17 +70,7 @@ bounds before adding a layout-specific exception.
 
 ## Verification matrix
 
-Every responsive visual change is checked at these CSS viewports:
-
-| Class                                              | Viewport  |
-| -------------------------------------------------- | --------- |
-| Small phone                                        | 375×667   |
-| Wide phone, landscape                              | 960×412   |
-| Tablet                                             | 820×1180  |
-| Compact desktop                                    | 1440×900  |
-| Desktop                                            | 1920×1080 |
-| High-density desktop at 150% OS scaling equivalent | 2560×1440 |
-| Native 4K CSS canvas                               | 3840×2160 |
+Every responsive visual change is checked at the sizes on the device list in [layout-law.md](layout-law.md). That page holds the only list.
 
 Also check 200% browser zoom for keyboard reachability, clipping, and reflow. Verification records the CSS viewport and computed root font size so a physical panel resolution is never mistaken for a CSS layout width.
 

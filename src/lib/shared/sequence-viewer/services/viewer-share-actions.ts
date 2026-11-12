@@ -3,6 +3,7 @@ import type { HapticFeedback } from "#lib/shared/application/services/haptic-fee
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ShareURLMetadata } from "#lib/shared/navigation/services/types.js";
 import type { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { tagOutboundLink } from "#lib/shared/share/domain/outbound-link.js";
 import type { PendingActionType } from "./pending-action-queue";
 import type { ViewerUrlParamPatch } from "./viewer-url-state-codec";
 import {
@@ -56,7 +57,9 @@ export function createViewerShareActions(
     }
 
     try {
-      await viewerNavigator.clipboard.writeText(details.url);
+      await viewerNavigator.clipboard.writeText(
+        tagOutboundLink(details.url, "copy_link")
+      );
       dependencies.showToast("Link copied to clipboard", "success");
       void dependencies.logShareAction("link_copy", {
         ...details.activityMetadata,
@@ -80,7 +83,7 @@ export function createViewerShareActions(
         .share({
           title: details.title,
           text: details.text,
-          url: details.url,
+          url: tagOutboundLink(details.url, "share_sheet"),
         })
         .then(() => {
           void dependencies.logShareAction("sequence_share", {

@@ -65,28 +65,51 @@ function ConvertTo-CanonicalShadowDevice {
     $canonical
 }
 
-function Assert-ShadowMountMatchesDevice {
-    $rawSessionsRoot = ConvertTo-AustenShadowPath `
-        -LivePath 'C:\Users\Austen\.codex\sessions' `
-        -ShadowRoot $shadowRoot
-    $mountedSessionsRoot = ConvertTo-AustenShadowPath `
-        -LivePath 'C:\Users\Austen\.codex\sessions' `
-        -ShadowRoot $shadowMountPath
-    $probe = Get-ChildItem `
-        -LiteralPath $rawSessionsRoot `
-        -File `
-        -Filter '*.jsonl' `
-        -Recurse `
-        -Force `
-        -ErrorAction Stop |
+function Get-ShadowMountProbeFile {
+    # The probe works best on a file that changes often on the live volume:
+    # if the mount ever resolved to live C: instead of the snapshot, the two
+    # reads would differ. Agent transcripts are written all day, but either
+    # agent can sit unused for weeks, and Codex now stores its sessions as
+    # .jsonl.zst. Requiring one Codex .jsonl failed every night from
+    # 2026-11-04. Take the newest transcript from either agent, and fall back
+    # to the registry hive, which every profile snapshot contains.
+    $candidateRoots = @(
+        @{ LivePath = 'C:\Users\Austen\.claude\projects'; Filter = '*.jsonl'; Depth = 1 },
+        @{ LivePath = 'C:\Users\Austen\.codex\sessions'; Filter = '*'; Depth = 3 },
+        @{ LivePath = 'C:\Users\Austen\.codex\archived_sessions'; Filter = '*'; Depth = 0 }
+    )
+    $candidates = foreach ($candidateRoot in $candidateRoots) {
+        $rawRoot = ConvertTo-AustenShadowPath -LivePath $candidateRoot.LivePath -ShadowRoot $shadowRoot
+        if ([System.IO.Directory]::Exists($rawRoot)) {
+            Get-ChildItem `
+                -LiteralPath $rawRoot `
+                -File `
+                -Filter $candidateRoot.Filter `
+                -Recurse `
+                -Depth $candidateRoot.Depth `
+                -Force `
+                -ErrorAction Stop
+        }
+    }
+    $probe = $candidates |
         Sort-Object LastWriteTimeUtc -Descending |
         Select-Object -First 1
     if ($null -eq $probe) {
-        throw 'No Codex session file is available for the shadow mount integrity probe.'
+        $hivePath = ConvertTo-AustenShadowPath -LivePath 'C:\Users\Austen\NTUSER.DAT' -ShadowRoot $shadowRoot
+        $probe = Get-Item -LiteralPath $hivePath -Force -ErrorAction Stop
+    }
+    $probe
+}
+
+function Assert-ShadowMountMatchesDevice {
+    $probe = Get-ShadowMountProbeFile
+    $rawPrefix = "$shadowRoot\"
+    if (-not $probe.FullName.StartsWith($rawPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "The shadow mount probe is outside the raw VSS device: $($probe.FullName)"
     }
 
-    $relativePath = $probe.FullName.Substring($rawSessionsRoot.Length).TrimStart('\')
-    $mountedProbePath = Join-Path $mountedSessionsRoot $relativePath
+    $relativePath = $probe.FullName.Substring($rawPrefix.Length)
+    $mountedProbePath = Join-Path $shadowMountPath $relativePath
     $samples = for ($attempt = 1; $attempt -le 2; $attempt++) {
         $rawItem = Get-Item -LiteralPath $probe.FullName -Force -ErrorAction Stop
         $mountedItem = Get-Item -LiteralPath $mountedProbePath -Force -ErrorAction Stop

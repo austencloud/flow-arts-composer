@@ -1,5 +1,4 @@
 import type { Component } from "svelte";
-import CodexPointerTopicPage from "./CodexPointerTopicPage.svelte";
 import GridTopicPage from "./GridTopicPage.svelte";
 import HandCombinationTopicPage from "./HandCombinationTopicPage.svelte";
 import HandMotionsTopicPage from "./HandMotionsTopicPage.svelte";
@@ -46,6 +45,4 @@ export const TOPIC_PAGES: Readonly<Record<string, Component<TopicPageProps>>> =
     "hm-type2": HandCombinationTopicPage,
     "hm-type34": HandCombinationTopicPage,
     "hm-type56": HandCombinationTopicPage,
-    codex: CodexPointerTopicPage,
-    "codex-2": CodexPointerTopicPage,
   };

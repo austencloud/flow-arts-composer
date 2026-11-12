@@ -1,0 +1,17 @@
+{
+  "about": "Routes for npm run layout:sweep. Guest-reachable only. `hero` is an optional CSS selector for the thing the person came for; the sweep reports the share of the window it covers.",
+  "routes": [
+    { "name": "home", "path": "/" },
+    { "name": "create", "path": "/create" },
+    { "name": "browse", "path": "/browse" },
+    { "name": "sequence-viewer", "path": "/sequence/P3WN" },
+    { "name": "guide", "path": "/guide" },
+    { "name": "guide-zans-diamond", "path": "/guide/zans-diamond" },
+    { "name": "guide-eight-step", "path": "/guide/eight-step" },
+    { "name": "learn", "path": "/learn" },
+    { "name": "settings", "path": "/settings" },
+    { "name": "compose", "path": "/compose" },
+    { "name": "codex", "path": "/codex" },
+    { "name": "atlas", "path": "/atlas" }
+  ]
+}

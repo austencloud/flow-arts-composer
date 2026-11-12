@@ -11,7 +11,10 @@
  * - Better TypeScript organization
  */
 
-import type { HandSide, MotionType } from "../../../../shared/domain/enums/pictograph-enums";
+import type {
+  HandSide,
+  MotionType,
+} from "../../../../shared/domain/enums/pictograph-enums";
 import type { GridLocation } from "../../../../grid/domain/enums/grid-enums";
 import type { PictographData } from "../../../../shared/domain/models/pictograph-data";
 import type { MotionData } from "../../../../shared/domain/models/motion-data";
@@ -50,6 +53,20 @@ import {
   rotatePlacementVectorToDisplayed,
 } from "./canonical-placement-frame";
 import { placementFrameForGridMode } from "../../placement/domain/placement-frame";
+import { isJsonLoadFailure } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
+
+/**
+ * Report a failed lookup once, at the public boundary. The inner layers rethrow
+ * with `cause` instead of logging, so one failure is one line, not four. A
+ * placement-file failure was already reported (or deliberately dropped, for a
+ * cancelled load) by the JSON cache, and every arrow on the page shares that
+ * file, so repeating it per arrow is the error spam PostHog showed on
+ * 2026-11-07: 9 arrows, 9 identical exceptions in one second.
+ */
+function reportAdjustmentFailure(label: string, error: unknown): void {
+  if (isJsonLoadFailure(error)) return;
+  console.error(`${label}:`, error);
+}
 
 export class ArrowAdjustmentCalculator {
   /**
@@ -91,7 +108,7 @@ export class ArrowAdjustmentCalculator {
         arrowColor
       );
     } catch (error) {
-      console.error(`Adjustment calculation failed: ${error}`);
+      reportAdjustmentFailure("Adjustment calculation failed", error);
       return new Point(0, 0);
     }
   }
@@ -119,7 +136,7 @@ export class ArrowAdjustmentCalculator {
         arrowColor
       );
     } catch (error) {
-      console.error(`Base adjustment lookup failed: ${error}`);
+      reportAdjustmentFailure("Base adjustment lookup failed", error);
       return new Point(0, 0);
     }
   }
@@ -172,10 +189,10 @@ export class ArrowAdjustmentCalculator {
 
       return new Point(finalAdjustment.x, finalAdjustment.y);
     } catch (error) {
-      console.error(
-        `Adjustment calculation failed for letter ${letter}: ${error}`
+      throw new Error(
+        `Arrow adjustment calculation failed for letter ${letter}: ${error}`,
+        { cause: error }
       );
-      throw new Error(`Arrow adjustment calculation failed: ${error}`);
     }
   }
 
@@ -612,8 +629,9 @@ export class ArrowAdjustmentCalculator {
       );
       return defaultAdjustment;
     } catch (error) {
-      console.error("Error in base adjustment lookup:", error);
-      throw new Error(`Arrow adjustment lookup failed: ${error}`);
+      throw new Error(`Arrow adjustment lookup failed: ${error}`, {
+        cause: error,
+      });
     }
   }
 
@@ -736,7 +754,7 @@ export class ArrowAdjustmentCalculator {
 
       return null;
     } catch (error) {
-      console.error("Error in special placement lookup:", error);
+      reportAdjustmentFailure("Error in special placement lookup", error);
       return null;
     }
   }
@@ -855,8 +873,9 @@ export class ArrowAdjustmentCalculator {
 
       return new Point(adjustmentPoint.x, adjustmentPoint.y);
     } catch (error) {
-      console.error("Error calculating default adjustment:", error);
-      throw new Error(`Default adjustment calculation failed: ${error}`);
+      throw new Error(`Default adjustment calculation failed: ${error}`, {
+        cause: error,
+      });
     }
   }
 }

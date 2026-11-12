@@ -121,6 +121,29 @@ function cancelMemberAnimations(
 }
 
 /**
+ * Bring running animations to the present before measuring them. The main
+ * thread's timeline only advances at its own frames, so after a long task it
+ * still holds the last frame's time while the compositor has kept moving. A
+ * measurement then reads a position the screen left behind, and a transition
+ * that interrupts from it jumps back. `aheadMs` reaches further ahead.
+ */
+export function seekToPresent(
+  animations: Iterable<Animation>,
+  aheadMs = 0
+): void {
+  const now = performance.now() + aheadMs;
+  for (const animation of animations) {
+    if (animation.playState !== "running" || animation.startTime === null)
+      continue;
+    const start = Number(animation.startTime);
+    const end = Number(animation.effect?.getComputedTiming().endTime ?? 0);
+    const elapsed = Math.min((now - start) * animation.playbackRate, end);
+    if (elapsed > Number(animation.currentTime ?? 0))
+      animation.currentTime = elapsed;
+  }
+}
+
+/**
  * The transform lands on the tracked element itself, never on a descendant.
  * A cell's background, border, and selection ring belong to its outer box; move
  * only the inside and the box arrives instantly, leaving its contents to slide

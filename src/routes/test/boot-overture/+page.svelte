@@ -6,7 +6,8 @@
   milestones. Nothing here draws: the worker does.
 
   Query parameters set the controls (scene, surface, reduced, length, late,
-  fly, tier); `late=1` holds the finish 5 s past the boot length, the way a
+  fly, tier, colors); `colors` is `settings` (the saved prop colours, as the
+  boot reads them), `default`, or two hex colours `rrggbb-rrggbb`; `late=1` holds the finish 5 s past the boot length, the way a
   slow boot on a fast machine does, so the pen's cruise and lap can be watched;
   `chrome=0` hides the panel for screenshots and `pauseAt=<ms>` freezes the
   whole lab that many ms into the fake boot (the finish is at the boot length;
@@ -87,6 +88,24 @@
       ? params.get("fly")!
       : "1.6"
   );
+  const colorParam = params.get("colors") ?? "settings";
+  let colors = $state(
+    colorParam === "default" || /^[0-9a-f]{6}-[0-9a-f]{6}$/i.test(colorParam)
+      ? colorParam
+      : "settings"
+  );
+  const colorOptions = [
+    { value: "settings", label: "Settings" },
+    { value: "default", label: "Default" },
+    { value: "a855f7-22c55e", label: "Violet & green" },
+  ];
+  /** What the boot script gets: undefined reads settings, null the defaults. */
+  function chosenColors(): { left: string; right: string } | null | undefined {
+    if (colors === "settings") return undefined;
+    if (colors === "default") return null;
+    const [left, right] = colors.split("-");
+    return { left: `#${left}`, right: `#${right}` };
+  }
   let tier = $state(
     ["full", "low"].includes(params.get("tier") ?? "")
       ? params.get("tier")!
@@ -171,6 +190,7 @@
       snapshot,
       fly,
       tier,
+      colors: chosenColors(),
     });
     bar = createSelfTimingBar({
       fill,
@@ -324,6 +344,16 @@
         onchange={(v) => (fly = v)}
         size="sm"
         ariaLabel="Fly-through scale"
+      />
+    </div>
+    <div class="row">
+      <span>Colours</span>
+      <SegmentedControl
+        options={colorOptions}
+        value={colors}
+        onchange={(v) => (colors = v)}
+        size="sm"
+        ariaLabel="Prop colours"
       />
     </div>
     <div class="row">

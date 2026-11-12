@@ -1,5 +1,5 @@
 import { describe, expect, it, afterEach, vi } from "vitest";
-import { createLayoutMotion } from "./layout-flip";
+import { createLayoutMotion, seekToPresent } from "./layout-flip";
 
 /**
  * These run in a real browser (vitest-browser-svelte) because the whole point of
@@ -255,5 +255,58 @@ describe("createLayoutMotion", () => {
     expect(
       survivor.querySelector<HTMLElement>(".shell")!.getAnimations()
     ).toHaveLength(0);
+  });
+});
+
+describe("seekToPresent", () => {
+  function running(duration = 1000): Animation {
+    const container = mountRow(["a"]);
+    return cell(container, "a").animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration,
+    });
+  }
+
+  /** Hold the main thread, the way a mount task does: the document timeline
+   * does not advance until the next frame, so the animation reads stale. */
+  function block(ms: number): void {
+    const until = performance.now() + ms;
+    while (performance.now() < until) {
+      // busy
+    }
+  }
+
+  it("moves a running animation up to wall-clock time after a long task", async () => {
+    const animation = running();
+    await animation.ready;
+    const stale = Number(animation.currentTime);
+    block(300);
+    expect(Number(animation.currentTime), "the timeline is stale").toBe(stale);
+    seekToPresent([animation]);
+    expect(Number(animation.currentTime) - stale).toBeGreaterThanOrEqual(290);
+    expect(Number(animation.currentTime) - stale).toBeLessThan(450);
+  });
+
+  it("reaches ahead by the lookahead, but never past the end", async () => {
+    const animation = running();
+    await animation.ready;
+    const before = Number(animation.currentTime);
+    seekToPresent([animation], 100);
+    expect(Number(animation.currentTime) - before).toBeGreaterThanOrEqual(99);
+    seekToPresent([animation], 5000);
+    expect(Number(animation.currentTime)).toBeLessThanOrEqual(1000);
+  });
+
+  it("never moves an animation backwards or touches a paused one", async () => {
+    const animation = running();
+    await animation.ready;
+    animation.currentTime = 600;
+    seekToPresent([animation]);
+    expect(Number(animation.currentTime)).toBeGreaterThanOrEqual(600);
+
+    const paused = running();
+    paused.pause();
+    paused.currentTime = 50;
+    seekToPresent([paused], 500);
+    expect(Number(paused.currentTime)).toBe(50);
   });
 });

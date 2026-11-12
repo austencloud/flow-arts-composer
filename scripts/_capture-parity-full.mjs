@@ -1,7 +1,7 @@
 // Get the parity page at full width showing both book and render columns
 import { chromium } from "playwright-core";
 
-const url = process.argv[2] ?? "http://localhost:5173/guide/codex/parity";
+const url = process.argv[2] ?? "http://localhost:5173/test/codex-parity";
 const out = process.argv[3] ?? "C:/tka-platform/static/test/parity-full.png";
 const waitMs = Number(process.argv[4] ?? 12000);
 

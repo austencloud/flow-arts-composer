@@ -39,6 +39,10 @@ import {
   buugengAppearanceArtwork,
   parseBuugengRenderKey,
 } from "../domain/buugeng-appearance";
+import {
+  parseTriadRenderKey,
+  triadBuildArtwork,
+} from "../domain/triad-build";
 import { getMotionColor } from "../../../utils/svg-color-utils";
 import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
 import { assetFetch } from "../../../net/asset-fetch";
@@ -129,6 +133,7 @@ export class PropSvgLoader {
         fanAppearance: options?.fanAppearance,
         triangleGrip: options?.triangleGrip,
         buugengStyle: options?.buugengStyle,
+        triadBuild: options?.triadBuild,
       });
       // The triangle's side grip, drawn the way the animator draws it. Its
       // glyph shares pictograph/triangle.svg's box, so placements hold.
@@ -151,10 +156,20 @@ export class PropSvgLoader {
             useGridVersion ? "animated" : "pictograph"
           )
         : null;
+      // A triad build, drawn on the plain triad frame of the same folder.
+      const triadRenderKey = parseTriadRenderKey(renderKey);
+      const triadArtworkPath = triadRenderKey
+        ? triadBuildArtwork(
+            triadRenderKey.propType,
+            triadRenderKey.build,
+            useGridVersion ? "animated" : "pictograph"
+          )
+        : null;
       const path =
         fanArtworkPath ??
         triangleArtworkPath ??
         buugengArtworkPath ??
+        triadArtworkPath ??
         (useGridVersion
           ? `/images/props/animated/${propArtworkStem(propType, side)}.svg`
           : `/images/props/pictograph/${propArtworkStem(propType, side)}.svg`);

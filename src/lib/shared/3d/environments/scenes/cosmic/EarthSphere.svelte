@@ -9,6 +9,7 @@
     TextureLoader,
   } from "three";
   import type { EarthConfig } from "../../domain/models/scene-configs";
+  import { COSMIC_EARTH_TEXTURE_URL } from "../../worlds/cosmic/cosmic-asset-urls";
 
   interface Props {
     config: EarthConfig;
@@ -21,7 +22,7 @@
   let material = $state<ShaderMaterial | null>(null);
 
   const textureLoader = useLoader(TextureLoader);
-  const earthTex = $derived(textureLoader.load("/textures/cosmic/earth-diffuse.jpg"));
+  const earthTex = $derived(textureLoader.load(COSMIC_EARTH_TEXTURE_URL));
 
   $effect(() => {
     if ($earthTex && onReady) onReady();

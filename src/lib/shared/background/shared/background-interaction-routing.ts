@@ -75,23 +75,30 @@ export function isBackgroundInteractionBlocked(
 ): boolean {
   if (!(target instanceof Element)) return true;
 
-  let element: Element | null = target;
-  while (
+  const chain: Element[] = [];
+  for (
+    let element: Element | null = target;
     element &&
     element !== document.body &&
-    element !== document.documentElement
-  ) {
+    element !== document.documentElement;
+    element = element.parentElement
+  )
+    chain.push(element);
+
+  // Any one element on the chain blocks, so the order of the checks does not
+  // change the answer. The structural checks run over the whole chain first:
+  // a tap on a button's icon is settled by the button without asking for a
+  // computed style. Inside a size container (the Create workspace) a computed
+  // style forces a layout, which on a slowed phone cost Play's tap 30 ms.
+  for (const element of chain) {
     if (element.getAttribute("data-background-interaction") === "block")
       return true;
     if (element.matches(INTERACTIVE_SELECTOR)) return true;
     if (CONTENT_TAGS.has(element.tagName) || element.closest("svg") === element)
       return true;
     if (hasOwnVisibleText(element)) return true;
-    if (paintsForeground(element)) return true;
-    element = element.parentElement;
   }
-
-  return false;
+  return chain.some(paintsForeground);
 }
 
 /** Map viewport input to the backing canvas's logical coordinate system. */

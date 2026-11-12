@@ -70,8 +70,12 @@ describe("PostShareSheet Show QR code", () => {
       "https://tkaflowarts.com/sequence/Ab12?pane=cards",
       768
     );
+    // The link under the code is a control (it copies), not dead text a
+    // phone flashes on when tapped.
     await expect
-      .element(page.getByText("tkaflowarts.com/sequence/Ab12", { exact: true }))
+      .element(
+        page.getByRole("button", { name: "tkaflowarts.com/sequence/Ab12" })
+      )
       .toBeInTheDocument();
 
     // Back and in again reuses the code instead of minting another link.
@@ -97,6 +101,45 @@ describe("PostShareSheet Show QR code", () => {
       "https://tkaflowarts.com/sequence/Ab12?pane=animation",
       768
     );
+  });
+
+  // A word that does not repeat cannot shorten, so the header shrinks the
+  // glyph row to its width instead of running it off the edge of a phone.
+  it("fits a long word inside the header on a phone", async () => {
+    await page.viewport(360, 780);
+    const base = structuredClone(demo) as unknown as SequenceData;
+    const letters = "ABCDEFGHIJKLMNOP";
+    const long = {
+      ...base,
+      steps: base.steps.map((step, index) => ({
+        ...step,
+        letter: letters[index],
+      })),
+    } as SequenceData;
+    render(PostShareSheet, {
+      isOpen: true,
+      sequence: long,
+      shareUrl: INLINE_VIEWER_URL,
+      videoBlobUrl: null,
+      isExportingVideo: false,
+      exportProgress: null,
+      onClose: vi.fn(),
+      availableArtifacts: ["card"],
+      canCreateLink: true,
+      metaStatusOverride: EMPTY_META_PUBLISH_STATUS,
+    });
+
+    await vi.waitFor(() => {
+      const images = document.querySelectorAll(".sequence-identity img");
+      expect(images.length).toBe(letters.length);
+    });
+    await vi.waitFor(() => {
+      const identity = document.querySelector(".sequence-identity")!;
+      const row = identity.querySelector(".glyph-row")!;
+      expect(row.getBoundingClientRect().right).toBeLessThanOrEqual(
+        identity.getBoundingClientRect().right + 0.5
+      );
+    });
   });
 
   it("never draws a code of the inline link for a guest", async () => {

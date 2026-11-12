@@ -197,10 +197,15 @@
     void focusOnShownScreen(`[data-drill="${from}"]`);
   }
 
-  // A pick is the answer: it applies at once and shows those props, even if
-  // the viewer was on saved props. Back on the Props screen the tile says so.
+  // A pick applies at once and shows those props, even if the viewer was on
+  // saved props. A prop with more to choose (Fan's build, a size) stays on
+  // its page; once nothing is left, the menu goes back to the Props screen,
+  // whose tile says what was picked.
   function pickProps(next: ResolvedPropConfig): void {
     void updateSettings({ ...next, propViewingMode: "my-props" });
+  }
+
+  function finishPicking(): void {
     screen = "props";
     void focusOnShownScreen('.prop-viewing-panel [aria-checked="true"]');
   }
@@ -606,6 +611,7 @@
                       value={captureActivePropConfig(getSettings())}
                       dense
                       onPick={pickProps}
+                      onDone={finishPicking}
                     />
                   </div>
                 </div>

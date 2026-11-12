@@ -390,9 +390,10 @@
         // KEEP IN SYNC with PUBLIC_PATH_PREFIXES + LANDING_PATHS in
         // src/config/domains.ts (detectSiteMode). Any public/marketing route the
         // layout boots in landing-lite mode (no Firebase/DI) MUST appear here, or
-        // the #app-loading boot bar is never dismissed (landing mode never calls
-        // __tkaLoadProgress(100)) and the page sits behind it until the 15s
-        // safety-net timeout.
+        // the #app-loading boot bar is never hidden (landing mode never calls
+        // __tkaLoadProgress(100)) and the page sits behind it until the root
+        // layout lets it go once the landing bootstrap is up
+        // (src/routes/+layout.svelte), showing the long wait from 15 s.
         var isLanding =
           p === "/" ||
           p === "/landing" ||
@@ -1684,11 +1685,96 @@
         transition: opacity 200ms;
       }
 
+      /* The long wait (no ready 15 s after the page started, or module-view
+         still open 15 s after ready): the label
+         may wrap to two lines inside the capsule, and a Reload button shows
+         under it. The button is placed absolutely from the start, so nothing
+         moves when it appears; it fades in on opacity only. */
+      #app-loading[data-long-wait] .boot-capsule {
+        white-space: normal;
+      }
+
+      #app-loading[data-long-wait] .boot-capsule-label {
+        text-align: center;
+        line-height: 1.25;
+      }
+
+      #app-loading > .boot-reload {
+        position: absolute;
+        bottom: max(8px, calc(9% - 56px));
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        box-sizing: border-box;
+        width: max-content;
+        min-height: 44px;
+        padding: 0 22px;
+        border: 1px solid rgba(255, 255, 255, 0.42);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 300ms ease-out;
+      }
+
+      #app-loading[data-long-wait] > .boot-reload {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      #app-loading > .boot-reload:hover {
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      #app-loading > .boot-reload:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 3px;
+      }
+
+      #app-loading[data-surface="light"] > .boot-reload {
+        border-color: rgba(63, 80, 190, 0.7);
+        background: rgba(255, 255, 255, 0.7);
+        color: #26306e;
+      }
+
+      #app-loading[data-surface="light"] > .boot-reload:focus-visible {
+        outline-color: #26306e;
+      }
+
+      @media (max-width: 599px) {
+        #app-loading > .boot-reload {
+          min-height: 36px;
+          bottom: max(8px, calc(9% - 46px));
+        }
+      }
+
+      /* Too short for the button under the capsule (a phone on its side):
+         it sits beside the capsule instead, level with it. The capsule stays
+         put; the Overture lays its letters out above it (overtureLayout). The
+         capsule is at most 360px wide, so 192px right of centre clears it. */
+      @media (max-height: 600px) and (min-width: 600px) {
+        #app-loading > .boot-reload {
+          bottom: calc(9% + 2px);
+          left: calc(50% + 192px);
+          right: auto;
+          margin: 0;
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         #app-loading,
         #boot-overture,
         .boot-capsule-label,
-        .boot-capsule-fill {
+        .boot-capsule-fill,
+        #app-loading > .boot-reload {
           transition: none;
         }
       }
@@ -1728,6 +1814,8 @@
           aria-live="polite"
         ></span>
       </div>
+      <!-- Shown only in the long wait (see __tkaLongWait). -->
+      <button type="button" id="boot-reload" class="boot-reload">Reload</button>
     </div>
     <script>
       // Landing visitors: hide loading bar immediately and skip all loading bar logic
@@ -1765,7 +1853,10 @@
     <script>
       // Two plain status strings: "Opening Flow Arts Composer" from first
       // paint, then "Almost there" if the app is still starting well past its
-      // expected finish (4s at the earliest). Boot milestones name phases for
+      // expected finish (4s at the earliest). In the long wait (no ready 15 s
+      // after the page started, or the module still loading 15 s after
+      // ready) a third status and a Reload button take over; see
+      // __tkaLongWait and __tkaNoReadyYet. The screen never leaves on a timer. Boot milestones name phases for
       // the fill and the boot profiler only; the screen never shows them. This runs before the app's lazy locale bundle.
       // Match its cookie-first selection so German visitors also get a
       // translated startup screen.
@@ -1806,6 +1897,9 @@
       var __tkaBootGerman = {
         "Opening Flow Arts Composer": "Flow Arts Composer wird geöffnet",
         "Almost there": "Gleich geschafft",
+        "Still loading. This is taking longer than usual.":
+          "Lädt noch. Das dauert länger als üblich.",
+        Reload: "Neu laden",
       };
       function __tkaBootMessage(message) {
         return __tkaBootLocale === "de"
@@ -1848,6 +1942,13 @@
       var _initText = document.getElementById("loading-text");
       if (_initText) {
         _initText.textContent = __tkaBootMessage("Opening Flow Arts Composer");
+      }
+      var _reloadButton = document.getElementById("boot-reload");
+      if (_reloadButton) {
+        _reloadButton.textContent = __tkaBootMessage("Reload");
+        _reloadButton.addEventListener("click", function () {
+          location.reload();
+        });
       }
 
       // --- The fill: a boot that times itself ---
@@ -1920,9 +2021,19 @@
       // that came later, before it stops holding the screen. A view that
       // loads slowly then asks for its own pieces still gives them their
       // time. No hold keeps the screen past ready + the ceiling, unless it
-      // asked for its own wait (see __tkaBootHold).
+      // asked for its own wait, or to wait until released (see __tkaBootHold).
       var __tkaHoldCapMs = 4000;
       var __tkaHoldCeilingMs = 8000;
+      // An until-released hold still open this long after ready, or no ready
+      // this long after the page started, turns the screen into the long
+      // wait: a plain message and a Reload button.
+      var __tkaLongWaitMs = 15000;
+      var __tkaLongWaitTimer = null;
+      var __tkaLongWaitShown = false;
+      // A stored profile's composed sits at most this far past its ready, so
+      // one slow boot (an until-released hold can wait as long as it takes)
+      // does not make the next boot's fill crawl toward a far-off end.
+      var __tkaStoredComposedMaxMs = 4000;
       var __tkaBarValue = 5; // the last aria-valuenow written
       var __tkaBarFill = document.getElementById("loading-bar-fill");
       var __tkaBarScreen = document.getElementById("app-loading");
@@ -1966,7 +2077,9 @@
         delete times.composed;
         if (times.scripts === undefined || times.shell === undefined) return;
         if (times.ready === undefined) return;
-        times.composed = Math.round(composedAt);
+        times.composed = Math.round(
+          Math.min(composedAt, times.ready + __tkaStoredComposedMaxMs)
+        );
         localStorage.setItem(
           "tka-boot-profile",
           JSON.stringify({ v: 1, at: Date.now(), t: times })
@@ -2023,6 +2136,7 @@
         __tkaMarkSplash("shell-handoff");
         clearTimeout(window.__tkaLoadTimeout);
         clearTimeout(__tkaSlowTimer);
+        clearTimeout(__tkaLongWaitTimer);
         if (screen) {
           __tkaMarkSplash("dismiss-start");
           // src/lib/shared/application/services/boot-screen.ts waits on `loaded`, display none, or removal.
@@ -2049,8 +2163,12 @@
       // and stops holding; 8 s after ready none hold. A hold that passes its
       // own waitMs gets ready + waitMs instead, past the ceiling: the Create
       // workspace is the whole first view, so a slow one is still worth the
-      // wait. A hold asked for once the screen is leaving, or on a route
-      // without it, holds nothing.
+      // wait. A hold asked for with "until-released" has no deadline at all:
+      // `module-view` ends only when the module's view, its error or its
+      // sign-in gate is on the page, so the screen never leaves on an empty
+      // placeholder (Austen, 2026-11-11). Past ready + 15 s it shows the long
+      // wait instead (__tkaLongWait). A hold asked for once the screen is
+      // leaving, or on a route without it, holds nothing.
       function __tkaOpenHolds() {
         var holds = __tkaBootBar.holds;
         var open = 0;
@@ -2061,6 +2179,7 @@
       }
 
       function __tkaHoldDeadline(hold) {
+        if (hold.untilReleased) return Infinity;
         if (hold.waitMs) return __tkaReadyAt + hold.waitMs;
         return Math.min(
           Math.max(__tkaReadyAt, hold.at) + __tkaHoldCapMs,
@@ -2069,7 +2188,8 @@
       }
 
       // The cap timer waits for the earliest deadline among the open holds.
-      // It only runs while one is open, so there is always a deadline.
+      // Open holds that wait until released have none, so with only those
+      // open no timer runs.
       function __tkaScheduleCap() {
         var next = Infinity;
         var holds = __tkaBootBar.holds;
@@ -2079,10 +2199,47 @@
           }
         }
         clearTimeout(__tkaCapTimer);
+        __tkaCapTimer = null;
+        if (!isFinite(next)) return;
         __tkaCapTimer = setTimeout(
           __tkaCapHolds,
           Math.max(0, next - performance.now())
         );
+      }
+
+      function __tkaOpenUntilReleased() {
+        var holds = __tkaBootBar.holds;
+        for (var i = 0; i < holds.length; i++) {
+          if (holds[i].untilReleased && holds[i].releasedAt === undefined) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // The long wait: the screen stays, and says so, with a way out. After
+      // ready it is for an until-released hold still open; before ready see
+      // __tkaNoReadyYet below.
+      function __tkaLongWait() {
+        if (__tkaFinished || __tkaLongWaitShown) return;
+        if (!__tkaOpenUntilReleased()) return;
+        __tkaShowLongWait();
+      }
+
+      function __tkaShowLongWait() {
+        if (__tkaFinished || __tkaLongWaitShown) return;
+        __tkaLongWaitShown = true;
+        __tkaMarkSplash("long-wait");
+        clearTimeout(__tkaSlowTimer);
+        var screen = document.getElementById("app-loading");
+        if (screen) screen.setAttribute("data-long-wait", "");
+        var text = document.getElementById("loading-text");
+        if (text) {
+          __tkaCrossfade(
+            text,
+            __tkaBootMessage("Still loading. This is taking longer than usual.")
+          );
+        }
       }
 
       function __tkaCompose() {
@@ -2127,10 +2284,22 @@
         try {
           if (__tkaFinished || !__tkaBarActive) return __tkaNoRelease;
           var entry = { name: String(name), at: Math.round(performance.now()) };
-          if (typeof waitMs === "number" && waitMs > __tkaHoldCapMs) {
+          if (waitMs === "until-released") {
+            entry.untilReleased = true;
+          } else if (typeof waitMs === "number" && waitMs > __tkaHoldCapMs) {
             entry.waitMs = waitMs;
           }
           __tkaBootBar.holds.push(entry);
+          // Asked for well after ready: it is already a long wait.
+          if (
+            entry.untilReleased &&
+            __tkaReadyAt !== null &&
+            performance.now() >= __tkaReadyAt + __tkaLongWaitMs
+          ) {
+            try {
+              __tkaLongWait();
+            } catch (e) {}
+          }
           // Asked for after ready: its own deadline may come first.
           if (__tkaReadyAt !== null) {
             try {
@@ -2161,8 +2330,8 @@
       function __tkaOnReady() {
         if (__tkaReadyAt !== null) return;
         __tkaReadyAt = performance.now();
-        // The safety net is for a ready that never comes; from here the
-        // holds' own deadlines decide.
+        // The no-ready check is for a ready that never comes; from here the
+        // holds decide.
         clearTimeout(window.__tkaLoadTimeout);
         try {
           if (__tkaOpenHolds() === 0) {
@@ -2170,6 +2339,11 @@
             return;
           }
           __tkaScheduleCap();
+          __tkaLongWaitTimer = setTimeout(function () {
+            try {
+              __tkaLongWait();
+            } catch (e) {}
+          }, __tkaLongWaitMs);
         } catch (e) {
           __tkaFinishBoot();
         }
@@ -2177,7 +2351,8 @@
 
       // The app's one entry point. A broken profile, storage, timer or hold
       // can only cost the fill its motion: ready always lets the screen go,
-      // at the latest when the hold cap fires.
+      // at the latest when the hold cap fires, except for an until-released
+      // hold, which waits for its release and shows the long wait meanwhile.
       function __tkaBootMilestone(name) {
         if (name === "composed") return; // the holds report it
         try {
@@ -2237,7 +2412,7 @@
       // Still starting well past the expected finish: say so once, plainly.
       var __tkaSlowTimer = setTimeout(
         function () {
-          if (__tkaFinished) return;
+          if (__tkaFinished || __tkaLongWaitShown) return;
           var text = document.getElementById("loading-text");
           if (text) __tkaCrossfade(text, __tkaBootMessage("Almost there"));
         },
@@ -2256,27 +2431,38 @@
         }
       } catch (e) {}
 
-      // Safety net: if ready never arrives, force-dismiss after 15s
-      window.__tkaLoadTimeout = setTimeout(function () {
-        try {
-          if (__tkaBar) __tkaBar.stopTicker();
-        } catch (e) {}
-        // A route that removed the screen itself still ends the Overture.
-        __tkaOvertureCall("finish");
+      // No ready 15 s after the page started. The screen never leaves on a
+      // timer (Austen, 2026-11-11): leaving here showed an empty page when the
+      // app's code was slow to arrive. If a route already took the screen
+      // away itself (removed or hid it), only stop the bar and the Overture.
+      // Otherwise show the long wait and keep the screen, the Overture still
+      // lapping; it leaves when ready arrives and the holds clear.
+      function __tkaNoReadyYet() {
+        if (__tkaFinished || __tkaReadyAt !== null) return;
         var screen = document.getElementById("app-loading");
-        if (screen && !screen.classList.contains("loaded")) {
-          __tkaMarkSplash("timeout-dismiss");
-          screen.classList.add("loaded");
-          if (__tkaReduceMotion) {
-            screen.remove();
-            return;
-          }
-          screen.addEventListener("transitionend", function () {
-            __tkaMarkSplash("removed");
-            screen.remove();
-          });
+        var covers = Boolean(
+          screen &&
+          screen.isConnected &&
+          !screen.classList.contains("loaded") &&
+          screen.style.display !== "none"
+        );
+        if (!covers) {
+          try {
+            if (__tkaBar) __tkaBar.stopTicker();
+          } catch (e) {}
+          __tkaOvertureCall("finish");
+          return;
         }
-      }, 15000);
+        __tkaShowLongWait();
+      }
+      window.__tkaLoadTimeout = setTimeout(
+        function () {
+          try {
+            __tkaNoReadyYet();
+          } catch (e) {}
+        },
+        Math.max(0, __tkaLongWaitMs - performance.now())
+      );
     </script>
     <!-- The Overture's boot script, inlined and started here by the server
          (src/lib/server/performance/overture-inline.ts). -->

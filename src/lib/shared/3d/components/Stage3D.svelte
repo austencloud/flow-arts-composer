@@ -28,6 +28,7 @@
   import { T } from "@threlte/core";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { STAGE } from "@austencloud/scene-3d";
+  import { getStageDirectionCuesShown } from "../context/stage-direction-cues-context";
 
   interface Props {
     /** Width of the stage along the X axis in meters. Default 6m. */
@@ -67,6 +68,8 @@
   // active. For the default forest floor this is ~-1.5 (below the
   // avatar's shoulder-origin Mixamo rig).
   const groundY = $derived(overrideGroundY ?? userProportionsState.groundY);
+  // The host viewer can turn the cues off for a whole scene (a recording).
+  const viewerCuesShown = getStageDirectionCuesShown();
 
   // ─── Stage geometry constants (all in meters) ─────────────────────
 
@@ -308,7 +311,7 @@
     </T.Mesh>
   {/each}
 
-  {#if showDirectionCues}
+  {#if showDirectionCues && viewerCuesShown()}
     <!--
       Downstage (+Z) footlight strip: warm bright yellow, emissive so it
       glows like a real stage footlight. Strongest visual cue for the

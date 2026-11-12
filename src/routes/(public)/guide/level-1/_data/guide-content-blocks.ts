@@ -90,7 +90,18 @@ export type GuideFlowArea =
   | "grid-closing";
 
 type GuideBlockContent =
-  | { kind: "heading"; level: 1 | 2 | 3; text: string; sheet?: PtHint }
+  | {
+      kind: "heading";
+      level: 1 | 2 | 3;
+      text: string;
+      /**
+       * A small label over the heading naming the section it belongs to
+       * ("Shift" over "Prospin"), for a screen that shows the subsection on
+       * its own. Flow views only; the print sheet ignores it.
+       */
+      kicker?: string;
+      sheet?: PtHint;
+    }
   | {
       kind: "prose";
       html: string;
@@ -154,6 +165,25 @@ type GuideBlockContent =
        * Spec: docs/superpowers/specs/2026-07-16-sequence-showcase-design.md.
        */
       card?: boolean;
+      /**
+       * With `card`: draw the figure card (2026-11-11, Staff Motions first)
+       * instead of the banner. The player sits on top and its two-cell strip
+       * (Start and step 1, the pictograph's own labels) directly under it,
+       * one frame, sized by the screen; the words sit beside it on a wide
+       * window and over it on a small one. Consecutive figure cards share
+       * one screen side by side, each under its `figureTitle`. Opt-in: a
+       * page that leaves it off draws exactly as before.
+       */
+      figureCard?: boolean;
+      /** A figure card's own small heading, when it shares a screen with
+          another figure card (the opener's "Prospin" and "Antispin"). */
+      figureTitle?: string;
+      /**
+       * Keep a card's animation playing round and round instead of stopping
+       * after one pass. For a sequence that ends where it started, so the
+       * reader can watch it as many times as they need. Omitted = play once.
+       */
+      loop?: boolean;
       /**
        * Refreshable example pool. When present, the showcase seeds the strip +
        * animation from `entries[0]` (the original print example, which

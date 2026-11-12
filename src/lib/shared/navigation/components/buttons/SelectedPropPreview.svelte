@@ -25,6 +25,7 @@
     fanAppearance: settings.fanAppearance,
     triangleGrip: settings.triangleGrip,
     buugengStyle: settings.buugengStyle,
+    triadBuild: settings.triadBuild,
   }}
   leftFlipped={isBuugengFamilyProp(left) && settings.leftBuugengFlipped}
   rightFlipped={right === PropType.HAND ||

@@ -45,6 +45,8 @@ vi.mock("#lib/shared/analytics/services/posthog-lifecycle-outbox.js", () => ({
 }));
 vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   getCurrentPostHogSessionId: vi.fn().mockResolvedValue("session-1"),
+  // A library save also sends sequence_kept through captureWhenReady.
+  captureWhenReady: vi.fn(),
 }));
 // NOT mocked: posthog-lifecycle-reporter. It is the boundary under test.
 

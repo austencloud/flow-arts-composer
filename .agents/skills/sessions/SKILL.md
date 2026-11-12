@@ -47,7 +47,8 @@ Skip any session already in `reviewedSessionIds`.
 identified, `zh-CN` browser language, and no referrer (on 2026-10-22, 30 of
 the top 40 friction slots were this shape). Pass `--include-crawlers` to see
 them. Nothing changes in PostHog; the rule is `isLikelyCrawlerSession` in
-`session-triage-queries.ts`.
+`crawler-sessions.ts`, which also drops the same sessions from the admin
+pulse counts.
 
 Each surfaced session carries its score AND the reasons that produced it, so
 you can see whether the ranking is behaving. If the reasons look wrong, say so

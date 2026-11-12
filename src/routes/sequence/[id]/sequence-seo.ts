@@ -1,9 +1,16 @@
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 const SITE_URL = "https://tkaflowarts.com";
-const DEFAULT_OG_IMAGE = `${SITE_URL}/branding/og-image.png`;
+/** The site-wide share image; every sequence link without its own uses it. */
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/branding/og-image.png`;
 
-export type SequenceRecordSource = "catalog" | "public" | "inline" | "unknown";
+/** Where a route's meta came from. `shortcode` is a scannable code's record. */
+export type SequenceRecordSource =
+  | "catalog"
+  | "public"
+  | "shortcode"
+  | "inline"
+  | "unknown";
 
 export interface SequenceRouteMeta {
   word: string | null;
@@ -81,6 +88,21 @@ export function isSequenceIndexable(meta: SequenceRouteMeta): boolean {
   );
 }
 
+/**
+ * The page and share title. Many apps show only this line in a link preview,
+ * so it names the sequence and, when known, who made it. The colon keeps a
+ * one-letter word ("A", from a repeated "AAAA") from reading as the article.
+ */
+export function buildSequenceTitle(
+  displayWord: string | null,
+  creator: string | null,
+  kind = "Flow Arts Sequence"
+): string {
+  if (!displayWord) return `${kind} | Flow Arts Composer`;
+  const byline = creator ? ` by ${creator}` : "";
+  return `${displayWord}${byline}: ${kind} | Flow Arts Composer`;
+}
+
 export function buildSequenceSeo(
   routeId: string,
   meta: SequenceRouteMeta
@@ -105,9 +127,7 @@ export function buildSequenceSeo(
   const ogImage = meta.thumbnailUrl ?? DEFAULT_OG_IMAGE;
 
   return {
-    title: displayWord
-      ? `${displayWord} Flow Arts Sequence | Flow Arts Composer`
-      : "Flow Arts Sequence | Flow Arts Composer",
+    title: buildSequenceTitle(displayWord, creator),
     description,
     canonical,
     heading,

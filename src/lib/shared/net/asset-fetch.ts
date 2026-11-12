@@ -33,6 +33,109 @@ function isTimeout(err: unknown): boolean {
   return err instanceof DOMException && err.name === "TimeoutError";
 }
 
+// A full-page navigation (the /composer "Open the app" link reloads into
+// /create) cancels every fetch still in flight. Firefox rejects each one with
+// "TypeError: NetworkError when attempting to fetch resource.", Chrome with
+// "Failed to fetch", and PostHog filed every one that reached console.error
+// as an exception. Nothing failed: the page was leaving. `beforeunload` fires
+// before the old document's fetches are cancelled; `pagehide` covers paths
+// that skip it. `pageshow` clears the flag when a back-forward-cache restore
+// brings the page back, and a press or key clears it after a `beforeunload`
+// whose navigation was cancelled (an unsaved-work prompt the visitor declined):
+// someone still using the page means it is not leaving.
+//
+// iPhone Safari never fires `beforeunload`, and it cancels the old page's
+// fetches ("TypeError: Load failed") as soon as a link starts loading, a
+// second before `pagehide` (a visitor report, 2026-11-11: five Load failed
+// errors 0.2 s after the tap, pagehide 1.2 s after it). So a link click the
+// browser itself will follow counts as leaving too. The window listener runs
+// after SvelteKit's, so a link the router handles in place is already
+// defaultPrevented and does not count.
+let pageLeaving = false;
+
+/** Whether this click makes the browser load a new document in this tab. */
+export function isDocumentNavigationClick(
+  event: Pick<
+    MouseEvent,
+    | "defaultPrevented"
+    | "button"
+    | "metaKey"
+    | "ctrlKey"
+    | "shiftKey"
+    | "altKey"
+    | "target"
+  >,
+  here: Pick<Location, "href">
+): boolean {
+  if (event.defaultPrevented || event.button !== 0) return false;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return false;
+  }
+  const target = event.target as Element | null;
+  const link = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+  if (!link || link.hasAttribute("download")) return false;
+  const frame = link.getAttribute("target");
+  if (frame && frame !== "_self") return false;
+  let destination: URL;
+  try {
+    destination = new URL(link.href, here.href);
+  } catch {
+    return false;
+  }
+  if (destination.protocol !== "http:" && destination.protocol !== "https:") {
+    return false;
+  }
+  const current = new URL(here.href);
+  // Same page apart from the #fragment: the browser scrolls, it does not load.
+  const samePage =
+    destination.origin === current.origin &&
+    destination.pathname === current.pathname &&
+    destination.search === current.search;
+  return !(samePage && destination.hash !== "");
+}
+if (typeof window !== "undefined") {
+  const options = { capture: true, passive: true };
+  const leave = (): void => {
+    pageLeaving = true;
+  };
+  const stay = (): void => {
+    pageLeaving = false;
+  };
+  window.addEventListener("beforeunload", leave, options);
+  window.addEventListener("pagehide", leave, options);
+  window.addEventListener("pageshow", stay, options);
+  window.addEventListener("pointerdown", stay, options);
+  window.addEventListener("keydown", stay, options);
+  window.addEventListener(
+    "click",
+    (event) => {
+      if (isDocumentNavigationClick(event, window.location)) leave();
+    },
+    { passive: true }
+  );
+}
+
+/** True once the document has started to unload. */
+export function isPageLeaving(): boolean {
+  return pageLeaving;
+}
+
+/** Test seam: set the unload flag without dispatching window events. */
+export function setPageLeavingForTests(value: boolean): void {
+  pageLeaving = value;
+}
+
+/**
+ * A failure that says nothing about the asset or the network: the request was
+ * cancelled on purpose (AbortError), or it died because the page is unloading.
+ * Callers drop these silently. A TimeoutError is NOT one of them: a request
+ * that ran out its whole budget is a real network problem worth one report.
+ */
+export function isCancelledAssetFailure(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  return pageLeaving && err instanceof TypeError;
+}
+
 /**
  * Fetch a static asset with a timeout + single network-error retry. Drop-in for
  * the loaders that use `response.ok` / `.text()` / `.json()`.
@@ -52,11 +155,15 @@ export async function assetFetch(
       // freeing the socket (the load-bearing freeze fix). The signal covers the
       // whole exchange including the body stream, so a download that stalls
       // mid-body aborts too rather than hanging forever.
-      return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+      return await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
     } catch (err) {
       // Don't retry timeouts (amplifies load on a saturated server) or after the
       // first retry. Only a transient network error gets one more shot.
-      if (isTimeout(err) || attempt >= 1) throw err;
+      // An unloading page cancels the retry too, so it would only fail twice.
+      if (isTimeout(err) || attempt >= 1 || pageLeaving) throw err;
       await new Promise((resolve) => setTimeout(resolve, 150));
     }
   }

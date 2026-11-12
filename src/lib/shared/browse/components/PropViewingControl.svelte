@@ -98,7 +98,6 @@
   // the viewer was on saved props.
   function pickProps(next: ResolvedPropConfig): void {
     void onUpdate({ ...next, propViewingMode: "my-props" });
-    choosing = false;
   }
 
   // The trigger toggles. Without this, its own press would count as an outside

@@ -16,6 +16,9 @@
  *   - it's ahead of local main (something to merge)
  *   - it merges into local main with no conflicts
  *   - the project gate passes in the worktree (see projectGate), in order:
+ *       0. scripts/layout/scan.mjs, when the branch changes a .svelte or
+ *          .css file under src/ (judges the branch's own changes against
+ *          where it left main, a few seconds)
  *       1. `npm run check` and scripts/svelte-compile-gate.mjs <base>
  *       2. `npm run check:tsc` (plain tsc; svelte-check is blind past its
  *          20 MB budget, see scripts/tsc-gate.mjs)
@@ -98,6 +101,20 @@ function requiresProjectCheck(paths) {
         normalized.startsWith("docs/") ||
         normalized.endsWith(".md") ||
         normalized.endsWith(".mdx")
+      );
+    })
+  );
+}
+
+/** The layout scan runs when a branch changes styles or markup under src/. */
+function touchesStyles(paths) {
+  return (
+    paths.length === 0 ||
+    paths.some((path) => {
+      const normalized = path.replaceAll("\\", "/");
+      return (
+        normalized.startsWith("src/") &&
+        (normalized.endsWith(".svelte") || normalized.endsWith(".css"))
       );
     })
   );
@@ -193,6 +210,14 @@ function projectGate(cwd, baseSha, taskPaths, { quiet = false } = {}) {
   const code = requiresProjectCheck(taskPaths);
 
   if (code) {
+    // Layout law scan of what the branch changed: plain Node, a few
+    // seconds, so it runs first.
+    const layoutScan = join(cwd, "scripts", "layout", "scan.mjs");
+    if (!touchesStyles(taskPaths))
+      console.log("    skipping layout scan: no .svelte or .css change under src/");
+    else if (!existsSync(layoutScan))
+      console.log("    skipping layout scan: the task worktree has no scripts/layout/scan.mjs");
+    else step("layout scan", () => run(process.execPath, [layoutScan], opts));
     step("npm run check", () => npmRun("check", opts));
     // svelte-check no longer reads components; compile the changed ones.
     const compileGate = fileURLToPath(

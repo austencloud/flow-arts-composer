@@ -169,6 +169,12 @@
      */
     contactMode?: "prop-authoritative" | "legacy";
     /**
+     * Whether prop-authoritative contact closes the fingers this frame
+     * (default true). The motion bake turns it off on passes it does not
+     * record; the live viewer never sets it.
+     */
+    solveFingerContacts?: boolean;
+    /**
      * Lock each staff to its palm after the arms solve. The hands still aim
      * at the full-grid grip; where an arm falls short, its staff comes in to
      * meet the palm by exactly the shortfall and keeps the grid's
@@ -626,6 +632,7 @@
   redPropState={rightProp}
   pairSeparation={!contact.planned}
   contactResetKey={contact.resetKey}
+  solveFingerContacts={props.solveFingerContacts ?? true}
   groundOffset={rigGroundOffset}
   enableLocomotion={props.enableLocomotion ?? true}
   enableFootPlanting={props.enableFootPlanting ?? true}

@@ -6,7 +6,9 @@
  * each curve, and only the last stretch tapers to a sharp point that hooks a
  * little past the half-circle. The styles are the cuts people actually sell
  * (Austen, 2026-11-07, after the invented spike/fang/talon shapes read as
- * fakes):
+ * fakes). Like the real prop, every style narrows to a hand-width grip where
+ * the two halves meet and flares out to the full blade a little way along each
+ * half, so a hand can close around it and roll the prop (Austen, 2026-11-11):
  *
  *   crescent    the plain blade
  *   perforated  a row of oval holes along each half, solid at the grip
@@ -38,6 +40,9 @@ const CURL = 0.3; // radians each tip hooks past the half-circle (~17°)
 const HALF_WIDTH = 9; // half the blade width; full blade ≈ 0.26 R, like the real prop
 const TAPER_START = 0.55; // fraction of each half (grip → tip) where the taper begins
 const SAMPLES = 240; // per half
+const GRIP_HALF = 4.5; // half the grip's width: about 2.5 cm on an 85 cm buugeng
+const GRIP_END = 0.05; // fraction of each half that is bare grip (about 7 cm across both, the palm)
+const FLARE_END = 0.3; // fraction of each half where the long flare reaches the full blade
 
 const BODY = "#2e3191";
 const WICK = "#c9ac68";
@@ -89,13 +94,29 @@ function outward(s) {
   return { x: (p.x - c.x) / len, y: (p.y - c.y) / len };
 }
 
-/** Even blade, then a long taper to a needle point, as a crescent's tip. */
-function halfWidth(s, base = HALF_WIDTH) {
+/**
+ * Narrow the middle of any width profile to the grip: bare grip for GRIP_END
+ * of each half, then a smooth flare to the style's own width by FLARE_END.
+ */
+function withGrip(widthFn) {
+  return (s, base) => {
+    const w = widthFn(s, base);
+    const t = alongHalf(s);
+    if (t >= FLARE_END) return w;
+    if (t <= GRIP_END) return Math.min(w, GRIP_HALF);
+    const u = (t - GRIP_END) / (FLARE_END - GRIP_END);
+    const ease = u * u * (3 - 2 * u);
+    return GRIP_HALF + (w - GRIP_HALF) * ease;
+  };
+}
+
+/** Grip, flare to an even blade, then a long taper to a needle point. */
+const halfWidth = withGrip((s, base = HALF_WIDTH) => {
   const t = alongHalf(s);
   if (t <= TAPER_START) return base;
   const u = (t - TAPER_START) / (1 - TAPER_START);
   return Math.max(0.35, base * (1 - Math.pow(u, 1.5)));
-}
+});
 
 // ── shapes as polygons (construction units) ─────────────────────────────────
 function blade(base = HALF_WIDTH, widthFn = halfWidth) {
@@ -160,12 +181,13 @@ const styles = {};
 styles.crescent = { body: blade(), holes: [], pieces: [] };
 
 {
-  // Oval holes along the even part of each half, sized to the local blade.
+  // Oval holes along the even part of each half, sized to the local blade;
+  // the grip and its flare stay solid.
   const holes = [];
   for (const half of [0, 1]) {
     const count = 7;
     for (let i = 0; i < count; i++) {
-      const t = 0.13 + (i / (count - 1)) * 0.66;
+      const t = FLARE_END - 0.04 + (i / (count - 1)) * 0.56;
       const s = sAt(half, t);
       const p = centre(s);
       const w = halfWidth(s);
@@ -201,10 +223,10 @@ styles.crescent = { body: blade(), holes: [], pieces: [] };
     return [p.x + o.x * d, p.y + o.y * d];
   };
   // The frame stays slim right to a blunt tip, where the wick knots over it.
-  const fireWidth = (s, w0) => {
+  const fireWidth = withGrip((s, w0) => {
     const t = alongHalf(s);
     return t <= 0.7 ? w0 : w0 * (1 - 0.45 * ((t - 0.7) / 0.3));
-  };
+  });
   const widthAt = (half, u) => fireWidth(sAt(half, Math.min(1, u / HALF_LEN)), base);
 
   // Inset a triangle given in (u, d) by `e` on every side.
@@ -237,7 +259,7 @@ styles.crescent = { body: blade(), holes: [], pieces: [] };
   for (const half of [0, 1]) {
     // Truss: alternate up and down triangles while the frame is deep enough.
     for (let i = 0; ; i++) {
-      const a = 0.05 * HALF_LEN + (i * CELL) / 2;
+      const a = (FLARE_END - 0.06) * HALF_LEN + (i * CELL) / 2;
       const b = a + CELL;
       if (b > 0.95 * HALF_LEN) break;
       const h = Math.min(widthAt(half, a), widthAt(half, b)) - RIM;
@@ -257,7 +279,7 @@ styles.crescent = { body: blade(), holes: [], pieces: [] };
 
     // Wick: one wrapped band along the outer edge, wire ties across it, and a
     // knot over the blunt tip.
-    const from = 0.1 * HALF_LEN;
+    const from = (FLARE_END - 0.08) * HALF_LEN;
     const to = HALF_LEN;
     const outerSide = [];
     const innerSide = [];
@@ -304,13 +326,13 @@ styles.crescent = { body: blade(), holes: [], pieces: [] };
 
 {
   // Alternating slanted leaves with a dot between each pair, like the cut
-  // metal sets; the grip stays solid.
+  // metal sets; the grip and its flare stay solid.
   const base = 11.5;
   const holes = [];
   for (const half of [0, 1]) {
     const steps = 11;
     for (let i = 0; i < steps; i++) {
-      const t = 0.1 + (i / (steps - 1)) * 0.7;
+      const t = FLARE_END - 0.06 + (i / (steps - 1)) * 0.6;
       const s = sAt(half, t);
       const p = centre(s);
       const w = halfWidth(s, base);

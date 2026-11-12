@@ -7,6 +7,7 @@
  * I/O, no credentials — so both the API route and the CLI can use them.
  */
 import { escapeHogQL, pulseProdFilter } from "./hogql-shared";
+import { CRAWLER_SESSION_COLUMNS as CRAWLER } from "./crawler-sessions";
 
 /** Events that mean the user actually produced something. */
 export const CONTENT_ACTION_EVENTS = [
@@ -79,7 +80,7 @@ export function buildTriageSessionsQuery(sinceIso: string, limit: number): strin
       countIf(event = '$exception') as exception_count,
       countIf(event = '$rageclick') as rage_click_count,
       countIf(event = '$dead_click') as dead_click_count,
-      countIf(event = '$pageview') as pageview_count,
+      ${CRAWLER.pageviewCount} as pageview_count,
       countIf(event IN (${contentEvents})) as content_action_count,
       arrayDistinct(arrayFilter(x -> x != '', groupArray(
         if(event = '$pageview',
@@ -96,9 +97,9 @@ export function buildTriageSessionsQuery(sinceIso: string, limit: number): strin
       argMax(properties."$browser", timestamp) as browser,
       argMax(properties."$os", timestamp) as operating_system,
       argMax(properties."$device_type", timestamp) as device_type,
-      argMax(properties."$browser_language", timestamp) as locale,
-      maxIf(1, toString(properties."$is_identified") IN ('true', '1')) as identified,
-      argMinIf(properties."$referring_domain", timestamp, event = '$pageview') as referring_domain
+      ${CRAWLER.locale} as locale,
+      ${CRAWLER.identified} as identified,
+      ${CRAWLER.referringDomain} as referring_domain
     FROM events
     WHERE timestamp > toDateTime('${since}')
       AND "$session_id" != ''
@@ -107,26 +108,6 @@ export function buildTriageSessionsQuery(sinceIso: string, limit: number): strin
     ORDER BY started_at DESC
     LIMIT ${n}
   `;
-}
-
-/**
- * Crawler sessions: one page view, never identified, zh-CN browser language,
- * and no referrer. On 2026-10-22, 30 of the top 40 friction slots were this
- * shape (zh-CN Chrome from cloud IP ranges reading one localized /guide page).
- * PostHog data here carries no datacenter-IP flag, so an empty referrer stands
- * in for it. Triage-side only: PostHog itself is untouched, and
- * `--include-crawlers` brings these sessions back.
- */
-export function isLikelyCrawlerSession(
-  row: Pick<TriageSessionRow, "pageviewCount" | "identified" | "locale" | "referringDomain">
-): boolean {
-  const noReferrer = row.referringDomain === "" || row.referringDomain === "$direct";
-  return (
-    row.pageviewCount === 1 &&
-    !row.identified &&
-    row.locale.toLowerCase().replace("_", "-") === "zh-cn" &&
-    noReferrer
-  );
 }
 
 /** Ordered event stream for one session, any user. */

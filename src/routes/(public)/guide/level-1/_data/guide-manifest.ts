@@ -62,9 +62,10 @@ export type GuidePageEntry = {
    * The web folds this print page into another page: /guide/level-1/<id>
    * redirects to `into` (at its 1-based `?screen=`), and the web's Previous,
    * Next and sitemap skip it. The print book, the handbook and the in-app
-   * reader keep the sheet in its place.
+   * reader keep the sheet in its place. `href` sends the web to a page outside
+   * the guide instead (the Codex sheets fold into /codex).
    */
-  web?: { into: string; screen?: number };
+  web?: { into: string; screen?: number } | { href: string };
 };
 
 export const GROUP_TITLES: Record<GuideGroup, string> = {
@@ -119,8 +120,22 @@ export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
   // the faithful static Double-Staff sheets instead - see GuideCodexPage.svelte.
   // The Codex spans two letter-sized pages - Types 1-2 (Double Staff) on `codex`,
   // Types 3-6 on `codex-2` - one printed sheet each (see CodexPageBody.svelte).
-  { id: "codex", title: "Codex", level: 0, group: "1.1" },
-  { id: "codex-2", title: "Codex (cont.)", level: 1, group: "1.1" },
+  // Online the Codex is one page, /codex (2026-11-10): the web sends both
+  // sheet addresses there and its Previous/Next step past them.
+  {
+    id: "codex",
+    title: "Codex",
+    level: 0,
+    group: "1.1",
+    web: { href: "/codex" },
+  },
+  {
+    id: "codex-2",
+    title: "Codex (cont.)",
+    level: 1,
+    group: "1.1",
+    web: { href: "/codex" },
+  },
   // (letters-type1 removed 2026-07-09 - base-letters carries the Type 1 head.)
   { id: "lt1-abc-ghi", title: "Alpha/Beta Words", level: 1, group: "1.1" },
   { id: "lt1-dj-ek-fl", title: "Compound Letters", level: 1, group: "1.1" },

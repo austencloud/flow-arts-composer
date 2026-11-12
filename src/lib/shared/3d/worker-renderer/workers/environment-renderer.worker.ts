@@ -538,30 +538,48 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
     markPresented = resolve;
   });
   const factory = WORLD_FACTORIES[sceneRequest.environment];
-  const builtWorld = await factory({
-    renderer,
-    camera,
-    performers: performerSnapshots,
-    requestId: sceneRequest.requestId,
-    reducedMotion: sceneRequest.reducedMotion,
-    reportProgress(phase, fraction) {
-      postProgress(phase, fraction);
-    },
-    scenePresented,
-    prepareLateObject(object, targetScene) {
-      if (!renderer || !camera) return Promise.resolve();
-      return prepareLateWorkerObject(
-        { renderer, scene: targetScene, camera },
-        object,
-        postProcessing?.sceneRenderTarget ?? null
-      );
-    },
-  });
+  // The performers need nothing from the world (their ground height and
+  // placement come in the snapshots), so their avatar download and skinning
+  // setup run while the environment downloads and parses, in a detached
+  // stage that joins the world's scene once it exists.
+  const pendingStage = new WorkerPerformerStage();
+  const performerBuild = pendingStage.setSnapshots(performerSnapshots);
+  // Held until awaited below; a failure while the world is still loading
+  // must not surface as an unhandled rejection.
+  performerBuild.catch(() => undefined);
+  let builtWorld: WorkerEnvironmentWorld;
+  try {
+    builtWorld = await factory({
+      renderer,
+      camera,
+      performers: performerSnapshots,
+      requestId: sceneRequest.requestId,
+      reducedMotion: sceneRequest.reducedMotion,
+      reportProgress(phase, fraction) {
+        postProgress(phase, fraction);
+      },
+      scenePresented,
+      prepareLateObject(object, targetScene) {
+        if (!renderer || !camera) return Promise.resolve();
+        return prepareLateWorkerObject(
+          { renderer, scene: targetScene, camera },
+          object,
+          postProcessing?.sceneRenderTarget ?? null
+        );
+      },
+    });
+  } catch (error) {
+    pendingStage.dispose();
+    throw error;
+  }
   if (isSuperseded(sceneRequest)) {
+    pendingStage.dispose();
     builtWorld.dispose();
     return false;
   }
   world = builtWorld;
+  // From here the shared teardown (disposeSceneRuntime) owns the stage.
+  performerStage = pendingStage;
   activeRuntimeReducedMotion = sceneRequest.reducedMotion;
   if (world.useViewerBaseLighting !== false) {
     world.scene.add(
@@ -579,9 +597,15 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
   );
   const environmentReadyAt = performance.now();
   postProgress("performer", 0);
-  performerStage = new WorkerPerformerStage(world.scene);
-  await performerStage.setSnapshots(performerSnapshots);
+  pendingStage.attachTo(world.scene);
+  await performerBuild;
   if (isSuperseded(sceneRequest)) return false;
+  // Snapshots that arrived while either half loaded replace the ones the
+  // build started from. Performers that still match are kept as built.
+  await pendingStage.setSnapshots(performerSnapshots);
+  if (isSuperseded(sceneRequest)) return false;
+  // Performers finish no earlier than the environment; performerMs is now the
+  // time the scene waited for them after its environment was ready.
   const performerReadyAt = performance.now();
   const worldReadyAt = performerReadyAt;
   postProgress("performer", 1);

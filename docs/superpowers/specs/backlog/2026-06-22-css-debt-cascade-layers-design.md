@@ -2,20 +2,22 @@
 status: backlog
 value: 3
 effort: L
-remaining: Recount !important and hardcoded colors; finish cascade/token migration and make stylelint blocking in CI if still required.
+remaining: 'Next slice: Phase 2 remnant in the Create LOOP picker (LOOPDrawer.svelte, 25 forced declarations re-pinning drawer geometry below 768px) onto the --sheet-* API with specificity; then the two popover shells (TabOverflowSelector, TikaModelSwitcher) whose forced declarations only fight the UA popover sheet. Phase 1 third-party layering is moot (98.css is scoped under .retro-shell, 4 reduced-motion survivors); fix the stale app.css comment with the next app.css touch. Phase 4: 18 static inline colors remain.'
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 work_state: in-progress
 ---
 
 # CSS Debt Elimination — Cascade Layers + Drawer Consolidation
 
+**Evidence (2026-11-01, Train practice sheets slice):** Phase 2 remnant: `ModePickerSheet.svelte` and `GridSettingsSheet.svelte` each re-skinned the drawer with 7 `!important` declarations (backdrop color, bottom-sheet height cap, side-drawer width). Replaced with the Drawer.css API already in place (`--sheet-backdrop-bg`, `--sheet-max-height`, `--sheet-width`) and a three-selector rule for the side-drawer width cap; the side drawer's height/max-height now come from the base right-placement rule (100dvh) instead of a forced 100%, which resolves to the same pixels. The drawer package only writes inline `height` for height snap points and inline `transform` during drag, neither of which these sheets use, so no survivor was needed. Verified with a temporary, uncommitted harness route that mounted both real sheets open: 375x667 (bottom placement) and 1440x900 (right placement) screenshots before/after are pixel-identical (0 differing pixels in all four), and computed geometry (x, y, width, height, max-height, backdrop color) is unchanged. Landing, Create, Browse and Settings at both viewports were captured as a regression control: Browse 0.000%, Create 0.004%, Settings 0.040%, Landing 0.287% (the rotating demo card); a same-code control pass taken under test-runner load differed by up to 2.3% on those routes, so that band is capture noise. The boot screen must be gone before a shot is taken; a 6 s fixed wait captured the splash instead. `npm run lint:css` warnings for the two files went from 14 to 0 (repo-wide 560 to 546; the 7 errors are pre-existing postcss-html parser false positives named in `stylelint.config.js`). Recount after this slice: 475 `!important` tokens in `src/**/*.svelte` (577 including `.css`), 18 static inline colors in `style=""` attributes (53 more are dynamic `--x:` injection, not debt). Phase 1 note: `src/app.css` claims 98.css is imported into `layer(thirdparty)`; it is not. It is scoped under `.retro-shell` by `scripts/scope-98css.cjs` and the retro feature has 4 reduced-motion `!important` survivors, so layering it would only let the global `button { font: inherit }` reset beat the retro font. Treat that Phase 1 step as superseded.
+
 **Triage evidence (2026-10-07):** `src/app.css` now declares `@layer thirdparty, base, components, overrides`, contradicting the original zero-layer baseline. The remaining override and Drawer-consolidation scope still needs source and visual review.
 
 **Date:** 2026-06-22
-**Status:** In progress; cascade layer foundation landed, remaining CSS debt and acceptance need review.
+**Status:** In progress; cascade layer foundation landed, Drawer skin API in place, per-consumer drawer overrides being retired one family at a time.
 **Goal:** Remove the antiquated CSS layer (559 `!important`, ~71 hardcoded inline colors) sitting inside an otherwise-modern Svelte 5 runes codebase, and prevent regression. Modern shell, 2019 override habits inside — close the gap.
 
 ## Problem (grounded, measured 2026-06-22)

@@ -73,6 +73,19 @@ describe("generatePerVisitDemo level selection", () => {
     }
   );
 
+  it("uses a pinned difficulty instead of drawing one", async () => {
+    // The /composer Generate demo pins intermediate; a draw of 0.9 would
+    // otherwise land in the advanced third.
+    await generatePerVisitDemo({
+      random: () => 0.9,
+      difficulty: "intermediate" as never,
+    });
+
+    expect(mocks.generateSequence).toHaveBeenCalledWith(
+      expect.objectContaining({ difficulty: "intermediate" })
+    );
+  });
+
   it("keeps one difficulty across quality-filter retries", async () => {
     const random = vi.fn(() => 0.5);
     mocks.generateSequence

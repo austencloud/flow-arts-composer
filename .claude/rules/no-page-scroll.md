@@ -26,6 +26,11 @@ as in the release notes."
   library, a long saved list, a gallery or a log has no fixed length, and
   paging it would only add taps. Only that area moves. The frame around it,
   and any filters or controls above it, stay fixed.
+- **Reach comes first.** Never remove scrolling if that leaves something out
+  of reach. Austen has hit this three times (2026-08-17, 08-24, 11-01): "I
+  can't actually access the rest of the loop in order to select my loop type
+  because there's no scrolling allowed". Keep the content reachable, then fix
+  the layout so it no longer needs the scroll.
 - **A mixed screen splits the same way.** Filters and actions sit fixed and
   only the list under them scrolls.
 - **A scrolling area uses a thin, themed bar that shows while it moves and
@@ -36,7 +41,7 @@ as in the release notes."
 ## Checking
 
 Measure before calling a screen done: the page's `scrollHeight` equals its
-`clientHeight`, and no control container overflows, on desktop and on the
-Fold's inner (707 by 772) and cover (412 by 915) screens. A content area
+`clientHeight`, and no control container overflows, at every size on the
+device list in `docs/architecture/layout-law.md`. A content area
 that scrolls is named in the report along with the reason it holds content
 and not controls.

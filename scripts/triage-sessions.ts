@@ -16,9 +16,9 @@ import {
   buildFirstSeenQuery,
   parseTriageSessionRow,
   parseTriageEventRow,
-  isLikelyCrawlerSession,
   type TriageSessionRow,
 } from "../src/lib/server/analytics/session-triage-queries.js";
+import { isLikelyCrawlerSession } from "../src/lib/server/analytics/crawler-sessions.js";
 import {
   scoreSession,
   resolveModule,

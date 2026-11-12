@@ -54,8 +54,42 @@ export class PresenceTracker {
   private activityTracker: ActivityTracker | null = null;
   private userDeleted = false;
   private pendingLocation: PresenceLocation | null = null;
+  /** The account the live presence node belongs to. */
+  private ownerUid: string | null = null;
+  private warnedWriteFailure = false;
 
   constructor() {}
+
+  /**
+   * A guest who signs into an existing account gets a new uid without a
+   * sign-out, so goOffline never runs. Left alone, the tracker keeps writing
+   * presence/{guestUid} under the new account's token and the rules refuse
+   * every write. Drop the old account's state locally (that node is no longer
+   * ours to write; its queued onDisconnect handlers clean it up) so the next
+   * initialize() starts fresh for whoever is signed in now.
+   * Returns true when the tracker belongs to the signed-in account.
+   */
+  private ownsCurrentAccount(): boolean {
+    if (!this.ownerUid) return true;
+    if (auth.currentUser?.uid === this.ownerUid) return true;
+    this.stopActivityTracking();
+    this.stopConnectionTracking();
+    this.connectionGeneration++;
+    this.connectionRef = null;
+    this.userPresenceRef = null;
+    this.currentPresence = null;
+    this.initialized = false;
+    this.userDeleted = false;
+    this.ownerUid = null;
+    return false;
+  }
+
+  /** Presence is best-effort: a refused write is logged once, never thrown. */
+  private warnWriteFailure(error: unknown): void {
+    if (this.warnedWriteFailure) return;
+    this.warnedWriteFailure = true;
+    console.warn("[PresenceTracker] Presence write failed:", error);
+  }
 
   /**
    * Get session ID from PostHog (automatic session tracking)
@@ -169,7 +203,9 @@ export class PresenceTracker {
     // 1) Live location on the presence record (for the map of online users).
     if (this.connectionRef && this.currentPresence) {
       this.currentPresence.location = loc;
-      await this.writeCurrentConnection();
+      await this.writeCurrentConnection().catch((error) =>
+        this.warnWriteFailure(error)
+      );
     }
 
     // 2) Persistent last-known location stays owner-private in Firestore.
@@ -186,6 +222,7 @@ export class PresenceTracker {
   }
 
   async initialize(): Promise<void> {
+    this.ownsCurrentAccount();
     if (this.initialized) return;
     if (this.userDeleted) return; // User was deleted, don't reinitialize
 
@@ -197,10 +234,16 @@ export class PresenceTracker {
     // Verify user document exists in Firestore before setting up presence
     const userExists = await this.checkUserExists(userId);
     if (!userExists) {
+      // Remember whose deletion this is, so a later account switch clears it.
+      this.ownerUid = userId;
       await this.cleanupDeletedUser();
       return;
     }
 
+    // The account may have changed (or another call finished) during the check.
+    if (auth.currentUser?.uid !== userId || this.initialized) return;
+
+    this.ownerUid = userId;
     this.userPresenceRef = ref(database, `presence/${userId}`);
 
     const now = Date.now();
@@ -267,6 +310,7 @@ export class PresenceTracker {
     if (!this.currentPresence || !this.userPresenceRef || this.userDeleted) {
       return;
     }
+    if (userId !== this.ownerUid || !this.ownsCurrentAccount()) return;
 
     const nextConnection = push(
       ref(database, `presence/${userId}/connections`)
@@ -326,6 +370,7 @@ export class PresenceTracker {
   }
 
   private async writeCurrentConnection(): Promise<void> {
+    if (!this.ownsCurrentAccount()) return;
     const connectionKey = this.connectionRef?.key;
     if (!connectionKey || !this.userPresenceRef || !this.currentPresence) {
       return;
@@ -368,6 +413,10 @@ export class PresenceTracker {
 
   /** Handle detected user activity */
   private async handleUserActivity(): Promise<void> {
+    if (!this.ownsCurrentAccount()) {
+      await this.initialize();
+      return;
+    }
     if (!this.currentPresence) return;
     if (this.userDeleted) return;
 
@@ -395,6 +444,7 @@ export class PresenceTracker {
   }
 
   async updateLocation(module: string, tab?: string | null): Promise<void> {
+    this.ownsCurrentAccount();
     if (this.userDeleted) return;
 
     if (!this.currentPresence) {
@@ -412,10 +462,17 @@ export class PresenceTracker {
     this.currentPresence.activityStatus = "active";
 
     // Navigation counts as activity and publishes the full current connection.
-    await this.writeCurrentConnection();
+    // Navigation fires this without awaiting, so a refusal must not escape as
+    // an unhandled rejection.
+    await this.writeCurrentConnection().catch((error) =>
+      this.warnWriteFailure(error)
+    );
   }
 
   async goOffline(): Promise<void> {
+    // After an account switch the old node is not ours to write; the check
+    // resets local state and leaves nothing more to do.
+    if (!this.ownsCurrentAccount()) return;
     // Stop activity tracking first
     this.stopActivityTracking();
     this.stopConnectionTracking();
@@ -435,6 +492,7 @@ export class PresenceTracker {
     this.currentPresence = null;
     this.initialized = false;
     this.userPresenceRef = null;
+    this.ownerUid = null;
   }
 
   getCurrentPresence(): UserPresence | null {

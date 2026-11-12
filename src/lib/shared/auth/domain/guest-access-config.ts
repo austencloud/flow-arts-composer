@@ -42,9 +42,8 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   ],
   post: [],
   creators: [],
-  // The written Guide is public at /guide/level-1 already, and a scanned
-  // sequence's "See it in the Guide" opens it here. Lessons and Play keep
-  // progress on an account.
+  // The written Guide is public at /guide/level-1 already, so a guest can
+  // read it here too. Lessons and Play keep progress on an account.
   learn: ["guide"],
   // Device preferences and appearance belong to the visitor's browser.
   // Notifications still require an account. Profile shows a guest a short

@@ -152,11 +152,10 @@ export const CONCEPT_RESOURCE_BINDINGS: Readonly<
     ],
     guideRefs: [
       { slug: "base-letters", label: "Base Letters", coverage: "partial" },
-      { slug: "codex", label: "Letter Codex", coverage: "focused" },
     ],
     exploration: {
       href: "/codex",
-      label: "Open the Letter Codex",
+      label: "Open the Codex",
     },
     practice: [
       {

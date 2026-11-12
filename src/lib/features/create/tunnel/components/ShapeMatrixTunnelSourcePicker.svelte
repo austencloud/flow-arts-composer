@@ -5,6 +5,8 @@
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ShapeMatrixGrid from "@tka/shape-engine/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixDrill from "@tka/shape-engine/components/ShapeMatrixDrill.svelte";
+  import { setShapeMatrixAnimationContext } from "@tka/shape-engine/app/context/shape-matrix-animation-context.js";
+  import { createShapeMatrixAnimationState } from "@tka/shape-engine/app/state/shape-matrix-animation-state.svelte.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { applyFilter } from "@tka/shape-domain";
   import { propPairFromLegacy } from "@tka/shape-engine/services/prop-pair.js";
@@ -28,6 +30,10 @@
     onSelect: (realization: ModeRealization) => void;
     onClose: () => void;
   } = $props();
+
+  // The drill plays its realizations through this state. Without it the
+  // drill throws on mount and takes the whole Composer down with it.
+  setShapeMatrixAnimationContext(createShapeMatrixAnimationState());
 
   let open = $state(true);
   let size = $state<MatrixSize>("small");

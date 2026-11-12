@@ -57,11 +57,13 @@ export function resolvePreviewCellRender(
   // A hand path has no triangle, so it drops the grip as it drops the fan build.
   const triangleGrip = isHandPath ? undefined : options.triangleGrip;
   const buugengStyle = isHandPath ? undefined : options.buugengStyle;
+  const triadBuild = isHandPath ? undefined : options.triadBuild;
 
   const prepareOptions: PrepareOptions = {
     fanAppearance: isHandPath ? undefined : options.fanAppearance,
     triangleGrip,
     buugengStyle,
+    triadBuild,
     themeMode: isDark ? "dark" : "light",
     leftPropType: effectiveLeftProp,
     rightPropType: effectiveRightProp,
@@ -81,6 +83,7 @@ export function resolvePreviewCellRender(
     fanAppearance: isHandPath ? undefined : options.fanAppearance,
     triangleGrip,
     buugengStyle,
+    triadBuild,
     primaryPropColors: options.primaryPropColors,
     size: options.size,
     widthMultiplier: options.widthMultiplier,
