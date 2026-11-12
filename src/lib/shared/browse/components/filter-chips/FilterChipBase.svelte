@@ -15,6 +15,9 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     /** Custom leading glyph rendered in the icon slot in place of `icon`
      *  (e.g. an inline SVG mark). Takes precedence over `icon` when set. */
     iconSnippet?: Snippet;
+    /** Shown in place of the visible label (e.g. the Mandala filter's still).
+     *  `label` stays the chip's accessible name, read but not shown. */
+    labelSnippet?: Snippet;
     active?: boolean;
     count?: number | null;
     chipColor?: string;
@@ -91,6 +94,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     label,
     icon,
     iconSnippet,
+    labelSnippet,
     active = false,
     count = null,
     chipColor = "var(--theme-accent)",
@@ -250,7 +254,12 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     {/if}
   {/if}
 
-  <span class="chip-label">{label}</span>
+  {#if labelSnippet}
+    {@render labelSnippet()}
+    <span class="sr-only">{label}</span>
+  {:else}
+    <span class="chip-label">{label}</span>
+  {/if}
 
   {#if count != null}
     <span class="chip-count">{count}</span>

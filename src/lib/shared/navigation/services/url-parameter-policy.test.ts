@@ -82,3 +82,30 @@ describe("viewer-state params are scoped to an open viewer", () => {
     expect(print.searchParams.get("letter")).toBeNull();
   });
 });
+
+describe("the By mandala address belongs to the Sequences screen", () => {
+  it("keeps the mandala page and its chosen row on Sequences", () => {
+    const url = at("/browse/explore/sequences?mandala=abc~s1&seq=s1");
+    pruneRouteScopedParams(url, "/browse/explore/sequences");
+
+    expect(url.searchParams.get("mandala")).toBe("abc~s1");
+    expect(url.searchParams.get("seq")).toBe("s1");
+  });
+
+  it("drops both when Browse moves to another screen", () => {
+    // Every Browse move copies the query string; the place must not ride
+    // along onto Collections and reopen when he comes back.
+    const url = at("/browse/explore/collections?mandala=abc~s1&seq=s1");
+    pruneParamsForNavigation(url, "/browse/explore/collections");
+
+    expect(url.searchParams.has("mandala")).toBe(false);
+    expect(url.searchParams.has("seq")).toBe(false);
+  });
+
+  it("leaves seq alone on pages that own it", () => {
+    const url = at("/coven?seq=s1");
+    pruneRouteScopedParams(url, "/coven");
+
+    expect(url.searchParams.get("seq")).toBe("s1");
+  });
+});

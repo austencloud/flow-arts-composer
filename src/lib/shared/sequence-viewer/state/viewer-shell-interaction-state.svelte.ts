@@ -42,6 +42,13 @@ export interface ViewerShellExportOverrides {
   showInlineProgress?: boolean;
 }
 
+/**
+ * Which Remix control was pressed, sent with the `remix` action so the visible
+ * compact-header button can be told apart from the full header's button and
+ * the dots menu.
+ */
+export type RemixSource = "header" | "compact_header" | "overflow";
+
 export interface ViewerShellGuideAction {
   label: string;
   onSelect: () => void;
@@ -178,8 +185,8 @@ export function createViewerShellInteractionState(
     else void inputs.getContext().handleExport();
   }
 
-  function handleRemix(): void {
-    dependencies.captureScanAction("remix");
+  function handleRemix(source: RemixSource): void {
+    dependencies.captureScanAction("remix", { source });
     dependencies.endScanViewerSession("remix");
     const onRemix = inputs.getOnRemix();
     const ctx = inputs.getContext();

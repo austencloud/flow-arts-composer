@@ -77,3 +77,32 @@ export function mountSpeedSlider(target: HTMLElement) {
     },
   };
 }
+
+/** A page track like the mandala climb's: end words, no value box. */
+export function mountEndedSlider(target: HTMLElement) {
+  const holds: boolean[] = [];
+  const props = $state({
+    label: "Simple to complex",
+    value: 1,
+    min: 0,
+    max: 18,
+    step: 1,
+    ends: ["Simple", "Complex"] as const,
+    valueText: (value: number) => `Mandalas ${value * 8 + 1} to ${value * 8 + 8} of 146`,
+    onhold: (held: boolean) => {
+      holds.push(held);
+    },
+    onchange: (next: number) => {
+      props.value = next;
+    },
+  });
+  const component = mount(ValueSlider, { target, props });
+  flushSync();
+  return {
+    component,
+    holds,
+    get value() {
+      return props.value;
+    },
+  };
+}

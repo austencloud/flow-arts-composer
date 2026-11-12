@@ -36,6 +36,11 @@
   import { textAlignmentFixture } from "./text-alignment-fixture";
   import { groupMoveFixture } from "./group-move-fixture";
   import { transitionsFixture } from "./transitions-fixture";
+  import {
+    autoFrameFixture,
+    autoFrameFixtureQuery,
+    probeVideoDuration,
+  } from "./auto-frame-fixture";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
   const SEQUENCE_ID = "ΩΛ-XJ";
@@ -97,6 +102,9 @@
     const isolatedTextAlignment = fixture === "text-alignment";
     const isolatedGroupMove = fixture === "group-move";
     const isolatedTransitions = fixture === "transitions";
+    // `?fixture=auto-frame&video=/word-videos/...&from=45&length=31&flip=1`
+    // opens one clip of that take in a fresh post, for Auto frame.
+    const isolatedAutoFrame = fixture === "auto-frame";
     // Exercise the real save/reload path without writing to the creator's post.
     const storageFixture = fixture === "draft-storage";
     // `?sequence=DCKΨ-` opens that sequence's saved post read-only: the
@@ -131,7 +139,8 @@
         isolatedKeyframes ||
         isolatedTextAlignment ||
         isolatedGroupMove ||
-        isolatedTransitions
+        isolatedTransitions ||
+        isolatedAutoFrame
           ? Promise.resolve({
               project: null,
               diskAvailable: false,
@@ -155,10 +164,23 @@
               ? "post-group-move-fixture"
               : isolatedTransitions
                 ? "post-transitions-fixture"
-                : storageFixture
+                : isolatedAutoFrame
+                  ? "post-auto-frame-fixture"
+                  : storageFixture
                   ? draftSequenceId
                   : hydrated.id;
       if (!mapping) seedPerformance(editorSequenceId);
+      // Before `sequence` is set: the editor mounts on it and reads its project once.
+      if (isolatedAutoFrame) {
+        const clip = autoFrameFixtureQuery(
+          new URL(window.location.href).searchParams,
+          VIDEO_URL
+        );
+        initialProject = autoFrameFixture(editorSequenceId, {
+          ...clip,
+          durationSeconds: await probeVideoDuration(clip.url),
+        });
+      }
       sequence = {
         ...hydrated,
         id: editorSequenceId,

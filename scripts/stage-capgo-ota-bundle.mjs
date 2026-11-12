@@ -17,6 +17,7 @@ import {
 } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import {
+  OTA_BUNDLE_BUDGET_BYTES,
   OTA_REQUIRED_FILES,
   selectOtaBundleFiles,
 } from "./lib/capgo-ota-bundle-policy.mjs";
@@ -39,12 +40,9 @@ function listFiles(root) {
   return files.sort();
 }
 
-const megabytes = (paths) =>
-  (
-    paths.reduce((sum, path) => sum + statSync(join(buildDir, path)).size, 0) /
-    1024 /
-    1024
-  ).toFixed(1);
+const bytesOf = (paths) =>
+  paths.reduce((sum, path) => sum + statSync(join(buildDir, path)).size, 0);
+const megabytes = (paths) => (bytesOf(paths) / 1024 / 1024).toFixed(1);
 
 if (!existsSync(buildDir)) {
   console.error(`[capgo-ota] Build directory not found: ${buildDir}`);
@@ -62,6 +60,29 @@ if (missing.length > 0) {
     `[capgo-ota] Missing ${missing.join(", ")}. Run the build and ` +
       "scripts/generate-native-env.mjs first."
   );
+  process.exit(1);
+}
+
+const keptBytes = bytesOf(keep);
+if (keptBytes > OTA_BUNDLE_BUDGET_BYTES) {
+  const byFolder = new Map();
+  for (const path of keep) {
+    const folder = path.split("/").slice(0, 2).join("/");
+    byFolder.set(
+      folder,
+      (byFolder.get(folder) ?? 0) + statSync(join(buildDir, path)).size
+    );
+  }
+  console.error(
+    `[capgo-ota] The bundle would be ${megabytes(keep)} MiB, over the ` +
+      `${OTA_BUNDLE_BUDGET_BYTES / 1024 / 1024} MiB budget that keeps its ` +
+      "zip under Capgo's 1 GiB cap. Largest folders:"
+  );
+  for (const [folder, bytes] of [...byFolder]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)) {
+    console.error(`  ${(bytes / 1024 / 1024).toFixed(1)} MiB  ${folder}`);
+  }
   process.exit(1);
 }
 

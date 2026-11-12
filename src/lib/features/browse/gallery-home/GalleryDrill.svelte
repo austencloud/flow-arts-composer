@@ -98,6 +98,9 @@
     persistSection?: boolean;
     /** Show the Collections tile. */
     showCollections?: boolean;
+    /** Opens the By mandala wall. A host without the wall omits it, and the
+     * Mandala tile and the landing door are not offered there. */
+    onOpenMandala?: () => void;
     /** The collections this surface can FILTER by. When supplied the
      * Collections tile opens a value editor instead of ejecting to the Library
      * tab; when absent it keeps the navigation behavior. */
@@ -179,6 +182,7 @@
     variant = "page",
     persistSection,
     showCollections,
+    onOpenMandala,
     collections,
     fluidWideCanvas = false,
     unifiedFilterChooser = false,
@@ -272,6 +276,9 @@
     },
     get showCollections() {
       return shouldShowCollections;
+    },
+    get showMandala() {
+      return !!onOpenMandala;
     },
     get collections() {
       return collections;
@@ -519,7 +526,8 @@
   }
 
   /** One tile handler for all three compositions: open an editor, apply a
-   * single-valued category directly, or leave for Collections. */
+   * single-valued category directly, or leave for Collections or the By
+   * mandala wall. */
   function selectCategory(entry: CategoryEntry) {
     if (entry.section) {
       goToSection(entry.section);
@@ -527,6 +535,8 @@
       onApply(entry.apply.type, entry.apply.value, entry.apply.label);
     } else if (entry.navigate === "collections") {
       browseNavigation?.viewExploreCollections();
+    } else if (entry.navigate === "mandala") {
+      onOpenMandala?.();
     }
   }
 
@@ -661,6 +671,7 @@
               glyphHeight={landingGlyphHeight}
               morph={showLanding}
               onOpenSection={goToSection}
+              {onOpenMandala}
               onShowAll={onShowAll ? handleShowAll : undefined}
               onSelectCategory={selectCategory}
             />

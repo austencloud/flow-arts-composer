@@ -12,8 +12,8 @@ import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-d
 import { resolveBrowseDate } from "#lib/shared/browse/services/browse-date.js";
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import {
-  densityBandOf,
-  resolveMandalaDensity,
+  mandalaSectionOf,
+  resolveMandalaSignature,
 } from "#lib/shared/browse/services/sequence-density.js";
 
 /** Numeric difficulty (1–3). Prefers stored `level`, else computes from steps. */
@@ -101,9 +101,23 @@ function sortByLength(sequences: SequenceData[]): SequenceData[] {
   return sequences.sort((a, b) => resolveStepCount(a) - resolveStepCount(b));
 }
 
-/** Sparse mandala first. */
+/**
+ * Simple mandala first: the same measure as the climb (enclosed spaces, then
+ * coverage), then the easier level, then the shorter sequence.
+ */
+export function compareByMandala(a: SequenceData, b: SequenceData): number {
+  const one = resolveMandalaSignature(a);
+  const two = resolveMandalaSignature(b);
+  return (
+    one.spaces - two.spaces ||
+    one.coverage - two.coverage ||
+    resolveDifficultyLevel(a) - resolveDifficultyLevel(b) ||
+    resolveStepCount(a) - resolveStepCount(b)
+  );
+}
+
 function sortByDensity(sequences: SequenceData[]): SequenceData[] {
-  return sequences.sort((a, b) => resolveMandalaDensity(a) - resolveMandalaDensity(b));
+  return sequences.sort(compareByMandala);
 }
 
 function sortByAuthor(sequences: SequenceData[]): SequenceData[] {
@@ -134,7 +148,7 @@ function getSectionKey(
     case BrowseSortMethod.SEQUENCE_LENGTH:
       return getLengthSection(sequence);
     case BrowseSortMethod.DENSITY:
-      return densityBandOf(resolveMandalaDensity(sequence)).label;
+      return mandalaSectionOf(resolveMandalaSignature(sequence).spaces).label;
     default:
       return "All";
   }

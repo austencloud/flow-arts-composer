@@ -189,6 +189,14 @@ export function choosePushedCommit(updates, headOid, headRef) {
   );
 }
 
+// Seconds since 2020 in steps of ten: rises with every build, and stays under
+// Android's version code ceiling (2,100,000,000) until about 2686.
+const BUILD_NUMBER_EPOCH_MS = Date.UTC(2020, 0, 1);
+
+export function nativeBuildNumber(now = Date.now()) {
+  return Math.floor((now - BUILD_NUMBER_EPOCH_MS) / 10_000) + 2;
+}
+
 export function parseAdbDevices(output) {
   return output
     .split(/\r?\n/)
@@ -212,17 +220,44 @@ export function parseAdbDevices(output) {
     .filter(({ serial, state }) => serial && state);
 }
 
+// One phone can be listed more than once: over USB, as its paired wireless
+// name (adb-<serial>-<id>._adb-tls-connect._tcp) and as ip:port. The caller
+// fills hardwareSerial from the phone itself where adb's list does not show it.
+const PAIRED_WIRELESS_NAME = /^adb-([A-Za-z0-9]+)-[^.]*\._adb-tls-connect\._tcp$/;
+const CONNECTION_PREFERENCE = { usb: 0, wireless: 1, emulator: 2 };
+
+export function hardwareSerialOf(device) {
+  if (device.hardwareSerial) return device.hardwareSerial;
+  return device.serial.match(PAIRED_WIRELESS_NAME)?.[1] ?? device.serial;
+}
+
+function onePerPhone(devices) {
+  const byPhone = new Map();
+  for (const device of devices) {
+    const key = hardwareSerialOf(device);
+    const kept = byPhone.get(key);
+    if (
+      !kept ||
+      CONNECTION_PREFERENCE[device.connection] <
+        CONNECTION_PREFERENCE[kept.connection]
+    ) {
+      byPhone.set(key, device);
+    }
+  }
+  return [...byPhone.values()];
+}
+
 export function selectAndroidDevice(devices, requestedSerial = "") {
-  const authorized = devices.filter(({ state }) => state === "device");
+  const listed = devices.filter(({ state }) => state === "device");
 
   if (requestedSerial) {
-    const requested = authorized.find(
-      ({ serial }) => serial === requestedSerial
-    );
+    const requested = listed.find(({ serial }) => serial === requestedSerial);
     return requested
       ? { device: requested, reason: "requested" }
       : { device: null, reason: "requested-device-unavailable" };
   }
+
+  const authorized = onePerPhone(listed);
 
   const usb = authorized.filter(({ connection }) => connection === "usb");
   if (usb.length === 1) return { device: usb[0], reason: "single-usb" };

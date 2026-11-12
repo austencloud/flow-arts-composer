@@ -2,6 +2,7 @@
 import { flushSync, tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  mountEndedSlider,
   mountHeldSlider,
   mountSpeedSlider,
   mountTurnSlider,
@@ -206,5 +207,62 @@ describe("ValueSlider typed values", () => {
     await press(typeInto(target, "-4,5"), "Enter");
     expect(slider.value).toBe(-4.5);
     expect(readingOf(target).textContent).toBe("-4.5°");
+  });
+});
+
+describe("ValueSlider with end words", () => {
+  it("shows the end words instead of the value box and reads the owner's value text", () => {
+    const target = host();
+    const slider = mountEndedSlider(target);
+    mounted = slider;
+    const input = target.querySelector<HTMLInputElement>("input[type=range]")!;
+
+    expect(target.querySelector(".typeable")).toBeNull();
+    expect(target.querySelector(".ends")?.textContent).toContain("Simple");
+    expect(target.querySelector(".ends")?.textContent).toContain("Complex");
+    expect(input.getAttribute("aria-valuetext")).toBe("Mandalas 9 to 16 of 146");
+    expect(target.querySelector(".name")?.classList.contains("sr-only")).toBe(true);
+  });
+
+  it("tells its owner when the pointer takes the thumb and lets go", () => {
+    const target = host();
+    const slider = mountEndedSlider(target);
+    mounted = slider;
+    const input = target.querySelector<HTMLInputElement>("input[type=range]")!;
+
+    input.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    expect(slider.holds).toEqual([true]);
+    window.dispatchEvent(new Event("pointerup"));
+    expect(slider.holds).toEqual([true, false]);
+    window.dispatchEvent(new Event("pointerup"));
+    expect(slider.holds).toEqual([true, false]);
+  });
+
+  it("keeps one release listener per hold and drops it on unmount", () => {
+    const target = host();
+    const slider = mountEndedSlider(target);
+    const input = target.querySelector<HTMLInputElement>("input[type=range]")!;
+
+    input.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    input.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    window.dispatchEvent(new Event("pointerup"));
+    expect(slider.holds).toEqual([true, true, false]);
+
+    input.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    unmount(slider.component);
+    window.dispatchEvent(new Event("pointercancel"));
+    expect(slider.holds).toEqual([true, true, false, true]);
+  });
+});
+
+describe("ValueSlider without end words", () => {
+  it("keeps its visible name and value box", () => {
+    const target = host();
+    mounted = mountTurnSlider(target);
+    expect(target.querySelector(".ends")).toBeNull();
+    expect(target.querySelector(".typeable")).not.toBeNull();
+    expect(target.querySelector(".name")?.classList.contains("sr-only")).toBe(false);
+    const input = target.querySelector<HTMLInputElement>("input[type=range]")!;
+    expect(input.getAttribute("aria-valuetext")).toBe("0°");
   });
 });

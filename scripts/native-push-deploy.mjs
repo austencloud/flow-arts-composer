@@ -30,6 +30,7 @@ import {
   parseJavaMajor,
   parsePushUpdates,
   readJavaProperty,
+  nativeBuildNumber,
   selectAndroidDevice,
   selectAndroidSdkRoot,
 } from "./lib/native-push-deploy-core.mjs";
@@ -232,7 +233,21 @@ function readConnectedDevices(adb, repoRoot) {
     capture: true,
     allowFailure: true,
   });
-  return result.status === 0 ? parseAdbDevices(result.stdout) : [];
+  if (result.status !== 0) return [];
+  // An ip:port entry does not say which phone it is. Ask the phone, so the
+  // same phone over two connections counts as one.
+  return parseAdbDevices(result.stdout).map((device) => {
+    if (device.state !== "device" || device.connection !== "wireless") {
+      return device;
+    }
+    const serial = run(
+      adb,
+      ["-s", device.serial, "shell", "getprop", "ro.serialno"],
+      { cwd: repoRoot, capture: true, allowFailure: true }
+    );
+    const hardwareSerial = serial.status === 0 ? serial.stdout.trim() : "";
+    return hardwareSerial ? { ...device, hardwareSerial } : device;
+  });
 }
 
 function resolveJavaHome() {
@@ -455,6 +470,7 @@ export async function main() {
   const buildEnv = {
     ...process.env,
     DISABLE_PWA: "true",
+    TKA_NATIVE_PUSH_BUILD: "1",
     JAVA_HOME: javaHome,
     ...(androidSdkRoot
       ? {
@@ -498,7 +514,9 @@ export async function main() {
     const androidDir = join(snapshotRoot, "android");
     const gradle =
       process.platform === "win32" ? ".\\gradlew.bat" : "./gradlew";
-    run(gradle, ["assembleDebug", "--console=plain", "--no-daemon"], {
+    const buildNumber = nativeBuildNumber();
+    console.log(`[native] Build number ${buildNumber}.`);
+    run(gradle, ["assembleDebug", `-PtkaVersionCode=${buildNumber}`, "--console=plain", "--no-daemon"], {
       cwd: androidDir,
       env: buildEnv,
     });

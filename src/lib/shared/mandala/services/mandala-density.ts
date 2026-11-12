@@ -12,6 +12,7 @@
 import type { MandalaPaths, MandalaPoint, SVGPathData } from "../domain/mandala-types";
 import { MANDALA_STANDARD_TIP_DX } from "../domain/mandala-constants";
 import { resolveMandalaRenderExtent } from "./mandala-renderer";
+import { enclosedSpaces, flatReach, flattenTraces } from "./mandala-raster";
 
 /** Cells per side of the grid the geometry is dropped onto. */
 export const DENSITY_GRID = 64;
@@ -21,9 +22,14 @@ export interface MandalaSignature {
 	coverage: number;
 	/** Names the picture: equal for geometries that mark the same cells. */
 	key: string;
+	/**
+	 * How many spaces the lines enclose (a ring is 1, a ring with a cross 4),
+	 * counted on a finer raster than the key's, so the key stays as it was.
+	 */
+	spaces: number;
 }
 
-export const EMPTY_MANDALA_SIGNATURE: MandalaSignature = { coverage: 0, key: "" };
+export const EMPTY_MANDALA_SIGNATURE: MandalaSignature = { coverage: 0, key: "", spaces: 0 };
 
 const SIGNATURES = new WeakMap<MandalaPaths, MandalaSignature>();
 
@@ -42,6 +48,10 @@ export function mandalaCoverage(paths: MandalaPaths): number {
 
 export function mandalaKey(paths: MandalaPaths): string {
 	return mandalaSignature(paths).key;
+}
+
+export function mandalaSpaces(paths: MandalaPaths): number {
+	return mandalaSignature(paths).spaces;
 }
 
 function measure(paths: MandalaPaths): MandalaSignature {
@@ -82,9 +92,15 @@ function measure(paths: MandalaPaths): MandalaSignature {
 		}
 	}
 
+	// The spaces are counted in the square the family maths compares in: the
+	// still's extent, widened if a point would fall outside it.
+	const flat = flattenTraces(traces);
+	const span = Math.max(extent, flatReach(flat));
+
 	return {
 		coverage: marked / cells.length,
 		key: `${fnv1a(cells).toString(16).padStart(8, "0")}-${marked}`,
+		spaces: enclosedSpaces(flat, span),
 	};
 }
 

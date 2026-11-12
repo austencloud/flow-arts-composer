@@ -24,14 +24,16 @@
   import PostStaffEffectsTool from "#lib/shared/post-studio-plugin/ui/PostStaffEffectsTool.svelte";
   import PostCardAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostCardAppearanceTool.svelte";
   import PostSequenceActionsTool from "#lib/shared/post-studio-plugin/ui/PostSequenceActionsTool.svelte";
-  import { useTkaEditor } from "./tka-editor-context";
+  import PostAutoFrameTool from "#lib/shared/post-studio-plugin/ui/PostAutoFrameTool.svelte";
+  import { shownLandings } from "#lib/shared/share/components/post-studio/builder/timing-lane-landings.js";
+  import { tkaEditorOf, useTkaEditor } from "./tka-editor-context";
 
   /**
    * tka's panels on core kinds: replacing an overlay video with the live
    * animation (after Trim's own controls), a video's looks, its staff
    * effects (after Effects' own controls), a card's and a QR image's
-   * appearance, and the sequence actions. Renders nothing for a tool none of
-   * them owns.
+   * appearance, the sequence actions, and a video's Auto frame. Renders
+   * nothing for a tool none of them owns.
    */
   let { editor, item, tool, locked }: ToolPanelProps = $props();
   const uid = $props.id();
@@ -41,6 +43,16 @@
     item ? (findItem(editor.project, item.id)?.trackIndex ?? 0) : 0
   );
   const onMain = $derived(trackIndex === 0);
+
+  /** The take's beat landings in take seconds, for Auto frame's key times. */
+  function takeLandings(takeId: string): number[] | null {
+    const wrapper = tkaEditorOf(editor)?.wrapper;
+    const timing = wrapper?.timing(takeId) ?? null;
+    if (!wrapper || !timing) return null;
+    return shownLandings(timing, wrapper.resolvedTiming(takeId)).map(
+      (landing) => landing.seconds
+    );
+  }
 
   function patchItem(patch: PostItemPatch): void {
     if (!item) return;
@@ -145,6 +157,19 @@
       onPick={(effect) => patchItem({ staffEffect: effect })}
     />
   {/if}
+{:else if tool === "autoframe" && item?.kind === "video"}
+  {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
+  <!-- Keyed so one clip's tracking and progress never show on the next. -->
+  {#key item.id}
+    <PostAutoFrameTool
+      {editor}
+      {item}
+      takeKey={take?.takeKey ?? null}
+      mediaUrl={editor.mediaUrl(item.takeId)}
+      landings={takeLandings(item.takeId)}
+      {locked}
+    />
+  {/key}
 {:else if tool === "appearance" && item?.kind === "card"}
   <PostCardAppearanceTool
     {item}

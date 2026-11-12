@@ -8,21 +8,22 @@
  * afterwards, and writes its answers to IndexedDB so the next visit loads
  * them instead of measuring again.
  *
- * `groups` is the pool's distinct mandalas, sparse to dense, each with the
- * sequences that draw it. `version` ticks after every slice; the Mandala
- * filter reads it so a filtered grid fills in as the measuring runs.
+ * `groups` is the pool's distinct mandalas, simple to complex (enclosed
+ * spaces, then coverage), each with the sequences that draw it. `version`
+ * ticks after every slice; the Mandala filter reads it so a filtered grid
+ * fills in as the measuring runs, and the climb (`mandala-climb.svelte.ts`)
+ * listens through `subscribe` so families follow without a host asking.
  */
+import { untrack } from "svelte";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
 import {
   MANDALA_MEASURE_VERSION,
-  densityBandOf,
   mandalaCacheKey,
   peekMandalaSignature,
   resolveMandalaSignature,
   seedMandalaSignature,
-  type DensityBand,
 } from "./sequence-density";
 
 /** One saved measurement. `id` is the stage 1 cache key. */
@@ -30,6 +31,8 @@ export interface MandalaSignatureRow {
   id: string;
   key: string;
   coverage: number;
+  /** Enclosed spaces; absent on rows from measure 1, which are ignored anyway. */
+  spaces: number;
   /** The measure that produced the row; rows from another measure are ignored. */
   measure: number;
 }
@@ -48,7 +51,8 @@ export type MandalaIndexScheduler = (work: (budgetMs: number) => void) => () => 
 export interface MandalaGroup {
   key: string;
   coverage: number;
-  band: DensityBand;
+  /** How many spaces the mandala's lines enclose. */
+  spaces: number;
   /** The sequences that draw this mandala, in pool order. */
   sequences: readonly SequenceData[];
   /** The mandala's geometry, from its first sequence, made once per key. */
@@ -58,15 +62,28 @@ export interface MandalaGroup {
 export interface MandalaIndex {
   /** Measure this pool; a pool already set is left alone. */
   setPool(sequences: readonly SequenceData[]): void;
+  /** The pool last set, so a host can tell whether the index holds its own. */
+  readonly pool: readonly SequenceData[];
   readonly progress: { readonly measured: number; readonly total: number };
   readonly done: boolean;
+  /**
+   * True once a pool with no sequences has been set. `done` stays false for
+   * it, and before any pool is set this is false too, so a door can tell
+   * "nothing to draw" from "still loading".
+   */
+  readonly empty: boolean;
   /** Ticks after every slice and every load from the store. */
   readonly version: number;
-  /** Distinct mandalas, sparse to dense. */
+  /** Distinct mandalas, simple to complex: enclosed spaces, then coverage, then key. */
   readonly groups: readonly MandalaGroup[];
-  /** Up to three groups spread sparse, medium, dense: the door's fan. */
-  readonly fan: readonly MandalaGroup[];
   groupOf(key: string): MandalaGroup | undefined;
+  /** A sequence of the current pool by its id. */
+  sequenceById(id: string): SequenceData | undefined;
+  /**
+   * Called after every change the index makes (a new pool, a slice, a load
+   * from the store). Returns the function that stops the calls.
+   */
+  subscribe(listener: () => void): () => void;
   /** Stop measuring; the pool and its answers stay. */
   stop(): void;
 }
@@ -147,27 +164,49 @@ export function createMandalaIndex(options: {
   let pool = $state.raw<readonly SequenceData[]>([]);
   let measured = $state(0);
   let total = $state(0);
+  let fed = $state(false);
   let version = $state(0);
   let queue: SequenceData[] = [];
   let run = 0;
   let cancelSlice: (() => void) | null = null;
+  const listeners = new Set<() => void>();
+
+  /** Every change goes through here, so listeners hear each one. */
+  function tick(): void {
+    version++;
+    // A listener reads the index; untracked, so whatever effect called
+    // setPool does not come to depend on what the listener reads.
+    untrack(() => {
+      for (const listener of [...listeners]) listener();
+    });
+  }
 
   const groups = $derived.by<readonly MandalaGroup[]>(() => {
     void version;
-    const byKey = new Map<string, { coverage: number; sequences: SequenceData[] }>();
+    const byKey = new Map<string, { coverage: number; spaces: number; sequences: SequenceData[] }>();
     for (const sequence of pool) {
       const signature = peekMandalaSignature(sequence);
       if (!signature || !signature.key) continue;
       const group = byKey.get(signature.key);
       if (group) group.sequences.push(sequence);
-      else byKey.set(signature.key, { coverage: signature.coverage, sequences: [sequence] });
+      else
+        byKey.set(signature.key, {
+          coverage: signature.coverage,
+          spaces: signature.spaces,
+          sequences: [sequence],
+        });
     }
     return [...byKey.entries()]
-      .sort((a, b) => a[1].coverage - b[1].coverage || a[0].localeCompare(b[0]))
+      .sort(
+        (a, b) =>
+          a[1].spaces - b[1].spaces ||
+          a[1].coverage - b[1].coverage ||
+          a[0].localeCompare(b[0])
+      )
       .map(([key, group]) => ({
         key,
         coverage: group.coverage,
-        band: densityBandOf(group.coverage),
+        spaces: group.spaces,
         sequences: group.sequences,
         get paths() {
           return pathsFor(key, group.sequences[0]!);
@@ -175,11 +214,8 @@ export function createMandalaIndex(options: {
       }));
   });
 
-  const fan = $derived.by<readonly MandalaGroup[]>(() => {
-    if (groups.length <= 3) return groups;
-    const last = groups.length - 1;
-    return [groups[0]!, groups[Math.floor(last / 2)]!, groups[last]!];
-  });
+  const groupByKey = $derived(new Map(groups.map((group) => [group.key, group])));
+  const sequenceIndex = $derived(new Map(pool.map((sequence) => [sequence.id, sequence])));
 
   function clearSlice(): void {
     cancelSlice?.();
@@ -198,11 +234,17 @@ export function createMandalaIndex(options: {
         const id = mandalaCacheKey(sequence);
         if (!id) continue;
         const signature = resolveMandalaSignature(sequence);
-        rows.push({ id, key: signature.key, coverage: signature.coverage, measure: MANDALA_MEASURE_VERSION });
+        rows.push({
+          id,
+          key: signature.key,
+          coverage: signature.coverage,
+          spaces: signature.spaces,
+          measure: MANDALA_MEASURE_VERSION,
+        });
       }
       if (rows.length > 0) {
         measured += rows.length;
-        version++;
+        tick();
         void store.save(rows);
       }
       if (queue.length > 0) scheduleSlice(thisRun);
@@ -222,25 +264,32 @@ export function createMandalaIndex(options: {
     }
     total = sequences.length;
     measured = known;
-    version++;
+    fed = true;
+    tick();
     if (pending.length === 0) return;
 
     const rows = await store.load(pending.map((sequence) => mandalaCacheKey(sequence)!));
     if (thisRun !== run) return;
     const byId = new Map(
-      rows.filter((row) => row.measure === MANDALA_MEASURE_VERSION).map((row) => [row.id, row])
+      rows
+      .filter((row) => row.measure === MANDALA_MEASURE_VERSION && typeof row.spaces === "number")
+      .map((row) => [row.id, row])
     );
     queue = [];
     for (const sequence of pending) {
       const row = byId.get(mandalaCacheKey(sequence)!);
       if (row) {
-        seedMandalaSignature(sequence, { coverage: row.coverage, key: row.key });
+        seedMandalaSignature(sequence, {
+          coverage: row.coverage,
+          key: row.key,
+          spaces: row.spaces,
+        });
         measured++;
       } else {
         queue.push(sequence);
       }
     }
-    version++;
+    tick();
     if (queue.length > 0) scheduleSlice(thisRun);
   }
 
@@ -253,11 +302,17 @@ export function createMandalaIndex(options: {
       queue = [];
       void start(sequences, run);
     },
+    get pool() {
+      return pool;
+    },
     get progress() {
       return { measured, total };
     },
     get done() {
       return total > 0 && measured >= total;
+    },
+    get empty() {
+      return fed && total === 0;
     },
     get version() {
       return version;
@@ -265,11 +320,15 @@ export function createMandalaIndex(options: {
     get groups() {
       return groups;
     },
-    get fan() {
-      return fan;
-    },
     groupOf(key) {
-      return groups.find((group) => group.key === key);
+      return groupByKey.get(key);
+    },
+    sequenceById(id) {
+      return sequenceIndex.get(id);
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
     stop() {
       run++;

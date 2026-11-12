@@ -15,6 +15,8 @@ workspace spec, the main gallery next — one component, never a copy.
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { localizeFilterChip } from "./localize-filter-chip";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import MandalaFilterStill from "#lib/shared/browse/components/filter-chips/MandalaFilterStill.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import {
     groupRuleFilters,
     type RuleStripFilter,
@@ -158,9 +160,13 @@ workspace spec, the main gallery next — one component, never a copy.
               )}</span
             >
           {/if}
+          {#snippet mandalaStill()}
+            <MandalaFilterStill value={chip.value} />
+          {/snippet}
           {#if interactive}
             <FilterChipBase
               label={localizeFilterChip({ ...chip, label: chip.displayLabel })}
+              labelSnippet={chip.type === BrowseFilterType.MANDALA ? mandalaStill : undefined}
               active
               mode="action"
               size="sm"
@@ -177,6 +183,7 @@ workspace spec, the main gallery next — one component, never a copy.
           {:else}
             <FilterChipBase
               label={localizeFilterChip({ ...chip, label: chip.displayLabel })}
+              labelSnippet={chip.type === BrowseFilterType.MANDALA ? mandalaStill : undefined}
               active
               mode="display"
               size="sm"

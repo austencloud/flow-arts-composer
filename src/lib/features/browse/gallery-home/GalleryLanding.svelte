@@ -18,6 +18,9 @@
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import CategoryTile from "./CategoryTile.svelte";
   import MandalaStill from "#lib/shared/mandala/components/MandalaStill.svelte";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     FAN_TILTS,
@@ -40,7 +43,9 @@
     glyphHeight: number;
     /** The landing owns the category morph names while it is the live screen. */
     morph?: boolean;
-    onOpenSection: (section: "level" | "length" | "mandala") => void;
+    onOpenSection: (section: "level" | "length") => void;
+    /** Opens the By mandala wall; without it the door is not offered. */
+    onOpenMandala?: () => void;
     onShowAll?: () => void;
     onSelectCategory: (entry: CategoryEntry) => void;
   }
@@ -58,6 +63,7 @@
     glyphHeight,
     morph = false,
     onOpenSection,
+    onOpenMandala,
     onShowAll,
     onSelectCategory,
   }: Props = $props();
@@ -65,6 +71,12 @@
   /** The door's fan always holds three slots, so nothing moves as keys arrive. */
   const FAN_SLOTS = [0, 1, 2] as const;
   const fanSize = $derived(Math.round(catalog.PEEK.fanH * 0.78));
+  /** The fan's art is on its way: the pool is loading or still being
+   *  measured. Not after a failed load or an empty pool, which have none. */
+  const fanWaiting = $derived(
+    !loadFailed &&
+      (loading || (!catalog.mandalaDone && !catalog.mandalaPoolEmpty))
+  );
 
   /** Room the tilted cards' corners need past the fan's own box. */
   const TILT_ROOM = 10;
@@ -195,8 +207,12 @@
       <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
     </button>
 
-    <!-- By mandala: the pool's distinct mandalas, sparse to dense. Its fan is
-         three real mandalas from the pool, one from each band. -->
+    <!-- By mandala: families of look-alike mandalas, simple to complex. Its
+         fan is the climb's first, middle and last families, drawn in the text
+         colour; before families land, three measured shapes picked the same
+         way, so the door is never empty. It opens the wall, so a host
+         without one does not offer it. -->
+    {#if onOpenMandala}
     <button
       class="choice-tile"
       type="button"
@@ -205,11 +221,11 @@
         name: "gallery-cat-mandala",
         enabled: morph,
       }}
-      onclick={() => onOpenSection("mandala")}
+      onclick={() => onOpenMandala?.()}
     >
       <span class="choice-main">
         <span class="choice-title">{t("browse_ui_by_mandala")}</span>
-        <span class="choice-sub">{t("browse_ui_sparse_to_dense")}</span>
+        <span class="choice-sub">{t("browse_ui_simple_to_complex")}</span>
       </span>
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
         <i class="fas fa-dharmachakra"></i>
@@ -218,6 +234,10 @@
         <span class="mandala-fan" use:fitArt>
           {#each FAN_SLOTS as slot (slot)}
             {@const group = catalog.mandalaFan[slot]}
+            <!-- An empty slot is the sequence fans' waiting card (SequencePeek:
+                 card fill, shimmer while the art is on its way); the still
+                 crossfades in when the shape arrives, and again when the
+                 families replace the first picks. -->
             <span
               class="mandala-slot"
               class:filled={group !== undefined}
@@ -225,19 +245,29 @@
               style:height="{fanSize}px"
               style:transform="rotate({FAN_TILTS[slot]}deg)"
             >
-              {#if group}
-                <MandalaStill
-                  key={group.key}
-                  paths={group.paths}
-                  size={fanSize}
-                />
-              {/if}
+              <Crossfade
+                key={group?.key ?? (fanWaiting ? "waiting" : "none")}
+                duration={DURATION.normal}
+                fill
+              >
+                {#if group}
+                  <MandalaStill
+                    key={group.key}
+                    paths={group.paths}
+                    size={fanSize}
+                    tone="ink"
+                  />
+                {:else if fanWaiting}
+                  <ShimmerBlock height="100%" borderRadius="0" />
+                {/if}
+              </Crossfade>
             </span>
           {/each}
         </span>
       </span>
       <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
     </button>
+    {/if}
 
     <!-- Show-all lives IN the hero rank: it's the main door, not a footnote. -->
     {#if showAll}
@@ -454,12 +484,24 @@
     flex-direction: row;
     align-items: center;
   }
+  /* Until its shape arrives a slot wears the sequence fans' waiting card
+     (SequencePeek's fill and border), not a dark empty panel. */
   .mandala-slot {
     display: block;
     flex: 0 0 auto;
     padding: 0.2rem;
     border-radius: 12px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    overflow: hidden;
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    /* The ink stills draw in this colour, on either theme. */
+    color: var(--theme-text, #e8edf6);
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      background-color var(--duration-normal) var(--ease-standard);
+  }
+  .mandala-slot.filled {
+    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
     background: var(--theme-panel-bg, #11131a);
   }
   .mandala-slot + .mandala-slot {
@@ -495,7 +537,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .choice-tile {
+    .choice-tile,
+    .mandala-slot {
       transition: none;
     }
     .choice-tile:hover,

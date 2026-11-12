@@ -29,6 +29,9 @@
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { RemixSource } from "../state/viewer-shell-interaction-state.svelte";
 
   const handColors = $derived(
     getSettings().primaryPropColors ?? {
@@ -85,7 +88,13 @@
     isSaving: boolean;
     onSave?: () => void;
     onAddToCollection?: () => void;
-    onRemix?: () => void;
+    onRemix?: (source: RemixSource) => void;
+    /**
+     * Keep Remix out of the dots menu on a compact header and show it as its
+     * own button beside Share, so a phone visitor can see a way to make their
+     * own without opening a menu. The standalone sequence page turns it on.
+     */
+    promoteRemix?: boolean;
     onPracticeToggle?: () => void;
     /**
      * The share panel is open; Share closes it again. Escape then belongs to
@@ -130,6 +139,7 @@
     onSave,
     onAddToCollection,
     onRemix,
+    promoteRemix = false,
     onPracticeToggle,
     sharePanelOpen = false,
     canToggleMotionVisibility = false,
@@ -162,6 +172,50 @@
       viewerWidth >=
         (navigation ? GENEROUS_CHROME_MIN_WIDTH : LABELLED_CHROME_MIN_WIDTH)
   );
+  const showCompactRemix = $derived(
+    compactChrome && promoteRemix && !!onRemix && !ctx.practiceActive
+  );
+
+  // The compact Remix button keeps its label only while the header has room
+  // for it. The sides never shrink, so a label that does not fit would squeeze
+  // the word (a QR visit's sign-in chip on a small phone, a long translation).
+  // The sum leaves the label itself out, so showing or hiding it never changes
+  // the answer.
+  /** Matches `.header-side` gap. */
+  const HEADER_SIDE_GAP = 6;
+  /**
+   * The word slot is 72px on small phones (the 420px rule below). The label
+   * may take up to 8px of it: a short word keeps its size and a long one
+   * shrinks a little. Past that the button shows only its icon.
+   */
+  const WORD_SLOT_FLOOR = 64;
+  /** The button's 1px border on each side; the sizer measures inside it. */
+  const REMIX_BORDERS = 2;
+  let headerEl = $state<HTMLElement>();
+  let headerBox = $state<DOMRectReadOnly>();
+  let leftSideWidth = $state(0);
+  let rightSideWidth = $state(0);
+  let remixButtonWidth = $state(0);
+  let remixLabelledWidth = $state(0);
+  const remixLabelled = $derived.by(() => {
+    if (!showCompactRemix || !headerEl || !headerBox || !remixLabelledWidth) {
+      return true;
+    }
+    const columnGap = parseFloat(getComputedStyle(headerEl).columnGap) || 0;
+    const otherRight =
+      rightSideWidth -
+      remixButtonWidth -
+      (remixButtonWidth ? HEADER_SIDE_GAP : 0);
+    const room =
+      headerBox.width -
+      leftSideWidth -
+      WORD_SLOT_FLOOR -
+      2 * columnGap -
+      otherRight -
+      HEADER_SIDE_GAP;
+    return room >= remixLabelledWidth + REMIX_BORDERS;
+  });
+
   const hasAccountEntry = $derived(
     !!openAppHref && !!onAccountSignIn && !embedded
   );
@@ -250,8 +304,10 @@
   class:with-navigation={!!navigation}
   class:word-roomy={!hasRightActions}
   data-hidden={hidden}
+  bind:this={headerEl}
+  bind:contentRect={headerBox}
 >
-  <div class="header-side header-left">
+  <div class="header-side header-left" bind:offsetWidth={leftSideWidth}>
     {#if ctx.practiceActive}
       {#if onPracticeToggle}
         <button
@@ -358,7 +414,7 @@
           <button
             type="button"
             class="viewer-action core-action remix-action"
-            onclick={onRemix}
+            onclick={() => onRemix("header")}
             aria-label={t("viewer_header_remix_sequence")}
             title={t("viewer_ui_remix")}
           >
@@ -474,7 +530,9 @@
           {isSaving}
           {onSave}
           {onAddToCollection}
-          {onRemix}
+          onRemix={onRemix && !showCompactRemix
+            ? () => onRemix("overflow")
+            : undefined}
           {onVideoUpload}
           {isPublished}
           {onPublish}
@@ -573,7 +631,7 @@
     {/if}
   </div>
 
-  <div class="header-side header-right">
+  <div class="header-side header-right" bind:offsetWidth={rightSideWidth}>
     {#if hasAccountEntry && openAppHref}
       <div class="account-entry-slot">
         {#if authState.isFullAccount}
@@ -634,6 +692,35 @@
           : t("viewer_header_show_settings")}
       >
         <i class="fas fa-sliders" aria-hidden="true"></i>
+      </button>
+    {/if}
+
+    {#if showCompactRemix && onRemix}
+      <!-- Full chrome shows Remix with Favorite and Save on the left; a compact
+           header folds those into the dots menu. Remix stays out here, labelled,
+           as the one visible way to make your own version. -->
+      <button
+        type="button"
+        class="viewer-action remix-action compact-remix"
+        class:icon-only={!remixLabelled}
+        bind:offsetWidth={remixButtonWidth}
+        onclick={() => onRemix("compact_header")}
+        aria-label={t("viewer_header_remix_sequence")}
+        title={t("viewer_header_remix_sequence")}
+        transition:growFade={{ axis: "x", duration: DURATION.emphasis }}
+      >
+        <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+        {#if remixLabelled}
+          <span class="remix-label">{t("viewer_ui_remix")}</span>
+        {/if}
+        <span
+          class="remix-sizer"
+          aria-hidden="true"
+          bind:offsetWidth={remixLabelledWidth}
+        >
+          <i class="fas fa-pen-to-square"></i>
+          <span class="remix-label">{t("viewer_ui_remix")}</span>
+        </span>
       </button>
     {/if}
 
@@ -869,6 +956,68 @@
       transparent
     );
     color: var(--theme-accent, #a78bfa);
+  }
+
+  /* The compact header's Remix: an icon box the size of its neighbours, then
+     the label. Tinted with the accent so it reads as the second thing to press
+     after Share, without competing with Share's fill. */
+  .compact-remix,
+  .remix-sizer {
+    gap: 6px;
+    padding-inline: 10px;
+  }
+
+  .compact-remix {
+    position: relative;
+    width: auto;
+    /* The width sets the touch target; a floor would stop growFade at 44px. */
+    min-width: 0;
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 55%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 18%,
+      var(--theme-card-bg, rgba(255, 255, 255, 0.05))
+    );
+    color: var(--theme-text, #ffffff);
+  }
+
+  .compact-remix.icon-only {
+    width: var(--min-touch-target, 44px);
+    padding: 0;
+  }
+
+  .compact-remix:hover:not(:disabled) {
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 75%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 30%,
+      var(--theme-card-bg, rgba(255, 255, 255, 0.05))
+    );
+  }
+
+  .remix-label {
+    white-space: nowrap;
+  }
+
+  /* The labelled button's contents, measured while the label is hidden so
+     the header can tell when it fits again. Out of flow and never seen. */
+  .remix-sizer {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .practice-exit {

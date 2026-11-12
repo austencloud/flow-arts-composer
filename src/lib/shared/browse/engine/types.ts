@@ -164,6 +164,18 @@ export interface BrowseEngine {
 
   /** True while loading sequences from Firestore / library. */
   readonly isLoading: boolean;
+  /**
+   * True while an active filter cannot answer yet although the pool is here:
+   * a Mandala filter whose shapes or families are still being worked out.
+   * Results hosts show their loading state, never "no sequences", meanwhile.
+   */
+  readonly isResolvingFilters: boolean;
+  /**
+   * True once no further stage of the pool is coming: not loading, no more
+   * library pages, and (for community) the host's extras have landed or
+   * failed. A failed load also counts, so waiting on it always ends.
+   */
+  readonly poolComplete: boolean;
   /** The first library page is visible while remaining pages arrive. */
   readonly isLoadingMore: boolean;
   readonly loadMoreError: string | null;

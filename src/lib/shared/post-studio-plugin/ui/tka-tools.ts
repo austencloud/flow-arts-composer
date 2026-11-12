@@ -7,6 +7,7 @@ import {
   faHashtag,
   faHeading,
   faLayerGroup,
+  faLocationCrosshairs,
   faPalette,
   faPersonRunning,
   faShapes,
@@ -25,6 +26,7 @@ import { tkaEditorOf } from "./tka-editor-context";
  * an arrangement's; Layers, Grids, Offset, Effort and Clear belong to its
  * cell in hand. Look is an arrangement's or a mandala's own look there, else
  * the post's animation defaults. Sequence is a mandala's ordered list.
+ * Auto frame writes a video's framing keys from its footage.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
@@ -75,6 +77,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: () => "Performers",
     icon: faClone,
+  },
+  {
+    id: "autoframe",
+    type: "panel",
+    label: () => "Auto frame",
+    icon: faLocationCrosshairs,
   },
   {
     id: "beats",

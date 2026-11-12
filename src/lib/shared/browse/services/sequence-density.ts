@@ -4,7 +4,8 @@
  * Runs the mandala geometry on the sequence's steps and measures it (see
  * `mandala-density.ts`). A sort pass asks for every sequence in the pool, so
  * each answer is kept by sequence id, word and step count; a later pass pays
- * nothing. The mandala index (`mandala-index.svelte.ts`) fills the same cache
+ * nothing. Each answer carries the mandala's coverage, its key and how many
+ * spaces its lines enclose, all from one geometry. The mandala index (`mandala-index.svelte.ts`) fills the same cache
  * in idle slices and from IndexedDB, and the Mandala filter reads it with
  * `peekMandalaKey`, which never measures.
  */
@@ -17,10 +18,11 @@ import {
 } from "#lib/shared/mandala/services/mandala-density.js";
 
 /**
- * Bumped whenever the measure changes (grid size, marking rule, key hash), so
- * signatures saved by an older measure are ignored and rewritten.
+ * Bumped whenever the measure changes (grid size, marking rule, key hash, a
+ * new field), so signatures saved by an older measure are ignored and
+ * rewritten. Version 2 added enclosed spaces; the key is unchanged.
  */
-export const MANDALA_MEASURE_VERSION = 1;
+export const MANDALA_MEASURE_VERSION = 2;
 
 const MAX_CACHE = 4000;
 const cache = new Map<string, MandalaSignature>();
@@ -78,41 +80,43 @@ export function resolveMandalaDensity(sequence: SequenceData): number {
   return resolveMandalaSignature(sequence).coverage;
 }
 
-export type DensityBandId = "sparse" | "medium" | "dense";
+/** How many spaces the sequence's mandala encloses. */
+export function resolveMandalaSpaces(sequence: SequenceData): number {
+  return resolveMandalaSignature(sequence).spaces;
+}
 
-export interface DensityBand {
-  id: DensityBandId;
+export type MandalaSectionId = "simple" | "busier" | "complex";
+
+export interface MandalaSection {
+  id: MandalaSectionId;
   label: string;
-  /** Coverage below this belongs to the band. */
+  /** Enclosed spaces below this belong to the section. */
   below: number;
 }
 
 /**
- * The library's sections when sorted by density. The adjective sits on the
- * mandala, never on the sequence. Thresholds come from the 36 showcase
- * mandalas' spread on 2026-10-20 (16% to 64% coverage): the sparsest third
- * sits under the first line and the densest third over the second.
+ * The library's sections when sorted by mandala: roughly thirds of the
+ * community pool by enclosed spaces (2026-11-11). The adjective sits on the
+ * mandala, never on the sequence. English only, as the bands before them.
  */
-export const DENSITY_BANDS: readonly DensityBand[] = [
-  { id: "sparse", label: "Sparse mandala", below: 0.31 },
-  { id: "medium", label: "Medium mandala", below: 0.38 },
-  { id: "dense", label: "Dense mandala", below: Number.POSITIVE_INFINITY },
+export const MANDALA_SECTIONS: readonly MandalaSection[] = [
+  { id: "simple", label: "Simple mandala", below: 30 },
+  { id: "busier", label: "Busier mandala", below: 70 },
+  { id: "complex", label: "Complex mandala", below: Number.POSITIVE_INFINITY },
 ];
 
-export function densityBandOf(coverage: number): DensityBand {
-  return DENSITY_BANDS.find((band) => coverage < band.below) ?? DENSITY_BANDS[DENSITY_BANDS.length - 1]!;
+export function mandalaSectionOf(spaces: number): MandalaSection {
+  return (
+    MANDALA_SECTIONS.find((section) => spaces < section.below) ??
+    MANDALA_SECTIONS[MANDALA_SECTIONS.length - 1]!
+  );
 }
 
-export function densityBandById(id: string): DensityBand | undefined {
-  return DENSITY_BANDS.find((band) => band.id === id || band.label === id);
+export function mandalaSectionById(id: string): MandalaSection | undefined {
+  return MANDALA_SECTIONS.find((section) => section.id === id || section.label === id);
 }
 
 /** Coverage as "14%" for titles and accessible names. */
 export function formatDensity(coverage: number): string {
   return `${Math.round(coverage * 100)}%`;
-}
-
-/** The applied Mandala chip and a box's name: "Sparse mandala, 24%". */
-export function formatMandalaLabel(coverage: number): string {
-  return `${densityBandOf(coverage).label}, ${formatDensity(coverage)}`;
 }

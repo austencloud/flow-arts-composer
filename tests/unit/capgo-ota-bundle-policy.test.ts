@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { selectOtaBundleFiles } from "../../scripts/lib/capgo-ota-bundle-policy.mjs";
+import {
+  OTA_BUNDLE_BUDGET_BYTES,
+  selectOtaBundleFiles,
+} from "../../scripts/lib/capgo-ota-bundle-policy.mjs";
 
 // The phone bundle silently loses any model this drops, so each case pins a
 // way the built app can name a file.
@@ -42,6 +45,24 @@ describe("Capgo over-the-air bundle policy", () => {
     });
 
     expect(result.unreferenced).toEqual([]);
+  });
+
+  // From 2026-11-11 this one message kept all 1.5 GB of models and every
+  // upload was refused for size.
+  it("does not count a bare /models/ in a message as naming every model", () => {
+    const result = select({
+      "_app/catalog.js":
+        'n(`"glbUrl" must be a /models/…/*.glb path served from static/`)',
+      "models/forest/candidates/oak-r1-proof.glb": "",
+    });
+
+    expect(result.unreferenced).toEqual([
+      "models/forest/candidates/oak-r1-proof.glb",
+    ]);
+  });
+
+  it("stages under a budget whose zip always fits Capgo's 1 GiB cap", () => {
+    expect(OTA_BUNDLE_BUDGET_BYTES).toBeLessThan(1024 * 1024 * 1024);
   });
 
   it("matches a bare file name from shipped data", () => {

@@ -31,6 +31,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
     title = "Filters",
     chooserTitle,
     chooserHint,
+    onOpenMandala,
     gridControls,
   }: {
     engine: BrowseEngine;
@@ -45,6 +46,9 @@ their own copies drifted (dropdown popovers, stale search) within days.
     /** Host-specific chooser copy without duplicating the drill. */
     chooserTitle?: string;
     chooserHint?: string;
+    /** Opens the By mandala wall. Hosts without the wall omit it, and the
+     * sheet then offers no Mandala tile. The sheet closes first. */
+    onOpenMandala?: () => void;
     /** A Browse grid (BrowsePanel's `headerChrome`): on a phone or tablet the
      * sheet also carries the grid's sort, props, applied filters and Select. */
     gridControls?: {
@@ -151,6 +155,12 @@ their own copies drifted (dropdown popovers, stale search) within days.
             }
           }}
           {activeFamilyValues}
+          onOpenMandala={onOpenMandala
+            ? () => {
+                isOpen = false;
+                onOpenMandala?.();
+              }
+            : undefined}
           onToggleFamily={(familyId, label, color, nowActive) => {
             // Same stacking contract as LOOPs.
             if (nowActive) {

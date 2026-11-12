@@ -291,7 +291,11 @@
   let showSkeleton = $state(true);
   let skeletonFading = $state(false);
 
-  const isInitializing = $derived(engine.isLoading);
+  // A filter still working out its answer (a restored Mandala filter while
+  // its shapes are measured) reads as loading, never as "no sequences".
+  const isInitializing = $derived(
+    engine.isLoading || engine.isResolvingFilters
+  );
   // `!warming` short-circuits FIRST so the filtered-set read (which triggers the
   // filter/sort/section compute) is skipped during the instant-tap warm frame.
   const isEmpty = $derived(

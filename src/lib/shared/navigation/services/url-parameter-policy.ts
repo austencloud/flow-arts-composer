@@ -47,6 +47,18 @@ const ROUTE_SCOPED_PARAMETERS: readonly RouteScopedParameter[] = [
     isValidForPath: (pathname) =>
       isAtlasPath(pathname) || pathname === "/browse/explore/sequences",
   },
+  // Browse's By mandala place: `?mandala` is the wall, `?mandala=<family>` a
+  // mandala's page, and `seq` its chosen row. Elsewhere `seq` belongs to other
+  // pages (the loop labeler, the coven), so only Browse drops a stray one.
+  {
+    name: "mandala",
+    isValidForPath: (pathname) => pathname === "/browse/explore/sequences",
+  },
+  {
+    name: "seq",
+    isValidForPath: (pathname, url) =>
+      !startsWith("/browse")(pathname) || url.searchParams.has("mandala"),
+  },
   { name: "grid", isValidForPath: isAtlasPath },
   { name: "variation", isValidForPath: isAtlasPath },
   { name: "leftTurns", isValidForPath: isAtlasPath },

@@ -19,6 +19,8 @@ import {
   formatLockHolder,
   inspectNativeReleaseSurface,
   inspectZipFilenameFlags,
+  nativeBuildNumber,
+  hardwareSerialOf,
   parseAdbDevices,
   parseJavaMajor,
   parsePushUpdates,
@@ -314,6 +316,33 @@ OFFLINE123 unauthorized usb:1-2 transport_id:7
     });
   });
 
+  it("counts one phone listed over two wireless connections once", () => {
+    const devices = parseAdbDevices(`List of devices attached
+192.168.12.100:42639 device product:q6qsqw model:SM_F956U device:q6q transport_id:661
+adb-RFCX71MRJ6J-5hnqJQ._adb-tls-connect._tcp device product:q6qsqw model:SM_F956U device:q6q transport_id:631
+`).map((device) =>
+      device.serial.includes(":")
+        ? { ...device, hardwareSerial: "RFCX71MRJ6J" }
+        : device
+    );
+    const selection = selectAndroidDevice(devices);
+
+    expect(selection.reason).toBe("single-hardware");
+    expect(hardwareSerialOf(selection.device!)).toBe("RFCX71MRJ6J");
+  });
+
+  it("still refuses two different wireless phones", () => {
+    const devices = parseAdbDevices(`List of devices attached
+adb-PHONEONE-aa._adb-tls-connect._tcp device
+adb-PHONETWO-bb._adb-tls-connect._tcp device
+`);
+
+    expect(selectAndroidDevice(devices)).toEqual({
+      device: null,
+      reason: "multiple-hardware",
+    });
+  });
+
   it("ignores unauthorized devices", () => {
     const devices = parseAdbDevices(
       "List of devices attached\nPHONE1 unauthorized\n"
@@ -323,6 +352,17 @@ OFFLINE123 unauthorized usb:1-2 transport_id:7
       device: null,
       reason: "none",
     });
+  });
+});
+
+describe("native build number", () => {
+  it("rises with time and stays a valid Android version code", () => {
+    const today = nativeBuildNumber(Date.UTC(2026, 10, 12));
+    const later = nativeBuildNumber(Date.UTC(2026, 10, 12, 0, 1));
+
+    expect(today).toBeGreaterThan(1);
+    expect(later).toBeGreaterThan(today);
+    expect(nativeBuildNumber(Date.UTC(2600, 0, 1))).toBeLessThan(2_100_000_000);
   });
 });
 

@@ -185,6 +185,11 @@
     onClose: () => void;
     /** Override the header/menu Remix action when a host needs custom routing. */
     onRemix?: () => void;
+    /**
+     * Show Remix as its own labelled button beside Share on a compact header
+     * (phones, narrow windows) instead of only in the dots menu.
+     */
+    promoteRemix?: boolean;
     /** Adds an "Open Flow Arts Composer" item to the title menu (scan funnel exit). */
     openAppHref?: string;
     /** Adds the standalone host's sign-in/avatar entry to the shared header. */
@@ -257,6 +262,7 @@
     isMobile,
     onClose,
     onRemix,
+    promoteRemix = false,
     openAppHref,
     onAccountSignIn,
     startInSplit = false,
@@ -389,7 +395,9 @@
   ) => {
     if (!embedded) {
       trackViewerAction(analyticsContext(), action, properties);
-      if (action === "remix") trackSequenceRemixStarted(analyticsContext());
+      if (action === "remix") {
+        trackSequenceRemixStarted(analyticsContext(), properties);
+      }
     }
     captureScanAction(action, properties, options);
   };
@@ -1373,6 +1381,7 @@
       onRemix={interactions.headerActions.onRemix && !embedded
         ? interactions.handleRemix
         : undefined}
+      {promoteRemix}
       onPracticeToggle={interactions.headerActions.showPractice
         ? ctx.practiceActive
           ? interactions.handleExitPractice

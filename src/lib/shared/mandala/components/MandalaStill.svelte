@@ -8,6 +8,7 @@
   look, so a grid of hundreds renders strings, not geometry, and a box that
   reappears pays nothing. Lines are raised for small boxes so they read at the
   card's weight, not thinner (the strip's rule in mandala-shift-render).
+  `tone="ink"` draws every stroke in the surrounding text colour instead.
 -->
 <script lang="ts" module>
   import {
@@ -47,6 +48,18 @@
     purpleFill: LIGHT_MOTION_PURPLE_FILL,
   };
 
+  /** Every stroke in the text colour of whatever holds the still. */
+  const INK_PALETTE: MandalaPalette = {
+    leftStroke: "currentColor",
+    leftFill: "currentColor",
+    rightStroke: "currentColor",
+    rightFill: "currentColor",
+    purpleStroke: "currentColor",
+    purpleFill: "currentColor",
+  };
+
+  export type MandalaStillTone = "hands" | "ink";
+
   /** The sequence card's mandala is about this wide; smaller boxes raise their lines. */
   const CARD_PX = 320;
   const MAX_CACHED = 900;
@@ -61,9 +74,11 @@
     key: string,
     paths: MandalaPaths,
     size: number,
-    darkMode: boolean
+    darkMode: boolean,
+    tone: MandalaStillTone = "hands"
   ): string {
-    const cacheKey = `${key}|${size}|${darkMode ? "dark" : "light"}`;
+    const look = tone === "ink" ? "ink" : darkMode ? "dark" : "light";
+    const cacheKey = `${key}|${size}|${look}`;
     const cached = svgCache.get(cacheKey);
     if (cached) return cached;
     const svg = renderMandalaSVG(paths, {
@@ -71,7 +86,7 @@
       style: "stroke",
       show: "both",
       strokeWidth: stillStrokeWidth(size),
-      palette: darkMode ? DARK_PALETTE : LIGHT_PALETTE,
+      palette: tone === "ink" ? INK_PALETTE : darkMode ? DARK_PALETTE : LIGHT_PALETTE,
     });
     if (svgCache.size >= MAX_CACHED) {
       const oldest = svgCache.keys().next().value;
@@ -92,12 +107,14 @@
     /** The box's width in pixels; the still fills it. */
     size: number;
     darkMode?: boolean;
+    /** Hand colours, or one colour taken from the surrounding text. */
+    tone?: MandalaStillTone;
   }
 
-  let { key, paths, size, darkMode }: Props = $props();
+  let { key, paths, size, darkMode, tone = "hands" }: Props = $props();
 
   const dark = $derived(darkMode ?? settingsService.settings.darkMode ?? true);
-  const svg = $derived(mandalaStillSVG(key, paths, size, dark));
+  const svg = $derived(mandalaStillSVG(key, paths, size, dark, tone));
 </script>
 
 <span class="mandala-still" aria-hidden="true">{@html svg}</span>

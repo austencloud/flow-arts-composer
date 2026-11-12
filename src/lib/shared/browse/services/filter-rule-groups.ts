@@ -21,6 +21,8 @@ export interface RuleStripFilter {
   type: string;
   label: string;
   chipColor: string;
+  /** The filter's value, for chips that draw it (the Mandala still). */
+  value?: unknown;
 }
 
 /** A strip filter plus its de-duplicated visible label ("Level 2" under the

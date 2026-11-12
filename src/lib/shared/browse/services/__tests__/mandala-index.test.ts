@@ -89,7 +89,7 @@ async function settle(): Promise<void> {
 }
 
 describe("the mandala index", () => {
-  it("measures a pool into groups ordered sparse to dense, sharing a group per picture", async () => {
+  it("measures a pool into groups ordered simple to complex, sharing a group per picture", async () => {
     const dense = sequence("idx-dense", "AAAA", twoHandSteps);
     const denseAgain = sequence("idx-dense-2", "AAAA", twoHandSteps);
     const sparse = sequence("idx-sparse", "BBBB", oneHandSteps);
@@ -108,11 +108,27 @@ describe("the mandala index", () => {
     expect(index.progress).toEqual({ measured: 4, total: 4 });
     expect(index.done).toBe(true);
     expect(index.groups.map((group) => group.sequences.length)).toEqual([1, 2]);
-    expect(index.groups[0]!.coverage).toBeLessThan(index.groups[1]!.coverage);
-    expect(index.groups[0]!.band.id).toBe("sparse");
+    const [first, second] = index.groups;
+    expect(
+      first!.spaces < second!.spaces ||
+        (first!.spaces === second!.spaces && first!.coverage <= second!.coverage)
+    ).toBe(true);
+    expect(index.groups.every((group) => Number.isInteger(group.spaces))).toBe(true);
     expect(index.groups[1]!.sequences.map((s) => s.id)).toEqual(["idx-dense", "idx-dense-2"]);
     expect(index.groupOf(index.groups[1]!.key)?.paths.left.length).toBeGreaterThan(0);
-    expect(index.fan).toHaveLength(2);
+    expect(index.sequenceById("idx-dense-2")?.word).toBe("AAAA");
+  });
+
+  it("reports an empty pool only once one is set", async () => {
+    const clock = manualScheduler();
+    const index = createMandalaIndex({ store: memoryStore().store, scheduler: clock.scheduler });
+    expect(index.empty).toBe(false);
+    index.setPool([]);
+    await settle();
+    expect(index.empty).toBe(true);
+    expect(index.done).toBe(false);
+    index.setPool([sequence("then-a", "AAAA", twoHandSteps)]);
+    expect(index.empty).toBe(false);
   });
 
   it("fills in slice by slice and saves each slice's rows", async () => {
@@ -137,18 +153,25 @@ describe("the mandala index", () => {
     expect(index.done).toBe(true);
     expect(memory.rows.get(mandalaCacheKey(a)!)).toMatchObject({
       key: resolveMandalaSignature(a).key,
+      spaces: resolveMandalaSignature(a).spaces,
       measure: MANDALA_MEASURE_VERSION,
     });
     expect(memory.rows.size).toBe(2);
   });
 
-  it("seeds saved rows from the current measure and ignores rows from an older one", async () => {
+  it("seeds saved rows, spaces included, and ignores rows from measure 1", async () => {
     const saved = sequence("saved-a", "AAAA", twoHandSteps);
     const stale = sequence("stale-b", "BBBB", oneHandSteps);
     const clock = manualScheduler();
     const memory = memoryStore([
-      { id: mandalaCacheKey(saved)!, key: "saved-key", coverage: 0.2, measure: MANDALA_MEASURE_VERSION },
-      { id: mandalaCacheKey(stale)!, key: "stale-key", coverage: 0.9, measure: MANDALA_MEASURE_VERSION - 1 },
+      { id: mandalaCacheKey(saved)!, key: "saved-key", coverage: 0.2, spaces: 7, measure: MANDALA_MEASURE_VERSION },
+      // A row from before spaces were measured: version 1, no spaces field.
+      {
+        id: mandalaCacheKey(stale)!,
+        key: "stale-key",
+        coverage: 0.9,
+        measure: 1,
+      } as unknown as MandalaSignatureRow,
     ]);
     const index = createMandalaIndex({ store: memory.store, scheduler: clock.scheduler });
 
@@ -158,11 +181,16 @@ describe("the mandala index", () => {
     expect(peekMandalaKey(saved)).toBe("saved-key");
     expect(index.progress).toEqual({ measured: 1, total: 2 });
     expect(index.groups.map((group) => group.key)).toEqual(["saved-key"]);
+    expect(index.groups[0]!.spaces).toBe(7);
     expect(clock.pending()).toBe(1);
 
     clock.runAll();
     expect(index.done).toBe(true);
     expect(peekMandalaKey(stale)).not.toBe("stale-key");
+    expect(memory.rows.get(mandalaCacheKey(stale)!)).toMatchObject({
+      measure: MANDALA_MEASURE_VERSION,
+      spaces: resolveMandalaSignature(stale).spaces,
+    });
   });
 
   it("measures only the new sequences when the pool changes, and stops when told", async () => {
@@ -181,9 +209,26 @@ describe("the mandala index", () => {
     expect(index.progress).toEqual({ measured: 1, total: 2 });
     expect(clock.pending()).toBe(1);
 
+    let heard = 0;
+    const stopHearing = index.subscribe(() => heard++);
     index.stop();
     clock.runAll();
     expect(index.progress).toEqual({ measured: 1, total: 2 });
     expect(index.done).toBe(false);
+    expect(heard).toBe(0);
+    stopHearing();
+  });
+
+  it("tells subscribers about each change", async () => {
+    const clock = manualScheduler();
+    const index = createMandalaIndex({ store: memoryStore().store, scheduler: clock.scheduler });
+    let heard = 0;
+    index.subscribe(() => heard++);
+    index.setPool([sequence("sub-a", "AAAA", twoHandSteps)]);
+    expect(heard).toBe(1);
+    await settle();
+    clock.runAll();
+    expect(heard).toBeGreaterThanOrEqual(3);
+    expect(index.done).toBe(true);
   });
 });

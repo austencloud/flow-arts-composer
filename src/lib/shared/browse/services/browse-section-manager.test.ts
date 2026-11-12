@@ -113,3 +113,43 @@ describe("organizeSections - letter grouping", () => {
     expect(sections[0]!.title.startsWith("A ")).toBe(true);
   });
 });
+
+describe("organizeSections - level grouping", () => {
+  function seq(id: string, word: string, level: number, length: number): SequenceData {
+    return {
+      id,
+      name: word,
+      word,
+      level,
+      sequenceLength: length,
+      steps: [],
+    } as unknown as SequenceData;
+  }
+
+  // A Mandala family mixes letters and lengths; letter and length
+  // sub-sections left it in one-card rows.
+  it("makes one section per level, easiest first, keeping the given order inside", () => {
+    const given = [
+      seq("b1", "BCA", 1, 3),
+      seq("a1", "AC", 1, 2),
+      seq("z1", "ZZZZ", 1, 4),
+      seq("c2", "CAB", 2, 3),
+      seq("a3", "ABCD", 3, 4),
+    ];
+    const sections = organizeSections([given[3]!, given[4]!, ...given.slice(0, 3)], {
+      groupBy: "level",
+      sortMethod: BrowseSortMethod.ALPHABETICAL,
+      showEmptySections: false,
+    });
+
+    expect(sections.map((s) => s.title)).toEqual([
+      "Level 1 (3 sequences)",
+      "Level 2 (1 sequence)",
+      "Level 3 (1 sequence)",
+    ]);
+    expect(sections[0]!.sequences.map((s) => s.id)).toEqual(["b1", "a1", "z1"]);
+    // No level field: the grid draws a plain heading per level, with no
+    // letter sub-headings under a banner.
+    expect(sections.every((s) => s.level === undefined)).toBe(true);
+  });
+});

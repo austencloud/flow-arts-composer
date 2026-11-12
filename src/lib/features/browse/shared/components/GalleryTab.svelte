@@ -33,6 +33,8 @@
      * with the rule strip). Phone keeps the bottom sheet for now — its fate
      * is settled by feel on a real phone (spec decision 3). */
     onOpenWorkspace?: () => void;
+    /** Opens the By mandala wall from the Filters sheet. */
+    onOpenMandala?: () => void;
   }
 
   let {
@@ -45,6 +47,7 @@
     warming = false,
     onSaveSmart,
     onOpenWorkspace,
+    onOpenMandala,
   }: Props = $props();
 
   // State for sub-sheets
@@ -101,6 +104,7 @@
     bind:isOpen={isFilterSheetOpen}
     {isMobile}
     allowSearch={false}
+    {onOpenMandala}
     gridControls={{ onSaveSmart }}
   />
 {/if}

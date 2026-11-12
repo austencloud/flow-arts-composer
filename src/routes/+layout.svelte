@@ -16,6 +16,7 @@
   import { onMount } from "svelte";
   import { afterNavigate, beforeNavigate, onNavigate, goto } from "$app/navigation";
   import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
+  import { keepBareParams } from "#lib/shared/navigation/services/url-bare-params.js";
   import { page } from "$app/state";
   import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
   import { dev } from "$app/env";
@@ -156,17 +157,23 @@
     if (isShallowGoto(navigation)) return;
     const pathname = navigation.to?.url.pathname ?? "";
 
-    const url = new URL(window.location.href);
+    const arrived = window.location.href;
+    const url = new URL(arrived);
     // `fresh` only forces the recovered document through the network. Once the
     // router has accepted that document, it no longer belongs in the URL.
     let changed = url.searchParams.has("fresh");
     if (changed) url.searchParams.delete("fresh");
-    const beforeRouteCleanup = url.search;
+    // Deleting a parameter rewrites the whole query, which turns a bare flag
+    // such as ?mandala into ?mandala=. Compare with bare flags kept, so a
+    // prune that removed nothing is not mistaken for a change.
+    const beforeRouteCleanup = keepBareParams(arrived, url).search;
     pruneRouteScopedParams(url, pathname);
-    changed ||= url.search !== beforeRouteCleanup;
+    const pruned = keepBareParams(arrived, url);
+    changed ||= pruned.search !== beforeRouteCleanup;
 
     if (changed) {
-      const cleaned = url.pathname + (url.search ? url.search : "") + url.hash;
+      const cleaned =
+        pruned.pathname + (pruned.search ? pruned.search : "") + pruned.hash;
       // Initial afterNavigate callbacks run immediately before SvelteKit marks
       // its router ready. Cross that boundary before using its history API.
       queueMicrotask(

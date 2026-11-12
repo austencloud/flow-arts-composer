@@ -152,6 +152,7 @@ compensation), so the detail view behind this sheet updates on its own.
     )
   );
   const activeFamilyValues = $derived(new Set(familyKeyByValue.keys()));
+
   const appliedValueKeys = $derived(
     new Set(
       [...engine.activeFilters.values()]

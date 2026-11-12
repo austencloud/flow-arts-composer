@@ -8,7 +8,7 @@
   import { getBrowseEventHandler } from "../get-browse-event-handler";
   import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
   import type { ResponsiveSettings } from "#lib/shared/device/domain/models/device-models.js";
-  import { onMount, onDestroy, setContext } from "svelte";
+  import { onMount, onDestroy, setContext, untrack } from "svelte";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import ErrorBanner from "../../../create/shared/components/ErrorBanner.svelte";
 
@@ -84,6 +84,8 @@
   import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
+  import MandalaPlace from "#lib/features/browse/mandala-place/MandalaPlace.svelte";
+  import { mandalaPlace } from "#lib/features/browse/mandala-place/mandala-place-state.svelte.js";
   import { isSidewaysViewport } from "#lib/shared/ui/sideways-viewport.js";
   import {
     GALLERY_LETTER_QUERY_PARAM,
@@ -342,6 +344,19 @@
     );
     if (active?.value === requested) return;
     removeCurrentUrlParams([GALLERY_LETTER_QUERY_PARAM]);
+  });
+
+  // The By mandala place reads its screen from the address: on load, on every
+  // real navigation (page.url moves on those, not on its own shallow writes),
+  // and on the browser's back and forward between its own entries.
+  $effect(() => {
+    void page.url.href;
+    untrack(() => mandalaPlace.syncFromAddress(new URL(window.location.href)));
+  });
+  $effect(() => {
+    const sync = () => mandalaPlace.syncFromAddress(new URL(window.location.href));
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
   });
 
   // Record view + search whenever they change so a reload/HMR remount
@@ -854,8 +869,15 @@
               {#if exploreSection === "sequences"}
                 <!-- Phones and tablets go straight to the grid; their Filters
                      sheet is the chooser. Desktop keeps the workspace with its
-                     live results beside it. -->
-                {#if galleryView === "start-here" && !isMobile}
+                     live results beside it. The By mandala place takes the
+                     whole area at every size while its address is open. -->
+                {#if mandalaPlace.open}
+                  <MandalaPlace
+                    pool={engine.allSequences}
+                    poolReady={engine.sectionsReady}
+                    poolComplete={engine.poolComplete}
+                  />
+                {:else if galleryView === "start-here" && !isMobile}
                   <FilterWorkspace
                     {engine}
                     collections={collectionOptions}
@@ -863,6 +885,7 @@
                     {resultsPane}
                     onSaveSmart={() => (smartSaveOpen = true)}
                     onEject={applyToGrid}
+                    onOpenMandala={() => mandalaPlace.openWall()}
                   />
                 {:else}
                   <GalleryTab
@@ -885,6 +908,7 @@
                       : () => (galleryView = "start-here")}
                     onOpenWorkspace={() => (galleryView = "start-here")}
                     onSaveSmart={() => (smartSaveOpen = true)}
+                    onOpenMandala={() => mandalaPlace.openWall()}
                   />
                 {/if}
               {:else if exploreSection === "collections"}

@@ -17,7 +17,6 @@
   import GalleryLetterEditor from "./value-editors/GalleryLetterEditor.svelte";
   import GalleryLevelEditor from "./value-editors/GalleryLevelEditor.svelte";
   import GalleryLoopEditor from "./value-editors/GalleryLoopEditor.svelte";
-  import GalleryMandalaEditor from "./value-editors/GalleryMandalaEditor.svelte";
   import GalleryMaxTurnEditor from "./value-editors/GalleryMaxTurnEditor.svelte";
   import GalleryPlacementEditor from "./value-editors/GalleryPlacementEditor.svelte";
   import GalleryPerformanceEditor from "./value-editors/GalleryPerformanceEditor.svelte";
@@ -112,14 +111,6 @@
     />
   {:else if section === "length"}
     <GalleryLengthEditor
-      {catalog}
-      {stackHint}
-      {isValueApplied}
-      {onPickValue}
-      {valueHead}
-    />
-  {:else if section === "mandala"}
-    <GalleryMandalaEditor
       {catalog}
       {stackHint}
       {isValueApplied}

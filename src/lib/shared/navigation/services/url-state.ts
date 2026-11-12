@@ -1,6 +1,7 @@
 import { browser } from "$app/env";
 import { goto } from "$app/navigation";
 import { navigating, page } from "$app/state";
+import { keepBareParams } from "./url-bare-params";
 
 export type UrlMutationMode = "push" | "replace";
 
@@ -182,6 +183,12 @@ export function writeUrl(
 ): void {
   if (!browser) return;
 
+  // A bare flag such as ?mandala stays bare whoever rewrites the query.
+  const from = currentHref();
+  const target = new URL(destination, from);
+  const kept = keepBareParams(from, target);
+  if (kept !== target) destination = kept;
+
   const write: UrlWrite = {
     destination,
     state: mergePageState(options),
@@ -212,8 +219,9 @@ export function mutateCurrentUrl(
   if (!browser) return;
 
   const currentUrl = new URL(currentHref());
-  const nextUrl = new URL(currentUrl);
-  mutation(nextUrl);
+  const mutated = new URL(currentUrl);
+  mutation(mutated);
+  const nextUrl = keepBareParams(currentUrl.href, mutated);
 
   if (
     nextUrl.href === currentUrl.href &&

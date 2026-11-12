@@ -25,10 +25,15 @@
   const activeUserFilterCount = $derived(
     engine.allFilterChips.filter((c) => !c.locked).length
   );
+  // While the pool loads or a filter is still working out its answer, the
+  // count is not an answer yet: an ellipsis holds its place instead of "0".
+  const countPending = $derived(engine.isLoading || engine.isResolvingFilters);
   const results = $derived(
-    engine.resultCount === 1
-      ? t("browse_audit_one_sequence", { count: engine.resultCount })
-      : t("browse_audit_many_sequences", { count: engine.resultCount })
+    countPending
+      ? t("browse_audit_counting_matches")
+      : engine.resultCount === 1
+        ? t("browse_audit_one_sequence", { count: engine.resultCount })
+        : t("browse_audit_many_sequences", { count: engine.resultCount })
   );
 </script>
 
@@ -51,9 +56,11 @@
     <span class="filters-word">{t("browse_ui_filters")}</span>
   {/if}
   <span class="filters-pill-count">
-    {engine.resultCount}{engine.isLibraryComplete ? "" : "+"}{#if label === "count"}<span
-        class="result-count-word"
-        >&nbsp;{engine.resultCount === 1
+    <span class="count-number">{countPending ? "…" : engine.resultCount}</span
+    >{engine.isLibraryComplete || countPending
+      ? ""
+      : "+"}{#if label === "count"}<span class="result-count-word"
+        >&nbsp;{engine.resultCount === 1 && !countPending
           ? t("browse_audit_sequence")
           : t("browse_audit_sequences")}</span
       >{/if}
@@ -63,7 +70,7 @@
   {/if}
 </button>
 <span class="sr-only" aria-live="polite" aria-atomic="true">
-  {engine.isLibraryComplete
+  {engine.isLibraryComplete || countPending
     ? results
     : `At least ${engine.resultCount} sequences loaded`}
 </span>
@@ -120,6 +127,14 @@
     font-weight: 700;
     /* Changing number must not jitter the pill width (no-layout-shift). */
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Two digits wide, so the ellipsis shown while counting and a short count
+     take the same room. */
+  .count-number {
+    display: inline-block;
+    min-width: 2ch;
+    text-align: end;
   }
 
   .header .filters-pill-count {

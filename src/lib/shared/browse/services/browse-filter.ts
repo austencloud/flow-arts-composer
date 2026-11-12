@@ -26,6 +26,10 @@ import { filterSequencesByExactLetter } from "#lib/shared/browse/services/sequen
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import { peekMandalaKey } from "#lib/shared/browse/services/sequence-density.js";
 import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
+import {
+  mandalaClimb,
+  type MandalaClimb,
+} from "#lib/shared/browse/services/mandala-climb.svelte.js";
 
 // Collection membership
 // COLLECTION filters need a collection's member ids — feature data this pure
@@ -135,18 +139,34 @@ export function applyFilter(
 }
 
 /**
- * The sequences that draw one mandala. Reads only measured answers, so a pass
- * is a map lookup per sequence and never freezes the page; reading the
- * index's version makes a filtered grid fill in as the measuring runs.
+ * The sequences whose mandala is in the family the value names (or, before
+ * families are ready, the named shape alone). Reads only measured answers, so
+ * a pass is a set lookup per sequence and never freezes the page; reading the
+ * index's and the climb's versions makes a filtered grid fill in as the
+ * measuring runs and widen when families land.
  */
 function filterByMandala(
   sequences: SequenceData[],
   filterValue: BrowseFilterValue
 ): SequenceData[] {
   void mandalaIndex.version;
-  const key = String(filterValue);
-  if (!key) return [];
-  return sequences.filter((seq) => peekMandalaKey(seq) === key);
+  return filterByMandalaFamily(sequences, String(filterValue ?? ""), mandalaClimb);
+}
+
+/** The Mandala filter against any climb; the app passes its one climb. */
+export function filterByMandalaFamily(
+  sequences: SequenceData[],
+  value: string,
+  climb: Pick<MandalaClimb, "version" | "keysFor">
+): SequenceData[] {
+  void climb.version;
+  if (!value) return [];
+  const keys = climb.keysFor(value);
+  if (keys.size === 0) return [];
+  return sequences.filter((seq) => {
+    const key = peekMandalaKey(seq);
+    return key !== undefined && key !== "" && keys.has(key);
+  });
 }
 
 export function getFilterOptions(

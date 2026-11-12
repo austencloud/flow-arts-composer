@@ -15,6 +15,14 @@
   button that goes to its value; the one under the thumb lets presses
   through, so the thumb stays easy to grab.
 
+  A track with no number to show (where a page sits in a climb) passes
+  `ends`: the two words under the track's ends replace the value box and name
+  the track on screen, so `label` names it for assistive technology only.
+  `valueText` then supplies what that technology reads for the value.
+
+  `onhold` hears when the pointer takes the thumb and lets go, so an owner can
+  make what it shows follow the hand without easing, and settle on release.
+
   Dense desktop tools that scrub a bare number use ScrubbableNumber instead.
 -->
 <script lang="ts">
@@ -43,6 +51,15 @@
      * not run in the units it shows: speed moves in doublings but reads ×.
      */
     fromTyped?: (typed: number) => number;
+    /**
+     * Words under the track's two ends, shown instead of the value box. The
+     * name is then read by assistive technology only.
+     */
+    ends?: readonly [string, string];
+    /** The value as assistive technology reads it; defaults to `format`. */
+    valueText?: (value: number) => string;
+    /** True when the pointer takes the thumb, false when it lets go. */
+    onhold?: (held: boolean) => void;
     onchange: (value: number) => void;
   }
 
@@ -59,6 +76,9 @@
     onmark,
     markLabel,
     fromTyped,
+    ends: endLabels,
+    valueText,
+    onhold,
     onchange,
   }: Props = $props();
 
@@ -66,6 +86,7 @@
 
   const clamped = $derived(Math.min(max, Math.max(min, value)));
   const text = $derived(format ? format(clamped) : String(clamped));
+  const spoken = $derived(valueText ? valueText(clamped) : text);
   const ends = $derived([
     format ? format(min) : String(min),
     format ? format(max) : String(max),
@@ -106,6 +127,31 @@
     onchange(Math.min(max, Math.max(min, next)));
   }
 
+  /** Stops listening for the current hold's release; null when nothing is held. */
+  let stopHold: (() => void) | null = null;
+
+  /** The pointer can let go anywhere, so the release is heard on the window.
+   *  One hold at a time: a second press replaces the first's listeners. */
+  function hold(): void {
+    if (!onhold || disabled) return;
+    stopHold?.();
+    onhold(true);
+    const release = () => {
+      stopHold?.();
+      onhold?.(false);
+    };
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    stopHold = () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+      stopHold = null;
+    };
+  }
+
+  // A slider that goes away mid-hold stops listening for its release.
+  $effect(() => () => stopHold?.());
+
   async function handleInput(
     event: Event & { currentTarget: HTMLInputElement }
   ): Promise<void> {
@@ -122,7 +168,9 @@
 </script>
 
 <div class="value-slider" class:disabled>
-  <span class="name" id="{id}-name">{label}</span>
+  <span class="name" class:sr-only={endLabels !== undefined} id="{id}-name"
+    >{label}</span
+  >
   <div class="row">
     <div class="track">
       <input
@@ -133,10 +181,11 @@
         value={clamped}
         {disabled}
         aria-labelledby="{id}-name"
-        aria-valuetext={text}
+        aria-valuetext={spoken}
         style:--from={Math.min(originFraction, valueFraction)}
         style:--to={Math.max(originFraction, valueFraction)}
         oninput={handleInput}
+        onpointerdown={hold}
       />
       {#each marks as mark, index (index)}
         {#if onmark}
@@ -164,18 +213,26 @@
         {/if}
       {/each}
     </div>
-    <span class="value">
-      <TypeableValue
-        {label}
-        {text}
-        parse={readTyped}
-        sizer={widest}
-        {signed}
-        {disabled}
-        oncommit={setTyped}
-      />
-    </span>
+    {#if !endLabels}
+      <span class="value">
+        <TypeableValue
+          {label}
+          {text}
+          parse={readTyped}
+          sizer={widest}
+          {signed}
+          {disabled}
+          oncommit={setTyped}
+        />
+      </span>
+    {/if}
   </div>
+  {#if endLabels}
+    <span class="ends" aria-hidden="true">
+      <span>{endLabels[0]}</span>
+      <span>{endLabels[1]}</span>
+    </span>
+  {/if}
 </div>
 
 <style>
@@ -199,6 +256,18 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
+  }
+
+  /* The end words sit under the track's two ends, tucked into the room the
+     44px touch row leaves around its thin track. */
+  .ends {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: -0.375rem;
+    color: var(--theme-text-muted, #9aa6b8);
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.2;
   }
 
   .track {

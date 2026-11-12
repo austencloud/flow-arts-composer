@@ -21,6 +21,7 @@ import type {
 } from "#lib/shared/offline/domain/offline-cache-types.js";
 import type { GeneratedMandalaEntry } from "#lib/shared/mandala/domain/mandala-pool-types.js";
 import type { MandalaSignatureRow } from "#lib/shared/browse/services/mandala-index.svelte.js";
+import type { MandalaFamilyBookRow } from "#lib/shared/browse/services/mandala-climb.svelte.js";
 import {
   DATABASE_NAME,
   DATABASE_VERSION,
@@ -72,6 +73,9 @@ export class TKADatabase extends Dexie {
 
   // Measured mandala keys for Browse's mandala grid (v11)
   mandalaSignatures!: EntityTable<MandalaSignatureRow, "id">;
+
+  // Saved pairwise distances between mandala shapes (v12)
+  mandalaFamilyBooks!: EntityTable<MandalaFamilyBookRow, "id">;
 
   constructor() {
     super(DATABASE_NAME);
@@ -128,6 +132,8 @@ export async function clearAllData(): Promise<void> {
       db.mediaCompositionPresets,
       db.messageDrafts,
       db.messageOutbox,
+      db.mandalaSignatures,
+      db.mandalaFamilyBooks,
     ],
     async () => {
       await db.sequences.clear();
@@ -144,6 +150,8 @@ export async function clearAllData(): Promise<void> {
       await db.mediaCompositionPresets.clear();
       await db.messageDrafts.clear();
       await db.messageOutbox.clear();
+      await db.mandalaSignatures.clear();
+      await db.mandalaFamilyBooks.clear();
     }
   );
 }

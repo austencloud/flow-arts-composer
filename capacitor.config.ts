@@ -59,7 +59,10 @@ const config: CapacitorConfig = {
       ]
     },
     CapacitorUpdater: {
-      autoUpdate: true,
+      // The phone build the pre-push step installs keeps the web layer it
+      // was built with. Pulling the update channel's bundle would put an
+      // older site over a fresh install whenever over-the-air uploads lag.
+      autoUpdate: process.env.TKA_NATIVE_PUSH_BUILD !== '1',
       appId: 'com.tkaflowarts.composer'
     }
   }

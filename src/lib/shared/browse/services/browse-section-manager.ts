@@ -18,14 +18,15 @@ import { deriveWord } from '#lib/shared/foundation/services/word-deriver.js';
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 
-/** Numeric difficulty (1–3). Prefers the stored `level`, else computes from steps. */
 import {
-  DENSITY_BANDS,
-  densityBandById,
-  densityBandOf,
-  resolveMandalaDensity,
+  MANDALA_SECTIONS,
+  mandalaSectionById,
+  mandalaSectionOf,
+  resolveMandalaSpaces,
 } from "#lib/shared/browse/services/sequence-density.js";
+import { compareByMandala } from "#lib/shared/browse/services/browse-sorter.js";
 
+/** Numeric difficulty (1–3). Prefers the stored `level`, else computes from steps. */
 function resolveLevel(sequence: SequenceData): number {
   if (typeof sequence.level === "number") return sequence.level;
   if (sequence.steps?.length) return calculateDifficultyLevel([...sequence.steps]);
@@ -199,9 +200,15 @@ function getGroupKey(
       // level banner with letter subsections beneath. Key: "1|A|4".
       return `${resolveLevel(sequence)}|${deriveLetter(sequence)}|${stepCountOf(sequence)}`;
 
+    case "level":
+      // Level alone, one section per level with every card together. A
+      // Mandala family is small, so letter and length sub-sections would
+      // leave it in one-card rows.
+      return String(resolveLevel(sequence));
+
     case "density":
-      // The band of the mandala the sequence draws: sparse, medium, dense.
-      return densityBandOf(resolveMandalaDensity(sequence)).id;
+      // How busy the sequence's mandala is: simple, busier, complex.
+      return mandalaSectionOf(resolveMandalaSpaces(sequence)).id;
 
     case "author":
       return sequence.author ?? "Unknown Author";
@@ -239,7 +246,12 @@ function createSections(
       id: createSectionId(key, config.groupBy),
       title: createSectionTitle(key, config.groupBy, sequences.length),
       count: sequences.length,
-      sequences: sortSequencesInSection(sequences, config.sortMethod),
+      // A level section keeps the order it was given: the caller's sort and
+      // direction, which a family's mixed lengths make the only order needed.
+      sequences:
+        config.groupBy === "level"
+          ? sequences
+          : sortSequencesInSection(sequences, config.sortMethod),
       isExpanded: config.expandedSections?.has(key) ?? false,
       sortOrder: getSectionSortOrder(key, config.groupBy),
     };
@@ -284,6 +296,9 @@ function createSectionTitle(
     case "length":
       return `${key} (${countText})`;
 
+    case "level":
+      return `Level ${key} (${countText})`;
+
     case "difficulty": {
       // key is "level|letter|steps" — title carries level + letter (kept unique
       // per section for the scroll anchor); the grid renders the colored badge.
@@ -293,7 +308,7 @@ function createSectionTitle(
     }
 
     case "density":
-      return `${densityBandById(key)?.label ?? key} (${countText})`;
+      return `${mandalaSectionById(key)?.label ?? key} (${countText})`;
 
     case "author":
       return `👤 ${key} (${countText})`;
@@ -368,12 +383,8 @@ function sortSequencesInSection(
       });
 
     case BrowseSortMethod.DENSITY:
-      // Sparse mandala first; same coverage falls back to length.
-      return sorted.sort((a, b) => {
-        const densityCompare = resolveMandalaDensity(a) - resolveMandalaDensity(b);
-        if (densityCompare !== 0) return densityCompare;
-        return getLength(a) - getLength(b);
-      });
+      // The same order as the sort: spaces, coverage, level, length.
+      return sorted.sort(compareByMandala);
 
     case "author":
       return sorted.sort((a, b) => {
@@ -504,8 +515,12 @@ function getSectionSortOrder(
       return level * 1_000_000 + (letterIndex + 1) * 1000 + beatOrder;
     }
 
+    case "level":
+      // Easiest first.
+      return parseInt(key, 10) || 9;
+
     case "density": {
-      const index = DENSITY_BANDS.findIndex((band) => band.id === key);
+      const index = MANDALA_SECTIONS.findIndex((section) => section.id === key);
       return index === -1 ? 999 : index;
     }
 

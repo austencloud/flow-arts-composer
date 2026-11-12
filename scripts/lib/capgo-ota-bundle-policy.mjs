@@ -8,6 +8,10 @@
 //    proof and candidate models that no shipped code loads, so a model file
 //    stays out unless the built app names it.
 // 2. Capgo's delta upload rejects any path that contains whitespace.
+// 3. A bare `models/` with nothing after it names no folder. Built code
+//    carries one in a validation message ("must be a /models/…/*.glb path"),
+//    and from 2026-11-11 that alone kept every model and pushed the bundle to
+//    1,030 MB, over the cap.
 
 /** Only files under this prefix can be left out for being unreferenced. */
 export const OTA_PRUNABLE_PREFIX = "models/";
@@ -48,6 +52,14 @@ export const OTA_REFERENCE_IGNORED_FILES = Object.freeze([
   "_headers",
   "_redirects",
 ]);
+
+/**
+ * The staged folder may not grow past this. Capgo refuses zips over 1 GiB,
+ * and zipping never makes the folder meaningfully larger (most of it is
+ * already-compressed models and images), so a folder under this size always
+ * zips under the cap. Staging stops here instead of failing at the upload.
+ */
+export const OTA_BUNDLE_BUDGET_BYTES = 960 * 1024 * 1024;
 
 /** Must be present: the phone shell cannot start without them. */
 export const OTA_REQUIRED_FILES = Object.freeze(["index.html", "_app/env.js"]);
@@ -96,6 +108,7 @@ export const createAssetReferences = () => ({
  */
 export function collectAssetReferences(text, references) {
   for (const [fragment] of text.matchAll(MODEL_PATH_FRAGMENT)) {
+    if (fragment === OTA_PRUNABLE_PREFIX) continue;
     references.prefixes.add(decode(fragment));
   }
   for (const [token] of text.matchAll(FILE_NAME_TOKEN)) {

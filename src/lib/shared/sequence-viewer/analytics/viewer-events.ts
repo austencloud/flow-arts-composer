@@ -110,10 +110,12 @@ export function trackViewerOpenTiming(
   });
 }
 
+/** `properties.source` names the Remix control that was pressed. */
 export function trackSequenceRemixStarted(
-  context: ViewerAnalyticsContext
+  context: ViewerAnalyticsContext,
+  properties: ViewerAnalyticsProperties = {}
 ): void {
-  captureViewerEvent("sequence_remix_started", context);
+  captureViewerEvent("sequence_remix_started", context, properties);
 }
 
 export function trackViewerAction(

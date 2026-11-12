@@ -26,6 +26,7 @@ import {
 } from "#lib/shared/browse/services/browse-filter.js";
 import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
 import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
+import { mandalaClimb } from "#lib/shared/browse/services/mandala-climb.svelte.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import { browser } from "$app/env";
@@ -46,7 +47,6 @@ export type Section =
   | "chooser"
   | "level"
   | "length"
-  | "mandala"
   | "letter"
   | "placement"
   | "gridmode"
@@ -62,7 +62,6 @@ export const SECTIONS: readonly Section[] = [
   "chooser",
   "level",
   "length",
-  "mandala",
   "letter",
   "placement",
   "gridmode",
@@ -80,7 +79,6 @@ export const SCREEN_CLASS: Record<Section, string> = {
   chooser: "screen-chooser",
   level: "screen-level",
   length: "screen-length",
-  mandala: "screen-mandala",
   letter: "screen-letter",
   placement: "screen-placements",
   gridmode: "screen-gridmode",
@@ -316,8 +314,9 @@ export interface CategoryEntry {
   section?: Exclude<Section, "chooser">;
   /** Direct-apply categories carry their filter instead of a section. */
   apply?: { type: BrowseFilterType; value: string; label: string };
-  /** Navigation-only tile (Collections, pre-filter conversion). */
-  navigate?: "collections";
+  /** Navigation-only tile: Collections (pre-filter conversion), or Mandala,
+   *  which opens the By mandala wall. */
+  navigate?: "collections" | "mandala";
   /** Narrowed out by the current rule: still mounted, dimmed, inert. */
   narrowedOut: boolean;
 }
@@ -336,6 +335,8 @@ export interface GalleryCatalogDeps {
     | undefined;
   readonly unifiedFilterChooser: boolean;
   readonly showCollections: boolean;
+  /** The host has the By mandala wall, so the Mandala tile opens it. */
+  readonly showMandala: boolean;
   /** When present, the Collections tile opens a value editor instead of
    * navigating to the Library tab. */
   readonly collections: readonly CollectionOption[] | undefined;
@@ -646,7 +647,8 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
             : PEEK_TIERS.base
   );
 
-  /** The three privileged doors — Level, Length and Mandala. */
+  /** The privileged doors: Level, Length and, where the host has the By
+   *  mandala wall to open, Mandala. */
   const primaryCategories = $derived<CategoryEntry[]>([
     {
       key: "level",
@@ -664,14 +666,18 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
       section: "length",
       narrowedOut: false,
     },
-    {
-      key: "mandala",
-      title: t("browse_ui_mandala_category"),
-      sub: t("browse_ui_sparse_to_dense"),
-      art: { kind: "icon", icon: "fa-dharmachakra" },
-      section: "mandala",
-      narrowedOut: false,
-    },
+    ...(deps.showMandala
+      ? [
+          {
+            key: "mandala",
+            title: t("browse_ui_mandala_category"),
+            sub: t("browse_ui_simple_to_complex"),
+            art: { kind: "icon", icon: "fa-dharmachakra" },
+            navigate: "mandala",
+            narrowedOut: false,
+          } satisfies CategoryEntry,
+        ]
+      : []),
   ]);
 
   /** Everything else, in the order the landing and the rail both use. */
@@ -954,19 +960,17 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     get primaryCategories() {
       return primaryCategories;
     },
-    /** The pool's distinct mandalas, sparse to dense (the drill feeds the index). */
-    get mandalaGroups() {
-      return mandalaIndex.groups;
-    },
-    /** One sparse, one medium, one dense: the By mandala door's fan. */
+    /** The climb's first, middle and last shapes: the By mandala door's fan. */
     get mandalaFan() {
-      return mandalaIndex.fan;
-    },
-    get mandalaProgress() {
-      return mandalaIndex.progress;
+      return mandalaClimb.fan;
     },
     get mandalaDone() {
       return mandalaIndex.done;
+    },
+    /** True once a pool with no sequences was measured: nothing to draw,
+     *  as opposed to not measured yet. */
+    get mandalaPoolEmpty() {
+      return mandalaIndex.empty;
     },
     get secondaryCategories() {
       return secondaryCategories;

@@ -51,8 +51,17 @@ import {
   CONNECTIVE_STACKING_TYPES,
   type FilterConnective,
 } from "#lib/shared/browse/services/multi-filter.js";
-import { sortSequences as browseSortSequences } from "#lib/shared/browse/services/browse-sorter.js";
+import {
+  resolveDifficultyLevel,
+  sortSequences as browseSortSequences,
+} from "#lib/shared/browse/services/browse-sorter.js";
 import { withLibraryBrowseDate } from "#lib/shared/browse/services/browse-date.js";
+import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
+import {
+  mandalaClimb,
+  mandalaFamiliesSettled,
+} from "#lib/shared/browse/services/mandala-climb.svelte.js";
+import { untrack } from "svelte";
 import { organizeSections as organizeBrowseSections } from "#lib/shared/browse/services/browse-section-manager.js";
 import { toggleFavorite as doToggleFavorite } from "#lib/shared/library/services/collection-manager.js";
 import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
@@ -318,6 +327,10 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
   // Every async producer of allSequences shares one revision. Source changes,
   // host-owned pools, and teardown invalidate older work before it can publish.
   let poolLoadRevision = 0;
+  // Host extras (the canonical T&D alphabet) arrive after the main community
+  // pool; `extrasPending` is true from the request until it lands or fails.
+  let extrasRequest = 0;
+  let extrasPending = $state(false);
   let initialized = false;
   let lastEffectiveUserId = authState.effectiveUserId;
   let lastFullAccount = authState.isFullAccount;
@@ -334,6 +347,46 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       : allSequences
   );
 
+  // A Mandala filter opens a family that mixes easy and hard sequences, so
+  // its results read easiest first whatever the sort.
+  const hasMandalaFilter = $derived.by(() => {
+    for (const f of activeFilters.values()) {
+      if (f.type === BrowseFilterType.MANDALA) return true;
+    }
+    return false;
+  });
+
+  // A Mandala filter matches by measured shape and by family, so it can only
+  // answer once the mandala index has measured this pool and the climb has
+  // built families from it. Until it first does, the results read as loading.
+  // After that the last families keep answering while a later stage of the
+  // pool is measured, so the grid does not drop back to a skeleton.
+  const mandalaSettled = $derived(
+    hasMandalaFilter &&
+      sectionsReady &&
+      mandalaFamiliesSettled(mandalaIndex, mandalaClimb, allSequences)
+  );
+  // The pool is complete once nothing more is on its way: the load is over,
+  // no further library page is loading, and the community extras have landed
+  // or failed. Each of those ends on its own, also on an error or offline.
+  const poolComplete = $derived(
+    !isLoading &&
+      !isLoadingMore &&
+      !(source === "community" && extrasPending)
+  );
+  // The source the filter last settled for on a complete pool; a new source
+  // starts over. Waiting for the complete pool keeps a partial stage (7 of a
+  // family of 13, or none of a family only the extras hold) from reading as
+  // the answer.
+  let mandalaSettledSource = $state<SequenceSource | null>(null);
+  const mandalaResolving = $derived(
+    hasMandalaFilter &&
+      sectionsReady &&
+      !error &&
+      mandalaSettledSource !== source &&
+      !(mandalaSettled && poolComplete)
+  );
+
   const filteredAndSorted = $derived.by(() => {
     let result = searchedPool;
 
@@ -346,6 +399,10 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     const sorted = browseSortSequences(result, sortMethod);
     if (sortDirection === "desc") {
       sorted.reverse();
+    }
+    if (hasMandalaFilter) {
+      // Stable, so the sort and its direction still order each level.
+      sorted.sort((a, b) => resolveDifficultyLevel(a) - resolveDifficultyLevel(b));
     }
     return sorted;
   });
@@ -370,7 +427,11 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
 
   const effectiveSectionGroupBy = $derived.by((): SectionGroupBy => {
     if (_sectionGroupByOverride) return _sectionGroupByOverride;
-    let groupBy = SORT_TO_SECTION_GROUP[sortMethod] ?? "letter";
+    // A Mandala family is small: one section per level keeps its cards
+    // together instead of scattering them over letter and length rows.
+    let groupBy: SectionGroupBy = hasMandalaFilter
+      ? "level"
+      : (SORT_TO_SECTION_GROUP[sortMethod] ?? "letter");
     // Hands mode has no letter/difficulty semantics — fall back to length.
     if (
       _viewMode.subject === "hands" &&
@@ -536,6 +597,22 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     _viewMode.granularity !== "solo";
 
   const cleanupMutated = $effect.root(() => {
+    // The engine owns the pool, so it hands it to the mandala index whenever
+    // a Mandala filter is active: a filter restored on reload resolves without
+    // the picker ever opening. The index measures in idle slices and reads
+    // saved answers first, and nothing is handed over without the filter.
+    // Untracked so this effect never depends on the index's own pool.
+    $effect(() => {
+      if (!hasMandalaFilter || !sectionsReady) return;
+      const pool = allSequences;
+      untrack(() => mandalaIndex.setPool(pool));
+    });
+
+    $effect(() => {
+      if (!hasMandalaFilter) mandalaSettledSource = null;
+      else if (mandalaSettled && poolComplete) mandalaSettledSource = source;
+    });
+
     $effect(() => {
       return onLibraryMutated((sequenceId) => {
         if (usesSharedLibraryPages()) return;
@@ -646,6 +723,13 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
   function appendExtraCommunitySequences(requestRevision: number): void {
     const provider = config.extraCommunitySequences;
     if (!provider) return;
+    // The pool is not complete until the extras land (or fail): a filter
+    // that only the extras can satisfy must not read as empty meanwhile.
+    const thisRequest = ++extrasRequest;
+    extrasPending = true;
+    const settle = () => {
+      if (thisRequest === extrasRequest) extrasPending = false;
+    };
     provider()
       .then((extra) => {
         if (
@@ -660,7 +744,8 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
         if (requestRevision !== poolLoadRevision || source !== "community")
           return;
         console.error("[BrowseEngine] extraCommunitySequences failed:", err);
-      });
+      })
+      .finally(settle);
   }
 
   async function loadLibrarySequences(refresh = false): Promise<void> {
@@ -870,6 +955,12 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     get isLoading() {
       return isLoading;
     },
+    get isResolvingFilters() {
+      return mandalaResolving;
+    },
+    get poolComplete() {
+      return poolComplete;
+    },
     get isLoadingMore() {
       return isLoadingMore;
     },
@@ -991,6 +1082,9 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
           ? sequences.map(withLibraryBrowseDate)
           : [...sequences];
       allSequences = deduplicateById(pool);
+      // A host pool is complete as given; no extras are coming for it.
+      extrasRequest += 1;
+      extrasPending = false;
       // The host owns the list, so there is nothing left to wait for — without
       // this the panel sits on its skeleton forever.
       sectionsReady = true;

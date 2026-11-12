@@ -27,8 +27,11 @@ export const DATABASE_NAME = "TKADatabase";
  * Version 10: Added user-scoped message drafts and the durable message outbox.
  * Version 11: Added mandalaSignatures, each sequence's measured mandala key and
  *             coverage, so Browse's mandala grid loads instead of re-measuring.
+ * Version 12: Added mandalaFamilyBooks, one saved book of pairwise distances
+ *             between mandala shapes, so families link on a return visit
+ *             without measuring again.
  */
-export const DATABASE_VERSION = 11;
+export const DATABASE_VERSION = 12;
 
 
 export const TABLE_NAMES = {
@@ -51,6 +54,7 @@ export const TABLE_NAMES = {
   MESSAGE_DRAFTS: "messageDrafts",
   MESSAGE_OUTBOX: "messageOutbox",
   MANDALA_SIGNATURES: "mandalaSignatures",
+  MANDALA_FAMILY_BOOKS: "mandalaFamilyBooks",
 } as const;
 
 
@@ -88,6 +92,8 @@ export const TABLE_INDEXES = {
   // Mandala signatures (v11): id is the stage 1 cache key (sequence id, word,
   // step count); rows from an older measure are skipped by their `measure`.
   [TABLE_NAMES.MANDALA_SIGNATURES]: "id, key, measure",
+  // Mandala family books (v12): one row, id "book", read and written whole.
+  [TABLE_NAMES.MANDALA_FAMILY_BOOKS]: "id",
 } as const;
 
 

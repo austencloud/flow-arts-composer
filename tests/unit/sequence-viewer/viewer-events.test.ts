@@ -35,7 +35,7 @@ describe("general sequence viewer events", () => {
   it("captures viewer entry, actions, and remix intent with one source vocabulary", () => {
     trackSequenceViewed(context);
     trackViewerAction(context, "favorite", { value: true });
-    trackSequenceRemixStarted(context);
+    trackSequenceRemixStarted(context, { source: "compact_header" });
     trackViewerViewChanged(context, "card", "animation", "content_rail");
 
     expect(vi.mocked(captureWhenReady).mock.calls).toEqual([
@@ -63,6 +63,7 @@ describe("general sequence viewer events", () => {
           page: "/browse/gallery",
           viewer_source: "browse_gallery",
           sequence_id: "sequence-1",
+          source: "compact_header",
         },
       ],
       [

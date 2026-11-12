@@ -69,7 +69,11 @@ export function tkaRow(
   switch (item.kind) {
     case "video":
       return insertAfter(
-        insertAfter(core, "volume", facts.hasLayout ? ["layout"] : []),
+        insertAfter(
+          core.includes("crop") ? insertAfter(core, "crop", ["autoframe"]) : core,
+          "volume",
+          facts.hasLayout ? ["layout"] : []
+        ),
         "effects",
         ["beats"]
       );

@@ -15,6 +15,7 @@
   import { browser } from "$app/env";
   import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
+  import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
   import { onMount, onDestroy } from "svelte";
   import {
     configureShortCodeManager,
@@ -463,6 +464,28 @@
     void ctx.handleExport();
   }
 
+  /**
+   * Remix from this page. The viewer's built-in Remix switches the app's
+   * module in place, which only works inside the app shell; this route has
+   * none, so the URL changed and the screen stayed put. Hand the sequence over
+   * the way Create reads it on arrival, then load the Create route. Create
+   * needs no account to open, so a guest goes straight in.
+   */
+  function remixInCreate(): void {
+    const current = sequence;
+    if (!current) return;
+    deepLinker.setData("create", current, "construct");
+    try {
+      localStorage.setItem(
+        "tka-pending-edit-sequence",
+        JSON.stringify(current)
+      );
+    } catch {
+      // Storage blocked: the in-memory hand-over above still reaches Create.
+    }
+    void goto("/create/construct");
+  }
+
   // Opens the public Codex on the sequence's first letter. It used to open
   // /learn/guide/codex, which boots the whole app (20 s on a throttled phone,
   // most of a minute on a scanner's real one, 2026-11-10) and then showed
@@ -862,6 +885,8 @@
               ? `Back to ${handoffData.returnLabel}`
               : "Back",
           }}
+          promoteRemix
+          onRemix={remixInCreate}
           openAppHref={scanOpenAppHref}
           onAccountSignIn={scanOriginCode ? ctx.openSignInPrompt : undefined}
           guideAction={scanOriginCode

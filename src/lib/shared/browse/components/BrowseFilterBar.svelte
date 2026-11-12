@@ -14,6 +14,7 @@ Reads from / writes to a headless BrowseEngine instance.
   import MaxTurnIntensityFilterChip from "#lib/shared/browse/components/filter-chips/MaxTurnIntensityFilterChip.svelte";
   import LOOPFilterChip from "#lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import MandalaFilterStill from "#lib/shared/browse/components/filter-chips/MandalaFilterStill.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { BrowseEngine } from "../engine/types";
   import { localizeFilterChip } from "./localize-filter-chip";
@@ -295,7 +296,12 @@ Reads from / writes to a headless BrowseEngine instance.
         {#if chip.locked}
           <i class="fas fa-lock chip-lock" aria-hidden="true"></i>
         {/if}
-        <span class="chip-label">{localizeFilterChip(chip)}</span>
+        {#if chip.type === BrowseFilterType.MANDALA}
+          <MandalaFilterStill value={chip.value} />
+          <span class="sr-only">{localizeFilterChip(chip)}</span>
+        {:else}
+          <span class="chip-label">{localizeFilterChip(chip)}</span>
+        {/if}
         {#if !chip.locked}
           <button
             class="chip-dismiss"

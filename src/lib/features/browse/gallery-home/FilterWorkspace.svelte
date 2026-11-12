@@ -39,6 +39,7 @@ the below-seam actions mutate the engine in place.
     showViewResultsAction = true,
     onSaveSmart,
     onEject,
+    onOpenMandala,
     onClose,
     splitMinHeight = 0,
     contentFirstShowAllPreview = false,
@@ -60,6 +61,9 @@ the below-seam actions mutate the engine in place.
      * mutation just runs.
      */
     onEject?: (mutate: () => void) => void;
+    /** Opens the By mandala wall. Hosts without the wall omit it, and the
+     * drill then offers no Mandala tile or door. */
+    onOpenMandala?: () => void;
     /** Forwarded to the drill: a short host (a modal) can be wide enough for
      * the split pane and still too short for its stacked left column. */
     splitMinHeight?: number;
@@ -83,6 +87,11 @@ the below-seam actions mutate the engine in place.
       // expanded fallback in that environment.
     }
     const section = SECTION_FOR_FILTER_TYPE[type];
+    // A Mandala chip has no editor in the drill: it reopens the wall.
+    if (section === "mandala") {
+      onOpenMandala?.();
+      return;
+    }
     drillSeed = { section: section === "collections" ? "collection" : section };
   }
 
@@ -102,6 +111,19 @@ the below-seam actions mutate the engine in place.
     )
   );
   const activeFamilyValues = $derived(new Set(familyKeyByValue.keys()));
+
+  // While the pool loads or a filter is still working out its answer, the
+  // count reads as pending instead of "0 matches".
+  const matchCountText = $derived(
+    engine.isLoading || engine.isResolvingFilters
+      ? t("browse_audit_counting_matches")
+      : t(
+          engine.resultCount === 1
+            ? "browse_audit_match_count_singular"
+            : "browse_audit_match_count_plural",
+          { count: engine.resultCount }
+        )
+  );
 
   // Which category each active rule belongs to, so the split pane's catalog
   // tiles can carry a count dot.
@@ -155,12 +177,7 @@ the below-seam actions mutate the engine in place.
     style:view-transition-name="gallery-rule-count"
     aria-live="polite"
   >
-    {t(
-      engine.resultCount === 1
-        ? "browse_audit_match_count_singular"
-        : "browse_audit_match_count_plural",
-      { count: engine.resultCount }
-    )}
+    {matchCountText}
   </span>
   {#if engine.hasActiveFilters}
     <FilterRuleStrip
@@ -231,12 +248,7 @@ the below-seam actions mutate the engine in place.
         style:view-transition-name="gallery-rule-count"
         aria-live="polite"
       >
-        {t(
-          engine.resultCount === 1
-            ? "browse_audit_match_count_singular"
-            : "browse_audit_match_count_plural",
-          { count: engine.resultCount }
-        )}
+        {matchCountText}
       </span>
       {#if engine.hasActiveFilters}
         <FilterRuleStrip
@@ -343,6 +355,7 @@ the below-seam actions mutate the engine in place.
         }
       }}
       {activeFamilyValues}
+      {onOpenMandala}
       familyConnective={engine.connectives[
         String(BrowseFilterType.TND_FAMILY)
       ] ?? "any"}

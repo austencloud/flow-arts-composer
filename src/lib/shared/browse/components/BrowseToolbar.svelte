@@ -24,6 +24,7 @@
   import LengthFilterChip from "#lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
   import LOOPFilterChip from "#lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import MandalaFilterStill from "#lib/shared/browse/components/filter-chips/MandalaFilterStill.svelte";
   import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import type { SequenceSource } from "../engine/types";
   // Every mutation below changes the visible result set. Routed through the one
@@ -86,6 +87,10 @@
   }: Props = $props();
 
   const effectiveBackLabel = $derived(backLabel ?? t("browse_ui_start_here"));
+
+  // While the pool loads or a filter is still working out its answer, the
+  // count is not an answer yet: an ellipsis holds its place instead of "0".
+  const countPending = $derived(engine.isLoading || engine.isResolvingFilters);
 
   // Sort choice
 
@@ -334,7 +339,12 @@
           {#if chip.locked}
             <i class="fas fa-lock chip-lock" aria-hidden="true"></i>
           {/if}
-          <span class="chip-label">{localizeFilterChip(chip)}</span>
+          {#if chip.type === BrowseFilterType.MANDALA}
+            <MandalaFilterStill value={chip.value} />
+            <span class="sr-only">{localizeFilterChip(chip)}</span>
+          {:else}
+            <span class="chip-label">{localizeFilterChip(chip)}</span>
+          {/if}
           {#if !chip.locked}
             <button
               class="chip-dismiss"
@@ -409,10 +419,12 @@
           total: resultTotal,
         })}
       {:else}
-        {engine.resultCount}{engine.isLibraryComplete ? "" : "+"}<span
+        <span class="count-number"
+          >{countPending ? "…" : engine.resultCount}</span
+        >{engine.isLibraryComplete || countPending ? "" : "+"}<span
           class="result-count-word"
           >&nbsp;{t(
-            engine.resultCount === 1
+            engine.resultCount === 1 && !countPending
               ? "browse_audit_sequence"
               : "browse_audit_sequences"
           )}</span
@@ -562,6 +574,14 @@
     height: 24px;
     background: color-mix(in srgb, var(--theme-text) 15%, transparent);
     flex-shrink: 0;
+  }
+
+  /* Two digits wide, so the ellipsis shown while counting and a short count
+     take the same room. */
+  .count-number {
+    display: inline-block;
+    min-width: 2ch;
+    text-align: end;
   }
 
   /* One-row chrome slots. The applied chips take the row's slack so the
