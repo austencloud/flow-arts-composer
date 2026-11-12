@@ -73,8 +73,9 @@ describe("homepage hero notation rail contract", () => {
     expect(sequenceHero).toMatch(
       /active=\{active &&\s*canvasReady &&\s*!!sequence &&\s*shouldMountNotationRail &&\s*!isNamedRouteMorphActive\(\) &&/
     );
+    expect(stepStrip).toContain("if (cells) return cells;");
     expect(stepStrip).toContain(
-      "const resolvedCells = $derived(cells ?? buildNotationCells(sequence))"
+      "reuseNotationCells(lastCells, buildNotationCells(sequence))"
     );
     expect(stepStrip).toContain('orientation?: "horizontal" | "vertical"');
     expect(stepStrip).toContain("translateY(${trackOffset}px)");

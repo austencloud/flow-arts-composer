@@ -35,6 +35,21 @@ function stampJoin<T extends object>(cell: T, join: GridJoin): T {
 }
 
 /**
+ * A sequence with no start position shows one made from its first step. The
+ * same step gives back the same start, for the reason the joined copies above
+ * are kept: a rebuild with nothing changed must not hand a strip new data.
+ */
+const derivedStarts = new WeakMap<object, StartPlacementData>();
+
+function startFromFirstStep(step: StepData): StartPlacementData {
+  const known = derivedStarts.get(step);
+  if (known) return known;
+  const start = createStartPlacementFromBeatStart(step);
+  derivedStarts.set(step, start);
+  return start;
+}
+
+/**
  * Build the ordered cells for a beat strip: a Start cell (real start position, or
  * derived from beat 1 when absent) followed by one cell per beat with 1-based labels.
  * Pure — no playback, no DOM. Mirrors the landing Infinite Spinner derivation so the
@@ -51,8 +66,7 @@ export function buildNotationCells(seq: SequenceData | null | undefined): Notati
   const join = sequenceGridJoin(seq);
   const cells: NotationCell[] = [];
 
-  const startPos =
-    seq.startPlacement ?? (seq.steps[0] ? createStartPlacementFromBeatStart(seq.steps[0]) : null);
+  const startPos = seq.startPlacement ?? (seq.steps[0] ? startFromFirstStep(seq.steps[0]) : null);
   if (startPos) {
     cells.push({
       key: `start-${seq.id ?? seq.word}`,
@@ -75,4 +89,25 @@ export function buildNotationCells(seq: SequenceData | null | undefined): Notati
   }
 
   return cells;
+}
+
+function sameCell(a: NotationCell, b: NotationCell | undefined): boolean {
+  return (
+    b !== undefined &&
+    a.data === b.data &&
+    a.key === b.key &&
+    a.label === b.label &&
+    a.isStart === b.isStart &&
+    a.stepNumber === b.stepNumber
+  );
+}
+
+/**
+ * The previous cells when the rebuilt ones say the same thing, else the
+ * rebuilt ones. Strips pass their cells down by identity, so a rebuild that
+ * changes nothing should change nothing below it either.
+ */
+export function reuseNotationCells(previous: NotationCell[], next: NotationCell[]): NotationCell[] {
+  if (previous.length !== next.length) return next;
+  return next.every((cell, index) => sameCell(cell, previous[index])) ? previous : next;
 }

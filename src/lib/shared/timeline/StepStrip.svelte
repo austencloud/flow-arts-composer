@@ -24,7 +24,11 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { buildNotationCells, type NotationCell } from "./notation-cell";
+  import {
+    buildNotationCells,
+    reuseNotationCells,
+    type NotationCell,
+  } from "./notation-cell";
   import {
     buildStripWindow,
     nextLoopOffset,
@@ -125,7 +129,16 @@
   const GAP = $derived(presentation === "strip" ? 3 : 6);
   const BUFFER = 3;
   const renderBuffer = $derived(density === "compact" ? 1 : BUFFER);
-  const resolvedCells = $derived(cells ?? buildNotationCells(sequence));
+  // A host that re-sends its props (Create's player does on every Play and
+  // Stop) rebuilds the same cells. Handing back the last array when nothing in
+  // it changed keeps every pictograph in the strip from preparing again inside
+  // the tap, though nothing on screen moved.
+  let lastCells: NotationCell[] = [];
+  const resolvedCells = $derived.by(() => {
+    if (cells) return cells;
+    lastCells = reuseNotationCells(lastCells, buildNotationCells(sequence));
+    return lastCells;
+  });
   const requestedDisplayedCells = $derived(
     includeStartPlacement
       ? resolvedCells
