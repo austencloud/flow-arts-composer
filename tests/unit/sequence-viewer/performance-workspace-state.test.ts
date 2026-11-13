@@ -117,4 +117,64 @@ describe("performance workspace state", () => {
       harness.dispose();
     }
   });
+
+  // Production 2026-11-12: with the viewer's own wiring, one performance video
+  // was enough to make these effects re-run themselves until Svelte gave up
+  // ("effect_update_depth_exceeded") and the app fell to its error page.
+  describe("hosted by the viewer's context", () => {
+    it("settles when the performance has no timing", () => {
+      const harness = createPerformanceWorkspaceHarness(
+        [performance("first")],
+        { wiring: "viewer" }
+      );
+      try {
+        expect(() => flushSync()).not.toThrow();
+        expect(harness.viewer.activeHandLabeling).toBe("mirror-me");
+        expect(harness.viewer.activeStepMap).toBeNull();
+        expect(harness.viewer.playbackSource).toBe("animation");
+      } finally {
+        harness.dispose();
+      }
+    });
+
+    it("settles when the performance is timed", () => {
+      const beatMap = {
+        source: "manual",
+        beatTimestamps: [0, 1],
+      } as StepMap;
+      const harness = createPerformanceWorkspaceHarness(
+        [performance("first", beatMap)],
+        { wiring: "viewer" }
+      );
+      try {
+        expect(() => flushSync()).not.toThrow();
+        expect(harness.viewer.activeStepMap).toEqual(beatMap);
+        expect(harness.viewer.playbackSource).toBe("video");
+        expect(harness.viewer.activeHandLabeling).toBe("mirror-me");
+      } finally {
+        harness.dispose();
+      }
+    });
+
+    it("hands the notation back when Performances becomes inactive", () => {
+      const beatMap = {
+        source: "manual",
+        beatTimestamps: [0, 1],
+      } as StepMap;
+      const harness = createPerformanceWorkspaceHarness(
+        [performance("first", beatMap)],
+        { wiring: "viewer" }
+      );
+      try {
+        flushSync();
+        harness.setActive(false);
+        expect(() => flushSync()).not.toThrow();
+        expect(harness.viewer.activeStepMap).toBeNull();
+        expect(harness.viewer.playbackSource).toBe("animation");
+        expect(harness.viewer.activeHandLabeling).toBeNull();
+      } finally {
+        harness.dispose();
+      }
+    });
+  });
 });

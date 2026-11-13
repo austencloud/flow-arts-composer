@@ -5,7 +5,10 @@ import type {
   StepMap,
 } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import type { SequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
-import type { VideoPlayheadBridge } from "#lib/shared/sequence-viewer/context/video-playhead-context.js";
+import {
+  createVideoPlayheadBridge,
+  type VideoPlayheadBridge,
+} from "#lib/shared/sequence-viewer/context/video-playhead-context.js";
 import {
   createPerformanceWorkspaceState,
   type PerformanceWorkspaceState,
@@ -17,10 +20,26 @@ const sequence = {
   steps: [],
 } as unknown as SequenceData;
 
+/** What the viewer shows once the pane's effects have settled. */
+export interface ViewerPlayheadSnapshot {
+  playbackSource: "animation" | "video";
+  activeStepMap: StepMap | null;
+  activeHandLabeling: HandLabeling | null;
+}
+
+/**
+ * `wiring: "viewer"` swaps the recording playhead for the real bridge, hosted
+ * the way SequenceViewerShell hosts it: each setter is reached through one
+ * derived context object that also carries the values those setters write, so
+ * it is rebuilt on every change. A pane effect that subscribes to that object
+ * re-runs itself forever, which the recording playhead cannot show.
+ */
 export function createPerformanceWorkspaceHarness(
-  initialVideos: CollaborativeVideo[]
+  initialVideos: CollaborativeVideo[],
+  options: { wiring?: "recording" | "viewer" } = {}
 ): {
   state: PerformanceWorkspaceState;
+  viewer: ViewerPlayheadSnapshot;
   setActive: (active: boolean) => void;
   setUploadRequested: (requested: boolean) => void;
   openChanges: boolean[];
@@ -64,13 +83,42 @@ export function createPerformanceWorkspaceHarness(
     },
   };
 
-  const playhead: VideoPlayheadBridge = {
+  let playbackSource = $state<"animation" | "video">("animation");
+  let activeStepMap = $state<StepMap | null>(null);
+  let activeHandLabeling = $state<HandLabeling | null>(null);
+  const viewerContext = $derived.by(() => ({
+    playbackSource,
+    activeStepMap,
+    activeHandLabeling,
+    setPlaybackSource: (next: "animation" | "video") => {
+      playbackSource = next;
+    },
+    setActiveStepMap: (next: StepMap | null) => {
+      activeStepMap = next;
+    },
+    setActiveHandLabeling: (next: HandLabeling | null) => {
+      activeHandLabeling = next;
+    },
+    onVideoTimeUpdate: () => {},
+  }));
+
+  const recordingPlayhead: VideoPlayheadBridge = {
     attach: (map) => attachedMaps.push(map),
     setHandLabeling: (labeling) => labelings.push(labeling),
     reportTime: () => {},
     registerSeek: () => {},
     seekToStep: () => false,
   };
+  const playhead =
+    options.wiring === "viewer"
+      ? createVideoPlayheadBridge({
+          setPlaybackSource: (next) => viewerContext.setPlaybackSource(next),
+          setActiveStepMap: (next) => viewerContext.setActiveStepMap(next),
+          setActiveHandLabeling: (next) =>
+            viewerContext.setActiveHandLabeling(next),
+          onVideoTimeUpdate: () => viewerContext.onVideoTimeUpdate(),
+        })
+      : recordingPlayhead;
 
   let state!: PerformanceWorkspaceState;
   const dispose = $effect.root(() => {
@@ -91,6 +139,17 @@ export function createPerformanceWorkspaceHarness(
 
   return {
     state,
+    viewer: {
+      get playbackSource() {
+        return playbackSource;
+      },
+      get activeStepMap() {
+        return activeStepMap;
+      },
+      get activeHandLabeling() {
+        return activeHandLabeling;
+      },
+    },
     setActive: (next) => {
       active = next;
     },

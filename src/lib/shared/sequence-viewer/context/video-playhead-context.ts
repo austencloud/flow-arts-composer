@@ -15,7 +15,7 @@
  * See docs/superpowers/specs/2026-08-16-video-notation-shared-playhead-design.md
  */
 
-import { getContext, setContext } from "svelte";
+import { getContext, setContext, untrack } from "svelte";
 import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import { seekTimeForStep } from "#lib/shared/video-collaboration/utils/step-map-utils.js";
 import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
@@ -52,6 +52,15 @@ interface BridgeHost {
   onVideoTimeUpdate(seconds: number): void;
 }
 
+/**
+ * Every call into the host runs untracked. The video pane drives this bridge
+ * from its effects, and the viewer's host reaches its setters through a
+ * context object that is rebuilt whenever one of those setters changes a
+ * value. Tracked, the calling effect subscribed to the very context it was
+ * writing, re-ran, and wrote again without end (production 2026-11-12: any
+ * sequence with a performance video froze the app as soon as its Performances
+ * pane was built, including in Create's hidden viewer).
+ */
 export function createVideoPlayheadBridge(
   host: BridgeHost
 ): VideoPlayheadBridge {
@@ -67,15 +76,17 @@ export function createVideoPlayheadBridge(
       const usable = next && next.beatTimestamps.length > 0 ? next : null;
       map = usable;
       time = 0;
-      host.setActiveStepMap(usable);
-      host.setPlaybackSource(usable ? "video" : "animation");
+      untrack(() => {
+        host.setActiveStepMap(usable);
+        host.setPlaybackSource(usable ? "video" : "animation");
+      });
     },
     setHandLabeling(labeling) {
-      host.setActiveHandLabeling(labeling);
+      untrack(() => host.setActiveHandLabeling(labeling));
     },
     reportTime(seconds) {
       time = seconds;
-      host.onVideoTimeUpdate(seconds);
+      untrack(() => host.onVideoTimeUpdate(seconds));
     },
     registerSeek(next) {
       seek = next;
@@ -86,7 +97,7 @@ export function createVideoPlayheadBridge(
       if (at === null) return false;
       seek(at);
       time = at;
-      host.onVideoTimeUpdate(at);
+      untrack(() => host.onVideoTimeUpdate(at));
       return true;
     },
   };
