@@ -641,6 +641,23 @@
     });
   }
 
+  /** The step count the drawing follows; null while the card has none. */
+  const arrivalProgress = $derived(
+    status.state === "rendering" &&
+      status.progress &&
+      status.progress.total > 0
+      ? { done: status.progress.current, of: status.progress.total }
+      : null
+  );
+
+  // A card that will draw its mandala shows only its word until the drawing
+  // starts. The ring, label and bar there were a second loading language
+  // that flashed for a moment and was replaced. They stay for a card that
+  // cannot draw.
+  const showLoadingRing = $derived(
+    isLoading && (!arrivalAllowed || arrival === "skipped")
+  );
+
   function endArrival(): void {
     arrival = "off";
     arrivalPaths = null;
@@ -795,7 +812,7 @@
           <TKAWordGlyph word={displayName} height={24} darkMode={!lightMode} />
         </div>
       {/if}
-      {#if isLoading && arrival !== "drawing"}
+      {#if showLoadingRing}
         <div class="loading-indicator">
           <ProgressRing percent={-1} size={24} strokeWidth={2} />
           <span class="loading-status">{statusLabel}</span>
@@ -823,6 +840,7 @@
       wordFrom={arrivalWordFrom}
       box={arrivalBox}
       {lightMode}
+      progress={arrivalProgress}
       ready={imageReady}
       onReveal={revealImage}
       onDone={endArrival}

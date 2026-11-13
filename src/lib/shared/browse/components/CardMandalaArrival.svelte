@@ -3,11 +3,13 @@
 
   What a slow gallery card shows while its picture is on the way (Austen,
   2026-11-12: "Own mandala, slow cards"). The card's own mandala draws itself
-  once and holds. When the picture is ready beneath it, the drawing flies into
-  the squares where the picture paints its mandalas while the picture fades
-  in, and the copies land exactly on the painted ones, so the hand-off has no
-  jump. A card whose picture paints no mandala lets the drawing shrink away
-  instead.
+  as the card loads: the drawing is the card's progress bar, never complete
+  before the picture is ready and never still while the card loads
+  (card-arrival-progress). When the picture is ready beneath it, the last of
+  the drawing finishes and it flies into the squares where the picture paints
+  its mandalas while the picture fades in, and the copies land exactly on the
+  painted ones, so the hand-off has no jump. A card whose picture paints no
+  mandala lets the drawing shrink away instead.
 
   On a card with a full mandala and one per hand, the drawing splits three
   ways (Austen, 2026-11-12: "so it's like three different peels"): the joined
@@ -56,9 +58,20 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     EASE_STANDARD,
-    EASE_STANDARD_OUT,
     motionDuration,
   } from "#lib/shared/transitions/motion.js";
+  import {
+    STEP_REST_SHARE,
+    WAIT_CEILING,
+    creepPoints,
+    drawKeyframes,
+    finishDuration,
+    fractionAt,
+    numbersTarget,
+    openingPoints,
+    stepPoints,
+    type DrawPoint,
+  } from "#lib/shared/browse/services/card-arrival-progress.js";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { HEADER_GLYPH_HEIGHT_RATIO } from "@tka/render-composition";
 
@@ -75,6 +88,11 @@
     /** The card's size as the drawing starts; sizes the word from its first frame. */
     box: { width: number; height: number };
     lightMode: boolean;
+    /**
+     * The steps rendered so far, while the card reports them; null while it
+     * has no numbers (checking, queued, saving, waiting on the picture).
+     */
+    progress: { done: number; of: number } | null;
     /** The picture is decoded and in place beneath, held hidden. */
     ready: boolean;
     /** Start the picture's fade-in. */
@@ -92,6 +110,7 @@
     wordFrom,
     box,
     lightMode,
+    progress,
     ready,
     onReveal,
     onDone,
@@ -242,8 +261,15 @@
     )
   );
 
-  const drawMs = motionDuration(DURATION.scene * 1.5);
+  /** Reduced motion: the drawing appears finished and nothing follows. */
+  const still = motionDuration(DURATION.scene) <= 0;
   let draws: Animation[] = [];
+  /** The stretch of drawing now playing on every path. */
+  let stretch: DrawPoint[] = [];
+  /** The drawn fraction when the first step number came in. */
+  let base: number | null = null;
+  let lastDone = 0;
+  let waiting = false;
   let started = $state(false);
   let handedOff = false;
   let destroyed = false;
@@ -302,19 +328,66 @@
     );
   }
 
+  /** How much of the drawing is drawn right now, worked out from the clock. */
+  function drawnNow(): number {
+    const first = draws[0];
+    if (!first) return 0;
+    return fractionAt(stretch, Number(first.currentTime ?? 0));
+  }
+
+  /**
+   * Play a new stretch on every path at once, so they stay in step. Each
+   * path keeps its one animation for the overlay's whole life.
+   */
+  function play(points: DrawPoint[], easing = "linear"): void {
+    stretch = points;
+    const { keyframes, duration } = drawKeyframes(points);
+    for (const draw of draws) {
+      const effect = draw.effect as KeyframeEffect;
+      effect.setKeyframes(keyframes);
+      effect.updateTiming({ duration, easing });
+      draw.currentTime = 0;
+      draw.play();
+    }
+  }
+
+  /** Move the drawing on with the card's loading. Never backwards. */
+  function follow(next: Props["progress"]): void {
+    if (handedOff) return;
+    if (next && next.of > 0 && next.done < next.of) {
+      const now = drawnNow();
+      // A render that starts over counts up again from where the line is.
+      if (base === null || next.done < lastDone) base = now;
+      lastDone = next.done;
+      const target = numbersTarget(base, next.done, next.of);
+      // A count the line is already past leaves the present stretch running.
+      if (target <= now) return;
+      const step = numbersTarget(base, next.done + 1, next.of) - target;
+      waiting = false;
+      play(
+        stepPoints(
+          now,
+          target,
+          target + step * STEP_REST_SHARE,
+          motionDuration(DURATION.emphasis)
+        )
+      );
+    } else if ((next || base !== null) && !waiting) {
+      // The steps are done and the picture is not: keep creeping.
+      waiting = true;
+      play(creepPoints(drawnNow(), WAIT_CEILING));
+    }
+  }
+
   onMount(() => {
     // Measured first, while the layout is still clean from mounting.
     glideWord();
-    // Ink shows from the first frame, then eases into the last strokes.
+    // Ink shows from the first frame and keeps coming for as long as the
+    // card loads.
+    stretch = still ? [{ at: 0, d: 1 }] : openingPoints();
+    const { keyframes, duration } = drawKeyframes(stretch);
     draws = [...rootEl.querySelectorAll<SVGPathElement>("path.trace")].map(
-      (path) =>
-        track(
-          path.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], {
-            duration: drawMs,
-            easing: EASE_STANDARD_OUT,
-            fill: "forwards",
-          })
-        )
+      (path) => track(path.animate(keyframes, { duration, fill: "forwards" }))
     );
     started = true;
     return () => {
@@ -325,20 +398,31 @@
   });
 
   $effect(() => {
-    if (ready && started) void handOff();
+    if (!started) return;
+    if (ready) void handOff();
+    else if (!still) follow(progress);
   });
 
   async function handOff(): Promise<void> {
     if (handedOff) return;
     handedOff = true;
 
-    // A picture that is ready mid-drawing does not wait out the whole draw:
-    // what is left of it finishes within a short beat, then the drawing
-    // flies. Too short a beat lurches.
-    const finishMs = motionDuration(DURATION.emphasis);
-    for (const draw of draws) {
-      const left = drawMs - Number(draw.currentTime ?? drawMs);
-      if (finishMs > 0 && left > finishMs) draw.updatePlaybackRate(left / finishMs);
+    // The picture is ready: what is left of the drawing finishes, then it
+    // flies. The beat grows with what is left; too short a beat lurches. It
+    // eases in as well as out: easing out alone drew most of what was left
+    // in two or three frames, then sat complete before the flight.
+    if (!still) {
+      const now = drawnNow();
+      const finishMs = motionDuration(
+        finishDuration(1 - now, DURATION.emphasis, DURATION.scene)
+      );
+      play(
+        [
+          { at: 0, d: now },
+          { at: finishMs, d: 1 },
+        ],
+        EASE_STANDARD
+      );
     }
     await settled(draws);
     if (destroyed) return;

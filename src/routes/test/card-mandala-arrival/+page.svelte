@@ -8,7 +8,10 @@
 
   The page patches the shared thumbnail orchestrator while it is open (no
   memory hits, no early previews, each result held for the chosen delay) and
-  puts it back when it closes.
+  puts it back when it closes. The card hears a pretend loading story in
+  place of the real one: waiting in line for the whole delay, or on the
+  counted speed waiting, then step numbers, then saving, so the drawing's
+  creep, its step numbers and its finish can each be seen.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
@@ -19,13 +22,30 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
-  type Speed = "phone" | "slow" | "mixed" | "fast";
-  const SPEEDS: { id: Speed; label: string; range: [number, number] }[] = [
+  type Speed = "phone" | "slow" | "long" | "counted" | "mixed" | "fast";
+  interface SpeedOption {
+    id: Speed;
+    label: string;
+    range: [number, number];
+    /** The card reports step numbers on the way. */
+    counted?: boolean;
+  }
+  const SPEEDS: SpeedOption[] = [
     { id: "phone", label: "Phone (0.4 to 4 s)", range: [400, 4000] },
     { id: "slow", label: "Slow (3 to 5 s)", range: [3000, 5000] },
+    { id: "long", label: "Long (8 to 10 s)", range: [8000, 10000] },
+    {
+      id: "counted",
+      label: "Counted steps (6 to 9 s)",
+      range: [6000, 9000],
+      counted: true,
+    },
     { id: "mixed", label: "Mixed (0.05 to 2 s)", range: [50, 2000] },
     { id: "fast", label: "Fast (under 0.2 s)", range: [0, 200] },
   ];
+  /** The counted speed's story: in line, then steps, then saving. */
+  const COUNT_FROM = 0.25;
+  const COUNT_TO = 0.85;
 
   let speed = $state<Speed>("phone");
   let round = $state(0);
@@ -37,9 +57,38 @@
   let orchestrator: ThumbnailRenderOrchestrator | null = null;
   let restore: (() => void) | null = null;
 
-  function delayFor(): number {
-    const [low, high] = SPEEDS.find((s) => s.id === speed)!.range;
+  function delayFor(option: SpeedOption): number {
+    const [low, high] = option.range;
     return low + Math.random() * (high - low);
+  }
+
+  /**
+   * Tell the card a pretend loading story over `hold` ms. Returns a stop.
+   */
+  function narrate(
+    request: Parameters<ThumbnailRenderOrchestrator["getThumbnail"]>[0],
+    option: SpeedOption,
+    hold: number
+  ): () => void {
+    const say = request.onStatusChange;
+    say?.({ state: "queued", position: 0 });
+    if (!option.counted) return () => {};
+    const total = (request.sequence.steps?.length ?? 0) + 1;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const at = (share: number, tell: () => void) =>
+      timers.push(setTimeout(tell, hold * share));
+    for (let current = 1; current <= total; current++) {
+      const share =
+        COUNT_FROM + ((COUNT_TO - COUNT_FROM) * (current - 1)) / total;
+      at(share, () =>
+        say?.({
+          state: "rendering",
+          progress: { current, total, stage: "rendering" },
+        })
+      );
+    }
+    at(COUNT_TO, () => say?.({ state: "uploading" }));
+    return () => timers.forEach(clearTimeout);
   }
 
   function patchOrchestrator(target: ThumbnailRenderOrchestrator): () => void {
@@ -47,11 +96,15 @@
     const getThumbnail = target.getThumbnail;
     target.getCached = () => null;
     target.getThumbnail = async (request) => {
-      const hold = delayFor();
+      const option = SPEEDS.find((s) => s.id === speed)!;
+      const hold = delayFor(option);
       const startedAt = performance.now();
+      const hush = narrate(request, option, hold);
+      request.signal?.addEventListener("abort", hush, { once: true });
       const result = await getThumbnail.call(target, {
         ...request,
         onPreview: undefined,
+        onStatusChange: undefined,
       });
       // With getCached patched to miss, a card being replaced thinks its blob
       // picture is uncached and frees it, while the orchestrator still hands
@@ -62,6 +115,7 @@
         : result.url;
       const left = hold - (performance.now() - startedAt);
       if (left > 0) await new Promise((r) => setTimeout(r, left));
+      hush();
       if (request.signal?.aborted) {
         if (url !== result.url && url) URL.revokeObjectURL(url);
         throw new Error("Cancelled");
