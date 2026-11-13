@@ -521,8 +521,8 @@
   // picture's mandala squares as it fades in (CardMandalaArrival). A card
   // that loads sooner shows as before. The overlay's code loads with the
   // first slow card.
-  type ArrivalComponent =
-    typeof import("./CardMandalaArrival.svelte").default;
+  type ArrivalModule = typeof import("./CardMandalaArrival.svelte");
+  type ArrivalComponent = ArrivalModule["default"];
   const ARRIVAL_DELAY = DURATION.emphasis;
   let arrival = $state<"off" | "waiting" | "drawing" | "skipped">("off");
   let arrivalPaths = $state.raw<MandalaPaths | null>(null);
@@ -530,6 +530,8 @@
   let imageHeld = $state(false);
   /** Where the waiting word sat, so the drawing's word can glide up from it. */
   let arrivalWordFrom = $state.raw<DOMRect | null>(null);
+  /** The card's size as its drawing starts, which sizes the drawn word. */
+  let arrivalBox = $state.raw({ width: 0, height: 0 });
   let placeholderGlyphEl = $state<HTMLDivElement | null>(null);
   let leaveArrivalQueue: (() => void) | null = null;
   let imageEl = $state<HTMLImageElement | null>(null);
@@ -579,16 +581,16 @@
     // Worked out here, while the card waits, and kept: the plan's word room
     // is too heavy for the frame that mounts the drawing.
     computeSheetMandalaPlan(sequence, arrivalSettings);
-    const component: Promise<ArrivalComponent> = Arrival
-      ? Promise.resolve(Arrival)
-      : import("./CardMandalaArrival.svelte").then((m) => m.default);
+    const overlay: Promise<ArrivalModule> = import(
+      "./CardMandalaArrival.svelte"
+    );
     Promise.all([
       cardMandalaPaths(sequence, leftPropType, rightPropType),
-      component,
+      overlay,
     ]).then(
       ([paths, loaded]) => {
         if (arrival !== "waiting") return;
-        Arrival = loaded;
+        Arrival = loaded.default;
         if (!paths) {
           arrival = "skipped";
           return;
@@ -597,6 +599,7 @@
           arrival = "off";
           return;
         }
+        loaded.warmCardArrival(paths);
         // Slow cards take turns starting (card-arrival-queue), so a screen
         // of them ripples in instead of stalling the page in one frame.
         const box = containerRef?.getBoundingClientRect();
@@ -613,6 +616,10 @@
               placeholderGlyphEl
                 ?.querySelector(".glyph-row")
                 ?.getBoundingClientRect() ?? null;
+            arrivalBox = {
+              width: containerRef?.clientWidth ?? 0,
+              height: containerRef?.clientHeight ?? 0,
+            };
             arrivalPaths = paths;
             imageHeld = true;
             arrival = "drawing";
@@ -814,6 +821,7 @@
       palette={arrivalPalette}
       word={displayName}
       wordFrom={arrivalWordFrom}
+      box={arrivalBox}
       {lightMode}
       ready={imageReady}
       onReveal={revealImage}

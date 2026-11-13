@@ -24,16 +24,30 @@
   the canvas size, fitted the way the <img> is), so the landing squares come
   straight from computeSheetMandalaPlan.
 -->
-<script lang="ts">
-  import { onMount, tick, untrack } from "svelte";
-  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+<script lang="ts" module>
   import type {
     MandalaHandVisibility,
     MandalaPalette,
     MandalaPaths,
   } from "#lib/shared/mandala/domain/mandala-types.js";
-  import { mandalaGridJoinOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
   import { resolveMandalaRenderExtent } from "#lib/shared/mandala/services/mandala-renderer.js";
+
+  /**
+   * Measure a drawing's reach before it mounts. The renderer keeps each
+   * geometry's reach, so the card that asks while it waits mounts its drawing
+   * without parsing every path in that frame.
+   */
+  export function warmCardArrival(paths: MandalaPaths): void {
+    for (const show of ["both", "left", "right"] as const) {
+      resolveMandalaRenderExtent(paths, { show });
+    }
+  }
+</script>
+
+<script lang="ts">
+  import { onMount, untrack } from "svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { mandalaGridJoinOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
   import {
     computeSheetMandalaPlan,
     type SheetMandalaSettings,
@@ -58,6 +72,8 @@
     word: string;
     /** Where the waiting card showed the word; the drawn word glides from it. */
     wordFrom: DOMRect | null;
+    /** The card's size as the drawing starts; sizes the word from its first frame. */
+    box: { width: number; height: number };
     lightMode: boolean;
     /** The picture is decoded and in place beneath, held hidden. */
     ready: boolean;
@@ -74,6 +90,7 @@
     palette,
     word,
     wordFrom,
+    box,
     lightMode,
     ready,
     onReveal,
@@ -200,13 +217,29 @@
   let wordEl = $state<HTMLDivElement | null>(null);
   let wordStrip = $state<DOMRectReadOnly | null>(null);
   /**
+   * The strip's height worked out from the card's size, for the frames before
+   * the strip's own size binding reports. Sizing the word only once the
+   * binding reported laid every starting card out twice, which dropped
+   * frames across a screen of them.
+   */
+  const stripSeed = untrack(() => {
+    const { width, height, headerHeight } = plan;
+    return headerHeight * Math.min(box.width / width, box.height / height);
+  });
+  /**
    * The word drawn at the height the picture letters it, the same share of
-   * the strip the painter uses. Unrounded and with no floor: a 12 px floor
-   * drew it taller than a thin strip, cut off at the card's top edge and
-   * about twice the painted title's size.
+   * the strip the painter uses. No floor: a 12 px floor drew it taller than
+   * a thin strip, cut off at the card's top edge and about twice the painted
+   * title's size. Kept to a tenth of a pixel, so the binding's first report
+   * does not nudge the size the seed already gave.
    */
   const wordHeight = $derived(
-    Math.max(1, (wordStrip?.height ?? 0) * HEADER_GLYPH_HEIGHT_RATIO)
+    Math.max(
+      1,
+      Math.round(
+        (wordStrip?.height ?? stripSeed) * HEADER_GLYPH_HEIGHT_RATIO * 10
+      ) / 10
+    )
   );
 
   const drawMs = motionDuration(DURATION.scene * 1.5);
@@ -243,6 +276,8 @@
   function glideWord(): void {
     const glideMs = motionDuration(DURATION.emphasis);
     if (!wordEl || !wordFrom || glideMs <= 0 || wordFrom.width === 0) return;
+    // An unsized word would start its glide many times too big.
+    if (stripSeed <= 0) return;
     const row = wordEl.querySelector(".glyph-row")?.getBoundingClientRect();
     if (!row || row.width === 0) return;
     // Where the word comes to rest: centred in the strip's word room, and no
@@ -268,6 +303,8 @@
   }
 
   onMount(() => {
+    // Measured first, while the layout is still clean from mounting.
+    glideWord();
     // Ink shows from the first frame, then eases into the last strokes.
     draws = [...rootEl.querySelectorAll<SVGPathElement>("path.trace")].map(
       (path) =>
@@ -279,13 +316,6 @@
           })
         )
     );
-    // Size the word before its glide is measured. The strip's size binding
-    // reports a frame late, and a glide measured against the unsized word
-    // starts many times too big.
-    if (wordEl) wordStrip = wordEl.getBoundingClientRect();
-    void tick().then(() => {
-      if (!destroyed) glideWord();
-    });
     started = true;
     return () => {
       destroyed = true;
