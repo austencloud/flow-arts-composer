@@ -91,6 +91,8 @@
   }
 
   interface MenuItem {
+    /** Names the row across renders, so an open menu can hold it in place. */
+    id: string;
     label: string;
     icon: string;
     action: () => void;
@@ -152,6 +154,9 @@
 
   function handleOpenChange(nextOpen: boolean): void {
     const reason = nextOpen ? "trigger" : pendingCloseReason;
+    heldRows = nextOpen
+      ? { lead: leadItems, actions: actionItems, owner: ownerItems }
+      : null;
     isOpen = nextOpen;
     // Always reopen on the list, whichever screen it was closed from.
     if (!nextOpen) screen = "menu";
@@ -249,6 +254,7 @@
     const items: MenuItem[] = [];
     if (onOpenApp) {
       items.push({
+        id: "open-app",
         label: openAppLabel ?? t("viewer_ui_open_app"),
         icon: "fa-compass",
         action: onOpenApp,
@@ -257,6 +263,7 @@
     }
     if (onGuideAction) {
       items.push({
+        id: "guide",
         label: guideActionLabel ?? t("viewer_ui_see_guide"),
         icon: "fa-book-open",
         action: onGuideAction,
@@ -270,6 +277,7 @@
 
     if (onFavoriteToggle) {
       items.push({
+        id: "favorite",
         label: isFavorite ? t("viewer_ui_unfavorite") : t("viewer_ui_favorite"),
         icon: "fa-heart",
         action: onFavoriteToggle,
@@ -278,6 +286,7 @@
     }
     if (onSave && !isSaved) {
       items.push({
+        id: "save",
         label: isSaving ? t("viewer_ui_saving") : t("viewer_ui_save"),
         icon: isSaving ? "fa-spinner fa-spin" : "fa-bookmark",
         action: onSave,
@@ -287,6 +296,7 @@
     }
     if (onAddToCollection) {
       items.push({
+        id: "collection",
         label: t("browse_audit_add_to_collection"),
         icon: "fa-folder-plus",
         action: onAddToCollection,
@@ -294,6 +304,7 @@
     }
     if (onRemix) {
       items.push({
+        id: "remix",
         label: remixLabel ?? t("viewer_ui_remix"),
         icon: "fa-pen-to-square",
         action: onRemix,
@@ -301,6 +312,7 @@
     }
     if (onSendTo) {
       items.push({
+        id: "send",
         label: t("viewer_ui_send_sequence"),
         icon: "fa-paper-plane",
         action: onSendTo,
@@ -308,6 +320,7 @@
     }
     if (onDownload) {
       items.push({
+        id: "download",
         label: downloadBusy ? t("viewer_ui_preparing") : saveActionLabel(),
         icon: downloadBusy
           ? "fa-spinner fa-spin"
@@ -320,6 +333,7 @@
     }
     if (onPracticeToggle) {
       items.push({
+        id: "practice",
         label: practiceActive
           ? t("viewer_ui_stop_practice")
           : t("viewer_ui_practice_mode"),
@@ -331,6 +345,7 @@
     }
     if (onVideoUpload) {
       items.push({
+        id: "video",
         label: t("viewer_ui_upload_video_title"),
         icon: "fa-video",
         action: onVideoUpload,
@@ -344,6 +359,7 @@
     const items: MenuItem[] = [];
     if (onCopyLink) {
       items.push({
+        id: "copy-link",
         label: linkCopied ? t("viewer_ui_copied") : t("viewer_ui_copy_link"),
         icon: linkCopied ? "fa-check" : "fa-link",
         action: onCopyLink,
@@ -352,6 +368,7 @@
     }
     if (onPublish || onUnpublish) {
       items.push({
+        id: "visibility",
         label: isPublished
           ? t("viewer_ui_make_private")
           : t("viewer_ui_make_public"),
@@ -361,6 +378,7 @@
     }
     if (onDeleteRequest) {
       items.push({
+        id: "delete",
         label: t("viewer_ui_delete"),
         icon: "fa-trash",
         action: onDeleteRequest,
@@ -370,12 +388,39 @@
     return items;
   });
 
+  // The rows an open menu shows are the rows it opened with. Saved, owner
+  // and collection checks answer from the network, seconds after the viewer
+  // opens on a slow phone; a Save row that left while the menu was up slid
+  // Remix up a row and a tap aimed at Remix opened Upload Video. While open,
+  // a held row keeps its slot and takes its live label and action; a row that
+  // stopped applying stays put, greyed; a new row waits for the next open.
+  let heldRows = $state.raw<{
+    lead: MenuItem[];
+    actions: MenuItem[];
+    owner: MenuItem[];
+  } | null>(null);
+
+  function holdRows(
+    live: MenuItem[],
+    held: MenuItem[] | undefined
+  ): MenuItem[] {
+    if (!held) return live;
+    return held.map(
+      (row) =>
+        live.find((item) => item.id === row.id) ?? { ...row, disabled: true }
+    );
+  }
+
+  const shownLead = $derived(holdRows(leadItems, heldRows?.lead));
+  const shownActions = $derived(holdRows(actionItems, heldRows?.actions));
+  const shownOwner = $derived(holdRows(ownerItems, heldRows?.owner));
+
   // Dividers go only between groups that are actually there.
   const sections = $derived({
-    lead: leadItems.length > 0,
-    actions: actionItems.length > 0,
+    lead: shownLead.length > 0,
+    actions: shownActions.length > 0,
     display: !!motionVisibility || !!propViewing,
-    owner: ownerItems.length > 0,
+    owner: shownOwner.length > 0,
   });
   const hasMenu = $derived(Object.values(sections).some(Boolean));
   const shouldRender = $derived(hasMenu || !!trigger);
@@ -451,13 +496,13 @@
 {/snippet}
 
 {#snippet menuScreen()}
-  {#each leadItems as item}
+  {#each shownLead as item (item.id)}
     {@render menuButton(item)}
   {/each}
 
   {#if sections.actions}
     {#if sections.lead}<hr class="viewer-overflow-divider" />{/if}
-    {#each actionItems as item}
+    {#each shownActions as item (item.id)}
       {#if item.dividerBefore}
         <hr class="viewer-overflow-divider" />
       {/if}
@@ -501,7 +546,7 @@
     {#if sections.lead || sections.actions || sections.display}
       <hr class="viewer-overflow-divider" />
     {/if}
-    {#each ownerItems as item}
+    {#each shownOwner as item (item.id)}
       {@render menuButton(item)}
     {/each}
   {/if}

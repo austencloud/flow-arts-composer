@@ -6,6 +6,10 @@ import {
   userProportionsState,
 } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../../state/character-instance-state.svelte";
+import {
+  CHARACTER_DEFINITIONS,
+  getCharacterModelPath,
+} from "../../domain/character-model";
 import { resolvePerformerContact } from "../../domain/performer-contact-displacement";
 import { CANONICAL_PERFORMER_ANCHOR_Y } from "../../environments/domain/stage-coordinate-frame";
 import type {
@@ -167,6 +171,10 @@ export function createWorkerPerformerSnapshot(
   return {
     id: performer.id,
     avatarId: performer.characterId,
+    avatarModelPath: getCharacterModelPath(performer.characterId),
+    avatarLocalOnly:
+      CHARACTER_DEFINITIONS.find(({ id }) => id === performer.characterId)
+        ?.availability === "local-evaluation",
     position: [
       performer.position.x,
       CANONICAL_PERFORMER_ANCHOR_Y,

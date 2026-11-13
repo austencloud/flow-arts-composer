@@ -57,24 +57,13 @@ import {
 import { turnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 // mandala geometry calculate() loaded dynamically to keep its dependency graph out of the worker bundle until needed
 import { renderMandalaToCanvas } from "../../mandala/services/mandala-renderer";
-import { applyMandalaHandColors } from "../../mandala/domain/mandala-palette";
+import { cardMandalaPalette } from "../../mandala/domain/mandala-palette";
 import { mandalaGridJoinOffsets } from "../../mandala/services/mandala-grid-join";
 import { pairTipEnds } from "../../pictograph/prop/domain/prop-tip-ends";
-import { getMandalaPlacements } from "../../sequence-viewer/services/get-mandala-placements";
 import {
-  LIGHT_MOTION_BLUE_STROKE,
-  LIGHT_MOTION_RED_STROKE,
-  LIGHT_MOTION_BLUE_FILL,
-  LIGHT_MOTION_RED_FILL,
-  LIGHT_MOTION_PURPLE_STROKE,
-  LIGHT_MOTION_PURPLE_FILL,
-  DARK_MOTION_BLUE_STROKE,
-  DARK_MOTION_RED_STROKE,
-  DARK_MOTION_BLUE_FILL,
-  DARK_MOTION_RED_FILL,
-  DARK_MOTION_PURPLE_STROKE,
-  DARK_MOTION_PURPLE_FILL,
-} from "../../mandala/domain/mandala-constants";
+  cardMandalaSquare,
+  getMandalaPlacements,
+} from "../../sequence-viewer/services/get-mandala-placements";
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
 import type { CardExportTrace } from "./card-export-trace";
 
@@ -1078,34 +1067,13 @@ export class ImageComposer {
 
       if (placements.length === 0) return;
 
-      const defaultPalette = isDarkMode
-        ? {
-            leftStroke: DARK_MOTION_BLUE_STROKE,
-            leftFill: DARK_MOTION_BLUE_FILL,
-            rightStroke: DARK_MOTION_RED_STROKE,
-            rightFill: DARK_MOTION_RED_FILL,
-            purpleStroke: DARK_MOTION_PURPLE_STROKE,
-            purpleFill: DARK_MOTION_PURPLE_FILL,
-          }
-        : {
-            leftStroke: LIGHT_MOTION_BLUE_STROKE,
-            leftFill: LIGHT_MOTION_BLUE_FILL,
-            rightStroke: LIGHT_MOTION_RED_STROKE,
-            rightFill: LIGHT_MOTION_RED_FILL,
-            purpleStroke: LIGHT_MOTION_PURPLE_STROKE,
-            purpleFill: LIGHT_MOTION_PURPLE_FILL,
-          };
-
       const visibility = await this.getVisibilitySettings(
         options.visibilityOverrides
       );
-      const palette = applyMandalaHandColors(
-        defaultPalette,
+      const palette = cardMandalaPalette(
+        isDarkMode,
         visibility.primaryPropColors
       );
-      const mandalaScale = 0.85;
-      const mandalaSize = Math.floor(stepSize * mandalaScale);
-      const padding = (stepSize - mandalaSize) / 2;
       // Joined grids: the full mandala draws each hand's figure on its own
       // grid (one-hand cells stay centered), as the MCP card does.
       const handOffsets = mandalaGridJoinOffsets(
@@ -1115,11 +1083,14 @@ export class ImageComposer {
 
       for (const p of placements) {
         const show = p.variant === "full" ? ("both" as const) : p.variant;
-        const x = (p.col - 1) * stepSize + gridOffsetX + padding;
-        const y = (p.row - 1) * stepSize + gridOffsetY + padding;
+        const { x, y, size } = cardMandalaSquare(p, {
+          stepSize,
+          gridOffsetX,
+          gridOffsetY,
+        });
 
         renderMandalaToCanvas(ctx, paths, {
-          size: mandalaSize,
+          size,
           style: "stroke",
           show,
           strokeWidth: 3,

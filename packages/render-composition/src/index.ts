@@ -121,6 +121,7 @@ export {
 } from "./sequence-card-pipeline.js";
 export {
   calculateHeaderWordSideInset,
+  HEADER_GLYPH_HEIGHT_RATIO,
   renderHeader,
   type HeaderOptions,
   type HeaderWordSideInsetOptions,

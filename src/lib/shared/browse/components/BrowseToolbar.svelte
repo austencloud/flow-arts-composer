@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { localizeFilterChip } from "./localize-filter-chip";
+  import { localizeFilterChip, showsMandalaStill } from "./localize-filter-chip";
   import type { Snippet } from "svelte";
   import type { BrowseEngine } from "../engine/types";
   import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
@@ -339,7 +339,7 @@
           {#if chip.locked}
             <i class="fas fa-lock chip-lock" aria-hidden="true"></i>
           {/if}
-          {#if chip.type === BrowseFilterType.MANDALA}
+          {#if showsMandalaStill(chip)}
             <MandalaFilterStill value={chip.value} />
             <span class="sr-only">{localizeFilterChip(chip)}</span>
           {:else}

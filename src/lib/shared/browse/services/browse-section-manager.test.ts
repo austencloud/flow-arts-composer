@@ -108,7 +108,7 @@ describe("organizeSections - letter grouping", () => {
     const sections = organizeSections([bracedSeq, plainSeq], letterConfig());
 
     expect(sections).toHaveLength(1);
-    expect(sections[0]!.id).toBe("letter-a|4");
+    expect(sections[0]!.id).toBe("letter-a");
     expect(sections[0]!.count).toBe(2);
     expect(sections[0]!.title.startsWith("A ")).toBe(true);
   });
@@ -147,9 +147,58 @@ describe("organizeSections - level grouping", () => {
       "Level 2 (1 sequence)",
       "Level 3 (1 sequence)",
     ]);
-    expect(sections[0]!.sequences.map((s) => s.id)).toEqual(["b1", "a1", "z1"]);
+    // Same-length cards together, shortest first; the given order decides
+    // within a length.
+    expect(sections[0]!.sequences.map((s) => s.id)).toEqual(["a1", "b1", "z1"]);
     // No level field: the grid draws a plain heading per level, with no
     // letter sub-headings under a banner.
     expect(sections.every((s) => s.level === undefined)).toBe(true);
+  });
+
+  it("keeps the given order among cards of one length", () => {
+    const sections = organizeSections(
+      [seq("x", "CC", 2, 8), seq("y", "AA", 2, 4), seq("z", "BB", 2, 8), seq("w", "DD", 2, 4)],
+      { groupBy: "level", sortMethod: BrowseSortMethod.DIFFICULTY_LEVEL, showEmptySections: false }
+    );
+    expect(sections).toHaveLength(1);
+    expect(sections[0]!.sequences.map((s) => s.id)).toEqual(["y", "w", "x", "z"]);
+  });
+});
+
+describe("organizeSections - one section per starting letter", () => {
+  function seq(id: string, word: string, length: number): SequenceData {
+    return { id, name: word, word, sequenceLength: length, steps: [] } as unknown as SequenceData;
+  }
+
+  // Letter AND length sections ("A · 4 steps · 3") left many groups with one
+  // to three cards and holes in the grid.
+  it("puts every length of a letter in one section, same lengths together", () => {
+    const sections = organizeSections(
+      [
+        seq("a8", "ABCDABCD", 8),
+        seq("b4", "BACD", 4),
+        seq("a4", "ACDB", 4),
+        seq("a16", "AAAABBBBCCCCDDDD", 16),
+        seq("a4b", "ADCB", 4),
+      ],
+      letterConfig()
+    );
+
+    expect(sections.map((s) => s.title)).toEqual(["A (4 sequences)", "B (1 sequence)"]);
+    expect(sections[0]!.id).toBe("letter-a");
+    expect(sections[0]!.sequences.map((s) => s.id.replace(/b$/, ""))).toEqual([
+      "a4",
+      "a4",
+      "a8",
+      "a16",
+    ]);
+  });
+
+  it("orders sections by the kinetic alphabet, W before W-", () => {
+    const sections = organizeSections(
+      [seq("wd", "W-A", 2), seq("b", "BA", 2), seq("w", "WA", 2), seq("a", "AB", 2)],
+      letterConfig()
+    );
+    expect(sections.map((s) => s.title.split(" ")[0])).toEqual(["A", "B", "W", "W-"]);
   });
 });

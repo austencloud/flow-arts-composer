@@ -34,6 +34,10 @@
   import { setBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
   import SmartCollectionSaveDialog from "#lib/features/library/components/SmartCollectionSaveDialog.svelte";
   import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
+  import GalleryMenuRow, {
+    type MenuRequest,
+  } from "#lib/features/browse/gallery-home/GalleryMenuRow.svelte";
+  import type { Section as DrillSection } from "#lib/features/browse/gallery-home/gallery-drill-catalog.svelte";
   import { loadCanonicalTnDSequences } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
   import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
   import {
@@ -73,7 +77,6 @@
   import { setSharedCollectionsContext } from "#lib/features/browse/collections/context/shared-collections-context.js";
   import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
   import { getCollectionOptions } from "#lib/features/browse/gallery-home/collection-options.svelte.js";
-  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
   import { trackBrowseDestinationEntered } from "#lib/shared/analytics/browse-events.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { getAccessibleSectionsForModule } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
@@ -86,6 +89,11 @@
   import { page } from "$app/state";
   import MandalaPlace from "#lib/features/browse/mandala-place/MandalaPlace.svelte";
   import { mandalaPlace } from "#lib/features/browse/mandala-place/mandala-place-state.svelte.js";
+  import {
+    MANDALA_LEVEL_COUNT,
+    mandalaLevelValue,
+    parseMandalaLevelValue,
+  } from "#lib/shared/browse/services/sequence-density.js";
   import { isSidewaysViewport } from "#lib/shared/ui/sideways-viewport.js";
   import {
     GALLERY_LETTER_QUERY_PARAM,
@@ -112,10 +120,6 @@
 
   const initialGalleryLetter = parseGalleryLetterQuery(
     new URLSearchParams(page.url.searchParams.toString())
-  );
-  // Review-only comparison. The unflagged Browse route keeps its current entry.
-  const contentFirstShowAllPreview = $derived(
-    page.url.searchParams.get("browseShowAll") === "results"
   );
 
   const engine = createBrowseEngine({
@@ -354,7 +358,8 @@
     untrack(() => mandalaPlace.syncFromAddress(new URL(window.location.href)));
   });
   $effect(() => {
-    const sync = () => mandalaPlace.syncFromAddress(new URL(window.location.href));
+    const sync = () =>
+      mandalaPlace.syncFromAddress(new URL(window.location.href));
     window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
   });
@@ -372,13 +377,58 @@
   // mutation (the expensive compute) a frame later, behind the skeleton. The
   // layout changes the instant you tap; cards fill in a beat afterward.
   let gridWarming = $state(false);
+
+  // Desktop: a front-door category tile opens the full-width grid with that
+  // category's menu already open. Level and Length have their own buttons;
+  // every other category opens More on it.
+  let menuRequest = $state<MenuRequest | null>(null);
+  function openCategoryMenu(section: Exclude<DrillSection, "chooser">): void {
+    const request: MenuRequest =
+      section === "level" || section === "length"
+        ? { menu: section }
+        : { menu: "more", section };
+    galleryView = "browse-all";
+    menuRequest = request;
+  }
+  function backToFrontDoor(): void {
+    menuRequest = null;
+    galleryView = "start-here";
+  }
   let smartSaveOpen = $state(false);
 
   // Collections are a FILTER in the gallery, not a door out of it: the tile
   // opens a value editor and picking one stacks an "In: <name>" rule. The
   // Library tab stays the management home (create, edit membership, share).
   const collectionOptions = $derived.by(() => getCollectionOptions());
+  // The By mandala place: the sequences a level would narrow (the search's
+  // results under every other filter), the level already applied, and
+  // applying one. Mandala filters stack as alternatives, so showing a level
+  // first clears the ones before: the grid then holds that level alone.
+  const mandalaFacetPool = $derived(
+    mandalaPlace.open ? engine.getFacetPool(BrowseFilterType.MANDALA) : []
+  );
+  const appliedMandalaLevel = $derived.by(() => {
+    for (const filter of engine.activeFilters.values()) {
+      if (filter.type !== BrowseFilterType.MANDALA) continue;
+      const level = parseMandalaLevelValue(filter.value);
+      if (level !== null) return level;
+    }
+    return null;
+  });
+  function showMandalaLevel(level: number): void {
+    mandalaPlace.close();
+    applyToGrid(() => {
+      engine.removeFilter(String(BrowseFilterType.MANDALA));
+      engine.addFilter(
+        BrowseFilterType.MANDALA,
+        mandalaLevelValue(level),
+        `Mandala ${level} of ${MANDALA_LEVEL_COUNT}`,
+        "#6aa0ff"
+      );
+    });
+  }
   function applyToGrid(mutate: () => void) {
+    menuRequest = null;
     galleryView = "browse-all";
     gridWarming = true;
     requestAnimationFrame(() =>
@@ -507,6 +557,26 @@
   const sideColumnEligible = $derived(
     exploreSwitcherShown &&
       browseNavigationState.currentLocation?.view === "list"
+  );
+  // Desktop Sequences grid: the row of filter menus carries the search and
+  // the Source menu, so the scope bar's chip strip steps aside.
+  const desktopMenuRow = $derived(
+    !isMobile &&
+      !homeOpen &&
+      activePrimary === "explore" &&
+      exploreSection === "sequences" &&
+      !mandalaPlace.open &&
+      galleryView === "browse-all"
+  );
+  // The desktop front door keeps the scope bar's search, with the same Source
+  // menu as the grid's row in place of the sideways chip strip.
+  const desktopFrontDoor = $derived(
+    !isMobile &&
+      !homeOpen &&
+      activePrimary === "explore" &&
+      exploreSection === "sequences" &&
+      !mandalaPlace.open &&
+      galleryView === "start-here"
   );
   // In the column the section tabs stand one per line.
   const sideColumn = $derived(sideColumnEligible && isSidewaysViewport());
@@ -763,25 +833,6 @@
   });
 </script>
 
-{#snippet resultsPane()}
-  <!-- The scope bar above owns search for every grid, so this pane narrows
-       live under it instead of carrying a second search field. -->
-  <BrowsePanel
-    {engine}
-    layout="compact"
-    eager={false}
-    showFilterBar={false}
-    hideFilterChips
-    hideToolbarSearch
-    onSelect={(sequence, variations) =>
-      eventHandlerService?.handleSequenceAction(
-        "view-detail",
-        sequence,
-        variations
-      )}
-  />
-{/snippet}
-
 <!-- Error banner -->
 {#if error}
   <ErrorBanner
@@ -841,12 +892,12 @@
       </div>
     </div>
   {/if}
-  {#if browseScope || onCollectionsList}
+  {#if (browseScope || onCollectionsList) && !desktopMenuRow}
     <div
       class="scope-bar-slot"
       transition:growFade={{ duration: DURATION.normal }}
     >
-      <BrowseScopeBar scope={browseScope} />
+      <BrowseScopeBar scope={browseScope} sourceMenu={desktopFrontDoor} />
     </div>
   {/if}
   <!-- Community and personal work replace one another without moving the
@@ -876,16 +927,24 @@
                     pool={engine.allSequences}
                     poolReady={engine.sectionsReady}
                     poolComplete={engine.poolComplete}
+                    facetPool={mandalaFacetPool}
+                    appliedLevel={appliedMandalaLevel}
+                    onShow={showMandalaLevel}
+                    onOpenSequence={(sequence) =>
+                      eventHandlerService?.handleSequenceAction(
+                        "view-detail",
+                        sequence
+                      )}
                   />
                 {:else if galleryView === "start-here" && !isMobile}
                   <FilterWorkspace
                     {engine}
                     collections={collectionOptions}
-                    {contentFirstShowAllPreview}
-                    {resultsPane}
                     onSaveSmart={() => (smartSaveOpen = true)}
                     onEject={applyToGrid}
-                    onOpenMandala={() => mandalaPlace.openWall()}
+                    onOpenMandala={() =>
+                      mandalaPlace.openPlace(appliedMandalaLevel)}
+                    onOpenCategory={openCategoryMenu}
                   />
                 {:else}
                   <GalleryTab
@@ -903,13 +962,24 @@
                         ) ?? Promise.resolve()
                       );
                     }}
-                    onBackToStart={isMobile
-                      ? undefined
-                      : () => (galleryView = "start-here")}
-                    onOpenWorkspace={() => (galleryView = "start-here")}
+                    onBackToStart={isMobile ? undefined : backToFrontDoor}
                     onSaveSmart={() => (smartSaveOpen = true)}
-                    onOpenMandala={() => mandalaPlace.openWall()}
-                  />
+                    onOpenMandala={() =>
+                      mandalaPlace.openPlace(appliedMandalaLevel)}
+                  >
+                    {#snippet menuRow()}
+                      <GalleryMenuRow
+                        {engine}
+                        scope={browseScope}
+                        collections={collectionOptions}
+                        {menuRequest}
+                        onBackToStart={backToFrontDoor}
+                        onSaveSmart={() => (smartSaveOpen = true)}
+                        onOpenMandala={() =>
+                          mandalaPlace.openPlace(appliedMandalaLevel)}
+                      />
+                    {/snippet}
+                  </GalleryTab>
                 {/if}
               {:else if exploreSection === "collections"}
                 <CommunityCollectionsPanel />

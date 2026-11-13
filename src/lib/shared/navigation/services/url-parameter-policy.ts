@@ -47,17 +47,17 @@ const ROUTE_SCOPED_PARAMETERS: readonly RouteScopedParameter[] = [
     isValidForPath: (pathname) =>
       isAtlasPath(pathname) || pathname === "/browse/explore/sequences",
   },
-  // Browse's By mandala place: `?mandala` is the wall, `?mandala=<family>` a
-  // mandala's page, and `seq` its chosen row. Elsewhere `seq` belongs to other
-  // pages (the loop labeler, the coven), so only Browse drops a stray one.
+  // Browse's By mandala place: `?mandala` is the levels screen, `?mandala=3`
+  // with the slider on level 3. Its old family page kept a chosen row in
+  // `seq`; elsewhere `seq` belongs to other pages (the loop labeler, the
+  // coven), so only Browse drops a stray one.
   {
     name: "mandala",
     isValidForPath: (pathname) => pathname === "/browse/explore/sequences",
   },
   {
     name: "seq",
-    isValidForPath: (pathname, url) =>
-      !startsWith("/browse")(pathname) || url.searchParams.has("mandala"),
+    isValidForPath: (pathname) => !startsWith("/browse")(pathname),
   },
   { name: "grid", isValidForPath: isAtlasPath },
   { name: "variation", isValidForPath: isAtlasPath },

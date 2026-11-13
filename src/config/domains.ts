@@ -96,10 +96,18 @@ const PUBLIC_PATH_PREFIXES = [
   "/2003",
 ];
 
-export function detectSiteMode(): SiteMode {
+/**
+ * Which experience a page boots into. Reads the current address by default;
+ * pass a navigation's destination to ask what the next page will need before
+ * the browser gets there.
+ */
+export function detectSiteMode(
+  target?: Pick<URL, "pathname" | "search">
+): SiteMode {
   if (typeof window !== "undefined") {
+    const where = target ?? window.location;
     // /de/guide/x is the /guide/x page in German: same public bootstrap.
-    const pathname = routePathFor(window.location.pathname);
+    const pathname = routePathFor(where.pathname);
     const isStandaloneDevHarness =
       import.meta.env.DEV &&
       pathname.startsWith("/test/") &&
@@ -117,7 +125,7 @@ export function detectSiteMode(): SiteMode {
     if ("__TAURI_INTERNALS__" in window && !isStandaloneDevHarness)
       return "app";
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(where.search);
     const modeOverride = params.get("mode") as SiteMode | null;
     if (modeOverride && ["app", "landing"].includes(modeOverride)) {
       return modeOverride;

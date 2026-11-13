@@ -3,9 +3,21 @@ import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import { localizedModeName } from "@tka/shape-engine/services/shape-matrix-display.js";
 import {
+  MANDALA_LEVEL_COUNT,
+  parseMandalaLevelValue,
+} from "#lib/shared/browse/services/sequence-density.js";
+import {
   MODE_FAMILY_ID,
   type VtgMode,
 } from "@tka/shape-domain";
+
+/** A Mandala chip for one family (from before the levels) shows that family's
+ *  small still, since a family has no name; a level chip is words. */
+export function showsMandalaStill(filter: { type: string; value?: unknown }): boolean {
+  return (
+    filter.type === BrowseFilterType.MANDALA && parseMandalaLevelValue(filter.value) === null
+  );
+}
 
 /** Translate built-in chip copy at display time; saved labels and user names stay intact. */
 export function localizeFilterChip(filter: {
@@ -28,9 +40,13 @@ export function localizeFilterChip(filter: {
       return filter.value != null
         ? t("browse_audit_chip_at_most_turns", { turns: String(filter.value) })
         : filter.label.replace(/ turns$/, ` ${t("browse_audit_chip_turns")}`);
-    case BrowseFilterType.MANDALA:
-      // A family has no name; the screen shows which box is applied.
-      return t("browse_ui_mandala_category");
+    case BrowseFilterType.MANDALA: {
+      const level = parseMandalaLevelValue(filter.value);
+      // A family has no name; its chip shows the family's still instead.
+      return level === null
+        ? t("browse_ui_mandala_category")
+        : t("browse_mandala_level_chip", { level, total: MANDALA_LEVEL_COUNT });
+    }
     case BrowseFilterType.PERFORMANCE_AVAILABILITY:
       if (
         filter.value === "has-public-performance" ||

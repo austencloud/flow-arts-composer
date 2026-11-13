@@ -19,6 +19,7 @@
     getCompositionRecipe,
     type CompositionRecipe,
   } from "../domain/prop-composition-recipes";
+  import { normalizeCompositionRecipe } from "../domain/composition-recipe-normalize";
   import {
     propTileArtwork,
     propGlyphArtwork,
@@ -232,12 +233,14 @@
   const savedOverrides = $derived(
     getSettings?.().compositionRecipeOverrides ?? {}
   );
+  // An override that cannot be read (an old blue/red save, a half-written
+  // entry) falls through to the built-in recipe instead of throwing.
   const recipe = $derived.by(() => {
-    if (recipeOverride) return recipeOverride;
     const base = getBasePropType(propType);
     return (
-      savedOverrides[base] ??
-      savedOverrides[propType] ??
+      normalizeCompositionRecipe(recipeOverride) ??
+      normalizeCompositionRecipe(savedOverrides[base]) ??
+      normalizeCompositionRecipe(savedOverrides[propType]) ??
       getCompositionRecipe(propType, pairedGlyph)
     );
   });

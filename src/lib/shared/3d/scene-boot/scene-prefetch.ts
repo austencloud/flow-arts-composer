@@ -33,25 +33,46 @@ function shouldSkipWarming(): boolean {
   return connection?.saveData === true;
 }
 
-function onIdle(run: () => void): void {
+function onIdle(run: () => void, signal?: AbortSignal): void {
   const schedule = (
     globalThis as {
       requestIdleCallback?: (callback: () => void) => number;
     }
   ).requestIdleCallback;
-  if (typeof schedule === "function") schedule(run);
-  else setTimeout(run, 200);
+  // A busy page can hold an idle callback back for a long time, so it may
+  // first get its turn after the caller has gone.
+  const runUnlessCancelled = () => {
+    if (!signal?.aborted) run();
+  };
+  if (typeof schedule === "function") schedule(runUnlessCancelled);
+  else setTimeout(runUnlessCancelled, 200);
 }
 
-async function warmUrls(urls: readonly string[]): Promise<void> {
+async function warmUrls(
+  urls: readonly string[],
+  signal?: AbortSignal
+): Promise<void> {
+  // Cancelling can cut any of this warm-up's downloads short, so it gives
+  // back every URL it claimed. One that did finish costs only a cache read
+  // the next time something warms it.
+  const claimed: string[] = [];
+  signal?.addEventListener(
+    "abort",
+    () => {
+      for (const url of claimed) warmed.delete(url);
+    },
+    { once: true }
+  );
   // Sequential on purpose: these downloads must never compete with whatever the
   // user is actually looking at. A failure means the asset simply loads the
   // normal way later, so it is not worth reporting.
   for (const url of urls) {
+    if (signal?.aborted) return;
     if (warmed.has(url)) continue;
     warmed.add(url);
+    claimed.push(url);
     try {
-      await fetch(url, { priority: "low" } as RequestInit);
+      await fetch(url, { priority: "low", signal } as RequestInit);
     } catch {
       warmed.delete(url);
     }
@@ -63,11 +84,14 @@ async function warmUrls(urls: readonly string[]): Promise<void> {
  * is idle, so opening 3D reads them from disk instead of the network. Only the
  * selected background — the ten scenes together run to hundreds of megabytes.
  */
-export function warmSceneAssets(background: BackgroundType): void {
+export function warmSceneAssets(
+  background: BackgroundType,
+  signal?: AbortSignal
+): void {
   if (shouldSkipWarming()) return;
   const urls = sceneAssetUrls(background);
   if (urls.length === 0) return;
-  onIdle(() => void warmUrls(urls));
+  onIdle(() => void warmUrls(urls, signal), signal);
 }
 
 /**
@@ -104,8 +128,13 @@ export function warmSceneUrls(urls: readonly string[]): void {
  * remembered choice the viewer boots with, plus the shared decoders. Callers
  * that only know 3D is one click away — the split pane, fullscreen, a saved
  * scene preview — use this rather than resolving the environment themselves.
+ *
+ * Pass a signal and abort it when the caller goes away. The models run to
+ * megabytes, and a warm-up still queued or downloading when the visitor
+ * leaves would otherwise spend the next page's bandwidth on a scene that
+ * page never shows.
  */
-export function warmSelectedSceneAssets(): void {
+export function warmSelectedSceneAssets(signal?: AbortSignal): void {
   if (shouldSkipWarming()) return;
   let stored: string | null = null;
   try {
@@ -114,14 +143,15 @@ export function warmSelectedSceneAssets(): void {
     stored = null;
   }
   warmSceneAssets(
-    getSceneEnvironmentRendererKey(normalizeSceneEnvironmentId(stored))
+    getSceneEnvironmentRendererKey(normalizeSceneEnvironmentId(stored)),
+    signal
   );
-  warmDecoderRuntimes();
+  warmDecoderRuntimes(signal);
 }
 
-export function warmDecoderRuntimes(): void {
+export function warmDecoderRuntimes(signal?: AbortSignal): void {
   if (shouldSkipWarming()) return;
-  onIdle(() => void warmUrls(DECODER_RUNTIME_URLS));
+  onIdle(() => void warmUrls(DECODER_RUNTIME_URLS, signal), signal);
 }
 
 export function _resetForTests(): void {

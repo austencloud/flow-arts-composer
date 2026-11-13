@@ -1,5 +1,8 @@
 # By mandala: the wall and the mandala page
 
+> Superseded on 2026-11-12 by `2026-11-12-mandala-levels-design.md`: the wall
+> and the family page gave way to five complexity levels.
+
 Date: 2026-11-11. Supersedes the screen in
 `2026-11-11-mandala-climb-design.md` (the six-box picker in the filter rail).
 That spec's engine sections still hold and are used here by reference:

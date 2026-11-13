@@ -3,8 +3,9 @@
  * shapes and ordered from the plainest to the busiest.
  *
  * It follows the mandala index by itself. Once the index has measured its
- * pool, the climb reads the saved distance book, measures only the pairs the
- * book lacks (in a worker when one starts, in idle slices when not), links
+ * pool, the climb reads the saved distance book, outlines the shapes and
+ * measures only the pairs the book lacks (both on the mandala workers when
+ * they run, in idle slices when not), links
  * the families and saves the book again. A return visit with every pair in
  * the book makes no geometry and starts no worker. A changed set of shapes
  * rebuilds, and a build for an old set is dropped; changed sequence counts
@@ -32,6 +33,11 @@ import {
   type MandalaFamilyBook,
 } from "#lib/shared/mandala/services/mandala-family-book.js";
 import { shapeOutline } from "#lib/shared/mandala/services/mandala-family.js";
+import { stepsText } from "#lib/shared/mandala/services/mandala-measure-work.js";
+import {
+  mandalaWorkers,
+  type MandalaWorkers,
+} from "#lib/shared/mandala/services/mandala-workers.js";
 import {
   measureDistances,
   type MandalaDistanceRunner,
@@ -39,6 +45,7 @@ import {
 import {
   idleScheduler,
   mandalaIndex,
+  seedMandalaPaths,
   type MandalaGroup,
   type MandalaIndexScheduler,
 } from "./mandala-index.svelte";
@@ -118,11 +125,16 @@ export interface MandalaClimb {
 /** The filter value for a family, or for a lone shape. */
 export function mandalaFamilyValue(representative: MandalaGroup): string {
   const first = representative.sequences[0];
-  return first ? `${representative.key}${MANDALA_VALUE_SEPARATOR}${first.id}` : representative.key;
+  return first
+    ? `${representative.key}${MANDALA_VALUE_SEPARATOR}${first.id}`
+    : representative.key;
 }
 
 /** A value's shape key and sequence id; a bare key (an older saved value) has no id. */
-export function parseMandalaFamilyValue(value: string): { key: string; sequenceId?: string } {
+export function parseMandalaFamilyValue(value: string): {
+  key: string;
+  sequenceId?: string;
+} {
   const at = value.indexOf(MANDALA_VALUE_SEPARATOR);
   if (at < 0) return { key: value };
   return { key: value.slice(0, at), sequenceId: value.slice(at + 1) };
@@ -134,19 +146,39 @@ export function parseMandalaFamilyValue(value: string): { key: string; sequenceI
  * shapes (or the pool is empty). Until then a filtered grid is still loading.
  */
 export function mandalaFamiliesSettled(
-  index: { readonly pool: readonly SequenceData[]; readonly done: boolean; readonly empty: boolean },
+  index: MandalaIndexProgress,
   climb: Pick<MandalaClimb, "ready" | "building">,
   pool: readonly SequenceData[]
 ): boolean {
-  if (index.pool !== pool) return false;
+  if (!mandalaIndexSettled(index, pool)) return false;
   if (index.empty) return true;
-  return index.done && climb.ready && !climb.building;
+  return climb.ready && !climb.building;
+}
+
+/** What the settled tests read of the index. */
+export interface MandalaIndexProgress {
+  readonly pool: readonly SequenceData[];
+  readonly done: boolean;
+  readonly empty: boolean;
+}
+
+/**
+ * Every sequence of `pool` is measured (or the pool is empty): enough for a
+ * Mandala level, which reads each sequence's own measure and no families.
+ */
+export function mandalaIndexSettled(
+  index: MandalaIndexProgress,
+  pool: readonly SequenceData[]
+): boolean {
+  if (index.pool !== pool) return false;
+  return index.empty || index.done;
 }
 
 /** The Dexie table, loaded on first use; a missing or blocked database keeps nothing. */
 export function dexieBookStore(): MandalaFamilyBookStore {
   const table = async () =>
-    (await import("#lib/shared/persistence/database/tka-database.js")).db.mandalaFamilyBooks;
+    (await import("#lib/shared/persistence/database/tka-database.js")).db
+      .mandalaFamilyBooks;
   return {
     async load() {
       try {
@@ -164,7 +196,9 @@ export function dexieBookStore(): MandalaFamilyBookStore {
     },
     async save(book) {
       try {
-        await (await table()).put({ id: BOOK_ID, ...book, keys: [...book.keys] });
+        await (
+          await table()
+        ).put({ id: BOOK_ID, ...book, keys: [...book.keys] });
       } catch {
         // A full or blocked database only costs the next visit a re-measure.
       }
@@ -194,6 +228,9 @@ function climbOrder(a: MandalaClimbFamily, b: MandalaClimbFamily): number {
   );
 }
 
+/** Shapes per worker task when outlining off the page. */
+const SHAPES_PER_TASK = 12;
+
 /** Share of the progress bar spent making outlines before measuring starts. */
 const OUTLINE_SHARE = 0.2;
 const MEASURE_SHARE = 0.75;
@@ -206,15 +243,25 @@ export function createMandalaClimb(
     scheduler?: MandalaIndexScheduler;
     /** A shape's traces and span; the default makes them from its geometry. */
     outline?: (paths: MandalaPaths) => ShapeOutline;
+    /** Outlines shapes off the page; null outlines in idle slices. Default:
+     *  the app's pool, unless `outline` is given. */
+    workers?: MandalaWorkers | null;
     now?: () => number;
   } = {}
 ): MandalaClimb {
   const index = options.index ?? mandalaIndex;
   const store =
-    options.store ?? (typeof indexedDB === "undefined" ? noBookStore : dexieBookStore());
+    options.store ??
+    (typeof indexedDB === "undefined" ? noBookStore : dexieBookStore());
   const measure = options.measure ?? measureDistances;
   const scheduler = options.scheduler ?? idleScheduler;
   const outlineOf = options.outline ?? shapeOutline;
+  const workers =
+    options.workers !== undefined
+      ? options.workers
+      : options.outline
+        ? null
+        : mandalaWorkers();
   const now = options.now ?? (() => performance.now());
 
   let families = $state.raw<readonly MandalaClimbFamily[]>([]);
@@ -225,15 +272,23 @@ export function createMandalaClimb(
 
   /** Each family's member keys, by every member's key. */
   const keysByMember = $derived.by(() => {
-    const map = new Map<string, { family: MandalaClimbFamily; keys: ReadonlySet<string> }>();
+    const map = new Map<
+      string,
+      { family: MandalaClimbFamily; keys: ReadonlySet<string> }
+    >();
     for (const family of families) {
-      const entry = { family, keys: new Set(family.members.map((member) => member.key)) };
+      const entry = {
+        family,
+        keys: new Set(family.members.map((member) => member.key)),
+      };
       for (const member of family.members) map.set(member.key, entry);
     }
     return map;
   });
 
-  const familyFan = $derived(spreadOfThree(families).map((family) => family.representative));
+  const familyFan = $derived(
+    spreadOfThree(families).map((family) => family.representative)
+  );
 
   // The book as last read or written; undefined until the store answers.
   let book: MandalaFamilyBook | null | undefined;
@@ -257,14 +312,91 @@ export function createMandalaClimb(
       saved &&
       saved.measure === MANDALA_MEASURE_VERSION &&
       saved.family === MANDALA_FAMILY_VERSION &&
-      saved.distances.length === (saved.keys.length * (saved.keys.length - 1)) / 2
+      saved.distances.length ===
+        (saved.keys.length * (saved.keys.length - 1)) / 2
         ? saved
         : null;
     return book;
   }
 
-  /** Every group's outline, made in idle slices; null if the build was dropped. */
+  /** Every group's outline; null if the build was dropped. */
   function gatherOutlines(
+    groups: readonly MandalaGroup[],
+    thisRun: number
+  ): Promise<ShapeOutline[] | null> {
+    if (workers && !workers.broken)
+      return gatherOffPage(groups, thisRun, workers);
+    return gatherInSlices(groups, thisRun);
+  }
+
+  /**
+   * The outlines not yet made, a few shapes per worker task, each from the
+   * steps of the shape's first sequence (the sequence its geometry comes
+   * from). Each shape's drawing comes back too and is kept for the wall:
+   * without it the wall made 146 drawings on the page as it drew, a 0.56 s
+   * freeze (12 Nov). If a worker fails, the slices make what is left.
+   */
+  function gatherOffPage(
+    groups: readonly MandalaGroup[],
+    thisRun: number,
+    pool: MandalaWorkers
+  ): Promise<ShapeOutline[] | null> {
+    const missing = groups.filter((group) => !outlines.has(group.key));
+    const all = (): ShapeOutline[] =>
+      groups.map((group) => outlines.get(group.key)!);
+    if (missing.length === 0) return Promise.resolve(all());
+    return new Promise((resolve) => {
+      const controller = new AbortController();
+      let finished = false;
+      const finish = (value: ShapeOutline[] | null): void => {
+        if (finished) return;
+        finished = true;
+        stopGathering = null;
+        resolve(value);
+      };
+      stopGathering = () => {
+        controller.abort();
+        finish(null);
+      };
+      let made = groups.length - missing.length;
+      for (let start = 0; start < missing.length; start += SHAPES_PER_TASK) {
+        const chunk = missing.slice(start, start + SHAPES_PER_TASK);
+        pool
+          .run(
+            () => ({
+              type: "outlines",
+              steps: stepsText(
+                chunk.map((group) => group.sequences[0]?.steps ?? [])
+              ),
+            }),
+            { signal: controller.signal }
+          )
+          .then((result) => {
+            if (finished || result.type !== "outlines") return;
+            if (thisRun !== run) return finish(null);
+            chunk.forEach((group, i) => {
+              const outline = result.outlines[i];
+              if (outline) outlines.set(group.key, outline);
+              const drawing = result.paths[i];
+              if (drawing) seedMandalaPaths(group.key, drawing);
+            });
+            made += chunk.length;
+            progress = (OUTLINE_SHARE * made) / Math.max(1, groups.length);
+            if (made >= groups.length) finish(all());
+          })
+          .catch(() => {
+            if (finished || controller.signal.aborted) return;
+            controller.abort();
+            finished = true;
+            stopGathering = null;
+            void gatherInSlices(groups, thisRun).then(resolve);
+          });
+      }
+    });
+  }
+
+  /** Every group's outline, made in idle slices; null if the build was dropped. */
+  function gatherInSlices(
     groups: readonly MandalaGroup[],
     thisRun: number
   ): Promise<ShapeOutline[] | null> {
@@ -282,7 +414,10 @@ export function createMandalaClimb(
         // Each new outline makes the shape's geometry, several milliseconds.
         // At least one per slice, so a slice with no time left still moves on.
         let made = 0;
-        while (gathered.length < groups.length && (made === 0 || now() - start < budgetMs)) {
+        while (
+          gathered.length < groups.length &&
+          (made === 0 || now() - start < budgetMs)
+        ) {
           const group = groups[gathered.length]!;
           let outline = outlines.get(group.key);
           if (!outline) {
@@ -292,7 +427,8 @@ export function createMandalaClimb(
           gathered.push(outline);
           made++;
         }
-        progress = (OUTLINE_SHARE * gathered.length) / Math.max(1, groups.length);
+        progress =
+          (OUTLINE_SHARE * gathered.length) / Math.max(1, groups.length);
         if (gathered.length < groups.length) cancel = scheduler(slice);
         else {
           stopGathering = null;
@@ -311,7 +447,10 @@ export function createMandalaClimb(
 
   function land(found: readonly MandalaFamily<MandalaGroup>[]): void {
     families = found
-      .map((family) => ({ ...family, value: mandalaFamilyValue(family.representative) }))
+      .map((family) => ({
+        ...family,
+        value: mandalaFamilyValue(family.representative),
+      }))
       .sort(climbOrder);
     ready = true;
     progress = 1;
@@ -323,7 +462,11 @@ export function createMandalaClimb(
   const countsKey = (groups: readonly MandalaGroup[]) =>
     groups.map((group) => `${group.key}:${group.sequences.length}`).join("|");
 
-  async function build(groups: readonly MandalaGroup[], thisRun: number, signal: AbortSignal): Promise<void> {
+  async function build(
+    groups: readonly MandalaGroup[],
+    thisRun: number,
+    signal: AbortSignal
+  ): Promise<void> {
     const keys = groups.map((group) => group.key);
     const saved = await loadBook();
     if (thisRun !== run) return;
@@ -339,7 +482,8 @@ export function createMandalaClimb(
           {
             signal,
             onProgress: (share) => {
-              if (thisRun === run) progress = OUTLINE_SHARE + MEASURE_SHARE * share;
+              if (thisRun === run)
+                progress = OUTLINE_SHARE + MEASURE_SHARE * share;
             },
           }
         );
@@ -469,7 +613,9 @@ export function createMandalaClimb(
     keysFor(value) {
       const key = resolveKey(value);
       if (!key) return new Set();
-      return (ready ? keysByMember.get(key)?.keys : undefined) ?? new Set([key]);
+      return (
+        (ready ? keysByMember.get(key)?.keys : undefined) ?? new Set([key])
+      );
     },
   };
 }

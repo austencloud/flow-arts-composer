@@ -527,9 +527,10 @@
     display: contents;
   }
   .mini-grid {
+    --mini-gap: 0.6rem;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.6rem;
+    gap: var(--mini-gap);
   }
 
   .choice-tile:active {
@@ -575,20 +576,21 @@
       margin-right: 0.6rem;
     }
   }
-  /* From 700px the auto-fill above already lands on four columns, and the
-     desktop tiers pin four, which leaves the sequence picker's ten minis
-     4+4+2 at every width. Let the last pair take the width the missing pair
-     would have had (`4k-native-layout.md` rule 2). Scoped to exactly ten so
-     the six-tile 3x2 rule and any other count keep their own shape. */
+  /* The sequence picker's ten minis. Four across leaves a pair over, and a
+     leftover tile is never stretched to fill its row (layout law, "Width
+     shows weight"). Where five fit (from 1150px, below) they set five and
+     five; narrower, four across with the last pair centred at the same tile
+     width. Scoped to exactly ten so the six-tile 3x2 rule and any other count
+     keep their own shape. */
   @container drill (min-width: 700px) {
     .mini-grid:has(> :global(:nth-child(10):last-child)) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
     }
-    .mini-grid:has(> :global(:nth-child(10):last-child))
-      > :global(:nth-child(9)),
-    .mini-grid:has(> :global(:nth-child(10):last-child))
-      > :global(:nth-child(10)) {
-      grid-column: span 2;
+    .mini-grid:has(> :global(:nth-child(10):last-child)) > :global(*) {
+      flex: 0 0 calc((100% - 3 * var(--mini-gap)) / 4);
+      min-width: 0;
     }
   }
 
@@ -644,8 +646,19 @@
       margin-top: 0.75rem;
     }
     .mini-grid {
+      --mini-gap: 0.8rem;
       grid-template-columns: repeat(4, 1fr);
-      gap: 0.8rem;
+    }
+  }
+
+  /* Ten minis where five fit with their titles on one line (about 220px a
+     tile): five and five, every tile the same width, each row the same
+     height. */
+  @container drill (min-width: 1150px) {
+    .mini-grid:has(> :global(:nth-child(10):last-child)) {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-auto-rows: 1fr;
     }
   }
 
@@ -695,7 +708,7 @@
       font-size: 1rem;
     }
     .mini-grid {
-      gap: 1rem;
+      --mini-gap: 1rem;
     }
 
     /* A focused full-screen host can opt into a band that grows through the

@@ -1,11 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
 
-const { openCollectionPicker, ensureGuestIdentity } = vi.hoisted(() => ({
-  openCollectionPicker: vi.fn(),
-  ensureGuestIdentity: vi.fn(() => Promise.resolve()),
-}));
+const { openCollectionPicker, ensureGuestIdentity, learnWhoIsSignedIn } =
+  vi.hoisted(() => ({
+    openCollectionPicker: vi.fn(),
+    ensureGuestIdentity: vi.fn(() => Promise.resolve()),
+    learnWhoIsSignedIn: vi.fn(() => Promise.resolve()),
+  }));
 vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity,
+}));
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
+  learnWhoIsSignedIn,
 }));
 vi.mock(
   "#lib/features/library/state/collection-picker-state.svelte.js",
@@ -197,6 +202,11 @@ describe("buildHeaderActions", () => {
     ensureGuestIdentity.mockImplementationOnce(async () => {
       order.push("identity");
     });
+    // The picker reads collections through authState, so it must be
+    // listening before the picker opens.
+    learnWhoIsSignedIn.mockImplementationOnce(async () => {
+      order.push("listener");
+    });
     openCollectionPicker.mockImplementationOnce(() => {
       order.push("picker");
     });
@@ -213,7 +223,7 @@ describe("buildHeaderActions", () => {
     a.onAddToCollection?.();
     await vi.waitFor(() => expect(openCollectionPicker).toHaveBeenCalled());
 
-    expect(order).toEqual(["identity", "picker"]);
+    expect(order).toEqual(["identity", "listener", "picker"]);
     expect(openCollectionPicker).toHaveBeenCalledWith({
       sequenceId: "pub-9",
       sequenceLabel: "BETA",

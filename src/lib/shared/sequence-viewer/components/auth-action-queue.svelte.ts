@@ -12,7 +12,10 @@ import { browser } from "$app/env";
 import { requiresFullAccount } from "#lib/shared/auth/domain/gated-action-policy.js";
 import type { AuthNudgeTrigger } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
 import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
-import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import {
+  authState,
+  learnWhoIsSignedIn,
+} from "#lib/shared/auth/state/auth-state.svelte.js";
 import { getPendingActionQueue } from "../get-pending-action-queue";
 import type { PendingActionType } from "#lib/shared/sequence-viewer/services/pending-action-queue.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -85,28 +88,37 @@ export function createAuthActionQueue() {
    * Called by footer action buttons. If signed in, runs the real handler.
    * If not, captures the intent, writes `?pending=` to the URL so a reload or
    * cross-browser handoff preserves it, and opens the sign-in sheet.
+   *
+   * Both paths start the auth listener first. /sequence/[id] leaves it off at
+   * load for a visitor with no saved session, and without it authState never
+   * hears about the guest this tap creates or the account they sign in to, so
+   * the handler ran as nobody and a queued action never replayed.
    */
   function invokeGatedAction(
     type: PendingActionType,
     realHandler: (() => void) | (() => Promise<void>) | undefined,
     sequence: SequenceData | null
   ) {
-    const isFullUser = authState.isAuthenticated && !authState.isAnonymous;
-
-    if (requiresFullAccount(type)) {
-      // publish: must be a permanent account.
-      if (isFullUser) {
-        void realHandler?.();
-        return;
-      }
-      // fall through to the sign-in sheet below
-    } else {
+    if (!requiresFullAccount(type)) {
       // save / favorite / remix / sendTo: provision a guest identity if
       // needed, then run. Never prompts.
-      void ensureGuestIdentity().then(() => realHandler?.());
+      void ensureGuestIdentity()
+        .then(learnWhoIsSignedIn)
+        .then(() => realHandler?.());
       return;
     }
 
+    // download / publish: must be a permanent account.
+    void learnWhoIsSignedIn().then(() => {
+      if (authState.isFullAccount) {
+        void realHandler?.();
+        return;
+      }
+      askToSignIn(type, sequence);
+    });
+  }
+
+  function askToSignIn(type: PendingActionType, sequence: SequenceData | null) {
     const sequenceId = sequence?.id ?? sequence?.word ?? "";
     if (!sequenceId) return;
 
@@ -145,10 +157,12 @@ export function createAuthActionQueue() {
     if (pending && !authState.isFullAccount) {
       if (requiresFullAccount(pending.type)) {
         openSignInSheet(pending.type);
+        // The replay waits on authState, so it has to be listening.
+        void learnWhoIsSignedIn();
       } else if (!authState.isAuthenticated) {
         // A guest-capable action should resume without an account gate, just
         // as it does when invoked from a button rather than a handoff URL.
-        void ensureGuestIdentity();
+        void ensureGuestIdentity().then(learnWhoIsSignedIn);
       }
       return pending.type;
     }

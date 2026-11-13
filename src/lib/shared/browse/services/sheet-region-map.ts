@@ -16,7 +16,16 @@
 
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
-import { computeCardFrontLayout } from "#lib/shared/render/services/card-front-assembler.js";
+import type { ThumbnailRenderInput } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+import {
+  cardHeaderWordBounds,
+  computeCardFrontLayout,
+} from "#lib/shared/render/services/card-front-assembler.js";
+import {
+  cardMandalaSquare,
+  getMandalaPlacements,
+  type MandalaVariant,
+} from "#lib/shared/sequence-viewer/services/get-mandala-placements.js";
 
 /** A rectangle in image space, all values fractions of the full image (0..1). */
 export interface SheetRegion {
@@ -129,4 +138,157 @@ export function computeSheetRegionMap(
     steps,
     canvasAspect: canvasWidth / canvasHeight,
   };
+}
+
+/** One mandala the card paints: which hands, and the square it fills. */
+export interface SheetMandalaSpot {
+  variant: MandalaVariant;
+  /** Center of the square, in composed-image pixels. */
+  cx: number;
+  cy: number;
+  /** Side of the square the mandala is fitted into. */
+  size: number;
+}
+
+/** Where a gallery card paints its mandalas, in composed-image pixels. */
+export interface SheetMandalaPlan {
+  width: number;
+  height: number;
+  /** Height of the word strip across the top; 0 when the card has none. */
+  headerHeight: number;
+  /**
+   * Where the strip letters the word, between the level badge and the LOOP
+   * icons (cardHeaderWordBounds); a long word is scaled to fit it.
+   */
+  word: { left: number; right: number };
+  /** Empty when the card paints no mandala (too few steps, mandala off). */
+  spots: SheetMandalaSpot[];
+}
+
+/** The card settings that move or hide its mandalas. Unset = gallery default. */
+export interface SheetMandalaSettings {
+  startPlacementLayout: "row" | "column";
+  showMandala: boolean;
+  showQRCode: boolean;
+  leftVisible: boolean;
+  rightVisible: boolean;
+  /** Hand paths drop the inverted LOOP icon, which moves the word's room. */
+  handPathMode?: boolean;
+  includeStartPlacement?: boolean;
+  addWord?: boolean;
+  addDifficultyLevel?: boolean;
+  addUserInfo?: boolean;
+  showNotes?: boolean;
+  showLoopGlyph?: boolean;
+}
+
+/**
+ * Where a gallery card paints its mandalas, so a slow card's drawing can land
+ * on the very squares the picture shows them in. Mirrors
+ * ImageComposer.renderMandalas: the same placements, the same cell share.
+ */
+/**
+ * The plan's settings for a card's render input, read the way the thumbnail
+ * renderer reads them (ThumbnailRenderer.buildRenderOptions), so the plan
+ * matches the picture that input paints.
+ */
+export function sheetMandalaSettings(
+  input: ThumbnailRenderInput
+): SheetMandalaSettings {
+  return {
+    startPlacementLayout: input.startPlacementLayout ?? "row",
+    showMandala: input.visibility?.showMandala ?? false,
+    showQRCode: input.visibility?.showQRCode ?? false,
+    leftVisible: input.visibility?.showLeftMotion ?? true,
+    rightVisible: input.visibility?.showRightMotion ?? true,
+    handPathMode: input.visibility?.handPathMode ?? false,
+    includeStartPlacement: input.includeStartPlacement,
+    addWord: input.addWord,
+    addDifficultyLevel: input.addDifficultyLevel,
+    addUserInfo: input.addUserInfo,
+    showNotes: input.showNotes,
+    showLoopGlyph: input.showLoopGlyph,
+  };
+}
+
+/**
+ * Plans already worked out, per sequence and settings. The word's room asks
+ * the LOOP resolver, which serialises the whole sequence for its cache key:
+ * about 8 ms a card, 30 ms on a slow phone. A slow card works its plan out
+ * while it waits (PropAwareThumbnail.startArrival), so the frame that mounts
+ * its drawing finds it here.
+ */
+const plans = new WeakMap<SequenceData, Map<string, SheetMandalaPlan>>();
+
+export function computeSheetMandalaPlan(
+  sequence: SequenceData,
+  settings: SheetMandalaSettings
+): SheetMandalaPlan {
+  const key = JSON.stringify(settings);
+  let known = plans.get(sequence);
+  if (!known) plans.set(sequence, (known = new Map()));
+  let plan = known.get(key);
+  if (!plan) known.set(key, (plan = buildSheetMandalaPlan(sequence, settings)));
+  return plan;
+}
+
+function buildSheetMandalaPlan(
+  sequence: SequenceData,
+  settings: SheetMandalaSettings
+): SheetMandalaPlan {
+  const options: Partial<SequenceExportOptions> = {
+    ...GALLERY_LAYOUT_OPTIONS,
+    startPlacementLayout: settings.startPlacementLayout,
+    // The renderer letters the loop from the sequence, not the input.
+    loopType: sequence.loopType ?? undefined,
+    ...(settings.includeStartPlacement !== undefined && {
+      includeStartPlacement: settings.includeStartPlacement,
+    }),
+    ...(settings.addWord !== undefined && { addWord: settings.addWord }),
+    ...(settings.addDifficultyLevel !== undefined && {
+      addDifficultyLevel: settings.addDifficultyLevel,
+    }),
+    ...(settings.addUserInfo !== undefined && {
+      addUserInfo: settings.addUserInfo,
+    }),
+    ...(settings.showNotes !== undefined && { showNotes: settings.showNotes }),
+    ...(settings.showLoopGlyph !== undefined && {
+      showLoopGlyph: settings.showLoopGlyph,
+    }),
+  };
+  const layout = computeCardFrontLayout(sequence, options, { darkMode: true });
+  const plan: SheetMandalaPlan = {
+    width: layout.canvasWidth,
+    height: layout.canvasHeight,
+    headerHeight: layout.headerHeight,
+    word: cardHeaderWordBounds(
+      sequence,
+      options,
+      {
+        handPathMode: settings.handPathMode,
+        showLeftMotion: settings.leftVisible,
+        showRightMotion: settings.rightVisible,
+      },
+      layout
+    ),
+    spots: [],
+  };
+  if (!settings.showMandala) return plan;
+
+  const { placements } = getMandalaPlacements({
+    stepCount: sequence.steps?.length ?? 0,
+    cols: layout.columns,
+    rows: layout.rows,
+    includeStartPlacement: options.includeStartPlacement ?? false,
+    showQRCode: settings.showQRCode,
+    leftVisible: settings.leftVisible,
+    rightVisible: settings.rightVisible,
+    mandalaEnabled: true,
+    startPlacementLayout: settings.startPlacementLayout,
+  });
+  plan.spots = placements.map((p) => {
+    const { x, y, size } = cardMandalaSquare(p, layout);
+    return { variant: p.variant, cx: x + size / 2, cy: y + size / 2, size };
+  });
+  return plan;
 }

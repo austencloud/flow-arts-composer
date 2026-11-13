@@ -56,6 +56,7 @@
   import GaitOverlay from "../diagnostics/gait/GaitOverlay.svelte";
   import { gaitProbeState } from "../diagnostics/gait/gait-probe-state.svelte";
   import { getViewer3DContext } from "../context/viewer-3d-context";
+  import { noticeShownInDualWheel } from "../state/wall-plane-notice";
   import { handlePerformerCopyShortcut } from "../domain/performer-copy-shortcuts";
   import { createSceneFeatureState } from "../scene-features/state/scene-feature-state.svelte";
   import {
@@ -311,6 +312,24 @@
       import("#lib/shared/timeline/UnifiedTimeline.svelte"));
 
   const viewer3DState = getViewer3DContext();
+
+  // Say once per sequence when wall plane is swapped for dual wheel because
+  // the arms would pass through each other. This lives here rather than in a
+  // scene because the canvas mounts both renderers (worker and main thread),
+  // and a toast raised inside the worker never reaches the page. Films stay
+  // clean.
+  const wallNoticeShownFor = new Set<string>();
+  $effect(() => {
+    if (cleanFrame) return;
+    for (const performer of viewer3DState.performerManager.performers) {
+      if (!performer.wallPlaneForced) continue;
+      const sequence = performer.loadedSequence;
+      const key = sequence?.id || sequence?.word || "";
+      if (wallNoticeShownFor.has(key)) continue;
+      wallNoticeShownFor.add(key);
+      noticeShownInDualWheel(sequence?.word);
+    }
+  });
   type CaptureRequest = ReturnType<typeof composerCaptureRequest>;
   let webCaptureRequests = $state<CaptureRequest[] | null>(null);
   let motionCacheRevision = $state(0);

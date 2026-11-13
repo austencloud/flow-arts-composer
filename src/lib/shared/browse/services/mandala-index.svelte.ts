@@ -1,12 +1,14 @@
 /**
  * The mandala index: every distinct mandala a pool of sequences draws.
  *
- * Measuring a sequence costs about 5.6 ms the first time, and the community
- * pool runs to hundreds, so the index measures in idle slices between frames
- * and the screen fills in as keys arrive. Each slice runs the stage 1
- * measure (`resolveMandalaSignature`), so the Mandala sort pays nothing
- * afterwards, and writes its answers to IndexedDB so the next visit loads
- * them instead of measuring again.
+ * Measuring a sequence costs about 3.5 ms the first time, and the community
+ * pool runs to 1,578 (12 Nov 2026), so the index hands the measuring to the
+ * mandala workers (`mandala-workers.ts`) a few sequences per task, and the
+ * screen fills in as keys arrive. Without workers it measures in idle slices
+ * between frames. Either way each answer is the stage 1 measure (the same as
+ * `resolveMandalaSignature`), so the Mandala sort pays nothing afterwards,
+ * and is written to IndexedDB so the next visit loads it instead of
+ * measuring again.
  *
  * `groups` is the pool's distinct mandalas, simple to complex (enclosed
  * spaces, then coverage), each with the sequences that draw it. `version`
@@ -18,6 +20,12 @@ import { untrack } from "svelte";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import type { MandalaSignature } from "#lib/shared/mandala/services/mandala-density.js";
+import { stepsText } from "#lib/shared/mandala/services/mandala-measure-work.js";
+import {
+  mandalaWorkers,
+  type MandalaWorkers,
+} from "#lib/shared/mandala/services/mandala-workers.js";
 import {
   MANDALA_MEASURE_VERSION,
   mandalaCacheKey,
@@ -46,7 +54,9 @@ export interface MandalaIndexStore {
  * Runs `work` when the page has time. `work` gets the slice's budget in
  * milliseconds; the returned function cancels a slice not yet run.
  */
-export type MandalaIndexScheduler = (work: (budgetMs: number) => void) => () => void;
+export type MandalaIndexScheduler = (
+  work: (budgetMs: number) => void
+) => () => void;
 
 export interface MandalaGroup {
   key: string;
@@ -101,7 +111,10 @@ export const idleScheduler: MandalaIndexScheduler = (work) => {
         work(
           deadline.didTimeout
             ? FORCED_BUDGET_MS
-            : Math.max(FORCED_BUDGET_MS, Math.min(MAX_BUDGET_MS, deadline.timeRemaining()))
+            : Math.max(
+                FORCED_BUDGET_MS,
+                Math.min(MAX_BUDGET_MS, deadline.timeRemaining())
+              )
         ),
       { timeout: IDLE_TIMEOUT_MS }
     );
@@ -114,12 +127,15 @@ export const idleScheduler: MandalaIndexScheduler = (work) => {
 /** The Dexie table, loaded on first use; without IndexedDB, nothing is kept. */
 export function dexieStore(): MandalaIndexStore {
   const table = async () =>
-    (await import("#lib/shared/persistence/database/tka-database.js")).db.mandalaSignatures;
+    (await import("#lib/shared/persistence/database/tka-database.js")).db
+      .mandalaSignatures;
   return {
     async load(ids) {
       try {
         const rows = await (await table()).bulkGet([...ids]);
-        return rows.filter((row): row is MandalaSignatureRow => row !== undefined);
+        return rows.filter(
+          (row): row is MandalaSignatureRow => row !== undefined
+        );
       } catch {
         return [];
       }
@@ -141,6 +157,19 @@ const noStore: MandalaIndexStore = {
 
 const PATHS_BY_KEY = new Map<string, MandalaPaths>();
 
+/**
+ * Keeps a shape's drawing made elsewhere (the climb's workers make one for
+ * every shape), so the wall's tiles draw without making it again.
+ */
+export function seedMandalaPaths(key: string, paths: MandalaPaths): void {
+  if (!PATHS_BY_KEY.has(key)) PATHS_BY_KEY.set(key, paths);
+}
+
+/** The drawing kept for a shape, if one has been made yet. */
+export function peekMandalaPaths(key: string): MandalaPaths | undefined {
+  return PATHS_BY_KEY.get(key);
+}
+
 function pathsFor(key: string, sequence: SequenceData): MandalaPaths {
   let paths = PATHS_BY_KEY.get(key);
   if (!paths) {
@@ -150,15 +179,24 @@ function pathsFor(key: string, sequence: SequenceData): MandalaPaths {
   return paths;
 }
 
-export function createMandalaIndex(options: {
-  store?: MandalaIndexStore;
-  scheduler?: MandalaIndexScheduler;
-  now?: () => number;
-} = {}): MandalaIndex {
+/** Sequences per worker task: few enough that the screen fills in as they land. */
+const SEQUENCES_PER_TASK = 24;
+
+export function createMandalaIndex(
+  options: {
+    store?: MandalaIndexStore;
+    scheduler?: MandalaIndexScheduler;
+    /** Measures off the page; null measures in idle slices. Default: the app's pool. */
+    workers?: MandalaWorkers | null;
+    now?: () => number;
+  } = {}
+): MandalaIndex {
   const store =
     options.store ??
     (typeof indexedDB === "undefined" ? noStore : dexieStore());
   const scheduler = options.scheduler ?? idleScheduler;
+  const workers =
+    options.workers === undefined ? mandalaWorkers() : options.workers;
   const now = options.now ?? (() => performance.now());
 
   let pool = $state.raw<readonly SequenceData[]>([]);
@@ -169,6 +207,7 @@ export function createMandalaIndex(options: {
   let queue: SequenceData[] = [];
   let run = 0;
   let cancelSlice: (() => void) | null = null;
+  let stopWorkers: (() => void) | null = null;
   const listeners = new Set<() => void>();
 
   /** Every change goes through here, so listeners hear each one. */
@@ -183,7 +222,10 @@ export function createMandalaIndex(options: {
 
   const groups = $derived.by<readonly MandalaGroup[]>(() => {
     void version;
-    const byKey = new Map<string, { coverage: number; spaces: number; sequences: SequenceData[] }>();
+    const byKey = new Map<
+      string,
+      { coverage: number; spaces: number; sequences: SequenceData[] }
+    >();
     for (const sequence of pool) {
       const signature = peekMandalaSignature(sequence);
       if (!signature || !signature.key) continue;
@@ -214,12 +256,82 @@ export function createMandalaIndex(options: {
       }));
   });
 
-  const groupByKey = $derived(new Map(groups.map((group) => [group.key, group])));
-  const sequenceIndex = $derived(new Map(pool.map((sequence) => [sequence.id, sequence])));
+  const groupByKey = $derived(
+    new Map(groups.map((group) => [group.key, group]))
+  );
+  const sequenceIndex = $derived(
+    new Map(pool.map((sequence) => [sequence.id, sequence]))
+  );
 
   function clearSlice(): void {
     cancelSlice?.();
     cancelSlice = null;
+  }
+
+  /** Stops whatever is measuring: the slices and the workers. */
+  function clearWork(): void {
+    clearSlice();
+    stopWorkers?.();
+    stopWorkers = null;
+  }
+
+  function rowOf(id: string, signature: MandalaSignature): MandalaSignatureRow {
+    return {
+      id,
+      key: signature.key,
+      coverage: signature.coverage,
+      spaces: signature.spaces,
+      measure: MANDALA_MEASURE_VERSION,
+    };
+  }
+
+  /**
+   * Hands the queue to the workers a few sequences per task; each answer
+   * lands as it comes. If a worker fails, the page measures what is left.
+   */
+  function measureOffPage(thisRun: number, pool: MandalaWorkers): void {
+    const pending = queue;
+    queue = [];
+    const controller = new AbortController();
+    stopWorkers = () => controller.abort();
+    const landed = new Set<SequenceData>();
+    let failed = false;
+    for (let start = 0; start < pending.length; start += SEQUENCES_PER_TASK) {
+      const chunk = pending.slice(start, start + SEQUENCES_PER_TASK);
+      pool
+        .run(
+          () => ({
+            type: "signatures",
+            steps: stepsText(chunk.map((sequence) => sequence.steps ?? [])),
+          }),
+          { signal: controller.signal }
+        )
+        .then((result) => {
+          if (thisRun !== run || failed || result.type !== "signatures") return;
+          const rows: MandalaSignatureRow[] = [];
+          chunk.forEach((sequence, i) => {
+            const signature = result.signatures[i];
+            const id = mandalaCacheKey(sequence);
+            if (!signature || !id) return;
+            seedMandalaSignature(sequence, signature);
+            rows.push(rowOf(id, signature));
+            landed.add(sequence);
+          });
+          if (rows.length === 0) return;
+          measured += rows.length;
+          tick();
+          void store.save(rows);
+          if (landed.size === pending.length) stopWorkers = null;
+        })
+        .catch(() => {
+          if (thisRun !== run || failed || controller.signal.aborted) return;
+          failed = true;
+          controller.abort();
+          stopWorkers = null;
+          queue = pending.filter((sequence) => !landed.has(sequence));
+          if (queue.length > 0) scheduleSlice(thisRun);
+        });
+    }
   }
 
   function scheduleSlice(thisRun: number): void {
@@ -229,18 +341,14 @@ export function createMandalaIndex(options: {
       if (thisRun !== run) return;
       const start = now();
       const rows: MandalaSignatureRow[] = [];
-      while (queue.length > 0 && (rows.length === 0 || now() - start < budgetMs)) {
+      while (
+        queue.length > 0 &&
+        (rows.length === 0 || now() - start < budgetMs)
+      ) {
         const sequence = queue.shift()!;
         const id = mandalaCacheKey(sequence);
         if (!id) continue;
-        const signature = resolveMandalaSignature(sequence);
-        rows.push({
-          id,
-          key: signature.key,
-          coverage: signature.coverage,
-          spaces: signature.spaces,
-          measure: MANDALA_MEASURE_VERSION,
-        });
+        rows.push(rowOf(id, resolveMandalaSignature(sequence)));
       }
       if (rows.length > 0) {
         measured += rows.length;
@@ -251,7 +359,10 @@ export function createMandalaIndex(options: {
     });
   }
 
-  async function start(sequences: readonly SequenceData[], thisRun: number): Promise<void> {
+  async function start(
+    sequences: readonly SequenceData[],
+    thisRun: number
+  ): Promise<void> {
     const pending: SequenceData[] = [];
     let known = 0;
     for (const sequence of sequences) {
@@ -268,12 +379,18 @@ export function createMandalaIndex(options: {
     tick();
     if (pending.length === 0) return;
 
-    const rows = await store.load(pending.map((sequence) => mandalaCacheKey(sequence)!));
+    const rows = await store.load(
+      pending.map((sequence) => mandalaCacheKey(sequence)!)
+    );
     if (thisRun !== run) return;
     const byId = new Map(
       rows
-      .filter((row) => row.measure === MANDALA_MEASURE_VERSION && typeof row.spaces === "number")
-      .map((row) => [row.id, row])
+        .filter(
+          (row) =>
+            row.measure === MANDALA_MEASURE_VERSION &&
+            typeof row.spaces === "number"
+        )
+        .map((row) => [row.id, row])
     );
     queue = [];
     for (const sequence of pending) {
@@ -290,7 +407,9 @@ export function createMandalaIndex(options: {
       }
     }
     tick();
-    if (queue.length > 0) scheduleSlice(thisRun);
+    if (queue.length === 0) return;
+    if (workers && !workers.broken) measureOffPage(thisRun, workers);
+    else scheduleSlice(thisRun);
   }
 
   return {
@@ -298,7 +417,7 @@ export function createMandalaIndex(options: {
       if (sequences === pool) return;
       pool = sequences;
       run++;
-      clearSlice();
+      clearWork();
       queue = [];
       void start(sequences, run);
     },
@@ -332,7 +451,7 @@ export function createMandalaIndex(options: {
     },
     stop() {
       run++;
-      clearSlice();
+      clearWork();
       queue = [];
     },
   };

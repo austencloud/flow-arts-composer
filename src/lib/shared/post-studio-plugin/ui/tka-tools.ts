@@ -4,6 +4,7 @@ import {
   faDiamond,
   faDrum,
   faEraser,
+  faEye,
   faHashtag,
   faHeading,
   faLayerGroup,
@@ -17,6 +18,7 @@ import {
   faTableCellsLarge,
 } from "@austencloud/video-editor/icons";
 import { canTapBeats } from "./tka-beats";
+import { reelsPreview } from "./reels-preview.svelte";
 import { tkaEditorOf } from "./tka-editor-context";
 
 /**
@@ -26,7 +28,8 @@ import { tkaEditorOf } from "./tka-editor-context";
  * an arrangement's; Layers, Grids, Offset, Effort and Clear belong to its
  * cell in hand. Look is an arrangement's or a mandala's own look there, else
  * the post's animation defaults. Sequence is a mandala's ordered list.
- * Auto frame writes a video's framing keys from its footage.
+ * Auto frame writes a video's framing keys from its footage. Reel view
+ * draws a Reel's own controls over the preview, to judge the framing by.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
@@ -83,6 +86,13 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: () => "Auto frame",
     icon: faLocationCrosshairs,
+  },
+  {
+    id: "reel",
+    type: "action",
+    label: () => (reelsPreview.shown ? "Hide Reel" : "Reel view"),
+    icon: faEye,
+    run: () => reelsPreview.toggle(),
   },
   {
     id: "beats",

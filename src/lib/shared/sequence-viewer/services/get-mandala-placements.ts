@@ -2,6 +2,28 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 
 export type MandalaVariant = "left" | "right" | "full";
 
+/** Share of its grid cell a card's mandala is fitted into. */
+export const CARD_MANDALA_CELL_SCALE = 0.85;
+
+/**
+ * The square a card paints a placement's mandala in, in canvas pixels: the
+ * cell's size times CARD_MANDALA_CELL_SCALE, centered in the cell. The
+ * composer paints there, and a slow gallery card's drawing lands there
+ * (computeSheetMandalaPlan), so both read it from here.
+ */
+export function cardMandalaSquare(
+  placement: { col: number; row: number },
+  grid: { stepSize: number; gridOffsetX: number; gridOffsetY: number }
+): { x: number; y: number; size: number } {
+  const size = Math.floor(grid.stepSize * CARD_MANDALA_CELL_SCALE);
+  const padding = (grid.stepSize - size) / 2;
+  return {
+    x: (placement.col - 1) * grid.stepSize + grid.gridOffsetX + padding,
+    y: (placement.row - 1) * grid.stepSize + grid.gridOffsetY + padding,
+    size,
+  };
+}
+
 export interface MandalaPlacement {
 	row: number;
 	col: number;

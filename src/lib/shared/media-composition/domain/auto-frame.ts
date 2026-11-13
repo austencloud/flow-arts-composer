@@ -35,6 +35,8 @@ const RIGHT_SHOULDER = 12;
 const LEFT_ELBOW = 13;
 const LEFT_WRIST = 15;
 const RIGHT_WRIST = 16;
+const LEFT_HIP = 23;
+const RIGHT_HIP = 24;
 /** Wrists, pinkies, index fingers and thumbs. */
 const HAND_POINTS = [15, 16, 17, 18, 19, 20];
 export const POSE_POINTS = 33;
@@ -55,8 +57,45 @@ export interface AutoFrameSettings {
   /** Weights for centring the props sideways and up/down. */
   centreX: number;
   centreY: number;
-  /** Where the props' centre sits down the window. */
+  /** Where the props' and body's centres sit down the uncovered part of the window. */
   centreYAt: number;
+  /** Weights for centring the body sideways and placing it up/down. */
+  bodyX: number;
+  bodyY: number;
+  /**
+   * Where the body's centre sits down the window. His own crops keep it low,
+   * feet near the bottom and the room above for the props.
+   */
+  bodyYAt: number;
+  /** The most of the window's height the body fills, and the cost per sample past it. */
+  bodyFill: number;
+  bodyFillCost: number;
+  /**
+   * How far above the head (footage height) the props must reach before the
+   * body's place and room give way to them, as his crops do when the props
+   * go high; the body's terms fade out over this distance.
+   */
+  propsHighBy: number;
+  /** How much of the props' up/down pull gives way to the body's while the props are low. */
+  bodyLeads: number;
+  /**
+   * Cost per sample of the body (arms aside) reaching past the window's
+   * sides or its uncovered top. The feet may go below the bottom, as his
+   * own crops let them when the props are high.
+   */
+  bodyInCost: number;
+  /**
+   * Room kept above the head, below the uncovered top, as a share of the
+   * window. Austen found 10% pressed to the top; about 17% looked right.
+   */
+  headRoom: number;
+  headRoomCost: number;
+  /**
+   * Cost per sample of the window showing much more than that moment needs:
+   * zoom below `fitSlack` of the zoom that just fits the moment's props.
+   */
+  fitCost: number;
+  fitSlack: number;
   /** Cost of jumps between keys, scaled by samples/keys. */
   smooth: number;
   /** Cost per key of the window top rising above the backdrop line. */
@@ -74,6 +113,18 @@ export const AUTO_FRAME_SETTINGS: AutoFrameSettings = {
   centreX: 4,
   centreY: 2,
   centreYAt: 0.45,
+  bodyX: 2,
+  bodyY: 1,
+  bodyYAt: 0.6,
+  bodyFill: 0.72,
+  bodyFillCost: 8,
+  bodyInCost: 2,
+  headRoom: 0.1,
+  headRoomCost: 8,
+  propsHighBy: 0.06,
+  bodyLeads: 0.75,
+  fitCost: 1,
+  fitSlack: 0.85,
   smooth: 0.05,
   backdropCost: 10,
   finalMargin: 0.12,
@@ -206,6 +257,27 @@ export function mustStayBox(props: FrameBox | null, pose: PoseLandmarks): FrameB
 }
 
 /**
+ * The body to centre and keep in: head top to feet, shoulders and hips
+ * across. Arms are left out, since a reach to one side shouldn't pull the
+ * frame after it. The head top is added only while the head is above the
+ * shoulders; bent over or upside down, the landmarks' own extent is used.
+ */
+export function bodyBox(pose: PoseLandmarks): FrameBox | null {
+  if (!pose || !Number.isFinite(pose[0]!)) return null;
+  const seen = (i: number) => pose[i * 3 + 2]! > 0.5;
+  const across = [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP].filter(seen);
+  if (across.length < 2) return null;
+  const xs = across.map((i) => pose[i * 3]!);
+  const ys: number[] = [];
+  for (let i = 0; i < POSE_POINTS; i++)
+    if ((i <= RIGHT_SHOULDER || i >= LEFT_HIP) && seen(i)) ys.push(pose[i * 3 + 1]!);
+  const [, ny] = point(pose, NOSE);
+  const shoulders = (pose[LEFT_SHOULDER * 3 + 1]! + pose[RIGHT_SHOULDER * 3 + 1]!) / 2;
+  if (seen(NOSE) && shoulders > ny) ys.push(ny - 0.9 * (shoulders - ny));
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+}
+
+/**
  * The whole body for the last key: every visible landmark, the head top
  * (nose up by 0.9 of nose-to-shoulders) with 0.04 more above it, and the
  * props at that moment.
@@ -285,6 +357,14 @@ export interface AutoFrameInput {
   backdropLine: number | null;
   /** The whole body, kept inside the last key. */
   finalBox: FrameBox | null;
+  /** Per sample: the body alone, head to feet, to centre as well; null when none was found. */
+  bodyOn?: readonly (FrameBox | null)[];
+  /**
+   * Canvas shares the platform's own controls cover once the post is up
+   * (a Reel's header and caption). A bright ceiling may hide under the top
+   * one, and centring aims at the part between them.
+   */
+  covered?: { top: number; bottom: number };
   /** The clip shows the footage mirrored. */
   flip: boolean;
   settings?: Partial<AutoFrameSettings>;
@@ -322,12 +402,15 @@ export function solveAutoFrame(input: AutoFrameInput): AutoFrameResult {
   const hinges: HingeProgram["hinges"][number][] = [];
   const limits: HingeProgram["limits"][number][] = [];
 
-  const rows: { t: number; box: FrameBox; centre: FrameBox }[] = [];
+  const rows: { t: number; box: FrameBox; centre: FrameBox; body: FrameBox | null }[] = [];
   input.times.forEach((t, i) => {
     const box = input.mustStay[i];
     if (!box || t < K[0]! || t > K[nk - 1]!) return;
-    rows.push({ t, box, centre: input.centreOn[i] ?? box });
+    rows.push({ t, box, centre: input.centreOn[i] ?? box, body: input.bodyOn?.[i] ?? null });
   });
+  const coverTop = input.covered?.top ?? 0;
+  const coverBottom = input.covered?.bottom ?? 0;
+  const centreAt = coverTop + (1 - coverTop - coverBottom) * set.centreYAt;
   const nS = rows.length;
   const m = set.margin;
   const slackWeight = (set.slackCost * nS) / 50;
@@ -343,6 +426,9 @@ export function solveAutoFrame(input: AutoFrameInput): AutoFrameResult {
       val: [wa, wa * scale, wb, wb * scale],
     };
   };
+  const push = (hinge: { idx: number[]; val: number[]; b: number }, weight: number) => {
+    if (weight > 0) hinges.push({ ...hinge, weight });
+  };
   const negate = (form: { idx: number[]; val: number[] }) => ({
     idx: form.idx,
     val: form.val.map((v) => -v),
@@ -356,15 +442,50 @@ export function solveAutoFrame(input: AutoFrameInput): AutoFrameResult {
     hinges.push({ ...negate(pathForm(at, w, "x", u0)), b: -m, weight: slackWeight });
     hinges.push({ ...pathForm(at, w, "x", u1), b: 1 - m, weight: slackWeight });
     hinges.push({ ...negate(pathForm(at, w, "y", v0)), b: -m, weight: slackWeight });
-    hinges.push({ ...pathForm(at, w, "y", v1), b: 1 - m, weight: slackWeight });
+    // The prop ends stay above a Reel's caption, where they would be lost.
+    hinges.push({ ...pathForm(at, w, "y", v1), b: 1 - coverBottom - m, weight: slackWeight });
     const c = row.centre;
     const cx = pathForm(at, w, "x", (c[0] + c[2]) / 2);
     const cy = pathForm(at, w, "y", (c[1] + c[3]) / 2);
     // |form - target| as two hinges.
     hinges.push({ ...cx, b: 0.5, weight: set.centreX });
     hinges.push({ ...negate(cx), b: -0.5, weight: set.centreX });
-    hinges.push({ ...cy, b: set.centreYAt, weight: set.centreY });
-    hinges.push({ ...negate(cy), b: -set.centreYAt, weight: set.centreY });
+    // Props well above the head lead; props about the body give it its place and room.
+    const low = row.body ? Math.min(1, Math.max(0, 1 - (row.body[1] - v0) / set.propsHighBy)) : 0;
+    push({ ...cy, b: centreAt }, set.centreY * (1 - set.bodyLeads * low));
+    push({ ...negate(cy), b: -centreAt }, set.centreY * (1 - set.bodyLeads * low));
+    if (row.body) {
+      const [b0, bt, b1, bb] = row.body;
+      const bx = pathForm(at, w, "x", (b0 + b1) / 2);
+      const by = pathForm(at, w, "y", (bt + bb) / 2);
+      push({ ...bx, b: 0.5 }, set.bodyX);
+      push({ ...negate(bx), b: -0.5 }, set.bodyX);
+      push({ ...by, b: set.bodyYAt }, set.bodyY * low);
+      push({ ...negate(by), b: -set.bodyYAt }, set.bodyY * low);
+      // Room around the body: r * height * size <= bodyFill.
+      const tall = r * (bb - bt);
+      push({ idx: [Z(at), Z(at + 1)], val: [(1 - w) * tall, w * tall], b: set.bodyFill }, set.bodyFillCost * low);
+      // Inside the window, with room above the head below the covered top.
+      push({ ...negate(pathForm(at, w, "x", b0)), b: -m }, set.bodyInCost);
+      push({ ...pathForm(at, w, "x", b1), b: 1 - m }, set.bodyInCost);
+      push({ ...negate(pathForm(at, w, "y", bt)), b: -(coverTop + set.headRoom) }, set.headRoomCost);
+    }
+    // Not much looser than the moment needs: zoom >= fitSlack * the zoom that just fits it.
+    // The need counts the room above the head down to the props' lower ends.
+    const headToEnds = row.body ? v1 - row.body[1] : 0;
+    const fits = Math.min(
+      set.maxZoom,
+      (1 - 2 * m) / Math.max(1e-6, u1 - u0),
+      (1 - coverBottom - 2 * m) / Math.max(1e-6, r * (v1 - v0)),
+      (1 - coverTop - set.headRoom - coverBottom - m) / Math.max(1e-6, r * headToEnds)
+    );
+    if (set.fitCost > 0)
+      hinges.push({
+        idx: [Z(at), Z(at + 1)],
+        val: [-(1 - w), -w],
+        b: -set.fitSlack * fits,
+        weight: set.fitCost,
+      });
   }
 
   const jumpWeight = (set.smooth * nS) / nk;
@@ -387,11 +508,11 @@ export function solveAutoFrame(input: AutoFrameInput): AutoFrameResult {
     limits.push({ idx: [Z(k)], val: [-1], b: -minZoom });
     limits.push({ idx: [Z(k)], val: [1], b: set.maxZoom });
     if (input.backdropLine !== null) {
-      // The window's top below the line: y + line * r * size <= 0.
+      // The uncovered top below the line: y + line * r * size <= the covered share.
       hinges.push({
         idx: [Y(k), Z(k)],
         val: [1, input.backdropLine * r],
-        b: 0,
+        b: coverTop,
         weight: (set.backdropCost * nS) / nk,
       });
     }
@@ -498,15 +619,21 @@ export function autoFrameBoxes(
   props: readonly (FrameBox | null)[],
   poses: readonly PoseLandmarks[],
   lastKey: number
-): { mustStay: (FrameBox | null)[]; centreOn: (FrameBox | null)[]; finalBox: FrameBox | null } {
+): {
+  mustStay: (FrameBox | null)[];
+  centreOn: (FrameBox | null)[];
+  bodyOn: (FrameBox | null)[];
+  finalBox: FrameBox | null;
+} {
   const mustStay = props.map((box, i) => mustStayBox(box, poses[i] ?? null));
+  const bodyOn = poses.map((pose) => bodyBox(pose ?? null));
   let nearest = -1;
   for (let i = 0; i < times.length; i++) {
     if (!poses[i]) continue;
     if (nearest < 0 || Math.abs(times[i]! - lastKey) < Math.abs(times[nearest]! - lastKey)) nearest = i;
   }
   const finalBox = nearest >= 0 ? wholeBodyBox(poses[nearest]!, props[nearest] ?? null) : null;
-  return { mustStay, centreOn: [...props], finalBox };
+  return { mustStay, centreOn: [...props], bodyOn, finalBox };
 }
 
 /** A post canvas ratio such as "9:16" as width over height. */

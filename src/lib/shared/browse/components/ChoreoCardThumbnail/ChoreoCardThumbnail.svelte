@@ -82,6 +82,7 @@ Variation support:
     selectionMode = false,
     onSelectionStart,
     onSelectionToggle,
+    showLength = false,
   }: {
     sequence: SequenceData;
     variations?: SequenceData[];
@@ -133,6 +134,9 @@ Variation support:
     selectionMode?: boolean;
     onSelectionStart?: (sequence: SequenceData) => void;
     onSelectionToggle?: (sequence: SequenceData) => void;
+    /** Show the step count in the card's info corner ("8 steps"). Grids
+     * whose sections already name the length leave it off. */
+    showLength?: boolean;
   } = $props();
 
   // Track which variation is currently displayed.
@@ -149,6 +153,9 @@ Variation support:
     }
     return sequence;
   });
+  const stepCount = $derived(
+    displayedSequence.sequenceLength ?? displayedSequence.steps?.length ?? 0
+  );
   const previewReadOnly = $derived(userPreviewState.isActive);
 
   // Total count for the pill
@@ -783,9 +790,19 @@ Variation support:
 
   <SyncStatusBadge status={displayedSequence.syncStatus} />
 
+  {#if (showLength && stepCount > 0) || (displayedSequence.publicPerformanceCount ?? 0) > 0}
+  <span class="card-info">
+  {#if showLength && stepCount > 0}
+    <span class="card-badge step-count">
+      {tDynamic(
+        stepCount === 1 ? "create_deep_step_count_one" : "browse_n_steps",
+        { count: stepCount }
+      )}
+    </span>
+  {/if}
   {#if (displayedSequence.publicPerformanceCount ?? 0) > 0}
     <span
-      class="performance-count"
+      class="card-badge performance-count"
       aria-label={tDynamic(
         displayedSequence.publicPerformanceCount === 1
           ? "browse_results_public_performance_one"
@@ -802,6 +819,8 @@ Variation support:
       <i class="fas fa-play" aria-hidden="true"></i>
       {displayedSequence.publicPerformanceCount}
     </span>
+  {/if}
+  </span>
   {/if}
 
   {#if selectionMode || isLongPressing}
@@ -1064,11 +1083,20 @@ Variation support:
     gap: 6px;
   }
 
-  .performance-count {
+  /* The card's info corner: small facts about the sequence (its length, its
+     public performances), one row at the bottom left. */
+  .card-info {
     position: absolute;
     bottom: 6px;
     left: 6px;
     z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+  }
+
+  .card-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.35em;
@@ -1083,6 +1111,12 @@ Variation support:
     line-height: 1;
     pointer-events: none;
     backdrop-filter: blur(8px);
+  }
+
+  .step-count {
+    font-weight: 600;
+    color: var(--theme-text-dim, var(--theme-text));
+    font-variant-numeric: tabular-nums;
   }
 
   .performance-count i {

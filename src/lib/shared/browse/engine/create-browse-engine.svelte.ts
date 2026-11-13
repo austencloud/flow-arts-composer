@@ -47,6 +47,7 @@ import {
 import {
   applyFilters as applyMultiFilters,
   getFilteredCount as getMultiFilteredCount,
+  getFacetPool as getMultiFacetPool,
   OR_STACKING_TYPES,
   CONNECTIVE_STACKING_TYPES,
   type FilterConnective,
@@ -60,7 +61,9 @@ import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.j
 import {
   mandalaClimb,
   mandalaFamiliesSettled,
+  mandalaIndexSettled,
 } from "#lib/shared/browse/services/mandala-climb.svelte.js";
+import { parseMandalaLevelValue } from "#lib/shared/browse/services/sequence-density.js";
 import { untrack } from "svelte";
 import { organizeSections as organizeBrowseSections } from "#lib/shared/browse/services/browse-section-manager.js";
 import { toggleFavorite as doToggleFavorite } from "#lib/shared/library/services/collection-manager.js";
@@ -347,8 +350,6 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       : allSequences
   );
 
-  // A Mandala filter opens a family that mixes easy and hard sequences, so
-  // its results read easiest first whatever the sort.
   const hasMandalaFilter = $derived.by(() => {
     for (const f of activeFilters.values()) {
       if (f.type === BrowseFilterType.MANDALA) return true;
@@ -356,15 +357,26 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     return false;
   });
 
-  // A Mandala filter matches by measured shape and by family, so it can only
-  // answer once the mandala index has measured this pool and the climb has
-  // built families from it. Until it first does, the results read as loading.
-  // After that the last families keep answering while a later stage of the
-  // pool is measured, so the grid does not drop back to a skeleton.
+  // A Mandala filter matches by measured shape, so it can only answer once
+  // the mandala index has measured this pool; a family value also waits for
+  // the climb to build families from it, a level value does not. Until it
+  // first answers, the results read as loading. After that the last answer
+  // holds while a later stage of the pool is measured, so the grid does not
+  // drop back to a skeleton.
+  const mandalaNeedsFamilies = $derived.by(() => {
+    for (const f of activeFilters.values()) {
+      if (f.type === BrowseFilterType.MANDALA && parseMandalaLevelValue(f.value) === null) {
+        return true;
+      }
+    }
+    return false;
+  });
   const mandalaSettled = $derived(
     hasMandalaFilter &&
       sectionsReady &&
-      mandalaFamiliesSettled(mandalaIndex, mandalaClimb, allSequences)
+      (mandalaNeedsFamilies
+        ? mandalaFamiliesSettled(mandalaIndex, mandalaClimb, allSequences)
+        : mandalaIndexSettled(mandalaIndex, allSequences))
   );
   // The pool is complete once nothing more is on its way: the load is over,
   // no further library page is loading, and the community extras have landed
@@ -400,7 +412,9 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     if (sortDirection === "desc") {
       sorted.reverse();
     }
-    if (hasMandalaFilter) {
+    if (mandalaNeedsFamilies) {
+      // A family mixes easy and hard sequences, so its results read easiest
+      // first whatever the sort; a Mandala level keeps the chosen sort.
       // Stable, so the sort and its direction still order each level.
       sorted.sort((a, b) => resolveDifficultyLevel(a) - resolveDifficultyLevel(b));
     }
@@ -410,12 +424,14 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
   // --- Derived: sections ---
 
   // Sort method → section grouping. Keeps the left section index in lockstep
-  // with the toolbar sort: sorting by Level buckets into difficulty sections,
-  // by Date into date sections, by Length into length sections, A–Z into letters.
+  // with the toolbar sort: sorting by Level buckets into one section per level,
+  // by Date into date sections, by Length into length sections, A–Z into one
+  // section per letter. Each groups by one thing; same-length cards sit
+  // together inside a section (browse-section-manager).
   const SORT_TO_SECTION_GROUP: Record<BrowseSortMethod, SectionGroupBy> = {
     [BrowseSortMethod.ALPHABETICAL]: "letter",
     [BrowseSortMethod.DATE_ADDED]: "date",
-    [BrowseSortMethod.DIFFICULTY_LEVEL]: "difficulty",
+    [BrowseSortMethod.DIFFICULTY_LEVEL]: "level",
     [BrowseSortMethod.SEQUENCE_LENGTH]: "length",
     [BrowseSortMethod.DENSITY]: "density",
     [BrowseSortMethod.AUTHOR]: "author",
@@ -428,14 +444,17 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
   const effectiveSectionGroupBy = $derived.by((): SectionGroupBy => {
     if (_sectionGroupByOverride) return _sectionGroupByOverride;
     // A Mandala family is small: one section per level keeps its cards
-    // together instead of scattering them over letter and length rows.
-    let groupBy: SectionGroupBy = hasMandalaFilter
+    // together instead of scattering them over letter and length rows. A
+    // Mandala level holds hundreds, so it keeps the sort's sections.
+    let groupBy: SectionGroupBy = mandalaNeedsFamilies
       ? "level"
       : (SORT_TO_SECTION_GROUP[sortMethod] ?? "letter");
     // Hands mode has no letter/difficulty semantics — fall back to length.
     if (
       _viewMode.subject === "hands" &&
-      (groupBy === "letter" || groupBy === "difficulty")
+      (groupBy === "letter" ||
+        groupBy === "difficulty" ||
+        (groupBy === "level" && !mandalaNeedsFamilies))
     ) {
       groupBy = "length";
     }
@@ -1228,6 +1247,10 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
         activeFilters,
         connectives
       );
+    },
+
+    getFacetPool(candidateType: BrowseFilterType): SequenceData[] {
+      return getMultiFacetPool(searchedPool, candidateType, activeFilters, connectives);
     },
 
     // --- Favorites ---

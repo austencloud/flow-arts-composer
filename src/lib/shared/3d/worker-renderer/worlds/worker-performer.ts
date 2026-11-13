@@ -312,9 +312,19 @@ export class WorkerPerformer {
   }
 
   private async loadAvatar(): Promise<void> {
-    await this.services.skeleton.loadModel(
-      getAvatarModelPath(this.snapshot.avatarId)
-    );
+    const { avatarId, avatarModelPath, avatarLocalOnly } = this.snapshot;
+    try {
+      await this.services.skeleton.loadModel(
+        avatarModelPath ?? getAvatarModelPath(avatarId)
+      );
+    } catch (error) {
+      // A local-evaluation body lives in a gitignored folder, so another
+      // checkout or machine may not have it. Same recovery as the main-thread
+      // CharacterSwapTransition: show the mannequin, not an empty stage.
+      if (!avatarLocalOnly) throw error;
+      console.warn(`Character ${avatarId} is not on this machine; showing the mannequin.`);
+      await this.services.skeleton.loadModel(getAvatarModelPath("x-bot"));
+    }
     if (this.disposed) return;
 
     this.services.skeleton.setHeight(cmToUnits(this.snapshot.avatarHeightCm));

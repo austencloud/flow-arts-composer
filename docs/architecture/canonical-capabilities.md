@@ -395,6 +395,22 @@ Searches: create entry, front door transition, method card flight, board to
 workspace, generate entry, tap into method, entry choreography, cards file into
 drawer, sidebar nod, method landing.
 
+Create's Play holds the stage with a poster while the player mounts:
+`PlaybackPoster` in
+`features/create/shared/workspace-panel/components/playback-poster.ts`, driven
+by `CreationWorkspaceArea.svelte`. A copy of the grid's already drawn start
+picture flies from its cell to the canvas's place (`playerCanvasBox`, which
+mirrors `.playback-layout` in `WorkspacePlayback.svelte`) while the grid steps
+back. The host holds `DualSourceCrossfade` on neither source until the poster
+has landed, so the player's controls arrive around the landed picture and the
+poster then dissolves into the canvas: the picture becomes the player instead
+of settling onto one already there. Stop before the dissolve ends sends it
+back to its cell. It is Web Animations on transform and opacity with
+`DURATION` and the motion.ts easings, not a view transition, because it must
+stay up for an unbounded load without freezing input. Theater mode is left
+out. Searches: play blank stage, player first frame, playback placeholder,
+start picture poster, canvas not ready.
+
 The controls around a piece of work step aside and come back through
 `controlArrive` and `controlLeave` (`shared/transitions/control-presence.ts`).
 A family reads as one movement: leaving is quick and starts at the press, each

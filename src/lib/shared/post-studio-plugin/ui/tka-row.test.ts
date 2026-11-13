@@ -26,7 +26,7 @@ const row = (
 
 describe("tka tool rows are today's rows", () => {
   it("nothing selected, and music", () => {
-    expect(row(null)).toEqual(["videos", "add", "canvas", "split", "look"]);
+    expect(row(null)).toEqual(["videos", "add", "canvas", "split", "look", "reel"]);
     expect(row(null, {}, true)).toEqual(["back", "music", "delete"]);
   });
   it("video, with and without a layout", () => {
@@ -46,6 +46,7 @@ describe("tka tool rows are today's rows", () => {
       "trim",
       "crop",
       "autoframe",
+      "reel",
       "speed",
       "volume",
       ...tail,
@@ -56,6 +57,7 @@ describe("tka tool rows are today's rows", () => {
       "trim",
       "crop",
       "autoframe",
+      "reel",
       "speed",
       "volume",
       "layout",

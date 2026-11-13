@@ -291,14 +291,18 @@ Popover uses fixed positioning to escape overflow:hidden containers.
       class="filter-chip duo-main"
       class:active
       class:disabled
+      class:expanded
       class:solid={emphasis === "solid"}
       class:size-sm={size === "sm"}
       class:scale-readable={labelScale === "readable"}
       type="button"
       aria-pressed={mode === "toggle" ? active : undefined}
+      aria-haspopup={mode === "dropdown" ? popupRole : undefined}
+      aria-expanded={mode === "dropdown" ? expanded : undefined}
       aria-label={ariaLabel ?? `${label}${count != null ? ` (${count})` : ""}`}
       {disabled}
       {onclick}
+      onkeydown={handleEscape}
       data-ghost={ghostKind && !disabled ? "safe" : undefined}
       data-ghost-kind={ghostKind && !disabled ? ghostKind : undefined}
       data-ghost-label={ghostKind ? label : undefined}

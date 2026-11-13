@@ -8,9 +8,9 @@
   synchronously and froze the tap.
 
   This virtualizes the sectioned layout by flattening sections into a typed item
-  stream — banner (Level N) / header (letter) / row (≤columnCount cards) — and
-  windowing it with @tanstack/svelte-virtual (the same lib the flat
-  VirtualizedSequenceGrid uses).
+  stream — banner (Level N) / header (letter) / row (a justified row of cards,
+  see justified-rows.ts) — and windowing it with @tanstack/svelte-virtual (the
+  same lib the flat VirtualizedSequenceGrid uses).
 
   Integration decision: it does NOT own a scroll container. It virtualizes
   against an EXTERNAL scroll element (BrowsePanel's `.panel-content`, passed in),
@@ -40,7 +40,7 @@
     buildVariationMap,
     variationGroupKey,
   } from "#lib/shared/browse/services/variation-grouper.js";
-  import { calculateGalleryAspectRatio } from "#lib/shared/render/services/layout-calculator.js";
+  import { galleryStepCount } from "#lib/shared/browse/services/gallery-render-input.js";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { isCatDogMode } from "#lib/shared/browse/utils/prop-mode-helpers.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
@@ -51,8 +51,13 @@
   import {
     createSectionedGridMeasurementSignature,
     getSectionedGridItemKey,
-    getSectionedGridRowMaxSteps,
   } from "./sectioned-grid-measurements";
+  import {
+    galleryAspectForSteps,
+    justifiedCellFlex,
+    justifiedTargetHeight,
+    packJustifiedRows,
+  } from "./justified-rows";
 
   export interface SectionedGridApi {
     /** Scroll the section whose header carries `title` to the top of the view. */
@@ -86,6 +91,8 @@
       name: string;
       onRemove: (sequenceId: string) => void;
     };
+    /** Show each card's step count. */
+    showLength?: boolean;
     /** Imperative API for the sidebar's section jump. */
     onGridReady?: (api: SectionedGridApi) => void;
     /** Reports the section title at the top of the viewport (sidebar highlight). */
@@ -109,6 +116,7 @@
     onSelectionStart,
     onSelectionToggle,
     collectionContext,
+    showLength = false,
     onGridReady,
     onActiveSectionChange,
   }: Props = $props();
@@ -193,16 +201,60 @@
         key: string;
         sectionTitle: string;
         sequences: SequenceData[];
+        /** Each card's shape (width / height), from its length and start
+         *  placement. */
+        aspects: number[];
+        /** The one height every card in this row is drawn at. */
+        height: number;
+        /** Fills the width; false for a section's last row, which sits left
+         *  at the target height. */
+        filled: boolean;
         isLevel: boolean;
       };
 
   const stepsRedundant = $derived(engine.activeFilters.has("length"));
+
+  // Justified rows: the gap and the level indent are part of the packing
+  // maths, so the row draws them from these numbers rather than from CSS.
+  const CARD_GAP = 8;
+  const LEVEL_INDENT = 8;
+
+  let listEl = $state<HTMLDivElement | null>(null);
+  let listWidth = $state(0);
+
+  /** The width the rows are packed for. The scroller's width stands in for
+   *  the list's own only until the list has been measured. */
+  const layoutWidth = $derived(
+    listWidth > 0 ? listWidth : (scrollElement?.clientWidth ?? 0)
+  );
 
   const flat = $derived.by(() => {
     const secs = engine.sections as SequenceSection[];
     const cols = engine.columnCount;
     const isLevel =
       secs.length > 0 && secs.every((s) => typeof s.level === "number");
+
+    // The zoom step sets the target height: the height a 4-step card had at
+    // this column count, so a row of 4-step cards looks as it always did.
+    const rowWidth = Math.max(0, layoutWidth - (isLevel ? LEVEL_INDENT : 0));
+    const layoutFor = (stepCount: number) =>
+      compositionManager.getStartPlacementLayoutForStepCount(stepCount);
+    const shapeBySteps = new Map<number, number>();
+    const shapeOf = (seq: SequenceData) => {
+      const steps = galleryStepCount(seq);
+      let shape = shapeBySteps.get(steps);
+      if (shape === undefined) {
+        shape = galleryAspectForSteps(steps, layoutFor);
+        shapeBySteps.set(steps, shape);
+      }
+      return shape;
+    };
+    const targetHeight = justifiedTargetHeight(
+      rowWidth,
+      cols,
+      CARD_GAP,
+      galleryAspectForSteps(4, layoutFor)
+    );
 
     const totals = new Map<number, number>();
     if (isLevel)
@@ -240,12 +292,24 @@
         isLevel,
       });
 
-      for (let i = 0; i < display.length; i += cols) {
+      // Each section packs on its own, so its last row is the one that sits
+      // left at the target height.
+      const aspects = display.map(shapeOf);
+      const rows = packJustifiedRows(aspects, {
+        width: rowWidth,
+        gap: CARD_GAP,
+        targetHeight,
+      });
+      for (const row of rows) {
+        const end = row.start + row.count;
         items.push({
           type: "row",
-          key: `r-${s.id}-${i}`,
+          key: `r-${s.id}-${row.start}`,
           sectionTitle: s.title,
-          sequences: display.slice(i, i + cols),
+          sequences: display.slice(row.start, end),
+          aspects: aspects.slice(row.start, end),
+          height: row.height,
+          filled: row.filled,
           isLevel,
         });
       }
@@ -255,8 +319,6 @@
   });
 
   // ── Virtualizer wiring ─────────────────────────────────────────────────
-  let listEl = $state<HTMLDivElement | null>(null);
-  let listWidth = $state(0);
   let scrollMargin = $state(0);
 
   let virtualItems = $state<VirtualItem[]>([]);
@@ -271,23 +333,11 @@
     if (!it) return HEADER_H;
     if (it.type === "banner") return BANNER_H;
     if (it.type === "header") return HEADER_H;
-    // row
-    const cols = engine.columnCount;
-    // Never estimate from a made-up width: a 360px guess on a 4K container
-    // under-estimated every row ~4x, so first paint scattered rows into wrong
-    // slots (visible as a hole between rows until measurement caught up). The
-    // scroller's width is always real and available before the list's own
-    // ResizeObserver fires.
-    const width =
-      listWidth > 0 ? listWidth : (scrollElement?.clientWidth ?? 360);
-    const gap = 8;
-    const cardWidth = (width - (cols - 1) * gap) / cols;
-    const maxSteps = getSectionedGridRowMaxSteps(it.sequences);
-    const aspect = calculateGalleryAspectRatio(
-      maxSteps,
-      compositionManager.startPlacementLayout
-    );
-    return cardWidth / aspect + ROW_SPACING;
+    // A justified row's height is packed from data, so the estimate is the
+    // row itself. It was packed against the real width (the scroller's until
+    // the list is measured), never a made-up one: a 360px guess on a 4K
+    // container once scattered first-paint rows into wrong slots.
+    return it.height + ROW_SPACING;
   }
 
   type VirtualizerInstance = SvelteVirtualizer<HTMLElement, Element>;
@@ -665,36 +715,46 @@
         {:else}
           <div
             class="sequences-grid grid-view"
-            class:under-level={it.isLevel}
-            class:is-transitioning={engine.isTransitioning}
-            style:grid-template-columns="repeat({engine.columnCount}, 1fr)"
+            class:filled={it.filled}
+            style:gap="{CARD_GAP}px"
+            style:padding-left={it.isLevel ? `${LEVEL_INDENT}px` : undefined}
           >
-            {#each it.sequences as sequence (sequence.id)}
+            {#each it.sequences as sequence, i (sequence.id)}
               {@const seqVariations = getVariationsForSequence(sequence)}
-              <ChoreoCardThumbnail
-                {collectionPropType}
-                {sequence}
-                variations={seqVariations}
-                onPrimaryAction={onAction
-                  ? (seq) => handleAction("view-detail", seq, seqVariations)
-                  : undefined}
-                onHover={handleHover}
-                leftPropType={propSettings.leftPropType}
-                rightPropType={propSettings.rightPropType}
-                catDogModeEnabled={isCatDog}
-                {lightMode}
-                {eager}
-                {handPathMode}
-                {showLeftMotion}
-                {showRightMotion}
-                {addWord}
-                {addDifficultyLevel}
-                {selectedIds}
-                {selectionMode}
-                {onSelectionStart}
-                {onSelectionToggle}
-                {collectionContext}
-              />
+              <div
+                class="justified-cell"
+                style:flex={justifiedCellFlex(
+                  it.aspects[i] ?? 1,
+                  it.height,
+                  it.filled
+                )}
+              >
+                <ChoreoCardThumbnail
+                  {collectionPropType}
+                  {sequence}
+                  variations={seqVariations}
+                  onPrimaryAction={onAction
+                    ? (seq) => handleAction("view-detail", seq, seqVariations)
+                    : undefined}
+                  onHover={handleHover}
+                  leftPropType={propSettings.leftPropType}
+                  rightPropType={propSettings.rightPropType}
+                  catDogModeEnabled={isCatDog}
+                  {lightMode}
+                  {eager}
+                  {handPathMode}
+                  {showLeftMotion}
+                  {showRightMotion}
+                  {addWord}
+                  {addDifficultyLevel}
+                  {selectedIds}
+                  {selectionMode}
+                  {onSelectionStart}
+                  {onSelectionToggle}
+                  {collectionContext}
+                  {showLength}
+                />
+              </div>
             {/each}
           </div>
         {/if}
@@ -714,9 +774,9 @@
     box-sizing: border-box;
   }
 
-  /* Letter subsections sit slightly indented beneath their level banner. */
-  .header-wrap.under-level,
-  .sequences-grid.under-level {
+  /* Letter subsections sit slightly indented beneath their level banner (the
+     rows take the same indent inline, from the packing maths). */
+  .header-wrap.under-level {
     padding-left: var(--spacing-sm, 8px);
   }
 
@@ -759,19 +819,18 @@
     padding-bottom: 2px;
   }
 
+  /* A justified row: every card one height, each keeping its own shape. A
+     filled row spans the width exactly; a section's last row sits left. The
+     gap and each card's width come inline from the packing. */
   .sequences-grid.grid-view {
-    display: grid;
-    gap: var(--spacing-sm, 8px);
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     align-items: var(--browse-row-align, start);
-    padding-bottom: var(--spacing-sm, 8px);
+    padding-bottom: 8px;
   }
-  .sequences-grid.grid-view.is-transitioning {
-    transition: gap var(--duration-normal) var(--ease-standard-out);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .sequences-grid.grid-view.is-transitioning {
-      transition: none !important;
-    }
+  .justified-cell {
+    min-width: 0;
   }
 </style>

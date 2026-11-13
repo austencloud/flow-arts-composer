@@ -7,6 +7,9 @@ import {
   type AvatarDefinition,
   type AvatarId,
 } from "@austencloud/scene-3d";
+// Adds the default cast's not-yet-uploaded bodies to the catalog in dev, so
+// anything that reads characters through this boundary sees them.
+import "./default-cast-characters";
 
 /**
  * The scene package still publishes its historical avatar vocabulary. Keep

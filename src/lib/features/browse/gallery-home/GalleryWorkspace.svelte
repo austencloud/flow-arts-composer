@@ -33,6 +33,8 @@
     persistentDesktopCatalog,
     chooserTitle,
     chooserHint,
+    chooserCategories = "all",
+    showEditorBack = true,
     stackHint,
     isValueApplied,
     activeLoopValues,
@@ -59,7 +61,8 @@
        ~44px on the chooser where Back doesn't exist. A screen's own control
        (Match any / Match all) rides the same row rather than floating centred
        below it, so the header reads as one band. -->
-  <header class="drill-head with-back">
+  <header class="drill-head" class:with-back={showEditorBack}>
+    {#if showEditorBack}
     <button
       class="head-back"
       type="button"
@@ -73,6 +76,7 @@
            it far from the title — the label makes it unmistakably a button. -->
       <span class="head-back-label">{t("learn_back")}</span>
     </button>
+    {/if}
     <h2 tabindex="-1">{title}</h2>
     {#if hint}<p>{hint}</p>{/if}
     {#if trailing}
@@ -96,6 +100,7 @@
       {sheet}
       {chooserTitle}
       {chooserHint}
+      {chooserCategories}
       {onSelectCategory}
     />
   {:else if section === "level"}

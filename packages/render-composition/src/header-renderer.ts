@@ -81,7 +81,8 @@ export interface HeaderOptions {
 }
 
 const LETTER_GAP_RATIO = 0.04; // gap between letters as fraction of headerHeight
-const GLYPH_HEIGHT_RATIO = 0.65; // glyph height as fraction of headerHeight
+// Glyph height as a fraction of headerHeight. A slow card's drawn word uses it too.
+export const HEADER_GLYPH_HEIGHT_RATIO = 0.65;
 // Dash overlay constants in SVG coordinate units (from Dash.svelte)
 const DASH_W_SVG = 70;
 const DASH_H_SVG = 20;
@@ -163,7 +164,7 @@ function measureGlyphWordWidth(
   glyphImages: Map<string, GlyphImageData>,
   headerHeight: number
 ): number {
-  const availableH = headerHeight * GLYPH_HEIGHT_RATIO;
+  const availableH = headerHeight * HEADER_GLYPH_HEIGHT_RATIO;
   const letterGap = headerHeight * LETTER_GAP_RATIO;
   let width = 0;
   for (const token of tokenizeGlyphWord(word)) {
@@ -182,7 +183,7 @@ function measureCompressedGlyphWordWidth(
   glyphImages: Map<string, GlyphImageData>,
   headerHeight: number
 ): number {
-  const availableH = headerHeight * GLYPH_HEIGHT_RATIO;
+  const availableH = headerHeight * HEADER_GLYPH_HEIGHT_RATIO;
   const letterGap = headerHeight * LETTER_GAP_RATIO;
   let width = 0;
   for (let si = 0; si < segments.length; si++) {
@@ -213,7 +214,7 @@ function renderGlyphWord(
 ): void {
   if (!word?.trim()) return;
 
-  const availableH = headerHeight * GLYPH_HEIGHT_RATIO;
+  const availableH = headerHeight * HEADER_GLYPH_HEIGHT_RATIO;
   const letterGap = headerHeight * LETTER_GAP_RATIO;
   const verticalCenter = headerHeight / 2;
 
@@ -280,7 +281,7 @@ function renderCompressedGlyphWord(
   darkMode: boolean,
   glyphImagesAreThemeColored: boolean
 ): void {
-  const availableH = headerHeight * GLYPH_HEIGHT_RATIO;
+  const availableH = headerHeight * HEADER_GLYPH_HEIGHT_RATIO;
   const letterGap = headerHeight * LETTER_GAP_RATIO;
   const verticalCenter = headerHeight / 2;
   const dashColor = darkMode ? "#ffffff" : "#231f20";

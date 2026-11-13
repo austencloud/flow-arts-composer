@@ -65,12 +65,12 @@ export function tkaRow(
   core: readonly string[],
   facts: TkaRowFacts
 ): readonly string[] {
-  if (item === null) return core[0] === "videos" ? [...core, "look"] : core;
+  if (item === null) return core[0] === "videos" ? [...core, "look", "reel"] : core;
   switch (item.kind) {
     case "video":
       return insertAfter(
         insertAfter(
-          core.includes("crop") ? insertAfter(core, "crop", ["autoframe"]) : core,
+          core.includes("crop") ? insertAfter(core, "crop", ["autoframe", "reel"]) : core,
           "volume",
           facts.hasLayout ? ["layout"] : []
         ),

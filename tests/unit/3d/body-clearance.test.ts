@@ -561,7 +561,7 @@ describe("body clearance over the isolation corpus", () => {
     let totalSamples = 0;
     for (const entry of propContinuityCorpus()) {
       const source = createCharacterInstanceState(
-        { id: `clearance-${entry.id}`, positionX: 0, persistent: false },
+        { id: `clearance-${entry.id}`, positionX: 0, persistent: false, allowImpossibleWall: true },
         makeStandaloneDeps()
       );
       source.setPlaneMode(PlaneMode.WALL);

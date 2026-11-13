@@ -265,7 +265,9 @@ describe("ViewerOverflowMenu display rows", () => {
 
     await page.getByRole("button", { name: /^Props/ }).click();
     await page.getByRole("button", { name: "Change my props" }).click();
-    await page.getByRole("button", { name: "Select Buugeng prop type" }).click();
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
 
     expect(mocks.updateSettings).toHaveBeenCalledWith(
       expect.objectContaining({ leftPropType: "buugeng" })
@@ -277,7 +279,9 @@ describe("ViewerOverflowMenu display rows", () => {
 
     await page.getByRole("button", { name: "Back to all props" }).click();
     await page.getByRole("button", { name: "Choose Club style" }).click();
-    await page.getByRole("button", { name: "Select Classic Club prop type" }).click();
+    await page
+      .getByRole("button", { name: "Select Classic Club prop type" })
+      .click();
 
     expect(mocks.updateSettings).toHaveBeenLastCalledWith(
       expect.objectContaining({ leftPropType: "classic_club" })
@@ -285,5 +289,78 @@ describe("ViewerOverflowMenu display rows", () => {
     await expect
       .element(page.getByRole("radio", { name: /^My props/ }))
       .toHaveFocus();
+  });
+});
+
+describe("ViewerOverflowMenu rows while open", () => {
+  function rowLabels(panel: HTMLElement): string[] {
+    return [
+      ...panel.querySelectorAll<HTMLElement>(
+        ".layer:not([inert]) .menu-screen > button"
+      ),
+    ].map((row) => row.textContent?.trim() ?? "");
+  }
+
+  // Austen's Fold, 11-12: the saved check answered while the menu was up,
+  // Save left, Remix slid up a row and his tap on it opened Upload Video.
+  it("holds every row in its slot until the menu closes", async () => {
+    const props = {
+      dropDown: true,
+      onFavoriteToggle: vi.fn(),
+      isSaved: false,
+      onSave: vi.fn(),
+      onAddToCollection: vi.fn(),
+      onRemix: vi.fn(),
+      onVideoUpload: vi.fn(),
+    };
+    const screen = render(ViewerOverflowMenu, props);
+    const trigger = page.getByRole("button", { name: "More actions" });
+    await trigger.click();
+    const panel = await openMenuPanel();
+    const opened = [
+      "Favorite",
+      "Save",
+      "Add to collection…",
+      "Remix",
+      "Upload Video",
+    ];
+    expect(rowLabels(panel)).toEqual(opened);
+    const remix = page.getByRole("button", { name: "Remix" });
+    const remixTop = remix.element().getBoundingClientRect().top;
+
+    await screen.rerender({
+      ...props,
+      isSaved: true,
+      isFavorite: true,
+      onDeleteRequest: vi.fn(),
+    });
+
+    await vi.waitFor(() =>
+      expect(rowLabels(panel)).toEqual([
+        "Unfavorite",
+        "Save",
+        "Add to collection…",
+        "Remix",
+        "Upload Video",
+      ])
+    );
+    expect(remix.element().getBoundingClientRect().top).toBe(remixTop);
+    expect(
+      page
+        .getByRole("button", { name: "Save" })
+        .element()
+        .hasAttribute("disabled")
+    ).toBe(true);
+
+    await trigger.click();
+    await trigger.click();
+    const reopened = await openMenuPanel();
+    expect(rowLabels(reopened)).toEqual([
+      "Unfavorite",
+      "Add to collection…",
+      "Remix",
+      "Upload Video",
+      "Delete",
+    ]);
   });
 });

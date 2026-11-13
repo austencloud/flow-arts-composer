@@ -2,6 +2,7 @@ import type { OrchestratorContext } from "../domain/viewer-orchestrator-context"
 import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
 import { openCollectionPicker } from "#lib/features/library/state/collection-picker-state.svelte.js";
 import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
+import { learnWhoIsSignedIn } from "#lib/shared/auth/state/auth-state.svelte.js";
 
 // Every viewer destination adopted SequenceViewerShell (the same chrome
 // verbatim), so the profile follows the subject, not the host. `full` acts on
@@ -83,12 +84,16 @@ export function buildHeaderActions(
     a.onAddToCollection = () => {
       const sequence = ctx.sequence;
       if (!sequence) return;
-      void ensureGuestIdentity().then(() =>
-        openCollectionPicker({
-          sequenceId: sequence.id,
-          sequenceLabel: sequence.name || sequence.word || undefined,
-        })
-      );
+      // The picker reads collections through authState, which a signed-out
+      // visit to /sequence/[id] has not started yet.
+      void ensureGuestIdentity()
+        .then(learnWhoIsSignedIn)
+        .then(() =>
+          openCollectionPicker({
+            sequenceId: sequence.id,
+            sequenceLabel: sequence.name || sequence.word || undefined,
+          })
+        );
     };
   }
   if (ownerCanManage) {

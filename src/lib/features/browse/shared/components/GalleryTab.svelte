@@ -35,6 +35,9 @@
     onOpenWorkspace?: () => void;
     /** Opens the By mandala wall from the Filters sheet. */
     onOpenMandala?: () => void;
+    /** Desktop: the row of filter menus that replaces the toolbar, the
+     * Filters pill and its sheet. Phones and tablets ignore it. */
+    menuRow?: import("svelte").Snippet;
   }
 
   let {
@@ -48,7 +51,9 @@
     onSaveSmart,
     onOpenWorkspace,
     onOpenMandala,
+    menuRow,
   }: Props = $props();
+  const desktopRow = $derived(!isMobile ? menuRow : undefined);
 
   // State for sub-sheets
   let isFilterSheetOpen = $state(false);
@@ -84,6 +89,7 @@
     backLabel={t("site_start_here")}
     hideToolbarSearch
     headerChrome
+    hostToolbar={desktopRow}
     onOpenFilters={() => {
       if (!isMobile && onOpenWorkspace) onOpenWorkspace();
       else isFilterSheetOpen = true;
@@ -97,7 +103,7 @@
      desktop's Filters pill routes to the in-page workspace instead.
      TODO(phone-sheet-feel): the phone sheet's fate is settled by feel on a
      real phone during unified-workspace verification (spec decision 3). -->
-{#if isMobile || !onOpenWorkspace}
+{#if !desktopRow && (isMobile || !onOpenWorkspace)}
   <!-- Search lives in the Browse scope bar, always on screen. -->
   <GalleryFilterSheet
     {engine}

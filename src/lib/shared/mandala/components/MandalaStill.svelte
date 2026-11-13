@@ -3,9 +3,10 @@
 
   Browse's mandala screen shows hundreds of distinct mandalas in small boxes
   and the front door fans three of them. Each is `renderMandalaSVG` of the
-  mandala's geometry at the standard reach, both hands, blue and red strokes,
-  on the theme's dark or light look. The SVG string is kept per key, size and
-  look, so a grid of hundreds renders strings, not geometry, and a box that
+  mandala's geometry at the standard reach, both hands, in the person's own
+  hand colours (Settings), or the theme's blue and red when they chose none,
+  the same as the sequence card's mandala. The SVG string is kept per key,
+  size and colours, so a grid of hundreds renders strings, not geometry, and a box that
   reappears pays nothing. Lines are raised for small boxes so they read at the
   card's weight, not thinner (the strip's rule in mandala-shift-render).
   `tone="ink"` draws every stroke in the surrounding text colour instead.
@@ -16,6 +17,7 @@
     renderMandalaSVG,
   } from "../services/mandala-renderer";
   import type { MandalaPalette, MandalaPaths } from "../domain/mandala-types";
+  import { applyMandalaHandColors } from "../domain/mandala-palette";
   import {
     DARK_MOTION_BLUE_FILL,
     DARK_MOTION_BLUE_STROKE,
@@ -67,26 +69,46 @@
 
   /** The stroke, in mandala units, for a box `size` pixels wide. */
   export function stillStrokeWidth(size: number): number {
-    return MANDALA_SVG_STROKE_WIDTH * Math.max(1, CARD_PX / Math.max(1, size) / 2);
+    return (
+      MANDALA_SVG_STROKE_WIDTH * Math.max(1, CARD_PX / Math.max(1, size) / 2)
+    );
   }
+
+  /** The person's hand colours; null keeps the theme's blue and red. */
+  export type MandalaStillColors = { left: string; right: string } | null;
 
   export function mandalaStillSVG(
     key: string,
     paths: MandalaPaths,
     size: number,
     darkMode: boolean,
-    tone: MandalaStillTone = "hands"
+    tone: MandalaStillTone = "hands",
+    colors: MandalaStillColors = null
   ): string {
-    const look = tone === "ink" ? "ink" : darkMode ? "dark" : "light";
+    const look =
+      tone === "ink"
+        ? "ink"
+        : colors
+          ? `${colors.left}/${colors.right}`
+          : darkMode
+            ? "dark"
+            : "light";
     const cacheKey = `${key}|${size}|${look}`;
     const cached = svgCache.get(cacheKey);
     if (cached) return cached;
+    const palette =
+      tone === "ink"
+        ? INK_PALETTE
+        : applyMandalaHandColors(
+            darkMode ? DARK_PALETTE : LIGHT_PALETTE,
+            colors
+          );
     const svg = renderMandalaSVG(paths, {
       size,
       style: "stroke",
       show: "both",
       strokeWidth: stillStrokeWidth(size),
-      palette: tone === "ink" ? INK_PALETTE : darkMode ? DARK_PALETTE : LIGHT_PALETTE,
+      palette,
     });
     if (svgCache.size >= MAX_CACHED) {
       const oldest = svgCache.keys().next().value;
@@ -114,7 +136,8 @@
   let { key, paths, size, darkMode, tone = "hands" }: Props = $props();
 
   const dark = $derived(darkMode ?? settingsService.settings.darkMode ?? true);
-  const svg = $derived(mandalaStillSVG(key, paths, size, dark, tone));
+  const colors = $derived(settingsService.settings.primaryPropColors ?? null);
+  const svg = $derived(mandalaStillSVG(key, paths, size, dark, tone, colors));
 </script>
 
 <span class="mandala-still" aria-hidden="true">{@html svg}</span>

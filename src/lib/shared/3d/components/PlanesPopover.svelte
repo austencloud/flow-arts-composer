@@ -10,6 +10,10 @@
   import PlanesDiagram from "./PlanesDiagram.svelte";
   import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
   import {
+    noticeWallRefused,
+    wallPlaneBlockedHint,
+  } from "../state/wall-plane-notice";
+  import {
     reportViewerControlChange,
     type ViewerControlSink,
   } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
@@ -84,6 +88,23 @@
     scopedPerformers.filter((performer) => performer.hasOverride.planes).length
   );
 
+  // Performers whose sequence rules out wall on both hands (AAAA and kin).
+  const wallBlocked = $derived(
+    scopedPerformers.filter((performer) => performer.wallPlaneArmCross)
+  );
+  const wallBlockedWord = $derived(wallBlocked[0]?.loadedSequence?.word);
+
+  /** True when this tap would put a ruled-out performer on wall with both hands. */
+  function refusesWall(hand: "left" | "right", plane: Plane): boolean {
+    if (plane !== Plane.WALL) return false;
+    return wallBlocked.some(
+      (performer) =>
+        (hand === "left"
+          ? performer.effectiveRightPlane
+          : performer.effectiveLeftPlane) === Plane.WALL
+    );
+  }
+
   function hasHandOnPlane(plane: Plane): boolean {
     return leftPlane === plane || rightPlane === plane;
   }
@@ -131,6 +152,10 @@
     e.stopPropagation();
     const currentPlane = hand === "left" ? leftPlane : rightPlane;
     if (currentPlane === plane) return;
+    if (refusesWall(hand, plane)) {
+      noticeWallRefused(wallBlockedWord);
+      return;
+    }
 
     viewer.setHandPlaneScoped(hand, plane);
     reportViewerControlChange(
@@ -245,6 +270,10 @@
     </button>
   </div>
 
+  {#if wallBlocked.length > 0}
+    <p class="planes-blocked">{wallPlaneBlockedHint(wallBlockedWord)}</p>
+  {/if}
+
   <div class="planes-body">
     <PlanesDiagram
       {leftPlane}
@@ -304,8 +333,10 @@
           <button
             class="hand-chip blue"
             class:filled={leftPlane === plane}
+            class:refused={refusesWall("left", plane)}
             onclick={(e) => handleHandSlotClick(e, "left", plane)}
             disabled={noScope}
+            aria-disabled={refusesWall("left", plane) || undefined}
             aria-pressed={leftPlane === plane}
             aria-label={`Left hand on ${label}`}
           >
@@ -314,8 +345,10 @@
           <button
             class="hand-chip red"
             class:filled={rightPlane === plane}
+            class:refused={refusesWall("right", plane)}
             onclick={(e) => handleHandSlotClick(e, "right", plane)}
             disabled={noScope}
+            aria-disabled={refusesWall("right", plane) || undefined}
             aria-pressed={rightPlane === plane}
             aria-label={`Right hand on ${label}`}
           >
@@ -601,11 +634,11 @@
     );
     color: color-mix(in srgb, var(--prop-red) 55%, var(--theme-text));
   }
-  .hand-chip:hover:not(.filled):not(:disabled).blue {
+  .hand-chip:hover:not(.filled):not(:disabled):not(.refused).blue {
     border-color: color-mix(in srgb, var(--prop-blue) 75%, transparent);
     box-shadow: 0 0 10px color-mix(in srgb, var(--prop-blue) 20%, transparent);
   }
-  .hand-chip:hover:not(.filled):not(:disabled).red {
+  .hand-chip:hover:not(.filled):not(:disabled):not(.refused).red {
     border-color: color-mix(in srgb, var(--prop-red) 75%, transparent);
     box-shadow: 0 0 10px color-mix(in srgb, var(--prop-red) 20%, transparent);
   }
@@ -620,6 +653,19 @@
     border-color: color-mix(in srgb, var(--prop-red) 85%, black);
     color: white;
     box-shadow: 0 0 12px color-mix(in srgb, var(--prop-red) 50%, transparent);
+  }
+  .planes-blocked {
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+    max-width: 34rem;
+  }
+  /* Tappable so the tap can say why, but reads as off. */
+  .hand-chip.refused {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
   }
   .hand-chip:disabled {
     opacity: 0.35;

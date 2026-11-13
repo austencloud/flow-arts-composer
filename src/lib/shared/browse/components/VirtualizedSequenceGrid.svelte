@@ -18,16 +18,23 @@
     buildVariationMap,
     variationGroupKey,
   } from "#lib/shared/browse/services/variation-grouper.js";
-  import { calculateGalleryAspectRatio } from "#lib/shared/render/services/layout-calculator.js";
   import { cellPreWarmer } from "#lib/shared/sequence-viewer/services/cell-pre-warmer.js";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { galleryStepCount } from "#lib/shared/browse/services/gallery-render-input.js";
+  import {
+    galleryAspectForSteps,
+    justifiedCellFlex,
+    justifiedTargetHeight,
+    packJustifiedRows,
+    type JustifiedRow,
+  } from "./justified-rows";
 
   /**
-   * The virtualizer needs to know each row's height before it renders.
-   * The old code sampled ONE sequence and assumed all rows were the same height.
-   * Cards with different beat counts have different aspect ratios, so that
-   * caused overlap. Now we estimate per-row using the tallest card in the row,
-   * then correct with measured DOM rows after they render.
+   * Cards with different lengths have different shapes, so rows are justified
+   * (justified-rows.ts): every card in a row is drawn at one height and the
+   * row fills the width. The rows are packed from data, so the virtualizer
+   * knows each row's height before it renders; measured DOM rows still
+   * correct it after render.
    */
 
   export interface VirtualGridApi {
@@ -50,6 +57,7 @@
     addDifficultyLevel,
     allowQR = true,
     collectionContext,
+    showLength = false,
     selectedIds,
     selectionMode = false,
     onSelectionStart,
@@ -84,6 +92,8 @@
       name: string;
       onRemove: (sequenceId: string) => void;
     };
+    /** Show each card's step count. */
+    showLength?: boolean;
     /** Picker hosts: ids to render with the selected outline. */
     selectedIds?: ReadonlySet<string>;
     selectionMode?: boolean;
@@ -165,39 +175,84 @@
     return 2;
   });
 
-  const rowCount = $derived(Math.ceil(sequences.length / columnCount));
+  // Each row's side padding and the space between cards are part of the
+  // packing maths, so the row draws them from these numbers. The gap keeps
+  // the sizes the old container queries gave it.
+  const ROW_PADDING_X = 8;
+  const cardGap = $derived(
+    containerWidth <= 480 ? 8 : containerWidth < 1200 ? 12 : 16
+  );
 
-  // Per-row height estimation: use the tallest card in each row.
-  // This is the key fix for the overlap bug - the old code used a single
-  // sample which broke when rows had mixed beat counts.
-  // Row height = tallest card in the row. The virtualizer's `gap: 16` option
-  // adds spacing between rows separately, so we don't add it here.
-  function estimateRowHeight(rowIndex: number): number {
-    if (containerWidth === 0) return 200;
-    const colGap = 16;
-    const cardWidth =
-      (containerWidth - (columnCount - 1) * colGap) / columnCount;
+  const layoutFor = (stepCount: number) =>
+    compositionManager.getStartPlacementLayoutForStepCount(stepCount);
 
-    const startIdx = rowIndex * columnCount;
-    const endIdx = Math.min(startIdx + columnCount, sequences.length);
-    let maxSteps = 4;
-    for (let i = startIdx; i < endIdx; i++) {
-      const seq = sequences[i];
-      const steps = seq?.steps?.length || seq?.sequenceLength || 4;
-      if (steps > maxSteps) maxSteps = steps;
+  /** Each card's shape (width / height), from its length and start placement. */
+  const aspects = $derived.by(() => {
+    const bySteps = new Map<number, number>();
+    return sequences.map((seq: SequenceData) => {
+      const steps = galleryStepCount(seq);
+      let shape = bySteps.get(steps);
+      if (shape === undefined) {
+        shape = galleryAspectForSteps(steps, layoutFor);
+        bySteps.set(steps, shape);
+      }
+      return shape;
+    });
+  });
+
+  // The column count sets the target height: the height a 4-step card had at
+  // that count, so a row of 4-step cards looks as it always did.
+  const rows = $derived.by((): JustifiedRow[] => {
+    const width = Math.max(0, containerWidth - 2 * ROW_PADDING_X);
+    if (width === 0) {
+      // Not measured yet: plain chunks hold the space for one frame.
+      const out: JustifiedRow[] = [];
+      for (let i = 0; i < sequences.length; i += columnCount) {
+        out.push({
+          start: i,
+          count: Math.min(columnCount, sequences.length - i),
+          height: 200,
+          filled: false,
+        });
+      }
+      return out;
     }
+    return packJustifiedRows(aspects, {
+      width,
+      gap: cardGap,
+      targetHeight: justifiedTargetHeight(
+        width,
+        columnCount,
+        cardGap,
+        galleryAspectForSteps(4, layoutFor)
+      ),
+    });
+  });
 
-    const aspectRatio = calculateGalleryAspectRatio(
-      maxSteps,
-      compositionManager.startPlacementLayout
-    );
-    return cardWidth / aspectRatio;
+  const rowCount = $derived(rows.length);
+
+  // The virtualizer's `gap: 16` option adds spacing between rows separately,
+  // so a row's estimate is its packed card height alone.
+  function estimateRowHeight(rowIndex: number): number {
+    return rows[rowIndex]?.height ?? 200;
   }
 
   function getRowSequences(rowIndex: number): SequenceData[] {
-    const startIndex = rowIndex * columnCount;
-    const endIndex = Math.min(startIndex + columnCount, sequences.length);
-    return sequences.slice(startIndex, endIndex);
+    const row = rows[rowIndex];
+    if (!row) return [];
+    return sequences.slice(row.start, row.start + row.count);
+  }
+
+  /** The row that holds the card at `index`. */
+  function rowIndexForSequence(index: number): number {
+    let lo = 0;
+    let hi = rows.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if ((rows[mid]?.start ?? 0) <= index) lo = mid;
+      else hi = mid - 1;
+    }
+    return Math.max(0, lo);
   }
 
   function handleSequenceAction(
@@ -365,7 +420,7 @@
     if (onGridReady) {
       onGridReady({
         scrollToSequenceIndex: (index: number) => {
-          const rowIndex = Math.floor(index / columnCount);
+          const rowIndex = rowIndexForSequence(index);
           if (currentVirtualizer) {
             currentVirtualizer.scrollToIndex(rowIndex, {
               align: "start",
@@ -380,7 +435,7 @@
         getFirstVisibleSequenceIndex: () => {
           const first = virtualRows[0];
           if (!first) return 0;
-          return first.index * columnCount;
+          return rows[first.index]?.start ?? 0;
         },
       });
     }
@@ -406,6 +461,22 @@
       if (scrollElement) {
         createAndSubscribe(count);
       }
+    });
+  });
+
+  // Same row count, different packing (new results, a resize that keeps the
+  // count): the cached heights are stale, so estimate again from the rows.
+  let packedSignature = "";
+  $effect(() => {
+    const signature = rows
+      .map((r) => `${r.start}:${r.count}:${r.height.toFixed(1)}`)
+      .join("|");
+    untrack(() => {
+      if (signature === packedSignature) return;
+      packedSignature = signature;
+      if (!currentVirtualizer) return;
+      currentVirtualizer.measure();
+      queueMountedRowMeasures();
     });
   });
 
@@ -448,16 +519,23 @@
         style:position="absolute"
         style:top="{virtualRow.start}px"
         style:width="100%"
-        style:display="grid"
-        style:grid-template-columns="repeat({columnCount}, 1fr)"
-        style:align-items="var(--browse-row-align, start)"
-        style:gap="var(--spacing-lg, 16px)"
+        style:padding-inline="{ROW_PADDING_X}px"
+        style:gap="{cardGap}px"
         role="row"
         aria-rowindex={virtualRow.index + 1}
       >
         {#each getRowSequences(virtualRow.index) as sequence, colIndex (sequence.id)}
           {@const seqVariations = getVariationsForSequence(sequence)}
-          <div role="gridcell" aria-colindex={colIndex + 1}>
+          {@const row = rows[virtualRow.index]}
+          <div
+            role="gridcell"
+            aria-colindex={colIndex + 1}
+            style:flex={justifiedCellFlex(
+              aspects[(row?.start ?? 0) + colIndex] ?? 1,
+              row?.height ?? 0,
+              row?.filled ?? false
+            )}
+          >
             <ChoreoCardThumbnail
               {collectionPropType}
               {sequence}
@@ -478,6 +556,7 @@
               {addDifficultyLevel}
               {allowQR}
               {collectionContext}
+              {showLength}
               {selectedIds}
               {selectionMode}
               {onSelectionStart}
@@ -523,20 +602,17 @@
     border-radius: 8px;
   }
 
+  /* A justified row: every card one height, each keeping its own shape. The
+     padding, the gap and each card's width come inline from the packing. */
   .virtual-row {
-    padding: 0 var(--spacing-sm, 4px);
     box-sizing: border-box;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: var(--browse-row-align, start);
   }
 
-  @container (max-width: 480px) {
-    .virtual-row {
-      gap: 8px !important;
-    }
-  }
-
-  @container (min-width: 481px) and (max-width: 1199px) {
-    .virtual-row {
-      gap: var(--spacing-md, 12px) !important;
-    }
+  .virtual-row [role="gridcell"] {
+    min-width: 0;
   }
 </style>

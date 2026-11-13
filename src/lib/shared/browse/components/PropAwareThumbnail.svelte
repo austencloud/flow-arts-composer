@@ -54,6 +54,19 @@
   import { loadedAuthState } from "#lib/shared/auth/state/loaded-auth-state.svelte.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
+  import {
+    computeSheetMandalaPlan,
+    sheetMandalaSettings,
+  } from "#lib/shared/browse/services/sheet-region-map.js";
+  import { cardMandalaPaths } from "#lib/shared/browse/services/card-mandala-paths.js";
+  import { cardMandalaPalette } from "#lib/shared/mandala/domain/mandala-palette.js";
+  import { queueArrivalStart } from "#lib/shared/browse/services/card-arrival-queue.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import {
+    EASE_STANDARD,
+    motionDuration,
+  } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     sequence: SequenceData;
@@ -294,6 +307,7 @@
 
   onDestroy(() => {
     observer?.disconnect();
+    leaveArrivalQueue?.();
 
     // Clear any pending error debounce
     if (errorDebounceTimer) {
@@ -318,7 +332,7 @@
   }
 
   function handleImageLoad() {
-    // Image loaded successfully
+    loadedUrl = thumbnailUrl;
   }
 
   /**
@@ -501,6 +515,131 @@
   );
   const hasError = $derived(status.state === "error");
 
+  // A slow card's own mandala (Austen, 2026-11-12: "Own mandala, slow
+  // cards"). A gallery card still empty after ARRIVAL_DELAY draws the mandala
+  // its picture paints; when the picture is ready the drawing flies into the
+  // picture's mandala squares as it fades in (CardMandalaArrival). A card
+  // that loads sooner shows as before. The overlay's code loads with the
+  // first slow card.
+  type ArrivalComponent =
+    typeof import("./CardMandalaArrival.svelte").default;
+  const ARRIVAL_DELAY = DURATION.emphasis;
+  let arrival = $state<"off" | "waiting" | "drawing" | "skipped">("off");
+  let arrivalPaths = $state.raw<MandalaPaths | null>(null);
+  let Arrival = $state.raw<ArrivalComponent | null>(null);
+  let imageHeld = $state(false);
+  /** Where the waiting word sat, so the drawing's word can glide up from it. */
+  let arrivalWordFrom = $state.raw<DOMRect | null>(null);
+  let placeholderGlyphEl = $state<HTMLDivElement | null>(null);
+  let leaveArrivalQueue: (() => void) | null = null;
+  let imageEl = $state<HTMLImageElement | null>(null);
+  let loadedUrl = $state<string | null>(null);
+
+  const arrivalAllowed = $derived(
+    variant === "gallery" &&
+      !cardMode &&
+      !handPathMode &&
+      (sequence.steps?.length ?? 0) > 0
+  );
+  const wantsArrival = $derived(
+    arrivalAllowed && isVisible && !thumbnailUrl && !hasError
+  );
+  const imageReady = $derived(!!thumbnailUrl && loadedUrl === thumbnailUrl);
+
+  // The settings the picture is painted with: the shown picture's own once
+  // it is here (a signed-in reader's QR can move the right-hand mandala).
+  const arrivalSettings = $derived(
+    sheetMandalaSettings(displayedKey?.inputs ?? renderInput)
+  );
+  const arrivalPalette = $derived(
+    cardMandalaPalette(!lightMode, renderInput.primaryPropColors)
+  );
+
+  $effect(() => {
+    if (!wantsArrival || arrival !== "off") return;
+    const timer = setTimeout(startArrival, ARRIVAL_DELAY);
+    return () => clearTimeout(timer);
+  });
+
+  // An error takes the card off the drawing; it must never leave a picture
+  // held hidden.
+  $effect(() => {
+    if (hasError && arrival === "drawing") endArrival();
+  });
+
+  // A picture already decoded when it arrives never fires load again.
+  $effect(() => {
+    if (thumbnailUrl && imageEl?.complete && imageEl.naturalWidth > 0) {
+      loadedUrl = thumbnailUrl;
+    }
+  });
+
+  function startArrival(): void {
+    arrival = "waiting";
+    // Worked out here, while the card waits, and kept: the plan's word room
+    // is too heavy for the frame that mounts the drawing.
+    computeSheetMandalaPlan(sequence, arrivalSettings);
+    const component: Promise<ArrivalComponent> = Arrival
+      ? Promise.resolve(Arrival)
+      : import("./CardMandalaArrival.svelte").then((m) => m.default);
+    Promise.all([
+      cardMandalaPaths(sequence, leftPropType, rightPropType),
+      component,
+    ]).then(
+      ([paths, loaded]) => {
+        if (arrival !== "waiting") return;
+        Arrival = loaded;
+        if (!paths) {
+          arrival = "skipped";
+          return;
+        }
+        if (thumbnailUrl) {
+          arrival = "off";
+          return;
+        }
+        // Slow cards take turns starting (card-arrival-queue), so a screen
+        // of them ripples in instead of stalling the page in one frame.
+        const box = containerRef?.getBoundingClientRect();
+        leaveArrivalQueue = queueArrivalStart({
+          top: box?.top ?? 0,
+          left: box?.left ?? 0,
+          start: () => {
+            leaveArrivalQueue = null;
+            if (arrival !== "waiting" || thumbnailUrl || hasError) {
+              if (arrival === "waiting") arrival = "off";
+              return false;
+            }
+            arrivalWordFrom =
+              placeholderGlyphEl
+                ?.querySelector(".glyph-row")
+                ?.getBoundingClientRect() ?? null;
+            arrivalPaths = paths;
+            imageHeld = true;
+            arrival = "drawing";
+            return true;
+          },
+        });
+      },
+      () => {
+        if (arrival === "waiting") arrival = "skipped";
+      }
+    );
+  }
+
+  function revealImage(): void {
+    imageHeld = false;
+    imageEl?.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: motionDuration(DURATION.emphasis),
+      easing: EASE_STANDARD,
+    });
+  }
+
+  function endArrival(): void {
+    arrival = "off";
+    arrivalPaths = null;
+    imageHeld = false;
+  }
+
   // Derive progress percentage from status state
   // Maps to where time is ACTUALLY spent:
   // - Waiting (cache/queue): 0% - no work started yet
@@ -604,9 +743,12 @@
   data-variant={variant}
   bind:this={containerRef}
   style:aspect-ratio={aspectRatio}
+  data-arriving={arrival === "drawing" ? "" : undefined}
 >
   {#if thumbnailUrl && !hasError}
     <img
+      bind:this={imageEl}
+      class:held={imageHeld && arrival === "drawing"}
       src={thumbnailUrl}
       use:replayableImage={thumbnailUrl}
       alt={t("browse_audit_preview_of_sequence", { name: sequenceName })}
@@ -638,12 +780,15 @@
     <!-- Unified placeholder: always shows word, conditionally shows loading indicators -->
     <div
       class="loading-placeholder"
+      data-mode={arrival === "drawing" ? "mandala" : undefined}
       aria-label={isLoading ? statusLabel : t("browse_audit_waiting_to_load")}
     >
-      <div class="placeholder-glyph">
-        <TKAWordGlyph word={displayName} height={24} darkMode={!lightMode} />
-      </div>
-      {#if isLoading}
+      {#if arrival !== "drawing"}
+        <div class="placeholder-glyph" bind:this={placeholderGlyphEl}>
+          <TKAWordGlyph word={displayName} height={24} darkMode={!lightMode} />
+        </div>
+      {/if}
+      {#if isLoading && arrival !== "drawing"}
         <div class="loading-indicator">
           <ProgressRing percent={-1} size={24} strokeWidth={2} />
           <span class="loading-status">{statusLabel}</span>
@@ -660,6 +805,20 @@
         </div>
       {/if}
     </div>
+  {/if}
+  {#if Arrival && arrival === "drawing" && arrivalPaths && !hasError}
+    <Arrival
+      {sequence}
+      paths={arrivalPaths}
+      settings={arrivalSettings}
+      palette={arrivalPalette}
+      word={displayName}
+      wordFrom={arrivalWordFrom}
+      {lightMode}
+      ready={imageReady}
+      onReveal={revealImage}
+      onDone={endArrival}
+    />
   {/if}
 </div>
 
@@ -682,8 +841,14 @@
 
   /* Art still on its way. The card background is black on a dark scene, which
      read as a thumbnail that had failed. */
-  .prop-thumbnail:has(> .loading-placeholder) {
+  .prop-thumbnail:has(> .loading-placeholder),
+  .prop-thumbnail[data-arriving] {
     background: color-mix(in srgb, var(--theme-text, #fff) 9%, transparent);
+  }
+
+  /* The picture waits, hidden, for its mandala to hand over. */
+  .prop-thumbnail img.held {
+    opacity: 0;
   }
 
   /* Container query adaptive sizing */
@@ -752,7 +917,7 @@
   }
 
   /* Skeleton shimmer effect for loading state */
-  .loading-placeholder::before {
+  .loading-placeholder:not([data-mode="mandala"])::before {
     content: "";
     position: absolute;
     inset: 0;

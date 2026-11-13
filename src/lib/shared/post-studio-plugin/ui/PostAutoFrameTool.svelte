@@ -18,11 +18,13 @@
     type AutoFrameTracking,
     type AutoFrameTrackPhase,
   } from "#lib/shared/media-composition/services/auto-frame-tracker.js";
+  import { REELS_COVERED } from "./reels-preview.svelte";
 
   /**
    * Auto frame: finds the props in the clip's footage and writes one framing
    * key per move, as tight as it can while the staff ends stay in, the props
-   * centred, a bright ceiling over a dark backdrop kept out, and the whole
+   * centred, the body centred with room while the props stay low, a bright
+   * ceiling over a dark backdrop kept out of what a Reel shows, and the whole
    * body on the last key. The keys are ordinary ones: drag, delete or re-ease
    * them like hand-made keys. One undo takes the whole set back.
    */
@@ -117,11 +119,16 @@
     if (!tracking || locked) return;
     const times = keyPlan.times;
     const boxes = autoFrameBoxes(tracking.times, tracking.props, tracking.poses, times[times.length - 1]!);
-    const shape = canvasAspectOf(editor.project.canvas) / tracking.footageAspect;
+    const canvasAspect = canvasAspectOf(editor.project.canvas);
+    const shape = canvasAspect / tracking.footageAspect;
+    // A 9:16 post goes up as a Reel, whose header and caption cover its top and bottom.
+    const reel = Math.abs(canvasAspect - 9 / 16) < 0.01;
     const { keys } = solveAutoFrame({
       times: tracking.times,
       mustStay: boxes.mustStay,
       centreOn: boxes.centreOn,
+      bodyOn: boxes.bodyOn,
+      covered: reel ? { top: REELS_COVERED.top, bottom: REELS_COVERED.bottom } : undefined,
       keyTimes: times,
       shape,
       backdropLine,
@@ -200,7 +207,8 @@
       {:else if status === "failed"}
         {message}
       {:else}
-        Frames the clip as tight as it can while the staff ends stay in: one key per
+        Frames the clip as tight as it can while the staff ends stay in, with you
+        centred while the props stay low: one key per
         {keyPlan.from === "landings" ? "beat landing" : "move"}, the whole body on the last.
       {/if}
     </p>

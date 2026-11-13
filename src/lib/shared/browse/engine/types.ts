@@ -321,6 +321,13 @@ export interface BrowseEngine {
     candidateValue: BrowseFilterValue
   ): number;
 
+  /**
+   * The search's results under every active filter except `candidateType`'s:
+   * the sequences a value of that type would narrow, the same pool
+   * `getFilteredCount` counts from.
+   */
+  getFacetPool(candidateType: BrowseFilterType): SequenceData[];
+
   /** Toggle favorite status for a sequence. Updates local state. */
   toggleFavorite(sequenceId: string): Promise<void>;
 

@@ -20,6 +20,7 @@ import {
   warmDecoderRuntimes,
   warmSceneAssets,
   warmSceneUrls,
+  warmSelectedSceneAssets,
 } from "#lib/shared/3d/scene-boot/scene-prefetch.js";
 
 const OCEAN_URLS = sceneAssetUrls(BackgroundType.OCEAN);
@@ -148,5 +149,64 @@ describe("warmSceneUrls", () => {
     warmSceneUrls(["/models/cosmic/other.glb"]);
     await Promise.resolve();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+/** Idle callbacks wait in a queue until the test runs them. */
+function queueIdleWork(): () => void {
+  const queued: Array<() => void> = [];
+  Object.defineProperty(globalThis, "requestIdleCallback", {
+    value: (callback: () => void) => {
+      queued.push(callback);
+      return queued.length;
+    },
+    configurable: true,
+    writable: true,
+  });
+  return () => {
+    for (const callback of queued.splice(0)) callback();
+  };
+}
+
+describe("cancelling a warm-up", () => {
+  // The viewer queues its warm-up for an idle moment. On a busy phone that
+  // moment can first come after the visitor has tapped through to another
+  // page, which then loses bandwidth to models it never shows.
+  it("drops work that was still queued when the caller left", async () => {
+    const runIdle = queueIdleWork();
+    const leave = new AbortController();
+    warmSelectedSceneAssets(leave.signal);
+
+    leave.abort();
+    runIdle();
+    await Promise.resolve();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("stops a warm-up part way and lets the next one fetch those models", async () => {
+    expect(OCEAN_URLS.length).toBeGreaterThan(1);
+    const leave = new AbortController();
+    // The first model is still downloading when the visitor leaves.
+    fetchMock.mockImplementationOnce(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError"))
+          );
+        })
+    );
+    warmSceneAssets(BackgroundType.OCEAN, leave.signal);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ signal: leave.signal });
+
+    leave.abort();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(fetchMock).toHaveBeenCalledOnce();
+
+    fetchMock.mockClear();
+    warmSceneAssets(BackgroundType.OCEAN);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(OCEAN_URLS.length));
+    expect(fetchedUrls()).toEqual([...OCEAN_URLS]);
   });
 });

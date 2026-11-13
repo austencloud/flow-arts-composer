@@ -1,6 +1,6 @@
 import {
   authState,
-  awaitAuthSettled,
+  learnWhoIsSignedIn,
 } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 
@@ -24,9 +24,14 @@ import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte
  * signup drawer opened on someone who already has an account. On a cold load of
  * a heavy 3D scene that window is seconds wide, which is exactly when someone
  * clicks Share.
+ *
+ * It also starts the auth listener when the page never did. Public pages such
+ * as /sequence/[id] start it at load only for a saved session, so for a
+ * visitor who arrived signed out the wait never ended: Download did nothing,
+ * not even the sign-up prompt, and a sign-in through that prompt went unseen.
  */
 export async function ensureFullAccountForExport(): Promise<boolean> {
-  await awaitAuthSettled();
+  await learnWhoIsSignedIn();
   if (authState.isAuthenticated && !authState.isAnonymous) return true;
   authDrawerState.show("signup", "export");
   return false;

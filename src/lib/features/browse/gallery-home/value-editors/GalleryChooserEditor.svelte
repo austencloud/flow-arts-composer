@@ -9,6 +9,7 @@
     | "sheet"
     | "chooserTitle"
     | "chooserHint"
+    | "chooserCategories"
     | "onSelectCategory"
   >;
 
@@ -18,8 +19,15 @@
     sheet,
     chooserTitle,
     chooserHint,
+    chooserCategories = "all",
     onSelectCategory,
   }: Props = $props();
+
+  const entries = $derived(
+    chooserCategories === "secondary"
+      ? catalog.secondaryCategories
+      : [...catalog.primaryCategories, ...catalog.secondaryCategories]
+  );
 </script>
 
 <!-- Refinement is already a focused "add a filter" task. Put every
@@ -39,7 +47,7 @@
     </p>
   </header>
   <div class="unified-choice-grid">
-    {#each [...catalog.primaryCategories, ...catalog.secondaryCategories] as entry (entry.key)}
+    {#each entries as entry (entry.key)}
       <CategoryTile
         {entry}
         composition="unified"

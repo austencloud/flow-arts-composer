@@ -18,6 +18,10 @@ export interface GalleryWorkspaceProps {
   adaptiveValueLayout: boolean;
   persistentDesktopCatalog: boolean;
   chooserTitle?: string;
+  /** "secondary" leaves the privileged doors out of the chooser. */
+  chooserCategories?: "all" | "secondary";
+  /** False hides the value screens' Back button. */
+  showEditorBack?: boolean;
   chooserHint?: string;
   stackHint?: string;
   isValueApplied?: (type: BrowseFilterType, value: string | number) => boolean;

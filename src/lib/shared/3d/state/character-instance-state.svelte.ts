@@ -64,6 +64,7 @@ import { findScenePropFamily } from "../domain/scene-prop-catalog";
 import type { PerformerDomainSnapshot } from "../undo/scene-undo-types";
 import { isSeamlesslyLoopable3D } from "../services/sequence-loopability-3d";
 import { applyWallFeasibility } from "../services/wall-plane-policy";
+import { findWallPlaneArmCross } from "../services/wall-plane-arm-cross";
 import { travelMeansWalking } from "../locomotion/performer-travels";
 
 // Position Constants (all in meters)
@@ -110,6 +111,13 @@ export interface CharacterInstanceConfig {
    * clobbers them when the film/preview changes hand planes.
    */
   persistent?: boolean;
+  /**
+   * Let wall plane through even where the arms would pass through each other
+   * (wall-plane-arm-cross.ts). Nothing that shows a sequence to a person sets
+   * this. Contact research does, because its corpus measures those beats in
+   * wall plane on purpose.
+   */
+  allowImpossibleWall?: boolean;
 }
 
 /**
@@ -279,6 +287,28 @@ export function createCharacterInstanceState(
   );
   const effectiveRightPlane = $derived(
     customRightPlane ?? getDefaults().customRightPlane
+  );
+
+  // AAAA and its split-same kin can't be done in wall plane: the arms would
+  // pass through each other (wall-plane-arm-cross.ts). Wall on both hands
+  // shows as dual wheel for them instead. The request itself is kept, so the
+  // next sequence still gets wall, and undo, saves and copies carry the
+  // request rather than the stand-in.
+  const wallPlaneArmCross = $derived(
+    config.allowImpossibleWall ? null : findWallPlaneArmCross(loadedSequence)
+  );
+  const wallPlaneForced = $derived(
+    wallPlaneArmCross !== null &&
+      isWallOnBothHands(requestedModeConfig(effectivePlaneMode))
+  );
+  const shownPlaneMode = $derived(
+    wallPlaneForced ? PlaneMode.DUAL_WHEEL : effectivePlaneMode
+  );
+  const shownLeftPlane = $derived(
+    wallPlaneForced ? Plane.WHEEL : effectiveLeftPlane
+  );
+  const shownRightPlane = $derived(
+    wallPlaneForced ? Plane.WHEEL : effectiveRightPlane
   );
 
   // Override detection (all categories)
@@ -614,8 +644,20 @@ export function createCharacterInstanceState(
    * plane assignments and lateral offsets, and rotates the character
    * to match the mode's facing angle.
    */
-  /** Build an effective mode config with the current rotation variant override */
+  function isWallOnBothHands(config: PlaneModeConfig): boolean {
+    return config.bluePlane === Plane.WALL && config.redPlane === Plane.WALL;
+  }
+
+  /** The config the viewer converts with: the request, unless wall is ruled out. */
   function getEffectiveModeConfig(mode: PlaneMode): PlaneModeConfig {
+    const requested = requestedModeConfig(mode);
+    return wallPlaneArmCross && isWallOnBothHands(requested)
+      ? PLANE_MODE_CONFIGS[PlaneMode.DUAL_WHEEL]
+      : requested;
+  }
+
+  /** Build an effective mode config with the current rotation variant override */
+  function requestedModeConfig(mode: PlaneMode): PlaneModeConfig {
     if (mode === PlaneMode.CUSTOM) {
       return {
         facingAngle: 0,
@@ -669,6 +711,13 @@ export function createCharacterInstanceState(
    */
   function setHandPlane(hand: "left" | "right", plane: Plane) {
     const beforeSnapshot = capturePerformerSnapshot();
+    // While wall is ruled out the viewer shows dual wheel, so a one-hand change
+    // starts from that: the other hand stays on wheel instead of jumping back
+    // to the wall it was never shown on.
+    if (wallPlaneForced) {
+      customLeftPlane = Plane.WHEEL;
+      customRightPlane = Plane.WHEEL;
+    }
     if (hand === "left") customLeftPlane = plane;
     else customRightPlane = plane;
 
@@ -748,8 +797,8 @@ export function createCharacterInstanceState(
   function getStepPlanes(stepNumber: number): { left: Plane; right: Plane } {
     const override = beatPlaneOverrides.get(stepNumber);
     return {
-      left: override?.left ?? effectiveLeftPlane,
-      right: override?.right ?? effectiveRightPlane,
+      left: override?.left ?? shownLeftPlane,
+      right: override?.right ?? shownRightPlane,
     };
   }
 
@@ -1477,7 +1526,7 @@ export function createCharacterInstanceState(
     },
     setGridJoin,
     get planeMode() {
-      return effectivePlaneMode;
+      return shownPlaneMode;
     },
     get rawPlaneMode() {
       return planeMode;
@@ -1682,13 +1731,21 @@ export function createCharacterInstanceState(
       return rawHandEffects;
     },
     get effectivePlaneMode() {
-      return effectivePlaneMode;
+      return shownPlaneMode;
     },
     get effectiveLeftPlane() {
-      return effectiveLeftPlane;
+      return shownLeftPlane;
     },
     get effectiveRightPlane() {
-      return effectiveRightPlane;
+      return shownRightPlane;
+    },
+    /** Where this sequence would push the arms through each other in wall plane, if anywhere. */
+    get wallPlaneArmCross() {
+      return wallPlaneArmCross;
+    },
+    /** True while a wall request is being shown as dual wheel. */
+    get wallPlaneForced() {
+      return wallPlaneForced;
     },
 
     // Override detection

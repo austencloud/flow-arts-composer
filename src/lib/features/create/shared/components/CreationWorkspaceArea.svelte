@@ -38,6 +38,8 @@
   import ViewSequenceButton from "../workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
   import ShareButton from "../workspace-panel/shared/components/buttons/ShareButton.svelte";
   import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
+  import { PlaybackPoster } from "../workspace-panel/components/playback-poster";
+  import { isTheaterViewport } from "../services/workspace-theater";
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
@@ -143,14 +145,66 @@
     // once the motion's first frame is on screen (two frames later) and
     // comes forward when it is ready.
     if (reducedMotion()) {
+      showPoster();
       prepare();
       return;
     }
     let frame = requestAnimationFrame(() => {
+      // The tap's own frame is painted; the poster goes up on this one and
+      // the player starts mounting on the next.
+      showPoster();
       frame = requestAnimationFrame(prepare);
     });
     return () => cancelAnimationFrame(frame);
   });
+
+  // Play's poster: the start picture holds the player's place from the frame
+  // after the tap until the canvas has painted and fully arrived beneath it,
+  // so the stage is never empty while a slow phone mounts the player.
+  let stageEl = $state<HTMLElement | null>(null);
+  const poster = new PlaybackPoster();
+  let posterPending = $state(false);
+  // The poster sits exactly where the canvas will be.
+  let posterLanded = $state(false);
+
+  function showPoster() {
+    untrack(() => {
+      if (
+        !stageEl ||
+        !playbackFolds ||
+        workspaceSource !== "first" ||
+        isTheaterViewport()
+      )
+        return;
+      posterLanded = false;
+      posterPending = poster.show(stageEl, reducedMotion(), () => {
+        posterLanded = true;
+      });
+    });
+  }
+
+  // Play ended (Stop, or the player failed) while the poster was still up or
+  // dissolving into the player: it goes back into its cell as the grid
+  // returns. Once it has gone this does nothing.
+  $effect(() => {
+    if (playbackCandidate) return;
+    posterPending = false;
+    untrack(() => poster.retreat(reducedMotion()));
+  });
+
+  // The player is arriving under the landed poster (DualSourceCrossfade's
+  // fade in, DURATION.normal): the poster dissolves into it as that fade
+  // lands.
+  $effect(() => {
+    if (workspaceSource !== "second" || !posterPending || !posterLanded) return;
+    posterPending = false;
+    untrack(() => {
+      const reduced = reducedMotion();
+      poster.reveal(reduced, reduced ? 0 : DURATION.normal);
+    });
+  });
+
+  onDestroy(() => poster.dispose());
 
   const workspaceSource = $derived<"first" | "second">(
     playback !== null &&
@@ -158,6 +212,19 @@
       readyPlayback === retainedPlayback
       ? "second"
       : "first"
+  );
+
+  // What the stage shows. While the poster holds the player's place, neither
+  // source does: the grid steps back as the picture lifts out of it, and the
+  // player comes in only once the picture has landed on the canvas's place.
+  // Its controls then arrive around the picture, which becomes the canvas,
+  // instead of the picture settling onto a player already standing there.
+  const stageSource = $derived<"first" | "second" | null>(
+    posterPending
+      ? workspaceSource === "second" && posterLanded
+        ? "second"
+        : null
+      : workspaceSource
   );
 
   onDestroy(() => panelState.stopWorkspacePlayback());
@@ -371,7 +438,7 @@
       />
     </div>
   {/if}
-  <div class="workspace-content">
+  <div class="workspace-content" bind:this={stageEl}>
     <!-- Play collapses the tool panel as the grid hands off to the animator,
          and Close brings it back. Holding the outgoing side spares the hidden
          step grid or animator a re-layout at a size nobody sees. The
@@ -388,7 +455,7 @@
       exitDuration={workspaceSource === "first"
         ? DURATION.fast
         : DURATION.normal}
-      active={workspaceSource}
+      active={stageSource}
       first={card}
       second={animation}
     />

@@ -13,10 +13,9 @@ workspace spec, the main gallery next — one component, never a copy.
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
-  import { localizeFilterChip } from "./localize-filter-chip";
+  import { localizeFilterChip, showsMandalaStill } from "./localize-filter-chip";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import MandalaFilterStill from "#lib/shared/browse/components/filter-chips/MandalaFilterStill.svelte";
-  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import {
     groupRuleFilters,
     type RuleStripFilter,
@@ -166,7 +165,7 @@ workspace spec, the main gallery next — one component, never a copy.
           {#if interactive}
             <FilterChipBase
               label={localizeFilterChip({ ...chip, label: chip.displayLabel })}
-              labelSnippet={chip.type === BrowseFilterType.MANDALA ? mandalaStill : undefined}
+              labelSnippet={showsMandalaStill(chip) ? mandalaStill : undefined}
               active
               mode="action"
               size="sm"
@@ -183,7 +182,7 @@ workspace spec, the main gallery next — one component, never a copy.
           {:else}
             <FilterChipBase
               label={localizeFilterChip({ ...chip, label: chip.displayLabel })}
-              labelSnippet={chip.type === BrowseFilterType.MANDALA ? mandalaStill : undefined}
+              labelSnippet={showsMandalaStill(chip) ? mandalaStill : undefined}
               active
               mode="display"
               size="sm"

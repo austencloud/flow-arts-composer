@@ -118,6 +118,79 @@ describe("auto frame solve", () => {
   });
 });
 
+describe("auto frame body and Reel", () => {
+  /** A still take: the same props and body at every sample. */
+  function stillTake(props: FrameBox, body: FrameBox | null) {
+    const times = Array.from({ length: 61 }, (_, i) => 10 + i / 15);
+    return {
+      times,
+      mustStay: times.map(() => props),
+      centreOn: times.map(() => props),
+      bodyOn: times.map(() => body),
+      keyTimes: [10, 11, 12, 13, 14],
+      shape: 1,
+      backdropLine: null,
+      finalBox: null,
+      flip: false,
+    };
+  }
+  const windowAt = (keys: PostKeyframe<PostSourceGeometry>[], t: number) =>
+    shownPart(geometryAt(keys, t), 9 / 16, 9 / 16);
+
+  it("gives a standing body room and centres it while the props stay low", () => {
+    const props: FrameBox = [0.44, 0.5, 0.56, 0.68];
+    const body: FrameBox = [0.45, 0.42, 0.55, 0.7];
+    const { keys } = solveAutoFrame(stillTake(props, body));
+    const [, top, , bottom] = windowAt(keys, 12);
+    const height = bottom - top;
+    expect((body[3] - body[1]) / height).toBeLessThan(0.75);
+    const at = ((body[1] + body[3]) / 2 - top) / height;
+    expect(at).toBeGreaterThan(0.45);
+    expect(at).toBeLessThan(0.65);
+    // The head clear of the top, not pressed against it.
+    expect((body[1] - top) / height).toBeGreaterThan(0.1);
+  });
+
+  it("lets props high above the head lead, legs and all", () => {
+    const props: FrameBox = [0.35, 0.12, 0.65, 0.5];
+    const body: FrameBox = [0.45, 0.4, 0.55, 0.78];
+    const alone = windowAt(solveAutoFrame(stillTake(props, null)).keys, 12);
+    const withBody = windowAt(solveAutoFrame(stillTake(props, body)).keys, 12);
+    // The body doesn't widen the window to keep the feet.
+    expect(withBody[2] - withBody[0]).toBeLessThan((alone[2] - alone[0]) * 1.05);
+    expect(withBody[3]).toBeLessThan(body[3]);
+  });
+
+  it("lets a bright ceiling hide under a Reel's header but no lower", () => {
+    // Props wanted low in the window, so it would rise into the ceiling if it could.
+    const take = { ...stillTake([0.4, 0.3, 0.6, 0.5], null), backdropLine: 0.28, settings: { centreYAt: 0.8 } };
+    const covered = { top: 140 / 1920, bottom: 360 / 1920 };
+    const plain = solveAutoFrame(take).keys;
+    const reel = solveAutoFrame({ ...take, covered }).keys;
+    for (const t of take.times) {
+      expect(windowAt(plain, t)[1]).toBeGreaterThan(0.28 - 0.005);
+      const [, top, , bottom] = windowAt(reel, t);
+      expect(top + covered.top * (bottom - top)).toBeGreaterThan(0.28 - 0.005);
+    }
+    // Under the header, the window itself reaches above the line.
+    expect(windowAt(reel, 12)[1]).toBeLessThan(0.28 - 0.01);
+  });
+
+  it("keeps staff ends hanging by the feet above a Reel's caption", () => {
+    // The 20 s moment of his DCK take: standing, both staffs pointing down to the floor.
+    const props: FrameBox = [0.48, 0.52, 0.56, 0.68];
+    const body: FrameBox = [0.42, 0.41, 0.58, 0.69];
+    const covered = { top: 140 / 1920, bottom: 360 / 1920 };
+    const { keys } = solveAutoFrame({ ...stillTake(props, body), covered });
+    for (const t of [10, 12, 14]) {
+      const [, top, , bottom] = windowAt(keys, t);
+      expect((props[3] - top) / (bottom - top)).toBeLessThan(1 - covered.bottom);
+      // By zooming out, not by sliding down until the head meets the header.
+      expect((body[1] - top) / (bottom - top)).toBeGreaterThan(covered.top + 0.08);
+    }
+  });
+});
+
 describe("backdrop line", () => {
   it("finds where a bright ceiling meets a dark backdrop", () => {
     const rows = Array.from({ length: 480 }, (_, r) => (r < 98 ? 190 : 12));

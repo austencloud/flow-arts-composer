@@ -15,6 +15,7 @@ import type { BackgroundType } from "@austencloud/backgrounds";
 import type { BackgroundLabSettings } from "#lib/shared/background-builder/domain/lab-settings-types.js";
 import type { TimeSignatureKey } from "../../foundation/domain/models/time-signature";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
+import { normalizeCompositionRecipeOverrides } from "../../pictograph/prop/domain/composition-recipe-normalize";
 import type { FanAppearance } from "../../pictograph/prop/domain/fan-appearance";
 import type { TriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";
 import type { BuugengStyle } from "../../pictograph/prop/domain/buugeng-appearance";
@@ -199,6 +200,15 @@ export function normalizeLegacyAppSettings(value: unknown): AppSettings {
   }
   delete normalized.blueBuugengFlipped;
   delete normalized.redBuugengFlipped;
+
+  // Prop Button Lab overrides saved before the side rename say blue/red.
+  if (source.compositionRecipeOverrides !== undefined) {
+    const overrides = normalizeCompositionRecipeOverrides(
+      source.compositionRecipeOverrides
+    );
+    if (overrides === undefined) delete normalized.compositionRecipeOverrides;
+    else normalized.compositionRecipeOverrides = overrides;
+  }
 
   // Position -> placement rename: fields renamed with no read-side migration.
   // Only fill the new key when it is absent so an already-migrated or

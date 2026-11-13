@@ -343,8 +343,16 @@ export async function initializeModulePersistence(): Promise<void> {
       }
     }
 
-    // Fallback to Firestore if not in localStorage
-    if (!savedModule) {
+    // Fall back to the tab saved in IndexedDB when localStorage has none. When
+    // the URL names a module that saved tab is never used, so don't wait for
+    // it: on a first visit, opening IndexedDB means creating the database,
+    // and that wait sat between the tap and the module appearing. The open
+    // still starts here so later reads find the database ready.
+    if (!savedModule && urlModule) {
+      void persistInitialize().catch(() => {
+        // Later reads open the database themselves and report their own errors.
+      });
+    } else if (!savedModule) {
       await persistInitialize();
       savedModule = await persistGetActiveTab();
     }

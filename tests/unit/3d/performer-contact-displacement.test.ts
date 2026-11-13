@@ -53,7 +53,7 @@ function performerFor(id: string): CharacterInstanceState {
   const entry = propContinuityCorpus().find((candidate) => candidate.id === id);
   if (!entry) throw new Error(`no corpus entry ${id}`);
   const state = createCharacterInstanceState(
-    { id: `contact-${id}`, positionX: 0, persistent: false },
+    { id: `contact-${id}`, positionX: 0, persistent: false, allowImpossibleWall: true },
     makeStandaloneDeps()
   );
   state.setPlaneMode(PlaneMode.WALL);

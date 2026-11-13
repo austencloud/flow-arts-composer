@@ -12,7 +12,10 @@ import { calculateLayout } from "./layout-calculator";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { drawSmartCellBorders } from "./cell-border-renderer";
 import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
-import { tryGetLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+import {
+  tryGetLoopDisplayResolver,
+  type LoopDisplay,
+} from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
 import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   RESERVED_ORIENTATION_PRIMITIVES,
@@ -20,7 +23,9 @@ import {
 } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   calculateCardSurface,
+  calculateHeaderWordSideInset,
   CARD_FRONT_INDICATOR_SIZE_SCALE,
+  type LOOPComponentId,
 } from "@tka/render-composition";
 import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 // TEMP assembly profiler — header/footer/border phase timing for the cold-deck profiler.
@@ -328,6 +333,116 @@ export async function paintCardFrontChrome(
     gridOffsetX
   );
 
+  const {
+    loopComponents,
+    overlayComponents,
+    rotationPeriod,
+    inversionPeriod,
+    reflectionAxis,
+    showLoopGlyph,
+  } = resolveCardHeaderLoop(sequence, options, visibility);
+
+  const showHeader =
+    (options.addWord && (derivedWord || options.customName)) ||
+    options.addDifficultyLevel ||
+    showLoopGlyph;
+  if (showHeader && headerHeight > 0) {
+    const difficultyLevel = getDifficultyLevel(sequence);
+    const displayName = options.addWord
+      ? options.customName || derivedWord
+      : "";
+    const periodForRender =
+      rotationPeriod === Period.QUARTERED
+        ? "quartered"
+        : rotationPeriod === Period.HALVED
+          ? "halved"
+          : undefined;
+
+    const inversionForRender =
+      inversionPeriod === Period.QUARTERED
+        ? "quartered"
+        : inversionPeriod === Period.HALVED
+          ? "halved"
+          : undefined;
+
+    deps.textRenderer.renderWordHeader({
+      canvas,
+      word: displayName,
+      headerHeight,
+      indicatorSizeScale: headerIndicatorSizeScale(options),
+      difficultyLevel,
+      showDifficultyBadge: options.addDifficultyLevel,
+      darkMode: isDarkMode,
+      loopComponents: showLoopGlyph ? loopComponents : undefined,
+      backgroundColor:
+        options.deckCard && !options.accentColor ? DECK_HEADER_BG : undefined,
+      borderColor:
+        options.deckCard && !options.accentColor
+          ? DECK_BORDER_COLOR
+          : undefined,
+      rotationPeriod: showLoopGlyph ? periodForRender : undefined,
+      inversionPeriod: showLoopGlyph ? inversionForRender : undefined,
+      reflectionAxis: showLoopGlyph ? reflectionAxis : undefined,
+      overlayComponents: showLoopGlyph ? overlayComponents : undefined,
+      accentColor: options.accentColor,
+      accentTintOpacity: options.accentTintOpacity,
+      renderAsText: options.renderWordAsText,
+    });
+  }
+
+  const showNotes = options.showNotes ?? options.addUserInfo;
+  const hasAnyFooterContent = Boolean(
+    showNotes || options.leftLabel || options.rightLabel || options.iconPath
+  );
+
+  if (hasAnyFooterContent && footerHeight > 0) {
+    await deps.textRenderer.renderCardFooter({
+      canvas,
+      notes: options.notes || "",
+      footerHeight,
+      darkMode: isDarkMode,
+      showNotes,
+      customNotesText: options.customNotesText,
+      backgroundColor:
+        options.deckCard && !options.accentColor ? DECK_HEADER_BG : undefined,
+      borderColor:
+        options.deckCard && !options.accentColor
+          ? DECK_BORDER_COLOR
+          : undefined,
+      leftLabel: options.leftLabel,
+      rightLabel: options.rightLabel,
+      iconPath: options.iconPath,
+      accentColor: options.accentColor,
+      accentTintOpacity: options.accentTintOpacity,
+    });
+  }
+}
+
+/** The header's level badge and LOOP icons, as the card front paints them. */
+export interface CardHeaderLoop {
+  loopComponents?: Set<LOOPComponent>;
+  overlayComponents?: Set<LOOPComponent>;
+  rotationPeriod?: Period;
+  inversionPeriod?: Period;
+  reflectionAxis?: LoopDisplay["reflectionAxis"];
+  showLoopGlyph: boolean;
+}
+
+type HeaderVisibility = Pick<
+  PictographVisibilityOptions,
+  "handPathMode" | "showLeftMotion" | "showRightMotion"
+>;
+
+/**
+ * Which LOOP icons the card's header shows: the canonical resolution when
+ * there is one, else the sequence's loop type, minus what the view cannot
+ * show.
+ */
+export function resolveCardHeaderLoop(
+  sequence: SequenceData,
+  options: Partial<SequenceExportOptions>,
+  visibility: HeaderVisibility
+): CardHeaderLoop {
   const loopTypeOverride = options.loopType;
   let loopComponents: Set<LOOPComponent> | undefined;
   // Only canonical resolution carries overlay-mode information. The legacy
@@ -380,88 +495,58 @@ export async function paintCardFrontChrome(
       loopComponents = filtered.size > 0 ? filtered : undefined;
     }
   }
-  const showLoopGlyph =
+  const showLoopGlyph = Boolean(
     options.showLoopGlyph !== false &&
-    loopComponents &&
-    loopComponents.size > 0;
-
-  const showHeader =
-    (options.addWord && (derivedWord || options.customName)) ||
-    options.addDifficultyLevel ||
-    showLoopGlyph;
-  if (showHeader && headerHeight > 0) {
-    const difficultyLevel = getDifficultyLevel(sequence);
-    const displayName = options.addWord
-      ? options.customName || derivedWord
-      : "";
-    const periodForRender =
-      rotationPeriod === Period.QUARTERED
-        ? "quartered"
-        : rotationPeriod === Period.HALVED
-          ? "halved"
-          : undefined;
-
-    const inversionForRender =
-      inversionPeriod === Period.QUARTERED
-        ? "quartered"
-        : inversionPeriod === Period.HALVED
-          ? "halved"
-          : undefined;
-
-    deps.textRenderer.renderWordHeader({
-      canvas,
-      word: displayName,
-      headerHeight,
-      indicatorSizeScale:
-        options.cardMode || options.deckCard
-          ? CARD_FRONT_INDICATOR_SIZE_SCALE
-          : undefined,
-      difficultyLevel,
-      showDifficultyBadge: options.addDifficultyLevel,
-      darkMode: isDarkMode,
-      loopComponents: showLoopGlyph ? loopComponents : undefined,
-      backgroundColor:
-        options.deckCard && !options.accentColor ? DECK_HEADER_BG : undefined,
-      borderColor:
-        options.deckCard && !options.accentColor
-          ? DECK_BORDER_COLOR
-          : undefined,
-      rotationPeriod: showLoopGlyph ? periodForRender : undefined,
-      inversionPeriod: showLoopGlyph ? inversionForRender : undefined,
-      reflectionAxis: showLoopGlyph ? reflectionAxis : undefined,
-      overlayComponents: showLoopGlyph ? overlayComponents : undefined,
-      accentColor: options.accentColor,
-      accentTintOpacity: options.accentTintOpacity,
-      renderAsText: options.renderWordAsText,
-    });
-  }
-
-  const showNotes = options.showNotes ?? options.addUserInfo;
-  const hasAnyFooterContent = Boolean(
-    showNotes || options.leftLabel || options.rightLabel || options.iconPath
+      loopComponents &&
+      loopComponents.size > 0
   );
+  return {
+    loopComponents,
+    overlayComponents,
+    rotationPeriod,
+    inversionPeriod,
+    reflectionAxis,
+    showLoopGlyph,
+  };
+}
 
-  if (hasAnyFooterContent && footerHeight > 0) {
-    await deps.textRenderer.renderCardFooter({
-      canvas,
-      notes: options.notes || "",
-      footerHeight,
-      darkMode: isDarkMode,
-      showNotes,
-      customNotesText: options.customNotesText,
-      backgroundColor:
-        options.deckCard && !options.accentColor ? DECK_HEADER_BG : undefined,
-      borderColor:
-        options.deckCard && !options.accentColor
-          ? DECK_BORDER_COLOR
-          : undefined,
-      leftLabel: options.leftLabel,
-      rightLabel: options.rightLabel,
-      iconPath: options.iconPath,
-      accentColor: options.accentColor,
-      accentTintOpacity: options.accentTintOpacity,
-    });
-  }
+function headerIndicatorSizeScale(
+  options: Partial<SequenceExportOptions>
+): number | undefined {
+  return options.cardMode || options.deckCard
+    ? CARD_FRONT_INDICATOR_SIZE_SCALE
+    : undefined;
+}
+
+/**
+ * Where the card's header letters its word, in canvas pixels: the space
+ * renderHeader leaves between the level badge and the LOOP icons, which a
+ * long word is scaled down to fit. A slow card's drawn word fits the same
+ * space, so it lands at the size the picture letters it.
+ */
+export function cardHeaderWordBounds(
+  sequence: SequenceData,
+  options: Partial<SequenceExportOptions>,
+  visibility: HeaderVisibility,
+  layout: Pick<CardFrontLayout, "canvasWidth" | "headerHeight">
+): { left: number; right: number } {
+  const { loopComponents, overlayComponents, showLoopGlyph } =
+    resolveCardHeaderLoop(sequence, options, visibility);
+  const asIds = (set?: Set<LOOPComponent>) =>
+    showLoopGlyph && set && set.size > 0
+      ? new Set([...set] as unknown as LOOPComponentId[])
+      : undefined;
+  const inset = Math.min(
+    layout.canvasWidth / 2,
+    calculateHeaderWordSideInset({
+      headerHeight: layout.headerHeight,
+      indicatorSizeScale: headerIndicatorSizeScale(options),
+      showDifficultyBadge: options.addDifficultyLevel,
+      loopComponents: asIds(loopComponents),
+      overlayComponents: asIds(overlayComponents),
+    })
+  );
+  return { left: inset, right: layout.canvasWidth - inset };
 }
 
 // Mirrors ImageComposer.getDifficultyLevel (private). Kept local so the chrome

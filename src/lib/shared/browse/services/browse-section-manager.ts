@@ -183,9 +183,11 @@ function getGroupKey(
 ): string {
   switch (groupBy) {
     case "letter":
-      // Sub-group by letter AND beat count for consistent row heights.
-      // Pipe separator avoids conflict with dash in letter names ("W-").
-      return `${deriveLetter(sequence)}|${stepCountOf(sequence)}`;
+      // One section per starting letter. Same-length cards sit together
+      // inside it (orderSectionSequences), so rows stay even without a
+      // letter-and-length section for every pair, most of which held one to
+      // three cards and left holes in the grid.
+      return deriveLetter(sequence);
 
     case "length":
       // Bucket by step count, never word character count. The Type-3/4/5 dash
@@ -201,9 +203,8 @@ function getGroupKey(
       return `${resolveLevel(sequence)}|${deriveLetter(sequence)}|${stepCountOf(sequence)}`;
 
     case "level":
-      // Level alone, one section per level with every card together. A
-      // Mandala family is small, so letter and length sub-sections would
-      // leave it in one-card rows.
+      // Level alone, one section per level with every card together. Letter
+      // and length sub-sections left most groups with one to three cards.
       return String(resolveLevel(sequence));
 
     case "density":
@@ -246,12 +247,7 @@ function createSections(
       id: createSectionId(key, config.groupBy),
       title: createSectionTitle(key, config.groupBy, sequences.length),
       count: sequences.length,
-      // A level section keeps the order it was given: the caller's sort and
-      // direction, which a family's mixed lengths make the only order needed.
-      sequences:
-        config.groupBy === "level"
-          ? sequences
-          : sortSequencesInSection(sequences, config.sortMethod),
+      sequences: orderSectionSequences(sequences, config),
       isExpanded: config.expandedSections?.has(key) ?? false,
       sortOrder: getSectionSortOrder(key, config.groupBy),
     };
@@ -270,6 +266,38 @@ function createSections(
   return sections;
 }
 
+/** Stable sort by step count: same-length cards end up side by side, and
+ * cards of one length keep the order they arrived in. */
+function byLengthKeepingOrder(sequences: SequenceData[]): SequenceData[] {
+  return sequences
+    .map((sequence, index) => ({ sequence, index }))
+    .sort(
+      (a, b) =>
+        stepCountOf(a.sequence) - stepCountOf(b.sequence) || a.index - b.index
+    )
+    .map(({ sequence }) => sequence);
+}
+
+/** The order inside one section. A section groups by ONE thing (a letter, a
+ * level). Inside it, same-length sequences sit together so most rows hold
+ * cards of one length, and the sort decides the order within a length. */
+function orderSectionSequences(
+  sequences: SequenceData[],
+  config: SectionConfig
+): SequenceData[] {
+  switch (config.groupBy) {
+    case "level":
+      // The caller's sort and direction, grouped by length.
+      return byLengthKeepingOrder(sequences);
+    case "letter":
+      return byLengthKeepingOrder(
+        sortSequencesInSection(sequences, config.sortMethod)
+      );
+    default:
+      return sortSequencesInSection(sequences, config.sortMethod);
+  }
+}
+
 function createSectionId(
   key: string,
   groupBy: SectionConfig["groupBy"]
@@ -285,13 +313,9 @@ function createSectionTitle(
   const countText = count === 1 ? "1 sequence" : `${count} sequences`;
 
   switch (groupBy) {
-    case "letter": {
-      // Key format: "A|4" or "W-|4" (letter|beatcount, where letter might be "W-")
-      const [letter = "", stepCountStr = "0"] = key.split("|");
-      const steps = parseInt(stepCountStr) || 0;
-      // Use parentheses to avoid double dash with letters like "W-"
-      return `${letter} (${steps} steps) (${countText})`;
-    }
+    case "letter":
+      // Parentheses avoid a double dash with letters like "W-".
+      return `${key} (${countText})`;
 
     case "length":
       return `${key} (${countText})`;
@@ -488,15 +512,10 @@ function getSectionSortOrder(
 
   switch (groupBy) {
     case "letter": {
-      // Key format: "A|4" or "W-|4" (letter|beatcount, where letter might be "W-")
-      // Sort by letter position in kinetic alphabet, then by beat count
-      const [letter = "", stepCountStr = "0"] = key.split("|");
-      const letterIndex = KINETIC_ALPHABET_ORDER.indexOf(letter);
-      const beatOrder = parseInt(stepCountStr) || 0;
-
-      // Return: (letter position * 10000) + beat count
-      // This ensures A comes before B, W comes before W-, etc.
-      return (letterIndex + 1) * 10000 + beatOrder;
+      // Kinetic alphabet order: A before B, W before W-. A letter outside
+      // the alphabet goes last.
+      const letterIndex = KINETIC_ALPHABET_ORDER.indexOf(key);
+      return letterIndex === -1 ? 9999 : letterIndex;
     }
 
     case "length": {

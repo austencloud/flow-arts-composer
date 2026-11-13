@@ -32,6 +32,8 @@
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { RemixSource } from "../state/viewer-shell-interaction-state.svelte";
+  import { beforeNavigate } from "$app/navigation";
+  import { composerIntent } from "#lib/shared/landing/services/composer-prefetch.js";
 
   const handColors = $derived(
     getSettings().primaryPropColors ?? {
@@ -214,6 +216,29 @@
       otherRight -
       HEADER_SIDE_GAP;
     return room >= remixLabelledWidth + REMIX_BORDERS;
+  });
+
+  // Remix leaves for Create, which loads the whole app; on a phone that takes
+  // a while, and the button used to sit there as if nothing had happened. A
+  // press arms it. Once the trip it starts is under way the icon turns into a
+  // spinner, further presses are ignored, and a trip that is cancelled or
+  // fails puts the icon back. A host whose Remix stays on the page never
+  // starts a trip, so its button never spins. `composerIntent` on the buttons
+  // starts fetching the app's code as soon as a finger lands on them.
+  let remixArmed = false;
+  let remixOpening = $state(false);
+  function pressRemix(source: RemixSource): void {
+    if (remixOpening || !onRemix) return;
+    remixArmed = true;
+    onRemix(source);
+  }
+  beforeNavigate((navigation) => {
+    if (!remixArmed) return;
+    remixArmed = false;
+    remixOpening = true;
+    navigation.complete.catch(() => {
+      remixOpening = false;
+    });
   });
 
   const hasAccountEntry = $derived(
@@ -414,11 +439,18 @@
           <button
             type="button"
             class="viewer-action core-action remix-action"
-            onclick={() => onRemix("header")}
+            onclick={() => pressRemix("header")}
+            use:composerIntent
+            aria-busy={remixOpening}
             aria-label={t("viewer_header_remix_sequence")}
             title={t("viewer_ui_remix")}
           >
-            <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+            <i
+              class="fas {remixOpening
+                ? 'fa-spinner fa-spin'
+                : 'fa-pen-to-square'}"
+              aria-hidden="true"
+            ></i>
             <span class="action-label">{t("viewer_ui_remix")}</span>
           </button>
         {/if}
@@ -704,12 +736,19 @@
         class="viewer-action remix-action compact-remix"
         class:icon-only={!remixLabelled}
         bind:offsetWidth={remixButtonWidth}
-        onclick={() => onRemix("compact_header")}
+        onclick={() => pressRemix("compact_header")}
+        use:composerIntent
+        aria-busy={remixOpening}
         aria-label={t("viewer_header_remix_sequence")}
         title={t("viewer_header_remix_sequence")}
         transition:growFade={{ axis: "x", duration: DURATION.emphasis }}
       >
-        <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+        <i
+          class="fas {remixOpening
+            ? 'fa-spinner fa-spin'
+            : 'fa-pen-to-square'}"
+          aria-hidden="true"
+        ></i>
         {#if remixLabelled}
           <span class="remix-label">{t("viewer_ui_remix")}</span>
         {/if}

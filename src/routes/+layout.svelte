@@ -328,7 +328,9 @@
     stage: () => import("#lib/features/stage/StageModule.svelte"),
   };
 
-  function startActiveModulePreload(): void {
+  function startActiveModulePreload(
+    pathname = typeof window === "undefined" ? "" : window.location.pathname
+  ): void {
     if (typeof window === "undefined") return;
     // Dev mode: each ES module is a separate HTTP request. Preloading the
     // module chunk (150+ files for /create) contends with the DI container
@@ -336,7 +338,7 @@
     // Prod mode: chunks are bundled; HTTP/2 multiplexes them at negligible
     // cost, so parallel preload is pure win.
     if (!import.meta.env.PROD) return;
-    const segment = window.location.pathname.split("/")[1] ?? "";
+    const segment = pathname.split("/")[1] ?? "";
     const loader = URL_TO_MODULE[segment];
     if (loader) {
       // Fire-and-forget. Cache warms up while DI/firebase/auth resolve in parallel.
@@ -374,10 +376,11 @@
     );
   }
 
-  function startAppImports() {
+  function startAppImports(pathname?: string) {
     // Prod-only: also kick off the active module chunk so ModuleRenderer's
-    // later dynamic import resolves from cache.
-    startActiveModulePreload();
+    // later dynamic import resolves from cache. A navigation that has not
+    // arrived yet passes its destination; otherwise it is the current page.
+    startActiveModulePreload(pathname);
     const common = {
       bootProfiler: import("#lib/shared/analytics/boot-profiler.js"),
       di: trackBootImport(
@@ -564,8 +567,9 @@
    * Same logic as the original layout, but loaded dynamically.
    */
   async function initAppMode() {
-    // Landing→app upgrade: preloadedImports is null because we started in landing
-    // mode. Kick off the imports now (still parallel, just late).
+    // Landing→app upgrade: the beforeNavigate hook below has usually started
+    // the imports already. Anything that reached app mode another way starts
+    // them now.
     if (!preloadedImports) preloadedImports = startAppImports();
     const imports = preloadedImports;
 
@@ -954,6 +958,20 @@
   // Without this, auth/DI/Firestore are never initialized and the app
   // shows "Warming up..." forever.
   let appModeUpgradeStarted = false;
+
+  // Start the app's code the moment a landing page heads into the app (Remix
+  // on a sequence page, "Open the app"), not once the new route has loaded
+  // and mounted. initAppMode then picks up these downloads instead of
+  // starting them a second or more later.
+  beforeNavigate((navigation) => {
+    if (siteMode !== "landing" || preloadedImports) return;
+    if (navigation.willUnload || isShallowGoto(navigation)) return;
+    const to = navigation.to?.url;
+    if (!to || to.origin !== window.location.origin) return;
+    if (detectSiteMode(to) !== "app") return;
+    preloadedImports = startAppImports(to.pathname);
+  });
+
   afterNavigate((navigation) => {
     if (isShallowGoto(navigation)) return;
     if (siteMode !== "landing" || appModeUpgradeStarted) return;

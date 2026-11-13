@@ -56,6 +56,12 @@ page the day he makes it.
 - **Hero first.** Size the thing the person came for first: the animation, the
   pictographs, the grid. Fit everything else into what is left. Extra room
   goes to the hero, not to bigger controls.
+- **Results get the full width.** A results screen, such as the Browse grid,
+  gives its results the whole width. Its filters are one row of menus above
+  the results. Each menu opens over the results and closes again; no filter
+  pane stays open beside them. A picker inside a viewer keeps its drill-down.
+- **A choice is shown once.** A chosen filter shows in one place, its own
+  menu button, and a count shows once on the screen.
 - **No leftover space.** Empty space is placed on purpose or filled. No panel
   sits in a blank region and no blank strip runs beside a column of text.
 - **Text fills, then the screen rearranges.** Text fills its box at normal

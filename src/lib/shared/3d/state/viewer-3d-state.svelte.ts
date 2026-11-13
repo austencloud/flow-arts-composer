@@ -46,6 +46,10 @@ import {
   DEFAULT_CHARACTER_ID,
   type CharacterId,
 } from "../domain/character-model";
+import {
+  adoptDefaultCast,
+  pickDefaultCastCharacter,
+} from "../performers/default-cast";
 import { STAGE } from "@austencloud/scene-3d";
 import type { FormationPreset } from "@austencloud/scene-3d";
 import {
@@ -756,6 +760,8 @@ function buildViewer3DState(
   // keep their shared cap (4) by not passing maxPerformers at all.
   const performerManager: PerformerManager = createPerformerManager({
     initialCharacterId: DEFAULT_CHARACTER_ID,
+    // A new performer is one of the four real people, not the mannequin.
+    pickCharacter: (taken) => pickDefaultCastCharacter(taken),
     maxPerformers:
       options.maxPerformers === undefined
         ? STAGE.MAX_VIEWER_PERFORMERS
@@ -2086,6 +2092,12 @@ function buildViewer3DState(
       while (performerManager.performers.length < persisted.length) {
         performerManager.addPerformer();
       }
+      // A visitor's own saved cast (never a seeded scene) still carries the
+      // mannequin that used to be everyone's default; recast it once.
+      const restoredCharacters =
+        seed?.performers === undefined
+          ? adoptDefaultCast(persisted.map((snap) => snap.characterId))
+          : persisted.map((snap) => snap.characterId);
       sceneUndo.withoutUndo(() => {
         persisted.forEach((snap, i) => {
           const p = performerManager.performers[i];
@@ -2095,7 +2107,8 @@ function buildViewer3DState(
           p.snapFacingAngle(snap.facingAngle);
           p.setHandPlane("left", snap.customLeftPlane);
           p.setHandPlane("right", snap.customRightPlane);
-          if (snap.characterId) p.setCharacter(snap.characterId);
+          const characterId = restoredCharacters[i];
+          if (characterId) p.setCharacter(characterId);
           p.setDisplayName(snap.name ?? null);
           // On a plain open the per-performer prop AND staffLengthCm overrides
           // are stripped, so the performer inherits _defaultSettings.prop —

@@ -14,7 +14,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
 -->
 <script lang="ts">
   import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
-  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import { createDrillFilterBindings } from "./drill-filter-bindings.svelte";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import GalleryDrill from "./GalleryDrill.svelte";
@@ -72,26 +72,9 @@ their own copies drifted (dropdown popovers, stale search) within days.
     wasOpen = isOpen;
   });
 
-  // Loop filters stack under composite map keys — keep value → key so the
-  // sheet can toggle one off without knowing the engine's key scheme.
-  const loopKeyByValue = $derived(
-    new Map(
-      [...engine.activeFilters]
-        .filter(([, f]) => f.type === BrowseFilterType.LOOP_TYPE && !f.locked)
-        .map(([key, f]) => [String(f.value), key])
-    )
-  );
-  const activeLoopValues = $derived(new Set(loopKeyByValue.keys()));
-
-  // TnD family filters follow the same stacking contract.
-  const familyKeyByValue = $derived(
-    new Map(
-      [...engine.activeFilters]
-        .filter(([, f]) => f.type === BrowseFilterType.TND_FAMILY && !f.locked)
-        .map(([key, f]) => [String(f.value), key])
-    )
-  );
-  const activeFamilyValues = $derived(new Set(familyKeyByValue.keys()));
+  // The one copy of the drill's add/remove rules (FilterWorkspace and the
+  // desktop menu row use it too).
+  const filters = createDrillFilterBindings(() => engine);
 
   function applySearch(query: string) {
     engine.setSearch(query);
@@ -141,40 +124,19 @@ their own copies drifted (dropdown popovers, stale search) within days.
           {chooserHint}
           getCount={(type, value) => engine.getFilteredCount(type, value)}
           onApply={(type, value, label, color) => {
-            engine.addFilter(type, value, label, color ?? "#6aa0ff");
+            filters.add(type, value, label, color);
             isOpen = false;
           }}
-          {activeLoopValues}
-          onToggleLoop={(value, label, color, nowActive) => {
-            // Sheet stays open — LOOPs stack, counts recompose live.
-            if (nowActive) {
-              engine.addFilter(BrowseFilterType.LOOP_TYPE, value, label, color);
-            } else {
-              const key = loopKeyByValue.get(value);
-              if (key) engine.removeFilter(key);
-            }
-          }}
-          {activeFamilyValues}
+          activeLoopValues={filters.activeLoopValues}
+          onToggleLoop={filters.toggleLoop}
+          activeFamilyValues={filters.activeFamilyValues}
           onOpenMandala={onOpenMandala
             ? () => {
                 isOpen = false;
                 onOpenMandala?.();
               }
             : undefined}
-          onToggleFamily={(familyId, label, color, nowActive) => {
-            // Same stacking contract as LOOPs.
-            if (nowActive) {
-              engine.addFilter(
-                BrowseFilterType.TND_FAMILY,
-                familyId,
-                label,
-                color
-              );
-            } else {
-              const key = familyKeyByValue.get(familyId);
-              if (key) engine.removeFilter(key);
-            }
-          }}
+          onToggleFamily={filters.toggleFamily}
           onSearch={allowSearch ? applySearch : undefined}
           showAll={allowShowAll}
           onShowAll={allowShowAll ? showAllResults : undefined}

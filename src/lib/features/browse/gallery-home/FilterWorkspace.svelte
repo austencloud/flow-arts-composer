@@ -30,6 +30,7 @@ the below-seam actions mutate the engine in place.
   import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
   import { SECTION_FOR_FILTER_TYPE } from "#lib/shared/browse/domain/workspace-sections.js";
+  import { createDrillFilterBindings } from "./drill-filter-bindings.svelte";
 
   let {
     engine,
@@ -43,10 +44,14 @@ the below-seam actions mutate the engine in place.
     onClose,
     splitMinHeight = 0,
     contentFirstShowAllPreview = false,
+    onOpenCategory,
   }: {
     engine: BrowseEngine;
     collections?: CollectionOption[];
-    resultsPane: Snippet;
+    /** The live results column beside the filters on a wide screen. Omit it
+     * and the workspace never opens a split pane: Show all and every pick
+     * hand off to the host's grid through `onEject`. */
+    resultsPane?: Snippet;
     /** Host-owned outcome placed beside the live result count. */
     resultsActions?: Snippet;
     /** Supporting hosts can keep their own outcome instead of the grid handoff. */
@@ -69,6 +74,10 @@ the below-seam actions mutate the engine in place.
     splitMinHeight?: number;
     /** Opt-in review variant: Show all opens on the results with Filters ready. */
     contentFirstShowAllPreview?: boolean;
+    /** The front door's category tiles go to the host instead of opening
+     * their editor here (the desktop gallery opens its grid with that
+     * category's menu open). */
+    onOpenCategory?: (section: Exclude<Section, "chooser">) => void;
   } = $props();
 
   const eject = (mutate: () => void) => (onEject ? onEject(mutate) : mutate());
@@ -95,22 +104,9 @@ the below-seam actions mutate the engine in place.
     drillSeed = { section: section === "collections" ? "collection" : section };
   }
 
-  const loopKeyByValue = $derived(
-    new Map(
-      [...engine.activeFilters]
-        .filter(([, f]) => f.type === BrowseFilterType.LOOP_TYPE && !f.locked)
-        .map(([key, f]) => [String(f.value), key])
-    )
-  );
-  const activeLoopValues = $derived(new Set(loopKeyByValue.keys()));
-  const familyKeyByValue = $derived(
-    new Map(
-      [...engine.activeFilters]
-        .filter(([, f]) => f.type === BrowseFilterType.TND_FAMILY && !f.locked)
-        .map(([key, f]) => [String(f.value), key])
-    )
-  );
-  const activeFamilyValues = $derived(new Set(familyKeyByValue.keys()));
+  // The one copy of the drill's add/remove rules (also the phone sheet's
+  // and the desktop menu row's).
+  const filters = createDrillFilterBindings(() => engine);
 
   // While the pool loads or a filter is still working out its answer, the
   // count reads as pending instead of "0 matches".
@@ -139,13 +135,6 @@ the below-seam actions mutate the engine in place.
     return counts;
   });
 
-  const appliedValueKeys = $derived(
-    new Set(
-      [...engine.activeFilters.values()]
-        .filter((f) => !f.locked)
-        .map((f) => `${f.type}:${String(f.value)}`)
-    )
-  );
 
   // True while the drill is rendering results live beside the filters. The
   // pinned strip and "View N results" belong to the step-through flow only;
@@ -316,64 +305,26 @@ the below-seam actions mutate the engine in place.
       fluidWideCanvas
       initialSection={drillSeed.section}
       getCount={(type, value) => engine.getFilteredCount(type, value)}
-      isValueApplied={(type, value) =>
-        appliedValueKeys.has(`${type}:${String(value)}`)}
-      onApply={(type, value, label, color) =>
-        engine.addFilter(type, value, label, color ?? "#6aa0ff")}
-      onToggleValue={(type, value, label, color, nowActive) => {
-        // The workspace never bounces: values toggle in place and the strip +
-        // counts recompose live.
-        if (nowActive) {
-          engine.addFilter(type, value, label, color ?? "#6aa0ff");
-        } else {
-          // Stacking categories (LOOPs, T&D, and the OR-stacking set) key per
-          // value; single-valued ones key by bare type because re-adding
-          // replaces. Removing the wrong key is a SILENT no-op, so remove
-          // whichever one the engine holds.
-          const perValue = `${type}:${String(value)}`;
-          engine.removeFilter(
-            engine.activeFilters.has(perValue) ? perValue : String(type)
-          );
-        }
-      }}
-      {activeLoopValues}
+      isValueApplied={filters.isValueApplied}
+      onApply={resultsPane
+        ? filters.add
+        : (type, value, label, color) =>
+            eject(() => filters.add(type, value, label, color))}
+      onToggleValue={filters.toggleValue}
+      activeLoopValues={filters.activeLoopValues}
       loopConnective={engine.connectives[String(BrowseFilterType.LOOP_TYPE)] ??
         "any"}
       onLoopConnectiveChange={(connective) =>
         engine.setConnective(BrowseFilterType.LOOP_TYPE, connective)}
-      onToggleLoop={(
-        value: string,
-        label: string,
-        color: string,
-        nowActive: boolean
-      ) => {
-        if (nowActive) {
-          engine.addFilter(BrowseFilterType.LOOP_TYPE, value, label, color);
-        } else {
-          const key = loopKeyByValue.get(value);
-          if (key) engine.removeFilter(key);
-        }
-      }}
-      {activeFamilyValues}
+      onToggleLoop={filters.toggleLoop}
+      activeFamilyValues={filters.activeFamilyValues}
       {onOpenMandala}
       familyConnective={engine.connectives[
         String(BrowseFilterType.TND_FAMILY)
       ] ?? "any"}
       onFamilyConnectiveChange={(connective) =>
         engine.setConnective(BrowseFilterType.TND_FAMILY, connective)}
-      onToggleFamily={(
-        familyId: string,
-        label: string,
-        color: string,
-        nowActive: boolean
-      ) => {
-        if (nowActive) {
-          engine.addFilter(BrowseFilterType.TND_FAMILY, familyId, label, color);
-        } else {
-          const key = familyKeyByValue.get(familyId);
-          if (key) engine.removeFilter(key);
-        }
-      }}
+      onToggleFamily={filters.toggleFamily}
       onShowAll={() => {
         // Above the seam the drill opens its own pane on the full live grid.
         // Below it, the host's grid.
@@ -390,6 +341,7 @@ the below-seam actions mutate the engine in place.
       bind:showAllPane
       {resultsHeader}
       {resultsPane}
+      {onOpenCategory}
     />
   {/key}
 </div>

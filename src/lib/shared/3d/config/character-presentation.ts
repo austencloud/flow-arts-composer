@@ -32,6 +32,10 @@ export const CHARACTER_PRESENTATION: Readonly<
   ch42: "masculine",
   ch44: "androgynous",
   "personal-metaperson": "masculine",
+  // The default cast's local bodies (default-cast-characters.ts).
+  "renderpeople-sophia": "feminine",
+  "renderpeople-manuel": "masculine",
+  "rocketbox-male-adult-08": "masculine",
 };
 
 export function charactersWithPresentation(

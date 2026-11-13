@@ -248,6 +248,18 @@ export interface WorkerPropHandColors {
 export interface WorkerPerformerSnapshot {
   id: string;
   avatarId: string;
+  /**
+   * The model URL, resolved on the main thread. Characters the product adds
+   * to the catalog (the default cast before its upload, lab rigs) exist only
+   * in the main thread's copy of it. Absent: the worker looks `avatarId` up
+   * in the package catalog.
+   */
+  avatarModelPath?: string;
+  /**
+   * The model is a gitignored local file that this checkout may not have.
+   * If it fails to load, the worker shows the mannequin instead of nothing.
+   */
+  avatarLocalOnly?: boolean;
   position: WorkerVector3;
   facingAngle: number;
   avatarHeightCm: number;

@@ -57,6 +57,15 @@ describe("sectioned grid measurement identity", () => {
     );
   });
 
+  it("invalidates a justified row whose packed height changes", () => {
+    const before = [{ ...row("r-letter-a-0", [4, 8, 12]), height: 240 }];
+    const after = [{ ...row("r-letter-a-0", [4, 8, 12]), height: 212.5 }];
+
+    expect(createSectionedGridMeasurementSignature(before, 5, "row")).not.toBe(
+      createSectionedGridMeasurementSignature(after, 5, "row")
+    );
+  });
+
   it("uses the flattened data key instead of the recycled numeric index", () => {
     const before = [row("r-letter-c|8-0", [8])];
     const after = [row("r-letter-a|16-0", [16])];

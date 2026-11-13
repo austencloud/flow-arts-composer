@@ -17,7 +17,7 @@ Reads from / writes to a headless BrowseEngine instance.
   import MandalaFilterStill from "#lib/shared/browse/components/filter-chips/MandalaFilterStill.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { BrowseEngine } from "../engine/types";
-  import { localizeFilterChip } from "./localize-filter-chip";
+  import { localizeFilterChip, showsMandalaStill } from "./localize-filter-chip";
 
   const LOOP_FILTER_COLORS: Record<string, string> = {
     "component:rotated_halved": "#36c3ff",
@@ -296,7 +296,7 @@ Reads from / writes to a headless BrowseEngine instance.
         {#if chip.locked}
           <i class="fas fa-lock chip-lock" aria-hidden="true"></i>
         {/if}
-        {#if chip.type === BrowseFilterType.MANDALA}
+        {#if showsMandalaStill(chip)}
           <MandalaFilterStill value={chip.value} />
           <span class="sr-only">{localizeFilterChip(chip)}</span>
         {:else}

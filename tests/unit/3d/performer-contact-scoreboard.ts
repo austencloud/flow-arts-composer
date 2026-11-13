@@ -649,7 +649,7 @@ export async function runContactScoreboard(
         headTorso: perStage(() => 0),
       };
       const state = createCharacterInstanceState(
-        { id: `scoreboard-${entry.id}`, persistent: false },
+        { id: `scoreboard-${entry.id}`, persistent: false, allowImpossibleWall: true },
         makeStandaloneDeps()
       );
       state.setPlaneMode(mode);

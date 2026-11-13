@@ -7,6 +7,8 @@ export interface SectionedGridMeasurementItem {
   readonly type: "banner" | "header" | "row";
   readonly key: string;
   readonly sequences?: readonly SectionedGridSequenceSizeSource[];
+  /** A justified row's card height, packed from data. */
+  readonly height?: number;
 }
 
 export type SectionedGridStartPlacementLayout = "row" | "column";
@@ -39,7 +41,11 @@ export function createSectionedGridMeasurementSignature(
 ): string {
   const itemTokens = items.map((item) => {
     if (item.type !== "row") return `${item.type}:${item.key}`;
-    return `${item.type}:${item.key}:${getSectionedGridRowMaxSteps(item.sequences ?? [])}`;
+    // A justified row's height moves with the width and zoom even when its
+    // key and cards stay the same, so it is part of the identity too.
+    const height =
+      item.height === undefined ? "" : `:${item.height.toFixed(1)}`;
+    return `${item.type}:${item.key}:${getSectionedGridRowMaxSteps(item.sequences ?? [])}${height}`;
   });
 
   return `${columnCount}\u001e${startPlacementLayout}\u001e${itemTokens.join("\u001f")}`;

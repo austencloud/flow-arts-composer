@@ -201,11 +201,16 @@
   // surface per side, so the primary side alone decides, and it also stands
   // down while the companion side shows 3D; otherwise the hidden companion
   // would warm during a direct 3D open.
+  // Leaving the viewer cancels the warm-up. Otherwise a download still queued
+  // or running would carry on into the next page (Remix into Create, say) and
+  // compete with everything that page has to load.
+  const sceneWarmup = new AbortController();
+  $effect(() => () => sceneWarmup.abort());
   $effect(() => {
     if (side !== "left") return;
     if (splitConfig.rightPane === "animation-3d") return;
     if (is3DActive || is3DMounted) return;
-    warmSelectedSceneAssets();
+    warmSelectedSceneAssets(sceneWarmup.signal);
   });
   let scene3DReady = $state(false);
   // Ready is when the stage is set; revealed is when the loading curtain has

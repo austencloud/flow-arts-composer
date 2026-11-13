@@ -12,6 +12,32 @@ import {
   peekMandalaKey,
   resolveMandalaSignature,
 } from "../sequence-density";
+import {
+  createMandalaWorkers,
+  type MandalaWorkerLike,
+} from "#lib/shared/mandala/services/mandala-workers.js";
+import { doMandalaWork } from "#lib/shared/mandala/services/mandala-measure-work.js";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { mandalaSignature } from "#lib/shared/mandala/services/mandala-density.js";
+
+/** A worker that does its task in place, a tick later, as a real one would. */
+function inPlaceWorker(options: { fail?: boolean } = {}): MandalaWorkerLike {
+  const worker: MandalaWorkerLike = {
+    onmessage: null,
+    onerror: null,
+    terminate() {},
+    postMessage(message) {
+      setTimeout(() => {
+        if (options.fail) return worker.onerror?.(new Event("error"));
+        const { result } = doMandalaWork(message.task);
+        worker.onmessage?.({
+          data: { id: message.id, type: "done", result },
+        } as MessageEvent);
+      }, 0);
+    },
+  };
+  return worker;
+}
 
 const CLOCKWISE = ["n", "e", "s", "w"] as const;
 
@@ -74,7 +100,9 @@ function memoryStore(seed: MandalaSignatureRow[] = []) {
   const rows = new Map(seed.map((row) => [row.id, row]));
   const store: MandalaIndexStore = {
     async load(ids) {
-      return ids.map((id) => rows.get(id)).filter((row): row is MandalaSignatureRow => !!row);
+      return ids
+        .map((id) => rows.get(id))
+        .filter((row): row is MandalaSignatureRow => !!row);
     },
     async save(saved) {
       for (const row of saved) rows.set(row.id, row);
@@ -95,7 +123,10 @@ describe("the mandala index", () => {
     const sparse = sequence("idx-sparse", "BBBB", oneHandSteps);
     const empty = sequence("idx-empty", "", []);
     const clock = manualScheduler();
-    const index = createMandalaIndex({ store: memoryStore().store, scheduler: clock.scheduler });
+    const index = createMandalaIndex({
+      store: memoryStore().store,
+      scheduler: clock.scheduler,
+    });
 
     index.setPool([dense, denseAgain, sparse, empty]);
     await settle();
@@ -111,17 +142,90 @@ describe("the mandala index", () => {
     const [first, second] = index.groups;
     expect(
       first!.spaces < second!.spaces ||
-        (first!.spaces === second!.spaces && first!.coverage <= second!.coverage)
+        (first!.spaces === second!.spaces &&
+          first!.coverage <= second!.coverage)
     ).toBe(true);
-    expect(index.groups.every((group) => Number.isInteger(group.spaces))).toBe(true);
-    expect(index.groups[1]!.sequences.map((s) => s.id)).toEqual(["idx-dense", "idx-dense-2"]);
-    expect(index.groupOf(index.groups[1]!.key)?.paths.left.length).toBeGreaterThan(0);
+    expect(index.groups.every((group) => Number.isInteger(group.spaces))).toBe(
+      true
+    );
+    expect(index.groups[1]!.sequences.map((s) => s.id)).toEqual([
+      "idx-dense",
+      "idx-dense-2",
+    ]);
+    expect(
+      index.groupOf(index.groups[1]!.key)?.paths.left.length
+    ).toBeGreaterThan(0);
     expect(index.sequenceById("idx-dense-2")?.word).toBe("AAAA");
+  });
+
+  it("measures on the workers into the same groups the page would make, and saves each answer", async () => {
+    const pool = [
+      sequence("wk-dense", "AAAA", twoHandSteps),
+      sequence("wk-dense-2", "AAAA", twoHandSteps),
+      sequence("wk-sparse", "BBBB", oneHandSteps),
+      ...Array.from({ length: 30 }, (_, i) =>
+        sequence(`wk-more-${i}`, "BBBB", oneHandSteps)
+      ),
+    ];
+    const memory = memoryStore();
+    const clock = manualScheduler();
+    const workers = createMandalaWorkers({
+      size: 2,
+      start: () => inPlaceWorker(),
+    });
+    const index = createMandalaIndex({
+      store: memory.store,
+      scheduler: clock.scheduler,
+      workers,
+    });
+
+    index.setPool(pool);
+    for (let i = 0; i < 50 && !index.done; i++)
+      await new Promise((r) => setTimeout(r, 0));
+
+    expect(index.done).toBe(true);
+    // No slice ran: the workers did all of it.
+    expect(clock.pending()).toBe(0);
+    for (const s of pool) {
+      expect(peekMandalaKey(s)).toBe(mandalaSignature(calculate(s.steps)).key);
+    }
+    expect(index.groups.map((group) => group.sequences.length)).toEqual([
+      31, 2,
+    ]);
+    expect(memory.rows.size).toBe(pool.length);
+  });
+
+  it("measures on the page what a failed worker left", async () => {
+    const pool = [
+      sequence("wk-fail-a", "AAAA", twoHandSteps),
+      sequence("wk-fail-b", "BBBB", oneHandSteps),
+    ];
+    const clock = manualScheduler();
+    const workers = createMandalaWorkers({
+      size: 1,
+      start: () => inPlaceWorker({ fail: true }),
+    });
+    const index = createMandalaIndex({
+      store: memoryStore().store,
+      scheduler: clock.scheduler,
+      workers,
+    });
+
+    index.setPool(pool);
+    for (let i = 0; i < 20 && clock.pending() === 0; i++)
+      await new Promise((r) => setTimeout(r, 0));
+    clock.runAll();
+
+    expect(index.done).toBe(true);
+    expect(index.groups).toHaveLength(2);
   });
 
   it("reports an empty pool only once one is set", async () => {
     const clock = manualScheduler();
-    const index = createMandalaIndex({ store: memoryStore().store, scheduler: clock.scheduler });
+    const index = createMandalaIndex({
+      store: memoryStore().store,
+      scheduler: clock.scheduler,
+    });
     expect(index.empty).toBe(false);
     index.setPool([]);
     await settle();
@@ -136,7 +240,10 @@ describe("the mandala index", () => {
     const b = sequence("slice-b", "BBBB", oneHandSteps);
     const clock = manualScheduler();
     const memory = memoryStore();
-    const index = createMandalaIndex({ store: memory.store, scheduler: clock.scheduler });
+    const index = createMandalaIndex({
+      store: memory.store,
+      scheduler: clock.scheduler,
+    });
 
     index.setPool([a, b]);
     await settle();
@@ -164,7 +271,13 @@ describe("the mandala index", () => {
     const stale = sequence("stale-b", "BBBB", oneHandSteps);
     const clock = manualScheduler();
     const memory = memoryStore([
-      { id: mandalaCacheKey(saved)!, key: "saved-key", coverage: 0.2, spaces: 7, measure: MANDALA_MEASURE_VERSION },
+      {
+        id: mandalaCacheKey(saved)!,
+        key: "saved-key",
+        coverage: 0.2,
+        spaces: 7,
+        measure: MANDALA_MEASURE_VERSION,
+      },
       // A row from before spaces were measured: version 1, no spaces field.
       {
         id: mandalaCacheKey(stale)!,
@@ -173,7 +286,10 @@ describe("the mandala index", () => {
         measure: 1,
       } as unknown as MandalaSignatureRow,
     ]);
-    const index = createMandalaIndex({ store: memory.store, scheduler: clock.scheduler });
+    const index = createMandalaIndex({
+      store: memory.store,
+      scheduler: clock.scheduler,
+    });
 
     index.setPool([saved, stale]);
     await settle();
@@ -197,7 +313,10 @@ describe("the mandala index", () => {
     const known = sequence("pool-known", "AAAA", twoHandSteps);
     const fresh = sequence("pool-fresh", "BBBB", oneHandSteps);
     const clock = manualScheduler();
-    const index = createMandalaIndex({ store: memoryStore().store, scheduler: clock.scheduler });
+    const index = createMandalaIndex({
+      store: memoryStore().store,
+      scheduler: clock.scheduler,
+    });
 
     index.setPool([known]);
     await settle();
@@ -221,7 +340,10 @@ describe("the mandala index", () => {
 
   it("tells subscribers about each change", async () => {
     const clock = manualScheduler();
-    const index = createMandalaIndex({ store: memoryStore().store, scheduler: clock.scheduler });
+    const index = createMandalaIndex({
+      store: memoryStore().store,
+      scheduler: clock.scheduler,
+    });
     let heard = 0;
     index.subscribe(() => heard++);
     index.setPool([sequence("sub-a", "AAAA", twoHandSteps)]);

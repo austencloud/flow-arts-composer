@@ -113,6 +113,26 @@ export function getFilteredCount<T extends ActiveFilter>(
   otherFilters: Map<string, T>,
   connectives?: FilterConnectives
 ): number {
+  return applyFilter(
+    getFacetPool(sequences, candidateType, otherFilters, connectives),
+    candidateType,
+    candidateValue
+  ).length;
+}
+
+/**
+ * The pool a candidate value of `candidateType` would narrow: `sequences`
+ * under every other active category (see the facet-count convention below).
+ * A screen that previews several values of one category at once, such as
+ * the Mandala levels, filters this once and splits it, instead of counting
+ * each value from the whole pool.
+ */
+export function getFacetPool<T extends ActiveFilter>(
+  sequences: SequenceData[],
+  candidateType: BrowseFilterType,
+  otherFilters: Map<string, T>,
+  connectives?: FilterConnectives
+): SequenceData[] {
   // Facet-count convention: a candidate value's count reflects the pool under
   // every OTHER category. For alternative-stacking categories (the OR set,
   // plus LOOPs/TnD under a "Match any" connective) the candidate's own
@@ -133,9 +153,5 @@ export function getFilteredCount<T extends ActiveFilter>(
     rest.set(key, filter);
   }
 
-  return applyFilter(
-    applyFilters(sequences, rest, connectives),
-    candidateType,
-    candidateValue
-  ).length;
+  return applyFilters(sequences, rest, connectives);
 }

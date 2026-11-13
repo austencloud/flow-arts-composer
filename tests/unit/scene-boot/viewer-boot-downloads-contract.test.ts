@@ -28,7 +28,7 @@ describe("viewer boot downloads", () => {
   it("warms scene assets only while 3D has not been opened", () => {
     const source = read(`${VIEWER_DIR}/ViewerMotionSurface.svelte`);
     const effect = source.match(
-      /\$effect\(\(\) => \{([^}]*?)warmSelectedSceneAssets\(\);/s
+      /\$effect\(\(\) => \{([^}]*?)warmSelectedSceneAssets\(sceneWarmup\.signal\);/s
     );
     expect(effect, "warm-up effect not found").not.toBeNull();
     expect(effect![1]).toMatch(
@@ -38,7 +38,17 @@ describe("viewer boot downloads", () => {
     // or the hidden companion fetches the models during a direct 3D open.
     expect(effect![1]).toMatch(/if \(side !== "left"\) return;/);
     // Exactly one call site, so the gate cannot be bypassed by a second one.
-    expect(source.match(/warmSelectedSceneAssets\(\)/g)).toHaveLength(1);
+    expect(source.match(/warmSelectedSceneAssets\(/g)).toHaveLength(1);
+  });
+
+  it("cancels the warm-up when the viewer goes away", () => {
+    // Remix into Create used to carry a queued warm-up onto the next page,
+    // where it downloaded the decoders and the scene's models alongside
+    // everything Create was loading.
+    const source = read(`${VIEWER_DIR}/ViewerMotionSurface.svelte`);
+    expect(source).toMatch(
+      /const sceneWarmup = new AbortController\(\);\s*\$effect\(\(\) => \(\) => sceneWarmup\.abort\(\)\);/
+    );
   });
 
   it("does not run the old forest and camping preloader", () => {

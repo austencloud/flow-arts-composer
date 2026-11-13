@@ -24,7 +24,12 @@ import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/ut
 import { TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { filterSequencesByExactLetter } from "#lib/shared/browse/services/sequence-letter-occurrence.js";
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
-import { peekMandalaKey } from "#lib/shared/browse/services/sequence-density.js";
+import {
+  mandalaLevelOf,
+  parseMandalaLevelValue,
+  peekMandalaKey,
+  peekMandalaSignature,
+} from "#lib/shared/browse/services/sequence-density.js";
 import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
 import {
   mandalaClimb,
@@ -139,18 +144,33 @@ export function applyFilter(
 }
 
 /**
- * The sequences whose mandala is in the family the value names (or, before
- * families are ready, the named shape alone). Reads only measured answers, so
- * a pass is a set lookup per sequence and never freezes the page; reading the
+ * The Mandala filter. A level value (`level-3`) keeps the sequences whose own
+ * mandala is that busy (`mandalaLevelOf`); a family value, which older saved
+ * filters and Smart Collections still hold, keeps the sequences whose mandala
+ * is in that family (or, before families are ready, the named shape alone).
+ * Reads only measured answers, so a pass never freezes the page; reading the
  * index's and the climb's versions makes a filtered grid fill in as the
- * measuring runs and widen when families land.
+ * measuring runs.
  */
 function filterByMandala(
   sequences: SequenceData[],
   filterValue: BrowseFilterValue
 ): SequenceData[] {
   void mandalaIndex.version;
+  const level = parseMandalaLevelValue(filterValue);
+  if (level !== null) return filterByMandalaLevel(sequences, level);
   return filterByMandalaFamily(sequences, String(filterValue ?? ""), mandalaClimb);
+}
+
+/** The sequences whose measured mandala sits at `level`; unmeasured ones wait. */
+export function filterByMandalaLevel(
+  sequences: SequenceData[],
+  level: number
+): SequenceData[] {
+  return sequences.filter((seq) => {
+    const signature = peekMandalaSignature(seq);
+    return signature !== undefined && signature.key !== "" && mandalaLevelOf(signature.spaces) === level;
+  });
 }
 
 /** The Mandala filter against any climb; the app passes its one climb. */

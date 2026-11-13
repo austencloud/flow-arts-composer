@@ -116,6 +116,44 @@ export function mandalaSectionById(id: string): MandalaSection | undefined {
   return MANDALA_SECTIONS.find((section) => section.id === id || section.label === id);
 }
 
+/**
+ * How busy a sequence's mandala is, on a scale of six, by the spaces its
+ * lines enclose. The cuts sit where the pictures change, not at equal shares:
+ * drawn as ten equal levels on 2026-11-12 (1,578 sequences, spaces 0 to 157),
+ * the simple end changed look at every step while everything past about 45
+ * spaces read as one dense rosette. So four levels for the simple end (bare
+ * lines, crosses in circles, open petals, layered rosettes) and two for the
+ * dense end: 81, 203, 170, 166, 469 and 489 sequences. Austen chose this
+ * split ("Six, by look"). The cuts are fixed, not worked out per pool, so a
+ * saved filter for level 3 means the same mandalas on every visit and for
+ * every source.
+ */
+export const MANDALA_LEVEL_CUTS: readonly number[] = [9, 17, 29, 45, 77];
+export const MANDALA_LEVEL_COUNT = MANDALA_LEVEL_CUTS.length + 1;
+
+/** The level, 1 (simplest) to MANDALA_LEVEL_COUNT, for a count of spaces. */
+export function mandalaLevelOf(spaces: number): number {
+  const below = MANDALA_LEVEL_CUTS.findIndex((cut) => spaces < cut);
+  return below === -1 ? MANDALA_LEVEL_COUNT : below + 1;
+}
+
+const LEVEL_VALUE_PREFIX = "level-";
+
+/** The Mandala filter's value for a level. A family value is
+ *  `<shape key>~<sequence id>`, so the two never read as each other. */
+export function mandalaLevelValue(level: number): string {
+  return `${LEVEL_VALUE_PREFIX}${level}`;
+}
+
+/** The level a Mandala filter value names, or null for a family value. */
+export function parseMandalaLevelValue(value: unknown): number | null {
+  if (typeof value !== "string" || !value.startsWith(LEVEL_VALUE_PREFIX)) return null;
+  const level = Number(value.slice(LEVEL_VALUE_PREFIX.length));
+  return Number.isInteger(level) && level >= 1 && level <= MANDALA_LEVEL_COUNT
+    ? level
+    : null;
+}
+
 /** Coverage as "14%" for titles and accessible names. */
 export function formatDensity(coverage: number): string {
   return `${Math.round(coverage * 100)}%`;

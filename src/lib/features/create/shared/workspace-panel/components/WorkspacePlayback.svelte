@@ -332,6 +332,9 @@
     inherits: false;
     initial-value: 0px;
   }
+  /* playerCanvasBox (playback-poster.ts) mirrors this layout and
+     .playback-media's square, so Play's poster stands where the canvas will
+     paint. Change them together. */
   .playback-layout {
     /* Left unresolved here: the container units resolve against this box
        wherever the size is read. */

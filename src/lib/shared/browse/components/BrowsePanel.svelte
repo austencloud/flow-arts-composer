@@ -115,6 +115,10 @@
      * the request. */
     revealSequenceId?: string | null;
     onRevealDone?: (sequenceId: string) => void;
+    /** The host draws the whole control row (desktop Browse's row of filter
+     * menus). It replaces the toolbar, the stacked props band and the applied
+     * chips, since the row shows each of those itself. */
+    hostToolbar?: import("svelte").Snippet;
   }
 
   let {
@@ -148,6 +152,7 @@
     collectionPropType,
     revealSequenceId = null,
     onRevealDone,
+    hostToolbar,
   }: Props = $props();
 
   const header = tryGetBrowseHeaderContext();
@@ -512,6 +517,8 @@
           onExitSelection={selection.exit}
         />
       </div>
+    {:else if hostToolbar && !chromeInHeader}
+      {@render hostToolbar()}
     {:else if !chromeInHeader}
       <BrowseToolbar
         {engine}
@@ -539,11 +546,11 @@
 
   <!-- Stacked bands: only below the one-row width, or when the toolbar that
        would host them is not shown. -->
-  {#if showViewingControl && !chromeInHeader && !(inlineChrome && showToolbar)}
+  {#if showViewingControl && !chromeInHeader && !hostToolbar && !(inlineChrome && showToolbar)}
     <PropViewingControl {collectionPropType} />
   {/if}
 
-  {#if showFilterBar && !chromeInHeader && !(inlineChrome && showToolbar && onOpenFilters)}
+  {#if showFilterBar && !chromeInHeader && !hostToolbar && !(inlineChrome && showToolbar && onOpenFilters)}
     <BrowseFilterBar {engine} chipsOnly={!!onOpenFilters} {onSaveSmart} />
   {/if}
 

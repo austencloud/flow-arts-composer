@@ -85,6 +85,12 @@ interface CharacterPresenceTransition {
 export interface PerformerManagerDeps {
   initialCharacterId: CharacterId;
   /**
+   * Chooses each new performer's character from the ones already on stage.
+   * The standalone viewer passes the default-cast picker; hosts that omit it
+   * give every performer `initialCharacterId`.
+   */
+  pickCharacter?: (taken: readonly CharacterId[]) => CharacterId;
+  /**
    * Optional cap override. Defaults to the shared STAGE.MAX_PERFORMERS (4).
    * The standalone 3D viewer passes STAGE.MAX_VIEWER_PERFORMERS (8).
    */
@@ -115,7 +121,7 @@ export interface PerformerManagerDeps {
  * Create performer manager state
  */
 function buildPerformerManager(deps: PerformerManagerDeps) {
-  const { initialCharacterId } = deps;
+  const { initialCharacterId, pickCharacter } = deps;
   const maxPerformers = deps.maxPerformers ?? MAX_PERFORMERS;
   const getDefaults = deps.getDefaults;
   const persistent = deps.persistent;
@@ -159,7 +165,9 @@ function buildPerformerManager(deps: PerformerManagerDeps) {
         id: `performer-${nextPerformerSerial++}`,
         positionX: pos.x,
         positionZ: pos.z,
-        characterId: initialCharacterId,
+        characterId: pickCharacter
+          ? pickCharacter(performerStates.map((p) => p.characterId))
+          : initialCharacterId,
         persistent,
       },
       getDefaults ? { getDefaults } : makeStandaloneDeps()

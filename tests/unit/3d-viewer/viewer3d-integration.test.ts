@@ -83,6 +83,9 @@ describe("viewer3d integration: spawn → formation → undo", () => {
     state.spawnPerformerFromUI();
     state.spawnPerformerFromUI();
     state.selectPerformerScope(null);
+    const before = state.performerManager.performers.map(
+      (performer) => performer.characterId
+    );
 
     const undo = getSceneUndoManager();
     undo.clear();
@@ -97,10 +100,8 @@ describe("viewer3d integration: spawn → formation → undo", () => {
 
     state.undo();
     expect(
-      state.performerManager.performers.every(
-        (performer) => performer.characterId === "x-bot"
-      )
-    ).toBe(true);
+      state.performerManager.performers.map((performer) => performer.characterId)
+    ).toEqual(before);
 
     state.redo();
     expect(

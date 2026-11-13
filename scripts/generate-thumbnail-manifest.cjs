@@ -37,6 +37,51 @@ try {
 
 const bucket = admin.storage().bucket();
 
+// The app only ever asks for cards drawn by the current renderer, so older
+// renders in the bucket are dead weight in a manifest every visitor downloads
+// at startup. Read the version from the app's own constant so a renderer bump
+// and the next manifest run can't disagree.
+const fs = require("fs");
+const { execFileSync } = require("child_process");
+const repoRoot = path.resolve(__dirname, "..");
+const KEY_DERIVER = "src/lib/shared/browse/services/thumbnail-key-deriver.ts";
+
+function readRendererVersion(source) {
+  const match = source.match(
+    /export const THUMBNAIL_RENDERER_VERSION = (\d+);/
+  );
+  return match ? match[1] : null;
+}
+
+const localVersion = readRendererVersion(
+  fs.readFileSync(path.join(repoRoot, KEY_DERIVER), "utf8")
+);
+if (!localVersion) {
+  console.error(`Could not read THUMBNAIL_RENDERER_VERSION from ${KEY_DERIVER}`);
+  process.exit(1);
+}
+const rendererVersions = new Set([localVersion]);
+
+// The live site runs GitHub main, which can trail local main by days. Keep the
+// live renderer's cards listed too, so a renderer bump on local main never
+// empties the index production reads before that bump ships.
+try {
+  const liveVersion = readRendererVersion(
+    execFileSync("git", ["show", `origin/main:${KEY_DERIVER}`], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+  );
+  if (liveVersion) rendererVersions.add(liveVersion);
+} catch {
+  // No origin/main here; the local version is all there is to go on.
+}
+const rendererLabel = [...rendererVersions].join(" and ");
+const currentRendererSuffix = new RegExp(
+  `_r(${[...rendererVersions].join("|")})_(dark|light)$`
+);
+
 /**
  * Convert a storage path to a cache key
  * Path format: thumbnails/{variant}/{propType}/{sequenceName}_{mode}.webp
@@ -54,6 +99,7 @@ async function generateManifest() {
 
   const cacheKeys = [];
   let fileCount = 0;
+  let olderRenders = 0;
 
   // List all files in the thumbnails folder
   const [files] = await bucket.getFiles({ prefix: "thumbnails/" });
@@ -69,16 +115,17 @@ async function generateManifest() {
     if (!file.name.endsWith(".webp")) continue;
 
     const cacheKey = pathToCacheKey(file.name);
-    cacheKeys.push(cacheKey);
     fileCount++;
-
-    // Progress indicator every 100 files
-    if (fileCount % 100 === 0) {
-      console.log(`  Processed ${fileCount} thumbnails...`);
+    if (!currentRendererSuffix.test(cacheKey)) {
+      olderRenders++;
+      continue;
     }
+    cacheKeys.push(cacheKey);
   }
 
-  console.log(`Found ${cacheKeys.length} thumbnails.`);
+  console.log(
+    `Found ${fileCount} thumbnails: ${cacheKeys.length} from renderer ${rendererLabel}, ${olderRenders} older renders left out.`
+  );
 
   // Generate manifest
   const manifest = {

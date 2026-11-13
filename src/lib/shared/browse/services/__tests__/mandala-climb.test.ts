@@ -15,9 +15,57 @@ import {
   type MandalaClimbSource,
   type MandalaFamilyBookStore,
 } from "../mandala-climb.svelte";
-import type { MandalaGroup } from "../mandala-index.svelte";
+import { peekMandalaPaths, type MandalaGroup } from "../mandala-index.svelte";
 import { seedMandalaSignature } from "../sequence-density";
 import { filterByMandalaFamily } from "../browse-filter";
+import {
+  createMandalaWorkers,
+  type MandalaWorkerLike,
+} from "#lib/shared/mandala/services/mandala-workers.js";
+import { doMandalaWork } from "#lib/shared/mandala/services/mandala-measure-work.js";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+
+/** A worker that does its task in place, a tick later, as a real one would. */
+function inPlaceWorker(): MandalaWorkerLike {
+  const worker: MandalaWorkerLike = {
+    onmessage: null,
+    onerror: null,
+    terminate() {},
+    postMessage(message) {
+      setTimeout(() => {
+        const { result } = doMandalaWork(message.task);
+        worker.onmessage?.({
+          data: { id: message.id, type: "done", result },
+        } as MessageEvent);
+      }, 0);
+    },
+  };
+  return worker;
+}
+
+const CLOCKWISE = ["n", "e", "s", "w"] as const;
+function motion(motionType: "pro" | "anti", start: number) {
+  return {
+    motionType,
+    rotationDirection: "cw",
+    startLocation: CLOCKWISE[start % 4]!,
+    endLocation: CLOCKWISE[(start + 1) % 4]!,
+    turns: 0,
+    startOrientation: "in",
+    endOrientation: "in",
+    isVisible: true,
+  };
+}
+const twoHandSteps = Array.from({ length: 4 }, (_, beat) => ({
+  letter: "A",
+  stepNumber: beat + 1,
+  motions: { left: motion("anti", beat + 2), right: motion("pro", beat) },
+}));
+const oneHandSteps = Array.from({ length: 4 }, (_, beat) => ({
+  letter: "B",
+  stepNumber: beat + 1,
+  motions: { left: null, right: motion("pro", beat) },
+}));
 
 const paths = (left: MandalaPoint[][], right: MandalaPoint[][] = []): MandalaPaths => ({
   left: left.map((p, tipIndex) => ({ d: "", tipIndex, beats: [p] })),
@@ -171,6 +219,31 @@ describe("the mandala climb", () => {
     expect(commas.value).toBe("b~b-seq0");
     expect(climb.fan.map((g) => g.key)).toEqual(["b", "big", "small"]);
     expect(books.saved()?.keys).toHaveLength(4);
+  });
+
+  it("keeps each shape's drawing from the workers, so the wall does not make it again", async () => {
+    const real = (key: string, steps: unknown[]): MandalaGroup => {
+      const sequence = { id: `${key}-seq0`, word: "AAAA", steps } as unknown as SequenceData;
+      seedMandalaSignature(sequence, { key, coverage: 0, spaces: 0 });
+      return { key, coverage: 0, spaces: 0, sequences: [sequence], paths: paths([]) };
+    };
+    const two = real("drawn-on-worker-two", twoHandSteps);
+    const one = real("drawn-on-worker-one", oneHandSteps);
+    const index = source();
+    const climb = createMandalaClimb({
+      index,
+      store: memoryBooks().store,
+      scheduler: soon,
+      measure: measureDistancesInSlices,
+      workers: createMandalaWorkers({ size: 1, start: () => inPlaceWorker() }),
+    });
+    expect(peekMandalaPaths(two.key)).toBeUndefined();
+
+    index.show([two, one]);
+    await until(() => climb.ready);
+
+    expect(peekMandalaPaths(two.key)).toEqual(calculate(twoHandSteps as never));
+    expect(peekMandalaPaths(one.key)).toEqual(calculate(oneHandSteps as never));
   });
 
   it("links from the saved book on a return visit and measures only a new shape's pairs", async () => {

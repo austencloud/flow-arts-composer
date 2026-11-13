@@ -6,6 +6,18 @@
 import {
 	BLUE_FILL,
 	BLUE_STROKE,
+	DARK_MOTION_BLUE_FILL,
+	DARK_MOTION_BLUE_STROKE,
+	DARK_MOTION_PURPLE_FILL,
+	DARK_MOTION_PURPLE_STROKE,
+	DARK_MOTION_RED_FILL,
+	DARK_MOTION_RED_STROKE,
+	LIGHT_MOTION_BLUE_FILL,
+	LIGHT_MOTION_BLUE_STROKE,
+	LIGHT_MOTION_PURPLE_FILL,
+	LIGHT_MOTION_PURPLE_STROKE,
+	LIGHT_MOTION_RED_FILL,
+	LIGHT_MOTION_RED_STROKE,
 	PURPLE_FILL,
 	PURPLE_STROKE,
 	RED_FILL,
@@ -28,6 +40,30 @@ export function applyMandalaHandColors(
 	colors?: { left: string; right: string } | null,
 ): MandalaPalette {
 	return colors ? handColorPalette(colors) : base;
+}
+
+/**
+ * The colors a choreo card paints its mandala squares in: the theme's motion
+ * blue, red and overlap purple, or the reader's own prop colors. ImageComposer
+ * paints the card with it, and a slow card's drawing (CardMandalaArrival)
+ * draws with it, so the drawing lands on squares of the same colors.
+ */
+export function cardMandalaPalette(
+	isDarkMode: boolean,
+	handColors?: { left: string; right: string } | null,
+): MandalaPalette {
+	const base: MandalaPalette = isDarkMode
+		? {
+				leftStroke: DARK_MOTION_BLUE_STROKE, leftFill: DARK_MOTION_BLUE_FILL,
+				rightStroke: DARK_MOTION_RED_STROKE, rightFill: DARK_MOTION_RED_FILL,
+				purpleStroke: DARK_MOTION_PURPLE_STROKE, purpleFill: DARK_MOTION_PURPLE_FILL,
+			}
+		: {
+				leftStroke: LIGHT_MOTION_BLUE_STROKE, leftFill: LIGHT_MOTION_BLUE_FILL,
+				rightStroke: LIGHT_MOTION_RED_STROKE, rightFill: LIGHT_MOTION_RED_FILL,
+				purpleStroke: LIGHT_MOTION_PURPLE_STROKE, purpleFill: LIGHT_MOTION_PURPLE_FILL,
+			};
+	return applyMandalaHandColors(base, handColors);
 }
 
 /**

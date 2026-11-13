@@ -159,6 +159,20 @@
      * can clear 1240px of width and still leave the editor no room for one
      * row. 0 keeps the width-only decision for full-page hosts. */
     splitMinHeight?: number;
+    /** Which categories the chooser offers. "secondary" leaves out the
+     * privileged doors (Level, Length, Mandala) for a host that gives them
+     * their own buttons: the desktop menu row's More menu. */
+    chooserCategories?: "all" | "secondary";
+    /** Value screens show a Back button to the chooser. A host that opens one
+     * editor on its own (the Level and Length menus) turns it off. */
+    showEditorBack?: boolean;
+    /** The landing hands a category to the host instead of opening its
+     * editor here: the desktop front door opens the grid with that
+     * category's menu already open. */
+    onOpenCategory?: (section: Exclude<Section, "chooser">) => void;
+    /** Content-sized host (a menu popover, which styles .fit-content):
+     * screens ease between their heights instead of filling one box. */
+    fitContent?: boolean;
   }
   let {
     pool = [],
@@ -200,6 +214,10 @@
     showAllPane = $bindable(false),
     contentFirstShowAllPreview = false,
     splitMinHeight = 0,
+    chooserCategories = "all",
+    showEditorBack = true,
+    onOpenCategory,
+    fitContent = false,
   }: Props = $props();
 
   // Null inside the shared sequence picker, which composes this drill in a
@@ -529,7 +547,9 @@
    * single-valued category directly, or leave for Collections or the By
    * mandala wall. */
   function selectCategory(entry: CategoryEntry) {
-    if (entry.section) {
+    if (entry.section && onOpenCategory && showLanding) {
+      onOpenCategory(entry.section);
+    } else if (entry.section) {
       goToSection(entry.section);
     } else if (entry.apply) {
       onApply(entry.apply.type, entry.apply.value, entry.apply.label);
@@ -575,6 +595,8 @@
     onFamilyConnectiveChange={onFamilyConnectiveChange
       ? changeFamilyConnective
       : undefined}
+    {chooserCategories}
+    {showEditorBack}
     onBack={() => goToSection("chooser")}
     onPickValue={pickValue}
     onPickExclusiveValue={pickExclusiveValue}
@@ -594,6 +616,7 @@
   class:adaptive-value-layout={adaptiveValueLayout}
   class:persistent-desktop-catalog={persistentDesktopCatalog}
   class:split-pane={splitPane}
+  class:fit-content={fitContent}
   bind:clientWidth={drillWidth}
   bind:clientHeight={drillHeight}
   bind:this={drillEl}
@@ -656,7 +679,12 @@
              grid-stack would resize (and shove neighbors) at every section
              change. The stage is the sized box; layers fill it and each
              screen scrolls itself. -->
-        <Crossfade key={section} duration={morphing ? 0 : DURATION.normal} fill>
+        <Crossfade
+          key={section}
+          duration={morphing ? 0 : DURATION.normal}
+          fill={!fitContent}
+          animateHeight={fitContent}
+        >
           {#if showLanding}
             <GalleryLanding
               {catalog}
@@ -670,7 +698,8 @@
               {fluidWideCanvas}
               glyphHeight={landingGlyphHeight}
               morph={showLanding}
-              onOpenSection={goToSection}
+              onOpenSection={(next) =>
+                onOpenCategory ? onOpenCategory(next) : goToSection(next)}
               {onOpenMandala}
               onShowAll={onShowAll ? handleShowAll : undefined}
               onSelectCategory={selectCategory}

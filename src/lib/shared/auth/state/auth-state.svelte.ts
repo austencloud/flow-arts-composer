@@ -155,6 +155,28 @@ export function awaitAuthSettled(): Promise<void> {
   });
 }
 
+/**
+ * Start the auth listener if nothing on this page has, then resolve once it
+ * has settled. For a tap that needs to know who is here, never for page load.
+ *
+ * awaitAuthSettled() alone waits forever on a public page that never started
+ * auth. /sequence/[id] starts it at load only for a scan or a saved session, so
+ * a visitor who arrived signed out stayed invisible to authState after the tap
+ * that made them a guest, or after signing in through the account sheet: the
+ * favourite they tapped flipped back, and Download did nothing at all. Never
+ * rejects; if the listener cannot start, it resolves and the caller carries on
+ * as signed out.
+ */
+export async function learnWhoIsSignedIn(): Promise<void> {
+  try {
+    await initializeAuthListener();
+  } catch (error) {
+    console.warn("[authState] Could not start the auth listener:", error);
+    return;
+  }
+  await awaitAuthSettled();
+}
+
 if (import.meta.hot) {
   import.meta.hot.dispose((data) => {
     data.authState = { ..._state };
