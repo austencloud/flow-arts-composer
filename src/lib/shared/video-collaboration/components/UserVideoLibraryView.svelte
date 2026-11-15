@@ -13,6 +13,7 @@
   import type { UserVideoLibrary } from "../services/types";
   import type { CollaborativeVideo } from "../domain/collaborative-video";
   import { onMount } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CollaborativeVideoCard from "./CollaborativeVideoCard.svelte";
   import PendingInviteCard from "./PendingInviteCard.svelte";
 
@@ -41,7 +42,7 @@
       library = await getUserVideoLibrary();
     } catch (e) {
       console.error("Failed to load video library:", e);
-      error = e instanceof Error ? e.message : "Failed to load videos";
+      error = e instanceof Error ? e.message : t("library_videos_load_failed");
     } finally {
       loading = false;
     }
@@ -76,10 +77,22 @@
   }
 
   const tabs: { id: Tab; label: string; count: number }[] = $derived([
-    { id: "all", label: "All", count: allCount },
-    { id: "created", label: "My Videos", count: createdCount },
-    { id: "collaborations", label: "Collaborations", count: collabCount },
-    { id: "invites", label: "Invites", count: pendingCount },
+    { id: "all", label: t("library_videos_all"), count: allCount },
+    {
+      id: "created",
+      label: t("library_videos_my_videos"),
+      count: createdCount,
+    },
+    {
+      id: "collaborations",
+      label: t("library_videos_collaborations"),
+      count: collabCount,
+    },
+    {
+      id: "invites",
+      label: t("library_videos_invites"),
+      count: pendingCount,
+    },
   ]);
 </script>
 
@@ -110,7 +123,7 @@
     {#if loading}
       <div class="loading-state">
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-        <span>Loading your videos...</span>
+        <span>{t("library_videos_loading")}</span>
       </div>
     {:else if error}
       <div class="error-state">
@@ -126,7 +139,7 @@
       {#if pendingCount === 0}
         <div class="empty-state">
           <i class="fas fa-inbox" aria-hidden="true"></i>
-          <span>No pending invites</span>
+          <span>{t("library_videos_no_invites")}</span>
         </div>
       {:else}
         <div class="invites-list">

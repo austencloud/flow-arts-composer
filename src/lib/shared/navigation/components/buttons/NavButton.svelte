@@ -55,6 +55,11 @@
   let compactLabel = $derived(label);
   let fullLabel = $derived(label);
 
+  // Only a real CSS gradient gets clipped to the glyph. A plain colour fills it
+  // with `color`, so session replays and screenshot tools that drop
+  // background-clip:text still draw the icon instead of a blank button.
+  let hasGradient = $derived(/gradient\(/.test(gradient));
+
   function handleClick() {
     if (!disabled) {
       hapticService?.trigger("selection");
@@ -74,6 +79,7 @@
   class:has-badge={badgeCount > 0}
   class:section={type === "section"}
   class:special={type === "special"}
+  class:gradient-icon={hasGradient}
   onclick={handleClick}
   {onpointerdown}
   {onpointerup}
@@ -207,21 +213,19 @@
     pointer-events: none;
   }
 
-  /* Style Font Awesome icons with gradient colors */
+  /* Plain colour: a real fill that every renderer and replay draws. */
   .nav-icon :global(i) {
-    background: var(--section-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--section-color);
     filter: drop-shadow(0 0 6px hsl(0 0% 0% / 0.15));
   }
 
-  /* Fallback for browsers that don't support background-clip */
-  @supports not (background-clip: text) {
-    .nav-icon :global(i) {
-      color: var(--section-color);
-      background: none;
-      -webkit-text-fill-color: initial;
+  /* Real gradients only: clip the gradient to the glyph. */
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .nav-button.gradient-icon .nav-icon :global(i) {
+      background-image: var(--section-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
   }
 

@@ -18,11 +18,29 @@
   import type { CollectedTunnel } from "../domain/tunnel-collection-types";
   import { collectedTunnelViewerSequence } from "../domain/collected-tunnel-source";
 
-  const { tunnel }: { tunnel: CollectedTunnel } = $props();
+  let {
+    tunnel,
+    playing = $bindable(true),
+    showPause = true,
+    framed = true,
+    onReady,
+  }: {
+    tunnel: CollectedTunnel;
+    /** The self-clock. Bindable so a host with its own pause control (the
+     *  Browse > Visuals stage) can drive it. */
+    playing?: boolean;
+    /** Show this preview's own pause toggle. A host that draws the shared
+     *  pause control itself passes false. */
+    showPause?: boolean;
+    /** The rounded, shadowed stage with its own square. False fills the host's
+     *  box edge to edge and leaves the framing to the host. */
+    framed?: boolean;
+    /** The first painted frame is on screen. */
+    onReady?: () => void;
+  } = $props();
 
   // Autoplaying motion needs a user-reachable pause (WCAG 2.2.2) — the viewer
   // has a transport; this gallery preview gets its own toggle.
-  let playing = $state(true);
   // Unwrap the $state proxy from the collection store into plain data ONCE —
   // structuredClone (inside createEffectsConfigState) throws DataCloneError on
   // Svelte 5 state proxies, and downstream transforms shouldn't see proxies
@@ -72,7 +90,7 @@
   } as unknown as ViewerPlaybackState;
 </script>
 
-<div class="preview-stage">
+<div class="preview-stage" class:flush={!framed}>
   <div class="art" role="img" aria-label="Live animated preview of {data.name}">
     <TunnelArtView
       {sequence}
@@ -87,17 +105,20 @@
       visibilityManager={visibility}
       bind:playing
       stageFit="contain"
+      onCanvasReady={onReady ? () => onReady() : undefined}
     />
   </div>
-  <button
-    type="button"
-    class="pause-toggle"
-    aria-pressed={!playing}
-    aria-label={playing ? "Pause preview" : "Play preview"}
-    onclick={() => (playing = !playing)}
-  >
-    <i class="fas {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
-  </button>
+  {#if showPause}
+    <button
+      type="button"
+      class="pause-toggle"
+      aria-pressed={!playing}
+      aria-label={playing ? "Pause preview" : "Play preview"}
+      onclick={() => (playing = !playing)}
+    >
+      <i class="fas {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
+    </button>
+  {/if}
 </div>
 
 <style>
@@ -121,6 +142,16 @@
       0 0 0 1px var(--theme-stroke, rgba(255, 255, 255, 0.08)),
       0 12px 60px
         color-mix(in srgb, var(--theme-accent, #22d3ee) 14%, transparent);
+  }
+
+  /* Edge to edge in the host's box: the host owns the frame. */
+  .preview-stage.flush {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .art {

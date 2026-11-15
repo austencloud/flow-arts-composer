@@ -35,7 +35,13 @@ interface ViewerShellLayoutInputs {
    */
   getModeSwitcherShown?: () => boolean;
   startInSplit: boolean;
-  startInCardThenSplit: boolean;
+  /**
+   * The host deferred animation services (a scan). Start them once the card
+   * has painted. This never changes the view: the scan used to open on Card
+   * and switch itself to Side by Side here, which moved and re-laid out the
+   * card a second after it appeared and dissolved the whole workspace.
+   */
+  startAnimationAfterCard: boolean;
 }
 
 interface ViewerShellLayoutDependencies {
@@ -68,7 +74,7 @@ export function createViewerShellLayoutState(
   let cardContainSizeMotionSettleFrame = 0;
   let cardContainSizeMotionVersion = 0;
   let cardLayoutSequenceKey = "";
-  let progressivePromotionScheduled = false;
+  let deferredStartupScheduled = false;
 
   const isMobile = $derived(inputs.getIsMobile());
   const isLandscape = $derived(responsiveSettings?.isLandscapeMobile ?? false);
@@ -401,28 +407,27 @@ export function createViewerShellLayoutState(
   $effect(() => {
     const ctx = inputs.getContext();
     if (
-      !inputs.startInCardThenSplit ||
-      progressivePromotionScheduled ||
+      !inputs.startAnimationAfterCard ||
+      deferredStartupScheduled ||
       !ctx.cardReady
     ) {
       return;
     }
 
-    progressivePromotionScheduled = true;
+    deferredStartupScheduled = true;
     let secondFrame = 0;
-    let promotionTimer: ReturnType<typeof setTimeout> | undefined;
+    let startupTimer: ReturnType<typeof setTimeout> | undefined;
     const firstFrame = requestAnimationFrame(() => {
       secondFrame = requestAnimationFrame(() => {
-        // The card receives its stable painted frame before animation services
-        // activate and Side-by-Side replaces the first impression.
-        promotionTimer = setTimeout(() => selectSplitMode(false), 0);
+        // The card gets its stable painted frame before animation work starts.
+        startupTimer = setTimeout(() => ctx.ensureInteractiveServices(), 0);
       });
     });
 
     return () => {
       cancelAnimationFrame(firstFrame);
       if (secondFrame) cancelAnimationFrame(secondFrame);
-      if (promotionTimer !== undefined) clearTimeout(promotionTimer);
+      if (startupTimer !== undefined) clearTimeout(startupTimer);
     };
   });
 
@@ -452,9 +457,7 @@ export function createViewerShellLayoutState(
     }
 
     const ctx = inputs.getContext();
-    if (inputs.startInCardThenSplit) {
-      dependencies.captureScanViewerOpened("card");
-    } else if (inputs.startInSplit) {
+    if (inputs.startInSplit) {
       queueMicrotask(() => {
         selectSplitMode(false);
         dependencies.captureScanViewerOpened("split");
@@ -546,6 +549,13 @@ export function createViewerShellLayoutState(
       leaseCardAutoLayout();
     } else if (previousMode === "card" && !cardAutoLayoutOverride) {
       leaseCardAutoLayout();
+    }
+    if (previousMode !== "card" && mode === "card") {
+      // Nor may it inherit one. The Side-by-Side -> 2D lease above is only
+      // released by leaving Card, so without this the first Card visit after
+      // that path kept the Side-by-Side grid for its whole stay.
+      cancelCardAutoLayoutRelease();
+      cardAutoLayoutOverride = null;
     }
 
     const transition = withViewerModeDissolve(

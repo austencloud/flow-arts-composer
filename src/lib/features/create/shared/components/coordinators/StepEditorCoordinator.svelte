@@ -14,6 +14,7 @@
   Domain: Create module - Beat Editing Coordination
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getStepOperator } from "#lib/features/create/shared/get-step-operator.js";
   import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -503,7 +504,9 @@
 -->
 <section
   class="step-editor-view"
-  aria-label={mandalaSelection ? "Mandala viewer panel" : "Step editor panel"}
+  aria-label={mandalaSelection
+    ? t("create_mandala_viewer_panel_label")
+    : t("create_step_editor_panel_label")}
 >
   <div class="drawer-zone">
     <Crossfade key={viewMode} fill duration={DURATION.fast}>

@@ -60,8 +60,12 @@
       var(--theme-card-hover-bg, var(--theme-stroke)) 50%,
       var(--theme-card-bg) 75%
     );
-    background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-icon {
+    background-size: 200% 100%;
   }
 
   .skeleton-content {
@@ -81,9 +85,13 @@
       var(--theme-card-hover-bg, var(--theme-stroke)) 50%,
       var(--theme-card-bg) 75%
     );
-    background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     animation-delay: var(--duration-instant);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-message {
+    background-size: 200% 100%;
   }
 
   .skeleton-time {
@@ -96,9 +104,13 @@
       var(--theme-card-hover-bg, var(--theme-stroke)) 50%,
       var(--theme-card-bg) 75%
     );
-    background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     animation-delay: var(--duration-normal);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-time {
+    background-size: 200% 100%;
   }
 
   @keyframes shimmer {

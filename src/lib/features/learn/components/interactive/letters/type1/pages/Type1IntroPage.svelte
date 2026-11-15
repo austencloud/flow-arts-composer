@@ -95,8 +95,12 @@ Page 1 of 5: Overview of Type 1 letters and motion patterns
       var(--theme-accent, #22d3ee) 0%,
       var(--theme-accent, #06b6d4) 100%
     );
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  h2 {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

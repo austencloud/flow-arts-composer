@@ -6,6 +6,7 @@ import {
   POST_TIME_EPSILON,
   timingVideoAt,
   postSecondsOfKeyframe,
+  videoFootageSeconds,
 } from "@austencloud/video-editor/core";
 import type { ResolvedTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 import type { TakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
@@ -20,7 +21,10 @@ export interface LayerTimingPart {
   movedLandings: number;
 }
 
-/** Timing actually heard by a layer across its full post timeline span. */
+/**
+ * Timing actually heard by a layer across its full post timeline span. A
+ * clip's held last frame plays no move, so the layer hears no timing there.
+ */
 export function layerTimingParts(
   project: PostProject,
   item: Pick<PostAnimationItem, "start" | "duration"> &
@@ -35,6 +39,8 @@ export function layerTimingParts(
       continue;
     cuts.add(Math.max(start, clip.start));
     cuts.add(Math.min(end, itemEnd(clip)));
+    const footageEnd = clip.start + videoFootageSeconds(clip);
+    if (footageEnd > start && footageEnd < end) cuts.add(footageEnd);
     const timing = timingForTake(clip.takeId);
     if (!timing) continue;
     for (const section of timing.sections) {
@@ -62,6 +68,8 @@ export function layerTimingParts(
       item.anchor?.itemId
     );
     if (!clip) continue;
+    if (from >= clip.start + videoFootageSeconds(clip) - POST_TIME_EPSILON)
+      continue;
     const timing = timingForTake(clip.takeId);
     if (!timing) continue;
     const mediaSeconds =

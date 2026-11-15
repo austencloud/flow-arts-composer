@@ -33,6 +33,10 @@
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { db } from "#lib/shared/persistence/database/tka-database.js";
   import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
+  import {
+    classifyEmailLinkSendFailure,
+    describeEmailLinkSendFailure,
+  } from "#lib/shared/auth/utils/email-link-send-failure.js";
   import { firstRunState } from "#lib/shared/onboarding/state/first-run-state.svelte.js";
   import { isRunningAsStandalone } from "#lib/shared/mobile/services/platform-detector.js";
   import {
@@ -207,41 +211,32 @@
         throw new Error(result.data.error || "Failed to send magic link");
       }
     } catch (err: unknown) {
-      const details = err as { code?: string; message?: string };
+      const failure = classifyEmailLinkSendFailure(err);
+      const { failureCode } = failure;
 
-      // Handle Cloud Function errors
-      const errorCode = details.code || "";
-      const errorMessage = details.message || "";
-      let failureCode = "unknown";
-
-      if (
-        errorCode.includes("invalid-argument") ||
-        errorMessage.includes("Invalid email")
-      ) {
-        failureCode = "invalid_email";
+      if (failureCode === "invalid_email") {
         error = t("auth_invalid_email_address");
         toast.error(t("auth_invalid_email_address"));
-      } else if (errorCode.includes("failed-precondition")) {
-        failureCode = "service_not_configured";
+      } else if (failureCode === "service_not_configured") {
         error = t("auth_email_service_unavailable");
         toast.error(t("auth_email_service_unavailable"));
-      } else if (errorCode.includes("unavailable")) {
-        failureCode = "provider_unavailable";
+      } else if (failureCode === "provider_unavailable") {
         error = t("auth_email_service_no_response");
         toast.error(t("auth_email_service_no_response"));
       } else {
-        failureCode = errorCode ? "request_failed" : "network_failed";
         error = t("auth_email_send_failed");
         toast.error(t("auth_email_send_failed"));
       }
 
-      console.error("[email-link] Send failed", { code: failureCode });
+      console.error(describeEmailLinkSendFailure(failure));
       trackAuthProviderResult("magic_link", "failed", failureCode);
       captureWhenReady("magic_link_request_failed", {
         request_id: requestId,
         auth_host: window.location.hostname,
         route: page.url.pathname,
         failure_code: failureCode,
+        error_code: failure.errorCode || null,
+        failure_reason: failure.reason,
         duration_ms: Math.round(performance.now() - startedAt),
       });
     } finally {

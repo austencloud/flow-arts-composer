@@ -5,11 +5,23 @@
  * are dependency injected so the state stays testable. Mutations return false
  * after reporting a failure; callers must not close the drawer or mutate UI
  * optimistically.
+ *
+ * Both lists open from the device copy (`setups-cache-mirror.ts`) and refresh
+ * behind it, so the skeleton shows only when this device has never seen the
+ * list. Austen, 2026-11-14: Setups took "a very very long time to load". The
+ * community list skips Firestore while its copy is under five minutes old.
+ * Everyone reads it, guests and signed-out visitors included (public setups
+ * are readable without an account; Austen, 2026-11-15), so the Setups panel
+ * can open on Community. An account is asked for only on Save.
  */
 import {
   generatorSetupRepository,
   type GeneratorSetupRepository,
 } from "../services/favorite-config-repository";
+import {
+  setupsCacheMirror,
+  type SetupsCache,
+} from "../services/setups-cache-mirror";
 import {
   authState,
   awaitAuthSettled,
@@ -32,13 +44,17 @@ import type {
 
 export const SETUP_CAP = 10;
 export const SETUP_NAME_MAX_LENGTH = 60;
+/** How long a device copy of the community list stands in for a fresh read. */
+export const COMMUNITY_FRESH_MS = 5 * 60_000;
 
 export interface FavoriteStateDeps {
   repository: GeneratorSetupRepository;
+  cache: SetupsCache;
   isAuthReady: () => boolean;
   awaitAuthReady: () => Promise<void>;
   getUserId: () => string | null;
   isPreviewActive: () => boolean;
+  now: () => number;
   getLiveSnapshot: () => SetupSnapshot;
   notifySuccess: (message: string) => void;
   reportUserError: (
@@ -53,10 +69,12 @@ function defaultDeps(
 ): FavoriteStateDeps {
   return {
     repository: generatorSetupRepository,
+    cache: setupsCacheMirror,
     isAuthReady: () => authState.initialized,
     awaitAuthReady: awaitAuthSettled,
     getUserId: getEffectiveUserId,
     isPreviewActive: () => userPreviewState.isActive,
+    now: () => Date.now(),
     getLiveSnapshot,
     notifySuccess: (message) => showToast(message, "success"),
     reportUserError: (message, error, action) => {
@@ -101,8 +119,15 @@ export function createFavoriteState(
   let communityLoadError = $state<string | null>(null);
   let pendingAction = $state<PendingSetupAction | null>(null);
   let personalIdentity: string | null = null;
+  // The account whose saved list is on screen from a real answer (the device
+  // copy or Firestore), so a refresh for it stays silent.
+  let personalKnownFor: string | null = null;
+  // Bumped by every saved-setup write, so a refresh that started before the
+  // write never paints over it.
+  let personalWriteVersion = 0;
   let personalRequestVersion = 0;
   let communityRequestVersion = 0;
+  let communityShown = false;
   let personalInFlight: {
     userId: string;
     operation: Promise<void>;
@@ -134,8 +159,51 @@ export function createFavoriteState(
       pendingAction === null
   );
 
+  // Paint from the device copy before anything awaits, when auth already
+  // knows who is here (the usual case: Generate opens after boot).
+  if (deps.isAuthReady()) {
+    const userId = deps.getUserId();
+    if (userId) seedPersonal(userId);
+    seedCommunity(userId);
+  }
+
   void loadPersonal();
   void loadCommunity();
+
+  function seedPersonal(userId: string): void {
+    const cached = deps.cache.readPersonal(userId);
+    personalIdentity = userId;
+    if (!cached) return;
+    setups = cached;
+    personalKnownFor = userId;
+    isLoadingSetups = false;
+  }
+
+  function showCommunity(
+    all: readonly CommunitySetup[],
+    userId: string | null
+  ) {
+    // Own setups live in the Saved tab already.
+    communitySetups = all.filter((setup) => setup.userId !== userId);
+    communityShown = true;
+    isLoadingCommunity = false;
+  }
+
+  function seedCommunity(userId: string | null): number | null {
+    const cached = deps.cache.readCommunity();
+    if (!cached) return null;
+    showCommunity(cached.setups, userId);
+    return cached.savedAt;
+  }
+
+  function persistPersonal(userId: string): void {
+    deps.cache.writePersonal(userId, setups);
+  }
+
+  function recordPersonalWrite(userId: string): void {
+    personalWriteVersion += 1;
+    persistPersonal(userId);
+  }
 
   async function loadPersonal(): Promise<void> {
     if (!deps.isAuthReady()) await deps.awaitAuthReady();
@@ -144,6 +212,7 @@ export function createFavoriteState(
       personalRequestVersion += 1;
       personalInFlight = null;
       personalIdentity = null;
+      personalKnownFor = null;
       setups = [];
       setupsLoadError = null;
       if (appliedSource?.kind === "setup") {
@@ -159,17 +228,21 @@ export function createFavoriteState(
     }
 
     if (personalIdentity !== userId) {
-      personalIdentity = userId;
+      personalKnownFor = null;
       setups = [];
       if (appliedSource?.kind === "setup") {
         appliedSource = null;
         appliedBaseline = null;
       }
+      seedPersonal(userId);
     }
 
     const requestVersion = ++personalRequestVersion;
-    isLoadingSetups = true;
+    const writeVersionAtStart = personalWriteVersion;
+    const silent = personalKnownFor === userId;
+    if (!silent) isLoadingSetups = true;
     setupsLoadError = null;
+    let readAgain = false;
     const operation = (async () => {
       try {
         const loaded = await deps.repository.loadPersonal(userId);
@@ -179,7 +252,15 @@ export function createFavoriteState(
         ) {
           return;
         }
-        setups = loaded;
+        if (personalWriteVersion !== writeVersionAtStart) {
+          // A save, rename, update or delete landed while this read was out;
+          // its answer may predate the write, so ask again below.
+          readAgain = true;
+        } else {
+          setups = loaded;
+          personalKnownFor = userId;
+          persistPersonal(userId);
+        }
       } catch (error) {
         if (
           requestVersion !== personalRequestVersion ||
@@ -187,28 +268,47 @@ export function createFavoriteState(
         ) {
           return;
         }
-        setupsLoadError = "Saved setups could not load";
         console.error("[FavoriteState] loadPersonal failed:", error);
+        // A list already on screen stays; the error only replaces nothing.
+        if (personalKnownFor !== userId) {
+          setupsLoadError = "Saved setups could not load";
+        }
       } finally {
         if (requestVersion === personalRequestVersion) {
           personalInFlight = null;
           isLoadingSetups = false;
         }
       }
+      if (readAgain) await loadPersonal();
     })();
     personalInFlight = { userId, operation };
     return operation;
   }
 
-  async function loadCommunity(): Promise<void> {
+  /**
+   * `force` skips the five-minute freshness check (the Retry button).
+   */
+  async function loadCommunity(
+    options: { force?: boolean } = {}
+  ): Promise<void> {
     if (!deps.isAuthReady()) await deps.awaitAuthReady();
     const userId = deps.getUserId();
     if (communityInFlight?.userId === userId) {
       return communityInFlight.operation;
     }
 
+    const savedAt = seedCommunity(userId);
+    if (
+      !options.force &&
+      savedAt !== null &&
+      deps.now() - savedAt < COMMUNITY_FRESH_MS
+    ) {
+      communityLoadError = null;
+      return;
+    }
+
     const requestVersion = ++communityRequestVersion;
-    isLoadingCommunity = true;
+    if (!communityShown) isLoadingCommunity = true;
     communityLoadError = null;
     const operation = (async () => {
       try {
@@ -219,8 +319,8 @@ export function createFavoriteState(
         ) {
           return;
         }
-        // Own setups live in the Saved tab already.
-        communitySetups = all.filter((setup) => setup.userId !== userId);
+        showCommunity(all, userId);
+        deps.cache.writeCommunity(all);
       } catch (error) {
         if (
           requestVersion !== communityRequestVersion ||
@@ -228,8 +328,10 @@ export function createFavoriteState(
         ) {
           return;
         }
-        communityLoadError = "Community setups could not load";
         console.error("[FavoriteState] loadCommunity failed:", error);
+        if (!communityShown) {
+          communityLoadError = "Community setups could not load";
+        }
       } finally {
         if (requestVersion === communityRequestVersion) {
           communityInFlight = null;
@@ -260,6 +362,7 @@ export function createFavoriteState(
         startEndOptions: snapshot.startEndOptions,
       });
       setups = [...setups, created];
+      recordPersonalWrite(userId);
       appliedSource = { kind: "setup", setupId: created.id };
       appliedBaseline = captureSetupSnapshot(
         created.config,
@@ -296,6 +399,7 @@ export function createFavoriteState(
           ? { ...setup, name, updatedAt: new Date() }
           : setup
       );
+      recordPersonalWrite(userId);
       deps.notifySuccess("Setup renamed");
       return true;
     } catch (error) {
@@ -330,6 +434,7 @@ export function createFavoriteState(
       setups = setups.map((setup) =>
         setup.id === setupId ? updated : setup
       );
+      recordPersonalWrite(userId);
       if (
         appliedSource?.kind === "setup" &&
         appliedSource.setupId === setupId
@@ -358,6 +463,7 @@ export function createFavoriteState(
     try {
       await deps.repository.deleteSetup(userId, setupId);
       setups = setups.filter((setup) => setup.id !== setupId);
+      recordPersonalWrite(userId);
       if (
         appliedSource?.kind === "setup" &&
         appliedSource.setupId === setupId

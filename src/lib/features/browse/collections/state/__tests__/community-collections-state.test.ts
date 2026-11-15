@@ -39,6 +39,7 @@ vi.mock("#lib/features/library/state/collections-state.svelte.js", () => ({
 import {
   communityCollectionsState,
   withOwnPublicCollections,
+  visibleOnShelf,
   type CommunityCollection,
 } from "../community-collections-state.svelte";
 
@@ -130,6 +131,48 @@ describe("withOwnPublicCollections", () => {
   it("returns the feed untouched for a signed-out viewer", () => {
     const feed = [feedItem("theirs", "them")];
     expect(withOwnPublicCollections(feed, [col("mine")], null)).toBe(feed);
+  });
+});
+
+describe("visibleOnShelf", () => {
+  const empty = (id: string, ownerId: string) =>
+    feedItem(id, ownerId, { sequenceCount: 0, sequenceIds: [] });
+
+  it("drops an empty collection from someone else", () => {
+    const items = [feedItem("full", "them"), empty("hollow", "them")];
+    expect(visibleOnShelf(items, "me").map((i) => i.collection.id)).toEqual([
+      "full",
+    ]);
+  });
+
+  it("keeps the viewer's own empty collection", () => {
+    const items = [empty("mine", "me"), empty("hollow", "them")];
+    expect(visibleOnShelf(items, "me").map((i) => i.collection.id)).toEqual([
+      "mine",
+    ]);
+  });
+
+  it("shows a signed-out viewer no empty collections", () => {
+    const items = [empty("hollow", "them"), feedItem("full", "them")];
+    for (const viewer of [null, undefined, ""]) {
+      expect(visibleOnShelf(items, viewer).map((i) => i.collection.id)).toEqual(
+        ["full"]
+      );
+    }
+  });
+
+  it("keeps the order of the collections it leaves", () => {
+    const items = [
+      feedItem("c", "them"),
+      empty("x", "them"),
+      feedItem("a", "me"),
+      feedItem("b", "them"),
+    ];
+    expect(visibleOnShelf(items, "me").map((i) => i.collection.id)).toEqual([
+      "c",
+      "a",
+      "b",
+    ]);
   });
 });
 

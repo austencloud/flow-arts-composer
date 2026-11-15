@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
+  import { clampFanBuild } from "#lib/shared/3d/domain/fan-appearance.js";
   import { useRenderer, useScheduler, useThrelte } from "@threlte/core";
   import type { Scene, WebGLRenderer } from "three";
   import {
@@ -51,7 +52,9 @@
     onMotionError?: (message: string) => void;
   }
   const props: Props = $props();
-  const capturedPropBuild = props.propBuild ?? propFinishState.build;
+  const capturedPropBuild = clampFanBuild(
+    props.propBuild ?? propFinishState.build
+  );
   const capturedEffortId = props.effortId ?? "linear";
   const capturedLeftPlane: Plane = props.leftPlane ?? props.capturePlane ?? Plane.WALL;
   const capturedRightPlane: Plane = props.rightPlane ?? props.capturePlane ?? Plane.WALL;

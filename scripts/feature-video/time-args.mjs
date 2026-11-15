@@ -23,3 +23,42 @@ export function parseTimeArg(text, name) {
     `--${name} must be seconds (12.5), a clock (1:02.5), or a bar like @9 or @9.3.`
   );
 }
+
+/** The fields of each batch op that hold a time, as `ops --file` reads them. */
+const BATCH_TIME_FIELDS = {
+  "add-titles": ["at"],
+  "add-flash": ["at"],
+  trim: ["seconds"],
+  music: ["startSeconds", "sourceInSeconds", "sourceOutSeconds"],
+  keyframe: ["at", "to", "times"],
+  move: ["to"],
+};
+
+/**
+ * A batch file's ops with every time written as text ("@29.3", "1:02.5",
+ * "12.5") read by the same parser as the flags. Numbers and the object form
+ * {"bar": 29, "beat": 3} pass through unchanged.
+ */
+export function withBatchTimes(ops) {
+  if (!Array.isArray(ops)) return ops;
+  return ops.map((op, index) => {
+    const fields = BATCH_TIME_FIELDS[op?.op];
+    if (!fields) return op;
+    const read = (value, name) => {
+      if (typeof value !== "string") return value;
+      try {
+        return parseTimeArg(value, name);
+      } catch (cause) {
+        throw new Error(`Edit ${index + 1} (${op.op}): ${cause.message}`);
+      }
+    };
+    const next = { ...op };
+    for (const field of fields) {
+      if (next[field] === undefined) continue;
+      next[field] = Array.isArray(next[field])
+        ? next[field].map((value) => read(value, field))
+        : read(next[field], field);
+    }
+    return next;
+  });
+}

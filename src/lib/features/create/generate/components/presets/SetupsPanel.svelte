@@ -26,8 +26,8 @@
     isSignedOut,
     isPreview,
     isAnonymous,
+    authKnown = true,
     onApply,
-    onRequestCommunityAccount,
     onRequestSaveAccount,
     onRequestSignIn,
     onClose,
@@ -37,8 +37,11 @@
     isSignedOut: boolean;
     isPreview: boolean;
     isAnonymous: boolean;
+    /** False until sign-in state has been restored. The Saved body waits for
+     *  it, so a guest is never shown the signed-in empty state first and then
+     *  the sign-in card. */
+    authKnown?: boolean;
     onApply: (source: ActiveSetupSource) => void;
-    onRequestCommunityAccount: () => void;
     onRequestSaveAccount: () => void;
     onRequestSignIn: () => void;
     onClose: () => void;
@@ -47,7 +50,12 @@
     titleId?: string;
   } = $props();
 
-  let activeTab = $state<"saved" | "community">("saved");
+  // Decided once, at mount: Saved for someone who already has setups of their
+  // own (seeded from the device copy), Community for everyone else. A list
+  // arriving later never moves the tab; only a tap does.
+  let activeTab = $state<"saved" | "community">(
+    favoriteState.setups.length > 0 ? "saved" : "community"
+  );
   let deleteTarget = $state<SavedGeneratorSetup | null>(null);
 
   const SUMMARY_SEPARATOR = "\u00B7";
@@ -71,18 +79,10 @@
   }
 
   function handleTabChange(value: "saved" | "community"): void {
-    if (value === "community" && isAnonymous) {
-      onRequestCommunityAccount();
-      return;
-    }
     activeTab = value;
   }
 
   function handleCommunityApply(setup: CommunitySetup): void {
-    if (isAnonymous) {
-      onRequestCommunityAccount();
-      return;
-    }
     onApply({
       kind: "community",
       userId: setup.userId,
@@ -126,12 +126,6 @@
     const deleted = await favoriteState.deleteSetup(target.id);
     if (deleted) deleteTarget = null;
   }
-
-  $effect(() => {
-    if (isAnonymous && activeTab === "community") {
-      activeTab = "saved";
-    }
-  });
 </script>
 
 <GenerationSettingsOverlay
@@ -181,7 +175,9 @@
         </div>
       {/if}
 
-      {#if isSignedOut}
+      {#if !authKnown}
+        <SkeletonLoader variant="rect" height="64px" count={2} />
+      {:else if isSignedOut}
         <div class="empty-state signed-out-state">
           <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
           <strong>{t("create_ui_save_generator_setups")}</strong>
@@ -276,7 +272,7 @@
           <button
             type="button"
             class="retry-button"
-            onclick={() => void favoriteState.loadCommunity()}
+            onclick={() => void favoriteState.loadCommunity({ force: true })}
           >
             {t("create_ui_try_again")}
           </button>
@@ -359,7 +355,6 @@
     gap: 0.75rem;
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-gutter: stable;
   }
 
   .setup-panel.hidden {
@@ -446,11 +441,18 @@
     text-align: center;
   }
 
+  /* The list is what scrolls, so the tabs, the save row and its note stay
+     put above a long list. The tab body keeps its own scroll as a fallback
+     for a box too short for even those. */
   .setup-list {
     display: flex;
+    flex: 0 1 auto;
     min-height: 0;
     flex-direction: column;
     gap: 0.5rem;
+    /* scrolls: up to ten saved setups, or the community's list */
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .load-state,

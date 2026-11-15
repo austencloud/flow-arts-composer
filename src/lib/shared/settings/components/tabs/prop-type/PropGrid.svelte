@@ -40,7 +40,9 @@
   } from "./section-fill-layout";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import PropChiralityRow from "./PropChiralityRow.svelte";
+  import BuugengPairsExplainer from "./BuugengPairsExplainer.svelte";
   import BuugengStyleRow from "./BuugengStyleRow.svelte";
+  import PropSizeRow from "./PropSizeRow.svelte";
   import TriadBuildRow from "./TriadBuildRow.svelte";
   import FanStyleOptionsCore from "./FanStyleOptionsCore.svelte";
   import {
@@ -76,6 +78,8 @@
 
   let {
     selectedPropType,
+    alsoSelectedPropType = null,
+    previewHand,
     color = "blue",
     title,
     onSelect,
@@ -112,6 +116,13 @@
     onChoiceDone,
   } = $props<{
     selectedPropType: PropType | null;
+    /** A second lit tile, for a pair whose hands hold different props. */
+    alsoSelectedPropType?: PropType | null;
+    /**
+     * The hand a Both / Left / Right choice above the grid names. Every tile
+     * then draws one prop in that hand's colour; unset draws the pair.
+     */
+    previewHand?: "left" | "right";
     color?: "blue" | "red" | (string & {});
     title?: string;
     onSelect: (propType: PropType) => void;
@@ -312,6 +323,10 @@
     selectedPropType === null ? null : getBasePropType(selectedPropType)
   );
 
+  const alsoSelectedBase = $derived(
+    alsoSelectedPropType === null ? null : getBasePropType(alsoSelectedPropType)
+  );
+
   function familyChoices(base: PropType): PropType[] {
     return getAllVariations(base).filter(
       (prop) => selectablePropSet.has(prop) && !isBigVariant(prop)
@@ -335,8 +350,17 @@
   type Drill =
     | { kind: "family"; base: PropType }
     | { kind: "fan-look"; prop: PropType; fromChip?: boolean }
-    | { kind: "details"; prop: PropType };
+    | { kind: "details"; prop: PropType }
+    // The buugeng pairs explainer, one level below the screen whose chirality
+    // row opened it; Back returns to that screen, not to the grid.
+    | {
+        kind: "pairs";
+        prop: PropType;
+        from: Exclude<Drill, { kind: "pairs" }>;
+      };
   let drill = $state<Drill | null>(null);
+  // Back out of the pairs screen steps the other way, like back to the grid.
+  let drillReturning = $state(false);
   let rootEl = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
@@ -352,7 +376,9 @@
         ? `family:${drill.base}`
         : drill.kind === "fan-look"
           ? "fan-look"
-          : `details:${drill.prop}`
+          : drill.kind === "pairs"
+            ? `pairs:${drill.prop}`
+            : `details:${drill.prop}`
   );
   const drillTitle = $derived(
     drill === null
@@ -363,18 +389,32 @@
           })
         : drill.kind === "fan-look"
           ? t("settings_fan_look")
-          : t("settings_prop_details", {
-              prop: localizedPropName(drill.prop),
-            })
+          : drill.kind === "pairs"
+            ? t("settings_buugeng_pairs_title")
+            : t("settings_prop_details", {
+                prop: localizedPropName(drill.prop),
+              })
   );
 
-  async function openDrill(next: Drill): Promise<void> {
+  async function openDrill(next: Drill, returning = false): Promise<void> {
+    drillReturning = returning;
     drill = next;
     await tick();
     rootEl?.querySelector<HTMLElement>(".drill-back")?.focus();
   }
 
+  function openPairs(prop: PropType): void {
+    if (drill === null || drill.kind === "pairs") return;
+    void openDrill({ kind: "pairs", prop, from: drill });
+  }
+
   async function closeDrill(): Promise<void> {
+    if (drill?.kind === "pairs") {
+      await openDrill(drill.from, true);
+      rootEl?.querySelector<HTMLElement>(".chirality-heading button")?.focus();
+      return;
+    }
+    drillReturning = true;
     const previous = drill;
     drill = null;
     await tick();
@@ -774,11 +814,27 @@
       hasBigVariant(detailProp)
   );
   const sizeIsBig = $derived(detailProp !== null && isBigVariant(detailProp));
+  // A details page whose only setting is Size draws it as two picture tiles
+  // instead of one line of text.
+  const sizeOnlyDetails = $derived(
+    showSize &&
+      !showGrip &&
+      !showBuugengStyle &&
+      !showTriadBuild &&
+      !(
+        chirality !== undefined &&
+        detailProp !== null &&
+        isBuugengFamilyProp(detailProp)
+      )
+  );
   function chooseSize(big: boolean) {
     if (detailProp === null || sizeIsBig === big) return;
     const next = toggleBigVariant(detailProp);
     if (drill?.kind === "details") drill = { ...drill, prop: next };
     if (drill?.kind === "fan-look") drill = { ...drill, prop: next };
+    if (drill?.kind === "pairs" && drill.from.kind === "details") {
+      drill = { ...drill, from: { ...drill.from, prop: next } };
+    }
     onSelect(next);
   }
   const normalizedFanAppearance = $derived(
@@ -871,8 +927,9 @@
   }
 </script>
 
-<!-- The rail picker owns gestures from its toolbar, gaps, tiles, and drill views.
-     The dock's separate grab handle remains available to dismiss the tray. -->
+<!-- The picker owns vertical drags from its toolbar, gaps, tiles, and drill views
+     in every layout, so scrolling props never drags the sheet or tray around it.
+     The host's handle, header, close button and backdrop still dismiss it. -->
 <div
   bind:this={rootEl}
   class="prop-grid-root"
@@ -884,7 +941,7 @@
   class:inspector={tileDensity === "inspector"}
   class:host-scroll={scrollMode === "host"}
   class:fluid-sections={fluidSections}
-  data-swipe-block={layout === "rail" ? "" : undefined}
+  data-swipe-block
 >
   {#snippet sizeControl()}
     <div class="size-toggle" role="group" aria-label={t("settings_prop_size")}>
@@ -1026,7 +1083,8 @@
       <PropGridButton
         propType={prop}
         {label}
-        selected={isSameProp(selectedPropType, prop)}
+        selected={isSameProp(selectedPropType, prop) ||
+          isSameProp(alsoSelectedPropType, prop)}
         {color}
         buttonProps={{ "data-prop-tile": prop }}
         onSelect={() => handleTileClick(prop)}
@@ -1037,9 +1095,10 @@
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
-        singleHand={chirality?.hands.length === 1
-          ? chirality.hands[0]?.hand
-          : undefined}
+        singleHand={previewHand ??
+          (chirality?.hands.length === 1
+            ? chirality.hands[0]?.hand
+            : undefined)}
         leftFlipped={chirality?.hands.find(
           (state: import("./prop-chirality-seam").PropChiralityHandState) =>
             state.hand === "left"
@@ -1065,7 +1124,7 @@
     {:else}
       <PropGridButton
         propType={familyDisplayProp(base)}
-        selected={selectedBase === base}
+        selected={selectedBase === base || alsoSelectedBase === base}
         badge={familyCount(base)}
         actionLabel={t("settings_prop_choose_style", {
           prop: localizedPropName(base),
@@ -1084,9 +1143,10 @@
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
-        singleHand={chirality?.hands.length === 1
-          ? chirality.hands[0]?.hand
-          : undefined}
+        singleHand={previewHand ??
+          (chirality?.hands.length === 1
+            ? chirality.hands[0]?.hand
+            : undefined)}
         leftFlipped={chirality?.hands.find(
           (state: import("./prop-chirality-seam").PropChiralityHandState) =>
             state.hand === "left"
@@ -1109,7 +1169,7 @@
       key={drillKey}
       mode="swap"
       motion="step"
-      direction={drill === null ? -1 : 1}
+      direction={drill === null || drillReturning ? -1 : 1}
       animateHeight={layout !== "rail"}
       fill={layout === "rail"}
     >
@@ -1145,6 +1205,7 @@
                 horizontal={layout === "rail" && !fitRoom}
                 room={fitRoom}
                 appearance={normalizedFanAppearance}
+                propType={drill.prop}
                 onchange={onFanAppearanceChange}
               />
             </div>
@@ -1161,7 +1222,18 @@
               onpointercancel={endRailPointer}
               onclickcapture={handleRailClick}
             >
-              {#if showSize}
+              {#if showSize && sizeOnlyDetails}
+                <PropSizeRow
+                  propType={drill.prop}
+                  onChange={chooseSize}
+                  {colors}
+                  fanAppearance={normalizedFanAppearance}
+                  triangleGrip={currentGrip}
+                  buugengStyle={currentBuugengStyle}
+                  triadBuild={currentTriadBuild}
+                  {recipeOverrides}
+                />
+              {:else if showSize}
                 <div class="detail-row">
                   <span class="look-label">{t("settings_size")}</span>
                   {@render sizeControl()}
@@ -1196,9 +1268,23 @@
                   partner={chirality.partner}
                   {colors}
                   onChange={chirality.onChange}
+                  onExplain={() => {
+                    if (drill?.kind === "details") openPairs(drill.prop);
+                  }}
                 />
               {/if}
             </div>
+          {:else if drill.kind === "pairs"}
+            {#if chirality}
+              <BuugengPairsExplainer
+                propType={drill.prop}
+                hands={chirality.hands}
+                partner={chirality.partner}
+                {colors}
+                onChange={chirality.onChange}
+                fill={layout === "rail" || fillHeight > 0}
+              />
+            {/if}
           {:else}
             {#if layout !== "rail"}
               <!-- The picked style's settings, above the tiles that pick it.
@@ -1244,6 +1330,9 @@
                       partner={chirality.partner}
                       {colors}
                       onChange={chirality.onChange}
+                      onExplain={() => {
+                        if (familyMember !== null) openPairs(familyMember);
+                      }}
                     />
                   </div>
                 {/if}
@@ -1614,11 +1703,8 @@
     max-height: 100%;
   }
   .flat-grid.nameless :global(.variant-badge) {
-    top: 1px;
-    left: 1px;
-    width: 12px;
-    height: 12px;
-    font-size: 9px;
+    top: 3px;
+    left: 5px;
   }
   .flat-grid.nameless :global(.checkmark-container) {
     top: 1px;

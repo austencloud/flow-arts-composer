@@ -18,6 +18,7 @@
     type PropFinish,
   } from "@austencloud/scene-3d";
   import { tick } from "svelte";
+  import { clampFanBuild } from "#lib/shared/3d/domain/fan-appearance.js";
 
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -69,7 +70,7 @@
     onBuildChange,
   }: Props = $props();
 
-  const build = $derived(buildOverride ?? propFinishState.build);
+  const build = $derived(clampFanBuild(buildOverride ?? propFinishState.build));
   const chirality = createGlobalChiralitySeam();
 
   // One way, settings to scene: see scene-prop-picker-grip-sync.svelte.ts.

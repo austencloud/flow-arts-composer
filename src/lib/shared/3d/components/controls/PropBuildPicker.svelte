@@ -3,6 +3,7 @@
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { popIn } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { Snippet } from "svelte";
   import type { PropBuildPreviewOption } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
   interface Props {
@@ -24,6 +25,11 @@
      * it instead of stopping at the render's 8:3 shape.
      */
     fill?: boolean;
+    /**
+     * Draws a tile's picture in place of the render, so a host can show the
+     * prop the way its own view will draw it. Without one, the render shows.
+     */
+    preview?: Snippet<[PropBuildPreviewOption<T>]>;
   }
 
   let {
@@ -35,25 +41,58 @@
     useImageScale = false,
     showCredit = false,
     fill = false,
+    preview,
   }: Props = $props();
+
+  // A look waiting on its maker is shown but never chosen: no click, tap or
+  // arrow key reaches it.
+  const anyWaiting = $derived(options.some((o) => o.waitingOnMaker));
+
+  function optionAriaLabel(option: PropBuildPreviewOption<T>): string {
+    const base = option.designCredit
+      ? t("prop_build_picker_design_credit_aria", {
+          label: option.label,
+          name: option.designCredit.originator,
+        })
+      : option.label;
+    return option.waitingOnMaker
+      ? `${base}. ${t("prop_build_picker_waiting_note")}`
+      : base;
+  }
+
+  function choose(option: PropBuildPreviewOption<T>): void {
+    if (option.waitingOnMaker) return;
+    onchange(option.id);
+  }
+
+  /** The next choosable index from `from`, stepping by `step`, or null. */
+  function stepChoosable(from: number, step: 1 | -1): number | null {
+    for (let i = 1; i <= options.length; i++) {
+      const index = (from + step * i + options.length * 2) % options.length;
+      if (!options[index]?.waitingOnMaker) return index;
+    }
+    return null;
+  }
 
   function moveSelection(event: KeyboardEvent, index: number): void {
     let nextIndex: number | null = null;
 
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      nextIndex = (index + 1) % options.length;
+      nextIndex = stepChoosable(index, 1);
     } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      nextIndex = (index - 1 + options.length) % options.length;
+      nextIndex = stepChoosable(index, -1);
     } else if (event.key === "Home") {
-      nextIndex = 0;
+      nextIndex = stepChoosable(-1, 1);
     } else if (event.key === "End") {
-      nextIndex = options.length - 1;
+      nextIndex = stepChoosable(options.length, -1);
+    } else {
+      return;
     }
 
-    if (nextIndex === null) return;
     event.preventDefault();
+    if (nextIndex === null) return;
     const option = options[nextIndex];
-    if (!option) return;
+    if (!option || option.waitingOnMaker) return;
 
     onchange(option.id);
     const group = (event.currentTarget as HTMLElement).closest(
@@ -87,26 +126,27 @@
         type="button"
         class="option"
         class:selected={value === option.id}
+        class:waiting={option.waitingOnMaker}
         role="radio"
         aria-checked={value === option.id}
-        aria-label={option.designCredit
-          ? t("prop_build_picker_design_credit_aria", {
-              label: option.label,
-              name: option.designCredit.originator,
-            })
-          : option.label}
+        aria-disabled={option.waitingOnMaker ? "true" : undefined}
+        aria-label={optionAriaLabel(option)}
         title={option.designCredit
           ? t("prop_build_picker_design_credit_title", {
               name: option.designCredit.originator,
             })
           : undefined}
         tabindex={value === option.id ? 0 : -1}
-        onclick={() => onchange(option.id)}
+        onclick={() => choose(option)}
         onkeydown={(event) => moveSelection(event, index)}
       >
         <span class="preview-frame">
           <Crossfade key={option.image} duration={DURATION.normal} fill>
-            {#if option.crop}
+            {#if preview && !option.waitingOnMaker}
+              <!-- The app cannot draw a waiting look on the canvas, so its
+                   tile keeps the rendered picture. -->
+              {@render preview(option)}
+            {:else if option.crop}
               <!-- Draw only the painted window, fitted and centred, so a
                    grip-centred capture is not half empty margin. -->
               <svg
@@ -149,6 +189,9 @@
             {option.label}
           {/if}
         </span>
+        {#if option.waitingOnMaker}
+          <i class="fas fa-clock waiting-mark" aria-hidden="true"></i>
+        {/if}
         {#if value === option.id}
           <span
             class="selected-badge"
@@ -159,6 +202,12 @@
       </button>
     {/each}
   </div>
+  {#if anyWaiting}
+    <p class="waiting-note">
+      <i class="fas fa-clock" aria-hidden="true"></i>
+      {t("prop_build_picker_waiting_note")}
+    </p>
+  {/if}
 </section>
 
 <style>
@@ -373,17 +422,62 @@
     outline-offset: 2px;
   }
 
-  .option:active {
+  .option:not(.waiting):active {
     transform: translateY(0) scale(0.985);
   }
 
+  /* Waiting on the maker: dimmed and flat, with a clock so it never reads as
+     merely paler. No lift, no ring and no pointer, since nothing happens. */
+  .option.waiting {
+    cursor: default;
+    border-style: dashed;
+  }
+
+  .option.waiting .preview-frame,
+  .option.waiting .option-label {
+    opacity: 0.42;
+    filter: saturate(0.55);
+  }
+
+  .option.waiting:active {
+    transform: none;
+  }
+
+  .waiting-mark {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: clamp(22px, 0.95cqi, 34px);
+    height: clamp(22px, 0.95cqi, 34px);
+    border-radius: 50%;
+    background: rgba(3, 4, 9, 0.82);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: var(--font-size-compact, 12px);
+    pointer-events: none;
+  }
+
+  .waiting-note {
+    flex: none;
+    margin: 8px 0 0;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.3;
+  }
+
+  .waiting-note i {
+    margin-inline-end: 4px;
+  }
+
   @media (hover: hover) and (pointer: fine) {
-    .option:hover {
+    .option:not(.waiting):hover {
       border-color: color-mix(in srgb, var(--prop-picker-accent) 54%, white);
       transform: translateY(-2px);
     }
 
-    .option:hover .preview-art {
+    .option:not(.waiting):hover .preview-art {
       transform: scale(calc(var(--preview-scale) * 1.04));
     }
   }

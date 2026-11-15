@@ -105,6 +105,7 @@
     onArtExportEvent,
     onArtSettingChange,
     onArtAction,
+    onCardAction,
     onViewer3DSettingChange,
     onViewer3DAction,
     suppressProgress = false,
@@ -115,6 +116,8 @@
     practiceRunning = false,
     practiceCountdown = 0,
     practiceMirrorEnabled = false,
+    onPracticeCameraReady,
+    onPracticeCameraFailure,
     tunnelComposition = null,
     tunnelSaveTarget = null,
     onTunnelSaved,
@@ -609,6 +612,8 @@
       {showcasePlayback}
       {practiceActive}
       {practiceMirrorEnabled}
+      {onPracticeCameraReady}
+      {onPracticeCameraFailure}
       {practiceResizePaused}
     />
     <ViewerCompanionSurface
@@ -646,6 +651,7 @@
       {onArtExportEvent}
       {onArtSettingChange}
       {onArtAction}
+      {onCardAction}
       {tunnelComposition}
       {tunnelSaveTarget}
       {onTunnelSaved}
@@ -697,6 +703,8 @@
         {showcasePlayback}
         {practiceActive}
         {practiceMirrorEnabled}
+      {onPracticeCameraReady}
+      {onPracticeCameraFailure}
         {practiceResizePaused}
       />
       <ViewerCompanionSurface
@@ -734,6 +742,7 @@
         {onArtExportEvent}
         {onArtSettingChange}
         {onArtAction}
+        {onCardAction}
         {tunnelComposition}
         {tunnelSaveTarget}
         {onTunnelSaved}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { withSavedProps } from "#lib/shared/foundation/services/prop-viewing.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     captureActivePropConfig,
     resolveRecordedPropConfig,
@@ -11,7 +12,7 @@
   import type { SequenceRouteMeta } from "./sequence-seo";
   import { resolveSequenceCloseTarget } from "./sequence-close-target";
   import { page } from "$app/state";
-  import { goto } from "$app/navigation";
+  import { beforeNavigate, goto } from "$app/navigation";
   import { browser } from "$app/env";
   import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
@@ -52,7 +53,10 @@
   import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
   import { collectionPickerState } from "#lib/features/library/state/collection-picker-state.svelte.js";
-  import { initialViewerModeForUrl } from "#lib/shared/sequence-viewer/services/viewer-modes.js";
+  import {
+    initialSplitConfigForUrl,
+    initialViewerModeForUrl,
+  } from "#lib/shared/sequence-viewer/services/viewer-modes.js";
 
   import {
     getIabBannerVisible,
@@ -353,6 +357,14 @@
 
     // Start sequence loading immediately - don't wait for services
     void initializeRoute();
+  });
+
+  // Back (the browser's button or a back swipe) ends the scan as "back";
+  // without this it read as a plain route unmount.
+  beforeNavigate((navigation) => {
+    if (scanAnalyticsCode && navigation.type === "popstate") {
+      endScanViewerSession("back");
+    }
   });
 
   onDestroy(() => {
@@ -747,8 +759,10 @@
   // NAVIGATION
   // ============================================================================
 
-  function handleClose(reason?: "navigate") {
+  function handleClose(reason?: "navigate" | "escape") {
     if (isEmbedded || reason === "navigate") return;
+    if (reason === "escape" && scanAnalyticsCode)
+      endScanViewerSession("escape");
     const target = resolveSequenceCloseTarget({
       returnPath: handoffData?.returnPath,
       scanOrigin: !!scanOriginCode,
@@ -846,6 +860,7 @@
       page.url.searchParams.get("pane"),
       urlRenderMode
     )}
+    initialSplitConfig={initialSplitConfigForUrl(!!scanOriginCode)}
     deferInteractiveStartup={!!scanOriginCode}
     initialActiveEffect={scanOriginCode ? "trails" : undefined}
     handPathMode={urlHandPathMode}
@@ -876,21 +891,26 @@
           shareOnOpen={shareFromShapeEngine}
           saveOnOpen={saveFromShapeEngine}
           {isMobile}
-          startInCardThenSplit={!!scanOriginCode}
+          startAnimationAfterCard={!!scanOriginCode}
           demoScanProps={isDemo && !!scanOriginCode}
           embedded={isEmbedded}
           onClose={handleClose}
           navigation={{
             label: handoffData?.returnLabel
-              ? `Back to ${handoffData.returnLabel}`
-              : "Back",
+              ? t("browse_verified_back_to", {
+                  destination: handoffData.returnLabel,
+                })
+              : t("common_back"),
           }}
           promoteRemix
           onRemix={remixInCreate}
           openAppHref={scanOpenAppHref}
           onAccountSignIn={scanOriginCode ? ctx.openSignInPrompt : undefined}
           guideAction={scanOriginCode
-            ? { label: "Look up the letters", onSelect: lookUpLetters }
+            ? {
+                label: t("viewer_scan_look_up_letters"),
+                onSelect: lookUpLetters,
+              }
             : null}
           exportOverrides={scanOriginCode
             ? {
@@ -908,7 +928,7 @@
   </SequenceViewerOrchestrator>
 {/if}
 
-<!-- The take-it-home export gate (ensureFullAccountForExport) opens this drawer
+<!-- Account asks (publishing, the share sheet's upload paths) open this drawer
      through authDrawerState. MainApplication mounts it for the in-app viewer;
      this standalone route has no shell, so without its own mount a guest
      clicking Record Scene or Share saw nothing happen at all. -->

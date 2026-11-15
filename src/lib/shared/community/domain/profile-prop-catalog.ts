@@ -1,5 +1,7 @@
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 /** A skill a creator can meaningfully claim, independent of its render asset. */
 export interface ProfilePropSkillChoice {
@@ -171,8 +173,44 @@ export function getProfilePropFamilyByRepresentative(
   return FAMILY_BY_REPRESENTATIVE.get(representative);
 }
 
+// The labels above stay English for code and tests. Screens show these: the
+// prop names from the Settings catalog, plus the few words that differ here.
+const FAMILY_LABEL_KEYS: Partial<Record<PropType, TranslationKey>> = {
+  [PropType.STAFF]: "profile_prop_family_staff",
+  [PropType.MINIHOOP]: "profile_prop_family_hoop",
+};
+const SKILL_LABEL_KEYS: Partial<Record<PropType, TranslationKey>> = {
+  [PropType.STAFF]: "profile_prop_family_staff",
+};
+const SKILL_SHORT_KEYS: Partial<Record<PropType, TranslationKey>> = {
+  [PropType.MINIHOOP]: "profile_prop_hoop_mini",
+  [PropType.BIGHOOP]: "profile_prop_hoop_big",
+};
+
+function propNameKey(prop: PropType): TranslationKey {
+  return `settings_prop_name_${prop}` as TranslationKey;
+}
+
+/** A family's name in the visitor's language ("Hoop", "Cerchio"). */
+export function profileFamilyLabel(family: ProfilePropFamily): string {
+  const rep = family.representative;
+  return t(FAMILY_LABEL_KEYS[rep] ?? propNameKey(rep));
+}
+
+/** A skill's full name in the visitor's language ("Mini Hoop"). */
+export function profileSkillLabel(choice: ProfilePropSkillChoice): string {
+  return t(SKILL_LABEL_KEYS[choice.prop] ?? propNameKey(choice.prop));
+}
+
+/** A skill's name inside its family's size choice ("Mini", "Big", "Triangle"). */
+export function profileSkillShortLabel(choice: ProfilePropSkillChoice): string {
+  const key = SKILL_SHORT_KEYS[choice.prop];
+  return key ? t(key) : profileSkillLabel(choice);
+}
+
 export function getProfilePropLabel(prop: PropType): string {
-  return SKILL_BY_MEMBER.get(prop)?.label ?? getPropTypeDisplayInfo(prop).label;
+  const choice = SKILL_BY_MEMBER.get(prop);
+  return choice ? profileSkillLabel(choice) : getPropTypeDisplayInfo(prop).label;
 }
 
 export function isProfilePropChoice(prop: PropType): boolean {

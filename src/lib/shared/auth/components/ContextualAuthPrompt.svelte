@@ -323,7 +323,7 @@
                 onclick={openPhoneSignIn}
               >
                 <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
-                <span>Use your phone</span>
+                <span>{t("auth_phone_use_your_phone")}</span>
               </button>
             {/if}
           </div>

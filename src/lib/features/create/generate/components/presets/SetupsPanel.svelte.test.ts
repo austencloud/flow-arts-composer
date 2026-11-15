@@ -96,7 +96,6 @@ function props(
     isPreview: false,
     isAnonymous: false,
     onApply: vi.fn(),
-    onRequestCommunityAccount: vi.fn(),
     onRequestSaveAccount: vi.fn(),
     onRequestSignIn: vi.fn(),
     onClose: vi.fn(),
@@ -115,6 +114,7 @@ describe("SetupsPanel", () => {
 
   it("tells the owner that saved setups are shared", async () => {
     render(SetupsPanel, props(fakeState()));
+    await page.getByRole("tab", { name: "Saved" }).click();
 
     await expect
       .element(page.getByText("Saved setups are shared with the community."))
@@ -128,6 +128,7 @@ describe("SetupsPanel", () => {
       SetupsPanel,
       props(state, { isAnonymous: true, onRequestSaveAccount })
     );
+    await page.getByRole("tab", { name: "Saved" }).click();
 
     await page.getByRole("button", { name: "Save current setup" }).click();
 
@@ -188,9 +189,9 @@ describe("SetupsPanel", () => {
     });
   });
 
-  it("asks guests to create an account before opening community setups", async () => {
+  it("lets a guest apply a community setup without an account prompt", async () => {
     const onApply = vi.fn();
-    const onRequestCommunityAccount = vi.fn();
+    const onRequestSaveAccount = vi.fn();
 
     render(
       SetupsPanel,
@@ -200,22 +201,37 @@ describe("SetupsPanel", () => {
             communitySetup("austen", "a1", "Austen Cloud", "VTG 1:1"),
           ],
         }),
-        {
-          isAnonymous: true,
-          onApply,
-          onRequestCommunityAccount,
-        }
+        { isAnonymous: true, onApply, onRequestSaveAccount }
       )
     );
 
-    await page.getByRole("tab", { name: "Community" }).click();
+    await expect
+      .element(page.getByRole("tab", { name: "Community" }))
+      .toHaveAttribute("aria-selected", "true");
+    await page.getByRole("button", { name: /VTG 1:1/ }).click();
 
-    expect(onRequestCommunityAccount).toHaveBeenCalledOnce();
-    expect(onApply).not.toHaveBeenCalled();
+    expect(onApply).toHaveBeenCalledWith({
+      kind: "community",
+      userId: "austen",
+      setupId: "a1",
+    });
+    expect(onRequestSaveAccount).not.toHaveBeenCalled();
+  });
+
+  it("opens on Community when nothing is saved", async () => {
+    render(SetupsPanel, props(fakeState()));
+
+    await expect
+      .element(page.getByRole("tab", { name: "Community" }))
+      .toHaveAttribute("aria-selected", "true");
+  });
+
+  it("opens on Saved when the person already has a saved setup", async () => {
+    render(SetupsPanel, props(fakeState({ setups: [setup("1")] })));
+
     await expect
       .element(page.getByRole("tab", { name: "Saved" }))
       .toHaveAttribute("aria-selected", "true");
-    await expect.element(page.getByText("Austen Cloud")).not.toBeVisible();
   });
 
   it("keeps load failure distinct from an empty list", async () => {
@@ -225,6 +241,7 @@ describe("SetupsPanel", () => {
       })
     );
     const screen = render(SetupsPanel, errorProps);
+    await page.getByRole("tab", { name: "Saved" }).click();
 
     await expect
       .element(page.getByText("Saved setups could not load"))
@@ -324,6 +341,25 @@ describe("SetupsPanel", () => {
         )
       )
       .toBeVisible();
+  });
+
+  it("holds the Saved body until sign-in state is known", async () => {
+    const view = render(
+      SetupsPanel,
+      props(fakeState(), { authKnown: false, isSignedOut: false })
+    );
+
+    await page.getByRole("tab", { name: "Saved" }).click();
+    expect(page.getByText("No saved setups yet").query()).toBeNull();
+    expect(
+      page.getByRole("button", { name: "Save current setup" }).query()
+    ).toBeNull();
+
+    await view.rerender({ authKnown: true, isSignedOut: true });
+    await expect
+      .element(page.getByRole("button", { name: "Sign In" }))
+      .toBeVisible();
+    expect(page.getByText("No saved setups yet").query()).toBeNull();
   });
 
   it("closes from the panel chrome", async () => {

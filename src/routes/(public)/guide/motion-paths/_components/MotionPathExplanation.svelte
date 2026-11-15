@@ -505,7 +505,9 @@
     <div class="intro-controls">
       {#if browser}
         <LessonStageControls
-          label={isFinal ? "Start again" : "Next"}
+          label={isFinal
+            ? tDynamic("guide_nav_start_again")
+            : tDynamic("guide_nav_next")}
           currentStep={stage + 1}
           totalSteps={STAGES.length}
           progressAppearance="steps"

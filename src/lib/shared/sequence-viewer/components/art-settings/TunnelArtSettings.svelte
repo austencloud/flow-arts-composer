@@ -1,6 +1,7 @@
 <!-- Tunnel settings route each substantial rail section to its presentation owner. -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { localizedEffortLabel } from "#lib/shared/effort/domain/effort-label.js";
   import { onDestroy, type Snippet } from "svelte";
   import AnimatorInspectorShell from "#lib/shared/animation-panel/components/AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "#lib/shared/animation-panel/components/AnimatorInspectorFooter.svelte";
@@ -27,6 +28,10 @@
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
   import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import TunnelEffectsSettings from "./TunnelEffectsSettings.svelte";
+  import type { EffectCatalogLook } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
+  import { EFFECT_GLYPH_WIDTH } from "#lib/shared/sequence-viewer/components/control-dock-tab-form.js";
+  import { effectCatalogLooks } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import TunnelDisplaySettings from "./TunnelDisplaySettings.svelte";
   import TunnelLookSettings from "./TunnelLookSettings.svelte";
   import TunnelMotionSettings from "./TunnelMotionSettings.svelte";
@@ -176,12 +181,25 @@
     });
   });
   const motionMerged = $derived(layout === "sidebar");
+  const effectsConfigState = getEffectsConfigContext();
+  const tunnelEffectChip = $derived(
+    effectsConfigState && effectsConfigState.activeEffect !== "none"
+      ? {
+          effectId: effectsConfigState.activeEffect,
+          look: effectCatalogLooks(effectsConfigState).get(
+            effectsConfigState.activeEffect
+          ),
+        }
+      : undefined
+  );
   const tunnelRail = $derived<
     {
       id: TunnelRailId;
       icon?: string;
       propType?: PropType;
       fanAppearance?: FanAppearance;
+      propPairGlyph?: boolean;
+      effectChip?: { effectId: string; look: EffectCatalogLook | undefined };
       label: string;
       summary?: string;
       accentColor?: string;
@@ -193,6 +211,9 @@
     {
       id: "effects",
       icon: "fa-wand-magic-sparkles",
+      // The effect that is on shows as its painted chip; the wand stays while
+      // nothing is on. tunnelDockTabs carries it to the phone dock.
+      effectChip: tunnelEffectChip,
       label: t("viewer_ui_effects"),
       summary: t("viewer_ui_effects"),
       accentColor: RAIL_CATEGORY_ACCENTS.effects,
@@ -203,12 +224,16 @@
             id: "props" as const,
             propType: selectedPropType,
             fanAppearance,
+            // The sidebar rail draws the blue and red pair from this flag;
+            // the phone dock reads `propType` alone.
+            propPairGlyph: true,
             label: t("viewer_ui_props"),
             summary: handProps
               ? viewingPropLabel({
                   leftPropType: handProps.leftPropType,
                   rightPropType: handProps.rightPropType,
-                  catDogMode: handProps.catDog,
+                  catDogMode:
+                    handProps.leftPropType !== handProps.rightPropType,
                 })
               : getPropTypeDisplayInfo(selectedPropType).label,
             accentColor: RAIL_CATEGORY_ACCENTS.props,
@@ -221,7 +246,7 @@
             id: "motion" as const,
             icon: "fa-gauge-high",
             label: t("viewer_ui_motion"),
-            summary: activeEffort.label,
+            summary: localizedEffortLabel(activeEffort.id),
             accentColor: activeEffort.color,
           },
         ]
@@ -229,7 +254,7 @@
           {
             id: "effort" as const,
             label: t("viewer_ui_effort"),
-            summary: activeEffort.label,
+            summary: localizedEffortLabel(activeEffort.id),
             accentColor: activeEffort.color,
           },
           {
@@ -325,6 +350,8 @@
       icon: p.icon,
       propType: p.propType,
       fanAppearance: p.fanAppearance,
+      effectChip: p.effectChip,
+      glyphWidth: p.id === "effects" ? EFFECT_GLYPH_WIDTH : undefined,
       accentColor: p.accentColor,
     }))
   );

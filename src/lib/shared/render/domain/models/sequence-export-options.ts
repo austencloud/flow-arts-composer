@@ -5,6 +5,7 @@ import type { TriadBuild } from "#lib/shared/pictograph/prop/domain/triad-build.
 import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
 import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
+import type { StepLabels } from "@tka/render-composition";
 
 export interface SequenceExportOptions {
   includeStartPlacement: boolean;
@@ -129,6 +130,11 @@ export interface SequenceExportOptions {
   width?: number;
   height?: number;
   backgroundColor?: string;
+
+  /** The Start/End corner words. The dispatcher fills in the visitor's
+   *  language when absent; shared gallery pictures pass empty words so the
+   *  card can lay the visitor's word on top. */
+  stepLabels?: StepLabels;
 
   /** Use 5:7 playing card layout (composeCardImage) for physical card export.
    *  Different from printMode (white background). cardMode = card aspect ratio. */

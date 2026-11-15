@@ -6,17 +6,28 @@
   function of its steps, so the guest view renders it with the real
   SequenceMandala renderer rather than blowing up the Storage poster. The poster
   exists for the list grid and for link unfurls; here the artwork is live and
-  scales to the viewport.
+  scales to the box it is given.
 
-  Autoplaying motion needs a user-reachable pause (WCAG 2.2.2), and the
-  undulation is off entirely under prefers-reduced-motion.
+  It fills its host's box and draws the mandala as the largest square that fits
+  inside it, so it is never wider than the box. The host owns the pause control
+  (autoplaying motion needs a user-reachable pause, WCAG 2.2.2) and passes
+  `playing`; the undulation is off entirely under prefers-reduced-motion.
 -->
 <script lang="ts">
   import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
   import { savedMandalaPalette } from "#lib/shared/mandala/domain/mandala-palette.js";
   import type { MandalaPublicPayload } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
 
-  const { payload }: { payload: MandalaPublicPayload } = $props();
+  let {
+    payload,
+    playing = true,
+    onReady,
+  }: {
+    payload: MandalaPublicPayload;
+    playing?: boolean;
+    /** The first frame is on screen. */
+    onReady?: () => void;
+  } = $props();
 
   // Same undulation envelope the Mandala module meditates with.
   const ANIMATE_MIN = 0;
@@ -40,24 +51,42 @@
     return () => mql.removeEventListener("change", onChange);
   });
 
-  let playing = $state(true);
   const animating = $derived(playing && !reducedMotion);
 
-  // The stage reserves a square box up front, so the mandala arriving never
-  // reflows the detail shell (no-layout-shift.md).
+  // The stage reserves its box up front, so the mandala arriving never
+  // reflows its host (no-layout-shift.md). The mandala is the largest square
+  // that fits inside that box.
   let stageEl = $state<HTMLElement | null>(null);
-  let stageSize = $state(320);
+  let stageSize = $state(0);
 
   $effect(() => {
     if (!stageEl) return;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        stageSize = Math.max(160, Math.min(width, height));
+        stageSize = Math.floor(Math.min(width, height));
       }
     });
     ro.observe(stageEl);
     return () => ro.disconnect();
+  });
+
+  // Ready once a real size has been drawn and painted: two frames, so a host
+  // that fades this in never fades up an empty box.
+  let readySent = false;
+  $effect(() => {
+    if (readySent || stageSize <= 0 || !onReady) return;
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        readySent = true;
+        onReady();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
   });
 
   const sequence = $derived({ steps: payload.steps });
@@ -65,8 +94,8 @@
   const palette = $derived(savedMandalaPalette(payload.colors));
 </script>
 
-<div class="mandala-preview">
-  <div class="mandala-stage" bind:this={stageEl}>
+<div class="mandala-stage" bind:this={stageEl}>
+  {#if stageSize > 0}
     <SequenceMandala
       {sequence}
       size={stageSize}
@@ -82,102 +111,18 @@
       animateEasing="sine"
       animateRotation={reducedMotion ? 0 : 90}
     />
-  </div>
-
-  <div class="preview-footer">
-    {#if payload.sourceWord}
-      <span class="source-word">{payload.sourceWord}</span>
-    {:else}
-      <span class="source-word placeholder" aria-hidden="true"></span>
-    {/if}
-    {#if !reducedMotion}
-      <button
-        type="button"
-        class="motion-btn"
-        aria-pressed={playing}
-        onclick={() => (playing = !playing)}
-      >
-        <i
-          class="fas {playing ? 'fa-pause' : 'fa-play'}"
-          aria-hidden="true"
-        ></i>
-        <span>{playing ? "Pause motion" : "Play motion"}</span>
-      </button>
-    {/if}
-  </div>
+  {/if}
 </div>
 
 <style>
-  .mandala-preview {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-
   .mandala-stage {
     display: flex;
-    flex: 1;
-    min-height: 0;
     width: 100%;
-    aspect-ratio: 1;
-    max-height: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
     align-items: center;
     justify-content: center;
-  }
-
-  .preview-footer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    min-height: 48px;
-  }
-
-  .source-word {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
-    font-size: var(--font-size-min, 14px);
-    letter-spacing: 0.04em;
-  }
-
-  /* Reserves the row height whether or not a source word exists, so the
-     footer never jumps between mandalas. */
-  .source-word.placeholder {
-    min-width: 1px;
-  }
-
-  .motion-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 8px 16px;
-    border: 1px solid
-      color-mix(in srgb, var(--theme-accent, #22d3ee) 45%, transparent);
-    border-radius: 10px;
-    background: transparent;
-    color: var(--theme-accent-text, var(--theme-accent, #22d3ee));
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 650;
-    cursor: pointer;
-  }
-
-  @media (hover: hover) {
-    .motion-btn:hover {
-      background: color-mix(
-        in srgb,
-        var(--theme-accent, #22d3ee) 12%,
-        transparent
-      );
-    }
-  }
-
-  .motion-btn:focus-visible {
-    outline: 2px solid var(--theme-accent, #22d3ee);
-    outline-offset: 2px;
+    overflow: hidden;
   }
 </style>

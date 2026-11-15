@@ -156,6 +156,31 @@ for (const key of backgroundKeys) {
     failures.push(`${manifest[key].name} statically imports vendor-three`);
   }
 }
+// A scanned card and a share link load the /q ingress and the standalone
+// viewer. On 2026-11-01 the tunnel page's 3D cast reached three.js through a
+// stage-facing helper, two imports deep, and every scan downloaded 1.5 MB that
+// the source-level shell contract could not see.
+const scanEntries = [
+  "src/routes/q/[code]/QScanPage.svelte",
+  "src/routes/sequence/[id]/SequenceViewerPage.svelte",
+];
+for (const key of scanEntries) {
+  if (!manifest[key]) failures.push(`missing scan entry ${key}`);
+}
+const scanClosure = staticClosure(
+  manifest,
+  scanEntries.filter((key) => manifest[key])
+);
+for (const key of scanClosure) {
+  const name = manifest[key]?.name;
+  if (!lazyChunks.includes(name) || name === "vendor-backgrounds") continue;
+  const importers = [...scanClosure].filter((parent) =>
+    manifest[parent]?.imports?.includes(key)
+  );
+  failures.push(
+    `${name} loads with the scan viewer, imported by ${importers.join(", ")}`
+  );
+}
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exitCode = 1;

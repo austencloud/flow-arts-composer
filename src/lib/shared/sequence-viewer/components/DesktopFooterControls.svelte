@@ -58,7 +58,11 @@
           : t("viewer_detail_add_to_favorites")}
       >
         <i class="fas fa-heart" aria-hidden="true"></i>
-        <span>{isFavorite ? "Favorited" : "Favorite"}</span>
+        <span
+          >{isFavorite
+            ? t("viewer_header_favorited")
+            : t("viewer_header_favorite")}</span
+        >
       </button>
     {/if}
 
@@ -74,7 +78,11 @@
       >
         <i class="fas {linkCopied ? 'fa-check' : 'fa-link'}" aria-hidden="true"
         ></i>
-        <span>{linkCopied ? "Copied" : t("viewer_detail_copy_link")}</span>
+        <span
+          >{linkCopied
+            ? t("shared_error_copied")
+            : t("viewer_detail_copy_link")}</span
+        >
       </button>
     {/if}
 
@@ -124,14 +132,16 @@
           practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
         aria-label={practiceActive
           ? t("viewer_detail_stop_practice")
-          : "Practice"}
+          : t("viewer_ui_practice")}
         aria-pressed={practiceActive}
       >
         <i
           class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}"
           aria-hidden="true"
         ></i>
-        <span>{practiceActive ? "Stop" : "Practice"}</span>
+        <span
+          >{practiceActive ? t("viewer_ui_stop") : t("viewer_ui_practice")}</span
+        >
       </button>
     {/if}
 

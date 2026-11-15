@@ -141,9 +141,13 @@
     gap: 10px;
     padding: 10px 12px;
     border: 1px solid color-mix(in srgb, var(--el) 40%, transparent);
-    border-left: 3px solid var(--el);
     border-radius: 12px;
     background: color-mix(in srgb, var(--el) 7%, transparent);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .mode {
+    border-left: 3px solid var(--el);
   }
   /* Intentional mode header: element icon + timing/direction + VTG code + word. */
   .cap {

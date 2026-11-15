@@ -13,7 +13,9 @@
     collectionId,
     foreignOwnerId = null,
     ownerName,
+    active = true,
   }: {
+    active?: boolean;
     collectionId: string;
     foreignOwnerId?: string | null;
     ownerName?: string;
@@ -27,6 +29,6 @@
   {/if}
 {/snippet}
 
-<BrowseHeaderSlot leaf={collectionId} actions={headerActions} />
+<BrowseHeaderSlot leaf={collectionId} actions={headerActions} {active} />
 
 <p data-testid="detail">Detail {collectionId} by {ownerName}</p>

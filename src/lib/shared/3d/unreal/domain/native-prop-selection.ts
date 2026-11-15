@@ -1,4 +1,9 @@
 import type { PropBuild } from "@austencloud/scene-3d";
+import {
+  AVAILABLE_FAN_BUILDS,
+  type FanBuild,
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { clampFanBuild } from "../../domain/fan-appearance";
 import { nativePropVariants } from "../../../../../../unreal/Shared/Tools/native-prop-catalog.mjs";
 
 /** One variant row of the native prop catalog. */
@@ -18,9 +23,12 @@ type NativePropVariant = {
  */
 export function nativePropId(
   prop: string,
-  build: PropBuild,
-  flips: { leftFlipped?: boolean; rightFlipped?: boolean } = {}
+  rawBuild: PropBuild,
+  flips: { leftFlipped?: boolean; rightFlipped?: boolean } = {},
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
 ): string {
+  // A fan look that is not offered is sent as the default look.
+  const build = clampFanBuild(rawBuild, available);
   const variants: NativePropVariant[] = nativePropVariants(prop);
   const variant = variants.find((candidate) => {
     if (candidate.fanBuild !== undefined)

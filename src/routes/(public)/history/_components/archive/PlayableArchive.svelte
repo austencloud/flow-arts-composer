@@ -260,8 +260,12 @@
     max-width: 224rem;
     margin-inline: auto;
     padding: var(--archive-room-padding);
-    padding-bottom: 1.25rem;
     color: var(--theme-text);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .archive-room {
+    padding-bottom: 1.25rem;
   }
   .archive-header {
     margin-bottom: var(--archive-heading-gap);

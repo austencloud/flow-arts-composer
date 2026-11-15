@@ -56,6 +56,7 @@
   // Domain managers
   import ModuleRenderer from "./modules/ModuleRenderer.svelte";
   import PWAInstallationManager from "./pwa/PWAInstallationManager.svelte";
+  import GuestNoteCard from "./guest-note/GuestNoteCard.svelte";
   import { desktopSidebarState } from "./layout/desktop-sidebar-state.svelte";
   // Keyboard shortcuts
 
@@ -360,6 +361,7 @@
 
   <!-- Domain Managers -->
   <PWAInstallationManager />
+  <GuestNoteCard />
   <!-- Module Switcher Drawer (opens via custom event) -->
   <ModuleSwitcher
     currentModule={currentModule()}

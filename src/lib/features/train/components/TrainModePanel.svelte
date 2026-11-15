@@ -113,7 +113,7 @@
   }
 
   function handleCameraError(error: string) {
-    trainState.setError(`Camera error: ${error}`);
+    trainState.setError(t("train_camera_error_prefix", { error: String(error) }));
     trainState.setCameraReady(false);
   }
 

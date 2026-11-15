@@ -20,7 +20,7 @@ Provides consistent styling and interaction patterns for all generation setting 
     clickable = true,
     gridColumnSpan = 2,
     cardIndex = 0, // For stagger animations
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
     appearance = "vivid",
     ariaLabel,
     onClick,

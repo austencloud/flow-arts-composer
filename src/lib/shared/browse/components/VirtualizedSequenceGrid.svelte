@@ -55,7 +55,6 @@
     showRightMotion = true,
     addWord,
     addDifficultyLevel,
-    allowQR = true,
     collectionContext,
     showLength = false,
     selectedIds,
@@ -81,11 +80,6 @@
     showRightMotion?: boolean;
     addWord?: boolean;
     addDifficultyLevel?: boolean;
-    /** Allow a baked-in QR (signed-in only, gated by the showQRCode setting +
-     * a spare cell). Default true — the QR is its own shared cache class, so it
-     * still loads from static/cloud. Pass false only for tiny/unscannable
-     * surfaces. */
-    allowQR?: boolean;
     /** When rendering a collection's members: adds "Remove from this collection" to each card's menu */
     collectionContext?: {
       id: string;
@@ -554,7 +548,6 @@
               {showRightMotion}
               {addWord}
               {addDifficultyLevel}
-              {allowQR}
               {collectionContext}
               {showLength}
               {selectedIds}

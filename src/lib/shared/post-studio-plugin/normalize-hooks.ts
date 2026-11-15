@@ -1,4 +1,9 @@
-import type { VideoEditorPlugin } from "@austencloud/video-editor/core";
+import type {
+  PostProject,
+  VideoEditorPlugin,
+} from "@austencloud/video-editor/core";
+import { normalizeAnimationSplit } from "#lib/shared/media-composition/domain/post-animation-split.js";
+import { normalizePanelLift } from "#lib/shared/media-composition/domain/post-panel-lift.js";
 import {
   mergeSeparateTunnelHook,
   splitTunnelHookTitles,
@@ -16,5 +21,32 @@ import { withMotionKeys } from "#lib/shared/media-composition/domain/post-projec
  */
 export const TKA_NORMALIZE: NonNullable<VideoEditorPlugin["normalize"]> = {
   before: (project) => splitTunnelHookTitles(mergeSeparateTunnelHook(project)),
-  after: withMotionKeys,
+  after: (project) => withNormalizedSplits(withMotionKeys(project)),
 };
+
+/**
+ * Every animation's split as `normalizeAnimationSplit` keeps it, and its
+ * lifted panel as `normalizePanelLift` keeps it.
+ */
+function withNormalizedSplits(project: PostProject): PostProject {
+  let changed = false;
+  const tracks = project.tracks.map((track) => {
+    let trackChanged = false;
+    const items = track.items.map((item) => {
+      if (item.kind !== "animation" || (!item.split && !item.panelLift))
+        return item;
+      const split = item.split && normalizeAnimationSplit(item.split);
+      const panelLift = item.panelLift && normalizePanelLift(item.panelLift);
+      if (split === item.split && panelLift === item.panelLift) return item;
+      trackChanged = true;
+      const next = { ...item };
+      if (split) next.split = split;
+      if (panelLift) next.panelLift = panelLift;
+      return next;
+    });
+    if (!trackChanged) return track;
+    changed = true;
+    return { ...track, items };
+  });
+  return changed ? { ...project, tracks } : project;
+}

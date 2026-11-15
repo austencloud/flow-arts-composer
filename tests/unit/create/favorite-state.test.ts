@@ -45,9 +45,35 @@ function makeCommunitySetup(
   };
 }
 
+const NOW_MS = 1_800_000_000_000;
+
+interface CacheSeed {
+  personal?: Record<string, SavedGeneratorSetup[]>;
+  community?: { setups: CommunitySetup[]; savedAt: number };
+}
+
+// An in-memory stand-in for the device copy, so tests never share storage.
+function makeCache(seed: CacheSeed = {}) {
+  const personal = new Map(Object.entries(seed.personal ?? {}));
+  let community = seed.community ?? null;
+  return {
+    readPersonal: vi.fn((userId: string) => personal.get(userId) ?? null),
+    writePersonal: vi.fn(
+      (userId: string, setups: readonly SavedGeneratorSetup[]) => {
+        personal.set(userId, [...setups]);
+      }
+    ),
+    readCommunity: vi.fn(() => community),
+    writeCommunity: vi.fn((setups: readonly CommunitySetup[]) => {
+      community = { setups: [...setups], savedAt: NOW_MS };
+    }),
+  };
+}
+
 interface FakeOptions {
   personal?: SavedGeneratorSetup[] | Error;
   community?: CommunitySetup[] | Error;
+  cache?: CacheSeed;
 }
 
 function makeDeps(options: FakeOptions = {}) {
@@ -80,8 +106,11 @@ function makeDeps(options: FakeOptions = {}) {
     updateSetup: vi.fn(async () => undefined),
     deleteSetup: vi.fn(async () => undefined),
   };
+  const cache = makeCache(options.cache);
   const deps: Partial<FavoriteStateDeps> = {
     repository,
+    cache,
+    now: () => NOW_MS,
     isAuthReady: () => true,
     awaitAuthReady: vi.fn(async () => undefined),
     getUserId: () => "u1",
@@ -89,7 +118,7 @@ function makeDeps(options: FakeOptions = {}) {
     notifySuccess: vi.fn(),
     reportUserError: vi.fn(),
   };
-  return { repository, deps };
+  return { repository, deps, cache };
 }
 
 const liveSnapshot = () => captureSetupSnapshot(CONFIG, null);
@@ -459,5 +488,198 @@ describe("favorite state", () => {
 
     expect(state.canSave).toBe(false);
     await expect(state.saveCurrentSetup()).resolves.toBe(false);
+  });
+});
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+// Austen, 2026-11-14: Setups took "a very very long time to load" on live.
+// The lists now open from the device copy and refresh behind it.
+describe("favorite state device copy", () => {
+  it("opens saved setups from the device copy and refreshes without a skeleton", async () => {
+    const read = deferred<SavedGeneratorSetup[]>();
+    const { deps, repository, cache } = makeDeps({
+      cache: { personal: { u1: [makeSetup("old", "Old")] } },
+    });
+    repository.loadPersonal.mockReturnValueOnce(read.promise);
+
+    const state = createFavoriteState(liveSnapshot, deps);
+
+    // First frame: the copy is on screen before any read answers.
+    expect(state.setups.map((setup) => setup.id)).toEqual(["old"]);
+    expect(state.isLoadingSetups).toBe(false);
+    await Promise.resolve();
+    expect(state.isLoadingSetups).toBe(false);
+    expect(repository.loadPersonal).toHaveBeenCalledOnce();
+
+    read.resolve([makeSetup("old", "Old"), makeSetup("new", "New")]);
+    await vi.waitFor(() => expect(state.setups).toHaveLength(2));
+    expect(cache.writePersonal).toHaveBeenLastCalledWith("u1", [
+      expect.objectContaining({ id: "old" }),
+      expect.objectContaining({ id: "new" }),
+    ]);
+  });
+
+  it("keeps the copied list when the refresh fails", async () => {
+    const { deps } = makeDeps({
+      personal: new Error("offline"),
+      cache: { personal: { u1: [makeSetup("s1")] } },
+    });
+    const state = await settled(createFavoriteState(liveSnapshot, deps));
+
+    expect(state.setups.map((setup) => setup.id)).toEqual(["s1"]);
+    expect(state.setupsLoadError).toBeNull();
+  });
+
+  it("does not paint a refresh that started before a save over the save", async () => {
+    const firstRead = deferred<SavedGeneratorSetup[]>();
+    const { deps, repository, cache } = makeDeps({
+      cache: { personal: { u1: [makeSetup("s1")] } },
+    });
+    repository.loadPersonal
+      .mockReturnValueOnce(firstRead.promise)
+      .mockResolvedValueOnce([makeSetup("s1"), makeSetup("new-id", "Setup 2")]);
+    const state = createFavoriteState(liveSnapshot, deps);
+
+    await expect(state.saveCurrentSetup()).resolves.toBe(true);
+    expect(cache.writePersonal).toHaveBeenLastCalledWith("u1", [
+      expect.objectContaining({ id: "s1" }),
+      expect.objectContaining({ id: "new-id" }),
+    ]);
+
+    // The old read answers without the new setup; it must not win.
+    firstRead.resolve([makeSetup("s1")]);
+    await vi.waitFor(() =>
+      expect(repository.loadPersonal).toHaveBeenCalledTimes(2)
+    );
+    await settled(state);
+    expect(state.setups.map((setup) => setup.id)).toEqual(["s1", "new-id"]);
+  });
+
+  it("swaps to the next account's own copy when the identity changes", async () => {
+    let userId = "u1";
+    const { deps } = makeDeps({
+      cache: {
+        personal: { u1: [makeSetup("a")], u2: [makeSetup("b")] },
+      },
+    });
+    deps.getUserId = () => userId;
+    const state = await settled(createFavoriteState(liveSnapshot, deps));
+
+    userId = "u2";
+    const reload = state.loadPersonal();
+    expect(state.setups.map((setup) => setup.id)).toEqual(["b"]);
+    expect(state.isLoadingSetups).toBe(false);
+    await reload;
+  });
+
+  it("uses a community copy under five minutes old without reading Firestore", async () => {
+    const { deps, repository } = makeDeps({
+      cache: {
+        community: {
+          setups: [
+            makeCommunitySetup("u1", "mine"),
+            makeCommunitySetup("u2", "theirs"),
+          ],
+          savedAt: NOW_MS - 60_000,
+        },
+      },
+    });
+    const state = createFavoriteState(liveSnapshot, deps);
+
+    expect(state.isLoadingCommunity).toBe(false);
+    expect(state.communitySetups.map((setup) => setup.setupId)).toEqual([
+      "theirs",
+    ]);
+    await settled(state);
+    expect(repository.loadCommunity).not.toHaveBeenCalled();
+  });
+
+  it("shows an older community copy at once and refreshes it behind", async () => {
+    const read = deferred<CommunitySetup[]>();
+    const { deps, repository, cache } = makeDeps({
+      cache: {
+        community: {
+          setups: [makeCommunitySetup("u2", "old")],
+          savedAt: NOW_MS - 10 * 60_000,
+        },
+      },
+    });
+    repository.loadCommunity.mockReturnValueOnce(read.promise);
+    const state = createFavoriteState(liveSnapshot, deps);
+    await Promise.resolve();
+
+    expect(state.communitySetups.map((setup) => setup.setupId)).toEqual([
+      "old",
+    ]);
+    expect(state.isLoadingCommunity).toBe(false);
+    expect(repository.loadCommunity).toHaveBeenCalledOnce();
+
+    read.resolve([makeCommunitySetup("u3", "fresh")]);
+    await vi.waitFor(() =>
+      expect(state.communitySetups.map((setup) => setup.setupId)).toEqual([
+        "fresh",
+      ])
+    );
+    expect(cache.writeCommunity).toHaveBeenCalledOnce();
+  });
+
+  it("Retry reads the community list even when the copy is fresh", async () => {
+    const { deps, repository } = makeDeps({
+      cache: {
+        community: { setups: [], savedAt: NOW_MS - 1_000 },
+      },
+    });
+    const state = await settled(createFavoriteState(liveSnapshot, deps));
+    expect(repository.loadCommunity).not.toHaveBeenCalled();
+
+    await state.loadCommunity({ force: true });
+
+    expect(repository.loadCommunity).toHaveBeenCalledOnce();
+  });
+
+  it("guests and signed-out visitors get the community list", async () => {
+    for (const userId of ["guest-1", null] as const) {
+      const { deps, repository } = makeDeps({
+        community: [makeCommunitySetup("u2", "theirs")],
+      });
+      deps.getUserId = () => userId;
+      const state = await settled(createFavoriteState(liveSnapshot, deps));
+
+      expect(repository.loadCommunity).toHaveBeenCalledWith(20);
+      expect(state.communitySetups.map((setup) => setup.setupId)).toEqual([
+        "theirs",
+      ]);
+      expect(state.communityLoadError).toBeNull();
+    }
+  });
+
+  it("opens the community list from the device copy for a signed-out visitor, then reads at most once per five minutes", async () => {
+    const { deps, repository } = makeDeps({
+      cache: {
+        community: {
+          setups: [makeCommunitySetup("u2", "theirs")],
+          savedAt: NOW_MS - 60_000,
+        },
+      },
+    });
+    deps.getUserId = () => null;
+    const state = createFavoriteState(liveSnapshot, deps);
+
+    expect(state.communitySetups.map((setup) => setup.setupId)).toEqual([
+      "theirs",
+    ]);
+    await settled(state);
+    await state.loadCommunity();
+
+    expect(repository.loadCommunity).not.toHaveBeenCalled();
   });
 });

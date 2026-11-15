@@ -43,6 +43,7 @@ import {
   nextGalleryOwnerIds,
   SYSTEM_COLLECTION_IDS,
 } from "#lib/shared/library/domain/models/collection.js";
+import { cardStepsToWrite } from "#lib/shared/library/domain/collection-card-steps.js";
 import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import {
@@ -467,6 +468,44 @@ export async function syncSmartCollectionCount(
       "[CollectionManager] Failed to sync smart collection count:",
       error
     );
+  }
+}
+
+// One attempt per collection and value per page open, whether it worked or not.
+const cardStepsAttempted = new Map<string, string>();
+
+/**
+ * When the owner opens their own public collection and the catalogue gives a
+ * certain answer for the public page's card shapes, keep the stored
+ * `cardSteps` equal to it, so a first-time visitor's placeholders take the
+ * cards' rows. Writes only that one field and leaves `updatedAt` alone (a bump
+ * would reorder the public feed). Never for a private, smart or system
+ * collection, someone else's, offline, or when nothing changed. Best effort
+ * and silent on failure.
+ */
+export async function recordCollectionCardSteps(
+  collectionData: LibraryCollection,
+  steps: readonly number[] | null
+): Promise<void> {
+  try {
+    const userId = getAuthenticatedUserId("write");
+    const next = cardStepsToWrite({
+      collection: collectionData,
+      viewerId: userId,
+      steps,
+      online: typeof navigator === "undefined" || navigator.onLine !== false,
+    });
+    if (!next) return;
+    const signature = `${next.key}|${next.steps.join(",")}`;
+    if (cardStepsAttempted.get(collectionData.id) === signature) return;
+    cardStepsAttempted.set(collectionData.id, signature);
+    const firestore = await getFirestoreInstance();
+    await updateDoc(
+      doc(firestore, getUserCollectionPath(userId, collectionData.id)),
+      { cardSteps: { key: next.key, steps: next.steps } }
+    );
+  } catch (error) {
+    console.warn("[CollectionManager] Could not record card steps:", error);
   }
 }
 

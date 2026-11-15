@@ -13,6 +13,7 @@
  *   P1.5 PlaybackSync           — per-update orchestration (completes P1)
  */
 
+import type { MotionCueFrame } from "../domain/types/motion-cue-types";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
@@ -139,6 +140,8 @@ export interface AnimationEngineProps {
   /** Tunnel performer spotlight: the selected performer (0 = base, k = copy arm
    *  k), or null. When set, every other copy dims in the render. Default null. */
   tunnelSelectedLayer?: number | readonly number[] | null;
+  /** Opt-in teaching marks (ghosts, hand path, thumb ring). */
+  motionCues?: MotionCueFrame | null;
 }
 
 export interface AdditionalLayerTextureStatus {

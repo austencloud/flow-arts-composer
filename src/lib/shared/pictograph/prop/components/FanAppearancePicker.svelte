@@ -2,12 +2,18 @@
   FanAppearancePicker.svelte
   One vocabulary for how a fan looks: the build (Pictograph, DoodleGrip Fire,
   Lotus Fire, DoodleGrip Day, Moon LED), then only the details that build
-  has. The frame color exists only in 3D, so 2D hosts leave it off.
+  has. The frame color exists only in 3D, so 2D hosts leave it off. A look
+  modelled on a maker's product shows as waiting, and cannot be chosen, until
+  its maker has approved it.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PropBuildPicker from "#lib/shared/3d/components/controls/PropBuildPicker.svelte";
+  import PropCompositionPreview from "./PropCompositionPreview.svelte";
+  import { PropType } from "../domain/enums/prop-type";
   import {
+    chooseCompactFanLook,
+    chooseFanBuild,
     fanBuildPreviewOptions,
     compactFanLookPreviewOptions,
     fanCoverPreviewOptions,
@@ -27,13 +33,33 @@
     onchange,
     compact = false,
     frameColor = true,
+    pairPreview = false,
+    pairPropType = PropType.FAN,
   }: {
     value: FanAppearance;
     onchange: (value: FanAppearance) => void;
     compact?: boolean;
     /** The black/white frame only shows on the 3D model; 2D hosts hide it. */
     frameColor?: boolean;
+    /**
+     * Each tile draws the blue and red pair in this look's line artwork, the
+     * way 2D draws it, instead of a photo of the 3D model. Compact list only.
+     */
+    pairPreview?: boolean;
+    /** Which fan the pair is drawn with: Fan or Big Fan. */
+    pairPropType?: PropType;
   } = $props();
+
+  // The look a compact tile stands for, as the appearance 2D would draw.
+  function pairAppearance(look: CompactFanLook) {
+    return {
+      fanAppearance: normalizeFanAppearance({
+        ...appearance,
+        build: look === "covered-fire" ? "fire" : look,
+        cover: look === "covered-fire" ? "covered" : "bare",
+      }),
+    };
+  }
 
   function buildLabel(id: FanBuild): string {
     switch (id) {
@@ -97,16 +123,15 @@
     appearance.build === "fire" || appearance.build === "day"
   );
 
+  // A look waiting on its maker comes back as null and writes nothing.
   function chooseBuild(build: FanBuild): void {
-    onchange({ ...appearance, build });
+    const next = chooseFanBuild(appearance, build);
+    if (next) onchange(next);
   }
 
   function chooseCompactLook(look: CompactFanLook): void {
-    if (look === "covered-fire") {
-      onchange({ ...appearance, build: "fire", cover: "covered" });
-      return;
-    }
-    onchange({ ...appearance, build: look, cover: "bare" });
+    const next = chooseCompactFanLook(appearance, look);
+    if (next) onchange(next);
   }
 
   const compactLook = $derived<CompactFanLook>(
@@ -124,6 +149,19 @@
   }
 </script>
 
+{#snippet pairTile(option: { id: string })}
+  <!-- Square 100x100 drawing, fitted to the frame's height and centred; no
+       colors prop, so the pair wears the user's saved prop colors. -->
+  <span class="pair-tile">
+    <PropCompositionPreview
+      propType={pairPropType}
+      size={120}
+      pairedGlyph
+      appearanceOverride={pairAppearance(option.id as CompactFanLook)}
+    />
+  </span>
+{/snippet}
+
 <div
   class="fan-appearance-picker"
   class:compact
@@ -137,6 +175,7 @@
       options={compact ? compactLookOptions : buildOptions}
       useImageScale={compact}
       showCredit={compact}
+      preview={compact && pairPreview ? pairTile : undefined}
       onchange={(next) =>
         compact
           ? chooseCompactLook(next as CompactFanLook)
@@ -183,6 +222,27 @@
     display: grid;
     gap: 12px;
     min-width: 0;
+  }
+
+  .pair-tile {
+    position: absolute;
+    inset: 0;
+    container-type: size;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  /* The pair inks about 88% of its square drawing's width and 70% of its
+     height, so a drawing fitted to the frame's height left half the frame
+     empty. Sized from the frame's width instead, the pair spans about 80% of
+     it; the height bound keeps its ink inside a flat frame. */
+  .pair-tile > :global(svg) {
+    width: min(90cqw, 136cqh);
+    height: auto;
+    max-width: none;
+    aspect-ratio: 1;
+    flex: none;
   }
 
   .build-choice,

@@ -7,40 +7,22 @@
   construction: envelopes exist only while approved, so this panel can never
   surface private or withdrawn work.
 
-  Composition follows the gallery's own language: a titled shelf per artifact
-  type, artwork on a plinth, one centered wall. There is deliberately NO type
-  picker — the supply is small enough to show whole, and a two-option segmented
-  control floating over an empty canvas was the thing this replaced. A type
-  still survives in the URL for deep links, and there it reads as a filter with
-  a way back to everything.
+  With no type named it is the front page (VisualsFront): a piece already
+  playing, and a door per type. With a type named (a door, or a deep link) it
+  is that type's wall: every piece of the type, laid out at the size that shows
+  the artwork largest, and panning inside its own area once the pieces would
+  shrink below a judgeable size.
 
-  The list never scrolls (one-screen-per-step.md). The wall is measured and
-  laid out at whichever arrangement shows the artwork largest; once that would
-  shrink the pieces below a judgeable size, each type becomes one door that
-  opens its own screen, and only that screen's wall pans.
+  The list never scrolls (one-screen-per-step.md); only a full wall pans.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import type { Component } from "svelte";
-  import { getBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
-  import type { BrowseVisualType } from "#lib/shared/browse/navigation/browse-route-resolver.js";
-  import {
+    import { getBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
+    import {
     listPublicArtifacts,
     getPublicArtifactDetail,
   } from "#lib/shared/artifact-revisions/services/public-artifact-loader.js";
-  import type {
-    PublicArtifactEnvelope,
-    PublicArtifactType,
-  } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
-  import {
-    collectedTunnelFromPublicArtifact,
-    type TunnelPublicPayload,
-  } from "#lib/features/tunnel-collection/domain/tunnel-public-revision.js";
-  import {
-    mandalaPublicPayloadFromArtifact,
-    type MandalaPublicPayload,
-  } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
-  import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+  import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import BrowseHeaderSlot from "#lib/features/browse/shared/components/BrowseHeaderSlot.svelte";
@@ -49,36 +31,18 @@
     panColumns,
     type WallMetrics,
   } from "../domain/visuals-wall-fit.js";
+  import { wallShowsMakerNames } from "../domain/visuals-makers.js";
+  import { buildStagePlaylist } from "../domain/visuals-playlist.js";
+  import {
+    VISUAL_TYPES as TYPES,
+    type PublishedVisualType,
+  } from "../domain/visuals-types.js";
+  import { createVisualPieceLoader } from "../services/visual-piece-loader.js";
+  import VisualStill from "./VisualStill.svelte";
+  import VisualPiecePage from "./VisualPiecePage.svelte";
+  import VisualsFront from "./VisualsFront.svelte";
 
   const browseNavigation = getBrowseNavigationContext();
-
-  /** The visual types with a shipped publication adapter today. Scenes join
-   *  when Phase 5B gives them one. */
-  type PublishedVisualType = Extract<BrowseVisualType, "tunnels" | "mandalas">;
-
-  interface TypeMeta {
-    readonly route: PublishedVisualType;
-    readonly artifactType: PublicArtifactType;
-    readonly label: string;
-    readonly blurb: string;
-  }
-
-  const TYPES: readonly TypeMeta[] = [
-    {
-      route: "tunnels",
-      artifactType: "tunnel",
-      label: "Tunnels",
-      blurb:
-        "Save a tunnel and share it publicly — it shows up here for everyone.",
-    },
-    {
-      route: "mandalas",
-      artifactType: "mandala",
-      label: "Mandalas",
-      blurb:
-        "Save a mandala and share it publicly — it shows up here for everyone.",
-    },
-  ];
 
   const location = $derived(browseNavigation.currentLocation);
   const inVisuals = $derived(
@@ -133,16 +97,30 @@
     void loadList();
   });
 
-  /** Shelves actually rendered: the filtered type, or every type that has work
-   *  in it. A type with nothing published contributes no empty shelf. */
-  const shelves = $derived.by(() => {
-    const visible = filterType
-      ? TYPES.filter((meta) => meta.route === filterType)
-      : TYPES;
-    return visible
-      .map((meta) => ({ meta, items: byType[meta.artifactType] ?? [] }))
-      .filter((shelf) => filterType !== undefined || shelf.items.length > 0);
-  });
+  /** The types that have work, in display order (the front page's doors). */
+  const groups = $derived(
+    TYPES.map((meta) => ({ meta, items: byType[meta.artifactType] ?? [] })).filter(
+      (group) => group.items.length > 0
+    )
+  );
+
+  /** The wall's one shelf: the named type, even when it is empty. */
+  const shelves = $derived(
+    TYPES.filter((meta) => meta.route === filterType).map((meta) => ({
+      meta,
+      items: byType[meta.artifactType] ?? [],
+    }))
+  );
+
+  // The stage plays tunnels first, then mandalas; the loader keeps what it has
+  // fetched for as long as this panel lives.
+  const playlist = $derived(
+    buildStagePlaylist(byType["tunnel"] ?? [], byType["mandala"] ?? [])
+  );
+  const loader = createVisualPieceLoader(getPublicArtifactDetail);
+
+  /** Every listed piece, for the piece page's step control. */
+  const allPieces = $derived(TYPES.flatMap((meta) => byType[meta.artifactType] ?? []));
 
   const totalCount = $derived(
     TYPES.reduce(
@@ -157,10 +135,9 @@
   const MIN_PLINTH = 150;
 
   interface WallLayout {
-    /** `shelves`: every piece on screen. `doors`: one card per type, each
-     *  opening that type's screen. `pan`: one type too full to fit whole, so
-     *  its wall pans inside its own area. */
-    readonly mode: "shelves" | "doors" | "pan";
+    /** `wall`: every piece on screen. `pan`: too full to fit whole, so the
+     *  wall pans inside its own area. */
+    readonly mode: "wall" | "pan";
     readonly direction: "row" | "column";
     readonly columns: readonly number[];
     readonly plinth: number;
@@ -168,10 +145,6 @@
 
   let galleryBody = $state<HTMLElement | null>(null);
   let wall = $state<WallLayout | null>(null);
-  /** The shelf heading is absent while doors show, so its last height is kept
-   *  for deciding when the full wall fits again. */
-  let headHeight = 0;
-
   function gapOf(element: Element | null, axis: "rowGap" | "columnGap") {
     return element ? parseFloat(getComputedStyle(element)[axis]) || 0 : 0;
   }
@@ -180,12 +153,12 @@
     const body = galleryBody;
     const card = body?.querySelector<HTMLElement>(".art-card");
     const plinth = card?.querySelector<HTMLElement>(".art-plinth");
+    if (shelves[0]?.items.length === 0) {
+      // A named type with nothing published: no wall to fit.
+      wall = { mode: "wall", direction: "row", columns: [0], plinth: 0 };
+      return;
+    }
     if (!body || !card || !plinth) return;
-    const head = body.querySelector<HTMLElement>(".shelf-head");
-    if (filterType) headHeight = 0;
-    else if (head)
-      headHeight = head.offsetHeight + gapOf(head.parentElement, "rowGap");
-
     // Read from the card's own box, not from its rendered width: a card
     // squeezed by the last fit would report less chrome than it has.
     const cardStyle = getComputedStyle(card);
@@ -207,7 +180,7 @@
       height: body.clientHeight,
       chromeX,
       chromeY: card.offsetHeight - plinth.offsetHeight,
-      headHeight,
+      headHeight: 0,
       wallGap: gapOf(body.querySelector(".art-wall"), "columnGap"),
       shelfGap: gapOf(body, "columnGap"),
     };
@@ -217,14 +190,7 @@
       metrics
     );
     if (full.plinth >= MIN_PLINTH) {
-      wall = { mode: "shelves", ...full };
-      return;
-    }
-    if (shelves.length > 1) {
-      wall = {
-        mode: "doors",
-        ...fitVisualsWall([shelves.length], { ...metrics, headHeight: 0 }),
-      };
+      wall = { mode: "wall", ...full };
       return;
     }
     const pan = panColumns(metrics, MIN_PLINTH);
@@ -254,123 +220,12 @@
     });
   }
 
-  // ---- detail state ---------------------------------------------------------
-
-  // Both preview renderers are heavy; load one only when a detail opens, and
-  // pick which from the envelope's own artifactType rather than from the URL —
-  // that is what lets the list drop its type segment entirely.
-  let TunnelDetailPreview = $state<Component<{
-    tunnel: CollectedTunnel;
-  }> | null>(null);
-  let MandalaDetailPreview = $state<Component<{
-    payload: MandalaPublicPayload;
-  }> | null>(null);
-
-  let detailTunnel = $state<CollectedTunnel | null>(null);
-  let detailMandala = $state<MandalaPublicPayload | null>(null);
-  let detailEnvelope = $state<PublicArtifactEnvelope | null>(null);
-  let detailLoading = $state(false);
-  let detailError = $state("");
-  let detailToken = 0;
-
-  function clearDetail() {
-    detailTunnel = null;
-    detailMandala = null;
-    detailEnvelope = null;
-  }
-
-  $effect(() => {
-    const artifactId = detailArtifactId;
-    const token = ++detailToken;
-    if (!artifactId) {
-      clearDetail();
-      detailError = "";
-      detailLoading = false;
-      return;
-    }
-    detailLoading = true;
-    detailError = "";
-    void (async () => {
-      try {
-        const detail = await getPublicArtifactDetail<
-          TunnelPublicPayload | MandalaPublicPayload
-        >(artifactId);
-        if (token !== detailToken) return;
-        if (!detail) {
-          detailError = t("browse_verified_visual_not_public");
-          clearDetail();
-          return;
-        }
-
-        if (detail.envelope.artifactType === "mandala") {
-          // Upgrades mandalas published with red and blue hands, as the tunnel
-          // adapter below does for tunnels.
-          const mandala = mandalaPublicPayloadFromArtifact(
-            detail.revision.payload
-          );
-          if (!mandala) {
-            detailError = t("browse_verified_visual_load_failed");
-            clearDetail();
-            return;
-          }
-          if (!MandalaDetailPreview) {
-            const loaded = await import("./MandalaDetailPreview.svelte");
-            if (token !== detailToken) return;
-            MandalaDetailPreview = loaded.default;
-          }
-          detailEnvelope = detail.envelope;
-          detailTunnel = null;
-          detailMandala = mandala;
-          return;
-        }
-
-        // The publication adapter validates the revision, upgrades snapshots
-        // published before saved colors, and keeps the authored cast.
-        const tunnel = collectedTunnelFromPublicArtifact(
-          detail.envelope,
-          detail.revision.payload as TunnelPublicPayload
-        );
-        if (!tunnel) {
-          detailError = t("browse_verified_visual_load_failed");
-          clearDetail();
-          return;
-        }
-        if (!TunnelDetailPreview) {
-          const loaded =
-            await import("#lib/features/tunnel-collection/components/TunnelDetailPreview.svelte");
-          if (token !== detailToken) return;
-          TunnelDetailPreview = loaded.default;
-        }
-        detailEnvelope = detail.envelope;
-        detailMandala = null;
-        detailTunnel = tunnel;
-      } catch (cause) {
-        console.warn("[ExploreVisuals] Detail load failed:", cause);
-        if (token === detailToken) {
-          detailError = t("browse_verified_visual_load_failed");
-          clearDetail();
-        }
-      } finally {
-        if (token === detailToken) detailLoading = false;
-      }
-    })();
-  });
-
   function openDetail(envelope: PublicArtifactEnvelope) {
     browseNavigation.navigateTo({
       primary: "explore",
       section: "visuals",
       view: "detail",
       contextId: envelope.artifactId,
-      ...(filterType !== undefined && { visualType: filterType }),
-    });
-  }
-
-  function backToList() {
-    browseNavigation.navigateTo({
-      primary: "explore",
-      section: "visuals",
-      view: "list",
       ...(filterType !== undefined && { visualType: filterType }),
     });
   }
@@ -382,21 +237,6 @@
       ? (shelves[0]?.items.length ?? 0)
       : null
   );
-
-  function formatPublished(timestamp: unknown): string {
-    if (!timestamp) return "";
-    const date =
-      timestamp instanceof Date
-        ? timestamp
-        : ((timestamp as { toDate?: () => Date }).toDate?.() ??
-          new Date(timestamp as string));
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
 </script>
 
 {#snippet countAction()}
@@ -409,58 +249,14 @@
 
 <div class="visuals-panel">
   {#if detailArtifactId}
-    <div class="detail-shell">
-      <header class="detail-header">
-        <button type="button" class="pill-btn" onclick={backToList}>
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>{t("browse_ui_all_visuals")}</span>
-        </button>
-        {#if detailEnvelope}
-          <div class="detail-title">
-            <h2>
-              <TkaLabel
-                text={detailEnvelope.title}
-                darkMode
-                fitToParent={false}
-              />
-            </h2>
-            <p class="detail-byline">
-              {t("browse_verified_by_creator", {
-                name: detailEnvelope.ownerDisplayName,
-              })}
-              {#if formatPublished(detailEnvelope.publishedAt)}
-                · {t("browse_verified_published_date", {
-                  date: formatPublished(detailEnvelope.publishedAt),
-                })}
-              {/if}
-            </p>
-          </div>
-        {/if}
-      </header>
-
-      <div class="detail-preview">
-        {#if detailLoading}
-          <div class="panel-status" role="status">
-            <PanelSpinner size={10} />
-            <span>{t("browse_verified_loading_visual")}</span>
-          </div>
-        {:else if detailError}
-          <div class="panel-status error" role="alert">
-            <span>{detailError}</span>
-            <button type="button" class="pill-btn" onclick={backToList}>
-              <i class="fas fa-arrow-left" aria-hidden="true"></i>
-              <span>{t("browse_ui_back_to_visuals")}</span>
-            </button>
-          </div>
-        {:else if detailTunnel && TunnelDetailPreview}
-          <TunnelDetailPreview tunnel={detailTunnel} />
-        {:else if detailMandala && MandalaDetailPreview}
-          <MandalaDetailPreview payload={detailMandala} />
-        {/if}
-      </div>
-    </div>
+    <VisualPiecePage
+      artifactId={detailArtifactId}
+      pieces={allPieces}
+      {loader}
+      onStep={openDetail}
+    />
   {:else}
-    <div class="list-shell">
+    <div class="list-shell" class:padded={filterType !== undefined}>
       {#if listLoading}
         <div class="panel-status" role="status">
           <PanelSpinner size={10} />
@@ -488,98 +284,60 @@
             everyone.
           </p>
         </div>
+      {:else if !filterType}
+        <VisualsFront
+          {groups}
+          {playlist}
+          {loader}
+          active={!detailArtifactId}
+          onOpenPiece={openDetail}
+          onOpenType={openShelf}
+        />
       {:else}
         <div
           class="gallery-body"
           class:fitted={wall !== null}
           class:pan={wall?.mode === "pan"}
-          class:stacked={wall?.direction === "column"}
           style:--plinth={wall ? `${wall.plinth}px` : undefined}
           bind:this={galleryBody}
         >
-          {#if wall?.mode === "doors"}
-            <div class="art-wall" style:--wall-cols={wall.columns[0]}>
-              {#each shelves as shelf (shelf.meta.route)}
-                {@const cover = shelf.items[0]}
-                <button
-                  type="button"
-                  class="art-card"
-                  onclick={() => openShelf(shelf.meta.route)}
+          {#each shelves as shelf (shelf.meta.route)}
+            <section class="shelf">
+              {#if shelf.items.length === 0}
+                <p class="shelf-empty">{t(shelf.meta.blurbKey)}</p>
+              {:else}
+                <div
+                  class="art-wall themed-scrollbar"
+                  style:--wall-cols={wall?.columns[0] ?? shelf.items.length}
                 >
-                  <span class="art-plinth">
-                    {#if cover?.posterUrl}
-                      <img
-                        src={cover.posterUrl}
-                        alt=""
-                        loading="lazy"
-                        draggable="false"
-                      />
-                    {/if}
-                  </span>
-                  <span class="art-meta">
-                    <span class="art-title">{shelf.meta.label}</span>
-                    <span class="art-byline"
-                      >{shelf.items.length === 1
-                        ? "1 piece"
-                        : `${shelf.items.length} pieces`}</span
+                  {#each shelf.items as envelope (envelope.artifactId)}
+                    <button
+                      type="button"
+                      class="art-card"
+                      onclick={() => openDetail(envelope)}
                     >
-                  </span>
-                </button>
-              {/each}
-            </div>
-          {:else}
-            {#each shelves as shelf, shelfIndex (shelf.meta.route)}
-              <section class="shelf">
-                {#if !filterType}
-                  <header class="shelf-head">
-                    <h2>{shelf.meta.label}</h2>
-                    <span class="shelf-count">{shelf.items.length}</span>
-                  </header>
-                {/if}
-
-                {#if shelf.items.length === 0}
-                  <p class="shelf-empty">{shelf.meta.blurb}</p>
-                {:else}
-                  <div
-                    class="art-wall themed-scrollbar"
-                    style:--wall-cols={wall?.columns[shelfIndex] ??
-                      shelf.items.length}
-                  >
-                    {#each shelf.items as envelope (envelope.artifactId)}
-                      <button
-                        type="button"
-                        class="art-card"
-                        onclick={() => openDetail(envelope)}
-                      >
-                        <span class="art-plinth">
-                          {#if envelope.posterUrl}
-                            <img
-                              src={envelope.posterUrl}
-                              alt=""
-                              loading="lazy"
-                              draggable="false"
-                            />
-                          {:else}
-                            <span class="art-pending" aria-hidden="true">
-                              <i class="fas fa-circle-notch"></i>
-                            </span>
-                          {/if}
+                      <span class="art-plinth">
+                        <VisualStill
+                          src={envelope.posterUrl}
+                          kind={shelf.meta.artifactType}
+                        />
+                      </span>
+                      <span class="art-meta">
+                        <span class="art-title">
+                          <TkaLabel text={envelope.title} darkMode />
                         </span>
-                        <span class="art-meta">
-                          <span class="art-title">
-                            <TkaLabel text={envelope.title} darkMode />
-                          </span>
+                        {#if wallShowsMakerNames(shelf.items)}
                           <span class="art-byline"
                             >{envelope.ownerDisplayName}</span
                           >
-                        </span>
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </section>
-            {/each}
-          {/if}
+                        {/if}
+                      </span>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </section>
+          {/each}
         </div>
       {/if}
     </div>
@@ -631,6 +389,9 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  .list-shell.padded {
     gap: clamp(14px, 1.4cqi, 24px);
     padding: clamp(12px, 1.6cqi, 28px);
   }
@@ -653,10 +414,6 @@
 
   .gallery-body.fitted {
     visibility: visible;
-  }
-
-  .gallery-body.stacked {
-    flex-direction: column;
   }
 
   /* One type too full to fit whole: its wall pans, and the heading and the
@@ -687,21 +444,6 @@
     gap: clamp(14px, 1.4cqi, 24px);
   }
 
-  .shelf-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 0.6rem;
-  }
-
-  .shelf-head h2 {
-    margin: 0;
-    font-size: clamp(1.2rem, 1.15vw + 0.55rem, 2.6rem);
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    color: var(--theme-text, #e8edf6);
-  }
-
   .shelf-count {
     min-width: 1.75em;
     padding: 0.1em 0.55em;
@@ -730,9 +472,7 @@
     gap: var(--art-wall-gap);
   }
 
-  /* No frame: the artwork is the card. Nothing here may transform or filter the
-     card itself, because that would give the poster's blend below nothing to
-     blend with and bring its black square back. */
+  /* The tile is the card's frame: it carries the hairline and the rounding. */
   .art-card {
     display: flex;
     flex-direction: column;
@@ -751,8 +491,7 @@
     outline-offset: -2px;
   }
 
-  /* The posters are bright strokes rendered on solid black. `screen` blending
-     drops the black out, so the lines sit directly on the page. */
+  /* The poster sits on its own dark tile (VisualStill). */
   .art-plinth {
     position: relative;
     display: flex;
@@ -767,24 +506,11 @@
     flex-shrink: 0;
   }
 
-  .art-plinth img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    mix-blend-mode: screen;
-    transition: filter var(--duration-fast) var(--ease-standard);
-  }
-
+  /* The hover lifts the artwork's own brightness (see VisualStill). */
   @media (hover: hover) {
-    .art-card:hover .art-plinth img {
-      filter: brightness(1.25);
+    .art-card:hover .art-plinth {
+      --still-lift: 1.2;
     }
-  }
-
-  .art-pending {
-    color: var(--theme-text-muted, #9aa6b8);
-    font-size: 1.4rem;
-    opacity: 0.7;
   }
 
   .art-meta {
@@ -815,59 +541,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .art-plinth img {
-      transition: none;
-    }
-  }
-
-  .detail-shell {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    flex-direction: column;
-  }
-
-  .detail-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 12px clamp(16px, 2cqi, 32px);
-    border-bottom: 1px solid
-      color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
-    flex-wrap: wrap;
-  }
-
-  .detail-title {
-    min-width: 0;
-  }
-
-  .detail-title h2 {
-    margin: 0;
-    color: var(--theme-text, white);
-    font-size: clamp(16px, 1.6cqi, 22px);
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .detail-byline {
-    margin: 2px 0 0;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
-    font-size: var(--font-size-compact, 12px);
-  }
-
-  .detail-preview {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    align-items: center;
-    justify-content: center;
-    padding: clamp(12px, 1.6cqi, 28px);
-    container-type: size;
   }
 
   .pill-btn {

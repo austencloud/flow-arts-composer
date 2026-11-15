@@ -823,7 +823,7 @@
   const mandalaMenuItems = $derived<ContextMenuEntry[]>([
     {
       id: "save-to-collection",
-      label: "Save to Collection",
+      label: t("create_mandala_save_to_collection"),
       icon: "fa-bookmark",
       action: async () => {
         // The collection store reaches Firestore, so it loads with this
@@ -843,13 +843,14 @@
               ? { left: leftColorOverride, right: rightColorOverride }
               : (settingsService.settings.primaryPropColors ?? null),
         });
-        if (name) toast.success(`Saved "${name}" to collection`);
+        if (name)
+          toast.success(t("create_mandala_saved_to_collection", { name }));
       },
     },
     { type: "separator" },
     {
       id: "path-shape",
-      label: "Path Shape",
+      label: t("create_ui_path_shape"),
       icon: "fa-bezier-curve",
       children: PATH_SHAPE_OPTIONS.map((opt) => ({
         id: `path-${opt.id}`,

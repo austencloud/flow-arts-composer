@@ -55,7 +55,11 @@
     toggleTunnelPlayback,
     type TunnelPlaybackSource,
   } from "../domain/tunnel-playback";
-  import { ExportAttemptGuard } from "../domain/export-attempt-guard";
+  import {
+    ExportAttemptGuard,
+    settleRefusedExportStart,
+    type ExportStartResult,
+  } from "../domain/export-attempt-guard";
   import type { ViewerActionSink } from "../domain/viewer-control-analytics";
   import {
     beginTunnelSaveAttempt,
@@ -153,7 +157,7 @@
       artType: ArtType;
       controller: TunnelViewController;
       mandalaController: MandalaViewerController;
-    }) => void;
+    }) => ExportStartResult;
     /**
      * Registers this art view as what the header's Share is currently about,
      * and withdraws it when the pane parks. The pane owns the two controllers,
@@ -323,7 +327,8 @@
   function handleExport(stage: "requested" | "retry" = "requested") {
     const attempt =
       artType === "tunnel" ? tunnelExportAttempt : mandalaExportAttempt;
-    if (attempt.begin() === null) return;
+    const token = attempt.begin();
+    if (token === null) return;
     exportAttemptBusy = true;
     if (artType === "tunnel") {
       tunnelAttemptActive = true;
@@ -335,7 +340,18 @@
       finishArtExportAttempt("failed", { reason: "not_ready" });
       return;
     }
-    onArtExport({ artType, controller, mandalaController });
+    // A refused start (a guest gets the account ask instead) never moves the
+    // exporter, so nothing else would end this attempt: settle it here.
+    void settleRefusedExportStart(
+      attempt,
+      token,
+      onArtExport({ artType, controller, mandalaController }),
+      () =>
+        finishArtExportAttempt("canceled", {
+          reason: "not_started",
+          user_initiated: false,
+        })
+    );
   }
 
   /**

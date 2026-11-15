@@ -81,6 +81,10 @@
 
   .retro-toolbar-button:hover:not(:disabled) {
     border: 1px solid var(--retro-button-shadow, #808080);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .retro-toolbar-button:hover:not(:disabled) {
     border-top-color: var(--retro-button-highlight, #fff);
     border-left-color: var(--retro-button-highlight, #fff);
     border-bottom-color: var(--retro-button-dark-shadow, #000);
@@ -89,11 +93,15 @@
 
   .retro-toolbar-button:active:not(:disabled) {
     border: 1px solid var(--retro-button-highlight, #fff);
+    padding: 2px 0 0 2px;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .retro-toolbar-button:active:not(:disabled) {
     border-top-color: var(--retro-button-dark-shadow, #000);
     border-left-color: var(--retro-button-dark-shadow, #000);
     border-bottom-color: var(--retro-button-highlight, #fff);
     border-right-color: var(--retro-button-highlight, #fff);
-    padding: 2px 0 0 2px;
   }
 
   .retro-toolbar-button:disabled {

@@ -66,9 +66,18 @@ import { loadPersistedMode, STORAGE_KEY_MODE } from "./viewer-3d-render-mode-sto
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
 import {
   HOSTED_CAST_OPENING_AZIMUTH_RAD,
+  castFrameBox,
+  castStanding,
+  castFrameCenter,
+  fitCastDistance,
+  isViewerCameraNearCast,
+  joinedPerformerExtent,
   levelJoinedViewerOpeningShot,
   rotateEyeAboutTarget,
+  type CastFrameBox,
 } from "../camera/viewer-camera-framing";
+import { largestHandDistance } from "../domain/performer-hand-distance";
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "../environments/domain/stage-coordinate-frame";
 import { resolveGridJoin3D } from "../services/grid-join-3d";
 import { fits3DViewportNow } from "../capabilities/viewport-3d-gate.svelte";
 import { userProportionsState } from "@austencloud/scene-3d";
@@ -113,6 +122,10 @@ export type PopoverId =
 // Persistence
 
 const STORAGE_KEY_CAMERA = "tka-viewer3d-camera";
+/** Viewer3DCamera's vertical field of view. */
+const VIEWER_CAMERA_FOV_DEG = 50;
+/** Framed shots stay inside the orbit controls' 25 m reach. */
+const VIEWER_FIT_MAX_DISTANCE = 24;
 const STORAGE_KEY_VISIBLE_PLANES = "tka-viewer3d-visiblePlanes";
 const STORAGE_KEY_PRESET = "tka-viewer3d-activePreset";
 const STORAGE_KEY_CAM_PRESET = "tka-viewer3d-cameraPreset";
@@ -695,7 +708,7 @@ function buildViewer3DState(
       ? loadPersistedMode()
       : "2d"
   );
-  const _persistedCamera = castIsHosted
+  let _persistedCamera = castIsHosted
     ? null
     : seeded(seed?.camera, loadPersistedCamera);
 
@@ -909,6 +922,85 @@ function buildViewer3DState(
     return shot;
   }
 
+  /** The box around everything the cast draws: bodies, hands and prop tips. */
+  function castBoxFor(
+    performers: readonly CharacterInstanceState[]
+  ): CastFrameBox | null {
+    return castFrameBox(
+      performers.map((performer) => {
+        const join = resolveGridJoin3D(performer.loadedSequence);
+        const handReach = join
+          ? joinedPerformerExtent(performer.handDistance, join)
+          : largestHandDistance(performer.handDistance);
+        return {
+          position: performer.position,
+          reach: handReach + performer.staffLength / 2,
+          centerY: join ? CANONICAL_PERFORMER_ANCHOR_Y : 0,
+        };
+      }),
+      stageGroundOffset + userProportionsState.groundY
+    );
+  }
+
+  /**
+   * Keep the shot's viewing direction, put the pivot at the middle of the
+   * cast, and pull in or back until the cast fills a little over half the
+   * view height (or as much as the width allows). The bounding-sphere fit
+   * this replaces sized a 2 m tall cast to a sphere as wide as the whole
+   * formation, which left a seven-person crew a quarter of the view tall.
+   */
+  function fitShotToCast(
+    shot: {
+      eye: { x: number; y: number; z: number };
+      target: { x: number; y: number; z: number };
+    },
+    performers: readonly CharacterInstanceState[],
+    viewportAspect = currentViewportAspect()
+  ): void {
+    const box = castBoxFor(performers);
+    if (!box) return;
+    const direction = {
+      x: shot.eye.x - shot.target.x,
+      y: shot.eye.y - shot.target.y,
+      z: shot.eye.z - shot.target.z,
+    };
+    // Aim at the cast's middle across the floor, but keep the shot's own aim
+    // height (a little above the feet, shared with Unreal) when it lies on the cast.
+    const center = castFrameCenter(box);
+    if (shot.target.y >= box.min.y && shot.target.y <= box.max.y) {
+      center.y = shot.target.y;
+    }
+    const distance = fitCastDistance(center, direction, box, {
+      fovDeg: VIEWER_CAMERA_FOV_DEG,
+      aspect: viewportAspect,
+      maxDistance: VIEWER_FIT_MAX_DISTANCE,
+    });
+    const length = Math.hypot(direction.x, direction.y, direction.z) || 1;
+    shot.target.x = center.x;
+    shot.target.y = center.y;
+    shot.target.z = center.z;
+    shot.eye.x = center.x + (direction.x / length) * distance;
+    shot.eye.y = center.y + (direction.y / length) * distance;
+    shot.eye.z = center.z + (direction.z / length) * distance;
+  }
+
+  /**
+   * Drop a saved camera that no longer looks at the cast: collapsed onto its
+   * pivot, or carried off by wheel travel. The welcome framing replaces it.
+   */
+  function discardStrayPersistedCamera(): void {
+    if (!_persistedCamera) return;
+    const box = castBoxFor(performerManager.performers);
+    if (isViewerCameraNearCast(_persistedCamera, box)) return;
+    _persistedCamera = null;
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.removeItem(STORAGE_KEY_CAMERA);
+    } catch {
+      // Storage unavailable: the default framing still wins this session.
+    }
+  }
+
   /**
    * First load is a hero composition, not a blocking diagram. Keep the
    * FOV-derived group distance but lower the eye and target to the rig's
@@ -931,6 +1023,7 @@ function buildViewer3DState(
       );
       shot.eye.x = turned.x;
       shot.eye.z = turned.z;
+      fitShotToCast(shot, performers);
       return shot;
     }
     if (
@@ -957,6 +1050,7 @@ function buildViewer3DState(
       );
       shot.eye.set(level.position.x, level.position.y, level.position.z);
       shot.target.set(level.target.x, level.target.y, level.target.z);
+      fitShotToCast(shot, performers);
       return shot;
     }
     const horizontalDistance = Math.hypot(
@@ -971,6 +1065,7 @@ function buildViewer3DState(
       environmentId
     );
     shot.target.y = 0;
+    fitShotToCast(shot, performers);
     return shot;
   }
 
@@ -1036,12 +1131,12 @@ function buildViewer3DState(
       }
     }
 
-    snapCameraTo(
-      { x: position.x, y: position.y, z: position.z },
-      { x: target.x, y: target.y, z: target.z },
-      undefined,
-      !reducedMotion()
-    );
+    const framed = {
+      eye: { x: position.x, y: position.y, z: position.z },
+      target: { x: target.x, y: target.y, z: target.z },
+    };
+    fitShotToCast(framed, performers, viewportAspect);
+    snapCameraTo(framed.eye, framed.target, undefined, !reducedMotion());
   }
 
   function setPerformerSelection(
@@ -2197,9 +2292,13 @@ function buildViewer3DState(
     // Queue welcome framing only when there is no camera to restore. A saved
     // pose belongs to the user and must win across refreshes and HMR remounts.
     // The snap executes when Viewer3DCamera registers its callback.
+    discardStrayPersistedCamera();
     if (!_hasPlayedWelcome && !_persistedCamera) {
       _welcomeAnimationPending = true;
       _hasPlayedWelcome = true;
+      // A camera that mounted from the restored render mode has already
+      // registered, so nothing else would fire the queued framing.
+      if (_snapToFn) requestAnimationFrame(() => _fireWelcome());
     }
   }
 
@@ -2959,6 +3058,17 @@ function buildViewer3DState(
     requestOpeningShot,
     snapCameraTo,
     openingShot,
+    /** The box the whole cast draws in; the orbit pivot belongs inside it. */
+    castFrameBox: () => castBoxFor(performerManager.performers),
+    /** Where the performers stand; a rotate orbits around them. */
+    castStanding: () =>
+      castStanding(
+        performerManager.performers.map((performer) => ({
+          x: performer.position.x,
+          z: performer.position.z,
+        })),
+        stageGroundOffset + userProportionsState.groundY
+      ),
     dispose,
   };
 }

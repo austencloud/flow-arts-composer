@@ -43,6 +43,11 @@
      * it when a long one is cut.
      */
     fit?: boolean;
+    /**
+     * One row of equal 36px chips for a phone dock: they share the width when
+     * they fit, and the row scrolls sideways (edges faded) when they do not.
+     */
+    dock?: boolean;
   }
 
   const {
@@ -57,6 +62,7 @@
     onSelect,
     wrap = false,
     fit = false,
+    dock = false,
   }: Props = $props();
 
   // A clipped chip against a hard edge reads as broken, not as scrollable, so
@@ -88,6 +94,7 @@
   class="look-chips"
   class:wrap
   class:fit
+  class:dock
   class:fade-start={!wrap && !fit && edges.start}
   class:fade-end={!wrap && !fit && edges.end}
   role="radiogroup"
@@ -201,6 +208,22 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  /* Phone dock: equal chips across the row, never narrower than their name.
+     The swatch grows a little so a look reads at a glance. */
+  .look-chips.dock .look-chip {
+    flex: 1 1 0;
+    min-width: max-content;
+    justify-content: center;
+    height: var(--alt-touch-target, 36px);
+    min-height: 0;
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .look-chips.dock .swatch {
+    width: 0.875rem;
+    height: 0.875rem;
   }
 
   /* Only the overflowing edge fades, so nothing softens a chip that is fully

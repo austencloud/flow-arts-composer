@@ -6,6 +6,7 @@
   state, resize interaction, and the layout that presents those capabilities.
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ResizeHandle from "#lib/shared/panels/ResizeHandle.svelte";
@@ -186,7 +187,9 @@
            in the first place — moving it here puts it in flow, next to the
            results it reveals, and it no longer teleports between states. -->
       <PanelButton
-        ariaLabel={filterPaneCollapsed ? "Show filters" : "Hide filters"}
+        ariaLabel={filterPaneCollapsed
+            ? t("browse_ui_show_filters")
+            : t("browse_ui_hide_filters")}
         ariaExpanded={!filterPaneCollapsed}
         onclick={() => setPaneCollapsed(!filterPaneCollapsed)}
       >
@@ -196,7 +199,7 @@
             : 'fa-chevron-left'} pane-toggle-chevron"
           aria-hidden="true"
         ></i>
-        Filters
+        {t("browse_ui_filters")}
       </PanelButton>
       {@render resultsHeader?.()}
     </div>

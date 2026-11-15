@@ -5,6 +5,7 @@
  * Handles RAF scheduling, trail point gathering, and scene rendering.
  */
 
+import type { MotionCueFrame } from "../domain/types/motion-cue-types";
 import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import type { CanvasFrame } from "../domain/types/canvas-frame";
 import type {
@@ -132,6 +133,8 @@ export interface RenderPropsState {
 export interface RenderFrameParams {
   stepData: StartPlacementData | StepData | null;
   currentStep: number;
+  /** Opt-in teaching marks for this canvas (see motion-cue-types.ts). */
+  motionCues?: MotionCueFrame | null;
   trailSettings: TrailSettings;
   gridVisible: boolean;
   gridOpacity?: number;

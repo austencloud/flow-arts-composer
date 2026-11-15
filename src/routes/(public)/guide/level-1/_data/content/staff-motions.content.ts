@@ -1,4 +1,4 @@
-import type { GuideBlock } from "../guide-content-blocks";
+import type { FigureCues, GuideBlock } from "../guide-content-blocks";
 import {
   createMotionData,
   createPlaceholderMotion,
@@ -141,12 +141,35 @@ export const SHIFT_DEMOS = {
   },
 };
 
+/** The playable rows, for tests that sample the same motions the cards play. */
+export const STAFF_MOTION_SEQUENCE_ITEMS = {
+  pro: rowSequenceItems(ROWS[0]!),
+  anti: rowSequenceItems(ROWS[1]!),
+  dash: rowSequenceItems(ROWS[2]!),
+};
+
+/**
+ * Every Staff Motions card (2026-11-12 review): the hand's dot and path in a
+ * colour of its own, faint copies of the staff at each quarter, the thumb
+ * ring, and Replay / half speed under the player. The default end trail is
+ * off on these cards (SequenceShowcase), so the hand path is the one line.
+ */
+const CUES: FigureCues = {
+  ghosts: true,
+  handPath: true,
+  thumbRing: true,
+  controls: true,
+};
+
 /**
  * The figure card for one row (2026-11-11): the player over its two-cell
  * strip, Start and step 1, the pictograph's own labels. The strip shows the
  * same two pictographs the player plays. Plays once and stops.
  */
-const figure = (row: RowDef, figureTitle?: string): GuideBlock => ({
+const figure = (
+  row: RowDef,
+  extra: Partial<Extract<GuideBlock, { kind: "pictographGroup" }>> = {}
+): GuideBlock => ({
   kind: "pictographGroup",
   items: rowSequenceItems(row),
   layout: "strip",
@@ -154,8 +177,17 @@ const figure = (row: RowDef, figureTitle?: string): GuideBlock => ({
   figureCard: true,
   numbered: true,
   render: RENDER,
-  ...(figureTitle ? { figureTitle } : {}),
+  cues: CUES,
+  ...extra,
 });
+
+/** The tagline. On the web it is the opener's answer (approved 2026-11-12). */
+const TAGLINE =
+  "During a shift, a prop can rotate in one of two directions - Prospin or Antispin.";
+
+// The opener: the two shifts side by side under blind titles, played in
+// turn, and a question. The thumb ring waits for the answer, which names them.
+const OPENER_CUES: FigureCues = { ...CUES, thumbRing: false };
 
 // Verbatim prose lifted from _pages/StaffMotionsPage.svelte (Austen's words - never AI-written).
 // Three sentences reworded with his approval on 2026-11-11 (the full stops
@@ -164,13 +196,34 @@ export const staffMotionsContent: GuideBlock[] = [
   { kind: "heading", level: 1, text: "Staff Motions" },
 
   { kind: "heading", level: 2, text: "Shift" },
+  figure(ROWS[0]!, {
+    figureTitle: "Prospin",
+    blindTitle: "A",
+    playInTurn: true,
+    cues: OPENER_CUES,
+  }),
+  figure(ROWS[1]!, {
+    figureTitle: "Antispin",
+    blindTitle: "B",
+    playInTurn: true,
+    cues: OPENER_CUES,
+  }),
   {
-    kind: "prose",
-    html: "During a shift, a prop can rotate in one of two directions - Prospin or Antispin.",
+    kind: "figureChoice",
+    id: "staff-motions-opener",
+    // Approved by Austen 2026-11-13
+    lead: "Same hand, same move. Watch the staff.",
+    // Approved by Austen 2026-11-13
+    question: "Which staff spins the same way as the hand?",
+    answer: 0,
+    // Approved by Austen 2026-11-13
+    right:
+      "Yes. A spins with the hand: a prospin. B spins against it: an antispin.",
+    // Approved by Austen 2026-11-13
+    wrong: "Look again. Follow the hand, then the staff.",
+    after: TAGLINE,
+    reveals: { thumbRing: true },
   },
-  // The opener: both shifts side by side, each under its own name.
-  figure(ROWS[0]!, "Prospin"),
-  figure(ROWS[1]!, "Antispin"),
 
   { kind: "heading", level: 3, text: "Prospin", kicker: "Shift" },
   {

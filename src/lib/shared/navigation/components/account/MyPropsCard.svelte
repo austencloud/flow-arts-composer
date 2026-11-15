@@ -2,7 +2,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
   import type { PropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
   import {
     getProfilePropLabel,
@@ -81,10 +81,9 @@
             {#each selectedProps.slice(0, MAX_VISIBLE_PROPS) as prop (prop)}
               <li class="prop-chip">
                 <span class="summary-prop-preview" aria-hidden="true">
-                  <PropCompositionPreview
+                  <SelectedPropPreview
                     propType={prop}
-                    size={26}
-                    useSavedOverrides={false}
+                    box={{ width: 26, height: 26 }}
                   />
                 </span>
                 <span>{getProfilePropLabel(prop)}</span>
@@ -113,10 +112,9 @@
         {:else if effectiveProfileProp}
           <span class="profile-prop">
             <span class="summary-prop-preview" aria-hidden="true">
-              <PropCompositionPreview
+              <SelectedPropPreview
                 propType={effectiveProfileProp}
-                size={26}
-                useSavedOverrides={false}
+                box={{ width: 26, height: 26 }}
               />
             </span>
             <span>{getProfilePropLabel(effectiveProfileProp)}</span>

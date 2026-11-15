@@ -3,6 +3,13 @@
 
   Location and orientation controls for both props in the selected start
   placement. Location changes transform the prop through the whole sequence.
+
+  Phone (upright): 36px controls and the hand picker, in the step editor's
+  two start arrangements (editor-layout.ts):
+    side  - in the column beside the board, Location over Orientation.
+    stack - the hand picker moves up into the editor's title row (its "pick"
+            cell) and the card fills the "ctrl" row, Location beside
+            Orientation when twoUp, else over it.
 -->
 <script lang="ts">
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
@@ -20,6 +27,12 @@
     stacked?: boolean;
     compact?: boolean;
     focused?: boolean;
+    /** Phone held upright: 36px controls (see the header comment). */
+    phone?: boolean;
+    /** The step editor's start arrangement on a phone (see header). */
+    phoneForm?: "side" | "stack" | null;
+    /** Stack only: Location and Orientation fit side by side. */
+    twoUp?: boolean;
     activeMoveHand?: HandSide | null;
     repositionDisabled?: boolean;
     isRepositioning?: boolean;
@@ -36,6 +49,9 @@
     stacked = false,
     compact = false,
     focused = false,
+    phone = false,
+    phoneForm = null,
+    twoUp = true,
     activeMoveHand = null,
     repositionDisabled = false,
     isRepositioning = false,
@@ -69,7 +85,7 @@
 
   // Stacked and focused layouts are both too narrow for two cards side by side,
   // so they share the hand picker and show one prop at a time.
-  const usesHandPicker = $derived(stacked || focused);
+  const usesHandPicker = $derived(stacked || focused || phone);
 
   const statusMessage = $derived(
     isRepositioning
@@ -105,6 +121,7 @@
         hand={hand === HandSide.LEFT ? "left" : "right"}
         {orientation}
         {compact}
+        {phone}
         disabled={isRepositioning}
         onOrientationChange={(nextOrientation) =>
           onOrientationChange(hand, nextOrientation)}
@@ -124,6 +141,10 @@
     class="start-placement-controls"
     class:compact
     class:focused
+    class:phone
+    class:side={phoneForm === "side"}
+    class:stack={phoneForm === "stack"}
+    class:two-up={twoUp}
     aria-busy={isRepositioning}
   >
     <p class="impact-message">
@@ -134,28 +155,37 @@
     </span>
 
     {#if usesHandPicker}
-      <SegmentedControl
-        options={HAND_OPTIONS}
-        value={visibleHand}
-        onchange={(hand) => (visibleHand = hand)}
-        ariaLabel={tDynamic("create_action_choose_start_placement_prop")}
-      />
+      <div class="hand-picker-slot">
+        <SegmentedControl
+          options={HAND_OPTIONS}
+          value={visibleHand}
+          size={phone ? "phone" : "md"}
+          onchange={(hand) => (visibleHand = hand)}
+          ariaLabel={tDynamic("create_action_choose_start_placement_prop")}
+        />
+      </div>
     {/if}
 
-    <PropControlPair
-      {stacked}
-      {compact}
-      labelsHidden={usesHandPicker}
-      prominentLabels
-      visibleHand={usesHandPicker ? visibleHand : "both"}
-    >
-      {#snippet leftContent()}
-        {@render propControls(HandSide.LEFT, leftLocation, leftOrientation)}
-      {/snippet}
-      {#snippet rightContent()}
-        {@render propControls(HandSide.RIGHT, rightLocation, rightOrientation)}
-      {/snippet}
-    </PropControlPair>
+    <div class="pair-slot">
+      <PropControlPair
+        {stacked}
+        {compact}
+        labelsHidden={usesHandPicker}
+        prominentLabels
+        visibleHand={usesHandPicker ? visibleHand : "both"}
+      >
+        {#snippet leftContent()}
+          {@render propControls(HandSide.LEFT, leftLocation, leftOrientation)}
+        {/snippet}
+        {#snippet rightContent()}
+          {@render propControls(
+            HandSide.RIGHT,
+            rightLocation,
+            rightOrientation
+          )}
+        {/snippet}
+      </PropControlPair>
+    </div>
   </section>
 {/if}
 
@@ -235,6 +265,82 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  /* Phone: the board is the hero, so the controls tighten to 36px. Tall
+     editor: the 42px hand picker, then one card (3px padding) holding
+     Location (36 + value + 36) beside Orientation (a 42px track), each under
+     a 12px label. The sentence goes to screen readers as in focused mode. */
+  .start-placement-controls.phone {
+    --compact-hand-card-padding: 3px;
+    gap: 4px;
+  }
+
+  .start-placement-controls.phone .prop-controls {
+    --prop-cycle-button-size: var(--alt-touch-target, 36px);
+    --prop-cycle-compact-columns: var(--alt-touch-target, 36px)
+      minmax(52px, 64px) var(--alt-touch-target, 36px);
+    --prop-cycle-compact-gap: 4px;
+    --prop-cycle-value-gap: 4px;
+    --prop-cycle-value-padding: 4px;
+
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 6px;
+  }
+
+  .start-placement-controls.phone .control-field {
+    width: 100%;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .start-placement-controls.phone .field-label {
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.15;
+  }
+
+  .start-placement-controls.phone .impact-message {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* The slots only exist for the stack arrangement; elsewhere they are not
+     boxes, so the section's grid lays out the picker and the pair as before. */
+  .hand-picker-slot,
+  .pair-slot {
+    display: contents;
+  }
+
+  /* Side: the controls stand in the column beside the board, so Location and
+     Orientation stack. Stack: they share the full width when two fit. */
+  .start-placement-controls.phone.side .prop-controls,
+  .start-placement-controls.phone.stack:not(.two-up) .prop-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Stack: this section stops being a box, so the picker and the card take
+     the step editor's "pick" and "ctrl" cells (StepEditorPanel .form-stack). */
+  .start-placement-controls.stack {
+    display: contents;
+  }
+
+  .start-placement-controls.stack .hand-picker-slot {
+    display: block;
+    grid-area: pick;
+    align-self: center;
+  }
+
+  .start-placement-controls.stack .pair-slot {
+    display: block;
+    grid-area: ctrl;
+    min-width: 0;
   }
 
   .control-field {

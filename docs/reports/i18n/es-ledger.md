@@ -178,3 +178,107 @@ normally under the 2026-10-14 glossary decision.
 - Glossary choices: preserved Zan's Diamond, Zan Moore, Shift and Dash. Used cuadrícula Diamante for the named grid and diamante for its shape; trayectoria, tiempo, paso, variación, props and Práctica follow the glossary. Generic playback loop becomes bucle. Labels remain single-line; the collection action uses the infinitive Abrir. Prose addresses the reader with tú.
 - Uncertainty: none regarding glossary terms; native acceptance has not been established.
 - Delivery: assigned codex/i18n-es branch for the coordinator; no integration or push. The explicit batch apply/gate instructions supersede the translate skill's general catalog rewrite and regeneration workflow.
+
+## Read-back — 2026-11-13
+
+- Scope: every released key (en.json keys whose first segment is in `released` in `scripts/i18n-released-prefixes.json`), 9138 keys. Each present string was read back into English and graded right, off or wrong; only off and wrong were changed. Change list with before, after, read-back and grade: `E:/tka-languages/runs/es/changes.json`.
+- Totals: 9138 read. 202 filled (were missing), 331 changed (294 off, 37 wrong), 8605 left as is. 0 released keys missing afterwards; placeholders, tags and entities match English in every released key. 309 strings stay identical to English on purpose (product and TKA names, letters, codes, units, Latin termbase labels).
+- Contract test: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts` → `Tests  4 failed | 68 passed (72)`. Every es test passes (`-t "es catalog"`: 6 passed). The failures are not from es: the English-fallback scan lists 107 keys missing from de.json only (expected), and the fr, it and pt released-coverage floors (8936 of 9138, below 0.98) fail on catalogs this run did not touch. `git diff --check` clean; es.json parses.
+
+### Term decisions
+
+- Glossary wins over the older termbase es column: Diamante, Cuadrado, vuelta(s) for turns, trayectoria de la mano for hand path (Rutas de mano and ruta removed everywhere), giro only for spins and body turns.
+- Effort (Laban) = Dinámica / Dinámicas everywhere, including Shape Engine settings, viewer, Phrase Effort lab and guide (was Esfuerzo in several places). The seven effort action names were filled as nouns: Deslizamiento, Toque, Presión, Golpe, Elástico, Rebote, Anticipación.
+- Base Motions = Movimientos base (generator level label was "no turns" wording; fixed).
+- Beat as a sequence position = paso (share and Post Studio labels, viewer step count, practice auto-advance, Zan's Diamond pages, review messages, record counter). Beat as a unit of duration or music (half beat, BPM, beat interval, lifetime in beats, swing patterns) stays tiempo.
+- Slot (high/low slot, print example slot) = casilla in every guide and print page (22 strings moved off espacio).
+- prop stays prop (accesorio removed catalog-wide); club = clava (prop names were Maza); deck = mazo; take = toma; look = aspecto; trail = estela; timing = sincronización; video, not vídeo.
+- Playground = sandbox: Shape Engine tab Espacio de pruebas; Ratio Playground keeps the earlier espacio de proporciones.
+- Compass letters use Spanish: O for west (staff cardinal label, Train grid hints, Learn grid-mode captions).
+- Mirrored = espejado, left-right (`loop_picker_description_mirrored`); flipped = top-bottom (`_flipped`); reflection = reflejo (tunnel labels were reflexión).
+- Lead/follow = guía / sigue; Spell tab = Deletrear (was Hechizo); Stage editor = Escenario; combo streak = racha.
+- Opening/closing letter groups in the Level 1 guide = APERTURA / CIERRE (were ABRIR / CERRAR).
+- Placement editor: each prop/hand noun carries its own article (el prop izquierdo, la mano izquierda), so templates avoid gendered participles ({prop} quedó en {point}).
+- Several Level 1 guide strings still carried older English text (gamma Quarter-Same pages, Type 2 Shift pages, U/V letter note, negative-space intro); rewritten to match current English.
+
+### Unsure
+
+| Key | English | My text | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| guide_paths_effort (and every Effort label) | Effort | Dinámica | Dynamics | Laban's Effort is often Esfuerzo in Spanish dance texts; Dinámica reads clearer to spinners but needs a native call. |
+| viewer_ui_effort_name_glide … _anticipation | Glide, Dab, Press, Punch, Elastic, Bounce, Anticipation | Deslizamiento, Toque, Presión, Golpe, Elástico, Rebote, Anticipación | Glide, Touch, Pressure, Hit, Elastic, Bounce, Anticipation | Laban action names have no single Spanish standard; nouns chosen to fit chips. |
+| browse_audit_each_sequences_own | Each sequence’s own | Los props de cada secuencia | Each sequence's own props | English leaves the noun implied; props inferred from the prop-filter context. |
+| browse_drafts_mode_draft | {mode} draft | Borrador de {mode} | Draft of {mode} | Depends on which mode words fill the slot. |
+| browse_collections_founding_* | TKA 1: Learning Letters, … Classic Book Variations | TKA 1: Aprender letras, TKA 2: Escribir palabras, TKA 3: Hablar en oraciones, Variaciones clásicas del libro | Learning letters, Writing words, Speaking in sentences, Classic variations from the book | Deck names may be meant to stay English as product names. |
+| keyboard_palette_suggestions | Jump to suggestions | Sugerencias de Ir a | Suggestions for Go to | Assumes the palette is labelled Ir a. |
+| pictograph_placement_move_left / _right | Move left / Move right | Mover izquierdo / Mover derecho | Move left (prop) / Move right (prop) | Reads as moving the left/right prop; if it means direction it should be Mover a la izquierda. |
+| pictograph_placement_announce_* | {prop} placed at {point}. … | {prop} quedó en {point}. … | {prop} is now at {point}. … | Nouns carry a lowercase article, so a sentence that opens with {prop} or {other} starts lowercase in the screen-reader text. |
+| guide_eightstep_timing_split_title, learn_timing_intro_option_split, shape_engine_mode_split | Split | Alternadas | Alternating | Split timing named by what the hands do; a native spinner may prefer keeping Split. |
+| shape_engine_playground | Playground | Espacio de pruebas | Sandbox | Short tab label; sandbox sense per brief. |
+| site_faq_try_props | Try props in the spinner | Probar props en el visor de giros | Try props in the spin viewer | Not sure which tool "the spinner" names; left as it was. |
+
+### English to its owner
+
+- Gamma "right angle" (Spanish kept as is, ángulo recto, per instruction): browse_audit_hands_right_angle, learn_timing_intro_placement_gamma, learn_placement_comparison_gamma, learn_placement_gamma_geometry, pictograph_desc_group_gamma, verified_level1_gamma_definition, verified_level1_placements_seo_description, verified_level1_guide_page_seo_4. guide_ratios_ends_level1 also says "right angles", but about cat-eye ends, not the gamma placement.
+- browse_unknown: "By" alone reads as a fragment.
+- browse_collections_founding_tka1_description: English calls the base motions "no turns".
+- tab_desc_browse_gallery and tab_desc_browse_sequences: "Browse and browse sequences".
+- train_step_advance_tap and train_step_advance_voice: both say "Tap or Voice", same as _both.
+- train_timed_config_title: duplicates the description sentence.
+- shape_engine_pictographs_calibration: "Level 4 pictograph are" (plural mismatch).
+
+### May not fit
+
+- generator_level_half_turns — Medias vueltas, Float
+- module_hand_paths — Trayectorias de la mano
+- tab_hand_paths_hand_path_builder — Constructor de trayectorias de la mano
+- guide_l2_leading_following — Guía / Sigue
+- viewer_ui_effort_name_glide — Deslizamiento
+- tab_choreo_card_releaser — Publicación de mazos
+
+## Unreleased features — 2026-11-14
+
+- Keys filled: 747 (arena 46, attribution 14, beta 4, community 20, connect 65, hall_of_shame 39, mandala 30, poi_lab 41, premium 45, voice_sessions 56, watch 24, post_* 366... counts approximate by prefix). All applied with the checked apply tool; missing count is now 0. No native-language review.
+- Left English on purpose (tools only Austen uses): admin, moderation, skel2tka, scheduler, gallery, character.
+- Register: neutral Latin American Spanish, tú, infinitive buttons, as before.
+
+| Term | Choice |
+| --- | --- |
+| beat (of a sequence or video) | paso; song beat = pulso de la canción |
+| Hall of Shame | salón de la vergüenza (as R1) |
+| playhead | cabezal de reproducción |
+| track / lane / layer | pista / pista / capa |
+| keyframe | fotograma clave |
+| crossfade / dissolve / fade | fundido encadenado / disolvencia / fundido |
+| take | toma |
+| caption | texto |
+| trim / crop | recortar / encuadre |
+| hook | gancho |
+| split hands | separar manos |
+| staff | bastón |
+| clockwise / counterclockwise | horario / antihorario |
+| Sessions (voice) | sesiones |
+
+### Unsure
+
+| key | English | your text | its read-back | why |
+| --- | --- | --- | --- | --- |
+| post_editor_card_ring | Ring on beats | Anillo en cada paso | Ring on each step | "beats" may mean song beats |
+| post_editor_card_ring_song_beat | Use the song's beat | Usar el pulso de la canción | Use the pulse of the song | beat vs step |
+| post_editor_flash_marks_on/off, titles_lit_on/off, card_on/off | On / Off | Sí / No | Yes / No | chosen for short toggles |
+| post_curve_preset_* | Ease in / out / in-out | Aceleración suave, Frenado suave, Suave al inicio y al final | gentle speed-up, slow-down, gentle at both ends | no glossary term |
+| voice_sessions_days_ago, hours_ago, minutes_ago | "{count}"d ago | hace "{count}" d | "{count}" d ago | English quotes kept around placeholder |
+
+### English to its owner
+
+- Quotes around placeholders in `mandala_copy_count`, `mandala_filter_all`, `poi_lab_beat_count`, `poi_lab_beat_number`, `voice_sessions_*_ago`, `voice_sessions_event_count` look accidental; kept as in English.
+- `connect_sharing_sequence` reads "Search for users above to invite them." (name does not match text); translated as written.
+- `premium_faq_a_refund` uses support@tka.com; kept.
+
+### May not fit
+
+- `post_editor_lift_*`, `post_editor_split_*`, `post_editor_card_qr_*` field labels; `post_curve_preset_ease_in_out`; `post_editor_use_omega_template`; `post_editor_titles_leave_lift`.
+
+### Catalog diff note
+
+`git diff` shows 747 additions plus four existing lines (`viewer_ui_trail_length`, `viewer_ui_trails`, `_off`, `_on`) moved to en.json key order.

@@ -13,6 +13,8 @@
   } from "#lib/shared/application/state/app-state.svelte.js";
   import FanAppearancePicker from "#lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
   import {
+    DEFAULT_FAN_APPEARANCE,
+    fanBuildPreviewOptions,
     normalizeFanAppearance,
     type FanAppearance,
   } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
@@ -56,7 +58,13 @@
   const LABEL = 38;
   const GAP = 10;
   const BLOCK_GAP = 12;
-  const BUILD_COUNT = 5;
+  // Every look is drawn, the waiting ones too, and a line under them says why.
+  const BUILD_COUNT = fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE).length;
+  const NOTE = fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE).some(
+    (option) => option.waitingOnMaker
+  )
+    ? 24
+    : 0;
 
   /**
    * Builds per row in a bounded host: two if the taller two-column cards
@@ -73,7 +81,7 @@
     const natural = (cols: number) => {
       const rows = Math.ceil(BUILD_COUNT / cols);
       const cardHeight = ((width - GAP * (cols - 1)) / cols) * (3 / 8) + LABEL;
-      return HEADING + rows * cardHeight + (rows - 1) * GAP;
+      return HEADING + rows * cardHeight + (rows - 1) * GAP + NOTE;
     };
     let cols = 3;
     if (width > 0 && height > 0) {

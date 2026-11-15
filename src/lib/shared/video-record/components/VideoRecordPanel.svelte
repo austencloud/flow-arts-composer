@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { browser } from "$app/env";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { getCameraManager } from "#lib/shared/train/get-camera-manager.js";
@@ -126,7 +127,7 @@
 
   async function initializeCamera() {
     if (!cameraService) {
-      cameraError = "Camera service not loaded";
+      cameraError = t("create_record_camera_service_not_loaded");
       return;
     }
 
@@ -161,7 +162,7 @@
       // stop() that would close the camera somebody else is now using.
       if (destroyed || isCameraAcquisitionCancelled(error)) return;
       cameraError =
-        error instanceof Error ? error.message : "Failed to access camera";
+        error instanceof Error ? error.message : t("train_camera_failed");
     }
   }
 
@@ -189,7 +190,7 @@
       recordingState = "recording";
     } catch (error) {
       console.error("Failed to start recording:", error);
-      toast.error("Failed to start recording. Please try again.");
+      toast.error(t("create_record_start_failed"));
     }
   }
 
@@ -217,7 +218,7 @@
       }
     } catch (error) {
       console.error("Failed to stop recording:", error);
-      toast.error("Failed to stop recording. Please try again.");
+      toast.error(t("create_record_stop_failed"));
     }
   }
 
@@ -276,7 +277,7 @@
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Failed to share:", error);
-        toast.error("Failed to share recording.");
+        toast.error(t("create_record_share_failed"));
       }
     } finally {
       isSharing = false;
@@ -303,7 +304,7 @@
     try {
       await initializeCamera();
     } catch (error) {
-      cameraError = "Failed to load camera service";
+      cameraError = t("create_record_camera_service_failed");
     }
   });
 
@@ -324,23 +325,23 @@
   {#if cameraError}
     <div class="error-state" role="alert">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-      <p>Camera Error</p>
+      <p>{t("create_record_camera_error_title")}</p>
       <p class="error-detail">{cameraError}</p>
       <button class="retry-btn" onclick={() => window.location.reload()}>
-        <i class="fas fa-redo" aria-hidden="true"></i> Retry
+        <i class="fas fa-redo" aria-hidden="true"></i> {t("action_retry")}
       </button>
     </div>
   {:else if !cameraInitialized}
     <div class="loading-state">
       <ProgressRing percent={-1} size={32} strokeWidth={3} />
-      <p>Initializing camera...</p>
+      <p>{t("train_camera_initializing")}</p>
     </div>
   {:else}
     <!-- Settings Button (Top Right) -->
     <button
       class="settings-fab"
       onclick={() => (settingsOpen = true)}
-      aria-label="Settings"
+      aria-label={t("viewer_ui_settings")}
     >
       <i class="fas fa-cog" aria-hidden="true"></i>
     </button>
@@ -364,7 +365,7 @@
                 autoplay
                 loop
                 class="video-preview"
-                aria-label="Recorded performance video"
+                aria-label={t("create_record_recorded_video")}
               ></video>
             {:else}
               <video
@@ -390,7 +391,9 @@
                 : 'fa-th'}"
               aria-hidden="true"
             ></i>
-            {activeReferenceView === "animation" ? "Animation" : "Grid"}
+            {activeReferenceView === "animation"
+              ? t("export_ui_animation")
+              : t("train_view_grid")}
           </div>
           <div class="reference-wrapper">
             {#if activeReferenceView === "animation"}
@@ -424,7 +427,7 @@
             <button
               class="control-btn secondary"
               onclick={discardRecording}
-              aria-label="Record Again"
+              aria-label={t("create_record_again")}
             >
               <i class="fas fa-redo" aria-hidden="true"></i>
             </button>
@@ -432,7 +435,7 @@
               class="control-btn primary"
               onclick={shareRecording}
               disabled={isSharing}
-              aria-label="Share"
+              aria-label={t("viewer_share")}
             >
               <i
                 class="fas {isSharing
@@ -445,7 +448,7 @@
               data-save-shortcut
               class="control-btn success"
               onclick={saveRecording}
-              aria-label="Save"
+              aria-label={t("action_save")}
             >
               <i class="fas fa-download" aria-hidden="true"></i>
             </button>
@@ -456,7 +459,7 @@
         <button
           class="record-btn"
           onclick={startRecording}
-          aria-label="Start Recording"
+          aria-label={t("create_record_start")}
         >
           <span class="record-dot"></span>
         </button>
@@ -471,21 +474,21 @@
             <button
               class="control-btn secondary"
               onclick={pauseRecording}
-              aria-label="Pause"
+              aria-label={t("viewer_ui_pause")}
             >
               <i class="fas fa-pause" aria-hidden="true"></i>
             </button>
             <button
               class="control-btn primary"
               onclick={stopRecording}
-              aria-label="Stop"
+              aria-label={t("viewer_ui_stop")}
             >
               <i class="fas fa-stop" aria-hidden="true"></i>
             </button>
             <button
               class="control-btn danger"
               onclick={cancelRecording}
-              aria-label="Cancel"
+              aria-label={t("action_cancel")}
             >
               <i class="fas fa-times" aria-hidden="true"></i>
             </button>
@@ -502,21 +505,21 @@
             <button
               class="control-btn success"
               onclick={resumeRecording}
-              aria-label="Resume"
+              aria-label={t("create_record_resume")}
             >
               <i class="fas fa-play" aria-hidden="true"></i>
             </button>
             <button
               class="control-btn primary"
               onclick={stopRecording}
-              aria-label="Stop"
+              aria-label={t("viewer_ui_stop")}
             >
               <i class="fas fa-stop" aria-hidden="true"></i>
             </button>
             <button
               class="control-btn danger"
               onclick={cancelRecording}
-              aria-label="Cancel"
+              aria-label={t("action_cancel")}
             >
               <i class="fas fa-times" aria-hidden="true"></i>
             </button>

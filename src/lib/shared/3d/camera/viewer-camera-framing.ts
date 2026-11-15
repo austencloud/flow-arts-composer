@@ -14,6 +14,29 @@ import {
   type PerformerHandDistance,
 } from "../domain/performer-hand-distance";
 
+import {
+  isPointNearCast,
+  type CastFrameBox,
+} from "./cast-framing";
+
+export {
+  castFrameBox,
+  castFrameCenter,
+  fitCastDistance,
+  isPointNearCast,
+  projectedBoxFill,
+  castStanding,
+  castDepthAlongRay,
+  isPivotOnCast,
+  seatPivotOnCast,
+  CAST_HEIGHT_FILL,
+  CAST_MAX_WIDTH_FILL,
+  type CastFrameBox,
+  type CastFrameMember,
+  type CastFitOptions,
+  type CastStanding,
+} from "./cast-framing";
+
 const GRID_CENTER_Y = 0;
 const GRID_CENTER_Z = 0.3;
 
@@ -299,4 +322,24 @@ export function computeViewerAlignedCamera(
     },
     target,
   };
+}
+
+/**
+ * A saved camera is worth restoring only if it still looks at the cast: a
+ * healthy orbit radius, a pivot on or near the cast, and an eye within orbit
+ * range of it. Anything else (a collapsed pivot, a pivot pushed off into the
+ * sky by wheel travel) is thrown away for the default framing.
+ */
+export function isViewerCameraNearCast(
+  snapshot: CameraStateSnapshot | null | undefined,
+  box: CastFrameBox | null,
+  maxOrbitDistance = 25,
+  pivotMargin = 1.5
+): boolean {
+  if (!isValidViewerCameraSnapshot(snapshot)) return false;
+  if (!box) return true;
+  const { position, target } = snapshot;
+  if (Math.sqrt(distanceSquared(position, target)) > maxOrbitDistance + 0.01)
+    return false;
+  return isPointNearCast(target, box, pivotMargin);
 }

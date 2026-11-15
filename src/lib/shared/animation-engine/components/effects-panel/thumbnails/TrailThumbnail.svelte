@@ -2,17 +2,38 @@
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import type { EffectPreset } from "../presets/types";
   import { queueTilePaint } from "./tile-paint-queue";
+  import {
+    TILE_FORMAT_SIZE,
+    type Box,
+    type TileFormat,
+    frame,
+    unitsPerDisplayPx,
+  } from "./tile-format";
 
   interface Props {
     preset: EffectPreset<"trails">;
     active?: boolean;
+    /** card (default), or the small tile / chip painting. */
+    format?: TileFormat;
   }
 
-  const { preset, active = false }: Props = $props();
+  const { preset, active = false, format = "card" }: Props = $props();
+  const size = $derived(TILE_FORMAT_SIZE[format]);
   let canvas = $state<HTMLCanvasElement>();
 
   const WIDTH = 720;
   const HEIGHT = 270;
+
+  /**
+   * Small formats: the whole figure-eight across the width of the frame, drawn
+   * with a line of at least 2px at display size and a glow of about 3px more.
+   * The chip is squarer, so it stretches the eight taller (ampK) rather than
+   * shrinking it; the curve stays the same lemniscate.
+   */
+  const SMALL: Record<"tile" | "chip", { view: Box; ampK: number }> = {
+    tile: { view: { x: 40, y: 15, w: 640, h: 240 }, ampK: 1 },
+    chip: { view: { x: 40, y: -146.5, w: 640, h: 427 }, ampK: 1.6 },
+  };
 
   /**
    * A stylised portrait of the look, same contract Bloom and Fire keep: every
@@ -59,11 +80,11 @@
    * waist. Crossing is what makes a trail read as two props rather than one
    * doubled stroke.
    */
-  function path(mirror: boolean): Point[] {
+  function path(mirror: boolean, ampK = 1): Point[] {
     const pts: Point[] = [];
     const STEPS = 260;
     const RX = WIDTH / 2 - 54;
-    const AMP = (HEIGHT / 2 - 30) * 3;
+    const AMP = (HEIGHT / 2 - 30) * 3 * ampK;
     const cx = WIDTH / 2;
     const cy = HEIGHT / 2;
     for (let i = 0; i < STEPS; i += 1) {
@@ -102,9 +123,12 @@
   ): HTMLCanvasElement {
     const layer = document.createElement("canvas");
     layer.width = WIDTH;
-    layer.height = HEIGHT;
+    // Twice the card's height, shifted down by half the card: the chip stretches
+    // the eight taller than the card, and a card-sized layer would clip it.
+    layer.height = HEIGHT * 2;
     const ctx = layer.getContext("2d");
     if (!ctx) return layer;
+    ctx.translate(0, HEIGHT / 2);
 
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -132,15 +156,24 @@
     const node = canvas;
     if (!node) return;
     void preset;
+    void format;
     return queueTilePaint(() => paint(node));
   });
 
   function paint(node: HTMLCanvasElement): void {
     const ctx = node.getContext("2d");
     if (!ctx) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const small = format === "card" ? null : SMALL[format];
+    if (small) frame(ctx, format, small.view, 0);
+    const upp = small ? unitsPerDisplayPx(small.view, format as "tile" | "chip") : 1;
 
     const intent = { ...TRAIL_DEFAULTS, ...(preset.patch ?? {}) };
-    const width = intent.thickness * THICKNESS_SCALE;
+    // A small format never draws thinner than 2 display px, and never brighter
+    // than the look says: only the line is protected, not the opacity.
+    const width = small
+      ? Math.max(intent.thickness * THICKNESS_SCALE * 0.55, 1.6 * upp)
+      : intent.thickness * THICKNESS_SCALE;
     // Mirrors the translator exactly rather than inventing a tile-local curve.
     const maxOpacity = intent.brightness;
     const minOpacity = intent.brightness * 0.3;
@@ -149,14 +182,14 @@
     background.addColorStop(0, "#080a10");
     background.addColorStop(1, "#04050a");
     ctx.fillStyle = background;
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillRect(-WIDTH, -HEIGHT, WIDTH * 3, HEIGHT * 3);
 
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
     const paths: [Point[], string][] = [
-      [path(false), intent.leftColor],
-      [path(true), intent.rightColor],
+      [path(false, small?.ampK), intent.leftColor],
+      [path(true, small?.ampK), intent.rightColor],
     ];
 
     for (const [pts, color] of paths) {
@@ -168,18 +201,18 @@
         ribbonLayer(
           pts,
           color,
-          width + 9,
+          width + (small ? 2.5 * upp : 9),
           minOpacity * 0.45,
           maxOpacity * 0.45,
-          7
+          small ? 1.2 * upp : 7
         ),
         0,
-        0
+        -HEIGHT / 2
       );
       ctx.drawImage(
         ribbonLayer(pts, color, width, minOpacity, maxOpacity, 0),
         0,
-        0
+        -HEIGHT / 2
       );
     }
 
@@ -188,7 +221,7 @@
 </script>
 
 <div class="trail-thumbnail" class:active aria-hidden="true">
-  <canvas bind:this={canvas} width={WIDTH} height={HEIGHT}></canvas>
+  <canvas bind:this={canvas} width={size.w} height={size.h}></canvas>
 </div>
 
 <style>

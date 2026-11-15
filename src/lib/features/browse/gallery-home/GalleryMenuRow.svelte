@@ -1,10 +1,10 @@
 <!--
   Desktop Browse > Sequences: the one row of filter menus above the grid.
 
-  Left to right: back to the front door, search, Source, Level, Length,
-  Mandala, More; then one count, Sort, Props, zoom and Save at the right end.
-  A choice shows once: in its own button (Level, Length, Mandala) or as
-  More's count. It replaces the toolbar, the scope bar's chip strip and the
+  Left to right: back to the ask screen, search, Source, then the two
+  answers (Length, Starts with), Level, Mandala, More; then one count, Sort,
+  Props, zoom and Save at the right end. A choice shows once: in its own
+  button (Length, Starts with, Level, Mandala) or as More's count. It replaces the toolbar, the scope bar's chip strip and the
   applied-chip band on desktop. Phones and tablets keep their own chrome.
 
   Composes FilterChipBase, ExpandableSearchBar, SortChoice,
@@ -15,7 +15,7 @@
   import type { Section as DrillSection } from "./gallery-drill-catalog.svelte";
 
   export type MenuRequest = {
-    menu: "level" | "length" | "more";
+    menu: "level" | "length" | "letter" | "more";
     section?: Exclude<DrillSection, "chooser">;
   };
 </script>
@@ -39,6 +39,7 @@
   import BrowseSourceMenu from "#lib/features/browse/shared/components/BrowseSourceMenu.svelte";
   import { createBrowseScopeChips } from "#lib/features/browse/shared/state/browse-scope-chips.svelte";
   import GalleryFilterMenu from "./GalleryFilterMenu.svelte";
+  import { createDrillFilterBindings } from "./drill-filter-bindings.svelte";
   import type {
     CollectionOption,
     Section,
@@ -68,6 +69,7 @@
 
   let levelOpen = $state(false);
   let lengthOpen = $state(false);
+  let letterOpen = $state(false);
   let moreOpen = $state(false);
   let moreSeed = $state<{ section: Exclude<Section, "chooser"> } | null>(null);
 
@@ -76,6 +78,7 @@
     if (!request) return;
     levelOpen = request.menu === "level";
     lengthOpen = request.menu === "length";
+    letterOpen = request.menu === "letter";
     moreSeed =
       request.menu === "more" && request.section
         ? { section: request.section }
@@ -83,6 +86,11 @@
     moreOpen = request.menu === "more";
   });
 
+  // The Mandala chip's × clears through the drill's bindings, which send
+  // the clear event.
+  const filters = createDrillFilterBindings(() => engine, {
+    surface: () => "more_filters",
+  });
   const countPending = $derived(engine.isLoading || engine.isResolvingFilters);
   const countNumber = $derived(
     countPending
@@ -170,8 +178,25 @@
         </div>
       {/if}
       <BrowseSourceMenu {scope} />
-      <GalleryFilterMenu {engine} kind="level" bind:open={levelOpen} />
-      <GalleryFilterMenu {engine} kind="length" bind:open={lengthOpen} />
+      <!-- The ask screen's two answers lead the row (Wren's placement). -->
+      <GalleryFilterMenu
+        {engine}
+        kind="length"
+        surface="answer_button"
+        bind:open={lengthOpen}
+      />
+      <GalleryFilterMenu
+        {engine}
+        kind="letter"
+        surface="answer_button"
+        bind:open={letterOpen}
+      />
+      <GalleryFilterMenu
+        {engine}
+        kind="level"
+        surface="more_filters"
+        bind:open={levelOpen}
+      />
       {#if onOpenMandala}
         <span class="mandala-door" class:applied={!!mandalaFilter}>
           <FilterChipBase
@@ -183,7 +208,7 @@
             onclick={onOpenMandala}
             onremove={mandalaFilter
               ? () =>
-                  withResultsMorph(() => engine.removeFilter(mandalaFilter![0]))
+                  withResultsMorph(() => filters.removeKey(mandalaFilter![0]))
               : undefined}
             removeAriaLabel={t("browse_audit_remove_filter", {
               filter: mandalaLabel,
@@ -194,6 +219,7 @@
       <GalleryFilterMenu
         {engine}
         kind="more"
+        surface="more_filters"
         bind:open={moreOpen}
         seedRequest={moreSeed}
         {collections}

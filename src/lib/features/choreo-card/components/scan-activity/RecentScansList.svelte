@@ -196,8 +196,13 @@
       var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08)) 50%,
       var(--theme-card-bg) 100%
     );
-    background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-main,
+  .skeleton-city {
+    background-size: 200% 100%;
   }
 
   .skeleton-city {

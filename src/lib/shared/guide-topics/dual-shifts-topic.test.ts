@@ -119,17 +119,28 @@ describe("Type 1 Dual-Shifts topic record", () => {
     ]);
   });
 
-  it("keeps the Gamma page's words verbatim in every catalog", () => {
-    const keys = [
+  it("keeps the Quarter mode names in English and translates the Gamma page's lines", () => {
+    // Mode names are TKA terms, the same in every language (i18n glossary).
+    for (const key of [
       DUAL_SHIFTS_WEB_COPY.quarterOpp,
       DUAL_SHIFTS_WEB_COPY.quarterSame,
+    ]) {
+      expect(german[key], key).toBe(english[key]);
+    }
+    // Austen, 2026-11-14: everything a visitor reads gets translated.
+    const lines = [
       DUAL_SHIFTS_WEB_COPY.quarterOppLead,
       DUAL_SHIFTS_WEB_COPY.quarterSameLead,
       DUAL_SHIFTS_WEB_COPY.switchingLead,
       DUAL_SHIFTS_WEB_COPY.continuous,
       DUAL_SHIFTS_WEB_COPY.gammaPractice,
     ];
-    for (const key of keys) expect(german[key], key).toBe(english[key]);
+    const markup = (s: string | undefined) => s?.match(/<[^>]+>/g) ?? [];
+    for (const key of lines) {
+      expect(german[key], key).toBeTruthy();
+      expect(german[key], key).not.toBe(english[key]);
+      expect(markup(german[key]), key).toEqual(markup(english[key]));
+    }
   });
 
   it("gives each mode and the switching sequence a static start box and a closed loop", () => {

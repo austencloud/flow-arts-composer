@@ -106,7 +106,7 @@ describe("QR scan cloud-render contract", () => {
     expect(cell).toContain("scanUsesHtmlStepNumbers");
   });
 
-  it("builds the complete viewer in card mode before interactive startup", () => {
+  it("opens a scan on Side by Side and starts animation after the card paints", () => {
     const page = source("src/routes/sequence/[id]/SequenceViewerPage.svelte");
     expect(page).toContain("initialViewerMode={initialViewerModeForUrl(");
     expect(page).toContain("!!scanOriginCode");
@@ -115,9 +115,10 @@ describe("QR scan cloud-render contract", () => {
     );
     // Prettier's singleQuote:false pass (i18n commit b11df1a24d) reformatted
     // this file's quote style; the branch itself is unchanged.
-    expect(modes).toContain('if (scanOrigin) return "card";');
+    expect(modes).toContain('if (scanOrigin) return "split";');
+    expect(page).toContain("initialSplitConfigForUrl(!!scanOriginCode)");
     expect(page).toContain("deferInteractiveStartup");
-    expect(page).toContain("startInCardThenSplit");
+    expect(page).toContain("startAnimationAfterCard");
     expect(page).toContain("setScanCardCloudProbe(true)");
   });
 

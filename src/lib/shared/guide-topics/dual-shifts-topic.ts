@@ -79,8 +79,8 @@ export function dualShiftsTitle(): string {
  * sentences, while the printed sheet keeps the proof's words. Timing and
  * direction are named with the Timing and Direction lesson's own lines, so the
  * Guide and the lesson say the same. The Quarter names and notes, the
- * switching line and the closing lines are Austen's words from the Gamma page,
- * kept in English in every catalog.
+ * switching line and the closing lines are Austen's words from the Gamma page.
+ * The Quarter names stay in English in every catalog; the lines are translated.
  */
 export const DUAL_SHIFTS_WEB_COPY = {
   sameLeadSplit: "guide_topic_dual_shifts_same_lead_split",

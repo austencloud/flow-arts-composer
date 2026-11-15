@@ -292,9 +292,6 @@ dialog.media-spotlight[data-swiping="true"] {
   right: 0;
   height: var(--spotlight-filmstrip-height);
   padding: var(--spotlight-chrome-padding);
-  padding-bottom: calc(
-    var(--spotlight-chrome-padding) + var(--spotlight-safe-area-bottom)
-  );
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
   overflow-x: auto;
   overflow-y: hidden;
@@ -304,6 +301,13 @@ dialog.media-spotlight[data-swiping="true"] {
   gap: var(--spotlight-filmstrip-gap);
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+/* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+.spotlight-filmstrip {
+  padding-bottom: calc(
+    var(--spotlight-chrome-padding) + var(--spotlight-safe-area-bottom)
+  );
 }
 
 .spotlight-filmstrip::-webkit-scrollbar {

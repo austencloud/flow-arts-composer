@@ -4,6 +4,7 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { EffectCatalogLook } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks";
   import IconRailNav from "../pill-nav/IconRailNav.svelte";
 
   interface RailPill {
@@ -11,6 +12,10 @@
     icon?: string;
     propType?: PropType;
     fanAppearance?: FanAppearance;
+    /** Draw `propType` as the blue and red pair, fitted to the rail slot. */
+    propPairGlyph?: boolean;
+    /** The effect that is on, drawn as its painted chip in place of the icon. */
+    effectChip?: { effectId: string; look: EffectCatalogLook | undefined };
     label: string;
     summary?: string;
     accentColor?: string;

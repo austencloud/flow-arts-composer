@@ -850,9 +850,13 @@
       color-mix(in srgb, var(--theme-text, #fff) 14%, transparent) 50%,
       var(--theme-hover-bg, rgba(255, 255, 255, 0.08)) 60%
     );
-    background-size: 220% 100%;
     animation: shimmer 1.6s linear infinite;
     animation-delay: inherit;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-line {
+    background-size: 220% 100%;
   }
 
   .skeleton-name {

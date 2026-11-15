@@ -14,6 +14,7 @@
   import GuideGridExplorer from "./GuideGridExplorer.svelte";
   import GuideStepStrip from "./GuideStepStrip.svelte";
   import SequenceShowcase from "./SequenceShowcase.svelte";
+  import FigureCardRow, { type FigureCardExtras } from "./FigureCardRow.svelte";
   import Sentences from "../../_components/Sentences.svelte";
   import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -87,13 +88,29 @@
   // One screen: gallery figures and bare strips that share a screen sit side
   // by side in one wrapping row, each with its caption, instead of stacking
   // down the page (the cut packs them: flow-render-items.ts).
+  type ChoiceBlock = Extract<GuideBlock, { kind: "figureChoice" }>;
   type Segment =
     | { key: number; item: FlowRenderItem; row?: undefined }
-    | { key: number; row: { item: FlowRenderItem; i: number }[] };
+    | {
+        key: number;
+        row: { item: FlowRenderItem; i: number }[];
+        /** The question asked about the row's figure cards. */
+        choice?: ChoiceBlock;
+      };
   const segments = $derived.by(() => {
     const out: Segment[] = [];
     for (const v of visible) {
       const last = out[out.length - 1];
+      // A question rides with the row of figure cards above it.
+      if (
+        v.item.type === "block" &&
+        v.item.block.kind === "figureChoice" &&
+        last?.row &&
+        last.row.every((r) => isFigureCardInRun(r.item))
+      ) {
+        last.choice = v.item.block;
+        continue;
+      }
       if (screen !== undefined && isPackable(v.item)) {
         if (last?.row) last.row.push(v);
         else out.push({ key: v.i, row: [v] });
@@ -161,17 +178,14 @@
   {#each segments as seg (seg.key)}
     {#if seg.row && seg.row.every((v) => isFigureCardInRun(v.item))}
       <!-- Figure cards that share a screen: side by side, each under its own
-           small title (the Staff Motions opener). -->
-      <div class="figure-row">
-        {#each seg.row as { item, i } (i)}
-          <div class="figure-slot">
-            {#if item.type === "showcase" && item.card.figureTitle}
-              <h3 class="flow-h3 figure-title">{item.card.figureTitle}</h3>
-            {/if}
-            {@render flowItem(item)}
-          </div>
-        {/each}
-      </div>
+           small title, with their question when they have one (the Staff
+           Motions opener). -->
+      <FigureCardRow
+        row={seg.row}
+        choice={seg.choice ?? null}
+        beside={!!room?.rowBeside}
+        card={flowItem}
+      />
     {:else if seg.row}
       <div class="gallery-row">
         {#each seg.row as { item, i } (i)}
@@ -195,7 +209,7 @@
   {/each}
 </div>
 
-{#snippet flowItem(item: FlowRenderItem)}
+{#snippet flowItem(item: FlowRenderItem, extra?: FigureCardExtras)}
     {#if item.type === "showcase" && item.card.figureCard}
       <!-- The figure card: the player over its own two-cell strip, the words
            beside it on a wide window and over it on a small one
@@ -239,6 +253,9 @@
           cardBeside={!!room?.cardBeside && item.text.length > 0}
           {picTheme}
           text={item.text.length ? cardWords : undefined}
+          cues={scard.cues ?? null}
+          thumbRingOn={extra?.thumbRingOn}
+          turns={extra?.turns ?? null}
         />
       </div>
     {:else if item.type === "showcase"}
@@ -857,31 +874,11 @@
        not fit recut the screen. */
     min-width: min(100%, 18rem);
   }
-  /* Figure cards side by side: each slot is as wide as its card, which
-     grows with --fit until the screen is full, two to a row. */
-  .figure-row {
-    --pair-gap: clamp(1rem, 6cqw, 4rem);
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    gap: var(--pair-gap);
-  }
-  .figure-slot {
-    /* The card fills its slot (SequenceShowcase reads --card-w); the fit
-       search sizes the pair to the screen. */
-    --card-w: 100cqw;
-    flex: none;
-    width: min(calc(14rem * var(--fit, 1)), calc((100cqw - var(--pair-gap)) / 2));
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .figure-slot .flow-showcase.figure {
+  /* Figure cards side by side (FigureCardRow owns the row): each card fills
+     its slot. */
+  :global(.figure-slot) .flow-showcase.figure {
     width: 100%;
     margin: 0;
-  }
-  .flow-h3.figure-title {
-    margin: 0 0 0.35rem;
   }
   .flow-strip-slot :global(.guide-step-strip) {
     margin-block: 0.5rem;

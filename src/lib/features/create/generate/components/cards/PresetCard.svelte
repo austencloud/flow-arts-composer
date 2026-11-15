@@ -59,6 +59,13 @@
     min-height: 0;
   }
 
+  /* The heading is one word in most languages ("Configuraciones"), so it
+     cannot wrap; the header's side padding gives its width back instead. The
+     title stays centred, so a word that already fit does not move. */
+  .preset-card-shell :global(.card-header) {
+    padding-inline: 0;
+  }
+
   .setup-status {
     display: inline-grid;
     justify-items: center;

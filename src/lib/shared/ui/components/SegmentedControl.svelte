@@ -20,7 +20,8 @@
     value: T;
     onchange: (value: T) => void;
     color?: "blue" | "red" | "accent";
-    size?: "sm" | "md";
+    /** phone = the phone control height: 34px segments in a 42px track. */
+    size?: "sm" | "md" | "phone";
     density?: "standard" | "compact" | "tight";
     columns?: number;
     ariaLabel?: string;
@@ -76,7 +77,7 @@
   options={sharedOptions}
   {value}
   {onchange}
-  {size}
+  size={size === "phone" ? "sm" : size}
   {density}
   {columns}
   {ariaLabel}
@@ -110,6 +111,15 @@
 {/snippet}
 
 <style>
+  /* Phone size: the shared control floors each segment at 44px; on a phone
+     the track (3px padding and a 1px border around each segment) comes to
+     42px, the phone control height in layout law. */
+  :global(.ui-segments.segmented-control.phone button) {
+    min-width: 0;
+    min-height: calc(var(--alt-touch-target, 36px) - 2px);
+    padding-block: 0;
+  }
+
   .segment-count {
     display: inline-flex;
     justify-content: center;

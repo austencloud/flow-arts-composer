@@ -37,6 +37,7 @@ import {
   mix,
   smoothstep,
 } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type SilkIntent = EffectConfigMap["silk"];
 export const SILK_TILE_SEED = 0x5117;
@@ -216,7 +217,9 @@ function drawRibbon(
   palette: SilkPalette,
   propColor: string,
   samples: Sample[],
-  phase: number
+  phase: number,
+  /** Edge line weight multiplier: the small formats need a bolder rim. */
+  edgeK = 1
 ): void {
   const profile = PROFILES[palette.id] ?? PROFILES.satin!;
   // Translator numbers: 5-30px half width, 0.5-4.0s life, world speed reference.
@@ -419,13 +422,13 @@ function drawRibbon(
   }
   ctx.globalAlpha = ribbonAlpha * profile.edgeAlpha * 0.55;
   ctx.strokeStyle = rep.shadow;
-  ctx.lineWidth = 0.65 * SCALE;
+  ctx.lineWidth = 0.65 * SCALE * edgeK;
   ctx.beginPath();
   traceCentripetalForward(ctx, rightEdge.x, rightEdge.y, 0, n - 1, n);
   ctx.stroke();
   ctx.globalAlpha = Math.min(1, ribbonAlpha * profile.edgeAlpha * 1.5);
   ctx.strokeStyle = edgeStyle;
-  ctx.lineWidth = 0.7 * SCALE;
+  ctx.lineWidth = 0.7 * SCALE * edgeK;
   ctx.beginPath();
   traceCentripetalForward(ctx, leftEdge.x, leftEdge.y, 0, n - 1, n);
   ctx.stroke();
@@ -441,11 +444,20 @@ export function resolveSilkTilePropColor(): string {
   return DEFAULT_EFFECTS_CONFIG.trails.leftColor;
 }
 
+/** Small formats: the ribbon framed to fill, its rim several times heavier. */
+const SMALL: Record<"tile" | "chip", { view: Box; edge: number }> = {
+  tile: { view: { x: 205, y: 20, w: 560, h: 210 }, edge: 3.2 },
+  chip: { view: { x: 250, y: -10, w: 450, h: 300 }, edge: 4.5 },
+};
+
 export function paintSilkTile(
   ctx: CanvasRenderingContext2D,
   intent: SilkIntent,
-  propColor: string
+  propColor: string,
+  format: TileFormat = "card"
 ): void {
+  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  if (small) frame(ctx, format, small.view, 0);
   const palette = resolveSilkPalette(intent);
   const body = hexToRgb(palette.body);
   const dark =
@@ -466,5 +478,13 @@ export function paintSilkTile(
   }
   const rand = lcg(SILK_TILE_SEED);
   const samples = recordTrail(intent.duration);
-  drawRibbon(ctx, intent, palette, propColor, samples, rand() * TAU);
+  drawRibbon(
+    ctx,
+    intent,
+    palette,
+    propColor,
+    samples,
+    rand() * TAU,
+    small?.edge ?? 1
+  );
 }

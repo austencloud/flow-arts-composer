@@ -31,6 +31,7 @@ Two modes:
   import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+  import { collectionDisplayName } from "#lib/shared/library/domain/collection-display-name.js";
   import { tick } from "svelte";
   import { flip } from "svelte/animate";
   import {
@@ -279,22 +280,40 @@ Two modes:
   }
 
   function countLabel(n: number): string {
-    return `${n} ${n === 1 ? "sequence" : "sequences"}`;
+    return t(n === 1 ? "browse_audit_one_sequence" : "browse_audit_many_sequences", {
+      count: n,
+    });
+  }
+
+  // A sentence with one emphasised phrase: the catalog places the phrase, so
+  // each language keeps its own word order around the <strong>.
+  function sentenceAround(sentence: string): [string, string] {
+    const [before = "", after = ""] = sentence.split("");
+    return [before, after];
   }
 </script>
 
 <div class="collection-picker">
   {#if mode === "bulk"}
+    {@const [before, after] = sentenceAround(
+      t("library_ui_bulk_choose", { selected: "" })
+    )}
     <p class="picker-subtitle">
-      Choose a collection for <strong
-        >{bulkCount} selected {bulkCount === 1
-          ? "sequence"
-          : "sequences"}</strong
-      >.
+      {before}<strong
+        >{t(
+          bulkCount === 1
+            ? "library_ui_bulk_selected_one"
+            : "library_ui_bulk_selected_other",
+          { count: bulkCount }
+        )}</strong
+      >{after}
     </p>
   {:else if displayLabel}
+    {@const [before, after] = sentenceAround(
+      t("library_ui_tap_to_file", { label: "" })
+    )}
     <p class="picker-subtitle">
-      Tap to file <strong>{displayLabel}</strong>, tap again to take it out.
+      {before}<strong>{displayLabel}</strong>{after}
     </p>
   {/if}
 
@@ -345,17 +364,20 @@ Two modes:
           style="--tile-color: {c.color ?? 'var(--theme-accent)'};"
           aria-pressed={selected || allBulkMembers}
           aria-label={mode === "bulk"
-            ? `${c.name}, ${
+            ? `${collectionDisplayName(c)}, ${
                 allBulkMembers
-                  ? `all ${bulkCount} already here`
+                  ? t("library_ui_bulk_all_here", { count: bulkCount })
                   : mixedBulkMembers
-                    ? `${bulkMembers} of ${bulkCount} already here`
+                    ? t("library_ui_bulk_some_here", {
+                        some: bulkMembers,
+                        count: bulkCount,
+                      })
                     : countLabel(c.sequenceCount)
               }`
             : undefined}
           aria-busy={busy || undefined}
           disabled={addingCollectionId !== null || allBulkMembers}
-          title={allBulkMembers ? "Already in this collection" : undefined}
+          title={allBulkMembers ? t("library_ui_already_in_collection") : undefined}
           onclick={() => handleCollectionPress(c)}
           animate:flip={{ duration: flipDuration() }}
           in:arrive={{ index }}
@@ -367,12 +389,17 @@ Two modes:
             <i class={`fas ${c.icon ?? "fa-folder"}`} aria-hidden="true"></i>
           </span>
           <span class="tile-text">
-            <span class="tile-name">{c.name}</span>
+            <span class="tile-name">{collectionDisplayName(c)}</span>
             {#if mode === "bulk" && allBulkMembers}
-              <span class="tile-here">All {bulkCount} already here</span>
+              <span class="tile-here"
+                >{t("library_ui_bulk_all_here", { count: bulkCount })}</span
+              >
             {:else if mode === "bulk" && mixedBulkMembers}
               <span class="tile-mixed"
-                >{bulkMembers} of {bulkCount} already here</span
+                >{t("library_ui_bulk_some_here", {
+                  some: bulkMembers,
+                  count: bulkCount,
+                })}</span
               >
             {:else if c.id === currentCollectionId}
               <span class="tile-here">{t("library_ui_currently_here")}</span>

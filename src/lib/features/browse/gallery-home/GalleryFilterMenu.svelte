@@ -1,12 +1,15 @@
 <!--
-  One menu in the desktop Browse row: Level, Length or More.
+  One menu in the desktop Browse row: Level, Length, Starts with or More.
 
   A chip button that shows what is chosen ("Level 2", tinted, with its own ×)
   and opens a popover under itself, floating over the grid. The popover hosts
   the same gallery drill the workspace and the phone sheet use, so every
   editor, count and stacking rule is the one copy.
 
-  - Level and Length open straight on their editor. A pick applies and closes.
+  - Level, Length and Starts with open straight on their editor. A pick
+    applies and closes.
+  - A host can draw its own trigger (the ask screen's Other length tile); the
+    popover and the drill stay this one copy.
   - More opens the remaining categories as tiles; a tile shows its editor in
     the same popover with a Back button. Stacking values toggle and the menu
     stays open until Done. Applied More filters sit on top, each removable.
@@ -24,8 +27,10 @@
   import GalleryDrill from "./GalleryDrill.svelte";
   import { createDrillFilterBindings } from "./drill-filter-bindings.svelte";
   import type { CollectionOption, Section } from "./gallery-drill-catalog.svelte";
+  import type { Snippet } from "svelte";
+  import type { BrowseFilterSurface } from "#lib/shared/analytics/browse-events.js";
 
-  type MenuKind = "level" | "length" | "more";
+  type MenuKind = "level" | "length" | "letter" | "more";
 
   let {
     engine,
@@ -33,6 +38,8 @@
     open = $bindable(false),
     seedRequest = null,
     collections = [],
+    surface = null,
+    trigger,
   }: {
     engine: BrowseEngine;
     kind: MenuKind;
@@ -41,6 +48,10 @@
      * tile). A new object each time, so the same tile twice still seeds. */
     seedRequest?: { section: Exclude<Section, "chooser"> } | null;
     collections?: readonly CollectionOption[];
+    /** Browse's filter path tags its picks for `browse_filter_applied`. */
+    surface?: BrowseFilterSurface | null;
+    /** Replaces the chip: the host's own button, which toggles `open`. */
+    trigger?: Snippet;
   } = $props();
 
   /** The filter types that have their own button in the row. Everything else
@@ -48,16 +59,21 @@
   const OWN_BUTTON_TYPES = new Set<string>([
     BrowseFilterType.DIFFICULTY,
     BrowseFilterType.LENGTH,
+    BrowseFilterType.STARTING_LETTER,
     BrowseFilterType.MANDALA,
   ]);
 
-  const filters = createDrillFilterBindings(() => engine);
+  const filters = createDrillFilterBindings(() => engine, {
+    surface: () => surface,
+  });
   const ownType = $derived(
     kind === "level"
       ? BrowseFilterType.DIFFICULTY
       : kind === "length"
         ? BrowseFilterType.LENGTH
-        : null
+        : kind === "letter"
+          ? BrowseFilterType.STARTING_LETTER
+          : null
   );
 
   const unlocked = $derived(
@@ -74,7 +90,9 @@
       ? t("browse_ui_level")
       : kind === "length"
         ? t("browse_ui_length")
-        : t("browse_verified_more")
+        : kind === "letter"
+          ? t("browse_ask_letter_label")
+          : t("browse_verified_more")
   );
   // Level and Length name their choice in the button; More counts its own.
   const chipLabel = $derived(
@@ -90,7 +108,9 @@
       ? "fas fa-signal"
       : kind === "length"
         ? "fas fa-ruler-horizontal"
-        : "fas fa-sliders"
+        : kind === "letter"
+          ? "fas fa-font"
+          : "fas fa-sliders"
   );
 
   let anchor = $state<HTMLElement | null>(null);
@@ -115,11 +135,11 @@
   function clearOwn(): void {
     if (!ownType) return;
     const type = ownType;
-    withResultsMorph(() => engine.removeFilter(String(type)));
+    withResultsMorph(() => filters.removeKey(String(type)));
   }
 
   function removeKey(key: string): void {
-    withResultsMorph(() => engine.removeFilter(key));
+    withResultsMorph(() => filters.removeKey(key));
   }
 
   function editKey(type: string): void {
@@ -140,7 +160,15 @@
   }
 </script>
 
-<div class="menu-anchor" bind:this={anchor} data-menu={kind}>
+<div
+  class="menu-anchor"
+  class:custom-trigger={!!trigger}
+  bind:this={anchor}
+  data-menu={kind}
+>
+  {#if trigger}
+    {@render trigger()}
+  {:else}
   <FilterChipBase
     label={chipLabel}
     {icon}
@@ -158,6 +186,7 @@
     onremove={ownType && applied.length > 0 ? clearOwn : undefined}
     removeAriaLabel={t("browse_audit_remove_filter", { filter: chipLabel })}
   />
+  {/if}
 </div>
 
 <Popover.Root bind:open>
@@ -253,7 +282,13 @@
     flex: 0 0 auto;
     min-width: 0;
   }
-  .menu-anchor :global(.chip-label) {
+  /* A host trigger fills the slot it was given (the ask screen's tile). */
+  .menu-anchor.custom-trigger {
+    display: grid;
+    width: 100%;
+    height: 100%;
+  }
+  .menu-anchor:not(.custom-trigger) :global(.chip-label) {
     max-width: 14rem;
     overflow: hidden;
     text-overflow: ellipsis;

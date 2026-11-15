@@ -259,6 +259,9 @@ const entries = (locale: string) =>
  * when its translation program batches finish; until then its gaps are
  * measured by the coverage floor below, not by the per-call scan.
  */
+// The other locales carry every released key since 2026-11-13, but audited
+// surfaces still call unreleased keys (post_*, duet_*, character_*) that only
+// German has. They join this list when those prefixes are released.
 const COMPLETE_LOCALES = ["de"];
 
 const prefixes = JSON.parse(
@@ -280,16 +283,21 @@ const releasedKeys = Object.keys(english).filter(
  * batch is integrated.
  */
 const RELEASED_COVERAGE_FLOOR: Record<string, number> = {
-  ar: 0.06,
-  de: 0.98,
-  es: 0.98,
-  fr: 0.98,
-  it: 0.98,
-  ja: 0.6,
-  ko: 0.59,
-  pt: 0.98,
-  ru: 0.6,
-  zh: 0.06,
+  // Every locale carried all released keys after the read-back pass of
+  // 2026-11-13 (zh-Hant, Traditional Chinese for Taiwan and Hong Kong,
+  // included). Floored a little below so a fresh English key does not break
+  // the build before its translations land.
+  ar: 0.99,
+  de: 0.99,
+  es: 0.99,
+  fr: 0.99,
+  it: 0.99,
+  ja: 0.99,
+  ko: 0.99,
+  pt: 0.99,
+  ru: 0.99,
+  zh: 0.99,
+  "zh-Hant": 0.99,
 };
 
 /**
@@ -439,6 +447,7 @@ describe("translation catalog contracts", () => {
       "pt",
       "ru",
       "zh",
+      "zh-Hant",
     ]);
     expect(Object.keys(RELEASED_COVERAGE_FLOOR).sort()).toEqual(locales);
     const all = [
@@ -579,6 +588,7 @@ describe("translation catalog contracts", () => {
         "Almost there",
         "Still loading. This is taking longer than usual.",
         "Reload",
+        "Loading Flow Arts Composer",
       ])
     );
     for (const message of messages) {

@@ -2,6 +2,7 @@
   import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { UndoOperationType } from "../../../../services/undo-manager";
+  import { undoTypeDescriptions as typeDescriptions } from "../../../../services/undo-descriptions";
   import type { createCreateModuleState } from "#lib/features/create/shared/state/create-module-state.svelte.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
@@ -32,54 +33,6 @@
   const hapticService = getHapticFeedback();
 
   const isAssembleTab = $derived(navigationState.activeTab === "assemble");
-
-  // Type descriptions for all operation types
-  const typeDescriptions: Record<UndoOperationType, () => string> = {
-    [UndoOperationType.ADD_BEAT]: () => t("create_workspace_history_add_step"),
-    [UndoOperationType.REMOVE_BEATS]: () =>
-      t("create_workspace_history_remove_steps"),
-    [UndoOperationType.CLEAR_SEQUENCE]: () =>
-      t("create_workspace_clear_sequence"),
-    [UndoOperationType.SELECT_START_PLACEMENT]: () =>
-      t("create_workspace_history_select_start"),
-    [UndoOperationType.UPDATE_BEAT]: () =>
-      t("create_workspace_history_update_step"),
-    [UndoOperationType.INSERT_BEAT]: () =>
-      t("create_workspace_history_insert_step"),
-    [UndoOperationType.BATCH_EDIT]: () =>
-      t("create_workspace_history_batch_edit"),
-    [UndoOperationType.MIRROR_SEQUENCE]: () =>
-      t("create_workspace_history_mirror"),
-    [UndoOperationType.FLIP_SEQUENCE]: () => t("create_workspace_history_flip"),
-    [UndoOperationType.ROTATE_SEQUENCE]: () =>
-      t("create_workspace_history_rotate"),
-    [UndoOperationType.SWAP_HANDS]: () =>
-      t("create_workspace_history_swap_hands"),
-    [UndoOperationType.INVERT_SEQUENCE]: () =>
-      t("create_workspace_history_invert"),
-    [UndoOperationType.REWIND_SEQUENCE]: () =>
-      t("create_workspace_history_rewind"),
-    [UndoOperationType.SET_GRID_JOIN]: () =>
-      t("create_workspace_history_grid_join"),
-    [UndoOperationType.SHIFT_START]: () =>
-      t("create_workspace_history_shift_start"),
-    [UndoOperationType.APPLY_TURN_PATTERN]: () =>
-      t("create_workspace_history_turn_pattern"),
-    [UndoOperationType.APPLY_ROTATION_PATTERN]: () =>
-      t("create_workspace_history_rotation_pattern"),
-    [UndoOperationType.APPLY_DURATION_PATTERN]: () =>
-      t("create_workspace_history_duration_pattern"),
-    [UndoOperationType.EXTEND_SEQUENCE]: () =>
-      t("create_workspace_history_extend"),
-    [UndoOperationType.MODIFY_BEAT_PROPERTIES]: () =>
-      t("create_workspace_history_edit_step"),
-    [UndoOperationType.GENERATE_SEQUENCE]: () =>
-      t("create_ui_generate_sequence"),
-    [UndoOperationType.SPELL_GENERATE]: () =>
-      t("create_workspace_history_spell_generate"),
-    [UndoOperationType.SPELL_APPLY_LOOP]: () =>
-      t("create_workspace_history_spell_loop"),
-  };
 
   // Derived state for button text/tooltip
   const canAct = $derived(
@@ -276,7 +229,7 @@
     color: color-mix(in srgb, var(--theme-accent-strong) 62%, white);
   }
 
-  .undo-button:active {
+  .undo-button:active:not(:disabled) {
     transform: scale(0.95);
     transition-duration: var(--duration-instant);
   }
@@ -286,11 +239,25 @@
     outline-offset: 2px;
   }
 
+  /* With nothing to act on, the button sits pressed flat and keeps its slot,
+     like the step editor's steppers at a limit. A faded purple disc read as a
+     softer live button on phones. A tap lands on it and does nothing instead
+     of falling through to whatever is underneath. The same look covers the
+     pair while a preview plays, when its wrapper is inert. */
   .undo-button:disabled,
-  .undo-button.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
+  .undo-button.disabled,
+  :global([inert]) .undo-button {
+    background: transparent;
+    border-color: var(--theme-stroke);
+    box-shadow: none;
+    color: var(--theme-text-dim);
+    cursor: default;
+  }
+
+  .undo-button:disabled :global(.undo-glyph),
+  .undo-button.disabled :global(.undo-glyph),
+  :global([inert]) .undo-button :global(.undo-glyph) {
+    color: var(--theme-text-dim);
   }
 
   @media (prefers-reduced-motion: reduce) {

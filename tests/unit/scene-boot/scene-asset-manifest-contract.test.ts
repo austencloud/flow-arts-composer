@@ -67,7 +67,9 @@ const SCENE_OWNERS: Record<string, BackgroundType> = {
   winter: BackgroundType.WINTER,
 };
 
-const MODEL_URL = /\/models\/[A-Za-z0-9_./-]+\.glb/g;
+// The query string is part of the URL: the HTTP cache keys on it, so a warmed
+// `x.glb` does nothing for a scene that loads `x.glb?v=2`.
+const MODEL_URL = /\/models\/[A-Za-z0-9_./-]+\.glb(?:\?[A-Za-z0-9_=&.-]+)?/g;
 
 function isExcluded(relativePath: string): boolean {
   const normalized = relativePath.split(path.sep).join("/");
@@ -78,6 +80,9 @@ function isExcluded(relativePath: string): boolean {
       "celestial/cloudbreak-assets.ts",
       "celestial/CelestialSanctuaries.svelte",
       "celestial/OliveCloudbreakSlice.svelte",
+      // Mounted by nothing (2026-11-14); its 5 MB model was warmed for every
+      // cosmic visitor and never used.
+      "cosmic/CosmicStage.svelte",
     ].includes(normalized)
   );
 }
@@ -121,7 +126,11 @@ function collectFromSources(): Map<BackgroundType, Map<string, string>> {
         `${label}/${relative} names a model but no environment owns it — add its folder to SCENE_OWNERS`
       ).not.toBeNull();
       const bucket = byOwner.get(owner!) ?? new Map<string, string>();
-      for (const url of urls) bucket.set(url, `${label}/${relative}`);
+      for (const url of urls) {
+        // `?retry=N` is a cache-buster added only after a failed first load,
+        // so the URL the warm-up must match is the one without it.
+        bucket.set(url.replace(/\?retry=\d*$/, ""), `${label}/${relative}`);
+      }
       byOwner.set(owner!, bucket);
     }
   }

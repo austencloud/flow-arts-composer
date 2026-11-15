@@ -3,10 +3,14 @@
    * Painted frames, keyed by effect and preset (plus the prop for Ghost, the
    * one tile that draws it), shared by every tile so reopening the picker
    * blits instead of repainting. Bounded by evicting the oldest entry: each
-   * frame holds a 720x270 backing store, and iOS caps total canvas memory.
+   * frame holds a backing store, and iOS caps total canvas memory. Card frames
+   * (720x270) are kept few; the small formats (240x90, 96x64) cost a tenth as
+   * much, so they get a larger count but the same order of eviction. The key
+   * carries the format, so one look can hold a card, a tile and a chip.
    */
   const cache = new Map<string, HTMLCanvasElement>();
   const CACHE_LIMIT = 32;
+  const SMALL_CACHE_LIMIT = 96;
 </script>
 
 <script lang="ts">
@@ -14,7 +18,7 @@
   import type { EffectConfigMap } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import type { EffectPreset } from "../presets/types";
-  import { TILE_H, TILE_W } from "./tile-paint";
+  import { TILE_FORMAT_SIZE, type TileFormat } from "./tile-format";
   import { queueTilePaint } from "./tile-paint-queue";
   import {
     PROP_AWARE_TILES,
@@ -28,6 +32,8 @@
     /** The prop Ghost portrays. Null falls back to the current prop. */
     propType?: string | null;
     active?: boolean;
+    /** card (default), or the small tile / chip painting. */
+    format?: TileFormat;
   }
 
   const {
@@ -35,6 +41,7 @@
     preset,
     propType = null,
     active = false,
+    format = "card",
   }: Props = $props();
 
   let canvas = $state<HTMLCanvasElement | null>(null);
@@ -52,14 +59,28 @@
     return { ...DEFAULT_EFFECTS_CONFIG[type], ...(patch ?? {}) };
   }
 
-  function remember(key: string, target: HTMLCanvasElement): void {
-    if (cache.size >= CACHE_LIMIT) {
-      const oldest = cache.keys().next().value;
-      if (oldest !== undefined) cache.delete(oldest);
+  const size = $derived(TILE_FORMAT_SIZE[format]);
+
+  function evictOldest(small: boolean): void {
+    // Each tier is bounded on its own count, oldest first.
+    let count = 0;
+    for (const entry of cache.values()) {
+      if ((entry.width < 720) === small) count++;
     }
+    if (count < (small ? SMALL_CACHE_LIMIT : CACHE_LIMIT)) return;
+    for (const [key, entry] of cache) {
+      if ((entry.width < 720) === small) {
+        cache.delete(key);
+        return;
+      }
+    }
+  }
+
+  function remember(key: string, target: HTMLCanvasElement): void {
+    evictOldest(format !== "card");
     const copy = document.createElement("canvas");
-    copy.width = TILE_W;
-    copy.height = TILE_H;
+    copy.width = target.width;
+    copy.height = target.height;
     copy.getContext("2d")?.drawImage(target, 0, 0);
     cache.set(key, copy);
   }
@@ -73,7 +94,8 @@
     if (!ctx) return;
     const cached = cache.get(key);
     if (cached) {
-      ctx.clearRect(0, 0, TILE_W, TILE_H);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, target.width, target.height);
       ctx.drawImage(cached, 0, 0);
       return;
     }
@@ -82,6 +104,7 @@
     const run = ++paintRun;
     const extras: TileExtras = {
       propType,
+      format,
       isStale: () => run !== paintRun,
     };
     const result = painter(ctx, mergeIntent(effectType, preset.patch), extras);
@@ -101,7 +124,7 @@
     if (!node) return;
     const prop = resolvedPropType;
     const keyed = PROP_AWARE_TILES.has(effectType) ? (prop ?? "") : "";
-    const key = `${effectType}|${preset.id}|${keyed}`;
+    const key = `${format}|${effectType}|${preset.id}|${keyed}`;
     // A remembered frame is a blit, so reopening the picker shows it at once.
     if (cache.has(key)) {
       paintInto(node, key, prop);
@@ -111,8 +134,13 @@
   });
 </script>
 
-<div class="portrait-tile" class:active aria-hidden="true">
-  <canvas bind:this={canvas} width={TILE_W} height={TILE_H}></canvas>
+<div
+  class="portrait-tile"
+  class:active
+  class:small={format !== "card"}
+  aria-hidden="true"
+>
+  <canvas bind:this={canvas} width={size.w} height={size.h}></canvas>
 </div>
 
 <style>
@@ -129,6 +157,13 @@
     display: block;
     width: 100%;
     height: 100%;
+  }
+
+  /* A small picture is painted to its own box edge to edge: the card's frame
+     would spend two of its 27 pixels on a border. */
+  .portrait-tile.small {
+    border: 0;
+    border-radius: 5px;
   }
 
   .portrait-tile.active {

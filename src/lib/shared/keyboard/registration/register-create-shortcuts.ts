@@ -19,7 +19,7 @@ import {
   updateSettings,
 } from "#lib/shared/application/state/app-state.svelte.js";
 import type { SequenceTransformCommandId } from "#lib/shared/create/domain/sequence-action-types.js";
-import { getAllPropTypes } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { getActivePropTypes } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   isLayerOwnedKeyboardTarget,
@@ -513,7 +513,7 @@ export function registerCreateShortcuts(
     action: async () => {
       const settings = getSettings();
       const currentProp = settings.leftPropType ?? PropType.STAFF;
-      const allProps = getAllPropTypes();
+      const allProps = getActivePropTypes();
       const otherProps = allProps.filter((p) => p !== currentProp);
       const randomProp =
         otherProps[Math.floor(Math.random() * otherProps.length)]!;

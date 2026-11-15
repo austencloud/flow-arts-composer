@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { PageData } from "./$types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  $T;
   import { browser } from "$app/env";
   import { goto } from "$app/navigation";
   import { onMount, onDestroy } from "svelte";
@@ -153,7 +155,11 @@
           analyticsSource="spiroanim"
           {isMobile}
           onClose={handleClose}
-          navigation={{ label: "Back to Flow Arts Composer" }}
+          navigation={{
+            label: t("browse_verified_back_to", {
+              destination: "Flow Arts Composer",
+            }),
+          }}
           openAppHref="/app"
           contextContent={provenance}
           showFullscreenControls

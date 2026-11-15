@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { ReaderNavRow } from "../_data/guide-reader-nav";
 
   let {
@@ -25,7 +26,7 @@
   }
 </script>
 
-<nav class="reader-nav" aria-label="Guide pages">
+<nav class="reader-nav" aria-label={t("guide_nav_pages_aria")}>
   {#each rows as row}
     {#if row.kind === "group"}
       <div class="grp">{row.title}</div>

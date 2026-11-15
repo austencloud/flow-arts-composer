@@ -257,9 +257,7 @@ describe("PropGrid fan look credit", () => {
     await page.getByRole("button", { name: "Big" }).click();
     expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGBUUGENG);
     await rerender({ selectedPropType: PropType.BIGBUUGENG });
-    await expect
-      .element(page.getByTestId("buugeng-style-row"))
-      .toBeVisible();
+    await expect.element(page.getByTestId("buugeng-style-row")).toBeVisible();
   });
 
   it("hides the buugeng style where the host cannot store it", async () => {
@@ -306,7 +304,10 @@ describe("PropGrid fan look credit", () => {
     await expect.element(row).toBeVisible();
     const builds = row.getByRole("radiogroup", { name: "Build" });
     expect(
-      builds.getByRole("radio").elements().map((r) => r.textContent?.trim())
+      builds
+        .getByRole("radio")
+        .elements()
+        .map((r) => r.textContent?.trim())
     ).toEqual(["Pictograph", "Fire", "Day"]);
     await expect
       .element(builds.getByRole("radio", { name: "Pictograph" }))
@@ -322,9 +323,7 @@ describe("PropGrid fan look credit", () => {
     await rerender({ selectedPropType: PropType.BIGTRIAD, triadBuild: "fire" });
     await expect
       .element(
-        page
-          .getByTestId("triad-build-row")
-          .getByRole("radio", { name: "Fire" })
+        page.getByTestId("triad-build-row").getByRole("radio", { name: "Fire" })
       )
       .toHaveAttribute("aria-checked", "true");
   });
@@ -442,9 +441,7 @@ describe("PropGrid one look per prop", () => {
     await expect
       .element(tile("Chicken"))
       .toHaveAttribute("aria-pressed", "true");
-    await expect
-      .element(tile("Club"))
-      .toHaveAttribute("aria-pressed", "false");
+    await expect.element(tile("Club")).toHaveAttribute("aria-pressed", "false");
   });
 
   it("reports a size change as the other size", async () => {
@@ -465,6 +462,105 @@ describe("PropGrid one look per prop", () => {
   });
 });
 
+// A details page whose only setting is Size draws it as two picture tiles, not
+// one text line on a black page.
+describe("PropGrid size-only details page", () => {
+  beforeEach(async () => {
+    await page.viewport(344, 640);
+    document.body.style.margin = "0";
+  });
+
+  it("draws Size as two picture tiles, Standard smaller than Big", async () => {
+    const onSelect = vi.fn();
+    render(PropGrid, {
+      selectedPropType: PropType.CLUB,
+      onSelect,
+      allowedProps: [PropType.CLUB, PropType.BIGCLUB],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+    });
+
+    await page.getByRole("button", { name: "Select Club prop type" }).click();
+    await expect.element(page.getByTestId("prop-size-row")).toBeVisible();
+
+    const standard = page.getByRole("button", { name: "Standard" });
+    const big = page.getByRole("button", { name: "Big", exact: true });
+    await expect.element(standard).toHaveAttribute("aria-pressed", "true");
+    await expect.element(big).toHaveAttribute("aria-pressed", "false");
+    const scaleOf = (id: string) =>
+      Number(
+        document
+          .querySelector(`[data-testid="prop-size-${id}"] .size-pair`)
+          ?.getAttribute("data-size-scale")
+      );
+    expect(scaleOf("standard")).toBeLessThan(scaleOf("big"));
+    expect(scaleOf("big")).toBe(1);
+
+    await big.click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGCLUB);
+  });
+
+  it("keeps the compact text row where Size shares the page", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      onBuugengStyleChange: vi.fn(),
+    });
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    expect(document.querySelector('[data-testid="prop-size-row"]')).toBeNull();
+  });
+});
+
+// The contact ball family is deactivated: a person who still has one chosen
+// opens a switcher with no contact ball tile, nothing lit, and no Size row.
+describe("PropGrid with a saved contact ball", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  it("lists no contact ball, lights no tile and offers no size control", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.CONTACTBALL,
+      onSelect: vi.fn(),
+      allowedProps: [
+        PropType.CONTACTBALL,
+        PropType.BIGCONTACTBALL,
+        PropType.DOUBLECONTACTBALL,
+        PropType.BIGDOUBLECONTACTBALL,
+        PropType.CLUB,
+        PropType.STAFF,
+      ],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+    });
+
+    await expect
+      .element(
+        page.getByRole("button", {
+          name: "Select Club prop type",
+          exact: true,
+        })
+      )
+      .toBeVisible();
+    expect(document.body.textContent).not.toMatch(/Contact Ball/);
+    expect(
+      document.querySelector('[data-prop-tile*="contactball"]')
+    ).toBeNull();
+    expect(
+      document.querySelectorAll('[data-prop-tile][aria-pressed="true"]').length
+    ).toBe(0);
+    expect(document.querySelector('[data-testid="prop-size-row"]')).toBeNull();
+    expect(document.querySelector(".size-toggle")).toBeNull();
+  });
+});
+
 // An unbounded grid's column count follows its container tier, so a short
 // last row once sat at the left (Bare hands under Novelty on a phone).
 describe("PropGrid short last rows", () => {
@@ -475,7 +571,10 @@ describe("PropGrid short last rows", () => {
   // Each row's tile count, and how far the widest gap between a row's middle
   // and the first row's middle is, rounded to the pixel.
   function rowsOf(grid: Element) {
-    const rows = new Map<number, { left: number; right: number; count: number }>();
+    const rows = new Map<
+      number,
+      { left: number; right: number; count: number }
+    >();
     for (const child of grid.children) {
       const box = child.getBoundingClientRect();
       const top = Math.round(box.top);
@@ -498,7 +597,9 @@ describe("PropGrid short last rows", () => {
       counts: ordered.map((row) => row.count),
       drift: first
         ? Math.round(
-            Math.max(...ordered.map((row) => Math.abs(middle(row) - middle(first))))
+            Math.max(
+              ...ordered.map((row) => Math.abs(middle(row) - middle(first)))
+            )
           )
         : 0,
     };
@@ -532,7 +633,9 @@ describe("PropGrid short last rows", () => {
         onFanAppearanceChange: vi.fn(),
       });
 
-      await expect.element(page.getByRole("button", { name: "Select Fan prop type" })).toBeVisible();
+      await expect
+        .element(page.getByRole("button", { name: "Select Fan prop type" }))
+        .toBeVisible();
       const grid = document.querySelector(".section-buttons");
       expect(grid).not.toBeNull();
       await expect.poll(() => rowsOf(grid!)).toEqual({ counts, drift: 0 });
@@ -554,12 +657,53 @@ describe("PropGrid short last rows", () => {
         onFanAppearanceChange: vi.fn(),
       });
 
-      await page.getByRole("button", { name: "Choose Double Staff style" }).click();
+      await page
+        .getByRole("button", { name: "Choose Double Staff style" })
+        .click();
       const styles = page.getByRole("group", {
         name: "Double Staff styles choices",
       });
       await expect.element(styles).toBeVisible();
-      await expect.poll(() => rowsOf(styles.element())).toEqual({ counts, drift: 0 });
+      await expect
+        .poll(() => rowsOf(styles.element()))
+        .toEqual({ counts, drift: 0 });
     }
   );
+});
+
+// A Both / Left / Right choice above the grid names the hand every tile
+// draws. Unset (no choice above the grid) keeps the pair.
+describe("PropGrid previewHand", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  // Each hand's prop sits in its own scale group inside the tile's svg.
+  const handsDrawn = () =>
+    document.querySelectorAll(
+      '[data-prop-tile="staff"] svg.prop-composition-preview g[transform^="scale"]'
+    ).length;
+
+  it.each([
+    { previewHand: undefined, hands: 2 },
+    { previewHand: "left", hands: 1 },
+    { previewHand: "right", hands: 1 },
+  ] as const)("draws $hands prop(s) per tile for $previewHand", async ({
+    previewHand,
+    hands,
+  }) => {
+    render(PropGrid, {
+      selectedPropType: PropType.STAFF,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.STAFF, PropType.CLUB],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      ...(previewHand ? { previewHand } : {}),
+    });
+    await expect
+      .poll(() => document.querySelector('[data-prop-tile="staff"]'))
+      .not.toBeNull();
+    await expect.poll(handsDrawn).toBe(hands);
+  });
 });

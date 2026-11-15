@@ -1,3 +1,5 @@
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import {
   GridLocation,
   GridMode,
@@ -25,16 +27,16 @@ const BOX_LOCATIONS = [
   GridLocation.NORTHWEST,
 ] as const;
 
-const LOCATION_LABELS: Record<GridLocation, string> = {
-  [GridLocation.NORTH]: "North",
-  [GridLocation.NORTHEAST]: "Northeast",
-  [GridLocation.EAST]: "East",
-  [GridLocation.SOUTHEAST]: "Southeast",
-  [GridLocation.SOUTH]: "South",
-  [GridLocation.SOUTHWEST]: "Southwest",
-  [GridLocation.WEST]: "West",
-  [GridLocation.NORTHWEST]: "Northwest",
-  [GridLocation.CENTER]: "Center",
+const LOCATION_LABEL_KEYS: Record<GridLocation, TranslationKey> = {
+  [GridLocation.NORTH]: "create_ui_orientation_centerN_label",
+  [GridLocation.NORTHEAST]: "create_ui_orientation_centerNE_label",
+  [GridLocation.EAST]: "create_ui_orientation_centerE_label",
+  [GridLocation.SOUTHEAST]: "create_ui_orientation_centerSE_label",
+  [GridLocation.SOUTH]: "create_ui_orientation_centerS_label",
+  [GridLocation.SOUTHWEST]: "create_ui_orientation_centerSW_label",
+  [GridLocation.WEST]: "create_ui_orientation_centerW_label",
+  [GridLocation.NORTHWEST]: "create_ui_orientation_centerNW_label",
+  [GridLocation.CENTER]: "pictograph_placement_point_center",
 };
 
 /**
@@ -76,7 +78,7 @@ export function getPlacementGridPoints(
 
     return {
       location,
-      label: LOCATION_LABELS[location],
+      label: t(LOCATION_LABEL_KEYS[location]),
       x: coordinates.x,
       y: coordinates.y,
     };
@@ -89,7 +91,7 @@ export function getPlacementGridPoints(
     }
     points.push({
       location: GridLocation.CENTER,
-      label: LOCATION_LABELS[GridLocation.CENTER],
+      label: t(LOCATION_LABEL_KEYS[GridLocation.CENTER]),
       x: center.x,
       y: center.y,
     });

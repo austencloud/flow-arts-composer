@@ -1,21 +1,27 @@
 import type { PluginTool } from "@austencloud/video-editor";
 import {
+  faArrowRightToBracket,
+  faBorderTopLeft,
   faClone,
   faDiamond,
   faDrum,
   faEraser,
   faEye,
+  faFont,
   faHashtag,
   faHeading,
   faLayerGroup,
+  faLeftRight,
   faLocationCrosshairs,
   faPalette,
   faPersonRunning,
+  faRulerCombined,
   faShapes,
   faShuffle,
   faSliders,
   faStopwatch,
   faTableCellsLarge,
+  faWandMagicSparkles,
 } from "@austencloud/video-editor/icons";
 import { canTapBeats } from "./tka-beats";
 import { reelsPreview } from "./reels-preview.svelte";
@@ -30,6 +36,11 @@ import { tkaEditorOf } from "./tka-editor-context";
  * the post's animation defaults. Sequence is a mandala's ordered list.
  * Auto frame writes a video's framing keys from its footage. Reel view
  * draws a Reel's own controls over the preview, to judge the framing by.
+ * Credit is a credit's small line over the wordmark. Flash is a flash
+ * clip's strength, fade and corner marks; Fly flies a
+ * canvas clip into the next clip on its lane.
+ * Lift panel moves an animation clip's canvas, step number and strip
+ * clear of a Reel's own buttons.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
@@ -52,6 +63,24 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     icon: faHeading,
   },
   {
+    id: "credit",
+    type: "panel",
+    label: (t) => t("post_editor_tool_credit"),
+    icon: faFont,
+  },
+  {
+    id: "flash",
+    type: "panel",
+    label: (t) => t("post_editor_tool_flash"),
+    icon: faBorderTopLeft,
+  },
+  {
+    id: "fly",
+    type: "panel",
+    label: (t) => t("post_editor_tool_fly"),
+    icon: faArrowRightToBracket,
+  },
+  {
     id: "labels",
     type: "panel",
     label: (t) => t("post_editor_tool_labels"),
@@ -62,6 +91,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: () => "Appearance",
     icon: faSliders,
+  },
+  {
+    id: "ending",
+    type: "panel",
+    label: (t) => t("post_editor_tool_card_ending"),
+    icon: faWandMagicSparkles,
   },
   {
     id: "shows",
@@ -80,6 +115,18 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: () => "Performers",
     icon: faClone,
+  },
+  {
+    id: "hands",
+    type: "panel",
+    label: (t) => t("post_editor_tool_split_hands"),
+    icon: faLeftRight,
+  },
+  {
+    id: "lift",
+    type: "panel",
+    label: (t) => t("post_editor_tool_panel_lift"),
+    icon: faRulerCombined,
   },
   {
     id: "autoframe",

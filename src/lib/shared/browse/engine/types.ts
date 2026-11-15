@@ -66,6 +66,12 @@ export interface PersistedEngineState {
   source: SequenceSource;
   sortMethod: BrowseSortMethod;
   sortDirection: "asc" | "desc";
+  /**
+   * True once the visitor picked an order. Absent in state saved before the
+   * flag existed, where an A to Z ascending order cannot be told from the old
+   * default (see resolveInitialSort).
+   */
+  sortChosen?: boolean;
   /** Serialized Map<string, ActiveFilter> entries (non-locked only). */
   activeFilters: Array<[string, ActiveFilter]>;
   /**

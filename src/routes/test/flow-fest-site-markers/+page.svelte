@@ -1922,12 +1922,16 @@
     padding: 1px 6px;
     border-radius: 4px;
     border: 1px solid var(--theme-border, #30363d);
-    border-bottom-width: 2px;
     background: var(--theme-card-bg, #161b22);
     color: var(--theme-text, #e6edf3);
     font-family: inherit;
     font-size: 0.75rem;
     white-space: nowrap;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .hotkeys kbd {
+    border-bottom-width: 2px;
   }
 
   .hotkey-plus {

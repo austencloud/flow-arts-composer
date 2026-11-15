@@ -186,6 +186,16 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spotlight-chrome-padding, 16px);
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.6) 0%,
+      transparent 100%
+    );
+    z-index: 10;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .spotlight-chrome-top {
     padding-top: calc(
       var(--spotlight-chrome-padding, 16px) +
         var(--spotlight-safe-area-top, 0px)
@@ -198,12 +208,6 @@
       var(--spotlight-chrome-padding, 16px) +
         var(--spotlight-safe-area-right, 0px)
     );
-    background: linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.6) 0%,
-      transparent 100%
-    );
-    z-index: 10;
   }
 
   /* Counter Badge */
@@ -338,6 +342,10 @@
 
     .spotlight-chrome-top {
       padding: var(--spotlight-chrome-padding-mobile, 12px);
+    }
+
+    /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+    .spotlight-chrome-top {
       padding-top: calc(
         var(--spotlight-chrome-padding-mobile, 12px) +
           var(--spotlight-safe-area-top, 0px)

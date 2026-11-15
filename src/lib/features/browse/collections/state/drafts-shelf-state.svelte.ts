@@ -1,3 +1,4 @@
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { DeviceDraft } from "#lib/features/create/shared/services/draft-catalog.js";
 
 export function createDraftsShelfState(
@@ -17,7 +18,7 @@ export function createDraftsShelfState(
       if (current === revision) drafts = result;
     } catch {
       if (current === revision)
-        error = "Drafts couldn't be loaded from this device.";
+        error = t("browse_drafts_load_failed");
     } finally {
       if (current === revision) loading = false;
     }

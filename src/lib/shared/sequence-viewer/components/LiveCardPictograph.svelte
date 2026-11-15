@@ -15,7 +15,8 @@
   import { resolvePreviewCellRender } from "../services/preview-cell-render-contract";
   import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
   import { derivePropElementalTypeForStep } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
-  import { renderStepNumber } from "@tka/render-composition";
+  import { renderStepNumber, stepLabelFor } from "@tka/render-composition";
+  import { localStepLabels } from "#lib/shared/render/services/local-step-labels.js";
   import { DURATION } from "@austencloud/motion";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { getCellPropNudges } from "../cell-prop-nudge-context";
@@ -152,6 +153,7 @@
       poseOnly
     )
       return;
+    const labels = localStepLabels();
     const draw = (): void => {
       const bounds = canvas.getBoundingClientRect();
       const width = Math.round(bounds.width);
@@ -162,7 +164,15 @@
       const context = canvas.getContext("2d");
       if (!context) return;
       context.clearRect(0, 0, width, height);
-      renderStepNumber(context, stepNumber, 0, 0, height, darkMode);
+      renderStepNumber(
+        context,
+        stepNumber,
+        0,
+        0,
+        height,
+        darkMode,
+        stepLabelFor(stepNumber, labels)
+      );
     };
     draw();
     const observer = new ResizeObserver(draw);

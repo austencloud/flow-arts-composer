@@ -45,6 +45,7 @@
     onArtExportEvent,
     onArtSettingChange,
     onArtAction,
+    onCardAction,
     tunnelComposition = null,
     tunnelSaveTarget = null,
     onTunnelSaved,
@@ -74,11 +75,13 @@
   const mandala = createPaneKeepAlive(() => selectedPane === "mandala");
   const tunnel = createPaneKeepAlive(() => selectedPane === "tunnel");
 
-  // A focused Card has no neighboring playback surface for a seek to explain.
-  // Keep its cells static; split view retains click-to-seek beside the motion.
+  // A focused Card has no neighboring playback surface for a seek to explain,
+  // so a tap enlarges the step in place; split view keeps click-to-seek beside
+  // the motion.
   const cardStepClick = $derived(
     layout.focusedPane === "image" ? undefined : onStepClick
   );
+  const cardStepZoom = $derived(!studioCard && layout.focusedPane === "image");
 
   function handleCloseClick(event: MouseEvent | KeyboardEvent): void {
     event.stopPropagation();
@@ -140,6 +143,8 @@
             ? false
             : playback.isPlaying || playback.highlightedStepIndex !== null}
         onStepClick={studioCard ? undefined : cardStepClick}
+        zoomSteps={cardStepZoom}
+        onZoomAction={onCardAction}
         {onQrPlayClick}
         clickableStart={!!cardStepClick}
         {onRenderProgress}

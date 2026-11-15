@@ -126,7 +126,8 @@ export function ground(
   g.addColorStop(0, css(toRgb(tint.map((v) => v * 1.6))));
   g.addColorStop(1, css(toRgb(tint.map((v) => v * 0.5))));
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, TILE_W, TILE_H);
+  // Past the card on every side: a small format may frame outside it.
+  ctx.fillRect(-TILE_W, -TILE_H, TILE_W * 3, TILE_H * 3);
 }
 
 /** One soft light blob. Everything in a tile is made of these. */

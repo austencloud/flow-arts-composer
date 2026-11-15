@@ -22,7 +22,7 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
     shadowColor = "270deg 70% 55%",
     gridColumnSpan = 2,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
     isMobile = false,
     onOpenOverlay,
   } = $props<{

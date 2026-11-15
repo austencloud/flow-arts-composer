@@ -6,10 +6,12 @@
    * Responsibilities:
    * - Manage PWA installation guide
    * - Respond to app installation events
+   * - Mount the phone install card (InstallNudgeCard), owned by installNudge
    */
   import { onMount } from "svelte";
   // import FullscreenHint from "../mobile/components/FullscreenHint.svelte";
   import EnhancedPWAInstallGuide from "../mobile/components/EnhancedPWAInstallGuide.svelte";
+  import InstallNudgeCard from "./components/InstallNudgeCard.svelte";
 
   let showPWAInstallGuide = $state(false);
 
@@ -38,3 +40,6 @@
 
 <!-- Enhanced PWA Install Guide (modal with device-specific instructions) -->
 <EnhancedPWAInstallGuide bind:showGuide={showPWAInstallGuide} />
+
+<!-- Phone install card: after a first sequence, or from the menu -->
+<InstallNudgeCard />

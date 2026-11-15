@@ -155,9 +155,13 @@
     position: absolute;
     inset: 0;
     border: 3px solid var(--theme-stroke);
-    border-top-color: var(--theme-accent-strong, var(--theme-accent-strong));
     border-radius: 50%;
     animation: spin 1s linear infinite;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .progress-icon-ring {
+    border-top-color: var(--theme-accent-strong, var(--theme-accent-strong));
   }
 
   @keyframes spin {

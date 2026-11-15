@@ -140,6 +140,57 @@ describe("handleSendMagicLink", () => {
     );
   });
 
+  it("names Brevo's authorised-IP block as a configuration fault", async () => {
+    const { runtime, error } = createRuntime({
+      fetch: jest.fn().mockResolvedValue(
+        providerResponse(
+          {
+            code: "unauthorized",
+            message:
+              "We have detected you are using an unrecognised IP address 2001:db8::1.",
+          },
+          401
+        )
+      ),
+    });
+
+    await expect(
+      handleSendMagicLink({ email: RECIPIENT }, runtime)
+    ).rejects.toMatchObject({
+      code: "failed-precondition",
+      details: { reason: "provider/ip-not-authorised" },
+    });
+
+    expect(error).toHaveBeenCalledWith(
+      "Magic link request failed",
+      expect.objectContaining({
+        stage: "provider_request",
+        providerStatus: 401,
+        providerCode: "unauthorized",
+        providerReason: "provider/ip-not-authorised",
+      })
+    );
+    // Brevo's message carries our server address; only the reason is logged.
+    expect(JSON.stringify(error.mock.calls)).not.toContain("2001:db8");
+  });
+
+  it("names a rejected Brevo key as a configuration fault", async () => {
+    const { runtime } = createRuntime({
+      fetch: jest
+        .fn()
+        .mockResolvedValue(
+          providerResponse({ code: "unauthorized", message: "Key not found" }, 401)
+        ),
+    });
+
+    await expect(
+      handleSendMagicLink({ email: RECIPIENT }, runtime)
+    ).rejects.toMatchObject({
+      code: "failed-precondition",
+      details: { reason: "provider/unauthorized" },
+    });
+  });
+
   it("returns provider details and correlates the accepted request", async () => {
     const fetch = jest
       .fn()

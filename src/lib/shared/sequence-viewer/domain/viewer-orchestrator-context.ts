@@ -14,6 +14,7 @@ import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js
 import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import type { TempoPracticeConfig } from "#lib/shared/sequence-viewer/services/tempo-practice-orchestrator.js";
 import type { PracticeViewPrefs } from "#lib/shared/sequence-viewer/state/practice-view-prefs.svelte.js";
+import type { PracticeGuide } from "#lib/shared/sequence-viewer/state/practice-guide-state.svelte.js";
 import type { createTempoPracticeState } from "#lib/shared/sequence-viewer/state/tempo-practice-state.svelte.js";
 import type { createViewerState } from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
 import type { SequenceViewerVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-visibility-state.svelte.js";
@@ -90,18 +91,21 @@ export interface OrchestratorContext {
   handleToggleMetronome: () => void;
   mirrorEnabled: boolean;
   handleToggleMirror: () => void;
+  /** Mirror camera state and the cockpit line's camera / coach sentence. */
+  practiceGuide: PracticeGuide;
+  /** Lets the shell leave practice its own way when a run ends by itself. */
+  setOnPracticeRunEnded: (cb: (() => void) | null) => void;
 
   collectionPropType?: PropType | null;
   leftPropType: PropType | undefined;
   rightPropType: PropType | undefined;
   catDogModeEnabled: boolean | undefined;
-  /** Hand the Props picker edits while cat/dog mode is on. */
+  /** What the Props picker addresses: both hands, or one. Opens on both. */
   propHand: ViewerPropHand;
   setPropHand: (hand: ViewerPropHand) => void;
-  handleCatDogToggle: () => void;
   handlePropTypeChange: (
     propType: PropType,
-    hand?: ViewerPropHand | "both"
+    hand?: ViewerPropHand
   ) => void;
   fanAppearance: FanAppearance;
   handleFanAppearanceChange: (appearance: FanAppearance) => void;
@@ -178,8 +182,8 @@ export interface OrchestratorContext {
   ) => void;
   openSignInPrompt: () => void;
   handleUnifiedDarkModeToggle: () => void;
-  handlePracticeStart: () => void;
-  enterPracticeMode: () => void;
+  /** Enter practice and start the run; false when the animation isn't ready. */
+  enterPracticeMode: () => boolean;
   exitPracticeMode: () => void;
   handlePracticeStepLevel: (dir: 1 | -1) => void;
   handlePracticeToggleHold: () => void;

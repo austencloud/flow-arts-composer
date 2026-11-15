@@ -176,6 +176,86 @@ describe("shape matrix app state", () => {
     expect(state.selectedPair).toEqual({ left, right });
   });
 
+  // Levels and Ratios each keep their own picked cell but share one compact
+  // pane. A pick on one side must not strand the visitor on an empty detail
+  // pane ("Pick a cell", no way forward) when they switch to the other side.
+  it("lands a compact visitor on the grid when the other surface has no pick", () => {
+    const { state } = createState(true);
+    state.setSurface("theory");
+    const [row] = state.theoryRowAxis;
+    const [column] = state.theoryColAxis;
+    if (!row || !column) throw new Error("Theory axis is empty");
+
+    state.selectTheoryPair({ left: row, right: column });
+    expect(state.activeView).toBe("detail");
+
+    state.setSurface("matrix");
+
+    expect(state.selectedPair).toBeNull();
+    expect(state.activeView).toBe("matrix");
+  });
+
+  it("lands a compact visitor on the grid in the other direction too", () => {
+    const { state } = createState(true);
+    const [left, right] = buildFlowerAxis();
+    if (!left || !right) throw new Error("Shape Matrix axis is empty");
+    state.selectPair({ left, right });
+    expect(state.activeView).toBe("detail");
+
+    state.setSurface("theory");
+
+    expect(state.theoryPair).toBeNull();
+    expect(state.activeView).toBe("matrix");
+  });
+
+  it("keeps a compact visitor on the detail pane when the surface has a pick", () => {
+    const { state } = createState(true);
+    const [left, right] = buildFlowerAxis();
+    if (!left || !right) throw new Error("Shape Matrix axis is empty");
+    state.selectPair({ left, right });
+    state.setSurface("theory");
+    const [row] = state.theoryRowAxis;
+    const [column] = state.theoryColAxis;
+    if (!row || !column) throw new Error("Theory axis is empty");
+    state.selectTheoryPair({ left: row, right: column });
+
+    state.setSurface("matrix");
+
+    expect(state.selectedPair).not.toBeNull();
+    expect(state.activeView).toBe("detail");
+  });
+
+  it("settles on the grid when a restore leaves the visible surface without a pick", () => {
+    const { state } = createState(true);
+    state.setSurface("theory");
+    const [row] = state.theoryRowAxis;
+    const [column] = state.theoryColAxis;
+    if (!row || !column) throw new Error("Theory axis is empty");
+    state.selectTheoryPair({ left: row, right: column });
+    expect(state.activeView).toBe("detail");
+
+    state.restoreState({
+      surface: "matrix",
+      theoryLeftRatio: { propRotations: 1, handCycles: 3 },
+      theoryRightRatio: { propRotations: 1, handCycles: 3 },
+      theoryMode: "SS",
+      theoryPair: null,
+      level: 2,
+      leftTurn: 0,
+      rightTurn: 0,
+      activeAxis: "both",
+      labelMode: "turns",
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      pair: null,
+      mode: null,
+      propMode: null,
+    });
+
+    expect(state.selectedPair).toBeNull();
+    expect(state.activeView).toBe("matrix");
+  });
+
   it("does not request compact focus for desktop selection or responsive changes", () => {
     const { state } = createState(false);
     const [left, right] = buildFlowerAxis();

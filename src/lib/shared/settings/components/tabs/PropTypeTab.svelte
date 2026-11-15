@@ -36,7 +36,6 @@
   import { resolveViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
@@ -47,7 +46,8 @@
     PreviousLooks,
     RestampResult,
   } from "#lib/shared/library/services/published-look-restamp.js";
-  import CatDogToggle from "./prop-type/CatDogToggle.svelte";
+  import HandPropToolbar from "./prop-type/HandPropToolbar.svelte";
+  import { applyHandPick } from "./prop-type/hand-pick";
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import PresetChipBar from "./prop-type/PresetChipBar.svelte";
   import PrimaryPropColorSettings from "./prop-type/PrimaryPropColorSettings.svelte";
@@ -82,13 +82,10 @@
   let propPresets = $state<(PropPreset | null)[]>(presetSlots(undefined));
   let selectedPresetIndex = $state(-1);
 
-  // Turning Cat Dog off copies the left prop to the right hand; turning it
-  // back on restores the right prop the performer had.
-  let rememberedRightProp = $state<PropType | null>(null);
-
-  // Which hand the one visible grid edits when Cat Dog is on and the picker
-  // is too narrow for two grids.
-  let narrowHand = $state<ChiralityHand>("left");
+  // Which hand the one grid sets: both, or one. The picker opens on Both and
+  // the choice is never saved; the stored flag only follows whether the two
+  // hands differ.
+  let hand = $state<"both" | "left" | "right">("both");
 
   onMount(() => {
     hapticService = getHapticFeedback();
@@ -295,46 +292,33 @@
   // performer saves to it; the shelf offers "Update preset N" when the props
   // drift from the one last applied.
 
-  function toggleCatDogMode() {
-    hapticService?.trigger("selection");
-    const next = !catDogMode;
-
-    if (next) {
-      if (rememberedRightProp !== null) {
-        selectedRightPropType = rememberedRightProp;
-        onUpdate?.({ key: "rightPropType", value: rememberedRightProp });
-        rememberedRightProp = null;
-      }
-    } else {
-      if (selectedRightPropType !== selectedLeftPropType) {
-        rememberedRightProp = selectedRightPropType;
-      }
-      selectedRightPropType = selectedLeftPropType;
-      onUpdate?.({ key: "rightPropType", value: selectedLeftPropType });
-    }
-
-    catDogMode = next;
-    onUpdate?.({ key: "catDogMode", value: catDogMode });
-  }
-
-  // The left grid, which is also the shared grid when Cat Dog is off.
+  // The one grid. Under Both a pick gives both hands that prop; under Left or
+  // Right it changes that hand only.
   function handleInlineSelect(propType: PropType) {
     hapticService?.trigger("selection");
-    selectedLeftPropType = propType;
-    if (catDogMode) {
-      onUpdate?.({ key: "leftPropType", value: propType });
-    } else {
-      // One write for both hands: two single-hand writes would read as a
-      // mixed pair in between and turn cat dog on.
+    if (hand === "both") {
+      selectedLeftPropType = propType;
       selectedRightPropType = propType;
+      catDogMode = false;
+      // One write for both hands: two single-hand writes would read as a
+      // mixed pair in between.
       onUpdate?.({ key: "propType", value: propType });
+      onUpdate?.({ key: "catDogMode", value: false });
+      return;
     }
-  }
-
-  function handleInlineSelectRed(propType: PropType) {
-    hapticService?.trigger("selection");
-    selectedRightPropType = propType;
-    onUpdate?.({ key: "rightPropType", value: propType });
+    const next = applyHandPick(
+      { left: selectedLeftPropType, right: selectedRightPropType },
+      hand,
+      propType
+    );
+    selectedLeftPropType = next.left;
+    selectedRightPropType = next.right;
+    catDogMode = next.catDogMode;
+    onUpdate?.({
+      key: hand === "left" ? "leftPropType" : "rightPropType",
+      value: propType,
+    });
+    onUpdate?.({ key: "catDogMode", value: catDogMode });
   }
 
   // Buugeng chirality. Written through the tab's own local mirrors rather than
@@ -373,6 +357,9 @@
   const bothHands = chiralitySeam("left", "right");
   const leftHand = chiralitySeam("left");
   const rightHand = chiralitySeam("right");
+  const pickerChirality = $derived(
+    hand === "both" ? bothHands : hand === "left" ? leftHand : rightHand
+  );
 
   // Side by side (the props-tab query in the styles), the picker card has a
   // definite height, so its grids size their tiles to fill it. Stacked, the
@@ -508,79 +495,39 @@
               : t("settings_same_props")}
           </Crossfade>
         {/snippet}
-        {#snippet action()}
-          <CatDogToggle {catDogMode} onToggle={toggleCatDogMode} />
-        {/snippet}
       </SettingsSectionHeader>
 
-      {#if catDogMode}
-        <div class="hand-switch" transition:growFade>
-          <SegmentedControl
-            options={[
-              {
-                value: "left",
-                label: t("settings_props_left_hand"),
-                tone: "blue",
-              },
-              {
-                value: "right",
-                label: t("settings_props_right_hand"),
-                tone: "red",
-              },
-            ]}
-            value={narrowHand}
-            onchange={(hand) => {
-              hapticService?.trigger("selection");
-              narrowHand = hand;
-            }}
-            color="accent"
-            size="sm"
-          />
-        </div>
-      {/if}
+      <div class="hand-switch">
+        <HandPropToolbar
+          handProps={{
+            hand,
+            leftPropType: selectedLeftPropType,
+            rightPropType: selectedRightPropType,
+            onHandChange: (next) => (hand = next),
+          }}
+        />
+      </div>
 
-      <!-- The left grid stays mounted across the Cat Dog switch; the right
-           grid grows in beside it (or is picked with the switch above when
-           the card is narrow). -->
-      <div class="hand-grids" data-hand={catDogMode ? narrowHand : "left"}>
-        <div class="hand-grid left">
-          {#if catDogMode}
-            <h4 class="hand-heading" transition:growFade>
-              <span class="hand-dot" style:background={palette.left}></span>
-              {t("settings_props_left_hand")}
-            </h4>
-          {/if}
+      <div class="hand-grids">
+        <div class="hand-grid">
           <BentoPropGrid
             variant="inline"
-            selectedPropType={selectedLeftPropType}
-            color="blue"
+            selectedPropType={hand === "right"
+              ? selectedRightPropType
+              : selectedLeftPropType}
+            previewHand={hand === "both" ? undefined : hand}
+            alsoSelectedPropType={hand === "both" &&
+            selectedLeftPropType !== selectedRightPropType
+              ? selectedRightPropType
+              : null}
+            color={hand === "right" ? "red" : "blue"}
             showColors={false}
-            title={catDogMode
-              ? t("settings_props_left_hand")
-              : t("settings_props_select_prop")}
+            title={t("settings_props_select_prop")}
             onSelect={handleInlineSelect}
-            chirality={catDogMode ? leftHand : bothHands}
+            chirality={pickerChirality}
             fill={pickerBounded}
           />
         </div>
-        {#if catDogMode}
-          <div class="hand-grid right" transition:growFade={{ axis: "x" }}>
-            <h4 class="hand-heading">
-              <span class="hand-dot" style:background={palette.right}></span>
-              {t("settings_props_right_hand")}
-            </h4>
-            <BentoPropGrid
-              variant="inline"
-              selectedPropType={selectedRightPropType}
-              color="red"
-              showColors={false}
-              title={t("settings_props_right_hand")}
-              onSelect={handleInlineSelectRed}
-              chirality={rightHand}
-              fill={pickerBounded}
-            />
-          </div>
-        {/if}
       </div>
     </section>
   </div>
@@ -701,12 +648,6 @@
   }
 
   .hand-name,
-  .hand-heading {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
   .hand-dot {
     flex: 0 0 auto;
     width: 0.625rem;
@@ -761,56 +702,10 @@
 
   .hand-grid {
     display: flex;
+    flex: 1 1 0;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-  }
-
-  /* The left grid takes whatever the right one leaves, so the right grid's
-     width animation reads as the section splitting in two. */
-  .hand-grid.left {
-    flex: 1 1 0;
-  }
-
-  .hand-grid.right {
-    flex: 0 0 auto;
-    width: 50%;
-    border-left: 1px solid var(--theme-stroke);
-  }
-
-  .hand-heading {
-    margin: 0;
-    padding: 0.75rem 1.125rem 0;
-    color: var(--theme-text);
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 600;
-  }
-
-  /* Two grids only once each can show a hand's props without scrolling;
-     narrower, one grid and the switch picks its hand. */
-  @container props-picker (width < 70rem) {
-    .hand-grid.right {
-      width: 100%;
-    }
-
-    .hand-grids[data-hand="left"] .hand-grid.right,
-    .hand-grids[data-hand="right"] .hand-grid.left {
-      display: none;
-    }
-
-    .hand-grid.right {
-      border-left: none;
-    }
-
-    .hand-heading {
-      display: none;
-    }
-  }
-
-  @container props-picker (width >= 70rem) {
-    .hand-switch {
-      display: none;
-    }
   }
 
   @container props-tab (max-width: 32rem) {

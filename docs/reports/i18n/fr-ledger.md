@@ -213,3 +213,159 @@ translate normally.
 - Prose review with ai-bust: mechanical HIGH/CRITICAL scan returned `[]`; judgment review preserved the new source's meaning and counts. `git diff --check` passed.
 - Uncertain: none. No native review is claimed. Source factual claims were translated as supplied, not independently verified.
 - No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
+
+## Read-back — 2026-11-13
+
+- Scope: every key of `messages/en.json` whose prefix is in `released` (`scripts/i18n-released-prefixes.json`): **9,138 released keys**, read back in 43 chunks grouped by prefix.
+- Filled: **202** (the missing keys, including the new keys from the hardcoded sweep). Changed: **270** (off 235, wrong 35). Left as is: **8,666**.
+- Full change list with before, after, read-back and grade: `E:/tka-languages/runs/fr/changes.json` (outside the repo, for Ilo).
+- Contract test: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts` → `Tests 4 failed | 68 passed (72)`. Every French check passes. The four failures are outside French: the English-fallback check lists 107 keys, all in `de` (expected outside the German run), and the es, it and pt released-coverage floors (8,936 of 9,138, under 0.98), which come from the new sweep keys those catalogs do not have yet. This run did not touch those files.
+- Checks: JSON parses, `git diff --check` clean, every placeholder, tag and entity in a changed value matches English, no vous/votre/vos left in released French, no CW/CCW letters left in released French.
+
+### Term decisions
+
+- Glossary over termbase: `scripts/i18n-termbase.json` lists fr Prop, Staff, Losange and trajet, while the glossary (which says it comes first) and the catalog use accessoire, bâton, Diamant and trajectoire de la main. Kept the glossary forms and moved the few strays (Losange, Prop, Trajet) to them. Ilo should align the termbase fr column.
+- Base Motions = Mouvements de base (`generator_level_no_turns`, was Sans tours). The Base level blurb keeps "Sans tours" because the English there says "No turns".
+- Effort (Shape Engine, viewer) stays Effort, the usual French Laban term. The missing Laban effort names: Glide = Glisser, Dab = Tapoter, Press = Presser, Punch = Frapper; Elastic = Élastique, Bounce = Rebond, Anticipation = Anticipation.
+- Orientation chips were already French (Horaire, Antihoraire, Horaire·intérieur and so on); no CW/CCW letters remain.
+- Mirrored = échanger gauche et droite, Flipped = échanger haut et bas (`loop_picker_description_mirrored` / `_flipped`), not vertical/horizontal.
+- LOOP labels set to the glossary forms Miroir / Pivoté / Inversé / Échangé where some had nouns (Rotation, Échange).
+- Latin labels restored where they had been translated: Cross-Shift (was Déplacement croisé), Shape Engine (was Moteur de formes), Zeta, Eta, Choreo Cards.
+- step = étape whenever "beat" means a position in the sequence (Post Studio overlays, viewer counts, Practice totals). temps stays where beat is a musical count (Compose tap tempo, rhythm help, viewer shortcut). Practice uses both, and Ilo may want one rule there.
+- Following (creator) = Abonné (was Suivant, "Next"). Spell tab = Épeler (was Invoquer, "cast a spell"). Ink swatch India = Encre de Chine (was Inde, the country).
+- vous forms found in auth, feedback, settings and guide strings moved to tu.
+- Four Level 1 guide keys (`verified_level1_hm_gamma_98`, `_101`, `_102`, `verified_level1_hm_type2_116`) had sentences shifted between neighbouring keys; each now matches its own English.
+- Templates that take a location or noun (`{point}`, `{location}`, pictograph placement nouns) were reworded so the inserted French word reads right without gender agreement.
+- Spacing: 784 older values use a plain space before : ; ! ?. Changed values use U+00A0. The older ones were not churned, so a mechanical pass is left for later.
+- Lowercase pro/anti/antispin in the Level 1 pool captions follows the English; left alone (case only).
+
+### Unsure
+
+| Key                                     | English                                    | French                                            | Read-back                                           | Why                                                                                                                                                                             |
+| --------------------------------------- | ------------------------------------------ | ------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `browse_grid_skewed`                    | Skewed                                     | Mixte                                             | Mixed                                               | Glossary pairs Mixed/Skewed grid = grille mixte; generator_level_skewed already says Grille mixte. If the chip means a skewed (oblique) grid, Oblique would be the alternative. |
+| `browse_collections_founding_book_name` | Classic Book Variations                    | Variantes Book classiques                         | Classic Book variants                               | 'Book' is a named TKA reversal pattern; kept in English as a proper name. Translate as 'livre' only if the owner prefers.                                                       |
+| `browse_collections_founding_tka3_name` | TKA 3: Speaking Sentences                  | TKA 3 : Parler en phrases                         | TKA 3: Speak in sentences                           | Deck title; chose parallel infinitives with Apprendre les lettres / Écrire des mots. learn_concept_words_alpha_beta_name carries the same TKA 1 title and should match.         |
+| `color_value_custom`                    | Custom                                     | Personnalisée                                     | Customized (fem.)                                   | Assumed it qualifies couleur.                                                                                                                                                   |
+| `guide_eightstep_path_ahead_title`      | Left hand ahead                            | Main gauche en avance                             | Left hand early                                     | Read as timing (quarter-box paths), not spatial position; old text said devant/derrière (in front/behind)                                                                       |
+| `library_look_trail_loop_clear`         | Loop-clear trail                           | Traînée effacée à chaque boucle                   | Trail erased at each loop                           | Assumed the trail clears when the animation loops; longer than EN.                                                                                                              |
+| `pictograph_placement_move_left`        | Move left                                  | Côté gauche                                       | Left side                                           | Visible label inside the 'Move {left prop}' button; means move the left one, not move leftward. Used a side label to avoid gender agreement between accessoire and main.        |
+| `pictograph_placement_move_right`       | Move right                                 | Côté droit                                        | Right side                                          | Same as move_left.                                                                                                                                                              |
+| `shape_engine_trace_this`               | Trace this                                 | Tracer cette forme                                | Trace this shape                                    | Key not found in src; assumed it refers to the shown flower/shape.                                                                                                              |
+| `shape_engine_solo_anti_mode`           | {petals}-petal {mode}-mode antispin flower | Flower Antispin à {petals} pétales en mode {mode} | Antispin Flower with {petals} petals in {mode} mode | Assumed {mode} is the grid mode (box/diamond); key not found in src.                                                                                                            |
+| `tab_browse_saved`                      | Saved work                                 | Créations enregistrées                            | Saved creations                                     | Saved work is generic; chose créations over a stiff literal                                                                                                                     |
+| `tab_stage_editor`                      | Stage                                      | Plateau                                           | Stage floor                                         | Scène is already taken by tab_stage_scene; Plateau keeps the two tabs distinct                                                                                                  |
+| `viewer_detail_flow`                    | Flow                                       | Fluidité                                          | Fluidity                                            | mandala colour-mode chip (Solid / Flow); left unchanged, but a shorter adjective like Fluide may read better beside Uni                                                         |
+| `viewer_ui_pill_continuous_short`       | Cont.                                      | Cont.                                             | Continuous (abbreviated)                            | assumed short for continu/continuous; same abbreviation works in French                                                                                                         |
+
+### English to its owner
+
+- `browse_audit_hands_right_angle`: Gamma described as a right angle; left unchanged per brief (Austen wants 'hands adjacent').
+- `create_ui_loop`: EN says 'Loop' but the Spell settings section holds LOOP components; French now shows LOOP. EN may want the capitals too.
+- `create_tour_help_tnd_tip`: EN says 'each beat' for a sequence position; French uses étape (step) per the step-over-beat rule.
+- `create_deep_loop_cannot_split`: EN says 'beats' for sequence positions; French uses étapes.
+- `create_deep_loop_flipped_description`: EN says '(horizontal axis)'; brief prefers top/bottom wording. French follows EN, left unchanged.
+- `create_action_help_flip_fulldesc`: EN describes Flip as 'vertically' / 'vertical variations'; brief prefers top/bottom wording. French follows EN, left unchanged.
+- `create_action_detail_mirror`: EN says 'Flips horizontally' for Mirror; French follows EN.
+- `guide_l2_open_close_intro`: Gamma explained via the 90° angle; left as is per the gamma rule
+- `guide_l2_print_openingclosingpage_0`: Same 90° angle wording for Gamma; left as is
+- `guide_l2_print_twoturnsshiftspage_2`: EN typo: '2 thumb switch' should be 'switches'
+- `landing_spinner_mode_selection`: 'Spinner Mode Selection' is internal-sounding for an aria label; French kept as 'Sélection du mode spinner'.
+- `learn_timing_intro_placement_gamma`: Gamma described as 'A right angle apart'; left as 'À angle droit' per brief.
+- `learn_placement_comparison_gamma`: Gamma described as 'A right angle apart'; left as 'À angle droit' per brief.
+- `learn_placement_gamma_geometry`: Gamma described as 'a right angle'; left as is per brief.
+- `learn_reference_reading_choreo_cards`: EN says 'Hand Motions' for the Reading a Choreo Card reference; looks like a copy error.
+- `learn_placement_build`: Fragment 'Build a' + placement name + 'placement' cannot follow French word order; current 'Construire une' left.
+- `pictograph_desc_group_gamma`: Gamma described as 'right angle'; left as 'Gamma (angle droit)' per brief.
+- `prop_pair_which_hand`: Key name says which_hand but EN text is about which props; translated the text.
+- `tab_desc_browse_gallery`: EN says 'Browse and browse sequences' (duplicated word)
+- `tab_desc_browse_sequences`: EN says 'Browse and browse sequences' (duplicated word)
+- `tab_browse_collections`: key name says collections but EN says Library; translated EN as Bibliothèque
+- `tab_desc_browse_visuals`: description just repeats the tab label; same for drafts/saved/your_visuals/your_videos/following descs
+- `train_step_advance_tap`: EN is 'Tap or Voice' for tap, voice and both options; tap/voice should probably say just Tap / Voice
+- `train_step_advance_voice`: EN is 'Tap or Voice', same as the both option
+- `train_timed_config_title`: EN title repeats the description sentence; FR follows EN
+- `verified_level1_gamma_definition`: gamma described as right angle; left unchanged per brief
+- `verified_level1_placements_seo_description`: gamma described as right angle; left unchanged per brief
+- `verified_level1_guide_page_seo_4`: gamma described as right angle; left unchanged per brief
+
+### May not fit
+
+- `generator_loop_all_four`
+- `library_look_trail_loop_clear`
+- `module_hand_paths`
+- `playback_audit_visual_progress_bar_in_word_header`
+- `shape_engine_mode_same`
+- `shape_engine_mode_opposite`
+- `tab_browse_saved`
+- `tab_choreo_card_print_prep`
+
+## Unreleased features — 2026-11-14
+
+- Keys filled: 729 (arena 43, community 20, connect 65, hall 39, mandala 30, poi 41, premium 45, voice 56, watch 24, post 366). Informal `tu`, infinitive-free imperative labels as in the existing catalog.
+- Left English on purpose (tools only Austen uses): admin, moderation, skel2tka, scheduler, gallery, character.
+- Applying in en.json key order moved 72 existing lines in `messages/fr.json` (diff shows 72 deletions, all re-added elsewhere); no existing value changed.
+
+| Term | Decision |
+| --- | --- |
+| step (sequence) | étape |
+| beat (music / tapped beat in Post Studio, crop, card ring) | temps |
+| timeline / track or lane / layer | timeline / piste / calque |
+| playhead | tête de lecture |
+| keyframe | image clé |
+| take (filmed video) | prise |
+| crossfade / dissolve / fade through black | fondu enchaîné / fondu / fondu par le noir |
+| canvas | canevas |
+| peek strip, breakdown | bande, décomposition |
+| Train module | Entraînement (matches `module_train`) |
+| Hall of Shame, Reels | kept in English as proper names |
+| counterclockwise / clockwise | sens antihoraire / sens horaire |
+
+### Unsure
+
+| Key | English | French | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| `hall_of_shame_gate_title` (and `_title`, `_enter`) | Hall of Shame | Hall of Shame | Hall of Shame | Treated as a feature name; translate if the owner prefers |
+| `hall_of_shame_cat_*` | Creative / Crude / Profanity | Créatives / Grossières / Vulgaires | Inventive / Coarse / Vulgar | Feminine plural agrees with séquences |
+| `post_editor_split_peel` | Peel | Décollage | Peeling off | Style name of a split effect; meaning guessed |
+| `post_editor_split_spread` | Spread | Écartement | Spacing apart | Same |
+| `post_editor_tool_fly` / `post_editor_fly_run` | Fly into next | Envol vers le suivant | Flight to the next one | Effect name |
+| `post_editor_titles_lit` | Light one letter | Éclairer une lettre | Light up a letter | Assumed a highlight effect on one letter |
+| `post_editor_card_ring*` | Ring on beats | Anneau sur les temps | Ring on the beats | Visual ring on a card, assumed |
+| `post_editor_lift_*` | Lift panel | Remonter le panneau | Raise the panel | Reads as raising the canvas |
+| `post_stage_3d_shot_orbit` | Circle around | Tour complet | Full circle | Camera orbit |
+| `post_stage_3d_scene` | Scene | Décor | Setting | Scène would collide with stage (scène 3D) |
+| `post_editor_hook_spoken` | How to say it | Comment le dire | How to pronounce it | Meaning of the field unclear |
+| `post_editor_tool_look` | Look | Aspect | Appearance | Short tool tab label |
+| `post_editor_split*` | Split hands | Séparer les mains | Separate the hands | Feature name |
+| `mandala_n_fold` | {count}-fold | Ordre {count} | Order {count} | Symmetry order |
+| `watch_title` | Watch | Regarder | Watch | Page title; could stay Watch |
+
+### English to its owner
+
+- `arena_*`, `poi_lab_beat_*`, `connect_*beat*`: EN says beats for sequence positions; French uses étapes.
+- `mandala_copy_count`, `mandala_filter_all`, `poi_lab_beat_count`, `poi_lab_beat_number`, `voice_sessions_days_ago`/`hours_ago`/`minutes_ago`, `voice_sessions_event_count`: EN wraps the placeholder in literal quotes (for example `"{count}" beats`), which looks like an extraction slip; French drops the quotes.
+- `arena_battle_sign_in_required` etc.: EN says Battle in `arena_stats_empty`; French calls the tab Duel throughout, check against the tab name.
+- `connect_beat_of`, `connect_*_beat`: EN uses Beat for sequence steps.
+- `connect_sharing_sequence`: text says "Search for users above to invite them", does not match the key name.
+- `connect_sessions_found`: no plural form in EN ("{count} session found"); French has the same singular form.
+- `premium_faq_a_refund`, `premium_cta_price_amount`: support address and dollar price are hardcoded.
+- `premium_early_access_message`: copy mentions "active development".
+- `post_editor_card_ring_at`, `post_editor_split_*`: field labels in sentence fragments ("Every", "Leaves at") depend on layout.
+
+### May not fit
+
+- `post_editor_tool_split_hands`
+- `post_editor_split_stays_apart`
+- `post_editor_lift_step_across`
+- `post_editor_lift_step_down`
+- `post_editor_lift_in_here`
+- `post_editor_lift_out_here`
+- `post_editor_titles_park`
+- `post_editor_card_qr_exit`
+- `post_editor_card_ring_song_beat`
+- `post_curve_preset_ease_in_out`
+- `post_stage_3d_default_value`
+- `post_editor_use_omega_template`
+- `premium_cta_unlock`
+- `premium_cta_cancel_note`

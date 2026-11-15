@@ -28,6 +28,13 @@
   {#if onPropChange}
     <BentoPropGrid
       {selectedPropType}
+      previewHand={handProps?.hand === "left" || handProps?.hand === "right"
+        ? handProps.hand
+        : undefined}
+      alsoSelectedPropType={handProps?.hand === "both" &&
+      handProps.leftPropType !== handProps.rightPropType
+        ? handProps.rightPropType
+        : null}
       onSelect={onPropChange}
       variant="inline"
       flat

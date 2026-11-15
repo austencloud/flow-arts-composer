@@ -64,6 +64,14 @@ import {
 import { PIXELS_PER_UNIT } from "#lib/shared/multi-grid/domain/constants/grid-mode-offsets.js";
 
 // Constants matching AnimatorCanvas EXACTLY
+import {
+  drawMotionCuesOver,
+  drawMotionCuesUnder,
+  type MotionCueSideDraw,
+} from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-motion-cue-renderer.js";
+import type { MotionCueSide } from "#lib/shared/animation-engine/domain/types/motion-cue-types.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+
 const VIEWBOX_SIZE = 950;
 const GRID_HALFWAY_POINT_OFFSET = 150; // Strict hand points (animation mode)
 const INWARD_FACTOR = 1.0; // No inward adjustment - use exact grid coordinates
@@ -737,6 +745,20 @@ export class Canvas2DAnimationRenderer {
       ctx.restore();
     }
 
+    // 3b. Opt-in motion cues under the props: ghost copies and hand path.
+    const cueSides = params.motionCues
+      ? this.motionCueSides(params, canvasSize)
+      : null;
+    if (params.motionCues && cueSides) {
+      drawMotionCuesUnder(
+        ctx,
+        params.motionCues,
+        params.currentStep ?? 0,
+        canvasSize,
+        cueSides
+      );
+    }
+
     // 4. Draw props (with fade transitions for toggles)
     // Overall props toggle affects all props
     this.propsFadeManager.setVisible(
@@ -1089,6 +1111,11 @@ export class Canvas2DAnimationRenderer {
       ctx.restore();
     }
 
+    // 4b. Opt-in motion cues over the props: hand dot and thumb ring.
+    if (params.motionCues && cueSides) {
+      drawMotionCuesOver(ctx, params.motionCues, canvasSize, cueSides);
+    }
+
     // 5. Draw glyph (with fade transition)
     this.renderGlyph(ctx, params.currentTime, canvasSize);
     this.publishTunnelPaintTelemetry(
@@ -1344,6 +1371,66 @@ export class Canvas2DAnimationRenderer {
       ctx.arc(screenX, screenY, screenR, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+
+  /** Each hand's cue entry. Ghosts reuse the hand's loaded sprite at a past
+   *  pose; they never enter lastRenderedPropSprites, so effects ignore them. */
+  private motionCueSides(
+    params: RenderSceneParams,
+    canvasSize: number
+  ): MotionCueSideDraw[] {
+    const cues = params.motionCues!;
+    const scaleFactor = canvasSize / VIEWBOX_SIZE;
+    const entry = (
+      prop: PropState | null,
+      side: MotionCueSide | null,
+      visible: boolean,
+      image: HTMLImageElement | null,
+      dimensions: { width: number; height: number },
+      flipped: boolean,
+      propType: string | undefined
+    ): MotionCueSideDraw => ({
+      prop,
+      side,
+      visible: visible && params.visibility.propsVisible,
+      propType,
+      flipped,
+      drawSprite: (pose) => {
+        if (!image) return;
+        const ctx = this.appManager.getContext();
+        if (!ctx) return;
+        const t = this.calculatePropTransform(pose, dimensions, canvasSize);
+        const width = dimensions.width * scaleFactor;
+        const height = dimensions.height * scaleFactor;
+        const rotation = propType?.toLowerCase() === "hand" ? 0 : t.rotation;
+        ctx.save();
+        ctx.translate(t.x, t.y);
+        ctx.rotate(rotation);
+        if (flipped) ctx.scale(-1, 1);
+        ctx.drawImage(image, -width / 2, -height / 2, width, height);
+        ctx.restore();
+      },
+    });
+    return [
+      entry(
+        params.leftProp,
+        cues.left,
+        params.visibility.leftMotionVisible,
+        this.imageLoader.getLeftPropImage(),
+        params.leftPropDimensions,
+        params.leftPropFlipped ?? false,
+        params.leftPropType
+      ),
+      entry(
+        params.rightProp,
+        cues.right,
+        params.visibility.rightMotionVisible,
+        this.imageLoader.getRightPropImage(),
+        params.rightPropDimensions,
+        params.rightPropFlipped ?? false,
+        params.rightPropType
+      ),
+    ];
   }
 
   /**

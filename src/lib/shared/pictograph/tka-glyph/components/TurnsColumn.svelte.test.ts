@@ -42,3 +42,21 @@ describe("TurnsColumn filter ids", () => {
     expect(paintedColors(second.container)).toEqual(["#00ff88", "#ff00ff"]);
   });
 });
+
+describe("TurnsColumn number art", () => {
+  it("draws numbers from in-memory art, never from a file path", () => {
+    const { container } = render(TurnsColumn, {
+      turnsTuple: "(s, 1, 1.5)",
+      letter: "A",
+      letterDimensions: LETTER_DIMENSIONS,
+    });
+    const hrefs = [...container.querySelectorAll("g.turn-number image")].map(
+      (image) => image.getAttribute("href") ?? ""
+    );
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) {
+      expect(href.startsWith("/images/numbers/")).toBe(false);
+      expect(href.startsWith("data:image/svg+xml")).toBe(true);
+    }
+  });
+});

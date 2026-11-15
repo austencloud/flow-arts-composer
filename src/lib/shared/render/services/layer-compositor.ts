@@ -81,7 +81,9 @@ export class LayerCompositor {
     pictograph: PreparedPictographData,
     options: LayerRenderOptions,
     visibility: LayerVisibility,
-    stepNumber?: number
+    stepNumber?: number,
+    /** The Start/End word in the visitor's language (empty leaves it blank). */
+    stepLabel?: string
   ): Promise<CompositionResult> {
     const totalStart = performance.now();
     this.stats.totalCompositions++;
@@ -118,7 +120,13 @@ export class LayerCompositor {
       ctx.fillRect(0, 0, width, options.size);
       ctx.drawImage(core, Math.round((width - options.size) / 2), 0);
       if (typeof stepNumber === "number" && stepNumber !== -1) {
-        this.drawStepNumber(ctx, stepNumber, options.size, options.darkMode);
+        this.drawStepNumber(
+          ctx,
+          stepNumber,
+          options.size,
+          options.darkMode,
+          stepLabel
+        );
         this.drawStartHandKey(
           ctx,
           pictograph,
@@ -188,7 +196,13 @@ export class LayerCompositor {
 
     if (typeof stepNumber === "number" && stepNumber !== -1) {
       const beatStart = performance.now();
-      this.drawStepNumber(ctx, stepNumber, options.size, options.darkMode);
+      this.drawStepNumber(
+          ctx,
+          stepNumber,
+          options.size,
+          options.darkMode,
+          stepLabel
+        );
       this.drawStartHandKey(ctx, pictograph, options, stepNumber, coreOffset);
       timing.beatLayerMs = performance.now() - beatStart;
     }
@@ -505,9 +519,10 @@ export class LayerCompositor {
     ctx: RenderContext2D,
     stepNumber: number,
     size: number,
-    darkMode: boolean
+    darkMode: boolean,
+    label?: string
   ): void {
-    renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode);
+    renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode, label);
   }
 
   /**

@@ -22,7 +22,7 @@ Uses stepper pattern for direct increment/decrement interaction
     shadowColor = "0deg 0% 0%", // Neutral shadow (adapts to any color)
     gridColumnSpan = 2,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
     appearance = "vivid",
   } = $props<{
     currentIntensity: number;

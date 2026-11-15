@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
@@ -15,14 +15,14 @@
 
 <div class="collection-prop-field">
   <span class="label">{t("library_ui_collection_prop")}</span>
-  <p>Used for every sequence when a viewer chooses As saved.</p>
+  <p>{t("library_collection_prop_help")}</p>
   <div class="actions">
     <PanelButton
       variant="secondary"
       {disabled}
       onclick={() => (choosing = !choosing)}
       ariaExpanded={choosing}
-      ariaLabel="Choose collection prop"
+      ariaLabel={t("library_collection_prop_choose")}
     >
       {#if value}
         <span class="preview"
@@ -30,8 +30,8 @@
         >
       {/if}
       {value
-        ? getPropTypeDisplayInfo(value).label
-        : "Use each sequence’s saved props"}
+        ? localizedPropName(value)
+        : t("library_collection_prop_each_saved")}
       <i class="fas fa-chevron-down" aria-hidden="true"></i>
     </PanelButton>
     {#if value}

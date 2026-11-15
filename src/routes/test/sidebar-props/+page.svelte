@@ -18,6 +18,14 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
 
+  // The boxes the chosen-prop buttons really have; each is outlined below.
+  const BOXES = [
+    { width: 20, height: 16 },
+    { width: 26, height: 26 },
+    { width: 30, height: 22 },
+    { width: 36, height: 36 },
+    { width: 40, height: 40 },
+  ];
   let chirality = $state("normal");
   let cover = $state<"bare" | "covered">("bare");
   let colors = $state({ left: "#36d6c5", right: "#ff8dba" });
@@ -25,7 +33,9 @@
   const PICKER_MAX_WIDTH = { full: "none", mid: "30rem", narrow: "19rem" } as const;
   const types = getAllPropTypes().filter(isPropActive);
   const families = [...new Set(types.map(getBasePropType))];
-  const fanBuilds = fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE);
+  const fanBuilds = fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE).filter(
+    (build) => !build.waitingOnMaker
+  );
   function choices(family: PropType) {
     return types
       .filter((type) => getBasePropType(type) === family)
@@ -60,7 +70,8 @@
     <h1>Prop pair gallery</h1>
     <p>
       Every family, variant and fan build. The two small buttons show the actual
-      mobile and sidebar sizes.
+      mobile and sidebar sizes. The dashed boxes show the pair fitted to the
+      slots of the chosen-prop buttons (20x16, 26x26, 30x22, 36x36, 40x40).
     </p>
     <SegmentedControl
       options={[
@@ -128,6 +139,18 @@
                 </div>
               </div>
             </div>
+            <div class="boxes" aria-label="Box fits">
+              {#each BOXES as box}
+                <div class="box-sample">
+                  <span
+                    class="box"
+                    style:width="{box.width}px"
+                    style:height="{box.height}px"
+                    >{@render glyph(choice.type, choice.fan, 0, box)}</span
+                  ><small>{box.width}x{box.height}</small>
+                </div>
+              {/each}
+            </div>
             <h3>{choice.label}</h3>
           </article>
         {/each}
@@ -136,10 +159,16 @@
   {/each}
 </main>
 
-{#snippet glyph(type: PropType, fan: FanAppearance, size: number)}
+{#snippet glyph(
+  type: PropType,
+  fan: FanAppearance,
+  size: number,
+  box?: { width: number; height: number }
+)}
   <PropCompositionPreview
     propType={type}
     {size}
+    {box}
     pairedGlyph
     darkBackground
     useSavedOverrides={false}
@@ -231,6 +260,26 @@
   }
   .button.mobile {
     border-radius: 50%;
+  }
+  .boxes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .box-sample {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+  }
+  /* The outline is the box the drawing is told to fit; the drawing must not
+     touch or cross it except where it fills it. */
+  .box {
+    display: block;
+    box-sizing: content-box;
+    outline: 1px dashed var(--theme-text-dim, #b8bdcc);
+    outline-offset: 0;
   }
   small {
     font-size: 12px;

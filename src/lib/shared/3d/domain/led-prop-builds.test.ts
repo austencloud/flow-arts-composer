@@ -53,11 +53,17 @@ describe("internal LED build registration", () => {
     expect(FAN_BUILDS).not.toContain("astral");
     expect(COMPACT_FAN_LOOKS).not.toContain("astral");
     expect(
-      fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE).map((option) => option.id)
+      fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE, FAN_BUILDS).map(
+        (option) => option.id
+      )
     ).not.toContain("astral");
     expect(
-      buildForEffect(PropType.FAN, "led", { ...BASE_BUILD, fanBuild: "fire" })
-        ?.propBuild?.fanBuild
+      buildForEffect(
+        PropType.FAN,
+        "led",
+        { ...BASE_BUILD, fanBuild: "fire" },
+        FAN_BUILDS
+      )?.propBuild?.fanBuild
     ).toBe("moon");
     for (const prop of [
       PropType.TRIQUETRA,

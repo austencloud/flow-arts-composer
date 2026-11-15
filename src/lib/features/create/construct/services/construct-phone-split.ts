@@ -31,19 +31,102 @@ export const CONSTRUCT_TYPE_RAIL_WIDTH = 52;
  */
 export const CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS: readonly number[] = [4];
 
+/**
+ * The least distance from the option picker's left or right edge to any
+ * option tile on the phone tier: the inset of the letter-type row above it,
+ * so the grid's outer edges line up with that row's. Beside a type rail the
+ * grid keeps its old 4px inset; the rail is the edge there.
+ */
+export const CONSTRUCT_PHONE_GRID_GUTTER = 14;
+const RAIL_SIDE_GRID_INSET = 4;
+
+/** The option grid's [start, end] side gutters on the phone tier. */
+export function constructPhoneGridGutter(typeRail: boolean): {
+  start: number;
+  end: number;
+} {
+  return {
+    start: typeRail ? RAIL_SIDE_GRID_INSET : CONSTRUCT_PHONE_GRID_GUTTER,
+    end: CONSTRUCT_PHONE_GRID_GUTTER,
+  };
+}
+
 // The picker's own rows, measured at 375px: the letter-type navigation (the
 // tier's 40px target in its 52px shell) and the carousel's bottom padding. On
 // this tier the tabs name the group, so the split reserves no height for a type
-// heading, and the arrows are gone, so the grid spans the width less its 4px
-// insets.
+// heading, and the arrows are gone, so the grid spans the width less its side
+// gutters.
 const TYPE_NAVIGATION_HEIGHT = 52;
 const CAROUSEL_BOTTOM_PADDING = 10;
-const GRID_INLINE_PADDING = 8;
 const GRID_GAP = 8;
 const GRID_COLUMNS = 4;
 const GRID_ROWS = 4;
 // The picker's largest option card. Past it, extra height is only empty space.
 const MAX_OPTION_SIZE = 120;
+
+/**
+ * Rows of step pictures the workspace floor keeps on a phone-width Construct
+ * (narrower than the type rail tier): two whole rows and a quarter of the
+ * third, so a longer sequence shows that it scrolls.
+ *
+ * The quarter row is how the height the slim bars gave back is shared. The
+ * floor is measured from the real header and button bar, so on its own a
+ * shorter bar would hand every pixel to the picker and the sequence window
+ * would stay where it was. Measured at 392x739 with 18 steps (2026-11-13):
+ * the bars went from 135px to about 92px; with this quarter row the sequence
+ * window goes from 180px to about 197px and the picker's tiles from 73px to
+ * about 79px. Wider tiers keep the usual two rows.
+ */
+export const CONSTRUCT_PHONE_SEQUENCE_ROWS = 2.25;
+
+/**
+ * The smallest option tile the phone-width picker's Type 1 page should show
+ * while the sequence still has rows to give: under 68px a prop stops reading.
+ */
+export const CONSTRUCT_PHONE_OPTION_FLOOR = 68;
+
+/** The fewest rows of step pictures the sequence yields down to. */
+export const CONSTRUCT_PHONE_MIN_SEQUENCE_ROWS = 1.25;
+
+/**
+ * The phone-width workspace floor once it yields to the picker.
+ *
+ * The workspace keeps its 2.25-row floor (fullFloor) unless that would leave
+ * the Type 1 page's 4x4 grid under CONSTRUCT_PHONE_OPTION_FLOOR. Then it
+ * gives height back, down to 1.25 rows (minFloor):
+ *
+ *   workspace = max(minFloor, min(fullFloor, height - pickerHeightFor(68)))
+ *
+ * where pickerHeightFor(68) is the type tabs, the carousel's padding and four
+ * 68px rows with their gaps: 52 + 10 + 4 x 68 + 3 x 8 = 358.
+ *
+ * Measured with 18 steps (2026-11-13): at 360x640 (layout height 595) the
+ * floor was 275 and the tiles 58 with 52px empty at each side; it is now
+ * about 237, with 68px tiles and about 32px at each side. At 360x591 (546)
+ * the floor stops at 1.25 rows (212) and the tiles reach about 62.
+ * 360x689, 375x667, 392x735 and 412x915 already leave 68px or more, so they
+ * keep the full floor. Only the phone-width tier (under
+ * CONSTRUCT_TYPE_RAIL_MIN_WIDTH) uses this; the rail tier keeps two rows.
+ */
+export function constructPhoneWorkspaceFloor(params: {
+  height: number;
+  fullFloor: number;
+  minFloor: number;
+}): number {
+  const { height, fullFloor, minFloor } = params;
+  const pickerForOptionFloor =
+    TYPE_NAVIGATION_HEIGHT +
+    CAROUSEL_BOTTOM_PADDING +
+    CONSTRUCT_PHONE_OPTION_FLOOR * GRID_ROWS +
+    GRID_GAP * (GRID_ROWS - 1);
+  return Math.max(minFloor, Math.min(fullFloor, height - pickerForOptionFloor));
+}
+
+export function constructPhoneSequenceRows(width: number): number | undefined {
+  return width > 0 && width < CONSTRUCT_TYPE_RAIL_MIN_WIDTH
+    ? CONSTRUCT_PHONE_SEQUENCE_ROWS
+    : undefined;
+}
 
 export function isConstructPhoneTier(params: {
   width: number;
@@ -110,9 +193,10 @@ export function constructPhoneSplit(params: {
   // picker no longer spends a row of height on them.
   const typeRail = isConstructTypeRailTier(params);
   const gridWidth = width - (typeRail ? CONSTRUCT_TYPE_RAIL_WIDTH : 0);
+  const gutter = constructPhoneGridGutter(typeRail);
   const optionSize = Math.min(
     MAX_OPTION_SIZE,
-    (gridWidth - GRID_INLINE_PADDING - GRID_GAP * (GRID_COLUMNS - 1)) /
+    (gridWidth - gutter.start - gutter.end - GRID_GAP * (GRID_COLUMNS - 1)) /
       GRID_COLUMNS
   );
   // An upper bound: the picker lays out four to eight columns, and four is

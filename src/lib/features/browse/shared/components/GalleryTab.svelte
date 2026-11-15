@@ -11,6 +11,8 @@
   import SortJumpSheet from "../../sequences/navigation/components/SortJumpSheet.svelte";
   import { sequencePanelManager } from "#lib/shared/browse/state/sequence-panel-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { untrack } from "svelte";
+  import { createDrillFilterBindings } from "#lib/features/browse/gallery-home/drill-filter-bindings.svelte";
 
   interface Props {
     isMobile: boolean;
@@ -38,6 +40,12 @@
     /** Desktop: the row of filter menus that replaces the toolbar, the
      * Filters pill and its sheet. Phones and tablets ignore it. */
     menuRow?: import("svelte").Snippet;
+    /** Phones and tablets: the answer row's More button and the ask screen's
+     * More filters open the Filters sheet. A new number each time opens it. */
+    filtersRequest?: number;
+    /** False when the answer row above the grid carries the sheet's door, so
+     * the header bar holds the Source menu instead of a Filters pill. */
+    headerFiltersPill?: boolean;
   }
 
   let {
@@ -52,11 +60,24 @@
     onOpenWorkspace,
     onOpenMandala,
     menuRow,
+    filtersRequest = 0,
+    headerFiltersPill = true,
   }: Props = $props();
   const desktopRow = $derived(!isMobile ? menuRow : undefined);
+  // The empty state's reset clears through the drill's bindings, which send
+  // one clear event per filter.
+  const filters = createDrillFilterBindings(() => engine, {
+    surface: () => "more_filters",
+  });
 
   // State for sub-sheets
   let isFilterSheetOpen = $state(false);
+  let seenFiltersRequest = untrack(() => filtersRequest);
+  $effect(() => {
+    if (filtersRequest === seenFiltersRequest) return;
+    seenFiltersRequest = filtersRequest;
+    isFilterSheetOpen = true;
+  });
   let isInvitePanelOpen = $state(false);
   let inviteVideo = $state<CollaborativeVideo | null>(null);
 
@@ -89,6 +110,8 @@
     backLabel={t("site_start_here")}
     hideToolbarSearch
     headerChrome
+    {headerFiltersPill}
+    onClearFilters={filters.clearAll}
     hostToolbar={desktopRow}
     onOpenFilters={() => {
       if (!isMobile && onOpenWorkspace) onOpenWorkspace();
@@ -112,6 +135,7 @@
     allowSearch={false}
     {onOpenMandala}
     gridControls={{ onSaveSmart }}
+    surface="more_filters"
   />
 {/if}
 

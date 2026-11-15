@@ -64,6 +64,10 @@ export interface ScanBaseProperties {
 export type ScanAnalyticsValue = string | number | boolean | null;
 export type ScanExitReason =
   | "close_button"
+  | "swipe_down"
+  | "tap_outside"
+  | "back"
+  | "escape"
   | "open_app"
   | "remix"
   | "guide"

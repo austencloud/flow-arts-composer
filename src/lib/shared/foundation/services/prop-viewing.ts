@@ -1,6 +1,6 @@
 import type { SequenceData } from "../domain/models/sequence-data";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
 import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
@@ -11,10 +11,10 @@ import {
 export type PropViewingMode = "my-props" | "as-saved";
 
 export function viewingPropLabel(config: ResolvedPropConfig): string {
-  const left = getPropTypeDisplayInfo(config.leftPropType).label;
+  const left = localizedPropName(config.leftPropType);
   return config.leftPropType === config.rightPropType
     ? left
-    : `${left} / ${getPropTypeDisplayInfo(config.rightPropType).label}`;
+    : `${left} / ${localizedPropName(config.rightPropType)}`;
 }
 
 export function resolveViewingProps(

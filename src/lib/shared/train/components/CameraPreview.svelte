@@ -14,10 +14,20 @@ Features frame processing loop for pose estimation and overlay support.
   import type { Snippet } from "svelte";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import {
+    classifyCameraFailure,
+    readCameraPermission,
+    type CameraFailureKind,
+  } from "#lib/shared/train/services/camera-failure.js";
 
   interface Props {
     onCameraReady?: () => void;
     onCameraError?: (error: string) => void;
+    /** The failure as a kind, for a host that words it itself. */
+    onCameraFailure?: (kind: CameraFailureKind) => void;
+    /** Draw nothing but the video: no loading text, no error, no Retry. The
+     *  host shows the camera's state somewhere else. */
+    quiet?: boolean;
     onFrame?: (video: HTMLVideoElement) => void;
     mirrored?: boolean;
     children?: Snippet;
@@ -26,6 +36,8 @@ Features frame processing loop for pose estimation and overlay support.
   let {
     onCameraReady,
     onCameraError,
+    onCameraFailure,
+    quiet = false,
     onFrame,
     mirrored = true,
     children,
@@ -96,6 +108,10 @@ Features frame processing loop for pose estimation and overlay support.
         error instanceof Error ? error.message : t("train_camera_failed");
       errorMessage = message;
       onCameraError?.(message);
+      if (onCameraFailure) {
+        const permission = await readCameraPermission();
+        if (!destroyed) onCameraFailure(classifyCameraFailure(error, permission));
+      }
     }
   }
 
@@ -131,14 +147,14 @@ Features frame processing loop for pose estimation and overlay support.
   data-ghost-state={isActive ? "camera-live" : undefined}
 >
   <div class="video-container" bind:this={videoContainer}>
-    {#if isInitializing}
+    {#if isInitializing && !quiet}
       <div class="loading-state">
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
         <p>{t("train_camera_initializing")}</p>
       </div>
     {/if}
 
-    {#if errorMessage}
+    {#if errorMessage && !quiet}
       <div class="error-state">
         <svg
           class="error-icon"

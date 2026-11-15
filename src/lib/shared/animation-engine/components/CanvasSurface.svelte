@@ -77,6 +77,7 @@ captureEffectDiagnostics to the context menu.
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
+  import type { MotionCueFrame } from "../domain/types/motion-cue-types";
   import PanelState from "#lib/shared/components/panel/PanelState.svelte";
 
   let {
@@ -90,6 +91,7 @@ captureEffectDiagnostics to the context menu.
     tunnelPropColors = null,
     primaryPropColors,
     tunnelSelectedLayer = null,
+    motionCues = null,
     gridVisible = true,
     gridOpacity = undefined,
     chromeOpacity = 1,
@@ -131,6 +133,7 @@ captureEffectDiagnostics to the context menu.
     placementGlyphVisible = false,
     leftPathLinesVisible = false,
     rightPathLinesVisible = false,
+    boldPathLines = false,
     gridJoin = null,
     suppress2DOverlays = false,
     // Engine wiring props
@@ -164,6 +167,8 @@ captureEffectDiagnostics to the context menu.
     /** undefined = fall back to the viewer's Settings; null = theme default. */
     primaryPropColors?: TunnelPropColorPair | null;
     tunnelSelectedLayer?: number | readonly number[] | null;
+    /** Opt-in teaching marks: ghosts, hand path, thumb ring. */
+    motionCues?: MotionCueFrame | null;
     gridVisible?: boolean;
     gridOpacity?: number;
     chromeOpacity?: number;
@@ -209,6 +214,8 @@ captureEffectDiagnostics to the context menu.
     placementGlyphVisible?: boolean;
     leftPathLinesVisible?: boolean;
     rightPathLinesVisible?: boolean;
+    /** Draw the path lines as a heavier guide (PathLinesOverlay `bold`). */
+    boldPathLines?: boolean;
     /** The sequence's join: path lines move onto each hand's own grid. */
     gridJoin?: GridJoin | null;
     suppress2DOverlays?: boolean;
@@ -527,6 +534,7 @@ captureEffectDiagnostics to the context menu.
       tunnelPropColors,
       primaryPropColors: resolvedPrimaryPropColors,
       tunnelSelectedLayer,
+      motionCues,
       gridVisible,
       gridOpacity,
       gridMode,
@@ -665,6 +673,7 @@ captureEffectDiagnostics to the context menu.
       showRight={rightPathLinesVisible}
       {gridJoin}
       vm={visibilityManager}
+      bold={boldPathLines}
     />
 
     <ProgressOverlay

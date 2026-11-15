@@ -15,6 +15,7 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
 import { sequenceGridJoinKey } from "@tka/render-core";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   resolveInfoCellDisplay,
@@ -72,6 +73,15 @@ export interface BuildGalleryRenderInputParams {
   showRightMotion?: boolean;
   /** Grid cards pass true; a prepared QR still needs a spare info cell. */
   allowQR?: boolean;
+  /**
+   * A small picture in a gallery grid. It never draws, requests or prepares a
+   * QR: its one spare info square is the mandala. The square is decided exactly
+   * as it is for a card that may show a QR (so a per-length "none" pick still
+   * leaves it empty) and the QR is then dropped, which is the QR-free picture a
+   * signed-in reader was always shown first. Without this, the square flipped
+   * from mandala to QR once the QR was prepared.
+   */
+  gridCard?: boolean;
   cardMode?: boolean;
   // Ambient state (passed in so this function stays pure/testable)
   compositionManager: GalleryCompositionSource;
@@ -94,11 +104,12 @@ export function galleryQrPolicy({
   variant = "gallery",
   cardMode,
   isAuthenticated,
+  gridCard,
 }: Pick<
   BuildGalleryRenderInputParams,
-  "variant" | "cardMode" | "isAuthenticated"
+  "variant" | "cardMode" | "isAuthenticated" | "gridCard"
 >): GalleryQrPolicy {
-  if (variant !== "gallery" || cardMode) return undefined;
+  if (variant !== "gallery" || cardMode || gridCard) return undefined;
   return isAuthenticated ? "background" : "prepared-only";
 }
 
@@ -158,6 +169,7 @@ export function buildGalleryVisibility(
     showLeftMotion = true,
     showRightMotion = true,
     allowQR = true,
+    gridCard = false,
     variant = "gallery",
     cardMode = false,
     isAuthenticated,
@@ -176,12 +188,19 @@ export function buildGalleryVisibility(
   const guestPreparedGallery = variant === "gallery" && !cardMode;
   const qrAllowed =
     allowQR && stepCount > 1 && (isAuthenticated || guestPreparedGallery);
+  // A grid card weighs the spare square as if a QR could win it, then draws
+  // none (see gridCard), so it reads the same as the QR-free picture it
+  // always showed first.
+  const qrWeighed = gridCard
+    ? stepCount > 1 && (isAuthenticated || guestPreparedGallery)
+    : qrAllowed;
+  const qrDrawn = gridCard ? false : qrAllowed;
 
   if (visibility) {
-    const qrGated = qrAllowed
+    const qrGated = qrDrawn
       ? visibility
       : { ...visibility, showQRCode: false };
-    return handPathMode || needsMotionFilter || !qrAllowed
+    return handPathMode || needsMotionFilter || !qrDrawn
       ? {
           ...qrGated,
           ...(handPathMode && { handPathMode: true }),
@@ -204,7 +223,7 @@ export function buildGalleryVisibility(
       p.startPlacementLayout ??
       compositionManager.getStartPlacementLayoutForStepCount(stepCount),
     columnCount: null, // Gallery thumbnails always render the auto layout table.
-    showQRCode: qrAllowed && compositionManager.showQRCode,
+    showQRCode: qrWeighed && compositionManager.showQRCode,
     showMandala: compositionManager.showMandala,
     infoCellChoice: compositionManager.getInfoCellChoiceForStepCount(stepCount),
     isAuthenticated: isAuthenticated || guestPreparedGallery,
@@ -218,7 +237,7 @@ export function buildGalleryVisibility(
   // choice suppresses QR do we honor the resolver's mandala value, which lands
   // on the warmer's no-QR (mandala) class.
   return {
-    showQRCode: resolved.showQRCode,
+    showQRCode: resolved.showQRCode && !gridCard,
     showMandala: resolved.showQRCode
       ? compositionManager.showMandala
       : resolved.showMandala,
@@ -284,6 +303,7 @@ export function buildGalleryRenderInput(
     visibility: buildGalleryVisibility(p),
     cardMode: cardMode || undefined,
     gridJoin: sequenceGridJoinKey(sequence) || undefined,
+    startLabel: t("viewer_ui_start"),
   };
 }
 

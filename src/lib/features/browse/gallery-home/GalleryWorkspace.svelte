@@ -68,8 +68,8 @@
       type="button"
       onclick={onBack}
       aria-label={unifiedFilterChooser
-        ? "Back to filters"
-        : "Back to browse options"}
+        ? t("browse_audit_back_to_filters")
+        : t("browse_back_to_browse_options")}
     >
       <i class="fas fa-arrow-left" aria-hidden="true"></i>
       <!-- Icon-only reads as an anonymous circle when the wide stage strands

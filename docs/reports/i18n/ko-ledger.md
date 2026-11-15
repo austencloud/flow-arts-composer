@@ -84,3 +84,124 @@
 Astra back-translation review: SAMPLE 240 / FLAGGED 4 / 1.7%. Applied all four
 fixes (visual builder tab hint, Continuous option name, missing particle after
 {hand}, map intro meaning).
+
+## Read-back — 2026-11-13
+
+- Scope: 9,138 released keys (prefixes in `scripts/i18n-released-prefixes.json`), read in 40 chunks of about 250 keys grouped by prefix. Each present value was read back into English and graded right, off or wrong.
+- Result: 214 filled (all keys that were missing, including the new hardcoded-sweep keys); 403 changed (382 off, 21 wrong); 8,521 left as is. Full change list with before, after and read-back: `E:/tka-languages/runs/ko/changes.json`.
+- Contract test: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts` → `Tests  5 failed | 67 passed (72)`. Every ko check passes. The five failures are outside Korean: "does not silently fall back to English" lists 107 keys, all missing from `de.json`; "released-prefix coverage above the ratchet floor" fails for es, fr, it and pt (8,936 of 9,138, below 0.98) because of the new English keys. None of those files is touched here.
+- Other checks: JSON parses and keeps its key order and 2-space format; placeholders, markup tags and entities match English on every changed value; values are single-line; no em dashes added; `git diff --check` clean.
+
+### Term decisions
+
+- Effort in the Laban sense (Shape Engine, viewer, animation menu, phrase lab, guide paths) is 에포트 everywhere. 성능 (performance), 강약 and 난이도 (difficulty) were wrong for it and are replaced. The difficulty sort in Browse stays 난이도 because it does mean difficulty.
+- Base Motions (Generate level) is 기본 동작, per glossary section 5; 무회전 ("no turns") is gone.
+- Orientation chips (`create_ui_orientation_clock_short`, `_counter_short`, the six `create_action_orientation_*_short`) read 시계 방향 / 반시계 방향 with 안쪽/바깥쪽; no CW/CCW anywhere in ko.
+- `loop_picker_description_mirrored` = 좌우 (left-right), `_flipped` = 상하 (top-bottom), following the code; the English says vertically/horizontally.
+- Prospin, Antispin, Inspin, Isolation, Extension and Flower stay in hangul (프로스핀, 안티스핀, 인스핀, 아이솔레이션, 익스텐션, 플라워). The run brief lists them among labels kept in Latin, but its rule covers labels the termbase keeps in Latin, and the ko termbase and glossary section 1 pin the hangul loanwords, which about 60 strings already use. Static, Float, Shift, Dash, Hash, Pro, Anti, Alpha, Beta, Gamma and LOOP stay Latin.
+- Named tools Construct and Assemble go back to Latin (some strings had 구성, 조립); Poi, Triad and Buugeng back to Latin.
+- Pinned terms enforced: letter 문자 (not 글자), grid 그리드 (not 격자), variation 변형 (not 변화), prop 프롭 (not 소품), Type N 유형 N, step 단계 wherever a sequence position is meant (not 스텝 or 비트), negative space 네거티브 스페이스, Shape Matrix 셰이프 매트릭스 (not 모양 행렬), color 색상.
+- Sentences in 합니다체 (all creators\_\* prose, some auth and settings strings) moved to 해요체.
+- Whole Turns stays 전체 회전 (glossary section 3). A reviewer proposed 정수 회전 (whole-number turns) for the Level 2 names; not applied, listed here for Ilo since 전체 회전 can also read as "full rotation".
+- Creator is not pinned: the catalog mixes 크리에이터, 창작자 and 제작자. Only the two creators tab labels changed (to 크리에이터, matching their descriptions); prose is untouched. Needs a pin.
+- Spelled-out VTG descriptions (`pictograph_desc_timing_*`, e.g. "Split-Opposite timing") stay Korean prose (엇갈림·반대 방향 타이밍); the hyphenated short labels stay English as before.
+- Gamma strings that say "right angle" are left exactly as they were (see English to its owner). No new 직각 was introduced.
+
+### Unsure
+
+| Key                                            | English                                                                               | Korean                                                                        | Read-back                                                                                        | Why                                                                                                                                                                                 |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `browse_collections_founding_book_description` | The base motions at one turn, with the book reversal — both props reverse every step. | 1회전 기본 동작에 북 방향 전환을 적용했어요. 두 프롭이 매 단계 방향을 바꿔요. | Base motions at one turn with the book reversal applied. Both props change direction every step. | No pinned Korean for 'book reversal'; used 북 방향 전환 (book as a name). Em dash in EN replaced by a sentence break.                                                               |
+| `browse_collections_films_title`               | Films                                                                                 | 필름                                                                          | Films                                                                                            | Chose 필름 to keep Films distinct from Videos (영상); confirm what Films holds.                                                                                                     |
+| `export_ui_performance`                        | Performance                                                                           | 공연                                                                          | Performance (a show)                                                                             | key unused in src; cannot tell if it means a staged performance or speed/quality. Left as is.                                                                                       |
+| `library_look_trail_loop_clear`                | Loop-clear trail                                                                      | 루프마다 지워지는 트레일                                                      | Trail that clears every loop                                                                     | inferred from TrailMode.LOOP_CLEAR; assumes the trail wipes at each loop of the animation                                                                                           |
+| `viewer_ui_inherit`                            | Inherit                                                                               | 기본값 따르기                                                                 | Follow the default                                                                               | tunnel performer color mode; assumed 'inherit' means use the performer's normal colors                                                                                              |
+| `viewer_ui_effort_name_anticipation`           | Anticipation                                                                          | 예비 동작                                                                     | Preparatory move                                                                                 | animation-principle name; 예비 동작 is the usual Korean term but a loanword (앤티시페이션) is possible                                                                              |
+| `settings_buugeng_pair_mirrored`               | Mirrored                                                                              | 거울상                                                                        | Mirror-image                                                                                     | Left as is: Buugeng chirality pair describes mirror-image shapes. Pinned term for Mirrored is 미러; switch to 미러 if the pin should cover this too (also affects the pair hint).   |
+| `train_total_beats`                            | Total Beats                                                                           | 총 단계 수                                                                    | Total steps                                                                                      | Unsure whether this stat counts sequence steps or musical beats; other train strings render beat as 단계. Use 총 비트 수 if it is a musical count.                                  |
+| `pictograph_placement_aiming`                  | Aiming the {noun}                                                                     | {noun} 방향 맞추는 중                                                         | Setting the {noun} direction                                                                     | Rendered aim as 방향 맞추기 (pointing the prop) and phrased to avoid a particle after {noun}, which is a runtime prop/hand name; check that reads well with the actual noun strings |
+| `shape_engine_over`                            | over                                                                                  | ×                                                                             | crossed with                                                                                     | Used between left and right flower labels in a screen-reader crossing announcement; × chosen over 위, check it is read acceptably by Korean screen readers (alternative: 대)        |
+| `shape_engine_trace_this`                      | Trace this                                                                            | 이걸로 따라 그리기                                                            | Trace with this one                                                                              | Button on a realization card that traces it in the mirror view; meaning of trace inferred from call site                                                                            |
+| `fullscreen_prompt_message_2`                  | Enter the Studio 🎯                                                                   | Studio 입장 🎯                                                                | Enter the Studio                                                                                 | unclear whether "Studio" here is the named tool or a generic workspace; if generic, 스튜디오 입장 was fine                                                                          |
+
+### English to its owner
+
+- `browse_audit_hands_right_angle`: Gamma described as hands forming a right angle; left unchanged per brief (KO still says 직각).
+- `learn_ui_challenge_chain_the_beats`: Title says 'Beats' but the challenge traces 3 steps; Austen prefers 'step'. Consider 'Chain the Steps'.
+- `learn_timing_intro_placement_gamma`: EN says 'A right angle apart' for gamma; left as is per brief (KO mirrors it with 직각).
+- `learn_placement_comparison_gamma`: EN says 'A right angle apart' for gamma; left as is per brief (KO mirrors it with 직각).
+- `learn_placement_gamma_geometry`: EN says 'a right angle' for gamma; left as is per brief (KO mirrors it with 직각).
+- `learn_reference_reading_choreo_cards`: EN value is 'Hand Motions' though the key is the Reading a Choreo Card reference; check it isn't a copy-paste slip.
+- `viewer_beats_count`: Shows stepCount but EN says 'beats'; Austen prefers 'steps'.
+- `viewer_ui_how_each_beat_speeds_up_and_slows_down`: Effort hint says 'each beat' where it means each step.
+- `tab_desc_browse_gallery`: English reads 'Browse and browse sequences' (duplicated verb)
+- `tab_desc_browse_sequences`: English reads 'Browse and browse sequences' (duplicated verb)
+- `tab_desc_browse_visuals`: Description just repeats the tab name 'Visuals'; same for drafts, saved, your_visuals, your_videos, following descriptions
+- `train_step_advance_tap`: English says 'Tap or Voice' for the tap-only option; should likely be 'Tap'
+- `train_step_advance_voice`: English says 'Tap or Voice' for the voice-only option; should likely be 'Voice'
+- `train_timed_config_title`: Title duplicates the description sentence; likely should be 'Timed Mode Settings'
+- `train_auto_advance`: Uses 'beat' where the app means a step; Korean uses 단계
+- `pictograph_desc_group_gamma`: EN still says "gamma (right angle)"; left as is per gamma rule
+- `shape_engine_pictographs_calibration`: EN grammar: "Level 4 pictograph are" should be "pictographs are"
+- `playback_audit_visual_progress_bar_in_word_header`: Key name says word header but EN now says downloaded videos and display-only players; translated the EN
+- `guide_topic_dual_shifts_switching_lead`: EN uses lowercase "gamma" as the placement name; should be Gamma
+- `loop_picker_description_mirrored`: "Mirrors placements vertically" is ambiguous; code swaps left and right. Suggest "Mirrors placements left to right".
+- `loop_picker_description_flipped`: "Mirrors placements horizontally" is ambiguous; code swaps north and south. Suggest "Flips placements top to bottom".
+- `verified_level1_gamma_definition`: Gamma described as "form a right angle"; left as is per brief
+- `verified_level1_placements_seo_description`: Gamma described as "form a right angle"; left as is per brief
+- `verified_level1_guide_page_seo_4`: Gamma described as "form a right angle"; left as is per brief
+- `verified_level1_seo_fallback_description`: Code concatenates `${title} ${fallback}`; the EN fragment "in The Kinetic Alphabet, ..." cannot take a Korean particle after the title. A full template with {title} would read better.
+- `browse_audit_hands_right_angle`, `learn_timing_intro_placement_gamma`, `learn_placement_comparison_gamma`, `learn_placement_gamma_geometry`, `pictograph_desc_group_gamma`, `verified_level1_gamma_definition`, `verified_level1_placements_seo_description`, `verified_level1_guide_page_seo_4`: gamma described as a right angle; Austen wants "hands adjacent". Korean left as is until the English changes.
+
+### May not fit
+
+- `playback_audit_visual_progress_bar_in_word_header`
+
+## Unreleased features — 2026-11-14
+
+Headless fill of the not-yet-released strings for Ilo, on Austen's rule of 2026-11-14: everything a visitor will eventually see is translated; screens only he uses stay English. Register as before: friendly polite 해요체, ASCII `...` for ellipses as the catalog does. Read-backs for plain strings were taken from the zh-Hant fill of the same key (same meaning); they are written separately only where the Korean text differs.
+
+- Keys filled: 747 (arena 43, attribution 14, beta 4, community 20, connect 65, hall 39, mandala 30, poi 41, post 366, premium 45, voice 56, watch 24).
+- Left English on purpose: `admin_*`, `moderation_*`, `skel2tka_*`, `scheduler_*`, `gallery_*`, `character_*`. These are tools only Austen uses.
+- Existing values were not touched. The change list for Ilo is `E:/tka-languages/runs/unrel/ko/changes.json` (747 entries).
+
+### Term decisions
+
+| English | Korean |
+| --- | --- |
+| step (of a sequence) | 단계 (every sequence `beat` count) |
+| beat (tapped on a video or a song) | 비트 (post tools, where the English means musical beats) |
+| Post Studio editor words | 트랙 (lane/track), 레이어, 재생 헤드 (playhead), 키프레임, 크로스페이드, 전환 (transition), 화면 속 화면 (picture in picture), 슬로 모션, 통 시연 (run-through), 분해 스트립 (breakdown strip), 플래시 |
+| Arena / Battle | 아레나 / 배틀 |
+| Hall of Shame | 수치의 전당 |
+| Premium / Free | 프리미엄 / 무료 |
+| Poi | Poi (kept as the catalog does) |
+| session | 세션 |
+| Take | 테이크 |
+| Staff | 스태프 |
+| Friends | 친구 |
+| Clockwise / Counterclockwise | 시계 방향 / 반시계 방향 |
+
+### Unsure
+
+| Key | English | Text | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| `connect_invited_you_to_join` | invited you to join | 님이 초대했어요 | invited you | Fragment that follows a name; the Korean particle attaches to the name. |
+| `connect_is_sharing` | is sharing | 님이 공유 중 | is sharing | Same fragment problem. |
+| `post_editor_card_ring` | Ring on beats | 비트에 맞춰 링 | Ring in time with the beats | Short English; the ring is read as a lit ring that steps with the beat. |
+| `post_editor_hook_spoken` | How to say it | 말하는 방식 | Way of speaking | Context (an opening hook line) is not visible. |
+| `post_editor_titles_lit` | Light one letter | 글자 하나 빛내기 | Make one letter glow | Assumed to light one letter of the name. |
+| `post_editor_split_peel` | Peel | 필 | Peel | Name of a split style; transliterated, reads oddly alone. |
+
+### English to its owner
+
+- `mandala_copy_count`, `mandala_filter_all`, `poi_lab_beat_count`, `poi_lab_beat_number`, `voice_sessions_days_ago`, `voice_sessions_event_count`, `voice_sessions_hours_ago`, `voice_sessions_minutes_ago`: the English wraps the placeholder in literal quotes (`"{count}" copies`). The quotes were dropped; they look like escaping leftovers.
+- `connect_sharing_sequence`: the key says sharing but the English says "Search for users above to invite them." Translated what it says.
+- `connect_no_sessions_nearby` and `connect_sessions_appear_automatically` carry the same text. So do `connect_no_friends_yet` and `connect_add_friends_hint`.
+- `connect_invited_you_to_join`, `connect_is_sharing`, `premium_user_count_tagline` are sentence fragments that only work in English word order.
+- `post_editor_fly_unavailable` says "lane" while the rest of Post Studio says "track". Read as the same thing.
+
+### May not fit
+
+- `post_editor_tool_split_hands`, `post_editor_tool_panel_lift`, `post_editor_tool_fly`: longer than the English in a tool tab.
+- `post_editor_lift_step_across`, `post_editor_lift_step_down`, `post_editor_card_qr_left`, `post_editor_card_qr_top`: the parenthesis form is longer than the English.

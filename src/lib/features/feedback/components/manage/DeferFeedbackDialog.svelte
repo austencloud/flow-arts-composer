@@ -249,8 +249,12 @@
     padding: clamp(12px, 3cqi, 16px);
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
-    border-left: 3px solid var(--semantic-warning);
     border-radius: clamp(8px, 2cqi, 12px);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .feedback-preview {
+    border-left: 3px solid var(--semantic-warning);
   }
 
   .preview-label {

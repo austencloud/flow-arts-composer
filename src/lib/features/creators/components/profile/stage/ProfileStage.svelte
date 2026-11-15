@@ -17,7 +17,7 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { t, type TranslationKey } from "#lib/shared/i18n/i18n.svelte.js";
   import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
   import { scene3dCollectionState } from "#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js";
   import { scene3DHasSteps } from "#lib/features/scene-3d-collection/services/open-3d-scene.js";
@@ -398,10 +398,18 @@
   /** Library > Art shelf ids, which are how the three collection galleries are
    *  addressed (`MyCollectionsPanel.svelte` ART_DETAIL). There is no route —
    *  they mount inside the Library detail pane. */
-  const ART_SHELF: { medium: Medium; id: string; label: string }[] = [
-    { medium: "mandala", id: "art_mandala", label: "Mandalas" },
-    { medium: "tunnel", id: "art_tunnels", label: "Tunnels" },
-    { medium: "scene", id: "art_scenes", label: "3D Scenes" },
+  const ART_SHELF: {
+    medium: Medium;
+    id: string;
+    labelKey: TranslationKey;
+  }[] = [
+    { medium: "mandala", id: "art_mandala", labelKey: "browse_home_mandalas" },
+    { medium: "tunnel", id: "art_tunnels", labelKey: "browse_home_tunnels" },
+    {
+      medium: "scene",
+      id: "art_scenes",
+      labelKey: "browse_collections_scenes_title",
+    },
   ];
 
   /**
@@ -421,6 +429,7 @@
   const collectionStrips = $derived.by(() =>
     ART_SHELF.map((shelf) => ({
       ...shelf,
+      label: t(shelf.labelKey),
       items: collectionEntries.filter((e) => e.medium === shelf.medium),
     }))
       .filter((strip) => strip.items.length > 0)

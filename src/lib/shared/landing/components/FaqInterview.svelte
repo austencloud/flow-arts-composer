@@ -23,6 +23,7 @@
     type FaqNote,
   } from "../faq/faq-items";
   import { siteCopy } from "../site-copy";
+  import { composerIntent } from "../services/composer-prefetch";
 
   let {
     items = FAQ_ITEMS,
@@ -93,7 +94,17 @@
             {before}<a href={faq.note.href}>{faq.note.linkLabel}</a>{after}
           </p>
         {/if}
-        {#if faq.cta}
+        {#if faq.cta?.opensApp}
+          <a
+            class="faq-cta"
+            href={faq.cta.href}
+            data-sveltekit-reload
+            use:composerIntent
+          >
+            {faq.cta.label}
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+          </a>
+        {:else if faq.cta}
           <a class="faq-cta" href={faq.cta.href}>
             {faq.cta.label}
             <i class="fas fa-arrow-right" aria-hidden="true"></i>

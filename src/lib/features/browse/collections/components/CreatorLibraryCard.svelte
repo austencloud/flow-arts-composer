@@ -8,6 +8,7 @@ Displays:
 - "View Profile" link to full profile
 -->
 <script lang="ts">
+  import { collectionDisplayName } from "#lib/shared/library/domain/collection-display-name.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     CreatorLibraryData,
@@ -261,7 +262,9 @@ Displays:
                     class={collection.icon || "fas fa-folder"}
                     style="color: {collection.color || 'inherit'}"
                   ></i>
-                  <span class="collection-name">{collection.name}</span>
+                  <span class="collection-name"
+                    >{collectionDisplayName(collection)}</span
+                  >
                   <span class="collection-count"
                     >{collection.sequenceCount}</span
                   >

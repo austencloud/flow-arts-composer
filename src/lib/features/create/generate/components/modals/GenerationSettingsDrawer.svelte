@@ -8,6 +8,7 @@
     isOpen,
     ariaLabel,
     surface = "accent",
+    fullHeightOnPhone = false,
     onClose,
     children,
   }: {
@@ -23,6 +24,13 @@
      * arrived belonging to a different application than the one it covers.
      */
     surface?: "accent" | "panel";
+    /**
+     * On a phone the bottom sheet is as tall as its content, up to the whole
+     * height, instead of a fixed 85%. For a screen of its own (Fuse's rule
+     * editor) whose controls need every row on a short phone but would leave
+     * an empty band under a fixed full-height sheet on a taller one.
+     */
+    fullHeightOnPhone?: boolean;
     onClose: () => void;
     children: Snippet;
   } = $props();
@@ -37,7 +45,9 @@
     closeOnEscape={true}
     {ariaLabel}
     focusContainerOnOpen={true}
-    class="generation-settings-drawer"
+    class="generation-settings-drawer{fullHeightOnPhone
+      ? ' full-height-on-phone'
+      : ''}"
     backdropClass="generation-settings-backdrop"
     onclose={onClose}
   >
@@ -68,6 +78,15 @@
     height: 85dvh;
     min-height: 0;
     max-height: 85dvh;
+  }
+
+  @media (max-width: 480px) {
+    :global(
+      .drawer-content.generation-settings-drawer.full-height-on-phone[data-placement="bottom"]
+    ) {
+      height: auto;
+      max-height: 100dvh;
+    }
   }
 
   :global(

@@ -76,6 +76,5 @@
   {tray}
   trailingAction={dockAction}
   {onHeightChange}
-  labelMinWidth={340}
   overlay
 />

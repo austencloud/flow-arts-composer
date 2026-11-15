@@ -134,6 +134,59 @@ const DRIFT_HALF_FRAME_FRACTION = 0.14;
  */
 const RENDER_PIXELS_PER_VIEW_UNIT = 1.06;
 
+/**
+ * How the two props are framed. The card keeps the long-standing numbers; the
+ * small formats (a 74px tile, a 29px chip) bring the clusters closer and make
+ * each one fill the frame's height, then expose harder, because at that size a
+ * thin ring cluster is a few faint pixels. Same renderer, same photometry: only
+ * the sweep geometry and the final blit change.
+ */
+export type LedFormat = "card" | "tile" | "chip";
+
+interface LedFraming {
+  half: number;
+  drift: number;
+  stations: number[];
+  /** Brightness multiplier on the final blit, made of additive coats (not a
+   *  canvas filter, which Safari ignores). 1 on the card. */
+  gain: number;
+  /** Radius, in backing px, of the ring of offset copies that thickens a
+   *  hairline ring; 0 on the card. */
+  thicken: number;
+  /** How much light the thickening copies add, as a share of one coat. */
+  bloom: number;
+}
+
+const FRAMING: Record<LedFormat, LedFraming> = {
+  card: {
+    half: STAFF_HALF_LENGTH_FRAME_FRACTION,
+    drift: DRIFT_HALF_FRAME_FRACTION,
+    stations: STATION_X,
+    gain: 1,
+    thicken: 0,
+    bloom: 0,
+  },
+  tile: {
+    half: 0.4,
+    drift: 0.08,
+    stations: [0.27, 0.73],
+    gain: 1.55,
+    thicken: 1.1,
+    bloom: 0.85,
+  },
+  // The chip keeps less exposure than before: at 1.7x with a strong soft pass
+  // every ring clipped to white and the look's colours were gone. A lighter
+  // coat and a wider, gentler thickening keep the colour in the halo.
+  chip: {
+    half: 0.26,
+    drift: 0.04,
+    stations: [0.28, 0.72],
+    gain: 1.1,
+    thicken: 1.3,
+    bloom: 0.95,
+  },
+};
+
 const DT = 1 / 60;
 
 const SETTLE_MAX_SECONDS = 6;
@@ -182,6 +235,43 @@ function acquire(width: number, height: number): WebGLLedRenderer | null {
   return shared;
 }
 
+/**
+ * How far from the shaft's centre the lit LEDs get during the window the
+ * shutter sees, as a fraction of the half-length (1 = the tips). A capsule or a
+ * rainbow staff lights the tips, so it is 1. A comet's head only travels a
+ * fifth of the strip in that window, so its loops are a fraction of the size;
+ * the small formats divide the half-length by this so the figure fills the
+ * frame like the others.
+ */
+function litReach(
+  config: LedSimulatorConfig,
+  pattern: StripPattern,
+  total: number
+): number {
+  const ledCount = Math.max(1, Math.round(config.device.ledCount));
+  const window = visibleWindow(config);
+  const steps = 24;
+  let reach = 0;
+  for (let step = 0; step <= steps; step++) {
+    const t = total - window + (window * step) / steps;
+    const frame = patternFrameIndex(
+      Math.max(0, t) * 1000,
+      config.cycleDuration,
+      pattern.frameCount
+    );
+    for (let led = 0; led < ledCount; led++) {
+      const c = getPixel(pattern, frame, led % pattern.ledCount);
+      if (Math.max(c.r, c.g, c.b) < LIT_CHANNEL_THRESHOLD) continue;
+      const raw = ledCount > 1 ? (led / (ledCount - 1)) * 2 - 1 : 0;
+      reach = Math.max(reach, Math.abs(raw));
+    }
+  }
+  return reach > 0 ? reach : 1;
+}
+
+/** The most a figure is enlarged to fill a small frame. */
+const MAX_REACH_BOOST = 2.2;
+
 function samplesAt(
   seconds: number,
   config: LedSimulatorConfig,
@@ -189,7 +279,8 @@ function samplesAt(
   viewHeight: number,
   totalSeconds: number,
   spins: number,
-  out: LedSample[]
+  out: LedSample[],
+  framing: LedFraming
 ): LedSample[] {
   out.length = 0;
   const ledCount = Math.max(1, Math.round(config.device.ledCount));
@@ -198,8 +289,8 @@ function samplesAt(
     config.cycleDuration,
     pattern.frameCount
   );
-  const halfLength = viewHeight * STAFF_HALF_LENGTH_FRAME_FRACTION;
-  const driftHalf = VIEW_W * DRIFT_HALF_FRAME_FRACTION;
+  const halfLength = viewHeight * framing.half;
+  const driftHalf = VIEW_W * framing.drift;
   const stationY = viewHeight / 2;
   const window = visibleWindow(config);
   const spinAngle = ((seconds * spins) / window) * Math.PI * 2;
@@ -207,14 +298,14 @@ function samplesAt(
   // ribbon the tile shows is centred on the station whatever the window is.
   const drift = (2 * (seconds - (totalSeconds - window))) / window - 1;
 
-  for (let prop = 0; prop < STATION_X.length; prop++) {
+  for (let prop = 0; prop < framing.stations.length; prop++) {
     // Mirrored, not merely offset: opposed spin and opposed drift read as a
     // matched pair of hands rather than one stamp printed twice.
     const sign = prop === 0 ? 1 : -1;
     const angle = spinAngle * sign;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    const cx = VIEW_W * STATION_X[prop]! + drift * driftHalf * sign;
+    const cx = VIEW_W * framing.stations[prop]! + drift * driftHalf * sign;
     const cy = stationY;
 
     for (let led = 0; led < ledCount; led++) {
@@ -271,9 +362,10 @@ const nextTask = (): Promise<void> =>
 export function renderLedThumbnail(
   config: LedSimulatorConfig,
   width: number,
-  height: number
+  height: number,
+  format: LedFormat = "card"
 ): Promise<HTMLCanvasElement | null> {
-  const run = queue.then(() => paint(config, width, height));
+  const run = queue.then(() => paint(config, width, height, format));
   // The queue must survive a failed render, or one broken tile stalls the rest.
   queue = run.catch(() => null);
   return run;
@@ -282,8 +374,10 @@ export function renderLedThumbnail(
 async function paint(
   config: LedSimulatorConfig,
   width: number,
-  height: number
+  height: number,
+  format: LedFormat
 ): Promise<HTMLCanvasElement | null> {
+  let framing = FRAMING[format];
   if (typeof document === "undefined") return null;
   if (config.pattern.source !== "generator") return null;
 
@@ -303,6 +397,13 @@ async function paint(
 
   const overlayConfig = { ...config, enabled: true };
   const total = settleSeconds(config);
+  if (format !== "card") {
+    const boost = Math.min(
+      MAX_REACH_BOOST,
+      1 / Math.max(0.35, litReach(config, pattern, total))
+    );
+    framing = { ...framing, half: framing.half * boost };
+  }
   const samples: LedSample[] = [];
   const spins =
     ledCount > DENSE_STRIP_LEDS && litFraction(pattern) > DENSE_LIT_FRACTION
@@ -314,7 +415,16 @@ async function paint(
   for (let t = 0; t <= total; t += DT) {
     renderer.renderLeds(
       {
-        leds: samplesAt(t, config, pattern, viewHeight, total, spins, samples),
+        leds: samplesAt(
+          t,
+          config,
+          pattern,
+          viewHeight,
+          total,
+          spins,
+          samples,
+          framing
+        ),
         currentTime: t * 1000,
         canvasWidth: VIEW_W,
         canvasHeight: viewHeight,
@@ -336,5 +446,29 @@ async function paint(
   const ctx = out.getContext("2d");
   if (!ctx) return null;
   ctx.drawImage(source, 0, 0, width, height);
+  if (format === "card") return out;
+  // Small formats: expose harder and thicken a hairline ring so it survives
+  // being drawn at a tenth of the size. Both are additive draws of the frame
+  // itself, not a canvas filter (Safari ignores `ctx.filter`), so every
+  // browser shows the same picture.
+  ctx.globalCompositeOperation = "lighter";
+  if (framing.gain > 1) {
+    ctx.globalAlpha = Math.min(1, framing.gain - 1);
+    ctx.drawImage(source, 0, 0, width, height);
+  }
+  const copies = 8;
+  ctx.globalAlpha = Math.min(1, framing.bloom / copies);
+  for (let i = 0; i < copies; i++) {
+    const a = (i / copies) * Math.PI * 2;
+    ctx.drawImage(
+      source,
+      Math.cos(a) * framing.thicken,
+      Math.sin(a) * framing.thicken,
+      width,
+      height
+    );
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
   return out;
 }

@@ -27,6 +27,7 @@ Props:
     getSlotOffsetX,
   } from "../utils/turn-tuple-parser";
   import { calculateTurnPositions } from "../utils/turn-position-calculator";
+  import { turnNumberArt } from "../utils/turn-number-art";
   import { interpretTurnColors } from "../services/turn-color-interpreter";
   import {
     getLetterDimensions,
@@ -367,7 +368,7 @@ Props:
       >
         {#if shouldDisplayTurn(parsedTurns.top)}
           <image
-            href={topImagePath}
+            href={turnNumberArt(topImagePath)}
             x={topOffsetX}
             width={topOwnWidth}
             height={numberHeight}
@@ -379,7 +380,7 @@ Props:
         {/if}
         {#if parsedTurns.topHalved}
           <image
-            href={HALF_MARK_IMAGE_PATH}
+            href={turnNumberArt(HALF_MARK_IMAGE_PATH)}
             x={topOffsetX + topOwnWidth + MARK_GAP}
             width={markWidth}
             height={numberHeight}
@@ -399,7 +400,7 @@ Props:
       >
         {#if shouldDisplayTurn(parsedTurns.bottom)}
           <image
-            href={bottomImagePath}
+            href={turnNumberArt(bottomImagePath)}
             x={bottomOffsetX}
             width={bottomOwnWidth}
             height={numberHeight}
@@ -411,7 +412,7 @@ Props:
         {/if}
         {#if parsedTurns.bottomHalved}
           <image
-            href={HALF_MARK_IMAGE_PATH}
+            href={turnNumberArt(HALF_MARK_IMAGE_PATH)}
             x={bottomOffsetX + bottomOwnWidth + MARK_GAP}
             width={markWidth}
             height={numberHeight}

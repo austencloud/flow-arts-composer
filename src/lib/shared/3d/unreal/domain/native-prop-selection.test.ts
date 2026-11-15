@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { PropBuild } from "@austencloud/scene-3d";
-import { nativePropId, nativePropSelection } from "./native-prop-selection";
+import { FAN_BUILDS } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { nativePropId as encodeNativePropId, nativePropSelection } from "./native-prop-selection";
+
+// The codec covers every look; which ones are offered is a separate gate.
+const nativePropId = (
+  prop: string,
+  build: PropBuild,
+  flips: { leftFlipped?: boolean; rightFlipped?: boolean } = {}
+) => encodeNativePropId(prop, build, flips, FAN_BUILDS);
 
 const build: PropBuild = {
   finish: "fire",

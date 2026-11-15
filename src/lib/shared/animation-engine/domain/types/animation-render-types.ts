@@ -1,3 +1,4 @@
+import type { MotionCueFrame } from "./motion-cue-types";
 import type {
   GridJoinTweenSample,
   HandOffsets,
@@ -73,4 +74,10 @@ export interface RenderSceneParams {
    * drawn moving at its offset while the old and new still pictures fade.
    */
   gridJoinSlide?: GridJoinTweenSample | null;
+  /** Opt-in teaching marks (ghosts, hand path, thumb ring). Null or absent
+   * draws none. */
+  motionCues?: MotionCueFrame | null;
+  /** The playback step this frame shows; motion cues read their progress
+   * from it. */
+  currentStep?: number;
 }

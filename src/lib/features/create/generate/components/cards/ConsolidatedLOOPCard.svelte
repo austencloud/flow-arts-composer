@@ -34,7 +34,7 @@ icons when enabled. Click opens the expanded overlay.
     handRelationship,
     onLOOPTypeChange,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
   } = $props<{
     loopEnabled: boolean;
     currentLOOPType: LOOPType;
@@ -496,7 +496,7 @@ icons when enabled. Click opens the expanded overlay.
     }
 
     .card-value[data-label="long"] {
-      font-size: 11px;
+      font-size: var(--font-size-compact, 12px);
     }
 
     .card-value {

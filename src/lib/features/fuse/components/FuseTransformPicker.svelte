@@ -14,6 +14,7 @@
   passes drafts.
 -->
 <script lang="ts">
+  import { MediaQuery } from "svelte/reactivity";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
@@ -56,6 +57,14 @@
   } = $props();
 
   const { state: fuseState } = getFuseContext();
+
+  // The phone form of the editor: the drawer is a screen of its own there and
+  // every row has to fit without a scroll, so the controls take the phone's
+  // 36px size and step 1 sits on one row. The drawer is portalled out of the
+  // fuse container, so the viewport decides, at the same 480px the composer
+  // uses for its phone layout.
+  const phoneQuery = new MediaQuery("(max-width: 480px)");
+  const phoneForm = $derived(!inline && phoneQuery.current);
   const selectedDriver = $derived(driver ?? fuseState.driverSide);
   const selectedRule = $derived(rule ?? fuseState.rule);
 
@@ -203,7 +212,7 @@
   }
 </script>
 
-<div class="transform-picker" class:inline>
+<div class="transform-picker" class:inline class:phone-form={phoneForm}>
   <!-- Named for what it does to both paths, not for the one it leaves alone.
        "Path you will edit" read as a view toggle, so switching it looked like
        the workspace had swapped to a different fuse: it is a source-of-truth
@@ -291,6 +300,7 @@
         <FuseTnDModePicker
           selected={selection.mode}
           {disabled}
+          size={phoneForm ? "sm" : "md"}
           onpick={chooseMode}
         />
       </div>
@@ -795,6 +805,72 @@
     .operation-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+  }
+
+  /* The phone form, which has to fit a 360 x 591 window without a scroll:
+     step 1 is one 44px row (its heading beside a 36px Left / Right switch),
+     the six modes are 36px chips (TnDModeGrid size sm), the Quarter rotation
+     and the two options are 36px, and the gaps between groups tighten. The
+     card stops growing into spare height, so the chips stay 36px and the
+     spare height sits above Cancel instead. */
+  .phone-form {
+    flex: none;
+    gap: 8px;
+  }
+
+  .phone-form .field,
+  .phone-form .rule-field {
+    flex: none;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .phone-form .field {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .phone-form .field-heading {
+    flex: 0 0 auto;
+  }
+
+  .phone-form .field-label {
+    white-space: nowrap;
+  }
+
+  .phone-form .driver-control {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
+  .phone-form .driver-control :global(.segment),
+  .phone-form .offset-axis :global(.segment) {
+    min-height: var(--alt-touch-target, 36px);
+    padding-block: 0;
+  }
+
+  .phone-form .axis {
+    gap: 4px;
+  }
+
+  .phone-form .mode-axis {
+    flex: none;
+    grid-template-rows: auto auto;
+  }
+
+  .phone-form .axis-label {
+    line-height: 1.25;
+  }
+
+  .phone-form .operation-toggle {
+    gap: 8px;
+    min-height: var(--alt-touch-target, 36px);
+    padding: 0 10px;
+  }
+
+  .phone-form .operation-note {
+    margin: 0 2px;
   }
 
   @media (min-width: 2600px) and (min-height: 1400px) {

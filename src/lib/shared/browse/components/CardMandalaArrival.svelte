@@ -2,11 +2,15 @@
   CardMandalaArrival
 
   What a slow gallery card shows while its picture is on the way (Austen,
-  2026-11-12: "Own mandala, slow cards"). The card's own mandala draws itself
-  as the card loads: the drawing is the card's progress bar, never complete
-  before the picture is ready and never still while the card loads
-  (card-arrival-progress). When the picture is ready beneath it, the last of
-  the drawing finishes and it flies into the squares where the picture paints
+  2026-11-12: "Own mandala, slow cards"). On every line of the card's own
+  mandala one stretch of ink travels round and round for as long as the card
+  waits: the travel says it is alive, the stretch's length says how far the
+  loading has got, and it is never complete before the picture is ready
+  (card-arrival-progress). A caption in the band between the word and the
+  drawing says the same in words ("Waiting its turn", "Loading 40%"), with a
+  small turning mark. The card's bottom edge stays its chips'.
+  When the picture is ready beneath it, the gap closes, the caption fades,
+  and the drawing flies into the squares where the picture paints
   its mandalas while the picture fades in, and the copies land exactly on the
   painted ones, so the hand-off has no jump. A card whose picture paints no
   mandala lets the drawing shrink away instead.
@@ -20,7 +24,8 @@
 
   PropAwareThumbnail mounts this only for a card still empty after a short
   wait, so a card that loads quickly never shows it. Under reduced motion the
-  drawing appears finished and the picture swaps in without movement.
+  drawing shows at its present length without travelling, the mark is still,
+  the caption carries the message, and the picture swaps in without movement.
 
   The drawing sits in the composed card's own pixel space (the SVG viewBox is
   the canvas size, fitted the way the <img> is), so the landing squares come
@@ -61,18 +66,21 @@
     motionDuration,
   } from "#lib/shared/transitions/motion.js";
   import {
+    NUMBERS_CEILING,
     STEP_REST_SHARE,
-    WAIT_CEILING,
-    creepPoints,
     drawKeyframes,
     finishDuration,
+    finishPoints,
     fractionAt,
     numbersTarget,
     openingPoints,
     stepPoints,
+    stillLength,
+    travelAnimation,
     type DrawPoint,
   } from "#lib/shared/browse/services/card-arrival-progress.js";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { HEADER_GLYPH_HEIGHT_RATIO } from "@tka/render-composition";
 
   interface Props {
@@ -93,6 +101,8 @@
      * has no numbers (checking, queued, saving, waiting on the picture).
      */
     progress: { done: number; of: number } | null;
+    /** What the card says in words while it loads ("Waiting its turn"). */
+    caption: string;
     /** The picture is decoded and in place beneath, held hidden. */
     ready: boolean;
     /** Start the picture's fade-in. */
@@ -111,6 +121,7 @@
     box,
     lightMode,
     progress,
+    caption,
     ready,
     onReveal,
     onDone,
@@ -128,6 +139,12 @@
   const REVEAL_AT = 0.5;
   /** How soon in the flight a peeling hand is fully drawn on its own. */
   const PEEL_SHOWN_AT = 0.15;
+  /**
+   * The caption's turning mark, in px: about the cap height of the 12 px
+   * caption, so it reads as part of the line rather than a second spinner.
+   */
+  const CAPTION_RING = 10;
+  const CAPTION_RING_LINE = 1.5;
 
   type Hand = "left" | "right";
   interface Pose {
@@ -161,6 +178,35 @@
   }
 
   /**
+   * The square the waiting drawing fills: centred in the card body below the
+   * word strip, in the picture's pixels.
+   */
+  function drawingSquare(): { x: number; y: number; size: number } {
+    const bodyTop = plan.headerHeight;
+    const bodyHeight = plan.height - bodyTop;
+    return {
+      x: plan.width / 2,
+      y: bodyTop + bodyHeight / 2,
+      size: Math.min(plan.width, bodyHeight) * DRAWING_SHARE,
+    };
+  }
+
+  /**
+   * The caption's band, as shares of the picture's height: from the word
+   * strip's bottom edge (the picture's top edge when it has no strip) down to
+   * the drawing's top edge.
+   */
+  const captionBand = $derived.by(() => {
+    const square = drawingSquare();
+    const top = plan.headerHeight;
+    const bottom = square.y - square.size / 2;
+    return {
+      top: top / plan.height,
+      height: Math.max(0, bottom - top) / plan.height,
+    };
+  });
+
+  /**
    * The copies, fixed when the drawing starts. A "both" drawing is one copy
    * when the picture has a full mandala square (the one-hand squares peel
    * off it), or one copy per hand otherwise, which together make the same
@@ -175,13 +221,11 @@
     if (visible.length === 0) visible.push("left", "right");
     const bigShow: MandalaHandVisibility =
       visible.length === 2 ? "both" : visible[0]!;
-    const bodyTop = start.headerHeight;
-    const bodyHeight = start.height - bodyTop;
-    const size = Math.min(start.width, bodyHeight) * DRAWING_SHARE;
+    const square = drawingSquare();
     const big: Pose = {
-      x: start.width / 2,
-      y: bodyTop + bodyHeight / 2,
-      s: fit(bigShow, size),
+      x: square.x,
+      y: square.y,
+      s: fit(bigShow, square.size),
     };
     const offset = (hand: Hand) =>
       bigShow === "both" && handOffsets ? handOffsets[hand] : { x: 0, y: 0 };
@@ -261,15 +305,23 @@
     )
   );
 
-  /** Reduced motion: the drawing appears finished and nothing follows. */
+  /**
+   * Reduced motion: the drawing shows at its present length with no travel,
+   * the turning mark is still, and the caption carries the message.
+   */
   const still = motionDuration(DURATION.scene) <= 0;
+  /** Each path's length animation (stroke-dasharray). */
   let draws: Animation[] = [];
-  /** The stretch of drawing now playing on every path. */
+  /** Each path's endless travel (stroke-dashoffset). */
+  let travels: Animation[] = [];
+  /** The stretch of lengths now playing on every path. */
   let stretch: DrawPoint[] = [];
-  /** The drawn fraction when the first step number came in. */
+  /** The length when the first step number came in. */
   let base: number | null = null;
   let lastDone = 0;
-  let waiting = false;
+  /** The steps are done; the length sits at the ceiling until ready. */
+  let atCeiling = false;
+  let captionEl = $state<HTMLDivElement | null>(null);
   let started = $state(false);
   let handedOff = false;
   let destroyed = false;
@@ -328,7 +380,7 @@
     );
   }
 
-  /** How much of the drawing is drawn right now, worked out from the clock. */
+  /** The stretch's length right now, worked out from the clock. */
   function drawnNow(): number {
     const first = draws[0];
     if (!first) return 0;
@@ -336,8 +388,26 @@
   }
 
   /**
-   * Play a new stretch on every path at once, so they stay in step. Each
-   * path keeps its one animation for the overlay's whole life.
+   * The caption arrives with the drawing, on the drawn word's glide, and
+   * leaves on the word's fade. Opacity only, so it never moves anything.
+   */
+  function fadeCaption(to: 0 | 1): void {
+    const ms = motionDuration(DURATION.emphasis);
+    if (!captionEl) return;
+    if (to === 1 && ms <= 0) return;
+    track(
+      captionEl.animate([{ opacity: 1 - to }, { opacity: to }], {
+        duration: ms,
+        easing: EASE_STANDARD,
+        fill: to === 0 ? "forwards" : "none",
+      })
+    );
+  }
+
+  /**
+   * Play a new stretch of lengths on every path at once, so they stay in
+   * step. Each path keeps its one length animation for the overlay's whole
+   * life, beside its one travel.
    */
   function play(points: DrawPoint[], easing = "linear"): void {
     stretch = points;
@@ -351,19 +421,22 @@
     }
   }
 
-  /** Move the drawing on with the card's loading. Never backwards. */
+  /**
+   * Set the length with the card's loading. Never shorter; the travel goes
+   * on underneath whatever the length does.
+   */
   function follow(next: Props["progress"]): void {
     if (handedOff) return;
     if (next && next.of > 0 && next.done < next.of) {
       const now = drawnNow();
-      // A render that starts over counts up again from where the line is.
+      // A render that starts over counts up again from where the length is.
       if (base === null || next.done < lastDone) base = now;
       lastDone = next.done;
       const target = numbersTarget(base, next.done, next.of);
-      // A count the line is already past leaves the present stretch running.
+      // A count the length is already past leaves the present stretch running.
       if (target <= now) return;
       const step = numbersTarget(base, next.done + 1, next.of) - target;
-      waiting = false;
+      atCeiling = false;
       play(
         stepPoints(
           now,
@@ -372,23 +445,43 @@
           motionDuration(DURATION.emphasis)
         )
       );
-    } else if ((next || base !== null) && !waiting) {
-      // The steps are done and the picture is not: keep creeping.
-      waiting = true;
-      play(creepPoints(drawnNow(), WAIT_CEILING));
+    } else if ((next || base !== null) && !atCeiling) {
+      // The steps are done (or the card has moved on to saving) and the
+      // picture is not: the length goes to the ceiling and stays, and the
+      // gap keeps travelling. No creep toward whole.
+      atCeiling = true;
+      const now = drawnNow();
+      if (now >= NUMBERS_CEILING) return;
+      play(
+        stepPoints(
+          now,
+          NUMBERS_CEILING,
+          NUMBERS_CEILING,
+          motionDuration(DURATION.emphasis)
+        )
+      );
     }
   }
 
   onMount(() => {
     // Measured first, while the layout is still clean from mounting.
     glideWord();
-    // Ink shows from the first frame and keeps coming for as long as the
-    // card loads.
-    stretch = still ? [{ at: 0, d: 1 }] : openingPoints();
+    fadeCaption(1);
+    // Ink shows from the first frame and travels for as long as the card
+    // loads.
+    stretch = still ? [{ at: 0, d: stillLength(progress) }] : openingPoints();
     const { keyframes, duration } = drawKeyframes(stretch);
-    draws = [...rootEl.querySelectorAll<SVGPathElement>("path.trace")].map(
-      (path) => track(path.animate(keyframes, { duration, fill: "forwards" }))
+    const traces = [...rootEl.querySelectorAll<SVGPathElement>("path.trace")];
+    draws = traces.map((path) =>
+      track(path.animate(keyframes, { duration, fill: "forwards" }))
     );
+    if (!still) {
+      // Started together in one task, so every path laps in step.
+      const lap = travelAnimation();
+      travels = traces.map((path) =>
+        track(path.animate(lap.keyframes, lap.timing))
+      );
+    }
     started = true;
     return () => {
       destroyed = true;
@@ -400,32 +493,35 @@
   $effect(() => {
     if (!started) return;
     if (ready) void handOff();
-    else if (!still) follow(progress);
+    else if (still) play([{ at: 0, d: stillLength(progress) }]);
+    else follow(progress);
   });
 
   async function handOff(): Promise<void> {
     if (handedOff) return;
     handedOff = true;
+    // The words go first, so nothing sits under the copies' flight.
+    fadeCaption(0);
 
-    // The picture is ready: what is left of the drawing finishes, then it
-    // flies. The beat grows with what is left; too short a beat lurches. It
-    // eases in as well as out: easing out alone drew most of what was left
-    // in two or three frames, then sat complete before the flight.
-    if (!still) {
+    // The picture is ready: the gap closes from wherever the length is, then
+    // the drawing flies. The beat grows with what is left; too short a beat
+    // lurches. It eases in as well as out: easing out alone drew most of
+    // what was left in two or three frames, then sat complete before the
+    // flight.
+    if (still) {
+      play([{ at: 0, d: 1 }]);
+    } else {
       const now = drawnNow();
       const finishMs = motionDuration(
         finishDuration(1 - now, DURATION.emphasis, DURATION.scene)
       );
-      play(
-        [
-          { at: 0, d: now },
-          { at: finishMs, d: 1 },
-        ],
-        EASE_STANDARD
-      );
+      play(finishPoints(now, finishMs), EASE_STANDARD);
     }
     await settled(draws);
     if (destroyed) return;
+    // A whole line has no gap to carry round; stop repainting it.
+    for (const travel of travels) travel.cancel();
+    travels = [];
 
     const flyMs = motionDuration(DURATION.dramatic);
     const awayMs = motionDuration(DURATION.emphasis);
@@ -523,14 +619,14 @@
 </script>
 
 <div class="card-arrival" bind:this={rootEl} aria-hidden="true">
-  {#if plan.headerHeight > 0 && word}
-    <!-- The picture's own frame: the card box can be a little taller or wider
-         than the picture, which then sits letterboxed in it, as the svg does. -->
-    <div
-      class="arrival-frame"
-      style:width="min(100cqw, 100cqh * {plan.width / plan.height})"
-      style:height="min(100cqh, 100cqw * {plan.height / plan.width})"
-    >
+  <!-- The picture's own frame: the card box can be a little taller or wider
+       than the picture, which then sits letterboxed in it, as the svg does. -->
+  <div
+    class="arrival-frame"
+    style:width="min(100cqw, 100cqh * {plan.width / plan.height})"
+    style:height="min(100cqh, 100cqw * {plan.height / plan.width})"
+  >
+    {#if plan.headerHeight > 0 && word}
       <!-- The word fits the room the picture letters it in, between the level
            badge and the LOOP icons, so a long word lands at the painted size. -->
       <div
@@ -548,8 +644,31 @@
           fitToParent
         />
       </div>
-    </div>
-  {/if}
+    {/if}
+    <!-- The card says in words that it is loading (Austen, 2026-11-14: "I
+         think we have to be more explicit"). In the band between the word
+         strip and the drawing, which nothing else uses while the card waits;
+         the bottom edge belongs to the card's chips. -->
+    {#if caption}
+      <div
+        class="arrival-caption-band"
+        style:top="{captionBand.top * 100}%"
+        style:height="{captionBand.height * 100}%"
+      >
+        <div class="arrival-caption" bind:this={captionEl}>
+          <span class="caption-turn" class:still>
+            <ProgressRing
+              percent={-1}
+              size={CAPTION_RING}
+              strokeWidth={CAPTION_RING_LINE}
+              color="currentColor"
+            />
+          </span>
+          <span class="caption-words">{caption}</span>
+        </div>
+      </div>
+    {/if}
+  </div>
   <svg
     viewBox="0 0 {plan.width} {plan.height}"
     preserveAspectRatio="xMidYMid meet"
@@ -660,8 +779,9 @@
     opacity: 1;
   }
 
+  /* Nothing shows until the length animation lays down the first ink. */
   .trace {
-    stroke-dasharray: 1 1;
+    stroke-dasharray: 0 1;
     stroke-dashoffset: 1;
   }
 
@@ -671,5 +791,52 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* The band from the word strip to the drawing, the frame's width less a
+     small inset each side. The line centres in it both ways; the auto
+     margins drop to nothing when the band is thinner than the line, so the
+     line keeps its height and sits against the band's top edge. */
+  .arrival-caption-band {
+    position: absolute;
+    left: var(--space-2026-xs);
+    right: var(--space-2026-xs);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Ring then words, as one centred group; the words end in an ellipsis
+     when the band is too narrow. */
+  .arrival-caption {
+    margin: auto;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    min-width: 0;
+    font-size: var(--font-size-compact);
+    line-height: 1.25;
+    /* The theme's full text colour: the caption has to be explicit. */
+    color: var(--theme-text);
+  }
+
+  .caption-turn {
+    display: flex;
+    flex: none;
+  }
+
+  /* The ring spins by CSS on its svg root (transform only, so the compositor
+     keeps it turning while the page renders cards); the app's own
+     reduced-motion setting stops it too, not only the system one. */
+  .caption-turn.still :global(svg) {
+    animation: none;
+  }
+
+  .caption-words {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
   }
 </style>

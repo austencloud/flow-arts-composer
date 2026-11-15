@@ -38,6 +38,11 @@ import {
   shouldHoldReplay,
 } from "#lib/shared/analytics/services/replay-hold.js";
 import { pageBootsInto3D } from "#lib/shared/sequence-viewer/services/viewer-boot-3d.js";
+import {
+  detectInAppBrowser,
+  isRunningAsStandalone,
+} from "#lib/shared/mobile/services/platform-detector.js";
+import { displayModeOf } from "#lib/shared/pwa/install-route.js";
 
 // src/env.ts declares the PostHog values static, so they are inlined at build
 // time. Capacitor serves a static bundle with no Worker behind it, and inlined
@@ -448,6 +453,7 @@ async function initializePostHog(): Promise<void> {
       // Before the first $pageview too, so a signed-out visit from Austen's
       // own browser is filtered from its very first event.
       registerInternalBrowser(posthog);
+      registerDisplayMode(posthog);
       // Scan attribution must be registered here, before posthog-js schedules
       // the initial $pageview immediately after this callback returns.
       notifyPostHogReady(posthog);
@@ -531,6 +537,24 @@ export function resetUser(): void {
   // reset() clears super properties along with the identity. Put the
   // internal mark back so the signed-out visit that follows stays filtered.
   registerInternalBrowser(posthog);
+  registerDisplayMode(posthog);
+}
+
+/**
+ * Tag every event with how the app is running: `display_mode` is "installed"
+ * (opened from the home screen) or "browser" (a tab), and `in_app_browser`
+ * names Instagram, Facebook and the like, or "none". Before 2026-11-13 the two
+ * could only be guessed from how much of the screen the page filled.
+ */
+function registerDisplayMode(instance: PostHogReadyClient): void {
+  try {
+    instance.register({
+      display_mode: displayModeOf(isRunningAsStandalone()),
+      in_app_browser: detectInAppBrowser(),
+    });
+  } catch (error) {
+    console.warn("[posthog] could not register display mode", error);
+  }
 }
 
 /**

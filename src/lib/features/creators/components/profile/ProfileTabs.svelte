@@ -155,7 +155,7 @@
             })}
           >
             <div class="card-thumbnail">
-              <PropAwareThumbnail {sequence} {lightMode} />
+              <PropAwareThumbnail {sequence} {lightMode} gridCard />
             </div>
 
             {#if sequence.starCount > 0}

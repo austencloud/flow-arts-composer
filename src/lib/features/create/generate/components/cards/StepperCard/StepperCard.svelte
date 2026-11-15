@@ -22,7 +22,7 @@ The actual implementation is now in $lib/shared/components/stepper-card
     textColor = "white",
     gridColumnSpan = 2,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
     appearance = "vivid",
   } = $props<{
     title: string;

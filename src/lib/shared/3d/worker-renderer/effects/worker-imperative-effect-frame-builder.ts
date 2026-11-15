@@ -304,7 +304,9 @@ export class WorkerImperativeEffectFrameBuilder {
           renderer: "moon-fan",
           sourceId: `${input.performerId}:${propIndex}:moon-fan`,
           sampleSequence: sequence,
-          enabled: input.intent.playing,
+          // The fan's own lights are part of how it looks, so they stay lit
+          // while paused, as the page renderer keeps them.
+          enabled: true,
           worldCenter: prop.worldCenter,
           worldRotation: prop.worldRotation,
           ledColors: stripColors(moonPattern, moonFrame),

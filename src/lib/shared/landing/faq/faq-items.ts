@@ -20,7 +20,12 @@
  * Design: docs/superpowers/specs/2026-07-16-interactive-faq-design.md
  */
 
-export type FaqCta = { label: string; href: string };
+/**
+ * `opensApp` marks a door into the app itself: it reloads the document (the
+ * app shell boots with Firebase, which the public pages leave out) and warms
+ * the app's code on first intent.
+ */
+export type FaqCta = { label: string; href: string; opensApp?: boolean };
 
 /**
  * One sentence under an answer that needs a link mid-sentence. `text` must
@@ -81,7 +86,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     question: "Is there software for flow arts choreography?",
     answer:
       "Yes. Flow Arts Composer is free flow arts software that runs in your browser. Build sequences step by step, generate them from parameters, animate the result, save it, and share it. Each sequence keeps its Kinetic Alphabet notation, so the structure remains visible beside the animation.",
-    cta: { label: "Open Flow Arts Composer", href: "/composer" },
+    cta: { label: "Open Flow Arts Composer", href: "/create", opensApp: true },
   },
   {
     question: "Is Flow Arts Composer free?",

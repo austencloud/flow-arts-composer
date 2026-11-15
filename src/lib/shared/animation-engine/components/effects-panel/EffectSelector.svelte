@@ -47,6 +47,9 @@
     /** Off as the grid's first tile, for a host whose box holds nothing else.
      *  It takes up whatever the last row leaves empty, so no hole remains. */
     onOff?: () => void;
+    /** A phone dock under the player: four one-line tiles across, icon beside
+     *  name, 36px tall. Ignores `catalog`. */
+    dock?: boolean;
   }
 
   const {
@@ -62,6 +65,7 @@
     portrait,
     morphName = null,
     onOff,
+    dock = false,
   }: Props = $props();
 
   function morphPart(part: string, effectId: string) {
@@ -74,6 +78,12 @@
   const showCatalog = $derived(!!catalog);
   const showPortraits = $derived(
     !!catalog && catalog.portrait > 0 && !!portrait
+  );
+  /** The phone tray (86x49 tiles, no catalog): the tile-format picture of the
+   *  effect's look stands over its name where an icon did, in a box that is
+   *  always 74x27 so nothing moves when the pictures arrive. */
+  const trayPictures = $derived(
+    layout === "tray" && !catalog && !dock && !!portrait
   );
 
   const effects = $derived(
@@ -103,8 +113,10 @@
   <div
     class="effect-selector"
     class:tray={layout === "tray"}
+    class:pictures={trayPictures}
     class:catalog={showCatalog}
     class:fill={catalog?.fill}
+    class:dock
     data-orientation={catalog?.orientation}
     style:--fx-cols={catalog?.cols}
     style:--fx-rows={catalog?.rows}
@@ -193,6 +205,15 @@
               >
             {/if}
           </span>
+        {:else if trayPictures && portrait}
+          <span class="effect-portrait tray-portrait" aria-hidden="true">
+            {@render portrait(effect.id)}
+          </span>
+          <span
+            class="effect-label"
+            use:claimedViewTransitionName={morphPart("name", effect.id)}
+            >{effectUiLabel(effect.label)}</span
+          >
         {:else}
           <i
             class="fas effect-icon {effect.icon}"
@@ -205,7 +226,7 @@
             >{effectUiLabel(effect.label)}</span
           >
         {/if}
-        {#if isActive && activeAction === "tune"}
+        {#if isActive && activeAction === "tune" && !dock}
           <span
             class="tune-badge"
             aria-hidden="true"
@@ -243,6 +264,27 @@
     container: effect-selector / inline-size;
   }
 
+  /* Tray with pictures: the same 86x49 tile. A 74x27 picture, the name at its
+     12px floor, and 2px of padding keep the height the icon version had. */
+  .effect-selector.tray.pictures .effect-btn {
+    padding: 2px 4px;
+    gap: 3px;
+  }
+  .tray-portrait {
+    flex: none;
+    width: min(74px, 100%);
+    height: 27px;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .effect-portrait.tray-portrait > :global(div) {
+    border: 0;
+    border-radius: 5px;
+  }
+  .effect-selector.tray.pictures .off-tile {
+    justify-content: center;
+  }
+
   .effect-selector {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -262,8 +304,47 @@
      about 195px) 34px per label, which clips "Sparkle" and "Bubbles". Three
      columns keep every name whole. */
   @container effect-selector (max-width: 15.5rem) {
-    .effect-selector:not(.tray, .catalog) {
+    .effect-selector:not(.tray, .catalog, .dock) {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* ── Phone dock ──
+     4 x 36px rows with 6px gaps = 162px. The active tile keeps its tint and
+     full ink border; the tune badge goes, since the Tune button under the
+     grid names the active effect. A body of 300px or more has the room for
+     icon over name, at 52px (the panel is the size container). */
+  .effect-selector.dock {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: var(--alt-touch-target, 36px);
+    gap: 6px;
+  }
+
+  .effect-selector.dock .effect-btn {
+    min-height: 0;
+    flex-direction: row;
+    gap: 5px;
+    padding: 0 4px;
+    border-radius: 8px;
+  }
+
+  .effect-selector.dock .effect-btn.active {
+    border-width: 2px;
+    background: color-mix(in srgb, var(--effect-color) 22%, transparent);
+  }
+
+  .effect-selector.dock .effect-btn i {
+    flex: none;
+  }
+
+  @container effects-panel (min-height: 18.75rem) {
+    .effect-selector.dock {
+      grid-auto-rows: 52px;
+    }
+
+    .effect-selector.dock .effect-btn {
+      flex-direction: column;
+      gap: 4px;
     }
   }
 

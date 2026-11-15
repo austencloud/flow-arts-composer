@@ -19,7 +19,7 @@ same setting is not exposed in two places.
     shadowColor = "330deg 75% 55%",
     gridColumnSpan = 2,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
   } = $props<{
     currentPeriod: number;
     onPeriodChange: (period: number) => void;

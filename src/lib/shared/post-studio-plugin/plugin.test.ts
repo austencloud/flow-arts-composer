@@ -47,6 +47,8 @@ describe("tka plugin", () => {
     expectTypeOf<"titles">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<"arrangement">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<"mandala">().toMatchTypeOf<PostItemKind>();
+    expectTypeOf<"flash">().toMatchTypeOf<PostItemKind>();
+    expectTypeOf<"credit">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<Extract<PostItem, { kind: "animation" }>>().not.toBeNever();
     // The checks above also pass if a kind type decays to any; these name the exact unions.
     expectTypeOf<PostItemKind>().toEqualTypeOf<
@@ -60,9 +62,18 @@ describe("tka plugin", () => {
       | "titles"
       | "arrangement"
       | "mandala"
+      | "flash"
+      | "credit"
     >();
     expectTypeOf<keyof PluginItemKinds>().toEqualTypeOf<
-      "animation" | "moves" | "carousel" | "titles" | "arrangement" | "mandala"
+      | "animation"
+      | "moves"
+      | "carousel"
+      | "titles"
+      | "arrangement"
+      | "mandala"
+      | "flash"
+      | "credit"
     >();
     expect(TKA_ITEM_KINDS.map((definition) => definition.kind)).toEqual([
       "animation",
@@ -71,6 +82,8 @@ describe("tka plugin", () => {
       "arrangement",
       "titles",
       "mandala",
+      "flash",
+      "credit",
     ]);
   });
 
@@ -208,7 +221,7 @@ describe("tka painter factories", () => {
     expect(typeof painter?.paint).toBe("function");
   }
 
-  it("lists the five factories in the order the registry asks them", () => {
+  it("lists the eight factories in the order the registry asks them", () => {
     const ids = createTkaPainters({
       getSequence: () => sequence,
       showProgressBar: () => false,
@@ -221,7 +234,10 @@ describe("tka painter factories", () => {
       "tka-strips",
       "tka-overlay",
       "tka-titles",
+      "tka-flash",
+      "tka-credit",
       "tka-staff",
+      "tka-comet",
     ]);
   });
 

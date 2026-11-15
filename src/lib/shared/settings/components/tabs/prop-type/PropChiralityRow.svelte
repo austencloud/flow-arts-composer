@@ -18,7 +18,10 @@
   .claude/rules/chip-primitives.md. A is the unflipped artwork and B its
   mirror; every version draws A the same way
   (tests/unit/buugeng-art-handedness.test.ts). The "What's this?" chip opens
-  the explainer on the props page.
+  the Buugeng pairs screen in the host's own sheet when the host passes
+  `onExplain` (BuugengPairsExplainer, drilled by PropGrid), so nobody leaves
+  the app mid-edit. Without it the chip links to the props page. The pairs
+  screen mounts this row `bare`: no heading, hint or chip, just the tiles.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -29,6 +32,7 @@
   } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import BuugengPairPreview from "./BuugengPairPreview.svelte";
   import {
     BUUGENG_PAIRS,
@@ -51,6 +55,8 @@
     partner,
     onChange,
     colors,
+    onExplain,
+    bare = false,
   }: {
     /** The buugeng-family prop the tiles draw. */
     propType: PropType;
@@ -60,12 +66,18 @@
     partner?: PropChiralityHandState;
     onChange: (hand: ChiralityHand, flipped: boolean) => void;
     colors?: ViewerCustomColorPair | null;
+    /** Opens the in-sheet pairs screen; without it the chip links out. */
+    onExplain?: () => void;
+    /** Tiles only, for the pairs screen that already explains them. */
+    bare?: boolean;
   } = $props();
 
   const palette = $derived(resolveViewerCustomColorPair(colors));
   const leftState = $derived(hands.find((state) => state.hand === "left"));
   const rightState = $derived(hands.find((state) => state.hand === "right"));
-  const bothHands = $derived(leftState !== undefined && rightState !== undefined);
+  const bothHands = $derived(
+    leftState !== undefined && rightState !== undefined
+  );
 
   let width = $state(0);
   // One row of four keeps the picker short enough to sit under the version
@@ -118,19 +130,33 @@
   ];
 </script>
 
-<div class="chirality-row" bind:clientWidth={width}>
-  <div class="chirality-heading">
-    <span class="chirality-label">{t("settings_buugeng_pair")}</span>
-    <LinkChip size="inline" href="/notation/props#buugeng-chirality">
-      {t("settings_buugeng_whats_this")}
-    </LinkChip>
-  </div>
-  <p class="chirality-hint">
-    {t("settings_buugeng_pair_hint")}
-    {#if !bothHands && partner}
-      {t("settings_buugeng_pair_one_hand_hint")}
-    {/if}
-  </p>
+<div class="chirality-row" class:bare bind:clientWidth={width}>
+  {#if !bare}
+    <div class="chirality-heading">
+      <span class="chirality-label">{t("settings_buugeng_pair")}</span>
+      {#if onExplain}
+        <FilterChipBase
+          mode="action"
+          size="sm"
+          label={t("settings_buugeng_whats_this")}
+          icon="fas fa-circle-question"
+          onclick={onExplain}
+        />
+      {:else}
+        <LinkChip size="inline" href="/notation/props#buugeng-chirality">
+          {t("settings_buugeng_whats_this")}
+        </LinkChip>
+      {/if}
+    </div>
+    <p class="chirality-hint">
+      {t("settings_buugeng_pair_hint")}
+      {#if !bothHands && partner}
+        {t("settings_buugeng_pair_one_hand_hint")}
+      {/if}
+    </p>
+  {:else if !bothHands && partner}
+    <p class="chirality-hint">{t("settings_buugeng_pair_one_hand_hint")}</p>
+  {/if}
 
   {#if bothHands}
     <SegmentedControl
@@ -221,6 +247,13 @@
     );
   }
 
+  .chirality-row.bare {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
   .chirality-heading {
     display: flex;
     align-items: center;
@@ -259,6 +292,16 @@
 
   .pair-tile :global(.pair-crop) {
     max-width: 120px;
+  }
+
+  /* On the pairs screen the stage is the big picture; the tiles stay at
+     picker size however wide the sheet is. */
+  .bare .pair-tile {
+    padding: 2px 0;
+  }
+
+  .bare .pair-tile :global(.pair-crop) {
+    max-width: 4.5rem;
   }
 
   .pair-name {

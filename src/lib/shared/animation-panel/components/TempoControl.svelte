@@ -239,14 +239,16 @@
         onclick={handlePracticeClick}
         type="button"
         aria-label={practiceActive
-          ? "Stop practice training"
-          : "Start practice training"}
+          ? t("viewer_detail_stop_practice_training")
+          : t("viewer_detail_start_practice_training")}
       >
         <i
           class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}"
           aria-hidden="true"
         ></i>
-        <span>{practiceActive ? "Stop" : "Practice"}</span>
+        <span
+          >{practiceActive ? t("viewer_ui_stop") : t("viewer_ui_practice")}</span
+        >
       </button>
     {/if}
   </div>

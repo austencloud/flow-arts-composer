@@ -53,12 +53,30 @@ export function hasEscapeShortcutTarget(
   return resolveEscapeShortcutTarget(document) !== null;
 }
 
+let activatingEscape = false;
+
+/**
+ * True while Escape is pressing its target button. click() runs the button's
+ * handler synchronously, so a close handler can ask this to tell an Escape
+ * close from a press of the button itself (the viewer's close analytics).
+ */
+export function isEscapeShortcutActivation(): boolean {
+  return activatingEscape;
+}
+
 export function activateEscapeShortcutTarget(
   document: Document = globalThis.document
 ): boolean {
   const target = resolveEscapeShortcutTarget(document);
   if (!target) return false;
 
-  if (isShortcutTargetEnabled(target)) target.click();
+  if (isShortcutTargetEnabled(target)) {
+    activatingEscape = true;
+    try {
+      target.click();
+    } finally {
+      activatingEscape = false;
+    }
+  }
   return true;
 }

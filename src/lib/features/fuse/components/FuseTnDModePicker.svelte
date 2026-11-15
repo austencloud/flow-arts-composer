@@ -5,15 +5,17 @@
   let {
     selected,
     disabled = false,
+    size = "md",
     onpick,
   }: {
     selected: VtgMode;
     disabled?: boolean;
+    size?: "md" | "sm";
     onpick: (mode: VtgMode) => void;
   } = $props();
 </script>
 
-<div class="mode-picker"><TnDModeGrid {selected} {disabled} {onpick} /></div>
+<div class="mode-picker"><TnDModeGrid {selected} {disabled} {size} {onpick} /></div>
 
 <style>
   .mode-picker {

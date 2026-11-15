@@ -15,6 +15,7 @@ export type ScanStage =
   | "shortcode-resolved"
   | "viewer-modules-ready"
   | "hydrated"
+  | "cell-prefetch-start"
   | "handoff-navigate"
   | "sequence-route-mounted"
   | "viewer-page-mounted"

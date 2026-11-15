@@ -24,6 +24,11 @@ import type {
 } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 import type { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
 import type { ThumbnailStage } from "./thumbnail-metrics-collector";
+import { inputUsesDefaults } from "./thumbnail-key-deriver";
+import {
+  ENGLISH_STEP_LABELS,
+  type StepLabels,
+} from "#lib/shared/render/services/step-number-renderer.js";
 
 /** Result of a thumbnail render. `qrConsistent` is false only when a QR was
  * requested but its bitmap could not be produced — the orchestrator uses it to
@@ -63,7 +68,9 @@ export type RenderStageCallback = (
   details?: { workerEligible?: boolean }
 ) => void;
 
-const DEFAULT_BEAT_SIZE = 240;
+/** Cell size the gallery pictures are drawn at (StartWordOverlay reads it). */
+export const DEFAULT_BEAT_SIZE = 240;
+const BLANK_STEP_LABELS: StepLabels = { start: "", end: "" };
 const DEFAULT_FORMAT = "WebP" as const;
 const DEFAULT_QUALITY = 0.9;
 
@@ -356,6 +363,16 @@ export class ThumbnailRenderer {
 
       // Always include reversal symbols
       addReversalSymbols: true,
+
+      // A shared picture serves every language, so its Start corner stays
+      // blank and the card lays the visitor's word on top. A personal one is
+      // drawn for this visitor alone and carries their word.
+      stepLabels: inputUsesDefaults(input)
+        ? BLANK_STEP_LABELS
+        : {
+            start: input.startLabel ?? ENGLISH_STEP_LABELS.start,
+            end: ENGLISH_STEP_LABELS.end,
+          },
 
       // Background based on light mode
       backgroundColor: input.lightMode ? "#ffffff" : "#1a1a2e",

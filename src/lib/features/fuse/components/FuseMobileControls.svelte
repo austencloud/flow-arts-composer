@@ -143,7 +143,11 @@
 </div>
 
 <style>
+  /* Phone controls are 36px (layout law, Tap size); the round viewer button is
+     the main action and stays at 44. Two rows: 44 + 8 + 36 = 88px. */
   .mobile-controls {
+    --min-touch-target: var(--alt-touch-target, 36px);
+    --viewer-size: 44px;
     container: fuse-controls / inline-size;
     display: grid;
     flex: 0 0 auto;
@@ -165,7 +169,8 @@
 
   .result-row :global(.panel-btn) {
     min-width: 0;
-    min-height: var(--min-touch-target, 48px);
+    min-height: var(--min-touch-target);
+    padding-block: 0;
   }
 
   .result-row :global(.panel-btn) {
@@ -183,6 +188,8 @@
   }
 
   .shuffle-control :global(.panel-btn) {
+    min-height: var(--min-touch-target);
+    padding-block: 0;
     padding-inline: 8px;
     border-radius: var(--settings-radius-md, 14px);
     font-size: var(--font-size-min, 14px);
@@ -191,9 +198,10 @@
   }
 
   .viewer-control :global(.action-button) {
-    width: 58px;
-    height: 58px;
-    min-height: 58px;
+    width: var(--viewer-size);
+    min-width: var(--viewer-size);
+    height: var(--viewer-size);
+    min-height: var(--viewer-size);
     padding: 0;
     border-radius: 50%;
     font-size: 18px;
@@ -338,17 +346,9 @@
       gap: 6px;
     }
 
-    .shuffle-control :global(.panel-btn),
-    .viewer-control :global(.action-button) {
+    .shuffle-control :global(.panel-btn) {
       gap: 5px;
       padding-inline: 5px;
-    }
-
-    .viewer-control :global(.action-button) {
-      width: 54px;
-      height: 54px;
-      min-height: 54px;
-      padding: 0;
     }
   }
 </style>

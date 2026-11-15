@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * One sequence as a start box + a NEAT grid of fused step rows. The start
    * position is never mixed into the step flow: it takes its own leading
@@ -224,7 +225,7 @@
   </div>
 {/snippet}
 
-<figure class="guide-step-strip" class:grows={maxCell > 132} class:fill role="group" aria-label={caption ?? "Sequence"} bind:clientWidth={ownW}>
+<figure class="guide-step-strip" class:grows={maxCell > 132} class:fill role="group" aria-label={caption ?? t("viewer_ui_sequence")} bind:clientWidth={ownW}>
   {#if layout.mode === "scroll"}
     <!-- Pre-measurement fallback (SSR / no-JS): aside above, everything in one
          scrollable row rather than overflowing the page. Vanishes once measured. -->

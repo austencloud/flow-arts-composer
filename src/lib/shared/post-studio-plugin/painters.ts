@@ -20,7 +20,13 @@ import { createBeatCarouselPainter } from "#lib/shared/media-composition/service
 import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
 import { createStaffEffectPainter } from "#lib/shared/media-composition/services/staff-effect-painter.js";
 import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
-import { itemIdFromStaffEffectRole } from "./compile-hooks";
+import { createFlashPainter } from "#lib/shared/media-composition/services/flash-painter.js";
+import { createCreditPainter } from "#lib/shared/media-composition/services/credit-painter.js";
+import { createCometTrailsPainter } from "#lib/shared/media-composition/services/comet-trails-painter.js";
+import {
+  itemIdFromCometTrailsRole,
+  itemIdFromStaffEffectRole,
+} from "./compile-hooks";
 
 /** The app state tka's painters read, owned by the editor that hosts them. */
 export interface TkaPainterDeps {
@@ -62,6 +68,9 @@ export function createTkaPainters(
   >();
   const titlesPainters = new Map<string, PostStudioLayerPainter>();
   const staffPainters = new Map<string, PostStudioLayerPainter>();
+  const cometPainters = new Map<string, PostStudioLayerPainter>();
+  const flashPainters = new Map<string, PostStudioLayerPainter>();
+  const creditPainters = new Map<string, PostStudioLayerPainter>();
 
   function videoItem(itemId: string): PostVideoItem | null {
     if (!latest) return null;
@@ -127,12 +136,59 @@ export function createTkaPainters(
           () =>
             latest?.compiled.titles.find((entry) => entry.itemId === itemId) ??
             null,
-          () => {
-            const sequence = deps.getSequence();
-            return simplifyRepeatedWord(sequence.word || deriveWord(sequence));
+          {
+            word: () => {
+              const sequence = deps.getSequence();
+              return simplifyRepeatedWord(
+                sequence.word || deriveWord(sequence)
+              );
+            },
+            // The letter of each move, which the lit letter follows.
+            beatLetters: () =>
+              deps.getSequence().steps.map((step) => step.letter ?? null),
           }
         );
         titlesPainters.set(itemId, painter);
+      }
+      return painter;
+    },
+  };
+
+  const creditFactory: PainterFactory = {
+    id: "tka-credit",
+    create(role, env) {
+      const plan = env.compiled.credits.find((entry) => entry.role === role);
+      if (!plan) return null;
+      latest = env;
+      const itemId = plan.itemId;
+      let painter = creditPainters.get(itemId);
+      if (!painter) {
+        painter = createCreditPainter(
+          () =>
+            latest?.compiled.credits.find((entry) => entry.itemId === itemId) ??
+            null
+        );
+        creditPainters.set(itemId, painter);
+      }
+      return painter;
+    },
+  };
+
+  const flashFactory: PainterFactory = {
+    id: "tka-flash",
+    create(role, env) {
+      const plan = env.compiled.flashes.find((entry) => entry.role === role);
+      if (!plan) return null;
+      latest = env;
+      const itemId = plan.itemId;
+      let painter = flashPainters.get(itemId);
+      if (!painter) {
+        painter = createFlashPainter(
+          () =>
+            latest?.compiled.flashes.find((entry) => entry.itemId === itemId) ??
+            null
+        );
+        flashPainters.set(itemId, painter);
       }
       return painter;
     },
@@ -165,11 +221,34 @@ export function createTkaPainters(
     },
   };
 
+  const cometFactory: PainterFactory = {
+    id: "tka-comet",
+    create(role, env) {
+      const itemId = itemIdFromCometTrailsRole(role);
+      if (itemId === null) return null;
+      const found = findItem(env.project, itemId)?.item;
+      if (found?.kind !== "video" || !found.cometTrails) return null;
+      latest = env;
+      let painter = cometPainters.get(itemId);
+      if (!painter) {
+        painter = createCometTrailsPainter({
+          trails: () => videoItem(itemId)?.cometTrails ?? null,
+          fit: () => videoItem(itemId)?.fit ?? "cover",
+        });
+        cometPainters.set(itemId, painter);
+      }
+      return painter;
+    },
+  };
+
   return [
     carouselFactory,
     stripFactory,
     overlayFactory,
     titlesFactory,
+    flashFactory,
+    creditFactory,
     staffFactory,
+    cometFactory,
   ];
 }

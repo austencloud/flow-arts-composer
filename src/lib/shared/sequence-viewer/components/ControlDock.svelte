@@ -9,8 +9,10 @@
   - an inline tray that slides up above the bar with the active tab's controls,
   - responsive: full-width sheet on phones, centered floating rounded bar at
     >=700px (matching the mandala dock),
-  - icon-only tabs when the bar is too narrow for labels; the row scrolls
-    before any tab can shrink below the shared touch-target floor.
+  - the tab row picks its form from whether the names fit, measured: one row
+    with names, else two rows with names (picture beside name), else pictures
+    only (control-dock-tab-form.ts). No name is ever cut; the row scrolls
+    only as a safety net before any tab can shrink below the touch floor.
 
   The shell owns NO domain state. Consumers pass their tabs, the active tab,
   a tray Snippet that renders the active tab's body, and the trailing action.
@@ -18,6 +20,7 @@
 <script lang="ts" module>
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { EffectCatalogLook } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
 
   export interface ControlDockTab {
     id: string;
@@ -27,6 +30,21 @@
     /** Live prop artwork for the Props destination. Takes precedence over icon. */
     propType?: PropType;
     fanAppearance?: FanAppearance;
+    /** Draw the paired selected-prop composition the Change Prop button
+     *  wears; the tab opens that same switcher. */
+    selectedPropGlyph?: boolean;
+    /**
+     * The painted picture of the effect that is on, drawn in the chip format
+     * in place of the icon. Without a look the icon stays (the wand).
+     */
+    effectChip?: { effectId: string; look: EffectCatalogLook | undefined };
+    /**
+     * Width of this tab's picture slot in px (default 20). A tab that wears
+     * a wider picture reports it here so the fit rule counts it, and keeps
+     * it in every state (picture, icon, open chevron) so the tab never
+     * changes width.
+     */
+    glyphWidth?: number;
     /** Tints the active state (and the solo dot when there's no icon). */
     accentColor?: string;
     /** Two-color dot pair instead of an icon (mandala "Colors" tab). */
@@ -78,8 +96,10 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { cubicOut } from "svelte/easing";
   import type { Snippet } from "svelte";
-  import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
-  import RailPropGlyph from "#lib/shared/components/RailPropGlyph.svelte";
+  import { SwipeToDismiss } from "@austencloud/drawer";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
+  import ActiveEffectChip from "#lib/shared/animation-engine/components/effects-panel/ActiveEffectChip.svelte";
+  import { chooseDockTabForm, topRowCount } from "./control-dock-tab-form.js";
 
   interface Props {
     tabs: ControlDockTab[];
@@ -96,8 +116,6 @@
     secondaryActions?: (ControlDockLink | ControlDockAction)[];
     /** Reports the dock's measured height so the stage can reserve room. */
     onHeightChange?: (px: number) => void;
-    /** Bar width (px) below which tab labels hide and tabs go icon-only. */
-    labelMinWidth?: number;
     /**
      * Overlay mode: the dock floats over a stage (absolute, bottom-anchored,
      * and a centered floating bar >=700px) — the mandala model. Default false:
@@ -122,7 +140,6 @@
     trailingAction,
     secondaryActions = [],
     onHeightChange,
-    labelMinWidth = 380,
     overlay = false,
     trayMaxHeight,
   }: Props = $props();
@@ -275,17 +292,120 @@
   const thumbPct = $derived(Math.max(thumbFrac * 100, 12));
   const thumbTopPct = $derived(Math.min(scrollFrac * 100, 100 - thumbPct));
 
-  // Measure: own height (-> stage padding) and own width (-> label-hide).
+  // Measure: own height (-> stage padding) and own width (-> tab form).
   // Parent width drives the desktop floating layout (measuring the parent
   // avoids a feedback loop with the dock's own width changing under .wide).
   let dockEl: HTMLDivElement | undefined = $state();
   let wide = $state(false);
-  let compact = $state(false);
   // Secondary CTAs (Remix / Open Flow Arts Composer) + the download trigger eat ~260px of a
   // single-row bar, starving the tab strip on phones. Below this width the bar
   // stacks: tabs own the top row, CTAs share the bottom row. Docks without
   // secondary actions (mandala) never stack.
   let stacked = $state(false);
+  // A stacked actions row narrower than this drops its link words.
+  let actionsCompact = $state(false);
+
+  // The tab form comes from whether the names fit (control-dock-tab-form.ts),
+  // never from a width number. Hidden copies of the names at the dock's name
+  // size report their natural widths; a language or tab-list change re-renders
+  // them and the observer reports again.
+  let labelMeasureEl = $state<HTMLDivElement>();
+  let labelWidths = $state<number[]>([]);
+  $effect(() => {
+    const el = labelMeasureEl;
+    if (!el) return;
+    // Re-run when the names change so new spans are observed.
+    void tabs.map((tab) => tab.label).join("\u0000");
+    const read = () => {
+      labelWidths = Array.from(
+        el.children,
+        (child) => child.getBoundingClientRect().width
+      );
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    for (const child of el.children) ro.observe(child);
+    return () => ro.disconnect();
+  });
+
+  // The viewer handoff narrows the dock for a moment, and Play / Stop can
+  // nudge it. The form follows the settled width: the first width is taken at
+  // once, later changes only once the width has held still for SETTLE_MS.
+  const SETTLE_MS = 250;
+  let settledWidth = $state(0);
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  function noteDockWidth(width: number): void {
+    const w = Math.round(width);
+    clearTimeout(settleTimer);
+    if (settledWidth === 0) {
+      settledWidth = w;
+      return;
+    }
+    if (w === settledWidth) return;
+    settleTimer = setTimeout(() => (settledWidth = w), SETTLE_MS);
+  }
+  $effect(() => () => clearTimeout(settleTimer));
+
+  // The trailing group's width beside the tabs in the one-row form.
+  let actionsEl = $state<HTMLDivElement>();
+  let actionsWidth = $state(0);
+  $effect(() => {
+    const el = actionsEl;
+    if (!el) {
+      actionsWidth = 0;
+      return;
+    }
+    const ro = new ResizeObserver(() => {
+      // Two rows lay the group out as contents (no box); the one-row width
+      // is then the trailing button alone.
+      actionsWidth = el.offsetWidth || (trailingAction ? 46 : 0);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+
+  // Beside a name every picture sits in one fixed 20 px square slot (icon,
+  // prop drawing, selected-prop pair, dots), which clips, so the row never
+  // depends on the drawing and nothing reaches outside the tab.
+  const GLYPH_SLOT = 20;
+  const glyphWidths = $derived(tabs.map((tab) => tab.glyphWidth ?? GLYPH_SLOT));
+  // Until the width and the names are measured the bar stays invisible, so a
+  // form that is about to change is never painted.
+  const formReady = $derived(
+    settledWidth > 0 && labelWidths.length === tabs.length
+  );
+  const BAR_SIDE_PADDING = 12;
+  const tabForm = $derived(
+    !formReady
+      ? "row"
+      : chooseDockTabForm({
+          labelWidths,
+          glyphWidths,
+          barWidth: settledWidth - BAR_SIDE_PADDING,
+          rowActionsWidth: stacked ? 0 : actionsWidth,
+          hasTrailing: !!trailingAction,
+          allowTwoRows: secondaryActions.length === 0,
+        })
+  );
+  const twoRows = $derived(tabForm === "two-rows");
+  // The blue and red pair is fitted to the picture slot: 20x20 beside a name,
+  // the icons' own 20x16 above one.
+  const pairBox = $derived(
+    twoRows ? { width: 20, height: 20 } : { width: 20, height: 16 }
+  );
+  // The wider Effects chip: 29x20 beside a name, 24x16 (the icon height) in
+  // the other forms.
+  const chipBox = $derived(
+    twoRows ? { width: 29, height: 20 } : { width: 24, height: 16 }
+  );
+  const splitAt = $derived(topRowCount(tabs.length));
+  const activeIndex = $derived(tabs.findIndex((tab) => tab.id === activeTab));
+  // The open tab fuses to the tray only from the top (or only) row; on the
+  // bottom row the top row sits between it and the tray.
+  const openFuses = $derived(
+    trayOpen && activeIndex >= 0 && !(twoRows && activeIndex >= splitAt)
+  );
+
   $effect(() => {
     if (!dockEl) return;
     const parent = dockEl.parentElement;
@@ -294,10 +414,13 @@
       if (!e) return;
       onHeightChange?.(Math.ceil(e.contentRect.height));
       stacked = secondaryActions.length > 0 && e.contentRect.width < 620;
-      // Stacked tabs have the full row to themselves — labels fit far narrower.
-      compact = e.contentRect.width < (stacked ? 300 : labelMinWidth);
+      actionsCompact = stacked && e.contentRect.width < 300;
+      noteDockWidth(e.contentRect.width);
     });
     hRo.observe(dockEl);
+    // Decide the first form now, before the bar is painted, rather than on
+    // the observer's first report a frame later.
+    if (dockEl.clientWidth > 0) noteDockWidth(dockEl.clientWidth);
     let wRo: ResizeObserver | undefined;
     if (parent) {
       wRo = new ResizeObserver((entries) => {
@@ -317,7 +440,8 @@
   class="dock"
   class:overlay
   class:wide={overlay && wide}
-  class:compact
+  class:actions-compact={actionsCompact}
+  data-tab-form={tabForm}
   style:--dock-tray-max={trayMaxHeight}
   data-swipe-block
   bind:this={dockEl}
@@ -380,13 +504,28 @@
     </div>
   {/if}
 
-  <div class="cat-bar" class:stacked class:tray-open={trayOpen}>
+  <!-- Hidden copies of the names at the dock's name size; their widths decide
+       the tab form. -->
+  <div class="label-measure" aria-hidden="true" bind:this={labelMeasureEl}>
+    {#each tabs as tab (tab.id)}
+      <span class="cat-label">{tab.label}</span>
+    {/each}
+  </div>
+
+  <div
+    class="cat-bar"
+    class:stacked
+    class:two-rows={twoRows}
+    class:icons={tabForm === "icons"}
+    class:measuring={!formReady}
+    class:tray-open={openFuses}
+  >
     <div class="cat-scroll">
       {#each tabs as t, i (t.id)}
         <button
           class="dock-btn cat"
           class:active={activeTab === t.id || !!t.pressed}
-          class:open={activeTab === t.id && trayOpen}
+          class:open={activeTab === t.id && openFuses}
           style:--cat-accent={t.accentColor ?? null}
           style:--btn-i={i}
           onclick={(event) => selectTab(t.id, event)}
@@ -396,37 +535,64 @@
             ? closeTabLabel(t.label)
             : t.label}
         >
-          {#if activeTab === t.id && trayOpen}
-            <!-- Open: this tab has become the tray's folder tab — its glyph is a
+          <span
+            class="cat-glyph"
+            style:--glyph-w={t.glyphWidth ? `${t.glyphWidth}px` : null}
+          >
+            {#if activeTab === t.id && trayOpen}
+              <!-- Open: this tab has become the tray's folder tab — its glyph is a
                  collapse chevron, and re-tapping it closes the tray (restoring
                  the ducked nav). -->
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-          {:else if t.propType}
-            <RailPropGlyph
-              propType={t.propType}
-              fanAppearance={t.fanAppearance}
-              size={20}
-            />
-          {:else if t.dots}
-            <span class="cat-dots">
-              <span class="dot" style:background={t.dots[0]}></span>
-              <span class="dot" style:background={t.dots[1]}></span>
-            </span>
-          {:else if t.accentColor && !t.icon}
-            <span class="cat-dots"
-              ><span class="dot solo" style:background={t.accentColor}
-              ></span></span
-            >
-          {:else}
-            <i class="fas {t.icon}" aria-hidden="true"></i>
-          {/if}
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            {:else if t.selectedPropGlyph}
+              <span
+                class="selected-prop-glyph"
+                style:width="{pairBox.width}px"
+                style:height="{pairBox.height}px"
+                ><SelectedPropPreview box={pairBox} /></span
+              >
+            {:else if t.propType}
+              <span
+                class="selected-prop-glyph"
+                style:width="{pairBox.width}px"
+                style:height="{pairBox.height}px"
+                ><SelectedPropPreview
+                  propType={t.propType}
+                  box={pairBox}
+                /></span
+              >
+            {:else if t.effectChip?.look}
+              <ActiveEffectChip
+                effectId={t.effectChip.effectId}
+                look={t.effectChip.look}
+                width={chipBox.width}
+                height={chipBox.height}
+              />
+            {:else if t.dots}
+              <span class="cat-dots">
+                <span class="dot" style:background={t.dots[0]}></span>
+                <span class="dot" style:background={t.dots[1]}></span>
+              </span>
+            {:else if t.accentColor && !t.icon}
+              <span class="cat-dots"
+                ><span class="dot solo" style:background={t.accentColor}
+                ></span></span
+              >
+            {:else}
+              <i class="fas {t.icon}" aria-hidden="true"></i>
+            {/if}
+          </span>
           <span class="cat-label">{t.label}</span>
         </button>
+        {#if twoRows && i === splitAt - 1}
+          <!-- Ends the top row; its 4 px height is the gap between rows. -->
+          <span class="row-break" aria-hidden="true"></span>
+        {/if}
       {/each}
     </div>
 
     {#if secondaryActions.length > 0 || trailingAction}
-      <div class="dock-actions">
+      <div class="dock-actions" bind:this={actionsEl}>
         {#each secondaryActions as action, i (action.label)}
           {#if isLink(action)}
             <a
@@ -482,6 +648,18 @@
 </div>
 
 <style>
+  /* The blue and red pair, fitted by SelectedPropPreview to the slot the
+     template gives it, so it never reaches past the tab's picture slot. */
+  .selected-prop-glyph {
+    display: block;
+    line-height: 0;
+  }
+
+  .selected-prop-glyph :global(svg) {
+    display: block;
+    max-width: none;
+  }
+
   /* Each button rises + fades on dock mount, staggered by --btn-i, so every
      dock (download / mandala / choreo / scan / transforms) gets a little
      entrance flourish layered over the root slide-up. */
@@ -497,6 +675,8 @@
   }
 
   .dock {
+    /* Holds the hidden name-measuring copies. */
+    position: relative;
     display: flex;
     flex-direction: column;
     /* One glass fill shared by the tray and the merged "open" folder tab, so
@@ -645,6 +825,10 @@
     backdrop-filter: blur(16px);
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
   }
+  /* The form is decided before the bar is seen. */
+  .cat-bar.measuring {
+    visibility: hidden;
+  }
   .cat-scroll {
     display: flex;
     flex: 1 1 auto;
@@ -742,18 +926,99 @@
     transform: translateY(-1px) scale(1.08);
   }
 
+  /* One slot for every picture (icon, prop drawing, dots, the open chevron),
+     so a tab keeps its width when its tray opens. */
+  .cat-glyph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: var(--glyph-w, 20px);
+  }
+
+  /* Names never shorten with dots: the measured form only shows them when
+     they are whole. The clip is a safety net for the moment a width is still
+     settling. */
   .cat-label {
-    font-size: 10px;
+    font-size: var(--font-size-compact);
     font-weight: 600;
     letter-spacing: 0.02em;
     white-space: nowrap;
     max-width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
-  /* Too narrow for legible labels -> icon-only, no cramming. */
-  .compact .cat-label {
+  /* Two rows can't hold every name either -> pictures only, no cramming. */
+  .cat-bar.icons .cat-label {
     display: none;
+  }
+  /* Pictures only: a tab may narrow to the 36 px phone floor before the
+     strip has to slide. */
+  .cat-bar.icons .dock-btn.cat {
+    flex-basis: 36px;
+    min-width: 36px;
+  }
+
+  /* Natural-width copies of the names, read by the form choice. */
+  .label-measure {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: max-content;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .label-measure .cat-label {
+    max-width: none;
+  }
+
+  /* ── Two rows ─────────────────────────────────────────────────────────
+     The names don't fit one row but do fit two: picture beside name, 36 px
+     rows, 4 px between tabs and rows. The strip and the actions group step
+     aside (display: contents) so the tabs, the row break and the trailing
+     action wrap as one line set: the top half, the break, then the rest with
+     the trailing action at the end. Each tab is as wide as its own picture
+     and name, and a row's tabs share what is left over equally. */
+  .cat-bar.two-rows {
+    flex-wrap: wrap;
+    column-gap: 4px;
+    row-gap: 0;
+  }
+  .two-rows .cat-scroll,
+  .two-rows .dock-actions {
+    display: contents;
+  }
+  .row-break {
+    flex: 0 0 100%;
+    height: 4px;
+  }
+  .two-rows .dock-btn.cat {
+    flex: 1 0 auto;
+    flex-direction: row;
+    gap: 4px;
+    min-height: 36px;
+    padding: 0 4px;
+  }
+  /* One fixed square slot for every picture; it clips, so a drawing that is
+     optically scaled past its box (a fan, a club) stays inside the tab. */
+  .two-rows .cat-glyph {
+    width: var(--glyph-w, 20px);
+    height: 20px;
+    min-width: var(--glyph-w, 20px);
+    overflow: clip;
+  }
+  /* The colour pair (two 14 px dots) is 30 wide; shown whole in the slot. */
+  .two-rows .cat-dots {
+    flex: 0 0 auto;
+    transform: scale(0.66);
+  }
+  .two-rows .dock-btn.download {
+    width: 44px;
+    min-height: 36px;
   }
 
   .cat-dots {
@@ -865,11 +1130,11 @@
     font-weight: 600;
     white-space: nowrap;
   }
-  .compact .dock-btn.trailing-link {
+  .actions-compact .dock-btn.trailing-link {
     padding: 0;
     width: 46px;
   }
-  .compact .trailing-label {
+  .actions-compact .trailing-label {
     display: none;
   }
 

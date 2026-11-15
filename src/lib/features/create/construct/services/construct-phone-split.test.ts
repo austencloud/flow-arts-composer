@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   CONSTRUCT_PHONE_MAX_WIDTH,
+  CONSTRUCT_PHONE_MIN_SEQUENCE_ROWS,
+  CONSTRUCT_PHONE_OPTION_FLOOR,
+  CONSTRUCT_PHONE_SEQUENCE_ROWS,
   CONSTRUCT_SHORT_LANDSCAPE_MAX_HEIGHT,
   CONSTRUCT_TYPE_RAIL_MIN_WIDTH,
+  constructPhoneSequenceRows,
   constructPhoneSplit,
+  constructPhoneWorkspaceFloor,
   isConstructPhoneTier,
   isConstructTypeRailTier,
 } from "./construct-phone-split";
@@ -130,7 +135,8 @@ describe("constructPhoneSplit", () => {
     // Pixel: four width-bound columns fit well inside the height, so the
     // sequence keeps the rest instead of the grid gaining empty rows.
     const [workspace, picker] = split(412, 870)!;
-    const widthBoundOption = (412 - 8 - 24) / 4;
+    // The grid keeps a 14px gutter on each side.
+    const widthBoundOption = (412 - 28 - 24) / 4;
     expect(picker).toBe(Math.round(52 + 10 + widthBoundOption * 4 + 24));
     expect(workspace + picker).toBe(870);
   });
@@ -154,5 +160,125 @@ describe("constructPhoneSplit", () => {
     const [workspace, picker] = split(707, 715)!;
     expect(workspace).toBe(floorAt(707));
     expect(workspace + picker).toBe(715);
+  });
+});
+
+describe("the slim phone bars share their height (2026-11-13)", () => {
+  // The workspace is its 2px frame, the bars (sequence header + button bar)
+  // and the sequence's scroll window; the picker is its 52px type tabs, 10px
+  // padding and a 4x4 grid with 8px gaps. Before: a 73px header with the
+  // badges' own row and a 62px bar around a 50px Play. After: a 48px header
+  // with the badges beside the word and a 44px bar of 36px controls.
+  const BEFORE_BARS = 73 + 62;
+  const AFTER_BARS = 48 + 44;
+  const sizes = (
+    width: number,
+    height: number,
+    bars: number,
+    rows: number | undefined
+  ) => {
+    const split = constructPhoneSplit({
+      width,
+      height,
+      stacked: true,
+      workspaceFloor: workspaceFloorHeight({ width, chromeHeight: bars, rows }),
+    });
+    if (!split) throw new Error("not on the phone tier");
+    const [workspace, picker] = split;
+    return {
+      sequenceWindow: workspace - 2 - bars,
+      tile: (picker - 52 - 10 - 3 * 8) / 4,
+    };
+  };
+
+  it("keeps a quarter of a third row only at phone widths", () => {
+    expect(constructPhoneSequenceRows(392)).toBe(CONSTRUCT_PHONE_SEQUENCE_ROWS);
+    expect(constructPhoneSequenceRows(360)).toBe(CONSTRUCT_PHONE_SEQUENCE_ROWS);
+    // The unfolded Fold keeps its two rows.
+    expect(constructPhoneSequenceRows(707)).toBeUndefined();
+    expect(constructPhoneSequenceRows(0)).toBeUndefined();
+  });
+
+  it("grows both the sequence window and the picker's tiles at 392x739", () => {
+    // 392x739 leaves 695px for the workspace and the picker.
+    const before = sizes(392, 695, BEFORE_BARS, undefined);
+    const after = sizes(392, 695, AFTER_BARS, constructPhoneSequenceRows(392));
+    expect(before.sequenceWindow).toBeLessThan(182);
+    expect(after.sequenceWindow).toBeGreaterThanOrEqual(196);
+    expect(after.tile).toBeGreaterThanOrEqual(76);
+    expect(after.tile).toBeGreaterThan(before.tile);
+  });
+
+  it("grows both at 360 wide too", () => {
+    for (const height of [596, 645]) {
+      const before = sizes(360, height, BEFORE_BARS, undefined);
+      const after = sizes(
+        360,
+        height,
+        AFTER_BARS,
+        constructPhoneSequenceRows(360)
+      );
+      expect(after.sequenceWindow).toBeGreaterThan(before.sequenceWindow);
+      expect(after.tile).toBeGreaterThan(before.tile);
+    }
+  });
+});
+
+describe("the sequence yields rows until the tiles reach 68px (2026-11-13)", () => {
+  // The slim bars (48px header, 44px button bar) and 18 steps, so the
+  // sequence has more rows than either floor shows.
+  const BARS = 48 + 44;
+  const sizes = (width: number, layoutHeight: number) => {
+    const floor = (rows: number) =>
+      workspaceFloorHeight({ width, chromeHeight: BARS, rows });
+    const fullFloor = floor(CONSTRUCT_PHONE_SEQUENCE_ROWS);
+    const minFloor = floor(CONSTRUCT_PHONE_MIN_SEQUENCE_ROWS);
+    const workspaceFloor = constructPhoneWorkspaceFloor({
+      height: layoutHeight,
+      fullFloor,
+      minFloor,
+    });
+    const [workspace, picker] = constructPhoneSplit({
+      width,
+      height: layoutHeight,
+      stacked: true,
+      workspaceFloor,
+    })!;
+    // Type 1's 4x4 grid: height-bound, or width-bound inside the gutters.
+    const tile = Math.min(
+      (picker - 52 - 10 - 3 * 8) / 4,
+      (width - 28 - 3 * 8) / 4
+    );
+    return { fullFloor, minFloor, workspace, tile };
+  };
+
+  it("gives a 360x640 phone 68px tiles instead of 58", () => {
+    const { fullFloor, workspace, tile } = sizes(360, 595);
+    expect(fullFloor).toBeCloseTo(275, -1);
+    expect(workspace).toBeLessThan(fullFloor);
+    expect(workspace).toBeCloseTo(237, 0);
+    expect(tile).toBeCloseTo(CONSTRUCT_PHONE_OPTION_FLOOR, 0);
+    // The grid's empty side strips shrink from 52px to about 32px.
+    expect((360 - (4 * tile + 3 * 8)) / 2).toBeCloseTo(32, 0);
+  });
+
+  it("stops at 1.25 rows on a shorter 360x591 phone", () => {
+    const { minFloor, workspace, tile } = sizes(360, 546);
+    expect(workspace).toBe(Math.round(minFloor));
+    // 1.25 rows of 360-wide step pictures under the slim bars.
+    expect(minFloor).toBeCloseTo(212, 0);
+    expect(tile).toBeGreaterThan(61);
+    expect(tile).toBeLessThan(CONSTRUCT_PHONE_OPTION_FLOOR);
+  });
+
+  it("leaves a 360x689 phone and a 392x739 phone as they were", () => {
+    for (const [width, height] of [
+      [360, 644],
+      [392, 695],
+    ] as const) {
+      const { fullFloor, workspace, tile } = sizes(width, height);
+      expect(workspace).toBeGreaterThanOrEqual(Math.round(fullFloor));
+      expect(tile).toBeGreaterThanOrEqual(CONSTRUCT_PHONE_OPTION_FLOOR);
+    }
   });
 });

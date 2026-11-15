@@ -269,6 +269,25 @@ export class AnimationPlaybackController {
     this.updatePropStatesFromEngine();
   }
 
+  /**
+   * Stop where a single play ends: the end hold, as if the play had just run
+   * out. A figure that hands the stage to its neighbour uses this so its last
+   * pose stays on the canvas instead of snapping back to the start.
+   */
+  restAtEnd(): void {
+    if (!this.state) return;
+    this.animationTarget = null;
+    this.stopStepPlayback();
+    this.loopService.stop();
+    this.syncIsPlaying(false);
+    this.timePosition = this.totalDuration;
+    const currentStepNumber = this.animationEngine.calculateStateDurationAware(
+      this.timePosition
+    );
+    this.syncCurrentStep(currentStepNumber);
+    this.updatePropStatesFromEngine();
+  }
+
   jumpToStep(step: number): void {
     if (!this.state) return;
 

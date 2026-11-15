@@ -102,8 +102,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
+    /* --prop-cycle-button-size lets a phone host use the 36px control. */
+    min-width: var(--prop-cycle-button-size, var(--min-touch-target, 44px));
+    min-height: 0;
+    height: var(--prop-cycle-button-size, var(--min-touch-target, 44px));
     border: 1px solid rgba(var(--prop-color-rgb, 59, 130, 246), 0.4);
     border-radius: 10px;
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.18);

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { GridLocation } from "../domain/enums/grid-enums";
   import type { PlacementGridPoint } from "../services/placement-grid-points";
   import type { PlacementGuideCoordinates } from "../services/prop-placement-view-model";
@@ -92,6 +93,28 @@
       placement.rightLocation === target.location
     );
   }
+
+  function pointLabel(target: PlacementTarget): string {
+    const left = isLeftAt(target);
+    const right = isRightAt(target);
+    const point = target.label;
+    if (left && right) {
+      return t("pictograph_placement_point_with_props", {
+        point,
+        props: t("pictograph_placement_props_pair", {
+          left: leftNoun,
+          right: rightNoun,
+        }),
+      });
+    }
+    if (left || right) {
+      return t("pictograph_placement_point_with_props", {
+        point,
+        props: left ? leftNoun : rightNoun,
+      });
+    }
+    return t("pictograph_placement_point", { point });
+  }
 </script>
 
 <svelte:window
@@ -108,7 +131,7 @@
   class:location-grabbed={aim.grabbedLocationColor !== null}
   style:--landing-duration={`${DURATION.dramatic}ms`}
   role="group"
-  aria-label="Placement points"
+  aria-label={t("pictograph_placement_points_group")}
   onpointerdown={aim.handleBoardPointerDown}
   bind:this={aim.overlayElement}
 >
@@ -270,13 +293,7 @@
           aim.handleKeydown(event, point.location, point.hand)}
         role="button"
         tabindex={aim.isPressable(point.location, point.hand) ? 0 : -1}
-        aria-label="{point.label} point{isLeftAt(point) && isRightAt(point)
-          ? ` (${leftNoun} and ${rightNoun})`
-          : isLeftAt(point)
-            ? ` (${leftNoun})`
-            : isRightAt(point)
-              ? ` (${rightNoun})`
-              : ''}"
+        aria-label={pointLabel(point)}
         aria-disabled={!aim.isPressable(point.location, point.hand)}
       />
     {/each}

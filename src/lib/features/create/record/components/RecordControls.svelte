@@ -58,8 +58,10 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
       class="control-button play-pause-button"
       class:playing={isPlaying}
       onclick={onPlayPause}
-      title={isPlaying ? "Pause" : "Play"}
-      aria-label={isPlaying ? "Pause playback" : "Start playback"}
+      title={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
+      aria-label={isPlaying
+        ? t("create_record_pause_playback")
+        : t("create_record_start_playback")}
       aria-pressed={isPlaying}
     >
       {#if isPlaying}
@@ -130,7 +132,9 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
       class="metronome-toggle"
       aria-pressed={isMetronomeEnabled}
       onclick={() => onMetronomeToggle(!isMetronomeEnabled)}
-      aria-label={isMetronomeEnabled ? "Disable metronome" : "Enable metronome"}
+      aria-label={isMetronomeEnabled
+        ? t("create_record_metronome_off")
+        : t("create_record_metronome_on")}
     >
       <span
         class="toggle-track"

@@ -15,7 +15,7 @@ describe("museum rendering performance contract", () => {
     );
 
     expect(scene).toContain(
-      "renderer.compileAsync(object, warmupCamera, scene)"
+      "compileAsyncGuarded(renderer, object, warmupCamera, scene)"
     );
     expect(`${streamer}\n${scene}`).not.toMatch(/\br(?:enderer|2)\.compile\(/);
     expect(streamer).not.toContain("Build all remaining rooms progressively");

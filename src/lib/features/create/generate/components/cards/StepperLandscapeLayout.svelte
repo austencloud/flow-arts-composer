@@ -19,7 +19,7 @@ Used when card aspect ratio is wide/landscape
     handleIncrement,
     handleDecrement,
     handleKeydown,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
   } = $props<{
     title: string;
     displayValue: string;

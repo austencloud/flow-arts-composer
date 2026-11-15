@@ -283,8 +283,12 @@
       var(--semantic-info, var(--semantic-info)),
       var(--theme-accent, var(--theme-accent-strong))
     );
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .results-header h1 {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

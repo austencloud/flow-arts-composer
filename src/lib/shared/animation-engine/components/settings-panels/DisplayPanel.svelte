@@ -91,6 +91,11 @@
      *  never shows one (a fill-mode player on a single transition) leaves the
      *  Word tile out rather than offering a toggle that changes nothing. */
     showWordToggle = true,
+    /** The progress bar under the animation. A host whose own transport
+     *  already shows where the loop is (the sequence viewer) leaves the tile
+     *  out; the visibility key stays, so the Download video screen still
+     *  seeds its progress bar from it. */
+    showProgressToggle = true,
     /** The word header's parts (Level, LOOP, Turns, Reversals) as switches of
      *  their own, disabled while the header is off. With `chips` they follow
      *  the Word chip in the same row; with tiles they are one row of small
@@ -99,6 +104,10 @@
      *  animation section sets it; the canvas menus and rails keep their ten
      *  tiles. */
     showHeaderParts = false,
+    /** A phone's bottom dock under a player that keeps its size: four tiles
+     *  across, rows sharing the body's height up to 76px each, a short last
+     *  row centred. Pure CSS; no measured fit. Ignored with `chips`. */
+    dock = false,
     onSettingChange,
     visibilityManagerOverride,
     animationSettingsOverride,
@@ -118,7 +127,9 @@
     chips?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
+    showProgressToggle?: boolean;
     showHeaderParts?: boolean;
+    dock?: boolean;
     onSettingChange?: ViewerControlSink;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
     animationSettingsOverride?: AnimationSettingsState;
@@ -409,7 +420,11 @@
     ...fieldChips,
     ...(showSequenceMarks
       ? markChips
-          .filter((chip) => showWordToggle || chip.id !== "wordHeader")
+          .filter(
+            (chip) =>
+              (showWordToggle || chip.id !== "wordHeader") &&
+              (showProgressToggle || chip.id !== "progressBar")
+          )
           .flatMap((chip) =>
             chip.id === "wordHeader" && headerPartsInline
               ? [chip, ...headerPartChips]
@@ -666,6 +681,7 @@
     class:fill
     class:stretch={fill && (stretch || room)}
     class:room={fill && room}
+    class:dock
     bind:this={shellEl}
   >
     <div
@@ -676,10 +692,13 @@
       class:rt-tile-grid={hostLaidOut}
       class:host-sized={hostLaidOut}
       class="vis-grid"
+      class:dock
       bind:this={gridEl}
       style={fitted
         ? `--vis-cols: ${fitCols}; --vis-tile: ${fitTile}px; --tile-art: ${fitArt}px;`
-        : undefined}
+        : dock
+          ? `--vis-rows: ${Math.ceil(chips.length / 4)};`
+          : undefined}
     >
       {#each chips as chip, index (chip.id)}
         <button
@@ -840,7 +859,9 @@
   /* A breath between the layers that live in the square and the marks drawn at
      its edges, so the grouping is visible without a heading for each. Skipped
      on the landing variant, where the group boundary falls mid-row. */
-  .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(.host-sized)
+  .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(.host-sized):not(
+      .dock
+    )
     > :nth-child(n + 5) {
     margin-top: 10px;
   }
@@ -997,6 +1018,66 @@
     font-size: 0.8em;
     line-height: 1.1;
     text-align: center;
+  }
+
+  /* Phone dock, about 336 x 200-300px. Eight half-columns so a tile spans
+     two and a short last row can start half a tile in and sit centred
+     (4+4+3 starts at track 2, a single tile at track 4). The rows share the
+     body: (height - gaps) / rows, capped at 76px, the grid centred when
+     capped. That is about 67px rows at a 215px body and 76px at 245 and
+     310. The picture takes what the label leaves, kept square. */
+  .vis-grid-shell.dock {
+    container-type: size;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .vis-grid-shell.dock > .vis-grid.dock:not(.fitted) {
+    height: 100%;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-auto-rows: min(
+      76px,
+      calc((100cqh - (var(--vis-rows, 3) - 1) * 4px) / var(--vis-rows, 3))
+    );
+    align-content: center;
+    gap: 4px;
+  }
+  .vis-grid.dock > .rt-chip {
+    grid-column: span 2;
+    min-width: 0;
+    min-height: 0;
+    padding: 3px 2px;
+    gap: 2px;
+    overflow: hidden;
+  }
+  .vis-grid.dock > .rt-chip:nth-child(4n + 1):nth-last-child(3) {
+    grid-column: 2 / span 2;
+  }
+  .vis-grid.dock > .rt-chip:nth-child(4n + 1):nth-last-child(2) {
+    grid-column: 3 / span 2;
+  }
+  .vis-grid.dock > .rt-chip:nth-child(4n + 1):nth-last-child(1) {
+    grid-column: 4 / span 2;
+  }
+  .vis-grid.dock .rt-chip :global(.art) {
+    flex: 1 1 0;
+    min-height: 0;
+    width: auto;
+    max-width: 100%;
+  }
+  .vis-grid.dock .chip-label {
+    flex: none;
+    max-width: 100%;
+    font-size: var(--font-size-compact, 12px);
+    overflow-wrap: anywhere;
+  }
+  /* On and off at this size: the off tile's picture is already dimmed; its
+     name dims with it, and the on tile's accent border is drawn at full
+     strength so the tint reads as a state, not a hover. */
+  .vis-grid.dock .rt-chip:not([aria-pressed="true"]) .chip-label {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
+  .vis-grid.dock .rt-chip[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--rail-accent) 85%, transparent);
   }
 
   .vis-grid .rt-chip[data-tone]:not([aria-pressed="true"]) {

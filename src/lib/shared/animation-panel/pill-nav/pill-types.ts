@@ -39,6 +39,9 @@ export interface PillSpec {
   /** Live prop artwork for the Props destination. Takes precedence over icon. */
   propType?: PropType;
   fanAppearance?: FanAppearance;
+  /** Draw the paired selected-prop composition the app's Change Prop button
+   *  wears, because this pill opens that same switcher. */
+  selectedPropGlyph?: boolean;
   /** Live one-line summary of the section's current state, ≤24 chars (truncated with ellipsis if longer). */
   summary: string;
   /** Optional accent color override. Effort sets this to its color so the active glow matches. */

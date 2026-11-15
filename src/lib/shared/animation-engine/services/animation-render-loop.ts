@@ -1187,6 +1187,8 @@ export class AnimationRenderLoop {
       primaryPropColors: params.primaryPropColors ?? null,
       gridJoinOffsets: params.gridJoinOffsets,
       gridJoinSlide: params.gridJoinSlide ?? null,
+      motionCues: params.motionCues ?? null,
+      currentStep,
     });
 
     // Read prop transforms from Canvas2D renderer for fire coherence

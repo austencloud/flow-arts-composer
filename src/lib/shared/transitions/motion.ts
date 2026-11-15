@@ -44,9 +44,10 @@ const STANDARD_MOTION_EASING = EASE_STANDARD;
 
 /**
  * JS twin of `--ease-in-out`, the curve PanelGroup tracks move on. Give it to
- * a Svelte transition that has to move in step with a panel slide.
+ * a Svelte transition that has to move in step with a panel slide. Defined
+ * in ws-ease.ts so pure modules can read it without loading Svelte.
  */
-export const standardEasing = cssCubicBezier(0.4, 0, 0.2, 1);
+export { standardEasing } from "./ws-ease";
 
 /**
  * JS twin of `--ease-out` (app.css), for Web Animations, which take a literal

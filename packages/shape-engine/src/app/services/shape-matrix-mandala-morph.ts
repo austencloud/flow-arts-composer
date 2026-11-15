@@ -33,17 +33,56 @@
  *    synchronously (forcing layout), flushes the paint that follows, and
  *    waits for the endpoint's raster to decode, so the browser captures a
  *    full-size picture and the morph is one mandala travelling.
+ *
+ * 5. the grid folds into the back chip's grid glyph opening and grows out of
+ *    it going back. The pane and the glyph exist on opposite sides of the
+ *    mutation, so one box is read before it and the other inside the update
+ *    callback, after the flush. The vector and scale go on the root as
+ *    `--shape-matrix-fold-x/-y/-scale` with the `shape-matrix-morph-fold`
+ *    class; if either box is missing nothing is set and the shell's plain
+ *    recede/return runs.
+ *
+ * Both surfaces fly with this one helper and one set of names: the Level
+ * Matrix's grid and drill, and the Ratio Playground's grid and stage. All four
+ * stay mounted, so each claim is gated on the surface showing, and the helper
+ * reads the rest strength from the floor that holds the name
+ * (`claimedMandalaFloor`), never merely the first floor in the page.
  */
 import { flushSync } from "svelte";
 import { startMorph } from "#lib/shared/transitions/results-morph.js";
 import {
   measureMandalaArt,
   SHAPE_MATRIX_ACTIVE_MANDALA_NAME,
+  SHAPE_MATRIX_BAR_LEAD_NAME,
+  SHAPE_MATRIX_PANE_NAME,
 } from "../../services/shape-matrix-artwork";
 
 export const SHAPE_MATRIX_MORPH_CLASS = "shape-matrix-morph";
 export const SHAPE_MATRIX_MORPH_BACK_CLASS = "shape-matrix-morph-back";
 export const SHAPE_MATRIX_FLOOR_REST_VAR = "--shape-matrix-floor-rest";
+export const SHAPE_MATRIX_MORPH_FOLD_CLASS = "shape-matrix-morph-fold";
+export const SHAPE_MATRIX_FOLD_X_VAR = "--shape-matrix-fold-x";
+export const SHAPE_MATRIX_FOLD_Y_VAR = "--shape-matrix-fold-y";
+export const SHAPE_MATRIX_FOLD_SCALE_VAR = "--shape-matrix-fold-scale";
+
+export interface FoldBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/** Where the grid pane and the back chip's grid glyph sit right now. */
+export interface FoldBoxes {
+  pane: () => FoldBox | null;
+  glyph: () => FoldBox | null;
+}
+
+export interface FoldVector {
+  x: number;
+  y: number;
+  scale: number;
+}
 
 export interface MandalaMorphHost {
   beginMandalaHandoff(): void;
@@ -63,23 +102,92 @@ export interface MandalaMorphDependencies {
     settle: () => Promise<void>
   ) => ViewTransition | null;
   flush: (fn: () => void) => void;
-  root: () => { classList: DOMTokenList } | null;
+  root: () => {
+    classList: DOMTokenList;
+    style?: Pick<CSSStyleDeclaration, "setProperty" | "removeProperty">;
+  } | null;
   /** Awaited inside the update callback, before the new-state capture. */
   settle: () => Promise<void>;
+  /** Reads the fold's two boxes; defaults to the live page. */
+  foldBoxes?: FoldBoxes;
+}
+
+/**
+ * The trip from the pane to the glyph: centre to centre, and the glyph's width
+ * as a share of the pane's. Null when either box is missing or empty.
+ */
+export function foldVector(
+  pane: FoldBox | null,
+  glyph: FoldBox | null
+): FoldVector | null {
+  if (!pane || !glyph) return null;
+  if (pane.width <= 0 || pane.height <= 0) return null;
+  if (glyph.width <= 0 || glyph.height <= 0) return null;
+  return {
+    x: glyph.left + glyph.width / 2 - (pane.left + pane.width / 2),
+    y: glyph.top + glyph.height / 2 - (pane.top + pane.height / 2),
+    scale: glyph.width / pane.width,
+  };
+}
+
+function namedElement(name: string): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  return (
+    [...document.querySelectorAll<HTMLElement>("[style]")].find(
+      (el) => el.style.viewTransitionName === name
+    ) ?? null
+  );
+}
+
+function boxOf(el: Element | null | undefined): FoldBox | null {
+  if (!el) return null;
+  const { left, top, width, height } = el.getBoundingClientRect();
+  return width > 0 && height > 0 ? { left, top, width, height } : null;
+}
+
+/** The pane and the glyph as the page holds them, by their claimed names. */
+const pageFoldBoxes: FoldBoxes = {
+  pane: () => boxOf(namedElement(SHAPE_MATRIX_PANE_NAME)),
+  glyph: () =>
+    boxOf(
+      namedElement(SHAPE_MATRIX_BAR_LEAD_NAME)?.querySelector(
+        ".fa-table-cells-large"
+      )
+    ),
+};
+
+/** Every element holding the flower's shared name right now (one, in a flight). */
+function activeMandalaOwners(root: ParentNode): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>("[style]")].filter(
+    (el) => el.style.viewTransitionName === SHAPE_MATRIX_ACTIVE_MANDALA_NAME
+  );
 }
 
 function activeMandalaImages(): HTMLImageElement[] {
   if (typeof document === "undefined") return [];
-  const owners = [...document.querySelectorAll<HTMLElement>("[style]")].filter(
-    (el) => el.style.viewTransitionName === SHAPE_MATRIX_ACTIVE_MANDALA_NAME
-  );
-  return owners.flatMap((owner) => [...owner.querySelectorAll("img")]);
+  return activeMandalaOwners(document).flatMap((owner) => [
+    ...owner.querySelectorAll("img"),
+  ]);
+}
+
+/**
+ * The still floor that owns the flower's name. Both surfaces keep a stage
+ * mounted, each with a floor (the Level Matrix drill's and the Ratio
+ * Playground's), so the first floor in the page is often the hidden one; the
+ * one the flight leaves from or lands on is the one holding the name.
+ */
+export function claimedMandalaFloor(root: ParentNode): Element | null {
+  for (const owner of activeMandalaOwners(root)) {
+    const floor = owner.closest("[data-mandala-floor]");
+    if (floor) return floor;
+  }
+  return null;
 }
 
 /** Tell the flight how strongly the stage's still rests on the page. */
 function recordFloorRest(): void {
   if (typeof document === "undefined") return;
-  const floor = document.querySelector("[data-mandala-floor]");
+  const floor = claimedMandalaFloor(document);
   if (!floor) return;
   document.documentElement.style.setProperty(
     SHAPE_MATRIX_FLOOR_REST_VAR,
@@ -123,25 +231,41 @@ export function runMandalaMorph(
   // it lands on the floor as it stands once the stage is showing.
   if (options.back) recordFloorRest();
 
+  // Opening, the pane is on the old side and the glyph on the new; going back,
+  // the other way round. Read the old side's box now.
+  const boxes = deps.foldBoxes ?? pageFoldBoxes;
+  const oldBox = options.back ? boxes.glyph() : boxes.pane();
+  const recordFold = () => {
+    const newBox = options.back ? boxes.pane() : boxes.glyph();
+    const fold = options.back
+      ? foldVector(newBox, oldBox)
+      : foldVector(oldBox, newBox);
+    if (!fold || !root?.style) return;
+    root.style.setProperty(SHAPE_MATRIX_FOLD_X_VAR, `${fold.x}px`);
+    root.style.setProperty(SHAPE_MATRIX_FOLD_Y_VAR, `${fold.y}px`);
+    root.style.setProperty(SHAPE_MATRIX_FOLD_SCALE_VAR, `${fold.scale}`);
+    root.classList.add(SHAPE_MATRIX_MORPH_FOLD_CLASS);
+  };
+
   const finish = () => {
     host.endMandalaHandoff();
     root?.classList.remove(
       SHAPE_MATRIX_MORPH_CLASS,
-      SHAPE_MATRIX_MORPH_BACK_CLASS
+      SHAPE_MATRIX_MORPH_BACK_CLASS,
+      SHAPE_MATRIX_MORPH_FOLD_CLASS
     );
+    root?.style?.removeProperty(SHAPE_MATRIX_FOLD_X_VAR);
+    root?.style?.removeProperty(SHAPE_MATRIX_FOLD_Y_VAR);
+    root?.style?.removeProperty(SHAPE_MATRIX_FOLD_SCALE_VAR);
   };
 
   let transition: ViewTransition | null;
   try {
-    transition = deps.startMorph(
-      mutate,
-      options.back
-        ? deps.settle
-        : async () => {
-            await deps.settle();
-            recordFloorRest();
-          }
-    );
+    transition = deps.startMorph(mutate, async () => {
+      await deps.settle();
+      if (!options.back) recordFloorRest();
+      recordFold();
+    });
   } catch (error) {
     finish();
     throw error;

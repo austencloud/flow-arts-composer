@@ -16,6 +16,7 @@
     actions = null,
     toolbar = null,
     accent = null,
+    active = true,
   }: {
     /** The current crumb's label. Null while it is still loading. */
     leaf?: string | null;
@@ -27,6 +28,9 @@
     toolbar?: Snippet | null;
     /** The screen's tint for the bar's hover and focus colors. */
     accent?: string | null;
+    /** False from the tap that starts this screen leaving: its pieces leave
+     * the bar then, not when the leaving screen unmounts. */
+    active?: boolean;
   } = $props();
 
   const header = tryGetBrowseHeaderContext();
@@ -39,6 +43,7 @@
       actions: () => actions,
       toolbar: () => toolbar,
       accent: () => accent,
+      active: () => active,
     });
   });
 </script>

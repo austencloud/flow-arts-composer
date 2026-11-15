@@ -83,7 +83,12 @@ export {
   STEP_NUMBER_OFFSET_RATIO,
   STEP_NUMBER_FONT_MAX,
 } from "./dimensions.js";
-export { renderStepNumber } from "./step-number-renderer.js";
+export {
+  renderStepNumber,
+  stepLabelFor,
+  ENGLISH_STEP_LABELS,
+  type StepLabels,
+} from "./step-number-renderer.js";
 export { renderSmartBorders } from "./border-renderer.js";
 export {
   DARK_HAND_COLORS,

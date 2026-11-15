@@ -152,6 +152,62 @@ describe("ApplicationThreadCameraController", () => {
     controller.dispose();
   });
 
+  it("does not collapse the orbit when a wheel-out follows a hard wheel-in", () => {
+    const element = createElement();
+    const scheduler = new ManualFrameScheduler();
+    const controller = new ApplicationThreadCameraController(element, {
+      initialPosition: [0, 1.1, -2],
+      initialTarget: [0, 1.1, 0],
+      frameScheduler: scheduler,
+    });
+    configureViewerOrbitNavigation(controller.controls);
+    let now = 0;
+    scheduler.step(now);
+    // A fast flick queues an end radius well under minDistance...
+    for (let tick = 0; tick < 25; tick++) {
+      element.dispatchEvent(
+        new WheelEvent("wheel", { deltaY: -120, clientX: 400, clientY: 200 })
+      );
+    }
+    scheduler.step((now += 16));
+    // ...and one tick back out flips the travel direction mid-flight.
+    element.dispatchEvent(
+      new WheelEvent("wheel", { deltaY: 120, clientX: 400, clientY: 200 })
+    );
+    let smallest = Infinity;
+    for (let frame = 0; frame < 240; frame++) {
+      scheduler.step((now += 16));
+      smallest = Math.min(smallest, controller.controls.distance);
+    }
+    expect(smallest).toBeGreaterThan(0.74);
+    expect(controller.controls.distance).toBeGreaterThanOrEqual(0.99);
+    controller.dispose();
+  });
+
+  it("stops at maxDistance on wheel-out instead of shoving the pivot away", () => {
+    const element = createElement();
+    const scheduler = new ManualFrameScheduler();
+    const controller = new ApplicationThreadCameraController(element, {
+      initialPosition: [0, 4, 20],
+      initialTarget: [0, 0, 0],
+      frameScheduler: scheduler,
+    });
+    configureViewerOrbitNavigation(controller.controls);
+    let now = 0;
+    scheduler.step(now);
+    for (let tick = 0; tick < 60; tick++) {
+      element.dispatchEvent(
+        new WheelEvent("wheel", { deltaY: 120, clientX: 400, clientY: 200 })
+      );
+      scheduler.step((now += 16));
+    }
+    for (let frame = 0; frame < 240; frame++) scheduler.step((now += 16));
+    const after = controller.getSnapshot();
+    expect(Math.hypot(...after.target)).toBeLessThan(2);
+    expect(controller.controls.distance).toBeLessThanOrEqual(25.01);
+    controller.dispose();
+  });
+
   it("keeps a pivot the wheel stopped on without travelling past it", () => {
     const element = createElement();
     const scheduler = new ManualFrameScheduler();
@@ -171,6 +227,100 @@ describe("ApplicationThreadCameraController", () => {
     expect(target[1]).toBeCloseTo(1.1, 6);
     expect(target[2]).toBeCloseTo(0, 6);
     expect(controller.controls.distance).toBeCloseTo(1, 4);
+    controller.dispose();
+  });
+
+  it("zooms out about the pivot, not the pointer, so the pivot stays on the performer", () => {
+    const element = createElement();
+    const scheduler = new ManualFrameScheduler();
+    const controller = new ApplicationThreadCameraController(element, {
+      initialPosition: [0, 0.5, 6],
+      initialTarget: [0, -0.45, 0],
+      frameScheduler: scheduler,
+    });
+    configureViewerOrbitNavigation(controller.controls, {
+      pivotCast: () => ({ spots: [{ x: 0, z: 0 }], floorY: -1, headY: 0.8 }),
+    });
+    let now = 0;
+    scheduler.step(now);
+    for (let tick = 0; tick < 30; tick++) {
+      // Pointer low and to the right, like a pane point under the performer.
+      element.dispatchEvent(
+        new WheelEvent("wheel", { deltaY: 120, clientX: 700, clientY: 350 })
+      );
+      scheduler.step((now += 16));
+    }
+    for (let frame = 0; frame < 240; frame++) scheduler.step((now += 16));
+    const target = controller.getSnapshot().target;
+    expect(target[0]).toBeCloseTo(0, 4);
+    expect(target[1]).toBeCloseTo(-0.45, 4);
+    expect(target[2]).toBeCloseTo(0, 4);
+    controller.dispose();
+  });
+
+  it("keeps the camera above the floor while wheel-in travels toward a point low in the view", () => {
+    const element = createElement();
+    const scheduler = new ManualFrameScheduler();
+    const floorY = -1.012;
+    const controller = new ApplicationThreadCameraController(element, {
+      initialPosition: [0, 0.2, 6],
+      initialTarget: [0, -0.3, 0],
+      frameScheduler: scheduler,
+    });
+    configureViewerOrbitNavigation(controller.controls, {
+      pivotCast: () => ({ spots: [{ x: 0, z: 0 }], floorY, headY: 0.8 }),
+    });
+    let now = 0;
+    scheduler.step(now);
+    let lowestCamera = Infinity;
+    let lowestPivot = Infinity;
+    const record = () => {
+      const snapshot = controller.getSnapshot();
+      lowestCamera = Math.min(lowestCamera, snapshot.position[1]!);
+      lowestPivot = Math.min(lowestPivot, snapshot.target[1]!);
+    };
+    for (let tick = 0; tick < 40; tick++) {
+      // Pointer in the bottom third of the view.
+      element.dispatchEvent(
+        new WheelEvent("wheel", { deltaY: -120, clientX: 400, clientY: 360 })
+      );
+      scheduler.step((now += 16));
+      record();
+    }
+    for (let frame = 0; frame < 240; frame++) {
+      scheduler.step((now += 16));
+      record();
+    }
+    expect(lowestCamera).toBeGreaterThanOrEqual(floorY + 0.25 - 1e-6);
+    expect(lowestPivot).toBeGreaterThanOrEqual(floorY - 1e-6);
+    // The rig was lifted, not pushed sideways: the travel still went forward.
+    expect(controller.getSnapshot().position[2]).toBeLessThan(6);
+    controller.dispose();
+  });
+
+  it("slides a pivot left near the lens out to the performer when a rotate starts", () => {
+    const element = createElement();
+    const scheduler = new ManualFrameScheduler();
+    const controller = new ApplicationThreadCameraController(element, {
+      initialPosition: [0, 0.4, 5],
+      initialTarget: [0, 0.4, 3.6],
+      frameScheduler: scheduler,
+    });
+    configureViewerOrbitNavigation(controller.controls, {
+      pivotCast: () => ({ spots: [{ x: 0, z: 0 }], floorY: -1, headY: 0.8 }),
+    });
+    scheduler.step(0);
+    scheduler.step(16);
+    const before = controller.getSnapshot();
+
+    pressLeftButton(element);
+
+    const after = controller.getSnapshot();
+    for (let i = 0; i < 3; i++) {
+      expect(after.position[i]).toBeCloseTo(before.position[i]!, 6);
+    }
+    expect(after.target[2]).toBeCloseTo(0, 4);
+    expect(controller.controls.distance).toBeCloseTo(5, 4);
     controller.dispose();
   });
 

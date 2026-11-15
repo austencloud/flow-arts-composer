@@ -5,7 +5,7 @@
   Extracted from AccountSettingsSection for single responsibility.
 -->
 <script lang="ts">
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { checkUsernameAvailability } from "#lib/shared/auth/services/username-validator.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import type { User } from "firebase/auth";
@@ -110,7 +110,9 @@
         error = "";
       } else {
         isAvailable = false;
-        error = result.error || t("nav_ui_username_unavailable");
+        error = result.errorKey
+          ? tDynamic(result.errorKey, result.errorParams)
+          : result.error || t("nav_ui_username_unavailable");
         suggestions = result.suggestions || [];
       }
     } catch (err) {

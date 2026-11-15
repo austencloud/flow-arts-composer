@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     ModuleDefinition,
     Section,
@@ -29,7 +30,7 @@
   }
 </script>
 
-<nav class="destination-list" aria-label={`${module.label} destinations`}>
+<nav class="destination-list" aria-label={t("nav_module_destinations", { module: t(module.labelKey) })}>
   {#each sections as section (section.id)}
     <button
       type="button"
@@ -48,9 +49,9 @@
         {@html section.icon}
       </span>
       <span class="destination-copy">
-        <strong>{section.label}</strong>
+        <strong>{t(section.labelKey)}</strong>
         {#if section.description}
-          <small>{section.description}</small>
+          <small>{t(section.descKey)}</small>
         {/if}
       </span>
       <i class="fas fa-arrow-right destination-arrow" aria-hidden="true"></i>

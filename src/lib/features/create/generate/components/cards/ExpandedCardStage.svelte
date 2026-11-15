@@ -10,12 +10,21 @@
     which the container renders this into through its expandedCard snippet.
     The grid is the cards' footprint (centered, capped per breakpoint), so
     the grown card never overhangs it. The Level toolbar above stays.
-  - stacked: portaled to <body> and fixed to the viewport, bottom nav included.
-    It cannot stay inside the settings container: `container-type: size`
-    applies layout containment, which makes the container the containing
-    block for fixed descendants. Three ways to present there:
-    - fill: on a phone held upright, Customize, Setups and Timing take the
-      whole screen. LOOP stays a bottom panel even there.
+    Two cards leave it for the viewport on a short window: LOOP under 700px
+    of window (centered), and Customize when the footprint is under 480px
+    (fill on a window under 520px tall, a phone on its side; float above).
+  - stacked: portaled to the app's overlay layer and fixed to the viewport,
+    bottom nav included. It cannot stay inside the settings container:
+    `container-type: size` applies layout containment, which makes the
+    container the containing block for fixed descendants. It goes to the app
+    layer rather than <body> so it stacks with the app's drawers and modals: a
+    sign-in box a card asks for (z 600) has to paint over the card (z 400),
+    and the app shell is a stacking context of its own, so a card on <body>
+    painted over every modal inside it. Three ways to present there:
+    - fill: on a phone held upright, Customize and Timing take the whole
+      screen. LOOP and Setups stay bottom panels even there, sized by their
+      content: a full screen for Setups was mostly blank, and taps on the
+      blank part did nothing.
     - float: on a window wider than a phone and at least 760px tall (an
       unfolded foldable, a tablet held upright, a tall browser pane), the
       grown card floats centered over a dimmed backdrop. A full-screen panel
@@ -29,7 +38,9 @@
   the interaction, so the workspace control underneath still works; the Level
   strip is the exception, since the card follows the level. A tap on
   the backdrop behind a bottom or floating panel closes it. X and Escape
-  close everywhere.
+  close everywhere, and so does the system Back (Android's back gesture),
+  through the same close watcher the app's sheets and sign-in box use. No
+  history entry is pushed, so closing by X leaves Back where it was.
   Focus moves in on open and back to the card that opened it on close. The
   {#key destination} remount on a layout flip (desktop <-> stacked) drops the
   panel's local state and focus along with it; acceptable for a resize or fold
@@ -44,9 +55,11 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { innerHeight, innerWidth } from "svelte/reactivity/window";
-  import { portal } from "../modals/portal";
+  import { appOverlayLayer, portal } from "../modals/portal";
+  import { watchBackOnlyToClose } from "#lib/shared/foundation/ui/modal/helpers/back-close-watcher.js";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
+    createIntrinsicSizeMotion,
     opaqueFade,
     popIn,
     reducedMotion,
@@ -82,9 +95,13 @@
     loop,
     setups,
     tnd,
+    footprintHeight = 0,
   }: {
     panelState: PanelCoordinationState;
     isDesktopLayout: boolean;
+    /** Height of the cards' footprint (.card-grid) on side-by-side layouts,
+     *  measured by the container; 0 while unmeasured. */
+    footprintHeight?: number;
     loop: LoopStageProps;
     setups: SetupsStageProps;
     tnd: TnDStageProps;
@@ -96,11 +113,27 @@
   // every time Generate came back.
   const viewportHeight = $derived(innerHeight.current ?? 1000);
   const viewportWidth = $derived(innerWidth.current ?? 1000);
+  // Customize stays in the cards' footprint only while that footprint is tall
+  // enough for its headers and a grid of sixteen drawings at phone size. Under
+  // it (a sideways phone, a short laptop window) the grid was a scrolling slot
+  // of half-rows, so it takes the window instead. An unmeasured footprint
+  // keeps the stage.
+  const CUSTOMIZE_STAGE_MIN_HEIGHT = 480;
+  const customizeLeavesFootprint = $derived(
+    openCard === "customize" &&
+      footprintHeight > 0 &&
+      footprintHeight < CUSTOMIZE_STAGE_MIN_HEIGHT
+  );
   const destination = $derived(
-    isDesktopLayout && !(openCard === "loop" && viewportHeight < 700)
+    isDesktopLayout &&
+      !(openCard === "loop" && viewportHeight < 700) &&
+      !customizeLeavesFootprint
       ? "stage"
       : "viewport"
   );
+  // A side-by-side window this short is a phone on its side: Customize takes
+  // the whole screen there, as it does on a phone held upright.
+  const SIDEWAYS_PHONE_MAX_HEIGHT = 520;
   // Widths up to this are a phone held upright, where a settings panel needs
   // the whole screen.
   const PHONE_MAX_WIDTH = 600;
@@ -109,17 +142,22 @@
   // most of the screen empty above it.
   const FLOAT_MIN_HEIGHT = 760;
   // How the viewport destination presents on a stacked layout. A phone fills
-  // the screen, except LOOP, which stays a bottom panel there whatever the
-  // height. Anything wider floats on a tall window and rests on the bottom
+  // the screen, except LOOP and Setups, which stay bottom panels there
+  // whatever the height. Anything wider floats on a tall window and rests on the bottom
   // edge on a short one. A desktop window too short for the LOOP stage keeps
-  // its centered panel.
+  // its centered panel; Customize leaving a short footprint fills a sideways
+  // phone and floats on anything taller.
   const presentation = $derived(
     destination !== "viewport"
       ? "stage"
       : isDesktopLayout
-        ? "centered"
+        ? openCard === "customize"
+          ? viewportHeight < SIDEWAYS_PHONE_MAX_HEIGHT
+            ? "fill"
+            : "float"
+          : "centered"
         : viewportWidth <= PHONE_MAX_WIDTH
-          ? openCard === "loop"
+          ? openCard === "loop" || openCard === "preset"
             ? "sheet"
             : "fill"
           : viewportHeight >= FLOAT_MIN_HEIGHT
@@ -266,6 +304,75 @@
       dismiss: close,
     });
   });
+
+  // The system Back closes the open card and leaves the page where it is.
+  // Without this, Android's back gesture walked the history out of Generate
+  // with the card still open. A sign-in box the card opens registers its own
+  // watcher later, so Back closes that first.
+  $effect(() => {
+    if (!openCard) return;
+    return watchBackOnlyToClose(close);
+  });
+
+  // Setups on a bottom panel is sized by its content, which changes height
+  // when a tab, a sign-in answer or a list arrives. The panel moves to each
+  // new height through the shared intrinsic-size owner instead of snapping.
+  // A content change is a DOM change, so a MutationObserver (a microtask,
+  // before paint) measures the new natural height and starts the motion from
+  // the height on screen. A ResizeObserver only keeps that height current for
+  // changes that are not mutations (a rotation); it never writes, because a
+  // resize started inside it changed the observed box and raised a
+  // ResizeObserver loop error. The frame returns to content sizing when the
+  // ease lands.
+  function followContentHeight(node: HTMLElement, active: boolean) {
+    let motion: ReturnType<typeof createIntrinsicSizeMotion> | null = null;
+    let mutations: MutationObserver | null = null;
+    let sizes: ResizeObserver | null = null;
+    let settled = 0;
+    const follow = () => {
+      if (!motion) return;
+      const from = motion.currentSize() ?? settled;
+      motion.cancel();
+      const next = node.offsetHeight;
+      settled = next;
+      motion.resize(from, next);
+    };
+    const start = (on: boolean) => {
+      mutations?.disconnect();
+      sizes?.disconnect();
+      motion?.cancel();
+      mutations = null;
+      sizes = null;
+      motion = null;
+      if (
+        !on ||
+        typeof MutationObserver === "undefined" ||
+        typeof ResizeObserver === "undefined"
+      )
+        return;
+      motion = createIntrinsicSizeMotion(node, { release: true });
+      settled = node.offsetHeight;
+      mutations = new MutationObserver(follow);
+      // Not `style`: the motion writes the root's own height there.
+      mutations.observe(node, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["class", "hidden"],
+      });
+      sizes = new ResizeObserver(() => {
+        if (motion && motion.currentSize() === null)
+          settled = node.offsetHeight;
+      });
+      sizes.observe(node);
+    };
+    start(active);
+    return {
+      update: start,
+      destroy: () => start(false),
+    };
+  }
 
   // The side-by-side stage is intentionally non-modal: the workspace around
   // it remains actionable. Close after the click bubbles through its target,
@@ -459,6 +566,7 @@
       guestGated={loop.guestGated}
       onRequestSignup={loop.onRequestSignup}
       handRelationship={loop.handRelationship}
+      onPickNeedsFit={loop.onPickNeedsFit}
       layout="responsive"
       {titleId}
     />
@@ -483,8 +591,8 @@
       isSignedOut={setups.isSignedOut}
       isPreview={setups.isPreview}
       isAnonymous={setups.isAnonymous}
+      authKnown={setups.authKnown}
       onApply={setups.onApply}
-      onRequestCommunityAccount={setups.onRequestCommunityAccount}
       onRequestSaveAccount={setups.onRequestSaveAccount}
       onRequestSignIn={setups.onRequestSignIn}
       onClose={close}
@@ -530,7 +638,7 @@
         class="expanded-card-backdrop"
         aria-hidden="true"
         onclick={() => close()}
-        use:portal
+        use:portal={appOverlayLayer()}
         transition:backdropFade={backdropMotion()}
       ></div>
     {/if}
@@ -552,7 +660,9 @@
           held: openCard === "customize" && !customizeStandIn,
           host: customizeHost,
         }}
-        use:portal
+        use:portal={appOverlayLayer()}
+        use:followContentHeight={presentation === "sheet" &&
+          openCard === "preset"}
         use:claimedViewTransitionName={{
           name: generateCardMorphName(openCard),
         }}
@@ -614,8 +724,7 @@
   .expanded-card-stage[data-contents-arriving]
     > :global(.customize-host)
     :global(.overlay-header > :not(.overlay-title, .close-button)) {
-    animation: card-contents-arrive var(--duration-normal) var(--ease-out)
-      both;
+    animation: card-contents-arrive var(--duration-normal) var(--ease-out) both;
   }
 
   .stand-in-action {
@@ -660,7 +769,8 @@
     max-height: 100%;
   }
 
-  /* A phone held upright: the whole screen, bottom nav included. */
+  /* A phone held upright, or Customize on a phone held sideways: the whole
+     screen, bottom nav included. */
   .expanded-card-stage[data-presentation="fill"] {
     position: fixed;
     inset: 0;
@@ -678,6 +788,9 @@
     border-radius: 0;
     border: none;
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    /* A phone on its side has its notch on one of these. */
+    padding-left: calc(16px + env(safe-area-inset-left, 0px));
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
   }
 
   /* A desktop window too short for the LOOP stage: centered over the dimmed
@@ -748,6 +861,25 @@
     position: relative;
     inset: auto;
     max-height: calc(100dvh - 16px);
+  }
+
+  /* Setups sizes its panel by its content, up to the screen less a strip of
+     the dimmed page to tap away on. With a long list the panel stops there
+     and only the list scrolls. followContentHeight moves the height. */
+  .expanded-card-stage[data-presentation="sheet"][data-card-id="preset"] {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: calc(100dvh - 16px);
+    overflow: hidden;
+  }
+
+  .expanded-card-stage[data-presentation="sheet"][data-card-id="preset"]
+    > :global(.generation-settings-overlay) {
+    position: relative;
+    inset: auto;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   /* The panel rests on the bottom edge: only its top corners round. */

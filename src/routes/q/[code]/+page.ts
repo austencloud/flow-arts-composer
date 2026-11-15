@@ -17,6 +17,10 @@ export const load: PageLoad = ({ data }) => {
   if (browser) {
     void import("./QScanPage.svelte").catch(() => {});
     void loadSequenceViewerPage().catch(() => {});
+    // QScanPage starts the card's picture downloads with this module.
+    void import("#lib/shared/render/services/scan-cell-prefetch.js").catch(
+      () => {}
+    );
   }
   return data;
 };

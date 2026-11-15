@@ -22,13 +22,23 @@
   import type { EffectPreset } from "../presets/types";
   import { mulberry32 } from "./tile-paint";
   import { queueTilePaint } from "./tile-paint-queue";
+  import {
+    TILE_FORMAT_SIZE,
+    type Box,
+    type TileFormat,
+    frame,
+    unitsPerDisplayPx,
+  } from "./tile-format";
 
   interface Props {
     preset: EffectPreset<"charcoal">;
     active?: boolean;
+    /** card (default), or the small tile / chip painting. */
+    format?: TileFormat;
   }
 
-  const { preset, active = false }: Props = $props();
+  const { preset, active = false, format = "card" }: Props = $props();
+  const size = $derived(TILE_FORMAT_SIZE[format]);
   let canvas = $state<HTMLCanvasElement>();
 
   const WIDTH = 720;
@@ -117,6 +127,18 @@
   const SPIN_TURNS = 4;
   const SPIN_CENTERS = [VIEW_W * 0.3, VIEW_W * 0.7];
 
+  /**
+   * Small formats: one spinner, so there is one clear ember arc with a bright
+   * head and the shower falling from it, not two overlapping smears. The view
+   * is a frame around that spinner (card px) tall enough that the falling
+   * sparks finish inside it. Spark streaks never paint thinner than about
+   * 1.4px at display size, and the glow pass sits behind them.
+   */
+  const SMALL: Record<"tile" | "chip", { view: Box; centre: number }> = {
+    tile: { view: { x: 130, y: 2, w: 460, h: 172.5 }, centre: 0.5 },
+    chip: { view: { x: 225, y: 2, w: 270, h: 180 }, centre: 0.5 },
+  };
+
   function tipAt(
     t: number,
     cx: number,
@@ -153,7 +175,10 @@
     ];
   }
 
-  function simulate(params: CharcoalSparkParams): Spark[] {
+  function simulate(
+    params: CharcoalSparkParams,
+    centres: number[] = SPIN_CENTERS
+  ): Spark[] {
     const rand = mulberry32(SEED);
     const material: SparkMaterial = resolveSparkMaterial(params.emissionStyle);
     const spread = params.spread ?? 0.4;
@@ -244,14 +269,14 @@
     );
     const rate = Math.min(
       params.ambientRate * 2,
-      (capacity * 0.85) / meanLife / SPIN_CENTERS.length
+      (capacity * 0.85) / meanLife / centres.length
     );
 
     let accumulator = 0;
     for (let t = 0; t < DURATION; t += DT) {
       // Half a revolution apart, so the two showers are never the same shower
       // twice - the pair reads as two props rather than one mirrored stamp.
-      const tips = SPIN_CENTERS.map((cx, i) => tipAt(t, cx, i * Math.PI));
+      const tips = centres.map((cx, i) => tipAt(t, cx, i * Math.PI));
 
       accumulator += rate * DT;
       while (accumulator >= 1) {
@@ -286,12 +311,17 @@
     const node = canvas;
     if (!node) return;
     void preset;
+    void format;
     return queueTilePaint(() => paint(node));
   });
 
   function paint(node: HTMLCanvasElement): void {
     const ctx = node.getContext("2d");
     if (!ctx) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const small = format === "card" ? null : SMALL[format];
+    if (small) frame(ctx, format, small.view, 0);
+    const upp = small ? unitsPerDisplayPx(small.view, format as "tile" | "chip") : 1;
 
     const intent = { ...CHARCOAL_DEFAULTS, ...(preset.patch ?? {}) };
     const params = semanticToCharcoalParams(
@@ -312,9 +342,20 @@
     background.addColorStop(0, "#0a0806");
     background.addColorStop(1, "#050404");
     ctx.fillStyle = background;
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillRect(-WIDTH, -HEIGHT, WIDTH * 3, HEIGHT * 3);
 
-    const sparks = simulate(params);
+    const all = simulate(
+      params,
+      small ? [VIEW_W * small.centre] : SPIN_CENTERS
+    );
+    // The small formats keep every third spark: the dense shower is a smear at
+    // 74px, and a few clear streaks with the bright head read better.
+    // A sparse look (Hot Coal, Banked Ember) keeps every spark it has.
+    const sparks = small
+      ? all.length > 120
+        ? all.filter((_, i) => i % 3 === 0)
+        : all
+      : all;
 
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -333,12 +374,16 @@
         const y = p.y * SCALE;
         const tx = (p.x - p.vx * SPARK_SHUTTER_SECONDS) * SCALE;
         const ty = (p.y - p.vy * SPARK_SHUTTER_SECONDS) * SCALE;
-        if (Math.max(x, tx) < 0 || Math.min(x, tx) > WIDTH) continue;
-        if (Math.max(y, ty) < 0 || Math.min(y, ty) > HEIGHT) continue;
+        if (Math.max(x, tx) < -WIDTH || Math.min(x, tx) > WIDTH * 2) continue;
+        if (Math.max(y, ty) < -HEIGHT || Math.min(y, ty) > HEIGHT * 2) continue;
         const alpha =
           Math.min(1, heat / 0.35) * (0.75 + heat * 0.6) * pass.alpha;
         ctx.strokeStyle = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${Math.min(1, alpha)})`;
-        ctx.lineWidth = Math.max(0.8, p.size * (0.55 + heat * 0.45) * 2) * pass.width;
+        const core = Math.max(
+          small ? 1.1 * upp : 0.8,
+          p.size * (0.55 + heat * 0.45) * 2
+        );
+        ctx.lineWidth = small ? core * (pass.width > 1 ? 1.8 : 1) : core * pass.width;
         ctx.beginPath();
         ctx.moveTo(tx, ty);
         ctx.lineTo(x, y);
@@ -346,12 +391,59 @@
       }
     }
 
+    if (small) paintHead(ctx, small, params, upp);
     ctx.restore();
+  }
+
+  /**
+   * Every small Coal look gets the same anchor, whatever its spark count: the
+   * arc the spinner sweeps, dim, and the bright head at its lead point with a
+   * soft halo, in the look's own colours. A quiet look then still has one
+   * bright head and a visible arc.
+   */
+  function paintHead(
+    ctx: CanvasRenderingContext2D,
+    small: { view: Box; centre: number },
+    params: CharcoalSparkParams,
+    upp: number
+  ): void {
+    const cx = VIEW_W * small.centre;
+    const rgb = (c: ArrayLike<number>, a: number): string =>
+      `rgba(${Math.round(c[0]!)}, ${Math.round(c[1]!)}, ${Math.round(c[2]!)}, ${a})`;
+    ctx.lineCap = "round";
+    ctx.lineWidth = 1.6 * upp;
+    ctx.strokeStyle = rgb(params.midColor, 0.55);
+    ctx.beginPath();
+    ctx.ellipse(
+      cx * SCALE,
+      SPIN_CY * SCALE,
+      SPIN_RX * SCALE,
+      SPIN_RY * SCALE,
+      0,
+      Math.PI * 0.15,
+      Math.PI * 1.35
+    );
+    ctx.stroke();
+    const head = tipAt(0, cx, Math.PI * 1.35);
+    const hx = head.x * SCALE;
+    const hy = head.y * SCALE;
+    const halo = ctx.createRadialGradient(hx, hy, 0, hx, hy, 9 * upp);
+    halo.addColorStop(0, rgb(params.coreColor, 0.95));
+    halo.addColorStop(0.35, rgb(params.midColor, 0.5));
+    halo.addColorStop(1, rgb(params.midColor, 0));
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(hx, hy, 9 * upp, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = rgb(params.coreColor, 1);
+    ctx.beginPath();
+    ctx.arc(hx, hy, 2.2 * upp, 0, Math.PI * 2);
+    ctx.fill();
   }
 </script>
 
 <div class="coal-thumbnail" class:active aria-hidden="true">
-  <canvas bind:this={canvas} width={WIDTH} height={HEIGHT}></canvas>
+  <canvas bind:this={canvas} width={size.w} height={size.h}></canvas>
 </div>
 
 <style>

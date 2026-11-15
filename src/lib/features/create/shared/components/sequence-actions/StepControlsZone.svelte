@@ -259,6 +259,7 @@
       <div class="mobile-hand-picker">
         <SegmentedControl
           options={HAND_OPTIONS}
+          size="phone"
           value={mobileHand}
           onchange={(hand) => (mobileHand = hand)}
           ariaLabel={t("create_controls_choose_prop")}
@@ -430,13 +431,18 @@
     min-height: 0;
   }
 
+  /* The phone budget: 6px padding, the 42px Left | Right switch, a 4px gap
+     and one 44px turns card (36px controls in 3px of card padding plus its
+     border) come to about 102px, so the top zone keeps the rest. */
   .controls-zone.stacked {
-    padding: 8px;
-    padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+    --turns-control-size: var(--alt-touch-target, 36px);
+    --compact-hand-card-padding: 3px;
+    padding: 6px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 6px));
   }
 
   .mobile-hand-picker {
-    padding: 0 0 6px;
+    padding: 0 0 4px;
   }
 
   /* Inner column so single (stepper + prop row) and batch (segmented + palette)

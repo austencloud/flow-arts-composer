@@ -89,13 +89,17 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
               onclick={handleMirrorToggle}
               aria-pressed={isMirrored}
               aria-labelledby="mirror-toggle-label"
-              title={isMirrored ? "Disable mirror" : "Enable mirror"}
+              title={isMirrored
+                ? t("create_record_mirror_off")
+                : t("create_record_mirror_on")}
             >
               <span class="toggle-icon" aria-hidden="true"
                 >{isMirrored ? "🪞" : "📹"}</span
               >
               <span class="toggle-text"
-                >{isMirrored ? "Mirrored" : "Normal"}</span
+                >{isMirrored
+                  ? t("create_record_mirrored")
+                  : t("create_record_not_mirrored")}</span
               >
             </button>
           </div>

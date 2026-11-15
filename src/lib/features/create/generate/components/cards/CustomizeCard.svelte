@@ -45,7 +45,7 @@ to three rows. Click opens the expanded overlay.
     color = "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)",
     shadowColor = "190deg 75% 50%",
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
   } = $props<{
     constraintPreset: "smooth" | "mixed" | "choppy";
     handPathMode: "smooth" | "mixed" | "choppy";

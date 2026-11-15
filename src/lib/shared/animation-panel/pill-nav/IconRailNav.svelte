@@ -10,8 +10,14 @@
 <script lang="ts" generics="T extends string">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import RailPropGlyph from "#lib/shared/components/RailPropGlyph.svelte";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import ActiveEffectChip from "#lib/shared/animation-engine/components/effects-panel/ActiveEffectChip.svelte";
+  import type { EffectCatalogLook } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks";
+
+  /** The rail's picture slot, in px (matches .rail-glyph below). */
+  const RAIL_GLYPH_BOX = { width: 26, height: 26 };
 
   interface RailPill {
     id: T;
@@ -20,6 +26,14 @@
     /** The current prop itself is more informative than a generic Props glyph. */
     propType?: PropType;
     fanAppearance?: FanAppearance;
+    /** Opens the app's Change Prop switcher, so it wears that button's drawing. */
+    selectedPropGlyph?: boolean;
+    /** Draw `propType` as the blue and red pair, fitted to the slot, instead
+     *  of the one-colour glyph. */
+    propPairGlyph?: boolean;
+    /** The effect that is on, drawn as its painted chip (about 30x20) in place
+     *  of the icon. Leave undefined while no effect is on. */
+    effectChip?: { effectId: string; look: EffectCatalogLook | undefined };
     label: string;
     /** Optional one-line summary surfaced in the button title tooltip. */
     summary?: string;
@@ -142,12 +156,30 @@
       onclick={() => onSelect(pill.id)}
       onkeydown={handleKeydown}
     >
-      <span class="rail-glyph">
-        {#if pill.propType}
+      <span class="rail-glyph" class:chip={!!pill.effectChip?.look}>
+        {#if pill.selectedPropGlyph}
+          <span class="selected-prop-glyph"
+            ><SelectedPropPreview box={RAIL_GLYPH_BOX} /></span
+          >
+        {:else if pill.propType && pill.propPairGlyph}
+          <span class="selected-prop-glyph"
+            ><SelectedPropPreview
+              propType={pill.propType}
+              box={RAIL_GLYPH_BOX}
+            /></span
+          >
+        {:else if pill.propType}
           <RailPropGlyph
             propType={pill.propType}
             fanAppearance={pill.fanAppearance}
             size={26}
+          />
+        {:else if pill.effectChip?.look}
+          <ActiveEffectChip
+            effectId={pill.effectChip.effectId}
+            look={pill.effectChip.look}
+            width={30}
+            height={20}
           />
         {:else if pill.icon}
           <i class="fas {pill.icon}" aria-hidden="true"></i>
@@ -264,6 +296,26 @@
     height: 26px;
     flex: 0 0 auto;
     place-items: center;
+  }
+
+  /* The effect chip is 30x20, wider than the 26px square slot. */
+  .rail-glyph.chip {
+    width: 30px;
+  }
+
+  /* The pair crops to what it paints and fits the slot exactly. */
+  .selected-prop-glyph {
+    position: relative;
+    display: block;
+    width: 26px;
+    height: 26px;
+    overflow: visible;
+    line-height: 0;
+  }
+
+  .selected-prop-glyph :global(svg) {
+    display: block;
+    max-width: none;
   }
 
   .rail-copy {

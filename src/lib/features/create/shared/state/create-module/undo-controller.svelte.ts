@@ -11,6 +11,8 @@ import type { UndoManager } from "../../services/undo-manager";
 import type { UndoMetadata } from "../../services/undo-manager";
 import { UndoOperationType } from "../../services/undo-manager";
 import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { describeUndoEntryForToast } from "../../services/undo-descriptions";
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   createHistoryTransitionPlan,
@@ -147,7 +149,12 @@ export function createUndoController({
 
     // Show brief toast confirming the undo
     if (undoDescription) {
-      toast.info(`Undid ${undoDescription}`, 1500);
+      toast.info(
+        t("create_toast_undid", {
+          action: describeUndoEntryForToast(lastEntry, undoDescription),
+        }),
+        1500
+      );
     }
 
     beginHistoryTransition(
@@ -226,7 +233,12 @@ export function createUndoController({
     }
 
     if (redoDescription) {
-      toast.info(`Redid ${redoDescription}`, 1500);
+      toast.info(
+        t("create_toast_redid", {
+          action: describeUndoEntryForToast(entry, redoDescription),
+        }),
+        1500
+      );
     }
 
     return true;

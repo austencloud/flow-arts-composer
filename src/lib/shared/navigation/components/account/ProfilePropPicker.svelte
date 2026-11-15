@@ -3,7 +3,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { getProfilePropLabel } from "#lib/shared/community/domain/profile-prop-catalog.js";
-  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
   import PropSelectionButton from "#lib/shared/settings/components/tabs/prop-type/PropSelectionButton.svelte";
 
   interface Props {
@@ -31,7 +31,7 @@
       onpress={() => onselect(prop)}
     >
       {#snippet art()}
-        <PropCompositionPreview propType={prop} neutral />
+        <SelectedPropPreview propType={prop} size={64} />
       {/snippet}
     </PropSelectionButton>
   {/each}

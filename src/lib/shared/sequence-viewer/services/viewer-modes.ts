@@ -226,8 +226,11 @@ export function viewerModeForRenderMode(
 /**
  * The route page's initial viewer mode, resolved from its URL params.
  *
- * A scan boot always lands on the card (the physical artifact the visitor just
- * scanned). Otherwise a `pane` param is the canonical mode owner (the vw URL
+ * A scan boot always lands on Side by Side: the animation above the card the
+ * visitor just scanned. It opens there directly, never on Card first: a scan
+ * used to open on Card and promote itself to Side by Side a second after the
+ * card painted, so the visitor watched the card move down, re-lay itself out,
+ * and the whole workspace dissolve (2026-11-13). Otherwise a `pane` param is the canonical mode owner (the vw URL
  * slice wrote it), so the page passes no initial mode and lets the seeded
  * viewer state stand — a full-state link that was captured on the tunnel pane
  * with the 3D renderer warm carries BOTH `pane=tunnel` and `render=3d`, and
@@ -241,7 +244,17 @@ export function initialViewerModeForUrl(
   pane: string | null,
   renderMode: "2d" | "3d" | null
 ): ViewerMode | undefined {
-  if (scanOrigin) return "card";
+  if (scanOrigin) return "split";
   if (pane) return undefined;
   return viewerModeForRenderMode(renderMode);
+}
+
+/**
+ * The Side by Side a scan opens on: the 2D animation beside the card. Seeded,
+ * not saved, so a scan never rewrites the visitor's remembered split.
+ */
+export function initialSplitConfigForUrl(
+  scanOrigin: boolean
+): SplitConfig | undefined {
+  return scanOrigin ? { leftPane: "animation", rightPane: "card" } : undefined;
 }

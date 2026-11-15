@@ -40,6 +40,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   } from "#lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
   import MultiSelectPlacementPicker from "#lib/shared/components/placement-picker/MultiSelectPlacementPicker.svelte";
   import PropOrientationControl from "../../../shared/components/sequence-actions/PropOrientationControl.svelte";
+  import StartPlacementChooser from "./StartPlacementChooser.svelte";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -519,31 +520,33 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
             onDashesChange={handleDashesChange}
           />
         {:else if id === "startPos"}
-          <div class="drill-fill grid-fill">
-            <MultiSelectPlacementPicker
-              layout="split"
+          <div class="drill-fill chooser-fill">
+            <StartPlacementChooser
+              {gridMode}
               blockedPlacements={localBlockedPlacements}
-              onBlockedChange={handleBlockedChange}
               leftStartOrientation={localLeftOri}
               rightStartOrientation={localRightOri}
+              availableOrientations={availableStartOrientations}
               presets={startPlacementPresets}
-              {gridMode}
+              onBlockedChange={handleBlockedChange}
+              onLeftOrientationChange={handleLeftOriChange}
+              onRightOrientationChange={handleRightOriChange}
             >
-              <!-- Beside the picker where there is room: the props in the
-                   grid redraw as these change, so the setting and its result
-                   are visible at the same time. On a panel too small for both,
-                   a row that opens them on a screen of their own. -->
-              {#snippet aside()}
+              <!-- The Custom grid's props controls: beside the grid where
+                   there is room, so the props in the grid redraw as these
+                   change. On a panel too small for both, a row that opens
+                   them on a screen of their own. -->
+              {#snippet customAside()}
                 {@render orientationControls(true)}
               {/snippet}
-              {#snippet asideFolded()}
+              {#snippet customAsideFolded()}
                 <SettingsDrillRow
                   label={t("create_ui_prop_orientations")}
                   value={orientationValue}
                   onclick={() => openScreen("startOri")}
                 />
               {/snippet}
-            </MultiSelectPlacementPicker>
+            </StartPlacementChooser>
           </div>
         {:else if id === "startOri"}
           <div class="drill-fill ori-screen">
@@ -637,6 +640,13 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   .grid-fill :global(.multi-select-grid) {
     flex: 1 1 0;
     min-height: 0;
+  }
+
+  /* Start Placement: the chooser stretches to the whole box and lays itself
+     out against it (a size container), so no part of it scrolls. */
+  .chooser-fill {
+    display: flex;
+    min-width: 0;
   }
 
   /* The Prop orientations screen, on a panel too small for the controls beside

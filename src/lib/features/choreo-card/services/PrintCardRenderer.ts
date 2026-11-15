@@ -30,6 +30,7 @@ import { getCompositionDispatcher } from "#lib/shared/render/get-composition-dis
 import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 import type { CompositionProgressCallback } from "#lib/shared/render/services/types.js";
 import { CARD_SIZES, type CardSizeId } from "../domain/card-sizes";
+import { localStepLabels } from "#lib/shared/render/services/local-step-labels.js";
 
 // MPC poker card defaults
 const MPC_WIDTH = 822;
@@ -97,7 +98,10 @@ export class PrintCardRenderer {
 
     // Main-thread render (worker unavailable or per-card fallback). QR is
     // generated internally by composeSequenceImage as today.
-    let mainThreadOptions = composeOptions;
+    let mainThreadOptions: typeof composeOptions = {
+      ...composeOptions,
+      stepLabels: composeOptions.stepLabels ?? localStepLabels(),
+    };
     if (options.qrUrl) {
       const qrImage = await this.prerenderQrImage(
         sequence,
@@ -105,7 +109,7 @@ export class PrintCardRenderer {
         composeOptions
       );
       if (qrImage) {
-        mainThreadOptions = { ...composeOptions, qrImageBitmap: qrImage };
+        mainThreadOptions = { ...mainThreadOptions, qrImageBitmap: qrImage };
       }
     }
     const sequenceCanvas = await this.imageComposer.composeSequenceImage(

@@ -70,6 +70,7 @@
   import { afterNavigate } from "$app/navigation";
   import { holdPageReady } from "@austencloud/motion";
   import { tileFlight } from "#lib/shared/transitions/tile-flight.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Crossfade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
@@ -99,7 +100,7 @@
     prevPage = null,
     nextPage = null,
     hubHref,
-    hubLabel = "All guides",
+    hubLabel,
     screen,
     lead,
     steadyHead = false,
@@ -470,7 +471,9 @@
     {:else}
       <span class="step-spacer"></span>
     {/if}
-    {#if hubHref}<a class="hub" href={hubHref}>{hubLabel}</a>{:else}<span
+    {#if hubHref}<a class="hub" href={hubHref}
+        >{hubLabel ?? t("guide_nav_all_guides")}</a
+      >{:else}<span
         class="step-spacer"
       ></span>{/if}
     {#if nextTarget?.kind === "screen"}

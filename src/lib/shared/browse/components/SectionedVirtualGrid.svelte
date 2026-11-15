@@ -281,7 +281,8 @@
       const display = dedupeByWord(s.sequences as SequenceData[]);
 
       headerIndexByTitle.set(s.title, items.length);
-      items.push({
+      // The flat wall (a "none" grouping) is one section with no heading.
+      if (s.id !== "all") items.push({
         type: "header",
         key: `h-${s.id}`,
         sectionTitle: s.title,

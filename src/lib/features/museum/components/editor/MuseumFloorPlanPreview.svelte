@@ -193,17 +193,21 @@
         transparent 52%
       ),
       var(--plan-paper);
-    background-size:
-      calc(100% / var(--grid-columns)) calc(100% / var(--grid-rows)),
-      calc(100% / var(--grid-columns)) calc(100% / var(--grid-rows)),
-      auto,
-      auto;
     border: 1px solid var(--museum-gold-25);
     border-radius: clamp(0.5rem, 1.2cqi, 1rem);
     box-shadow:
       0 1.5rem 5rem rgba(0, 0, 0, 0.42),
       inset 0 0 0 1px rgba(255, 255, 255, 0.025);
     isolation: isolate;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .plan-grid {
+    background-size:
+      calc(100% / var(--grid-columns)) calc(100% / var(--grid-rows)),
+      calc(100% / var(--grid-columns)) calc(100% / var(--grid-rows)),
+      auto,
+      auto;
   }
 
   .tile-grid {

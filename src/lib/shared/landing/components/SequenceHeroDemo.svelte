@@ -38,6 +38,7 @@
 
 <script lang="ts">
   import { tick, untrack, type Snippet } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "#lib/actions/activate-when-near.js";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
@@ -427,7 +428,7 @@
         onclick={activatePlayerManually}
       >
         <span aria-hidden="true">▶</span>
-        <span>Play live preview</span>
+        <span>{t("site_demo_play_preview")}</span>
       </button>
     {:else}
       <ProgressRing percent={-1} size={32} strokeWidth={3} />
@@ -437,15 +438,15 @@
 
 {#snippet playerError(_error: unknown, retry: () => void)}
   <div class="demo-load-error" role="alert">
-    <span>The live preview could not load.</span>
-    <button type="button" onclick={retry}>Try again</button>
+    <span>{t("site_demo_preview_failed")}</span>
+    <button type="button" onclick={retry}>{t("browse_ui_try_again")}</button>
   </div>
 {/snippet}
 
 {#snippet railError(_error: unknown, retry: () => void)}
   <div class="notation-load-error" role="alert">
-    <span>Pictographs did not load.</span>
-    <button type="button" onclick={retry}>Try again</button>
+    <span>{t("site_demo_pictographs_failed")}</span>
+    <button type="button" onclick={retry}>{t("browse_ui_try_again")}</button>
   </div>
 {/snippet}
 
@@ -500,8 +501,8 @@
           class="notation-strip"
           role="group"
           aria-label={sequence
-            ? `Pictographs for ${word}`
-            : "Pictographs loading"}
+            ? t("site_demo_pictographs_for", { word })
+            : t("site_demo_pictographs_loading")}
           aria-busy={notationBusy}
           bind:this={railElement}
         >
@@ -561,14 +562,14 @@
         ></i>
         <span
           >{pending
-            ? "Preparing..."
+            ? t("viewer_detail_preparing")
             : rerolling
               ? errorMessage
-                ? "Trying again..."
-                : "Rolling..."
+                ? t("site_demo_trying_again")
+                : t("site_demo_rolling")
               : errorMessage
-                ? "Try again"
-                : "Roll a new one"}</span
+                ? t("browse_ui_try_again")
+                : t("site_demo_roll_new")}</span
         >
       </button>
     </div>

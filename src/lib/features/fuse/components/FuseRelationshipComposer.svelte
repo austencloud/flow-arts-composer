@@ -499,13 +499,30 @@
     }
   }
 
-  /* A stacked chain makes this block a third of a phone sheet — too much to pin.
-     A phone scrolls to its commands like every other phone form. */
+  /* On a phone the editor is a full-height screen and fits without a scroll
+     (the picker's phone form), so nothing needs pinning: the commands sit on
+     the floor through `margin-top: auto`. They take the phone's 36px size,
+     stacked (36 + 6 + 36), and the gaps above them tighten. */
   @media (max-width: 480px) {
+    .pairing-editor {
+      gap: 8px;
+    }
+
     .relationship-commit {
       position: static;
+      gap: 8px;
+      padding-top: 0;
       background: none;
       backdrop-filter: none;
+    }
+
+    .editor-actions {
+      gap: 6px;
+    }
+
+    .editor-actions :global(.panel-btn) {
+      min-height: var(--alt-touch-target, 36px);
+      padding-block: 0;
     }
   }
 </style>

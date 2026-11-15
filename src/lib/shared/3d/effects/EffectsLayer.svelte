@@ -10,6 +10,7 @@
    */
 
   import { Vector3, Quaternion, Euler, type Object3D } from "three";
+  import { clampFanBuild } from "#lib/shared/3d/domain/fan-appearance.js";
   import {
     AUSTEN_STAFF,
     PropType,
@@ -128,7 +129,9 @@
     effectSpaceRoot,
   }: Props = $props();
 
-  const propBuild = $derived(propBuildOverride ?? propFinishState.build);
+  const propBuild = $derived(
+    clampFanBuild(propBuildOverride ?? propFinishState.build)
+  );
 
   const unifiedState = getUnifiedEffectsState();
   const scene3DRender = getScene3DRenderContext();

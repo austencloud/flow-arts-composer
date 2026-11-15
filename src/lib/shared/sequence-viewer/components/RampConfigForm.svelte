@@ -1,19 +1,25 @@
 <!--
   RampConfigForm.svelte
 
-  The practice tempo-ramp config rows (Start tempo / Loops per speed-up X /
-  BPM per speed-up Y / Goal toggle + Goal tempo) plus a plain-language hint.
-  Extracted from the old PracticeConfigPopover so it can render inline in the
-  practice setup screen (and anywhere else a ramp form is needed) instead of
-  being trapped inside a popover. Writes through onUpdate.
+  How the practice tempo climbs, changed from the cockpit while practice runs:
+  a preset (Creep, Staircase, Custom), the start tempo, and for Custom the
+  loops per speed-up, BPM per speed-up and an optional goal. A one-line summary
+  under the rows says what the ramp will do. Writes through onUpdate; the
+  playback controller applies each change to the run in progress.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import type { TempoPracticeConfig } from "../services/tempo-practice-orchestrator";
   import {
     PLAYBACK_MIN_BPM,
     PLAYBACK_MAX_BPM,
   } from "#lib/shared/animation-engine/domain/constants/timing.js";
+  import {
+    matchRampPreset,
+    RAMP_PRESET_PATCHES,
+    type RampPresetId,
+  } from "../domain/practice-ramp-presets";
 
   interface Props {
     config: Partial<TempoPracticeConfig>;
@@ -29,6 +35,28 @@
   let targetBpm = $derived(config.targetBpm ?? 60);
   let targetEnabled = $derived(config.targetEnabled ?? false);
   let maxBpm = $derived(config.maxBpm ?? PLAYBACK_MAX_BPM);
+
+  // Custom is a choice, not only a config shape: picking it shows the rows
+  // even while the numbers still match a preset.
+  let customChosen = $state(false);
+  let preset = $derived<RampPresetId>(
+    customChosen ? "custom" : matchRampPreset(config)
+  );
+
+  const PRESETS = $derived<{ value: RampPresetId; label: string }[]>([
+    { value: "creep", label: t("viewer_ui_creep") },
+    { value: "staircase", label: t("viewer_ui_staircase") },
+    { value: "custom", label: t("viewer_ui_custom") },
+  ]);
+
+  function pickPreset(next: RampPresetId) {
+    if (next === "custom") {
+      customChosen = true;
+      return;
+    }
+    customChosen = false;
+    onUpdate(RAMP_PRESET_PATCHES[next]);
+  }
 
   function clamp(v: number, min: number, max: number) {
     return Math.max(min, Math.min(max, v));
@@ -52,16 +80,36 @@
 
   // Plain-language summary of the current ramp.
   let everyPhrase = $derived(
-    roundsPerLevel === 1 ? "every loop" : `every ${roundsPerLevel} loops`
+    roundsPerLevel === 1
+      ? t("viewer_detail_every_loop")
+      : t("viewer_detail_every_n_loops", { count: roundsPerLevel })
   );
   let hint = $derived(
     targetEnabled
-      ? `Climbs +${increment} BPM ${everyPhrase} up to ${clamp(targetBpm, startBpm + 5, maxBpm)} BPM, then stops.`
-      : `Climbs +${increment} BPM ${everyPhrase} up to ${maxBpm} BPM.`
+      ? t("viewer_detail_ramp_hint_goal", {
+          increment,
+          every: everyPhrase,
+          target: clamp(targetBpm, startBpm + 5, maxBpm),
+        })
+      : t("viewer_detail_ramp_hint", {
+          increment,
+          every: everyPhrase,
+          max: maxBpm,
+        })
   );
 </script>
 
 <div class="config-body">
+  <SegmentedControl
+    options={PRESETS}
+    value={preset}
+    onchange={pickPreset}
+    color="accent"
+    size="sm"
+    density="compact"
+    ariaLabel={t("viewer_detail_practice_ramp")}
+  />
+
   {@render stepper(
     t("viewer_detail_start_tempo"),
     startBpm,
@@ -69,45 +117,48 @@
     () => setStartBpm(startBpm - 5),
     () => setStartBpm(startBpm + 5)
   )}
-  {@render stepper(
-    t("viewer_detail_loops_per_speed_up"),
-    roundsPerLevel,
-    "",
-    () => setRounds(roundsPerLevel - 1),
-    () => setRounds(roundsPerLevel + 1)
-  )}
-  {@render stepper(
-    "BPM per speed-up",
-    increment,
-    "",
-    () => setIncrement(increment - 1),
-    () => setIncrement(increment + 1)
-  )}
 
-  <div class="config-row">
-    <span class="config-label">{t("viewer_ui_stop_at_a_goal")}</span>
-    <button
-      type="button"
-      class="goal-toggle"
-      class:on={targetEnabled}
-      onclick={toggleTarget}
-      aria-pressed={targetEnabled}
-      aria-label={targetEnabled
-        ? t("viewer_detail_goal_on")
-        : t("viewer_detail_goal_off")}
-    >
-      <span class="goal-knob"></span>
-    </button>
-  </div>
-
-  {#if targetEnabled}
+  {#if preset === "custom"}
     {@render stepper(
-      t("viewer_detail_goal_tempo"),
-      clamp(targetBpm, startBpm + 5, maxBpm),
-      "BPM",
-      () => setTargetBpm(targetBpm - 5),
-      () => setTargetBpm(targetBpm + 5)
+      t("viewer_detail_loops_per_speed_up"),
+      roundsPerLevel,
+      "",
+      () => setRounds(roundsPerLevel - 1),
+      () => setRounds(roundsPerLevel + 1)
     )}
+    {@render stepper(
+      t("viewer_detail_bpm_per_speed_up"),
+      increment,
+      "",
+      () => setIncrement(increment - 1),
+      () => setIncrement(increment + 1)
+    )}
+
+    <div class="config-row">
+      <span class="config-label">{t("viewer_ui_stop_at_a_goal")}</span>
+      <button
+        type="button"
+        class="goal-toggle"
+        class:on={targetEnabled}
+        onclick={toggleTarget}
+        aria-pressed={targetEnabled}
+        aria-label={targetEnabled
+          ? t("viewer_detail_goal_on")
+          : t("viewer_detail_goal_off")}
+      >
+        <span class="goal-knob"></span>
+      </button>
+    </div>
+
+    {#if targetEnabled}
+      {@render stepper(
+        t("viewer_detail_goal_tempo"),
+        clamp(targetBpm, startBpm + 5, maxBpm),
+        "BPM",
+        () => setTargetBpm(targetBpm - 5),
+        () => setTargetBpm(targetBpm + 5)
+      )}
+    {/if}
   {/if}
 
   <p class="config-hint">{hint}</p>
@@ -127,7 +178,7 @@
         type="button"
         class="step-btn"
         onclick={onMinus}
-        aria-label={`Decrease ${label}`}
+        aria-label={t("create_decrease_value", { title: label })}
       >
         <i class="fas fa-minus" aria-hidden="true"></i>
       </button>
@@ -138,7 +189,7 @@
         type="button"
         class="step-btn"
         onclick={onPlus}
-        aria-label={`Increase ${label}`}
+        aria-label={t("create_increase_value", { title: label })}
       >
         <i class="fas fa-plus" aria-hidden="true"></i>
       </button>

@@ -9,6 +9,7 @@
   import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import { Z } from "#lib/shared/ui/z-index.js";
   import { releaseSettle } from "#lib/shared/transitions/motion.js";
+  import { watchBackToClose } from "./modal/helpers/back-close-watcher";
 
   configureDrawerStack({ baseZIndex: Z.DRAWER });
 
@@ -48,6 +49,44 @@
       () => { if (!shouldDeferEscapeShortcut(document)) requestClose("escape"); },
       () => closeOnEscape
     );
+  }
+
+  // The stock drawer opens with dialog.show(), which gets no close watcher,
+  // so Android's Back skipped an open sheet and went back a page instead. A
+  // visitor report found the same gap in the sign-in box. The watcher puts
+  // Back on the sheet: the top open sheet closes, and nothing else moves.
+  // Sheets that pushed an address entry still lose it, because their close
+  // goes through the sheet router, which steps history back itself.
+  // Chrome also routes the Escape key through close watchers. Escape keeps
+  // its own path (handleKeydown and the app shortcut), which leaves the first
+  // press to a focused text field, so a watcher fired by Escape only re-arms.
+  let dropBackWatcher: () => void = () => {};
+  let backArmedOpen = false;
+  let escapeKeyAt = -Infinity;
+  // Back and the Escape key both close as "escape". The close event carries
+  // `viaBack` so a host can tell them apart (the viewer's close analytics).
+  let closingViaBack = false;
+  const ESCAPE_KEY_WINDOW_MS = 300;
+
+  function noteEscapeKey(event: KeyboardEvent) {
+    if (event.key === "Escape") escapeKeyAt = performance.now();
+  }
+
+  function armBackWatcher() {
+    dropBackWatcher();
+    if (!backArmedOpen || !closeOnEscape || !dismissible) return;
+    dropBackWatcher = watchBackToClose(() => {
+      if (performance.now() - escapeKeyAt < ESCAPE_KEY_WINDOW_MS) {
+        queueMicrotask(armBackWatcher);
+        return;
+      }
+      // A refused close (an unsaved-changes prompt) keeps Back armed.
+      closingViaBack = true;
+      if (!requestClose("escape")) {
+        closingViaBack = false;
+        armBackWatcher();
+      }
+    });
   }
 
   function handleBeforeClose(reason: CloseReason): boolean | void {
@@ -128,7 +167,13 @@
   function handleClose(event: CustomEvent<{ reason: CloseReason }>) {
     const reason = event.detail?.reason;
     if (reason === "swipe" || reason === "snap") settleFromRelease();
-    onclose?.(event);
+    const viaBack = closingViaBack && reason === "escape";
+    closingViaBack = false;
+    onclose?.(
+      viaBack
+        ? new CustomEvent("close", { detail: { reason, viaBack: true } })
+        : event
+    );
   }
 
   function handleOpenChange(open: boolean) {
@@ -137,7 +182,13 @@
       releaseSamples = [];
       sheetElement()?.style.removeProperty("transition");
       registerAppDrawer();
-    } else unregisterDrawer(drawerId);
+      backArmedOpen = true;
+      armBackWatcher();
+    } else {
+      unregisterDrawer(drawerId);
+      backArmedOpen = false;
+      dropBackWatcher();
+    }
     holdBackgroundFor(`drawer-slide:${drawerId}`, 460);
     onOpenChange?.(open);
   }
@@ -154,7 +205,16 @@
     });
   });
 
-  onDestroy(() => unregisterDrawer(drawerId));
+  $effect(() => {
+    window.addEventListener("keydown", noteEscapeKey, true);
+    return () => window.removeEventListener("keydown", noteEscapeKey, true);
+  });
+
+  onDestroy(() => {
+    unregisterDrawer(drawerId);
+    backArmedOpen = false;
+    dropBackWatcher();
+  });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />

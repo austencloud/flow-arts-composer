@@ -4,6 +4,8 @@ import http from "node:http";
 import https from "node:https";
 import path from "node:path";
 import { alignTake, mediaPathFromUrl } from "./feature-video/align-take.mjs";
+import { buildCometMap, writeCometMap } from "./feature-video/comet-map.mjs";
+import { cometSettings } from "./feature-video/comet-settings.mjs";
 import {
   PEAK_CEILING_DBTP,
   TARGET_LUFS,
@@ -24,7 +26,11 @@ import {
   writeReleaseMedia,
   writeStills,
 } from "./feature-video/stills.mjs";
-import { parseTimeArg } from "./feature-video/time-args.mjs";
+import {
+  keyframeListing,
+  keyframeListingText,
+} from "./feature-video/keyframe-list.mjs";
+import { parseTimeArg, withBatchTimes } from "./feature-video/time-args.mjs";
 import {
   walkthroughReport,
   walkthroughTake,
@@ -45,6 +51,7 @@ if (
 
 const BRIDGE = "/api/dev/post-project";
 const FEATURE_API = "/api/dev/feature-videos";
+
 /** A feature video's route: its file, or its `ops`, `duplicate` or `media`. */
 const featureRoute = (slug, ...rest) =>
   [FEATURE_API, encodeURIComponent(slug), ...rest].join("/");
@@ -55,6 +62,15 @@ const featureMediaUrl = (slug, relativePath) =>
     .filter(Boolean)
     .map(encodeURIComponent)
     .join("/")}`;
+/**
+ * The media URL of a file inside a feature video's media folder under
+ * `root`, or null for a file anywhere else.
+ */
+function mediaUrlForFile(file, root) {
+  const [slug, media, ...rest] = path.relative(root, file).split(path.sep);
+  if (!slug || slug === ".." || media !== "media" || rest.length === 0) return null;
+  return featureMediaUrl(slug, rest.join("/"));
+}
 const NO_MUSIC = "This post has no music. Add it with: add-music <file>.";
 
 async function request(method, query = {}, body, route = BRIDGE) {
@@ -134,6 +150,57 @@ const EDIT_COMMANDS = {
     op: "add-titles",
     ...(option("spoken") !== undefined ? { spoken: option("spoken") } : {}),
     ...time("at"),
+  }),
+  "add-flash": () => ({
+    op: "add-flash",
+    ...time("at"),
+    ...number("strength"),
+    ...number("fade"),
+    ...(option("marks") !== undefined ? { marks: onOff("marks") } : {}),
+  }),
+  "add-credit": () => ({
+    op: "add-credit",
+    ...time("at"),
+    ...(option("lead") !== undefined ? { lead: option("lead") } : {}),
+    ...number("duration"),
+  }),
+  "fly-into-next": () => ({
+    op: "fly-into-next",
+    item: required("item"),
+    ...number("seconds"),
+  }),
+  keyframe: () => ({
+    op: "keyframe",
+    item: required("item"),
+    action: required("action"),
+    ...time("at"),
+    ...time("to"),
+    ...(option("times") !== undefined
+      ? {
+          times: option("times")
+            .split(",")
+            .map((value) => parseTimeArg(value, "times")),
+        }
+      : {}),
+    ...(option("channel") !== undefined ? { channel: option("channel") } : {}),
+    ...(option("patch") !== undefined
+      ? { patch: JSON.parse(option("patch")) }
+      : {}),
+    ...(option("easing") !== undefined ? { easing: option("easing") } : {}),
+    ...(flag("own") ? { own: true } : {}),
+  }),
+  move: () => ({
+    op: "move",
+    item: required("item"),
+    to: parseTimeArg(required("to"), "to"),
+    ...number("track"),
+  }),
+  "land-titles": () => ({
+    op: "land-titles",
+    ...(option("titles") ? { titles: option("titles") } : {}),
+    ...(option("card") ? { card: option("card") } : {}),
+    ...time("at"),
+    word: JSON.parse(required("word")),
   }),
   "hook-speed": () => ({ op: "hook-speed", speed: positional(0, "a curve") }),
   "hook-frame": () => ({
@@ -218,6 +285,8 @@ const BOOLEAN_FLAGS = [
   "--append",
   "--share-media",
   "--open",
+  "--own",
+  "--off",
 ];
 function flag(name) {
   return args.includes(`--${name}`);
@@ -244,6 +313,13 @@ function number(name, key = name) {
 function time(name, key = name) {
   const value = option(name);
   return value === undefined ? {} : { [key]: parseTimeArg(value, name) };
+}
+/** A flag that must say true or false. */
+function onOff(name) {
+  const value = option(name);
+  if (value !== "true" && value !== "false")
+    throw new Error(`--${name} must be true or false.`);
+  return value === "true";
 }
 /** A text flag; an empty one removes an artist or license. */
 function text(name) {
@@ -409,7 +485,36 @@ try {
     }
   } else if (command === "ops") {
     const file = required("file");
-    result = await sendOps(JSON.parse(await fs.readFile(file, "utf8")));
+    result = await sendOps(
+      withBatchTimes(JSON.parse(await fs.readFile(file, "utf8")))
+    );
+  } else if (command === "keyframe" && option("action") === "list") {
+    const listing = keyframeListing(
+      await currentSnapshot(),
+      required("item"),
+      option("channel")
+    );
+    if (flag("json")) result = listing;
+    else {
+      process.stdout.write(keyframeListingText(listing) + "\n");
+      result = undefined;
+    }
+  } else if (command === "move") {
+    const edit = await sendOps([EDIT_COMMANDS.move()]);
+    const landed =
+      edit.status === "completed" ||
+      edit.status === "applied" ||
+      edit.status === "unchanged";
+    const item = landed
+      ? (await currentSnapshot()).tracks
+          .flatMap((track, index) =>
+            track.items.map((entry) => ({ ...entry, track: index }))
+          )
+          .find((entry) => entry.id === option("item"))
+      : undefined;
+    result = item
+      ? { ...edit, landed: { start: item.start, track: item.track } }
+      : edit;
   } else if (command in EDIT_COMMANDS) {
     result = await sendOps([EDIT_COMMANDS[command]()]);
   } else if (command === "features") {
@@ -634,6 +739,90 @@ try {
         measured.truePeakDbtp
       );
     }
+  } else if (command === "comet-map") {
+    const feature = required("feature");
+    const place = required("place");
+    const project = await currentSnapshot();
+    const clip = project.tracks
+      .flatMap((track) => track.items)
+      .find((item) => item.id === place);
+    if (!clip) throw new Error(`No item "${place}" in this post.`);
+    if (clip.kind !== "video") throw new Error(`"${place}" is not a video clip.`);
+    const take = project.takes.find((entry) => entry.id === clip.takeId);
+    const { folder } = await request("GET", {}, undefined, featureRoute(feature));
+    const root = path.dirname(folder);
+    // --source reads a sharper copy of the same footage, such as the 4K original.
+    const sourceArg = option("source");
+    const file = sourceArg
+      ? sourceArg.startsWith("/api/")
+        ? mediaPathFromUrl(sourceArg, root)
+        : path.resolve(sourceArg)
+      : take?.ref.kind === "linked"
+        ? mediaPathFromUrl(take.ref.url, root)
+        : null;
+    if (!file)
+      throw new Error(
+        `Take "${clip.takeId}" is not a file in a feature video folder; name one with --source.`
+      );
+    const span = (clip.duration ?? 0) * (clip.speed ?? 1);
+    const fromSeconds = numberOption("from") ?? clip.sourceIn ?? 0;
+    const toSeconds = numberOption("to") ?? (clip.sourceIn ?? 0) + span;
+    const built = await buildCometMap({
+      file,
+      fromSeconds,
+      toSeconds,
+      onProgress: (done, total) =>
+        process.stderr.write(`light map: ${done}/${total} frames
+`),
+    });
+    const relativePath = await writeCometMap(folder, place, built.bytes);
+    const map = featureMediaUrl(feature, relativePath);
+    // The map is new; the look the clip already has stays. A sharper copy
+    // in a feature video folder is kept, so the editor reads it again too.
+    const trails = cometSettings(clip.cometTrails ?? null, { map });
+    const sourceUrl = sourceArg ? mediaUrlForFile(file, root) : null;
+    if (sourceUrl) trails.source = sourceUrl;
+    else if (!sourceArg) delete trails.source;
+    result = {
+      map,
+      frames: built.frames,
+      stamps: built.stamps,
+      megabytes: Math.round((built.bytes.length / 1048576) * 10) / 10,
+      edit: await sendOps([
+        { op: "item", item: place, patch: { cometTrails: trails } },
+      ]),
+    };
+  } else if (command === "comet") {
+    required("feature");
+    const place = required("place");
+    const project = await currentSnapshot();
+    const clip = project.tracks
+      .flatMap((track) => track.items)
+      .find((item) => item.id === place);
+    if (!clip) throw new Error(`No item "${place}" in this post.`);
+    if (clip.kind !== "video") throw new Error(`"${place}" is not a video clip.`);
+    let trails = null;
+    if (!flag("off")) {
+      if (!clip.cometTrails)
+        throw new Error(
+          `"${place}" has no light map yet. Read one with: comet-map --place ${place}`
+        );
+      trails = cometSettings(clip.cometTrails, {
+        clipStart: clip.sourceIn ?? 0,
+        length: numberOption("length"),
+        gain: numberOption("gain"),
+        taper: numberOption("taper"),
+        second: option("second"),
+        grow: option("grow"),
+        pullBack: option("pull-back"),
+      });
+    }
+    result = {
+      cometTrails: trails,
+      edit: await sendOps([
+        { op: "item", item: place, patch: { cometTrails: trails } },
+      ]),
+    };
   } else if (command === "render") {
     const feature = required("feature");
     const name = option("name");
@@ -772,6 +961,19 @@ try {
   remove-hook
   line-up-hook                 end the tunnel on the footage's opening pose, footage behind it
   add-titles [--spoken "how to say it"] [--at T]   name titles clip, over the opening tunnel when there is one
+  add-flash [--at T] [--strength 0.22] [--fade 0.4] [--marks true|false]   a 3 s flash clip; its start is the hit
+  add-credit [--at T] [--lead "made with"] [--duration 4]   the ready-made Flow Arts Composer credit; --lead "" for the wordmark alone
+  fly-into-next --item ID [--seconds 1.13]   cross-fade into the next clip on its lane, both riding one box path
+  keyframe --item ID --action list [--channel C] [--json]   keyframes by channel: from the item's start, on the post, and bar.beat with a beat grid
+  keyframe --item ID --action set --at T --patch '{"opacity":0.5}' [--easing ease-out]   key animatable fields (box opacity zoom panX panY rotation sourceGeometry)
+  keyframe --item ID --action move --at T --to T2 [--channel C]   the keyframe within 0.02 s of T
+  keyframe --item ID --action retime --channel C --times T1,T2,...   one time per keyframe, in order
+  keyframe --item ID --action delete --at T [--channel C]
+  keyframe --item ID --action clear [--channel C] [--at T]   the value at T (default: the item's start) stays
+                               add --own when the times are seconds from the item's start
+  move --item ID --to T [--track N]   move a clip, its keyframes with it; prints where it landed
+  land-titles --word '{"x":0.1,"y":0.02,"width":0.8,"height":0.06}' [--titles ID] [--card ID] [--at T]
+                               glide the titles' name onto a card's header word; --word is where the card draws it, as shares of the card's box
   hook-speed <ease-out|ease-in|ease-in-out|linear|smooth|overshoot|default|x1,y1,x2,y2>
   hook-frame [--zoom 1.4] [--x 0.5] [--y 0.55] [--whole]   frame the footage behind the opening tunnel
   appearance [--item hook|animations|all|ID] --set glyph=false ...  (keys: tkaGlyph stepNumbers gridMode progressBar ...; null clears)
@@ -781,7 +983,7 @@ try {
   canvas <ratio>   background <dark|blur>
   sound <takes|silent>         whether the takes' own sound plays; the music plays either way
   add-card [--label "End"] [--qr-url https://...] [--fade-in S]   a card at the end; --qr-url is the link its QR code opens
-  ops --file ops.json          a batch applied in one step
+  ops --file ops.json          a batch applied in one step; a time there is a number, "12.5", "1:02.5", "@9.3" or {"bar": 9, "beat": 3}
   read|apply|status            whole-manifest bridge (--session, --base-revision, --base-fingerprint, --file, --command)
 Feature videos, folders on the dev server's computer:
   features                     list them
@@ -793,6 +995,8 @@ Feature videos, folders on the dev server's computer:
   music [--start T] [--from T] [--to T] [--gain 0.8] [--fade-in S] [--fade-out S] [--bpm 85|none] [--downbeat S] [--beats-per-bar 4] [--label --artist --license]
                                --start is where the music begins in the post; --from and --to are the part of the song that plays
   remove-music
+  comet-map --place ITEM [--source FILE|URL] [--from S --to S]   reads where the clip's LED bulbs' light goes, from every camera frame (--source: a sharper copy of the same take, such as the 4K original), and turns its comet trails on
+  comet --place ITEM [--length S] [--gain G] [--taper T] [--second LENGTH,GAIN,AT,SECONDS] [--grow AT,SECONDS] [--pull-back AT,SECONDS] [--off]   the comet trails' look; times are seconds into the clip's footage from its first frame; "none" removes a change
   align-take --place ITEM | --take ID   where a take sits in the music, from its camera sound; --place puts the clip in time with it
   sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
   loudness <render.mp4> [--feature SLUG]   loudness and true peak; with --feature, the music level that reaches -14 LUFS

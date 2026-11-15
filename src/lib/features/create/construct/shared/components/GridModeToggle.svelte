@@ -87,13 +87,28 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
       transform var(--transition-fast);
   }
 
+  /* The label wraps to two balanced lines when its half of the row is too
+     narrow for one ("Switch to Box mode" is 171px of text in a 168px button at
+     360 wide; "Zum Gittermodus Quadrat wechseln" is longer still). Two lines
+     of 14px fit inside the 48px row the picker gives this button, so the row
+     keeps its height. The Crossfade box is a flex item: without min-width: 0
+     it keeps the one-line width and the words run past the button. */
+  .grid-mode-toggle > :global(.crossfade) {
+    min-width: 0;
+  }
+
   .mode-label {
+    display: block;
     font-size: var(--font-size-sm);
     font-weight: 600;
-    white-space: nowrap;
+    line-height: 1.2;
+    text-align: center;
+    text-wrap: balance;
+    overflow-wrap: break-word;
   }
 
   .mode-icon {
+    flex-shrink: 0;
     transition: transform var(--transition-normal);
   }
 
@@ -145,7 +160,8 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
   @media (max-width: 600px) {
     .grid-mode-toggle {
       min-height: var(--min-touch-target);
-      padding: 0 16px;
+      gap: 6px;
+      padding: 0 10px;
     }
 
     .mode-label {

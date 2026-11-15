@@ -982,8 +982,17 @@
       var(--theme-card-hover-bg) 50%,
       var(--theme-panel-bg) 100%
     );
-    background-size: 200% 100%;
     animation: shimmer var(--duration-emphasis) infinite;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-card,
+  .skeleton-block,
+  .skeleton-line,
+  .skeleton-session,
+  .bar-skeletons span,
+  .bar-skeletons i {
+    background-size: 200% 100%;
   }
 
   .skeleton-card {

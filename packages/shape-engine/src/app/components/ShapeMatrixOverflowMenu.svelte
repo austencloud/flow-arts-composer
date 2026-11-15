@@ -4,10 +4,7 @@
   import type { HTMLButtonAttributes } from "svelte/elements";
 
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
-  import {
-    KINETIC_SHAPE_ENGINE_NAME,
-    ORIGINAL_SHAPE_MATRIX_URL,
-  } from "../shape-engine-identity";
+  import { ORIGINAL_SHAPE_MATRIX_URL } from "../shape-engine-identity";
 
   const appState = getShapeMatrixAppContext();
   let open = $state(false);
@@ -59,7 +56,7 @@
            traces. -->
       <DropdownMenu.Item
         class="shape-matrix-overflow-item"
-        textValue="View Lorq Nichols' original 144 Shape Matrix"
+        textValue={t("shape_engine_original_matrix")}
         onSelect={openOriginal}
       >
         <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
@@ -67,7 +64,7 @@
       </DropdownMenu.Item>
       <DropdownMenu.Item
         class="shape-matrix-overflow-item"
-        textValue={`About ${KINETIC_SHAPE_ENGINE_NAME}`}
+        textValue={t("shape_engine_about_name")}
         onSelect={openAbout}
       >
         <i class="fas fa-circle-info" aria-hidden="true"></i>

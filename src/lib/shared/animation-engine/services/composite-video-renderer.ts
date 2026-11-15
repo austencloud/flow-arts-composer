@@ -32,6 +32,7 @@ export interface StepGridPlacement {
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ImageComposer } from "../../render/services/image-composer";
 import { calculateLayout } from "#lib/shared/render/services/layout-calculator.js";
+import { localStepLabels } from "#lib/shared/render/services/local-step-labels.js";
 
 export class CompositeVideoRenderer {
   private sequence: SequenceData | null = null;
@@ -126,6 +127,7 @@ export class CompositeVideoRenderer {
       format: "PNG" as const,
       quality: 1,
       scale: 1,
+      stepLabels: localStepLabels(),
     };
 
     const renderedGrid = await this.imageComposer.composeSequenceImage(

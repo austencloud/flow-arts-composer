@@ -70,6 +70,30 @@ describe("startup splash handoff", () => {
     }
   );
 
+  it.each([
+    { cookie: "PARAGLIDE_LOCALE=zh-Hant", languages: ["en"], text: "正在開啟 Flow Arts Composer" },
+    { cookie: "", languages: ["zh-TW", "en"], text: "正在開啟 Flow Arts Composer" },
+    { cookie: "", languages: ["zh-HK"], text: "正在開啟 Flow Arts Composer" },
+    { cookie: "", languages: ["zh-CN"], text: "正在打开 Flow Arts Composer" },
+    { cookie: "PARAGLIDE_LOCALE=ja", languages: ["en"], text: "Flow Arts Composer を開いています" },
+  ])(
+    "shows the boot status in the reader's script: $cookie / $languages",
+    ({ cookie, languages, text }) => {
+      page = new JSDOM(
+        '<div id="app-loading" aria-label="Loading Flow Arts Composer"><div id="loading-bar-fill"></div><p id="loading-text"></p></div>',
+        { url: "https://localhost/create/construct", runScripts: "outside-only" }
+      );
+      page.window.document.cookie = cookie;
+      Object.defineProperty(page.window.navigator, "languages", {
+        value: languages,
+      });
+      page.window.eval(loadingScript!);
+      expect(
+        page.window.document.getElementById("loading-text")!.textContent
+      ).toBe(text);
+    }
+  );
+
   it("releases the shell immediately and ignores child transition events", () => {
     expect(loadingScript).toBeDefined();
     page = new JSDOM(

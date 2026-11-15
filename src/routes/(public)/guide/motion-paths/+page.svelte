@@ -36,7 +36,7 @@
   onMount(() => watchScreenTier((v) => (tier = v)));
   const views = $derived<{ label: string; parts: Part[] }[]>([
     { label: tDynamic("guide_paths_stage_three"), parts: ["explain"] },
-    { label: "Try all four", parts: ["explore"] },
+    { label: tDynamic("guide_paths_screen_try_all"), parts: ["explore"] },
     ...(tier === "large"
       ? [
           {
@@ -58,36 +58,60 @@
               label: tDynamic("guide_paths_what_changes"),
               parts: ["what", "whatDefs"] as Part[],
             },
-            { label: "Exceptions", parts: ["whatNotes"] as Part[] },
+            {
+              label: tDynamic("guide_paths_screen_exceptions"),
+              parts: ["whatNotes"] as Part[],
+            },
             {
               label: tDynamic("guide_paths_scope"),
               parts: ["scope", "scopeDefs"] as Part[],
             },
-            { label: "In Composer", parts: ["scopeNotes"] as Part[] },
+            {
+              label: tDynamic("guide_paths_screen_in_composer"),
+              parts: ["scopeNotes"] as Part[],
+            },
             {
               label: tDynamic("guide_paths_third_order"),
               parts: ["third"] as Part[],
             },
-            { label: "Concave and flowers", parts: ["thirdLinks"] as Part[] },
+            {
+              label: tDynamic("guide_paths_screen_concave_flowers"),
+              parts: ["thirdLinks"] as Part[],
+            },
           ]
         : [
             {
               label: tDynamic("guide_paths_what_changes"),
               parts: ["what"] as Part[],
             },
-            { label: "The four paths", parts: ["whatDefs"] as Part[] },
-            { label: "Exceptions", parts: ["whatNotes"] as Part[] },
+            {
+              label: tDynamic("guide_paths_screen_four_paths"),
+              parts: ["whatDefs"] as Part[],
+            },
+            {
+              label: tDynamic("guide_paths_screen_exceptions"),
+              parts: ["whatNotes"] as Part[],
+            },
             {
               label: tDynamic("guide_paths_scope"),
               parts: ["scope"] as Part[],
             },
-            { label: "Preview and save", parts: ["scopeDefs"] as Part[] },
-            { label: "In Composer", parts: ["scopeNotes"] as Part[] },
+            {
+              label: tDynamic("guide_paths_screen_preview_save"),
+              parts: ["scopeDefs"] as Part[],
+            },
+            {
+              label: tDynamic("guide_paths_screen_in_composer"),
+              parts: ["scopeNotes"] as Part[],
+            },
             {
               label: tDynamic("guide_paths_third_order"),
               parts: ["third"] as Part[],
             },
-            { label: "Concave and flowers", parts: ["thirdLinks"] as Part[] },
+            {
+              label: tDynamic("guide_paths_screen_concave_flowers"),
+              parts: ["thirdLinks"] as Part[],
+            },
           ]),
     { label: tDynamic("guide_paths_awkward"), parts: ["awkward"] },
   ]);
@@ -201,7 +225,9 @@
                 {#if shortScreen}
                   <p>{sentences(introBody)[0]}</p>
                   <span class="intro-more" bind:this={moreButton}>
-                    <PanelButton onclick={() => showIntro(true)}>More</PanelButton>
+                    <PanelButton onclick={() => showIntro(true)}
+                      >More</PanelButton
+                    >
                   </span>
                 {:else}
                   <h2>{tDynamic("guide_paths_try_four")}</h2>

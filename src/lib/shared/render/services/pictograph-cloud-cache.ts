@@ -139,6 +139,19 @@ export function cellPublicUrl(hash: string): string {
   return `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encoded}?alt=media`;
 }
 
+/** Downloads a scanned card started before its viewer mounted, by hash. */
+const prefetched = new Map<string, Promise<Blob | null>>();
+
+/**
+ * Start downloading a cell the scanned card is about to ask for. The objects
+ * are served with `max-age=0`, so the browser's HTTP cache cannot hand the
+ * bytes to the card's later request; `download` takes them from here instead.
+ */
+export function prefetch(hash: string): void {
+  if (prefetched.has(hash) || isKnownMissing(hash)) return;
+  prefetched.set(hash, download(hash, { probeUnknown: true }));
+}
+
 /**
  * Download the pre-rendered WebP for this hash, or null if it doesn't exist yet
  * (or the network failed). Confirmed misses are cached for 24 hours. Never throws.
@@ -147,6 +160,12 @@ export async function download(
   hash: string,
   options: CellDownloadOptions = {}
 ): Promise<Blob | null> {
+  const early = prefetched.get(hash);
+  if (early) {
+    prefetched.delete(hash);
+    const blob = await early;
+    if (blob) return blob;
+  }
   if (isKnownMissing(hash)) return null;
   if (options.probeUnknown === false && !getKnownExists().has(hash)) {
     return null;
@@ -217,6 +236,7 @@ export async function upload(hash: string, blob: Blob): Promise<string | null> {
 export function _resetForTest(): void {
   urlCache.clear();
   pendingUploads.clear();
+  prefetched.clear();
   knownExists = null;
   knownMissing = null;
   try {

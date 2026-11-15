@@ -184,3 +184,197 @@ the coordinator narrowed the glossary so counted petals translate normally
 - Manually reviewed all 16 translations against the new English, including the eight-beat path, odd/even leads, seven forward offsets and eight reversed starts for either hand. No native reviewer participated.
 - Uncertain: none.
 - Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed; no push, integration, installation, dev server, build, broad check or prohibited validator run.
+
+## Read-back — 2026-11-13
+
+- Scope: every released key (prefixes in `scripts/i18n-released-prefixes.json`). Released keys total: 9138.
+- Filled: 202 (keys with no Italian, mostly from the hardcoded-string sweep). Changed: 249 (off 221, wrong 28). Left as is: 8687.
+- Method: 37 chunks of about 250 keys, grouped by prefix. Each Italian string read back into English and graded against the English. Coordinator plus four helper passes; every chunk validated for placeholders, tags, grades and coverage before it was applied in order with key order and 2-space formatting kept. Full change list with read-backs: `E:/tka-languages/runs/it/changes.json`.
+- Contract test: `Tests  4 failed | 68 passed (72)`. The four failures are outside Italian: "does not silently fall back to English" lists 107 keys, all missing from `de.json`; the released-coverage floor fails for es, fr and pt (8936 of 9138 each). Every Italian check passes. `git diff --check` clean; JSON parses; placeholders and tags match English in every Italian value.
+- Released keys missing after the pass: 0. No CW/CCW, no "Sforzo", no "biblioteca" left in released strings.
+
+### Term decisions
+
+- Termbase vs glossary: the termbase `it` column says Prop, Staff and Rombo, but the glossary (sections 5 and 9), the review log and the catalog (about 300 attrezzo, 85 bastone, 27 Diamante) all say attrezzo, bastone, Diamante. French shows the same split (accessoire). The two references disagree with each other, so the safe choice was to keep the glossary and catalog wording and flag the termbase `it` entries for Ilo to correct, rather than rewrite some 400 strings.
+- Effort (how a move feels, Laban effort) is now Dinamica / Dinamiche, "qualità dinamica" in prose. Every Sforzo in that sense is gone (Shape Engine settings, player menu, viewer, phrase-effort lab, guide). `viewer_ui_creep` is a tempo creep (+1 BPM per loop) and keeps "Aumento graduale".
+- Base Motions (Generate level) is "Movimenti base", replacing "Senza giri".
+- Orientation chips read Orario / Antiorario / Interno / Esterno, compounds Orario·Int, Antiorario·Est and so on; CW/CCW in prose is orario/antiorario.
+- `loop_picker_description_mirrored` says left to right (da sinistra a destra) with Specchia; `_flipped` says top to bottom (dall'alto in basso) with Ribalta.
+- Module "3D Studio" kept as the product name, matching the sign-in prompts (was Palco).
+- Effort (Laban feel) -> Dinamica / Dinamiche, replacing Sforzo.
+- Stale account nudges ('... with an account. Free, about ten seconds.') rendered as '... con un account. Gratis, circa dieci secondi.', matching existing auth_nudge_follow.
+- 'Visuals' is rendered both as 'Creazioni visive' and 'Visual' across the catalog; left as is, not clearly wrong either way.
+- browse_audit_viewing_prefix 'Visualizzazione: ' left as is (prefix before the prop name; neutral gender).
+- film (saved video) -> filmato/filmati, matching viewer_ui_*film* keys.
+- TKA 3 'Speaking Sentences' -> 'Pronunciare frasi'.
+- Card terminology: the share/save card (image card) is 'scheda' across all share_* and create_workspace_* keys, while scanned/printed Choreo Cards use 'carta'. Left 'scheda' in place for consistency; coordinator may want one term (carta) catalog-wide.
+- Generator UI 'cards' (setting tiles in the tour) stay 'scheda'; sequence/Choreo cards are 'carta'.
+- Spelled-out timing labels (Quarter Opposite, Split Same, Together Same...) left in descriptive Italian ('A un quarto, direzione opposta'), matching learn_timing_* and shape_engine_mode_* renderings; only the hyphenated short codes are kept Latin.
+- Long help texts render presets as 'modelli'; left as is (reads naturally in prose).
+- Undid/Redid toasts -> 'Annullato: {action}' / 'Ripetuto: {action}' (colon avoids gender agreement with the action name).
+- Card terminology: the share/save card is 'scheda' in create_workspace_* and share_* keys; left in place for consistency (see notes 05).
+- achievements in notification groups -> traguardi (matches neighbouring desc strings)
+- generator period Halved/Quartered -> A metà / In quarti, matching create_deep_halved and the tour help
+- pattern (TKA/Zan's Diamond/CAPs prose) -> schema, replacing loose 'pattern' in two Zan's strings
+- guide breadcrumb -> 'Guida a The Kinetic Alphabet' everywhere (caps page used 'Guida di')
+- eight-step left-hand return run ('back') -> ritorno, matching 'Pro all'andata, Anti al ritorno'
+- Quarter timing title -> 'A un quarto', matching learn_timing_intro_option_quarter
+- Nine guide_topic_dual_shifts / another_example strings were still English in it.json; translated and graded wrong
+- Timing and Direction (guide name) -> 'timing e direzione', matching site_timing_direction
+- Remix -> Rielabora per catalog (was Ricombina)
+- minutes abbreviation -> 'min' (bare 'm' reads as metres in Italian)
+- Escape key -> Esc, as in guide_ratios_pairings_choose
+- variation -> variante per catalog (learn_variation, learn_all_pictographs)
+- Delete key -> Canc (Italian keyboard label)
+- landing_spinner_generated is a fallback name for one sequence -> 'Generata'
+- Box grid in prose kept as 'griglia Quadrato' (not 'griglia quadrata') to match learn_ui_box_grid
+- learn_timing_intro_place_dot_aria: {point} is sinistra/alto/destra/basso, so "in {point}" gave "in sinistra"; colon form avoids the a/in preposition clash
+- Placement comparison actions use catalog verbs: mirror -> specchiate, flip -> ribaltate (both were 'riflesse', so mirror and flip read the same)
+- learn_trace beat N kept as 'passo' (sequence step, not musical count)
+- learn_trace_starts_at / holds_at: {location} is nord/centro/etc., so 'in {location}' gave 'in nord'; now 'dal/sul punto {location}'
+- Mirror verbs in loop_picker descriptions changed from 'riflette' to catalog 'specchia'
+- Viewer look -> 'stile'; trail -> 'scia'
+- module names: catalog terms in sentence case (Percorsi della mano, Posta in arrivo); other title-cased module names left alone
+- Browse is 'Sfoglia' in nav_choose_browse_destination (was 'Esplora')
+- disconnect family uses scollegare throughout (Scollega / Scollegamento)
+- preset -> preimpostazione across settings_preset* (catalog rule; keyboard_shortcut_prop_preset_label already uses it)
+- Beat # on the player visual menu = step number -> 'Passo n.'
+- prop in settings -> attrezzo (was 'oggetto di scena')
+- release -> versione, matching settings_all_releases / settings_version_list
+- Shape Engine orientation clock/counter -> orario/antiorario, matching create_ui_orientation_clock/counter
+- Triad prop name kept Latin per fixed terms (was 'Triade')
+- Shape Engine settings: Effort -> Dinamica; Layers -> Strati (was 'Livelli', which collides with Level)
+- Share overlay 'Beat numbers' -> 'Numeri dei passi' (step position), matching playback 'Passo n.'
+- Flower kept Latin and treated as feminine, as elsewhere in shape_engine_*
+- Post Studio landing taps: kept existing 'arrivo/arrivi' and 'tocco/tocchi' renderings; Beat carousel kept as 'Carosello dei passi' (sequence beats = passo).
+- Visuals (browse) -> Visual / I tuoi visual, matching browse_home_*.
+- Spell (Create tab) -> Scrivi, matching create_ui_spell_a_word; 'Incanta' was a magic-spell mistranslation.
+- Decks -> Mazzi (matches site_loop_deck, tab_desc_choreo_card_decks).
+- Title Case removed from Italian tab labels (Il mio feedback, Note di versione, Griglia congiunta).
+- community -> comunità and creator -> creatori for consistency with tab labels.
+- Effort -> Dinamica / qualità dinamiche in phrase-effort lab.
+- Tunnel Mirror/Flip -> Specchia/Ribalta per catalog (was 'Rifletti verticalmente/orizzontalmente').
+- Guide hm_gamma 98/101/102 had Italian shifted one string off (stale split); re-aligned each to its English.
+- Guide prose: stale Italian from older English rewritten to current English (U/V, negative space intro, LOOP definition).
+- viewer_ui_effort Sforzo -> Dinamica per brief; viewer_ui_creep (tempo creep) left as 'Aumento graduale'.
+- preset -> preimpostazione throughout the viewer tunnel presets.
+- Effort names (viewer) -> Scivolata / Tocco / Pressione / Colpo / Elastico / Rimbalzo / Anticipazione.
+- Post (viewer destination) -> Post Studio, matching viewer_ui_post.
+
+### Unsure
+
+| Key | English | Italian | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| browse_blue_solo_prop | Blue Solo Prop | Solo attrezzo blu | Blue prop only | Assumed 'solo prop' means showing only that hand's prop; was 'Prop solo blu' (English loanword, not catalog term). |
+| browse_ui_subject | Subject | Contenuto | Content | aria-label of the view-mode toggle (what is shown: sequences/visuals); 'Oggetto' read like an email subject. |
+| browse_audit_each_sequences_own | Each sequence’s own | Quelli di ciascuna sequenza | The ones of each sequence | Refers to props (attrezzi, masculine) in the prop-viewing panel; phrased as a noun phrase. |
+| browse_audit_match_any | Match any | Almeno uno | At least one | Old 'Corrispondi a uno' read as 'match one'; paired with 'Corrispondi a tutti' (left as is). |
+| browse_collections_founding_book_name | Classic Book Variations | Varianti classiche del libro | Classic variants of the book | 'Book' is the TKA book reversal / original book; no existing Italian term in the catalog. |
+| browse_collections_founding_tka1_description | The 19 base T&D motions — no turns. | I 19 movimenti T&D di base, senza giri. | The 19 base T&D motions, without turns. | Kept 'T&D' abbreviation as a TKA term; elsewhere the catalog spells it out as 'timing e direzione'. |
+| browse_drafts_mode_draft | {mode} draft | Bozza: {mode} | Draft: {mode} | {mode} is a localized mode label (e.g. Costruisci); colon avoids gender agreement. |
+| create_ui_layers | Layers | Livelli | Layers/levels | Left as is; 'Livelli' is the usual software term for layers but collides with Level -> Livello. Change to 'Strati' only if both appear together. |
+| create_ui_orientation_in_label | In | Interno | Inward | Orientation chip label beside single-word siblings (Orario, Antiorario, Orario-interno); hint key already says 'Verso il centro'. Compact chip form per the brief. |
+| create_draft_status_conflict | Another tab changed this draft | Un'altra scheda ha modificato questa bozza | Another tab modified this draft | 'tab' here is a browser tab; 'scheda' is the standard Italian term. |
+| guide_seo_teaches | Flow arts choreography notation for double staves and dual-wielded props | Notazione coreografica delle flow arts per bastoni doppi e attrezzi usati in coppia | Flow arts choreographic notation for double staffs and props used in pairs | old 'attrezzi a due mani' read as one prop held with both hands; 'usati in coppia' is my rendering of dual-wielded |
+| learn_ui_challenge_chain_the_beats | Chain the Beats | Collega i passi | Link the steps | left as is: catalog says beat (musical) -> battito, but this challenge appears to chain sequence positions, so passi seems intended |
+| learn_trace_place_hand | Place {hand} on its start point. | Posiziona la {hand} sul suo punto iniziale. | Place the {hand} on its start point. | {hand} is filled with learn_trace_hand_left/right ('Mano sinistra'), so every 'La {hand}' string in learn_trace_* renders 'La Mano sinistra' with a capital M. Meaning is intact; left as is. A lowercase hand-name key would fix all of them. |
+| library_look_saved | Saved look | Stile salvato | Saved style | 'look' rendered as 'stile' to match settings_props_apply_look ('Applica questo stile...'); effect_deep_* uses 'aspetto' for a single effect's look |
+| module_write | Choreo | Coreografia | Choreography | Italian said 'Scrivi' (Write), stale. module_choreo is also English 'Choreo' and already 'Coreografia', so two modules share the label in both languages |
+| pictograph_placement_place | Place the {noun} | Posiziona: {noun} | Place: {noun} | {noun} can be a masculine prop (attrezzo) or feminine hand (mano), and also starts announcement sentences, so placement strings use article-free colon forms instead of 'Posiziona l'attrezzo / la mano'. Nouns are lowercase because they sit mid-sentence; where {prop}/{other} opens an announcement it reads lowercase. |
+| pictograph_placement_move_left | Move left | Sposta il sinistro | Move the left one | Visible tray label inside a button whose aria is 'Move {leftNoun}'; masculine fits the default prop noun. If the tray is also used with hand nouns it should be 'la sinistra'. |
+| shape_engine_trace_this | Trace this | Traccia questa | Trace this one | selectLabel in ShapeMatrixDetailPane; feminine assumes the thing traced is a forma/realizzazione |
+| shape_engine_solo_anti_mode | {petals}-petal {mode}-mode antispin flower | Flower Antispin a {petals} petali in modalità {mode} | Antispin Flower with {petals} petals in {mode} mode | No caller found in src or packages; assumed {mode} is a grid mode word (box/diamond) |
+| shared_fan_build_day | DoodleGrip Day | DoodleGrip Giorno | DoodleGrip Day | Was 'Allenamento' (practice); aligned with settings_triad_build_day 'Giorno' and the 'Fuoco' sibling builds. Revert if 'Allenamento' is preferred everywhere. |
+| tab_compose_timeline | Timeline | Timeline | Timeline | 'Sequenza Temporale' collides with sequenza (TKA sequence); Timeline is the usual loanword in Italian editors. |
+| tab_stage_editor | Stage | Palco | Stage | Was 'Editor'; English names the Stage area. If Stage is meant as a product name, keep 'Stage'. |
+| viewer_ui_prop_colors_default | Default | Predefiniti | Default (masculine plural, agreeing with colori) | Option in a prop-colours picker; plural agrees with 'colori'. Use 'Predefinito' if it labels a single preset. |
+| viewer_ui_effort_name_dab | Dab | Tocco | Touch | Laban effort names have no catalog entry yet; chose short nouns (Scivolata, Tocco, Pressione, Colpo, Elastico, Rimbalzo, Anticipazione). Classic Italian Laban usage would be verbs (Scivolare, Picchiettare, Premere, Colpire); switch together if the termbase prefers that. |
+| viewer_ui_effort_name_punch | Punch | Colpo | Blow / strike | 'Pugno' (fist) read too literal; 'Colpo' keeps the sharp, direct quality. |
+
+### English to its owner
+
+| Key | What is unclear |
+| --- | --- |
+| browse_audit_hands_right_angle | gamma described as right angle; Austen wants hands adjacent |
+| learn_timing_intro_placement_gamma | gamma described as right angle; Austen wants hands adjacent |
+| learn_placement_comparison_gamma | gamma described as right angle; Austen wants hands adjacent |
+| learn_placement_gamma_geometry | gamma described as right angle; Austen wants hands adjacent |
+| learn_reference_reading_choreo_cards | English title is 'Hand Motions' for the Reading a Choreo Card reference; looks copied from the hand motions entry |
+| loop_picker_description_mirrored | English says 'vertically'; brief says mirrored = left-right. Italian follows the brief |
+| loop_picker_description_flipped | English says 'horizontally'; brief says flipped = top-bottom. Italian follows the brief |
+| pictograph_desc_group_gamma | gamma described as right angle; Austen wants hands adjacent |
+| tab_desc_browse_gallery | English reads 'Browse and browse sequences' (likely meant 'Browse and search sequences'); Italian 'Sfoglia e cerca sequenze' kept. |
+| tab_desc_browse_sequences | Same duplicated 'Browse and browse sequences'. |
+| tab_desc_browse_visuals | Description strings for the new Browse tabs just repeat the label (Visuals, Drafts, Saved work, Your visuals, Your videos, Following). |
+| train_step_advance_tap | English for _both, _tap and _voice are all 'Tap or Voice'; the tap-only and voice-only options probably should read 'Tap' and 'Voice'. Italian mirrors English ('Tocco o voce'). |
+| train_timed_config_title | Title repeats the description sentence 'Practice with beat timing and performance scoring.' |
+| verified_level1_gamma_definition | gamma described as right angle; Austen wants hands adjacent |
+| verified_level1_placements_seo_description | gamma described as right angle; Austen wants hands adjacent |
+| verified_level1_examples_cccc_54 | 'Let's add reversals after the second B' sits in the CCCC section; check the letter. |
+| verified_level1_guide_page_seo_4 | gamma described as right angle; Austen wants hands adjacent |
+| guide_ratios_ends_level1 | Says the antispin cat-eyes sit "at right angles"; geometric, not the gamma placement, so the Italian keeps it, but worth a look. |
+
+### May not fit
+
+- create_ui_presets
+- library_look_trail_loop_clear
+- settings_preset_slot
+- settings_presets_shortcut_hint
+- settings_display_reset
+- shared_keyboard_spell
+- tab_browse_saved
+- tab_hand_paths_hand_path_builder
+- viewer_ui_save_as_preset
+
+## Unreleased features — 2026-11-14
+
+- Keys filled: 747 (arena 43, attribution 14, beta 4, community 20, connect 65, hall_of_shame 38, mandala 29, poi_lab 41, premium 45, voice_sessions 56, watch 24, post_* 366; counts approximate by prefix). All applied through apply.cjs, none refused.
+- Left English on purpose (tools only Austen uses): admin, moderation, skel2tka, scheduler, gallery, character.
+- Register: tu, imperative, matching the existing catalog.
+
+| Term | Decision |
+| --- | --- |
+| step / beat in sequence UI (connect, arena, watch, poi_lab) | passo |
+| beat in Post Studio (tapped or song beats) | battito / battiti |
+| take (filmed) | ripresa |
+| clip | clip (invariable) |
+| keyframe | keyframe (invariable) |
+| playhead | testina di riproduzione (short: testina) |
+| crossfade | dissolvenza incrociata |
+| lane / layer | traccia (timeline) / livello |
+| canvas | tela |
+| validate (poi_lab) | convalida |
+| streak | serie |
+| Hall of Shame | kept as a name, as in earlier ledger |
+| on/off toggles in Post Studio | Sì / No |
+
+### Unsure
+
+| key | English | your text | its read-back | why |
+| --- | --- | --- | --- | --- |
+| post_editor_split_peel | Peel | Sbuccia | Peel (as in peeling) | Style name for a split effect; no catalog precedent. |
+| post_editor_card_ring | Ring on beats | Anello sui battiti | Ring on the beats | "Ring" is a visual ring on the card, assumed. |
+| post_curve_preset_overshoot | Overshoot | Con rimbalzo oltre il valore | With a bounce past the value | Long for a preset chip. |
+| post_timeline_track_layer | Layer {number} | Livello {number} | Level {number} | Livello also means TKA level elsewhere. |
+| post_editor_tool_look | Look | Aspetto | Appearance | Tool tab name. |
+| voice_sessions_days_ago (_hours_/_minutes_) | "{count}"d ago | "{count}" g fa | "{count}" d ago | Source has literal quote marks around the placeholder, kept. |
+
+### English to its owner
+
+| Key | What is unclear |
+| --- | --- |
+| mandala_copy_count, mandala_filter_all, poi_lab_beat_count, poi_lab_beat_number, voice_sessions_days_ago, _hours_ago, _minutes_ago, voice_sessions_event_count | Placeholder is wrapped in literal straight quotes (looks like an escaping slip); Italian keeps them. |
+| connect_sharing_sequence | Text says "Search for users above to invite them." under a key that suggests a sharing state. |
+| connect_sessions_found | Singular "{count} session found" with no plural form; Italian uses "Sessioni trovate: {count}". |
+| post_editor_kind_moves | English "Picture in picture" for a key named moves; kept as read. |
+
+### May not fit
+
+- post_curve_preset_overshoot
+- post_editor_split_stays_apart
+- post_editor_lift_in_here
+- post_editor_lift_out_here
+- post_editor_tool_fly
+- post_editor_titles_park
+- post_editor_card_ring_song_beat
+- post_timeline_add_crossfade

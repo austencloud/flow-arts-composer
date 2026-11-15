@@ -14,10 +14,16 @@ import {
   type DocumentData,
   type Firestore,
 } from "firebase/firestore";
+import { parseCardSteps } from "../domain/collection-card-steps";
 import { parseCollectionProp } from "../domain/collection-prop";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { isPreviewReadOnly } from "#lib/shared/debug/state/user-preview-state.svelte.js";
-import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import type {
+  CollectionTextTranslation,
+  CollectionTranslations,
+  LibraryCollection,
+} from "#lib/shared/library/domain/models/collection.js";
+import { isLocale } from "#lib/shared/i18n/i18n.svelte.js";
 import { LibrarySequenceDocSchema } from "#lib/shared/library/domain/library-schemas.js";
 import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
 
@@ -78,6 +84,35 @@ export function toDate(timestamp: unknown): Date {
 }
 
 /**
+ * Keep only well-formed translations: a known locale mapping to a non-empty
+ * name and/or description string. Anything else is dropped, and a document
+ * with none reads as having no translations at all.
+ */
+export function parseCollectionTranslations(
+  raw: unknown
+): CollectionTranslations | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const out: Record<string, CollectionTextTranslation> = {};
+  for (const [locale, value] of Object.entries(
+    raw as Record<string, unknown>
+  )) {
+    if (!isLocale(locale) || !value || typeof value !== "object") continue;
+    const entry = value as Record<string, unknown>;
+    const name = typeof entry["name"] === "string" ? entry["name"].trim() : "";
+    const description =
+      typeof entry["description"] === "string"
+        ? entry["description"].trim()
+        : "";
+    if (!name && !description) continue;
+    out[locale] = {
+      ...(name ? { name } : {}),
+      ...(description ? { description } : {}),
+    };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
  * Map Firestore document to LibraryCollection
  */
 export function mapDocToCollection(
@@ -92,10 +127,12 @@ export function mapDocToCollection(
     // Cleared fields are written as "" rather than deleted (updateDoc rejects
     // undefined), so normalise the empty string back to absent here.
     credit: data["credit"] || undefined,
+    translations: parseCollectionTranslations(data["translations"]),
     ownerId: data["ownerId"] ?? "",
     sequenceIds: data["sequenceIds"] ?? [],
     sequenceOwnerIds: data["sequenceOwnerIds"],
     galleryOwnerIds: data["galleryOwnerIds"],
+    cardSteps: parseCardSteps(data["cardSteps"]),
     sequenceCount: data["sequenceCount"] ?? 0,
     coverImageUrl: data["coverImageUrl"],
     color: data["color"],

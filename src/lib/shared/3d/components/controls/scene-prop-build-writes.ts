@@ -4,7 +4,10 @@ import {
   type PropFinish,
 } from "@austencloud/scene-3d";
 
-import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import {
+  isFanBuildAvailable,
+  type FanAppearance,
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 /**
  * The parts of a build one control changed. A performer override stores only
@@ -28,6 +31,9 @@ export function writeFanAppearance(
   appearance: FanAppearance,
   onBuildChange?: PropBuildPatchSink
 ): void {
+  // A look still waiting on its maker is never written, as a backstop to the
+  // pickers, which already refuse it.
+  if (!isFanBuildAvailable(appearance.build)) return;
   if (onBuildChange) {
     return onBuildChange({
       fanBuild: appearance.build,

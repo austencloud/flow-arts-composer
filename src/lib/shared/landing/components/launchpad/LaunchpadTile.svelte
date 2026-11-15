@@ -30,6 +30,7 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import { siteCopy } from "../../site-copy";
+  import { composerIntent } from "../../services/composer-prefetch";
   import {
     isPlainPress,
     tileFlight,
@@ -333,9 +334,21 @@
       </span>
     {/snippet}
 
-    <a class="tile-link" href={tile.href} onclick={handleActivate}>
-      {@render primary()}
-    </a>
+    {#if tile.opensApp}
+      <a
+        class="tile-link"
+        href={tile.href}
+        data-sveltekit-reload
+        use:composerIntent
+        onclick={handleActivate}
+      >
+        {@render primary()}
+      </a>
+    {:else}
+      <a class="tile-link" href={tile.href} onclick={handleActivate}>
+        {@render primary()}
+      </a>
+    {/if}
 
     <div class="glow" aria-hidden="true"></div>
 
@@ -1084,6 +1097,16 @@
     .tile.variant-home .guide-cover-box {
       width: 4rem;
     }
+    /* About Composer chip: stays, in line with the title, above a body that
+       leaves room for it (it is the launchpad's only way to /composer). */
+    .tile.variant-home.t-composer .chips {
+      left: 2.25rem;
+      right: auto;
+      bottom: 0.5rem;
+    }
+    .tile.variant-home.t-composer .card:has(.chips) .body {
+      padding-bottom: 2.75rem;
+    }
   }
 
   /* Just before the single-column fallback, the paired product cards keep
@@ -1274,6 +1297,16 @@
     }
     .tile.variant-home .poster-dictionary span {
       display: none;
+    }
+    /* About Composer chip: stays, in line with the title, above a body that
+       leaves room for it (it is the launchpad's only way to /composer). */
+    .tile.variant-home.t-composer .chips {
+      left: 2.25rem;
+      right: auto;
+      bottom: 0.5rem;
+    }
+    .tile.variant-home.t-composer .card:has(.chips) .body {
+      padding-bottom: 2.75rem;
     }
   }
 
@@ -1471,6 +1504,14 @@
     }
   }
 
+  /* The Composer tile opens the app, so its About Composer chip is the
+     launchpad's only way to the page about the app. It stays at every size,
+     including the tiers above that drop the other tiles' chips, sitting under
+     the title and descriptor on the left. In the compact tiers it moves in
+     line with the title (see the "About Composer chip" rules in those tiers). */
+  .tile.variant-home.t-composer .chips {
+    display: flex;
+  }
   /* ---- reduced motion: freeze breathing/tilt/press/magnetic movement,
 	   keep only color/opacity hover feedback. The effect packages already
 	   guard themselves internally; this is the CSS-level backstop. ---- */

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import en from "../../../../../../../messages/en.json";
 import { staffMotionsContent } from "./staff-motions.content";
-import { localizeLevel1Text } from "../localize-level1-content";
+import { localizeLevel1Block, localizeLevel1Text } from "../localize-level1-content";
 
 // The lookup answers with the key it found, so a miss (which falls back to
 // the English text) cannot pass.
@@ -21,7 +21,11 @@ const APPROVED = {
 } as const;
 
 describe("the Staff Motions wording", () => {
-  const prose = staffMotionsContent.flatMap((b) => (b.kind === "prose" ? [b.html] : []));
+  // Since 2026-11-12 the tagline is the opener question's answer
+  // (`figureChoice.after`), so it counts as page words there too.
+  const prose = staffMotionsContent.flatMap((b) =>
+    b.kind === "prose" ? [b.html] : b.kind === "figureChoice" && b.after ? [b.after] : []
+  );
 
   it.each(Object.entries(APPROVED))("%s is on the page and resolves to its message", (key, text) => {
     expect(prose).toContain(text);
@@ -42,5 +46,55 @@ describe("the Staff Motions wording", () => {
   it.each(Object.entries(SHEET))("print sheet text for %s still resolves", (key, text) => {
     expect((en as Record<string, string>)[key]).toBe(text);
     expect(localizeLevel1Text(text)).toBe(`key:${key}`);
+  });
+});
+
+// The opener's four new lines (PROPOSED 2026-11-12, awaiting Austen's yes):
+// each is in the question block and finds its message in every language file.
+const PROPOSED = {
+  guide_l1_staff_motions_choice_lead: "Same hand, same move. Watch the staff.",
+  guide_l1_staff_motions_choice_question: "Which staff spins the same way as the hand?",
+  guide_l1_staff_motions_choice_right:
+    "Yes. A spins with the hand: a prospin. B spins against it: an antispin.",
+  guide_l1_staff_motions_choice_wrong: "Look again. Follow the hand, then the staff.",
+} as const;
+
+describe("the Staff Motions opener question", () => {
+  const choice = staffMotionsContent.find((b) => b.kind === "figureChoice");
+
+  it("declares the question, the answer and the tagline after it", () => {
+    expect(choice?.kind).toBe("figureChoice");
+    if (choice?.kind !== "figureChoice") return;
+    expect([choice.lead, choice.question, choice.right, choice.wrong]).toEqual(
+      Object.values(PROPOSED)
+    );
+    expect(choice.after).toBe(APPROVED.verified_level1_staff_motions_shift_intro);
+    expect(choice.answer).toBe(0);
+  });
+
+  it.each(Object.entries(PROPOSED))("%s resolves to its message", (key, text) => {
+    expect((en as Record<string, string>)[key]).toBe(text);
+    expect(localizeLevel1Text(text)).toBe(`key:${key}`);
+  });
+
+  it("localizes every line of the block", () => {
+    const local = localizeLevel1Block(choice!);
+    expect(local).toMatchObject({
+      lead: "key:guide_l1_staff_motions_choice_lead",
+      question: "key:guide_l1_staff_motions_choice_question",
+      right: "key:guide_l1_staff_motions_choice_right",
+      wrong: "key:guide_l1_staff_motions_choice_wrong",
+      after: "key:verified_level1_staff_motions_shift_intro",
+    });
+  });
+
+  it("titles the opener cards A and B until answered, then by name", () => {
+    const cards = staffMotionsContent.filter(
+      (b) => b.kind === "pictographGroup" && b.blindTitle
+    );
+    expect(cards.map((b) => b.kind === "pictographGroup" && [b.blindTitle, b.figureTitle])).toEqual([
+      ["A", "Prospin"],
+      ["B", "Antispin"],
+    ]);
   });
 });

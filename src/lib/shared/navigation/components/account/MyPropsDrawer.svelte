@@ -18,7 +18,7 @@
   import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
-  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import ProfilePropPicker from "./ProfilePropPicker.svelte";
@@ -267,10 +267,9 @@
                   })}
                 >
                   <span class="legacy-preview" aria-hidden="true">
-                    <PropCompositionPreview
+                    <SelectedPropPreview
                       propType={prop}
-                      size={32}
-                      useSavedOverrides={false}
+                      box={{ width: 28, height: 28 }}
                     />
                   </span>
                   <span>{getProfilePropLabel(prop)}</span>

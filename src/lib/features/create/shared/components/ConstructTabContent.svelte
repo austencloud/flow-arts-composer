@@ -34,8 +34,6 @@
     initialStartPlacement = null,
     lockStartGridMode = false,
     startPlacementValidationMessage = null,
-    onStartPlacementNavigateToAdvanced,
-    onStartPlacementNavigateToDefault,
     isSideBySideLayout = () => false,
     onOpenFilters = () => {},
     onCloseFilters = () => {},
@@ -54,8 +52,6 @@
     initialStartPlacement?: PictographData | null;
     lockStartGridMode?: boolean;
     startPlacementValidationMessage?: string | null;
-    onStartPlacementNavigateToAdvanced?: () => void;
-    onStartPlacementNavigateToDefault?: () => void;
     isSideBySideLayout?: () => boolean;
     onOpenFilters?: () => void;
     onCloseFilters?: () => void;
@@ -100,8 +96,6 @@
               {gridJoin}
               lockedGridMode={lockStartGridMode ? currentGridMode : undefined}
               validationMessage={startPlacementValidationMessage}
-              onNavigateToAdvanced={onStartPlacementNavigateToAdvanced}
-              onNavigateToDefault={onStartPlacementNavigateToDefault}
               onPlacementSubmitted={onStartPlacementSubmitted}
               suppressHeading={constructTutorialState.isActive}
               morphIntoWorkspace

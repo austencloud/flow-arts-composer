@@ -66,6 +66,7 @@ with pre-prepared data for better performance.
   } from "../state/pictograph-edit-motion.svelte";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import PictographRenderer from "./PictographRenderer.svelte";
+  import { observePictographArtScale } from "../services/pictograph-art-scale-observer";
   import { gridJoinKey, isGridJoin } from "@tka/render-core";
   import { globalAdjustmentVersion } from "../../arrow/positioning/global/state/global-adjustment-version.svelte";
   import type {
@@ -360,6 +361,16 @@ with pre-prepared data for better performance.
   // and print uses `printMode`; both capture static SVG and must hard-unmount
   // hidden overlays so they don't leak into the raw markup.
   const liveAnimateVisibility = $derived(darkMode === undefined && !printMode);
+
+  // Small pictographs draw their small art (quieter grid, bold poi). Only the
+  // live DOM switches: exports and print keep the real drawing. The shared
+  // observer writes data-art-scale onto the root itself, so a resize never
+  // re-renders the pictograph.
+  let containerElement: HTMLDivElement | undefined = $state();
+  $effect(() => {
+    if (!containerElement || !liveAnimateVisibility) return;
+    return observePictographArtScale(containerElement);
+  });
 
   // Effective visibility values - use prop overrides if set, otherwise true (motion always visible)
   const effectiveLeftMotion = $derived(
@@ -660,7 +671,7 @@ with pre-prepared data for better performance.
             fanAppearanceOverride ?? getSettings().fanAppearance
           ),
           triangleGrip: effectiveTriangleGrip,
-      buugengStyle: effectiveBuugengStyle,
+          buugengStyle: effectiveBuugengStyle,
           triadBuild: effectiveTriadBuild,
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,
@@ -990,8 +1001,10 @@ with pre-prepared data for better performance.
 </script>
 
 <div
+  bind:this={containerElement}
   class="pictograph-container"
   class:loading={isLoading}
+  class:dark-art={effectiveDarkMode}
   role={hasA11yLabel ? "img" : undefined}
   aria-label={hasA11yLabel ? a11yLabel : undefined}
   aria-busy={Boolean(pictographData) && !renderReady}
@@ -1171,5 +1184,42 @@ with pre-prepared data for better performance.
 
   .pictograph-container.loading {
     opacity: 0.8;
+  }
+
+  /* Small art (data-art-scale="small", under 180px wide): poi swaps its real
+     drawing for one bold mark in the hand's colour. The art is injected with
+     {@html}, so the selectors are global. The head's ring is the picture's
+     background colour (TORCH_CONTRAST_PALETTE backgrounds), a literal like
+     GridSvg's because iOS ignores custom properties in SVG paint, so two
+     heads at one point stay apart. See "Props in small pictographs" in
+     docs/architecture/visual-design-canon.md. The attribute is written at
+     runtime, outside Svelte's view, so the whole selector is global or the
+     compiler would prune it as unused. */
+  :global(
+    .pictograph-container[data-art-scale="small"] [data-poi-art="regular"]
+  ) {
+    display: none;
+  }
+
+  :global(
+    .pictograph-container[data-art-scale="small"] [data-poi-art="small"]
+  ) {
+    display: inline;
+  }
+
+  :global(
+    .pictograph-container[data-art-scale="small"]
+      [data-poi-art="small"]
+      [data-poi-part="head"]
+  ) {
+    stroke: #d8d8d2;
+  }
+
+  :global(
+    .pictograph-container.dark-art[data-art-scale="small"]
+      [data-poi-art="small"]
+      [data-poi-part="head"]
+  ) {
+    stroke: #0a0a0f;
   }
 </style>

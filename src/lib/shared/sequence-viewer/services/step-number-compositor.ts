@@ -14,7 +14,11 @@
  * identically.
  */
 
-import { drawStepNumber } from "#lib/shared/render/services/step-number-renderer.js";
+import {
+  drawStepNumber,
+  stepLabelFor,
+} from "#lib/shared/render/services/step-number-renderer.js";
+import { localStepLabels } from "#lib/shared/render/services/local-step-labels.js";
 
 /**
  * Draw `stepNumber` onto a copy of `baseBlob` and return the composited blob.
@@ -42,7 +46,17 @@ export async function compositeStepNumberOnBlob(
     ctx.drawImage(bitmap, 0, 0, width, height);
     // x=0,y=0 with cellSize=size reproduces the top-left placement + scale that
     // drawStepNumber uses for printed cards (50/950 of the cell from each edge).
-    drawStepNumber(ctx, stepNumber, 0, 0, size, isDarkMode);
+    // The base blob is cached without the number, so the visitor's own word
+    // goes on here and never enters a cache key.
+    drawStepNumber(
+      ctx,
+      stepNumber,
+      0,
+      0,
+      size,
+      isDarkMode,
+      stepLabelFor(stepNumber, localStepLabels())
+    );
 
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(

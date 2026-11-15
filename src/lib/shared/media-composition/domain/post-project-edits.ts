@@ -1,6 +1,15 @@
 import {
   DEFAULT_TUNNEL_HOOK,
   DEFAULT_TUNNEL_HOOK_SECONDS,
+  EASING_PRESETS,
+  boxAt,
+  channelKeyframeSeconds,
+  isAnimated,
+  postOutputSize,
+  removeKeyframe,
+  setKeyframe,
+  setSegmentEasing,
+  type PostBox,
   MAIN_TRACK_INDEX,
   POST_MIN_BOX_SIZE,
   POST_MAX_SPEED,
@@ -21,6 +30,7 @@ import {
   withNewTrackOnTop,
   withTrackItems,
   timingVideoAt,
+  videoFootageSeconds,
   videoPostSeconds,
   type EditContext,
   type PostItem,
@@ -41,7 +51,11 @@ import {
   takeTimingMoveBeats,
   type TakeTiming,
 } from "#lib/shared/media-composition/domain/take-timing.js";
-import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
+import {
+  openingTitlesSpan,
+  pairNameShare,
+} from "#lib/shared/media-composition/domain/tunnel-titles.js";
+import { CARD_TITLE_LANDING_SECONDS } from "#lib/shared/post-studio-plugin/card-ending.js";
 import {
   arrangementDurationSeconds,
   createArrangementItem,
@@ -109,6 +123,197 @@ export function addTitlesItem(
       ...(init.spoken !== undefined ? { spoken: init.spoken } : {}),
       fill: false,
     },
+    ctx
+  );
+}
+
+/**
+ * The name pair's big spot on the hook, as a share of the frame: centred near
+ * the top, its letters as tall as the opening's titles.
+ */
+export const TITLES_HOOK_BOX: PostBox = {
+  x: 0.2,
+  y: 0.135,
+  width: 0.6,
+  height: 0.094,
+};
+/**
+ * Where a parked pair sits: its left edge and top, as shares of the frame,
+ * inside the part a 4:5 feed crop of a 9:16 post keeps.
+ */
+export const TITLES_PARK_LEFT = 0.033;
+export const TITLES_PARK_TOP = 0.155;
+/** A parked pair's size against the box it leaves. */
+export const TITLES_PARK_SCALE = 0.45;
+/** Seconds the pair takes to glide into its parked spot. */
+export const TITLES_PARK_GLIDE_SECONDS = 0.8;
+
+/**
+ * A parked pair's size: the box it leaves, scaled down evenly so the pair
+ * keeps its shape, but never below the smallest box the editor allows.
+ */
+export function parkedSize(box: PostBox): { width: number; height: number } {
+  const scale = Math.min(
+    1,
+    Math.max(
+      TITLES_PARK_SCALE,
+      POST_MIN_BOX_SIZE / box.width,
+      POST_MIN_BOX_SIZE / box.height
+    )
+  );
+  return { width: box.width * scale, height: box.height * scale };
+}
+
+/**
+ * Parks a titles clip's name pair small in the top left: a box key at
+ * `seconds` holding the box as it is (the hook's big spot when the box has
+ * never moved), and an eased key `TITLES_PARK_GLIDE_SECONDS` later in the
+ * parked spot. The words then stay to the clip's last frame. Both keys are
+ * ordinary ones the author can move or change. A clip too short for the glide
+ * is left as it is.
+ */
+export function parkTitles(
+  project: PostProject,
+  itemId: string,
+  seconds: number,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  const item = located?.item;
+  if (item?.kind !== "titles") return project;
+  const end = itemEnd(item);
+  const from = Math.max(
+    item.start,
+    Math.min(finiteOr(seconds, item.start), end - TITLES_PARK_GLIDE_SECONDS)
+  );
+  const to = from + TITLES_PARK_GLIDE_SECONDS;
+  if (to > end + POST_TIME_EPSILON) return project;
+  const box = isAnimated(item, "box")
+    ? boxAt(item, from)
+    : { ...TITLES_HOOK_BOX };
+  const parked = clampBox({
+    x: TITLES_PARK_LEFT,
+    y: TITLES_PARK_TOP,
+    ...parkedSize(box),
+  });
+  let next: PostItem = setKeyframe(item, "box", from, box);
+  next = setKeyframe(next, "box", to, parked);
+  next = setSegmentEasing(
+    next,
+    "box",
+    from + TITLES_PARK_GLIDE_SECONDS / 2,
+    EASING_PRESETS["ease-in-out"]
+  );
+  if (next.kind === "titles") next = { ...next, leave: "stay" };
+  return finish(replaceItem(project, itemId, next), ctx);
+}
+
+/** Where a card draws its header word, as fractions of the card's own box. */
+export interface CardWordRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The titles painter keeps this share of its name band clear on each side
+ * (`calculateHeaderWordSideInset` at a band of glyph / 0.65), and the box is
+ * given a little more than the word so it never shrinks to fit.
+ */
+const LANDED_SIDE_INSET = 0.25 / 0.65;
+const LANDED_WIDTH_SLACK = 1.04;
+
+/**
+ * The titles box that puts the pair's name exactly over a card's header
+ * word at the same size: the name's letters fill the top `pairNameShare`
+ * of a pair's box (less with a larger `spokenSize`), so the box is the
+ * word's height over that share, its top on the word's top, and centred on
+ * the word.
+ */
+export function titlesBoxOverWord(
+  cardBox: PostBox,
+  word: CardWordRect,
+  frame: { width: number; height: number },
+  spokenSize?: number
+): PostBox {
+  const wordX = cardBox.x + word.x * cardBox.width;
+  const wordY = cardBox.y + word.y * cardBox.height;
+  const wordW = word.width * cardBox.width;
+  const wordH = word.height * cardBox.height;
+  const height = wordH / pairNameShare(spokenSize);
+  const glyphPx = wordH * frame.height;
+  const width =
+    (wordW * frame.width * LANDED_WIDTH_SLACK +
+      2 * glyphPx * LANDED_SIDE_INSET) /
+    frame.width;
+  return { x: wordX + wordW / 2 - width / 2, y: wordY, width, height };
+}
+
+/**
+ * Lands a titles clip's name on a card's header word: a box key at the
+ * later of `seconds` and the card's start holding the box as it is, then an
+ * eased key `CARD_TITLE_LANDING_SECONDS` later over the card's word. Later
+ * box keys go, the words stay to the clip's end, the spoken line fades out
+ * from the landing on, and the card stops drawing its own word. Both clips
+ * must still be on screen when the name lands; otherwise nothing changes.
+ * `word` is where the card draws its word inside its own box; only a drawn
+ * card knows that, so the caller measures it.
+ */
+export function landTitlesOnCard(
+  project: PostProject,
+  titlesId: string,
+  cardId: string,
+  seconds: number,
+  word: CardWordRect,
+  ctx: EditContext
+): PostProject {
+  const titles = findItem(project, titlesId)?.item;
+  const card = findItem(project, cardId)?.item;
+  if (titles?.kind !== "titles" || card?.kind !== "card") return project;
+  if (![word.x, word.y, word.width, word.height].every(Number.isFinite))
+    return project;
+  if (word.width <= 0 || word.height <= 0) return project;
+  const from = Math.max(
+    titles.start,
+    card.start,
+    finiteOr(seconds, titles.start)
+  );
+  const to = from + CARD_TITLE_LANDING_SECONDS;
+  if (to > itemEnd(titles) + POST_TIME_EPSILON) return project;
+  if (to > itemEnd(card) + POST_TIME_EPSILON) return project;
+  const box = isAnimated(titles, "box")
+    ? boxAt(titles, from)
+    : { ...TITLES_HOOK_BOX };
+  // The landed box is the clip's shortest, so its line takes the small size.
+  const landed = titlesBoxOverWord(
+    boxAt(card, to),
+    word,
+    postOutputSize(project.canvas),
+    titles.spokenSizeSmall ?? titles.spokenSize
+  );
+  let next: PostItem = titles;
+  for (const key of channelKeyframeSeconds(titles, "box")) {
+    if (key > from + POST_TIME_EPSILON) next = removeKeyframe(next, "box", key);
+  }
+  next = setKeyframe(next, "box", from, box);
+  next = setKeyframe(next, "box", to, landed);
+  next = setSegmentEasing(
+    next,
+    "box",
+    from + CARD_TITLE_LANDING_SECONDS / 2,
+    EASING_PRESETS["ease-in-out"]
+  );
+  if (next.kind === "titles") {
+    next = {
+      ...next,
+      leave: "stay",
+      quiet: { from: from - titles.start, to: titles.duration },
+    };
+  }
+  const nextCard = { ...card, headerTitle: "clip" as const };
+  return finish(
+    replaceItem(replaceItem(project, titlesId, next), cardId, nextCard),
     ctx
   );
 }
@@ -266,7 +471,9 @@ export function lineUpTunnelHook(
     return (
       intro >= MIN_LINED_UP_INTRO_SECONDS &&
       intro <= MAX_INTRO_SECONDS &&
-      hook.start + intro < itemEnd(video) - POST_MIN_ITEM_SECONDS &&
+      // The intro ends on the footage, never on a held last frame.
+      hook.start + intro <
+        video.start + videoFootageSeconds(video) - POST_MIN_ITEM_SECONDS &&
       cue - intro * video.speed >= -POST_TIME_EPSILON
     );
   };
@@ -328,6 +535,9 @@ function withoutTunnelBackdrop(
   const video = timingVideoAt(main, introEnd, hook.anchor?.itemId);
   if (!video || video.start >= introEnd - POST_TIME_EPSILON) return project;
   const laterBy = introEnd - video.start;
+  // An intro ending on the clip's held last frame leaves no footage to start from.
+  if (laterBy > videoFootageSeconds(video) - POST_MIN_ITEM_SECONDS)
+    return project;
   const sourceIn = video.sourceIn + laterBy * video.speed;
   return {
     ...project,

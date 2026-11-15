@@ -378,9 +378,13 @@
     justify-content: space-between;
     gap: var(--panel-gap);
     padding: var(--panel-padding);
-    padding-bottom: clamp(12px, 3cqi, 16px);
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .panel-header {
+    padding-bottom: clamp(12px, 3cqi, 16px);
   }
 
   .header-title {

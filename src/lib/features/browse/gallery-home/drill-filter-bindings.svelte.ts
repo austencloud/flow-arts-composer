@@ -13,10 +13,42 @@
  */
 import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
+import {
+  trackBrowseFilterApplied,
+  type BrowseFilterSurface,
+} from "#lib/shared/analytics/browse-events.js";
 
 const DEFAULT_CHIP_COLOR = "#6aa0ff";
 
-export function createDrillFilterBindings(getEngine: () => BrowseEngine) {
+export interface DrillFilterBindingOptions {
+  /** Browse's filter path names its surface, and every apply and clear made
+   * through these bindings sends `browse_filter_applied` from here: the one
+   * place values are applied. Hosts outside that path (pickers, builders)
+   * omit it and send nothing. A getter, because one host can serve two
+   * surfaces (the ask screen opened from an answer button). */
+  surface?: () => BrowseFilterSurface | null;
+}
+
+export function createDrillFilterBindings(
+  getEngine: () => BrowseEngine,
+  options: DrillFilterBindingOptions = {}
+) {
+  function track(
+    type: BrowseFilterType,
+    value: string | number,
+    action: "apply" | "clear"
+  ): void {
+    const surface = options.surface?.();
+    if (!surface) return;
+    trackBrowseFilterApplied({
+      filter: String(type),
+      value,
+      action,
+      surface,
+      result_count: getEngine().resultCount,
+    });
+  }
+
   const keyByValue = (type: BrowseFilterType) =>
     new Map(
       [...getEngine().activeFilters]
@@ -43,6 +75,20 @@ export function createDrillFilterBindings(getEngine: () => BrowseEngine) {
     color?: string
   ): void {
     getEngine().addFilter(type, value, label, color ?? DEFAULT_CHIP_COLOR);
+    track(type, value, "apply");
+  }
+
+  /** Runs a removal on the engine and sends one clear per user filter it
+   * took away, read from the engine before and after, so a bare-type key
+   * that clears a whole stacked category reports each value. */
+  function clearTracked(mutate: (engine: BrowseEngine) => void): void {
+    const engine = getEngine();
+    const before = [...engine.activeFilters].filter(([, f]) => !f.locked);
+    mutate(engine);
+    const after = engine.activeFilters;
+    for (const [key, f] of before) {
+      if (!after.has(key)) track(f.type, f.value as string | number, "clear");
+    }
   }
 
   return {
@@ -69,6 +115,15 @@ export function createDrillFilterBindings(getEngine: () => BrowseEngine) {
       engine.removeFilter(String(type));
       add(type, value, label, color);
     },
+    /** Remove by engine key: a rule chip's ×, or a bare type that clears
+     * its whole category. */
+    removeKey(key: string): void {
+      clearTracked((engine) => engine.removeFilter(key));
+    },
+    /** The "Show all" reset: every user filter goes, one clear each. */
+    clearAll(): void {
+      clearTracked((engine) => engine.clearUserFilters());
+    },
     /** Any category: tap toggles the value in the rule. */
     toggleValue(
       type: BrowseFilterType,
@@ -86,6 +141,7 @@ export function createDrillFilterBindings(getEngine: () => BrowseEngine) {
       engine.removeFilter(
         engine.activeFilters.has(perValue) ? perValue : String(type)
       );
+      track(type, value, "clear");
     },
     toggleLoop(
       value: string,
@@ -95,9 +151,12 @@ export function createDrillFilterBindings(getEngine: () => BrowseEngine) {
     ): void {
       if (nowActive) {
         getEngine().addFilter(BrowseFilterType.LOOP_TYPE, value, label, color);
+        track(BrowseFilterType.LOOP_TYPE, value, "apply");
       } else {
         const key = loopKeyByValue.get(value);
-        if (key) getEngine().removeFilter(key);
+        if (!key) return;
+        getEngine().removeFilter(key);
+        track(BrowseFilterType.LOOP_TYPE, value, "clear");
       }
     },
     toggleFamily(
@@ -113,9 +172,12 @@ export function createDrillFilterBindings(getEngine: () => BrowseEngine) {
           label,
           color
         );
+        track(BrowseFilterType.TND_FAMILY, familyId, "apply");
       } else {
         const key = familyKeyByValue.get(familyId);
-        if (key) getEngine().removeFilter(key);
+        if (!key) return;
+        getEngine().removeFilter(key);
+        track(BrowseFilterType.TND_FAMILY, familyId, "clear");
       }
     },
   };

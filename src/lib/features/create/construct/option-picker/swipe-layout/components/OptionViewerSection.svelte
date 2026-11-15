@@ -30,6 +30,7 @@ Renders a section with:
   import { getLetterBorderColors } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import OptionPictographCell from "./OptionPictographCell.svelte";
   import SectionHeader from "./SectionHeader.svelte";
+  import TypeGroupLabel from "./TypeGroupLabel.svelte";
   import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
   import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
   import { tryGetOptionAuditionContext } from "../../context/option-audition-context";
@@ -56,12 +57,14 @@ Renders a section with:
     contentAreaBounds = null,
     forcedPictographSize,
     showHeader = true,
+    showLabel = false,
     headerOnlyWithRoom = false,
     fitToViewport = false,
     onSlotClicked,
     continuationIndex = null,
     onArrowOffsetChange,
     columnOptions = DEFAULT_COLUMN_OPTIONS,
+    inlineGutter,
   } = $props<{
     letterType?: string;
     pictographs?: PictographData[];
@@ -79,6 +82,8 @@ Renders a section with:
     contentAreaBounds?: { left: number; right: number; width: number } | null;
     forcedPictographSize?: number;
     showHeader?: boolean;
+    /** A one-line type name above the tiles where the header doesn't fit. */
+    showLabel?: boolean;
     /** Show the header only where the tiles can spare the height. Phone-tier
      *  pickers fill their height with the grid. */
     headerOnlyWithRoom?: boolean;
@@ -92,7 +97,16 @@ Renders a section with:
     /** Column counts the fitted grid may choose between. Construct's rail
      *  tier narrows this so a group of 16 sits as a 4x4 block. */
     columnOptions?: readonly number[];
+    /** The grid's side insets in px. The tile size is fitted to the width
+     *  less both, so no tile comes closer to the picker's edge. Without it
+     *  the grid keeps its 4px insets and fits tiles to the full width. */
+    inlineGutter?: { start: number; end: number };
   }>();
+
+  // Width the fitter must leave free beside the tiles.
+  const gutterWidth = $derived(
+    inlineGutter ? inlineGutter.start + inlineGutter.end : 0
+  );
 
   // Services - resolve synchronously to avoid first-render sizing issues
   let hapticService: HapticFeedback | null = null;
@@ -163,7 +177,7 @@ Renders a section with:
     if (!width || !availableHeight) return false;
     return headerFitsBesideTiles({
       itemCount: displayedItems().length,
-      availableWidth: width,
+      availableWidth: width - gutterWidth,
       availableHeight,
       gridGap: parseInt(layoutConfig?.gridGap || "8px"),
       maxSize: layoutConfig?.pictographSize || 144,
@@ -324,7 +338,10 @@ Renders a section with:
     }
 
     // Use contentAreaBounds directly if available (the actual space between navigation arrows)
-    const effectiveWidth = contentAreaBounds?.width || availableWidth;
+    const measuredWidth = contentAreaBounds?.width || availableWidth;
+    const effectiveWidth = measuredWidth
+      ? Math.max(0, measuredWidth - gutterWidth)
+      : 0;
     const effectiveHeight =
       availableHeight || layoutConfig?.containerHeight || 0;
 
@@ -422,6 +439,8 @@ Renders a section with:
   <!-- Section Header -->
   {#if headerVisible}
     <SectionHeader {letterType} />
+  {:else if showLabel}
+    <TypeGroupLabel {letterType} />
   {/if}
 
   <!-- Section Content - Index-keyed so components stay mounted,
@@ -440,6 +459,9 @@ Renders a section with:
   {:else}
     <div
       class="pictographs-grid"
+      style:padding-inline={inlineGutter
+        ? `${inlineGutter.start}px ${inlineGutter.end}px`
+        : undefined}
       style:grid-template-columns={optimalLayout().gridColumns}
       style:gap={layoutConfig?.gridGap || "16px"}
     >

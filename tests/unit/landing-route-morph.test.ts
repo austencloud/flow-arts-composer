@@ -197,7 +197,8 @@ describe("landing shared-element contract", () => {
     );
     expect(layout).toContain("installRouteMotion({");
     expect(layout).toContain("morphs: navigationMorphs,");
-    expect(layout).toContain("isShallow: isShallowGoto,");
+    expect(layout).toContain("isShallow: pageOwnsMotion,");
+    expect(layout).toContain("isShallowGoto(navigation) ||");
     expect(layout).not.toContain("runNamedRouteMorph(() =>");
   });
 

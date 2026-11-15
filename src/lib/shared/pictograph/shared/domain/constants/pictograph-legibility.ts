@@ -25,3 +25,16 @@ const CAP_HEIGHT_RATIO = 0.7;
 export const MIN_LEGIBLE_PICTOGRAPH_SIZE = Math.ceil(
   (ESSENTIAL_TEXT_SIZE * CAP_HEIGHT_RATIO * VIEWBOX_SIZE) / LETTER_GLYPH_HEIGHT
 );
+
+/**
+ * Below this live width (CSS px) a pictograph switches to its small art: the
+ * grid steps back and thin props draw one bold mark in the hand's colour.
+ *
+ * At 180px today's poi head is about 6px across and its cord under 1px; below
+ * that the real poi stops reading and the grid dots (3.4px at 64px) are louder
+ * than the prop. See "Props in small pictographs" in
+ * docs/architecture/visual-design-canon.md.
+ */
+export const SMALL_PICTOGRAPH_ART_MAX_SIZE = 180;
+/** Half-width of the dead band around the cutoff, so a cell on the line does not flicker. */
+export const SMALL_PICTOGRAPH_ART_HYSTERESIS = 4;

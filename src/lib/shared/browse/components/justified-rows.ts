@@ -189,6 +189,47 @@ export function galleryCardAspect(
   return galleryAspectForSteps(galleryStepCount(sequence), layoutForStepCount);
 }
 
+/** Space between cards and between rows in BrowseGrid's flat grid, in px. */
+export const FLAT_GRID_GAP = 8;
+
+/** Above this many results BrowseGrid hands the list to the virtualized grid,
+ * which pads and spaces its rows differently. */
+export const FLAT_GRID_MAX_CARDS = 50;
+
+/**
+ * BrowseGrid's flat grid rows for cards of these step counts: the one place
+ * that grid packs, so its placeholders (BrowseThumbnailSkeleton) stand exactly
+ * where its cards will. `aspects` comes back beside the rows so a caller can
+ * size each cell without working the shapes out again.
+ */
+export function flatGridRows(
+  stepCounts: readonly number[],
+  width: number,
+  columns: number,
+  layoutForStepCount: (stepCount: number) => "row" | "column"
+): { rows: JustifiedRow[]; aspects: number[] } {
+  const bySteps = new Map<number, number>();
+  const aspects = stepCounts.map((steps) => {
+    let shape = bySteps.get(steps);
+    if (shape === undefined) {
+      shape = galleryAspectForSteps(steps, layoutForStepCount);
+      bySteps.set(steps, shape);
+    }
+    return shape;
+  });
+  const rows = packJustifiedRows(aspects, {
+    width,
+    gap: FLAT_GRID_GAP,
+    targetHeight: justifiedTargetHeight(
+      width,
+      columns,
+      FLAT_GRID_GAP,
+      galleryAspectForSteps(4, layoutForStepCount)
+    ),
+  });
+  return { rows, aspects };
+}
+
 /** The aspect a gallery card of `stepCount` steps draws with. */
 export function galleryAspectForSteps(
   stepCount: number,

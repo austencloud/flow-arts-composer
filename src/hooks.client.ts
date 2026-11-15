@@ -18,6 +18,8 @@ import {
   printChunkRecoveryReloadBreadcrumb,
 } from "#lib/shared/offline/services/chunk-recovery-marker.js";
 import { forceFreshReload } from "#lib/shared/foundation/services/force-fresh.js";
+import { isPageLeaving } from "#lib/shared/net/asset-fetch.js";
+import { viewer3DWarmupOwnsPreloadErrors } from "#lib/shared/3d/scene-boot/viewer-3d-warmup-guard.js";
 
 const UPDATE_ACTION_TOAST_MS = 15_000;
 
@@ -259,6 +261,21 @@ if (browser && !dev) {
     // long enough to destructure that missing module and emit a cascade of fake
     // state/initializer failures. Let the import reject so its caller stops;
     // the rejection listener below keeps the expected exit quiet.
+    //
+    // A link tap on a freshly loaded page is not a stale shell. WebKit and
+    // Firefox cancel the page's in-flight lazy-chunk loads as soon as the
+    // navigation starts, while this page's scripts still run, so the
+    // cancelled imports land here. Recovering then would replace the link's
+    // navigation with a reload of this same page (a visitor report: the first
+    // "Open the app" tap reloaded the landing page; the second, with the
+    // chunks cached, went through). The click flag is set before the loads
+    // are cancelled, so a leaving page lets the navigation win.
+    if (isPageLeaving()) return;
+    // A 3D warm-up the visitor did not ask for failed (a stale deploy or a
+    // dropped connection before any tap). It swallows its own rejection; a
+    // reload here would be one the visitor never caused. Their tap's import
+    // takes this path normally (viewer-3d-warmup-guard.ts).
+    if (viewer3DWarmupOwnsPreloadErrors()) return;
     if (chunkRecoveryStarted) return;
     chunkRecoveryStarted = true;
 
@@ -438,18 +455,16 @@ export const init: ClientInit = async () => {
         void (async () => {
           // A deploy that carries a published release says so; anything else,
           // or a failed lookup, keeps the plain wording.
-          const message = await import(
-            "#lib/shared/offline/services/update-ready-copy.js"
-          )
-            .then(({ updateReadyMessage }) =>
-              updateReadyMessage(__APP_VERSION__, async () => {
-                const { getLatestVersion } = await import(
-                  "#lib/shared/feedback/services/version-service.js"
-                );
-                return getLatestVersion();
-              })
-            )
-            .catch(() => "An update is ready.");
+          const message =
+            await import("#lib/shared/offline/services/update-ready-copy.js")
+              .then(({ updateReadyMessage }) =>
+                updateReadyMessage(__APP_VERSION__, async () => {
+                  const { getLatestVersion } =
+                    await import("#lib/shared/feedback/services/version-service.js");
+                  return getLatestVersion();
+                })
+              )
+              .catch(() => "An update is ready.");
           showToast({
             message,
             type: "info",

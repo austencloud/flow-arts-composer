@@ -340,11 +340,19 @@
     background: var(--scrollbar-thumb);
     border-radius: 4px;
     border: 2px solid transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .browser-content::-webkit-scrollbar-thumb {
     background-clip: padding-box;
   }
 
   .browser-content::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .browser-content::-webkit-scrollbar-thumb:hover {
     background-clip: padding-box;
   }
 

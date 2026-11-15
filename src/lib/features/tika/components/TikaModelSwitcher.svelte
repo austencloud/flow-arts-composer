@@ -236,7 +236,6 @@
 
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 16px 16px 0 0;
-    border-bottom: none;
     padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
 
     box-shadow:
@@ -250,6 +249,11 @@
       scale var(--duration-normal) var(--ease-spring),
       overlay var(--duration-normal) var(--ease-standard) allow-discrete,
       display var(--duration-normal) var(--ease-standard) allow-discrete;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  :global(#tika-model-popover) {
+    border-bottom: none;
   }
 
   @starting-style {

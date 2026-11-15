@@ -1,13 +1,15 @@
 import type { ItemKindUi } from "@austencloud/video-editor";
 import {
   faArrowsUpDownLeftRight,
+  faBorderTopLeft,
+  faFont,
   faHeading,
   faImages,
   faSun,
   faTableCellsLarge,
   faWandMagicSparkles,
 } from "@austencloud/video-editor/icons";
-import { TUNNEL_PART } from "./tka-parts";
+import { SPLIT_FORK, TUNNEL_PART } from "./tka-parts";
 import TkaArrangementSelection from "./TkaArrangementSelection.svelte";
 import TkaArrangementTools from "./TkaArrangementTools.svelte";
 import { tkaEditorOf } from "./tka-editor-context";
@@ -18,11 +20,18 @@ import TkaStage3DSelection from "./TkaStage3DSelection.svelte";
  * The icons and names the editor shows for tka's kinds, and the item tool's
  * panels for the animation, moves and titles kinds. The icons are the glyphs
  * the timeline's blocks drew for these kinds. An animation's opening tunnel
- * is its part. An arrangement's cells are picked and dragged on the canvas,
+ * is its part, and its split hands fork its block. An arrangement's cells are picked and dragged on the canvas,
  * and the panel names the cell in hand.
  */
 export const TKA_KIND_UI: Record<
-  "animation" | "moves" | "carousel" | "titles" | "arrangement" | "mandala",
+  | "animation"
+  | "moves"
+  | "carousel"
+  | "titles"
+  | "arrangement"
+  | "mandala"
+  | "flash"
+  | "credit",
   ItemKindUi
 > = {
   animation: {
@@ -30,6 +39,7 @@ export const TKA_KIND_UI: Record<
     label: (t) => t("post_editor_kind_animation"),
     toolPanel: TkaKindTools,
     parts: [TUNNEL_PART],
+    fork: SPLIT_FORK,
     // A 3D clip on its saved shot turns its camera by dragging in the box.
     selectionLayer: TkaStage3DSelection as unknown as NonNullable<
       ItemKindUi["selectionLayer"]
@@ -70,6 +80,16 @@ export const TKA_KIND_UI: Record<
   mandala: {
     icon: faSun,
     label: (t) => t("post_editor_kind_mandala"),
+    toolPanel: TkaKindTools,
+  },
+  flash: {
+    icon: faBorderTopLeft,
+    label: (t) => t("post_editor_kind_flash"),
+    toolPanel: TkaKindTools,
+  },
+  credit: {
+    icon: faFont,
+    label: (t) => t("post_editor_kind_credit"),
     toolPanel: TkaKindTools,
   },
 };

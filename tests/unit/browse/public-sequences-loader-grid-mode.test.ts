@@ -394,3 +394,86 @@ describe("PublicSequencesLoader recorded prop intent", () => {
     expect(resolveRecordedPropConfig(sequence)).toBeNull();
   });
 });
+
+describe("PublicSequencesLoader fresh complete catalogue", () => {
+  const FIVE_MINUTES = 5 * 60 * 1000;
+  const makeDoc = (id: string) => ({
+    id,
+    data: () => ({
+      id,
+      sourceRef: `users/owner/sequences/${id}`,
+      ownerId: "owner",
+      ownerDisplayName: "Owner",
+      name: id,
+      word: id,
+      thumbnails: [],
+      tags: [],
+      isForked: false,
+    }),
+  });
+  const page = (docs: ReturnType<typeof makeDoc>[]) => ({
+    docs,
+    size: docs.length,
+    forEach: (visit: (doc: ReturnType<typeof makeDoc>) => void) =>
+      docs.forEach(visit),
+  });
+
+  it("is fresh after a full Firestore read and goes stale with age", async () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+    try {
+      mocks.getDocs.mockResolvedValueOnce(page([makeDoc("a"), makeDoc("b")]));
+      const loader = new PublicSequencesLoader();
+      expect(loader.getFreshCatalog(FIVE_MINUTES)).toBeNull();
+
+      await loader.refreshFromFirestore();
+      expect(loader.getFreshCatalog(FIVE_MINUTES)?.map((s) => s.id)).toEqual([
+        "a",
+        "b",
+      ]);
+
+      now.mockReturnValue(1_000_000 + FIVE_MINUTES);
+      expect(loader.getFreshCatalog(FIVE_MINUTES)).toBeNull();
+    } finally {
+      now.mockRestore();
+    }
+  });
+
+  it("is not fresh after only the first page has arrived", async () => {
+    const firstDocs = Array.from({ length: 150 }, (_, i) => makeDoc(`s${i}`));
+    mocks.getDocs
+      .mockResolvedValueOnce(page(firstDocs))
+      .mockReturnValueOnce(new Promise(() => {}));
+    const loader = new PublicSequencesLoader();
+
+    const first = await loader.loadInitialSequenceMetadata();
+
+    expect(first).toHaveLength(150);
+    expect(loader.getFreshCatalog(FIVE_MINUTES)).toBeNull();
+  });
+
+  it("is not fresh when warmed from the saved IndexedDB catalogue", () => {
+    const loader = new PublicSequencesLoader();
+    loader.warmFromCache(
+      [{ id: "saved" } as Parameters<typeof loader.addToCache>[0]],
+      new Map()
+    );
+    expect(loader.getFreshCatalog(FIVE_MINUTES)).toBeNull();
+  });
+
+  it("is gone once the catalogue is cleared, even if the saved one warms back", async () => {
+    mocks.getDocs.mockResolvedValueOnce(page([makeDoc("a")]));
+    const loader = new PublicSequencesLoader();
+    await loader.refreshFromFirestore();
+    expect(loader.getFreshCatalog(FIVE_MINUTES)).not.toBeNull();
+
+    // BrowseModule's reconnect handler clears the catalogue through a cast.
+    (loader as unknown as { cachedSequences: unknown }).cachedSequences = null;
+    expect(loader.getFreshCatalog(FIVE_MINUTES)).toBeNull();
+
+    loader.warmFromCache(
+      [{ id: "saved" } as Parameters<typeof loader.addToCache>[0]],
+      new Map()
+    );
+    expect(loader.getFreshCatalog(FIVE_MINUTES)).toBeNull();
+  });
+});

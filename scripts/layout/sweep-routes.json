@@ -3,6 +3,11 @@
   "routes": [
     { "name": "home", "path": "/" },
     { "name": "create", "path": "/create" },
+    { "name": "construct", "path": "/create/construct" },
+    { "name": "generate", "path": "/create/generate" },
+    { "name": "fuse", "path": "/create/fuse" },
+    { "name": "shape-engine", "path": "/create/shape-engine" },
+    { "name": "assemble", "path": "/create/assemble" },
     { "name": "browse", "path": "/browse" },
     { "name": "sequence-viewer", "path": "/sequence/P3WN" },
     { "name": "guide", "path": "/guide" },

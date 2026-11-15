@@ -26,6 +26,17 @@ export function taglineInIntro(
 ): TaglineInIntro {
   const tag = stripHtml(tagline);
   if (!tag) return "none";
+  // A "which one?" question that ends on the tagline says it in its answer;
+  // the hero drops it so it is not given away above the question.
+  if (
+    content.some(
+      (b) =>
+        b.kind === "figureChoice" &&
+        !!b.after &&
+        stripHtml(localizeLevel1Text(b.after)).includes(tag)
+    )
+  )
+    return "contains";
   // Headings before the first prose (the page title, a section heading) are
   // skipped. Every paragraph of the intro counts: the run of prose before the first
   // heading or figure (LOOPs' tagline is its second paragraph).

@@ -45,6 +45,9 @@
   import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { resolveCardLoadingPresentation } from "#lib/shared/choreo-card/services/choreo-card-loading-presentation.js";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import {
     getStepColumnsForLayout,
@@ -56,6 +59,9 @@
   import CardHeader, { HEADER_MOTION_MS } from "./CardHeader.svelte";
   import CardFooter from "./CardFooter.svelte";
   import CardGridLayout from "./CardGridLayout.svelte";
+  import CardStepZoom from "./CardStepZoom.svelte";
+  import { zoomStepOrder } from "./card-step-zoom";
+  import type { ViewerControlValue } from "../domain/viewer-control-analytics";
   import type { MandalaFill } from "../services/get-mandala-placements";
 
   // Extracted modules
@@ -219,6 +225,16 @@
      * unique on the page; cards without one redraw in place.
      */
     transitionKey?: string | null;
+    /**
+     * A tapped step enlarges over the card instead of seeking. For a card with
+     * no animation beside it; ignored while onStepClick is set.
+     */
+    zoomSteps?: boolean;
+    /** Records each open and close of the enlarged step. */
+    onZoomAction?: (
+      action: string,
+      properties: Record<string, ViewerControlValue>
+    ) => void;
   }
 
   const {
@@ -274,6 +290,8 @@
     layoutAvailableHeight,
     transitionKey = null,
     cellOverlay,
+    zoomSteps = false,
+    onZoomAction,
   }: Props = $props();
 
   // Auth-aware WITHOUT dragging Firebase onto pages that never need it.
@@ -385,6 +403,25 @@
   let longPressTimer: ReturnType<typeof setTimeout> | null = null;
   let longPressOrigin: { x: number; y: number } | null = null;
   let longPressFired = false;
+
+  // The step enlarged over the card, or null. A tap that ends a long press
+  // belongs to the menu it opened, never to the step under the finger.
+  let zoomStep = $state<number | null>(null);
+  const zoomTaps = $derived(zoomSteps && !onStepClick && !exportPresentation);
+  function openStepZoom(index: number): void {
+    if (longPressFired) {
+      longPressFired = false;
+      return;
+    }
+    zoomStep = index;
+  }
+  function findZoomCell(index: number): HTMLElement | null {
+    return (
+      containerElement?.querySelector<HTMLElement>(
+        `[data-card-step="${index}"]`
+      ) ?? null
+    );
+  }
 
   function cancelLongPress() {
     if (longPressTimer !== null) {
@@ -1037,6 +1074,29 @@
     fixedCardAspectRatio !== null ? 0 : renderLifecycle.flipDuration
   );
 
+  // The card has been on screen. Latched, so a later redraw that briefly
+  // re-measures the box shows Updating, never the first-open loading state.
+  let cardSeen = $state(false);
+  // The preview stack's own reveal condition (its inline visibility below).
+  const stackVisible = $derived(
+    needsScroll ||
+      (!!containedWidth && !!containedHeight && cellWidth >= 1)
+  );
+  const cardLoading = $derived(
+    resolveCardLoadingPresentation({
+      isLoading,
+      isRefreshing,
+      cells,
+      exportPresentation,
+      stackVisible,
+      seenBefore: cardSeen,
+      firstRenderEnded: renderLifecycle.hasSettledOnce,
+    })
+  );
+  $effect.pre(() => {
+    if (cardLoading.seen && !cardSeen) cardSeen = true;
+  });
+
   /**
    * For solo mode, extract the end location of the kept color's motion
    * for a given step, used as the cell's alt/aria label. The visible start→end
@@ -1180,7 +1240,7 @@
   data-contain-size-motion={containSizeMotion}
   data-contain-size-jump={sizingState.sizeJump ? "true" : undefined}
   data-header-motion={headerMotion ? "true" : undefined}
-  aria-busy={isRefreshing ? "true" : undefined}
+  aria-busy={isRefreshing || cardLoading.loading ? "true" : undefined}
   data-qr-pending={qrSettled ? undefined : "true"}
   data-layout-columns={effectiveColumns}
   data-layout-rows={effectiveRows}
@@ -1231,7 +1291,7 @@
   onpointerup={() => cancelLongPress()}
   onpointercancel={() => cancelLongPress()}
 >
-  {#if !exportPresentation && isRefreshing && cells.length > 0}
+  {#if cardLoading.refreshing}
     <!-- The card keeps showing its previous images while it regenerates, so
          without this a toggle looks like a dead control. Absolutely positioned
          and pointer-events:none — it can never move or block the card. -->
@@ -1244,13 +1304,21 @@
       <span>{t("viewer_detail_updating")}</span>
     </div>
   {/if}
-  {#if isLoading && cells.length === 0}
-    <div class="loading-placeholder">
+  {#if cardLoading.loading}
+    <!-- Until the first picture is drawn the card's loading state holds the
+         whole slot, so the card arrives once, in place, as this fades off it.
+         Absolute, so neither its presence nor its fade moves the card. -->
+    <div
+      class="loading-placeholder"
+      out:opaqueFade={{ duration: DURATION.normal }}
+    >
       <ProgressRing percent={-1} size={32} strokeWidth={3} />
     </div>
-  {:else if cells.length > 0}
+  {/if}
+  {#if cells.length > 0}
     <div
       class="preview-stack"
+      class:awaiting-first-paint={cardLoading.loading}
       class:scroll-mode={needsScroll}
       class:has-frame={!!frameColors}
       class:has-card-aspect={fixedCardAspectRatio !== null}
@@ -1327,9 +1395,14 @@
         {activeDarkMode}
         {leftPropType}
         {rightPropType}
-        onStepClick={exportPresentation ? undefined : onStepClick}
+        onStepClick={exportPresentation
+          ? undefined
+          : zoomTaps
+            ? openStepZoom
+            : onStepClick}
+        stepTapEnlarges={zoomTaps}
         onQrPlayClick={exportPresentation ? undefined : onQrPlayClick}
-        clickableStart={exportPresentation ? false : clickableStart}
+        clickableStart={exportPresentation ? false : clickableStart || zoomTaps}
         onGridScrollRefChange={(el) => {
           gridScrollRef = el;
         }}
@@ -1368,6 +1441,24 @@
     </div>
   {/if}
 </div>
+
+<!-- Outside the card root: the dialog is still in the card's DOM, and the
+     root's long-press handler must never see a press made inside it. -->
+{#if zoomStep !== null}
+  <CardStepZoom
+    {cells}
+    order={zoomStepOrder(
+      cells.map((cell) => cell.index),
+      includeStartPlacement
+    )}
+    step={zoomStep}
+    darkMode={activeDarkMode}
+    showStepNumbers={showStepNumbers && !isMotionSoloMode}
+    findCell={findZoomCell}
+    onAction={onZoomAction}
+    onClosed={() => (zoomStep = null)}
+  />
+{/if}
 
 <ContextMenu
   menuState={contextMenuState}
@@ -1414,6 +1505,9 @@
   }
 
   .loading-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1445,6 +1539,12 @@
     font-weight: 600;
     line-height: 1;
     pointer-events: none;
+  }
+
+  /* Placeholders keep their measured box under the loading state but stay
+     unseen, so the header and empty cells never show before the pictures. */
+  .preview-stack.awaiting-first-paint {
+    visibility: hidden;
   }
 
   .preview-stack {
@@ -1509,12 +1609,6 @@
       height var(--duration-normal) var(--ease-out);
   }
 
-  /* The Card was never readable at its previous size, so there is nothing to
-     animate from. Place it at the destination without a transition. */
-  .choreo-card-root[data-contain-size-jump="true"] .preview-stack {
-    transition: none;
-  }
-
   .choreo-card-root[data-contain-size-motion="focus"] .preview-stack {
     transition:
       width var(--transition-dramatic),
@@ -1533,6 +1627,14 @@
     transition:
       width var(--transition-emphasis),
       height var(--transition-emphasis);
+  }
+
+  /* There is nothing on screen to animate from (a speck, or a pane opening
+     from hidden). Place the Card at its destination without a transition.
+     This must come after the pane-motion rules: at equal specificity the
+     later rule wins, and the jump is raised during those phases. */
+  .choreo-card-root[data-contain-size-jump="true"] .preview-stack {
+    transition: none;
   }
 
   /* In scroll mode, fill the parent edge-to-edge instead of using

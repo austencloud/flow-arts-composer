@@ -175,9 +175,19 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
       !!engine?.error ||
       (loadState === "ready" && !!collection && !spec)
   );
+  // Cards show as soon as the engine has sections, even while the rest of
+  // the catalogue is still arriving (the list may grow). An early pool with
+  // no matches keeps the skeleton until loading ends, so the empty state never
+  // flashes before the full catalogue has been checked.
+  const engineWaiting = $derived(
+    !engine ||
+      (!engine.error &&
+        (!engine.sectionsReady ||
+          (engine.isLoading && engine.resultCount === 0)))
+  );
   const resultsLoading = $derived(
     loadState === "loading" ||
-      (loadState === "ready" && !!spec && (!engine || engine.isLoading))
+      (loadState === "ready" && !!spec && engineWaiting)
   );
   const liveMatchCount = $derived(
     engine && !engine.isLoading && !engine.error ? engine.resultCount : null

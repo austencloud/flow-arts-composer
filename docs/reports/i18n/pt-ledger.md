@@ -196,3 +196,110 @@ Shift as the motion name).
 - Removed explanations about prop rotation and mirrored words because they are absent from the new English; no claims were added. Placeholders {name} and {n} remain unchanged.
 - Uncertain: none. No native-speaker review performed.
 - Changes remain on the assigned worker branch for coordinator integration. No primary checkout access, install, broad checks, dev server, integration or push performed.
+
+## Read-back — 2026-11-13
+
+Every released string (prefix in `released` in `scripts/i18n-released-prefixes.json`) was read against its English and graded right, off or wrong. Fixes went through a script that keeps key order and 2-space JSON. The full change list, with a read-back for every changed string, is in the translation desk's `runs/pt/changes.json`.
+
+- Released keys: 9,138. Filled: 202. Changed: 315 (282 off, 33 wrong). Left as is: 8,621. No released key is missing or empty now.
+- Contract test: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts` gives `Tests  4 failed | 68 passed (72)`. All six pt tests pass. The fallback test fails only on 107 de.json keys, as expected. The es, fr and it released-coverage ratchets also fail (8936 of 9138 is under their 0.98 floor); those catalogs were not touched here.
+- `git diff --check` is clean, `messages/pt.json` parses, and placeholders and tags match English on every changed key (checked by the apply script and the contract test).
+
+### Term decisions
+
+- Turn stays volta (glossary and catalog use), not the termbase's giro. Body turns are giros do corpo.
+- Diamond stays Diamante or diamante, not the termbase's Losango. Box is Quadrado.
+- Prop is prop everywhere. Acessório, adereço and objeto were replaced, and none remain in released strings.
+- Hand path is trajetória da mão. Rota and percurso were replaced.
+- Step, not beat, for a position in a sequence: Passo nº, Números dos passos, Carrossel de passos, Total de passos, and the animation shortcuts. Batida stays where the English counts musical or timing beats (BPM, durations in beats, effect intervals, 16-count sequences) and in the CAPs and Zan's Diamond prose (see Unsure).
+- Take is tomada. Effort is esforço (Laban). Pattern is never modo. Playground is Área de exploração; Ratio Playground is Área de proporções.
+- Placement is posição. Preset is predefinição. Rotate is Rotacionar. Spin ratios are Proporções de rotação. Setup steps are Etapa.
+- Nível N and Tipo N take a capital. "The Kinetic Alphabet" takes "de" ("uma ideia de The Kinetic Alphabet"), never "do The".
+- Latin labels stay Latin with a capital: Static, Float, Gamma, Alpha, Beta, Antispin, Prospin, Inspin, Extension, Flower, Dash, Shift, LOOP. VTG mode names (Split-Same, Quarter-Opp and the rest) stay English.
+- Orientation chips are spelled out (horário, anti-horário). No CW or CCW remains in released Portuguese.
+- `loop_picker_description_mirrored` reads left-right and `_flipped` reads top-bottom.
+- Screen-reader lines that put a noun into a slot use the colon form, so no article or gender agreement is needed ("Posicione: {prop}.", "Ocultar movimento: {hand}").
+- Choreo Cards, Post Studio, Shape Engine, Composer and Flow Arts Composer stay as names. Physical deck cards are cartas; on-screen cards are cartões.
+
+### Unsure
+
+| Key | English | Portuguese | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| `browse_collections_founding_book_name` | Classic Book Variations | Variações clássicas do livro | Classic variations from the book | "Book" may be a proper name (the printed TKA book) and might need a capital or a title. |
+| `browse_collections_founding_book_description` | The base motions at one turn, with the book reversal — both props reverse every step. | Os movimentos base com uma volta e a reversão do livro: os dois props invertem o sentido a cada passo. | The base motions with one turn and the book reversal: both props reverse direction every step. | Same as above: "book reversal" may be a named term. |
+| `create_workspace_history_spell_loop` | Apply spell loop | Aplicar repetição da palavra | Apply the word's repetition | "Spell loop" is unclear in English. I read it as repeating the spelled word. |
+| `generator_period_halved` | Halved | Pela metade | By half | Halved and Quartered use "Pela metade" and "Em quartos". A native speaker may prefer another short form. |
+| `guide_zans_*`, CAPs prose | (beats) | batida | beat | Kept batida because the English counts beats on purpose there. The step rule could be argued for these lines. |
+| `learn_staff_cardinal_E`, `learn_staff_cardinal_W` (also N, S, `learn_ui_cardinal_directions`, `learn_staff_outer_end`) | E, W | E, W | E, W | Kept the English letters to match the grid labels. Portuguese compass letters would be L and O. |
+| `pictograph_placement_announce_place` and the other placement announcements | Place the {prop}. | Posicione: {prop}. | Place: {prop}. | Neutral colon form chosen because the slot noun's gender is unknown. It reads a little clipped. |
+| `tab_create_shape_engine` | Shape | Shape | Shape | Kept as part of the Shape Engine name. The old "Moldar" (to mould) misread it. "Formas" is the other option. |
+| `viewer_ui_effort_name_glide`, `_dab`, `_press`, `_punch` | Glide, Dab, Press, Punch | Deslizar, Pontuar, Pressionar, Socar | Glide, Dab, Press, Punch | Laban effort actions use the usual Portuguese Laban verbs. Elastic, Bounce and Anticipation (Elástico, Quique, Antecipação) are animation terms, not Laban. |
+| `shape_engine_trace_this` | Trace this | Traçar | Trace | The object of "this" is not clear from the code, so the verb stands alone. |
+| `shape_engine_ratio_playground` | Ratio Playground | Área de proporções | Ratio area | Matches the existing catalog. It loses some of the sandbox sense. |
+| `tutorial_back_card` | Back to card | Voltar à carta | Back to the card | Left as is. If this card is on screen rather than printed, it should be cartão. |
+| `share_studio_deep_summary_missed` | {count} missed | {count} perdidas | {count} missed (landings) | Feminine agreement assumes the missed things are landings (chegadas). |
+| SEO titles (`guide_*_seo_title`, `verified_level1_guide_page_seo_*`) | Flow Arts Notation Guide | Guia de notação de flow arts | Flow arts notation guide | SEO titles keep "flow arts" while site copy says "artes de flow". Left as is because the titles may target the English search term. |
+
+### English to its owner
+
+- `learn_timing_intro_placement_gamma`, `learn_placement_comparison_gamma`, `pictograph_desc_group_gamma`, `browse_audit_hands_right_angle`, `learn_placement_gamma_geometry`, `verified_level1_gamma_definition`, `verified_level1_placements_seo_description`, `verified_level1_guide_page_seo_4`: the English describes Gamma as a "right angle". The Portuguese mirrors it (ângulo reto) and was left unchanged.
+- `feedback_needs_info_hint`: the English is a sentence fragment.
+- `learn_play`: one key serves the games header ("Play" as in games) and the play-animation label. These need two keys.
+- `learn_reference_reading_choreo_cards`: says "Hand Motions" where the page's term differs.
+- `shape_engine_pictographs_calibration`: "Level 4 pictograph are" needs a plural noun.
+- `tab_desc_browse_gallery`, `tab_desc_browse_sequences`: "Browse and browse sequences" repeats a word.
+- `train_step_advance_tap`, `train_step_advance_voice`, `train_step_advance_both`: all three say "Tap or Voice".
+- `train_timed_config_title`: repeats the description sentence instead of being a title.
+- `site_faq_try_props`: "Try props in the spinner". "Spinner" probably means the viewer.
+- `shape_engine_solo_pro`, `shape_engine_solo_pro_mode`: the keys say pro but the English says inspin. Worth a check that inspin is intended.
+
+### May not fit
+
+- `create_action_orientation_clockIn_short`, `create_action_orientation_clockOut_short`, `create_action_orientation_counterIn_short`, `create_action_orientation_counterOut_short`
+- `create_ui_orientation_counter_short`, `create_controls_ccw_short`
+- `pictograph_placement_move_left`, `pictograph_placement_move_right`
+- `tab_hand_paths_hand_path_builder` (Construtor de trajetórias da mão)
+- `tab_choreo_card_print_prep` (Preparo de impressão)
+- `tab_retro_history`, `tab_retro_timeline`
+- `share_video_carousel_off` (Desligado)
+
+## Unreleased features — 2026-11-14
+
+- Keys filled: 747 (arena 43, attribution 14, beta 4, community 20, connect 65, hall_of_shame 39, mandala 30, poi_lab 41, premium 45, voice_sessions 56, watch 24, post_* 366). Missing count for wanted prefixes is now 0. Register unchanged: Brazilian Portuguese, você, infinitive action labels.
+- Left English on purpose (tools only Austen uses): admin, moderation, skel2tka, scheduler, gallery, character.
+
+### Term decisions
+
+| English | Portuguese | Note |
+| --- | --- | --- |
+| beat (step of a sequence) | passo | connect_*beat*, arena/poi/watch counts |
+| beat (song beat, tapped) | batida | Post Studio, matches `clip_beats` |
+| track / lane | faixa | layer = camada |
+| playhead | indicador (de reprodução) | short in buttons |
+| keyframe | quadro-chave | as in R4 |
+| crossfade | fusão cruzada | |
+| picture in picture | imagem em imagem | |
+| card | cartão | Choreo Card kept |
+| take | Take | filmed take, loanword |
+| hook (tunnel) | gancho | |
+| Hall of Shame, Poi Lab, Watch, Reels, Flash | kept English | names |
+
+### Unsure
+
+| key | English | text | read-back | why |
+| --- | --- | --- | --- | --- |
+| post_curve_preset_overshoot | Overshoot | Ultrapassagem | Going past the target | no settled term |
+| post_editor_split_peel/spring | Peel / Spring | Descascar / Mola | Peel off / Spring | effect names |
+| post_editor_look_breakdown | Breakdown | Detalhamento | Detailed split | strip name |
+| hall_of_shame_cat_* | Creative / Crude | Criativas / Grosseiras | Creative / Coarse | gender agrees with sequências |
+| post_editor_tutorial_hint | "move 1" | movimento 1 | move 1 | source wording unclear |
+
+### English to its owner
+
+- `mandala_copy_count`, `mandala_filter_all`, `poi_lab_beat_count`, `poi_lab_beat_number`, `voice_sessions_*_ago`, `voice_sessions_event_count`: values wrap the placeholder in literal straight quotes (`"{count}"`); kept as-is, they will show quotes to visitors.
+- `connect_sessions_found` has only a singular form.
+- `post_editor_hook_spoken`: "How to say it" is unclear without context.
+
+### May not fit
+
+- `post_editor_tool_fly`, `post_editor_tool_split_hands`, `post_editor_tool_panel_lift`, `post_editor_titles_park`, `post_editor_lift_step_across/down`, `post_stage_3d_spacing`, `post_curve_preset_ease_in_out`, `arena_battle_random_click_to_choose`, `premium_cta_unlock`, `premium_sticky_cta_button`.

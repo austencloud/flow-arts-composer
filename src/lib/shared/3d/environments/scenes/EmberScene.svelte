@@ -75,8 +75,10 @@
       config: nextConfig,
       stageRadius,
       stageRadiusGrowth,
-      qualityTier: adaptiveQuality?.contentTier,
-      shadows: adaptiveQuality?.config.enableShadows ?? true,
+      // Sampled per load: a tier step under frame pressure must not reload
+      // the whole world (CelestialScene documents the flash that caused).
+      qualityTier: untrack(() => adaptiveQuality?.contentTier),
+      shadows: untrack(() => adaptiveQuality?.config.enableShadows ?? true),
       reducedMotion: prefersReducedMotion(),
       groundDetailEnabled,
       onProgress: (fraction) => {

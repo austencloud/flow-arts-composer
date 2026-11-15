@@ -650,12 +650,16 @@
     justify-content: center;
     padding: 0 6px;
     border: 1px solid var(--theme-stroke-strong);
-    border-bottom-width: 2px;
     border-radius: 6px;
     background: var(--theme-card-bg);
     color: var(--theme-text);
     font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", monospace;
     font-size: var(--font-size-compact, 12px);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .command-palette__footer kbd {
+    border-bottom-width: 2px;
   }
 
   @media (min-width: 2600px) {

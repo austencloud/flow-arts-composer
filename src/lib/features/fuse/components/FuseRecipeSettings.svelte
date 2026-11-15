@@ -67,10 +67,14 @@
     { id: "style", label: "Style", value: summaries.style },
     { id: "starting", label: "Starting conditions", value: summaries.starting },
   ]);
+  // The rule editor is never a row in the list (on a phone it is opened from
+  // the Linked rule row under the switch), so it always opens on its own:
+  // a Back button would lead to a list that does not name it.
   const solo = $derived(
-    singleDestination &&
-      destination !== null &&
-      isFuseRecipeDestination(destination)
+    destination === "pairing" ||
+      (singleDestination &&
+        destination !== null &&
+        isFuseRecipeDestination(destination))
   );
 
   function selectDestination(id: string | null): void {

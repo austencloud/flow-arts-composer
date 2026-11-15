@@ -38,7 +38,7 @@
     dormant: boolean;
     onCardReady: () => void;
     onReadyForReveal: () => void;
-    onClose: (reason?: "navigate") => void;
+    onClose: (reason?: "navigate" | "escape") => void;
     shortCode: string | null;
     analyticsSource: SequenceViewerSource;
     shareOnOpen: boolean;

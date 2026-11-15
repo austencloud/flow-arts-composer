@@ -18,6 +18,37 @@ export const FAN_BUILDS = [
 ] as const;
 export type FanBuild = (typeof FAN_BUILDS)[number];
 
+/**
+ * A look modelled on a maker's product is offered once its maker has approved
+ * it. Turning one back on is a one-line change to this list.
+ */
+export const APPROVED_FAN_BUILDS: readonly FanBuild[] = ["pictograph", "sense"];
+
+/**
+ * Preview servers set VITE_MAKER_PREVIEW=1 to offer every build again, for
+ * recording a clip. It is off unless set, in dev and in production alike.
+ */
+const MAKER_PREVIEW = import.meta.env.VITE_MAKER_PREVIEW === "1";
+
+/** The builds offered right now. Pure functions take this as a parameter. */
+export const AVAILABLE_FAN_BUILDS: readonly FanBuild[] = MAKER_PREVIEW
+  ? FAN_BUILDS
+  : APPROVED_FAN_BUILDS;
+
+export function isFanBuildAvailable(
+  build: unknown,
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
+): build is FanBuild {
+  return typeof build === "string" && available.includes(build as FanBuild);
+}
+
+/** Fire when it is offered, otherwise the app's own Pictograph drawing. */
+export function defaultFanBuild(
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
+): FanBuild {
+  return available.includes("fire") ? "fire" : "pictograph";
+}
+
 export const FAN_FRAME_COLORS = ["black", "white"] as const;
 export type FanFrameColor = (typeof FAN_FRAME_COLORS)[number];
 
@@ -37,6 +68,12 @@ export interface PropBuildPreviewOption<T extends string> {
   imageScale?: number;
   /** The painted window of a grip-centred capture; see PropTileCrop. */
   crop?: PropTileCrop;
+  /**
+   * A look modelled on a maker's product, shown until its maker has approved
+   * it. It stays in the list so people can see it is coming, but it can never
+   * be chosen.
+   */
+  waitingOnMaker?: boolean;
   designCredit?: {
     originator: string;
     /** Absent until the originator names a product page. */
@@ -58,11 +95,12 @@ export const COMPACT_FAN_LOOKS = [
 export type CompactFanLook = (typeof COMPACT_FAN_LOOKS)[number];
 
 /**
- * New users see the measured DoodleGrip Fire build so the 2D canvas matches the
- * realistic 3D fan out of the box; Pictograph stays one tap away in the picker.
+ * New users see the measured DoodleGrip Fire build when it is offered, so the
+ * 2D canvas matches the realistic 3D fan out of the box. Until then the app's
+ * own Pictograph drawing is the default.
  */
 export const DEFAULT_FAN_APPEARANCE: FanAppearance = {
-  build: "fire",
+  build: defaultFanBuild(),
   frameColor: "black",
   cover: "bare",
 };
@@ -74,13 +112,20 @@ function includes<T extends string>(
   return typeof value === "string" && values.includes(value as T);
 }
 
+/**
+ * A stored build that is not offered reads as the default. Nothing is written
+ * back, so the stored choice returns if its look is offered later.
+ */
 export function normalizeFanAppearance(
-  value: Partial<FanAppearance> | null | undefined
+  value: Partial<FanAppearance> | null | undefined,
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
 ): FanAppearance {
   return {
-    build: includes(FAN_BUILDS, value?.build)
-      ? value.build
-      : DEFAULT_FAN_APPEARANCE.build,
+    build:
+      includes(FAN_BUILDS, value?.build) &&
+      isFanBuildAvailable(value.build, available)
+        ? value.build
+        : defaultFanBuild(available),
     frameColor: includes(FAN_FRAME_COLORS, value?.frameColor)
       ? value.frameColor
       : DEFAULT_FAN_APPEARANCE.frameColor,
@@ -286,7 +331,36 @@ export function fanPreviewImage(appearance: FanAppearance): string {
   )}?v=2`;
 }
 
+/**
+ * Marks each look available or waiting, then lists the available ones first.
+ * Each group keeps its own order.
+ */
+function approvedFirst<T extends string>(
+  options: readonly PropBuildPreviewOption<T>[],
+  isWaiting: (id: T) => boolean
+): readonly PropBuildPreviewOption<T>[] {
+  const marked = options.map((option) => ({
+    ...option,
+    waitingOnMaker: isWaiting(option.id),
+  }));
+  return [
+    ...marked.filter((option) => !option.waitingOnMaker),
+    ...marked.filter((option) => option.waitingOnMaker),
+  ];
+}
+
+/** Every look, the approved ones first and the waiting ones after. */
 export function fanBuildPreviewOptions(
+  appearance: FanAppearance,
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
+): readonly PropBuildPreviewOption<FanBuild>[] {
+  return approvedFirst(
+    allFanBuildPreviewOptions(appearance),
+    (id) => !available.includes(id)
+  );
+}
+
+function allFanBuildPreviewOptions(
   appearance: FanAppearance
 ): readonly PropBuildPreviewOption<FanBuild>[] {
   return [
@@ -382,12 +456,13 @@ export function fanBuildPreviewOptions(
  * DoodleGrip Fire covered rendering is an honest, direct visual choice here.
  */
 export function compactFanLookPreviewOptions(
-  appearance: FanAppearance
+  appearance: FanAppearance,
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
 ): readonly PropBuildPreviewOption<CompactFanLook>[] {
-  return [
-    ...fanBuildPreviewOptions({ ...appearance, cover: "bare" }),
+  const options: readonly PropBuildPreviewOption<CompactFanLook>[] = [
+    ...allFanBuildPreviewOptions({ ...appearance, cover: "bare" }),
     {
-      id: "covered-fire",
+      id: "covered-fire" as const,
       label: "Covered Fan",
       image: fanPreviewImage({
         ...appearance,
@@ -397,6 +472,40 @@ export function compactFanLookPreviewOptions(
       imageScale: 1.91,
     },
   ];
+  // The covered fan is the Fire build with its cover on, so it waits with it.
+  return approvedFirst(
+    options,
+    (id) => !available.includes(id === "covered-fire" ? "fire" : id)
+  );
+}
+
+/**
+ * What choosing a look writes, or null when the look is waiting on its maker.
+ * Every picker writes through these two, so a waiting look never becomes the
+ * active one, whatever the tile or key that asked for it.
+ */
+export function chooseFanBuild(
+  appearance: FanAppearance,
+  build: FanBuild,
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
+): FanAppearance | null {
+  return isFanBuildAvailable(build, available)
+    ? { ...appearance, build }
+    : null;
+}
+
+export function chooseCompactFanLook(
+  appearance: FanAppearance,
+  look: CompactFanLook,
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
+): FanAppearance | null {
+  const build = look === "covered-fire" ? "fire" : look;
+  if (!isFanBuildAvailable(build, available)) return null;
+  return {
+    ...appearance,
+    build,
+    cover: look === "covered-fire" ? "covered" : "bare",
+  };
 }
 
 export function fanFramePreviewOptions(

@@ -199,7 +199,9 @@
     [
       `"${compactSlots.join(" ")}"`,
       ...(rotationRow ? [spanRow("rotation")] : []),
-      spanRow("path"),
+      // The path row exists only while open: an empty row still took a row
+      // gap and made the card 6px taller than its one row of buttons.
+      ...(pathOpen ? [spanRow("path")] : []),
     ].join(" ")
   );
 
@@ -470,7 +472,9 @@
   }
 
   /* Compact card: the stepper (four buttons, a 36px value, 4px gaps = 228px)
-     shares its row with the rotation and Path buttons (4 + 44 + 4 + 44). */
+     shares its row with the rotation and Path buttons (4 + 44 + 4 + 44).
+     At the 36px phone size the seven controls need 7 x 36 + 6 x 4 = 276px,
+     inside this threshold, so the 44px figure decides it. */
   @container hand-card (min-width: 324px) {
     .turns-controls.compact {
       column-gap: 4px;
@@ -524,9 +528,13 @@
       box-shadow var(--duration-fast) var(--ease-standard);
   }
 
+  /* A compact host may set --turns-control-size (the step editor on a phone
+     uses the 36px phone control); the global button floor is lifted with it. */
   .ctrl-btn.compact {
-    width: var(--min-touch-target);
-    height: var(--min-touch-target);
+    width: var(--turns-control-size, var(--min-touch-target));
+    height: var(--turns-control-size, var(--min-touch-target));
+    min-width: 0;
+    min-height: 0;
     border-radius: 8px;
     font-size: 0.95rem;
   }
@@ -608,8 +616,10 @@
   /* Compact: icon-only square button, positioned before turns row */
   .invert-btn.compact {
     grid-area: rotation;
-    width: var(--min-touch-target);
-    height: var(--min-touch-target);
+    width: var(--turns-control-size, var(--min-touch-target));
+    height: var(--turns-control-size, var(--min-touch-target));
+    min-width: 0;
+    min-height: 0;
     padding: 0;
     border-radius: 8px;
     font-size: 0.95rem;
@@ -724,7 +734,10 @@
 
   .path-toggle.compact {
     grid-area: pathtoggle;
-    width: var(--min-touch-target);
+    width: var(--turns-control-size, var(--min-touch-target));
+    height: var(--turns-control-size, var(--min-touch-target));
+    min-width: 0;
+    min-height: 0;
     padding: 0;
     border-radius: 8px;
   }

@@ -189,3 +189,130 @@ describe("isPropPairKey", () => {
     ).toEqual([true, true, true, true, false]);
   });
 });
+
+describe("a chosen contact ball moves to Staff", () => {
+  const BALLS = [
+    PropType.CONTACTBALL,
+    PropType.BIGCONTACTBALL,
+    PropType.DOUBLECONTACTBALL,
+    PropType.BIGDOUBLECONTACTBALL,
+  ];
+
+  describe.each(BALLS)("%s", (ball) => {
+    it("in the left hand only: left lands on Staff, right is untouched", () => {
+      expect(
+        healPropPair({
+          leftPropType: ball,
+          rightPropType: PropType.FAN,
+          catDogMode: true,
+        })
+      ).toEqual({
+        leftPropType: PropType.STAFF,
+        rightPropType: PropType.FAN,
+        propType: PropType.STAFF,
+        catDogMode: true,
+      });
+    });
+
+    it("in the right hand only: right lands on Staff, left is untouched", () => {
+      expect(
+        healPropPair({
+          leftPropType: PropType.FAN,
+          rightPropType: ball,
+          catDogMode: true,
+        })
+      ).toMatchObject({
+        leftPropType: PropType.FAN,
+        rightPropType: PropType.STAFF,
+        catDogMode: true,
+      });
+    });
+
+    it("in both hands: both land on Staff and the flag goes off", () => {
+      expect(
+        healPropPair({
+          leftPropType: ball,
+          rightPropType: ball,
+          catDogMode: true,
+        })
+      ).toMatchObject({
+        leftPropType: PropType.STAFF,
+        rightPropType: PropType.STAFF,
+        catDogMode: false,
+      });
+    });
+
+    it("turns the flag off when the moved hand now matches the other", () => {
+      expect(
+        healPropPair({
+          leftPropType: PropType.STAFF,
+          rightPropType: ball,
+          catDogMode: true,
+        }).catDogMode
+      ).toBe(false);
+    });
+
+    it("a prop patch naming it lands on Staff", () => {
+      expect(
+        normalizePropPatch(plain, { propType: ball } as PropPairFields)
+      ).toMatchObject({
+        leftPropType: PropType.STAFF,
+        rightPropType: PropType.STAFF,
+        propType: PropType.STAFF,
+      });
+      expect(
+        normalizePropPatch(plain, {
+          rightPropType: ball,
+        } as PropPairFields)
+      ).toMatchObject({
+        rightPropType: PropType.STAFF,
+        propType: PropType.STAFF,
+      });
+    });
+  });
+
+  it("leaves a setting with no contact ball as it was", () => {
+    expect(healPropPair(mixed)).toEqual({ ...mixed, propType: PropType.STAFF });
+    expect(healPropPair({ ...plain, catDogMode: true }).catDogMode).toBe(true);
+  });
+
+  it("a preset holding one lands that hand on Staff, other hand kept", () => {
+    const out = normalizePropPatch(plain, {
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.CONTACTBALL,
+      catDogMode: true,
+    } as PropPairFields);
+    expect(out).toMatchObject({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.STAFF,
+      catDogMode: true,
+    });
+  });
+
+  it("a preset whose moved hand leaves the pair matching turns the flag off", () => {
+    const out = normalizePropPatch(plain, {
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.BIGCONTACTBALL,
+      catDogMode: true,
+    } as PropPairFields);
+    expect(out.catDogMode).toBe(false);
+  });
+
+  it("does not touch what a sequence saved with a contact ball resolves to", async () => {
+    const { resolveRecordedPropConfig } = await import(
+      "../../foundation/services/recorded-prop-intent"
+    );
+    const config = resolveRecordedPropConfig({
+      creatorIntent: {
+        propConfig: {
+          leftPropType: PropType.CONTACTBALL,
+          rightPropType: PropType.DOUBLECONTACTBALL,
+        },
+      },
+    } as never);
+    expect(config).toMatchObject({
+      leftPropType: PropType.CONTACTBALL,
+      rightPropType: PropType.DOUBLECONTACTBALL,
+    });
+  });
+});

@@ -15,6 +15,13 @@ import {
   resolveBubblePalette,
 } from "#lib/shared/effects/domain/bubble-palettes.js";
 import { type Rgb, blob, css, ground, hexToRgb, lcg } from "./tile-paint";
+import {
+  type Box,
+  type TileFormat,
+  frame,
+  isSmall,
+  unitsPerDisplayPx,
+} from "./tile-format";
 
 export type BubblesIntent = EffectConfigMap["bubbles"];
 export const BUBBLES_TILE_SEED = 0xb0b5;
@@ -130,16 +137,61 @@ function field(p: BubblesIntent, rand: Rand): Bubble[] {
   return out;
 }
 
+/** Small formats: a few big bubbles, the rim at least `rim` units wide. */
+const SMALL_VIEW: Record<"tile" | "chip", Box> = {
+  tile: { x: 80, y: 20, w: 560, h: 210 },
+  chip: { x: 210, y: 20, w: 300, h: 200 },
+};
+/** u, v (fractions of the view) and radius as a fraction of its height. */
+const SMALL_BUBBLES: Record<
+  "tile" | "chip",
+  readonly (readonly [number, number, number])[]
+> = {
+  tile: [
+    [0.3, 0.52, 0.4],
+    [0.6, 0.68, 0.22],
+    [0.74, 0.3, 0.18],
+    [0.89, 0.66, 0.11],
+  ],
+  chip: [
+    [0.38, 0.52, 0.36],
+    [0.78, 0.7, 0.17],
+    [0.74, 0.24, 0.12],
+  ],
+};
+
+function smallField(
+  p: BubblesIntent,
+  rand: Rand,
+  format: "tile" | "chip",
+  view: Box
+): Bubble[] {
+  const k = 0.92 + Math.min(0.16, p.intensity * 0.16);
+  return SMALL_BUBBLES[format].map(([u, v, rf], i) => ({
+    x: view.x + u * view.w,
+    y: view.y + v * view.h,
+    r: rf * view.h * k,
+    lifeT: 0.15 + i * 0.2,
+    alpha: 1,
+    filmPhase: rand(),
+    popping: false,
+    popT: 0,
+  }));
+}
+
 function drawBubble(
   ctx: CanvasRenderingContext2D,
   b: Bubble,
   pal: BubblePalette,
-  film: Film
+  film: Film,
+  minRim = 0
 ): void {
   const { x, y, r, alpha } = b;
   const rim = pal.iridescent ? oilIridescentRim(b.lifeT) : pal.rim;
-  const rimWidth =
-    Math.min(1.9, Math.max(0.65, (r * 0.055) / SCALE)) * SCALE * 0.8;
+  const rimWidth = Math.max(
+    minRim,
+    Math.min(1.9, Math.max(0.65, (r * 0.055) / SCALE)) * SCALE * 0.8
+  );
   ctx.lineCap = "round";
 
   if (b.popping) {
@@ -230,14 +282,15 @@ function drawBubble(
   const hi = hexToRgb(pal.highlight);
   const sx = x - r * 0.4;
   const sy = y - r * 0.44;
-  const spec = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 0.2);
+  const specR = r * (minRim > 0 ? 0.3 : 0.2);
+  const spec = ctx.createRadialGradient(sx, sy, 0, sx, sy, specR);
   spec.addColorStop(0, css(hi, 1));
-  spec.addColorStop(0.45, css(hi, 0.55));
+  spec.addColorStop(minRim > 0 ? 0.7 : 0.45, css(hi, minRim > 0 ? 0.9 : 0.55));
   spec.addColorStop(1, css(hi, 0));
   ctx.globalAlpha = alpha * 0.9;
   ctx.fillStyle = spec;
   ctx.beginPath();
-  ctx.arc(sx, sy, r * 0.2, 0, TAU);
+  ctx.arc(sx, sy, specR, 0, TAU);
   ctx.fill();
   if (r > 3 * SCALE) {
     const bx = x + r * 0.36;
@@ -255,9 +308,14 @@ function drawBubble(
 
 export function paintBubblesTile(
   ctx: CanvasRenderingContext2D,
-  intent: BubblesIntent
+  intent: BubblesIntent,
+  format: TileFormat = "card"
 ): void {
   const rand = lcg(BUBBLES_TILE_SEED);
+  if (isSmall(format)) {
+    paintSmall(ctx, intent, rand, format as "tile" | "chip");
+    return;
+  }
   const pal = resolveBubblePalette(intent);
   const film = filmOf(pal);
   ground(ctx, [0.03, 0.03, 0.055]);
@@ -269,5 +327,25 @@ export function paintBubblesTile(
   blob(ctx, 200, 170, 280, 140, film.rgb, 0.1 * wash);
   ctx.save();
   for (const b of field(intent, rand)) drawBubble(ctx, b, pal, film);
+  ctx.restore();
+}
+
+function paintSmall(
+  ctx: CanvasRenderingContext2D,
+  intent: BubblesIntent,
+  rand: Rand,
+  format: "tile" | "chip"
+): void {
+  const pal = resolveBubblePalette(intent);
+  const film = filmOf(pal);
+  const view = frame(ctx, format, SMALL_VIEW[format], 0);
+  ground(ctx, [0.03, 0.03, 0.055]);
+  // A film-coloured wash behind the cluster, so the clear bubbles catch it.
+  blob(ctx, view.x + view.w * 0.5, view.y + view.h * 0.55, view.w * 0.6, view.h * 0.75, film.rgb, 0.3);
+  const minRim = 1.5 * unitsPerDisplayPx(view, format);
+  ctx.save();
+  for (const b of smallField(intent, rand, format, view)) {
+    drawBubble(ctx, b, pal, film, minRim);
+  }
   ctx.restore();
 }

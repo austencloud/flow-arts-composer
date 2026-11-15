@@ -12,6 +12,7 @@ import {
   videoOverlaysFrom,
   type VideoOverlays,
 } from "#lib/shared/video-export/domain/video-overlays.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 const allOn = Object.fromEntries(
   VIDEO_OVERLAY_KEYS.map((key) => [key, true])
@@ -61,6 +62,28 @@ describe("video overlays", () => {
     canvas.wordHeader = false;
     const off = videoOverlaysFrom((key) => canvas[key]!, true);
     for (const key of VIDEO_HEADER_KEYS) expect(off[key]).toBe(false);
+  });
+
+  // The viewer's Display panel no longer offers Word or Progress bar, but the
+  // keys stay, so a first Download video list still starts from them.
+  it("seeds a first list from the canvas defaults with the header and progress bar on", () => {
+    const canvas = new AnimationVisibilityStateManager({ ephemeral: true });
+    const overlays = videoOverlaysFrom(
+      (key) => canvas.getVisibility(key),
+      canvas.isGridVisible()
+    );
+    expect(overlays).toEqual({
+      headerWord: true,
+      headerLevel: true,
+      headerTurns: true,
+      headerReversals: true,
+      headerLoop: true,
+      tkaGlyph: true,
+      stepNumbers: true,
+      elementalGlyph: false,
+      grid: true,
+      progressBar: true,
+    });
   });
 
   it("accepts only a complete on/off list", () => {

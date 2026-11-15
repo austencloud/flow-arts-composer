@@ -17,6 +17,7 @@ vi.mock("#lib/shared/auth/firebase.js", () => ({
 
 import {
   download,
+  prefetch,
   upload,
   cellPublicUrl,
   isCellKnownAvailable,
@@ -60,6 +61,32 @@ describe("pictograph-cloud-cache", () => {
       await download("not-yet-uploaded", { probeUnknown: false })
     ).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("a scan's early download hands its bytes to the card's request", async () => {
+    // Cells are served with max-age=0, so only this hand-off avoids a second
+    // round trip when the card asks for a cell the scan page already fetched.
+    const blob = new Blob(["img"], { type: "image/webp" });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) });
+    vi.stubGlobal("fetch", fetchMock);
+    prefetch("early");
+    prefetch("early");
+    expect(await download("early")).toBe(blob);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("a failed early download falls back to the card's own request", async () => {
+    const blob = new Blob(["img"], { type: "image/webp" });
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) });
+    vi.stubGlobal("fetch", fetchMock);
+    prefetch("flaky");
+    expect(await download("flaky")).toBe(blob);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("download never throws on network error", async () => {

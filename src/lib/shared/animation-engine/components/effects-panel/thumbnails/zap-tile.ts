@@ -15,6 +15,7 @@ import {
   lcg,
   terminal,
 } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type ZapIntent = EffectConfigMap["zap"];
 export const ZAP_TILE_SEED = 0x2a17;
@@ -62,19 +63,66 @@ function grad(
   return g;
 }
 
+/**
+ * How a format weights the bolt. The small formats frame the bolt between its
+ * two ends, draw the trunk several times thicker (a 2.4px line is under a
+ * pixel at 74px wide) and keep one or two forks.
+ */
+interface ZapStyle {
+  A: Point;
+  B: Point;
+  /** Line weight multiplier. */
+  k: number;
+  /** Glow and terminal multiplier. */
+  halo: number;
+  forks: number;
+  /** Jag amplitude multiplier. */
+  amp: number;
+  view: Box | null;
+}
+const CARD_STYLE: ZapStyle = {
+  A: { x: 150, y: 140 },
+  B: { x: 570, y: 130 },
+  k: 1,
+  halo: 1,
+  forks: 8,
+  amp: 1,
+  view: null,
+};
+const SMALL_STYLE: Record<"tile" | "chip", ZapStyle> = {
+  tile: {
+    A: { x: 130, y: 140 },
+    B: { x: 590, y: 128 },
+    k: 1.9,
+    halo: 0.8,
+    forks: 2,
+    amp: 1.15,
+    view: { x: 75, y: 32, w: 570, h: 213.75 },
+  },
+  chip: {
+    A: { x: 215, y: 150 },
+    B: { x: 505, y: 120 },
+    k: 2.5,
+    halo: 0.9,
+    forks: 1,
+    amp: 0.8,
+    view: { x: 170, y: 20, w: 380, h: 253.3 },
+  },
+};
+
 function drawStorm(
   ctx: CanvasRenderingContext2D,
   p: ZapIntent,
-  rand: Rand
+  rand: Rand,
+  st: ZapStyle
 ): void {
-  const A: Point = { x: 150, y: 140 };
-  const B: Point = { x: 570, y: 130 };
-  const width = 2 * SCALE;
-  const glow = 12 * SCALE * (0.5 + p.glow);
+  const { A, B } = st;
+  const width = 2 * SCALE * st.k;
+  const glow = 12 * SCALE * (0.5 + p.glow) * st.halo;
   const jf = 0.35 + p.jitter * 1.3;
-  const amp = Math.min(420 * 0.18, 34 * SCALE) * jf;
+  const amp = Math.min(420 * 0.18, 34 * SCALE) * jf * st.amp;
   // Ghost strikes: the multi-strike flicker, one faint earlier path per ~6 strikes/s.
-  const ghosts = Math.round(p.frequency / 6);
+  const ghosts = isSmallStyle(st) ? 0 : Math.round(p.frequency / 6);
   for (let g = 0; g < ghosts; g += 1) {
     const pts = jag(A, B, amp * 1.2, rand);
     glowStroke(
@@ -91,12 +139,12 @@ function drawStorm(
   const main = jag(A, B, amp, rand);
   // Forks: count and reach scale with branching. Each fork leaves the main
   // bolt as a real limb, thick at the root, forking once itself, not a wisp.
-  const forks = Math.round(1 + p.branching * 7);
+  const forks = Math.min(st.forks, Math.round(1 + p.branching * 7));
   for (let f = 0; f < forks; f += 1) {
     const i = 4 + Math.floor(rand() * (main.length - 8));
     const o = main[i]!;
     const ang = (rand() - 0.5) * 2.2 + (rand() < 0.5 ? -0.9 : 0.9);
-    let len = (60 + rand() * 110) * (0.5 + p.branching) * SCALE * 0.5;
+    let len = (60 + rand() * 110) * (0.5 + p.branching) * SCALE * 0.5 * (isSmallStyle(st) ? 0.7 : 1);
     // Forks stay inside the tile: a bolt that leaves the frame reads as cropped.
     const yEnd = o.y + Math.sin(ang) * len;
     if (yEnd < 28) len *= (o.y - 28) / (o.y - yEnd);
@@ -107,7 +155,7 @@ function drawStorm(
     };
     const col = i < main.length / 2 ? p.leftColor : p.rightColor;
     const limb = jag(o, tip, amp * 0.4, rand, 3);
-    glowStroke(ctx, limb, width * 0.75, col, glow * 0.8, p.intensity * 0.85);
+    glowStroke(ctx, limb, width * 0.6, col, glow * 0.8, p.intensity * 0.85);
     // Secondary fork off the limb.
     const k = Math.floor(limb.length * (0.35 + rand() * 0.3));
     const s = limb[k]!;
@@ -152,23 +200,27 @@ function drawStorm(
     "#fff",
     "#ffffff"
   );
-  terminal(ctx, A.x, A.y, 22 * SCALE, p.leftColor, p.intensity);
-  terminal(ctx, B.x, B.y, 22 * SCALE, p.rightColor, p.intensity);
+  terminal(ctx, A.x, A.y, 22 * SCALE * st.halo, p.leftColor, p.intensity);
+  terminal(ctx, B.x, B.y, 22 * SCALE * st.halo, p.rightColor, p.intensity);
+}
+
+function isSmallStyle(st: ZapStyle): boolean {
+  return st.view !== null;
 }
 
 function drawPlasma(
   ctx: CanvasRenderingContext2D,
   p: ZapIntent,
-  rand: Rand
+  rand: Rand,
+  st: ZapStyle
 ): void {
-  const A: Point = { x: 150, y: 140 };
-  const B: Point = { x: 570, y: 130 };
-  const width = 5 * SCALE;
-  const glow = 20 * SCALE * (0.5 + p.glow);
+  const { A, B } = st;
+  const width = 5 * SCALE * (isSmallStyle(st) ? st.k * 0.5 : 1);
+  const glow = 20 * SCALE * (0.5 + p.glow) * st.halo;
   // A sustained wobbling conduit: sine wobble plus a little jitter, no forks.
   const N = 48;
   const pts: Point[] = [];
-  const wob = p.wobbleAmount * 26 * SCALE * 0.5;
+  const wob = p.wobbleAmount * 26 * SCALE * 0.5 * st.amp;
   for (let i = 0; i <= N; i += 1) {
     const t = i / N;
     const x = A.x + (B.x - A.x) * t;
@@ -192,7 +244,7 @@ function drawPlasma(
   );
   glowStroke(ctx, pts, width, p.leftColor, glow, p.intensity, "#fff", g);
   // Sputter sparks shedding off the arc: count follows frequency.
-  const sparks = Math.round(p.frequency * 2.2);
+  const sparks = isSmallStyle(st) ? Math.min(5, Math.round(p.frequency * 0.6)) : Math.round(p.frequency * 2.2);
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   for (let s = 0; s < sparks; s += 1) {
@@ -211,8 +263,8 @@ function drawPlasma(
     ctx.fill();
   }
   ctx.restore();
-  terminal(ctx, A.x, A.y, 26 * SCALE, p.leftColor, p.intensity);
-  terminal(ctx, B.x, B.y, 26 * SCALE, p.rightColor, p.intensity);
+  terminal(ctx, A.x, A.y, 26 * SCALE * st.halo, p.leftColor, p.intensity);
+  terminal(ctx, B.x, B.y, 26 * SCALE * st.halo, p.rightColor, p.intensity);
 }
 
 interface WebNode extends Point {
@@ -222,17 +274,32 @@ interface WebNode extends Point {
 function drawWeb(
   ctx: CanvasRenderingContext2D,
   p: ZapIntent,
-  rand: Rand
+  rand: Rand,
+  st: ZapStyle
 ): void {
   // Four tips: both ends of each prop, so the mesh has same-prop and cross-prop edges.
-  const nodes: WebNode[] = [
-    { x: 170, y: 72, left: true },
-    { x: 140, y: 205, left: true },
-    { x: 555, y: 65, left: false },
-    { x: 585, y: 198, left: false },
-  ];
+  const nodes: WebNode[] = isSmallStyle(st)
+    ? st.A.x < 200
+      ? [
+          { x: 175, y: 70, left: true },
+          { x: 155, y: 200, left: true },
+          { x: 545, y: 66, left: false },
+          { x: 565, y: 196, left: false },
+        ]
+      : [
+          { x: 225, y: 60, left: true },
+          { x: 215, y: 215, left: true },
+          { x: 495, y: 58, left: false },
+          { x: 505, y: 212, left: false },
+        ]
+    : [
+        { x: 170, y: 72, left: true },
+        { x: 140, y: 205, left: true },
+        { x: 555, y: 65, left: false },
+        { x: 585, y: 198, left: false },
+      ];
   const jf = 0.35 + p.jitter * 1.3;
-  const glow = 12 * SCALE * (0.5 + p.glow);
+  const glow = 12 * SCALE * (0.5 + p.glow) * st.halo;
   for (let i = 0; i < nodes.length; i += 1) {
     for (let j = i + 1; j < nodes.length; j += 1) {
       const A = nodes[i]!;
@@ -247,7 +314,7 @@ function drawWeb(
         rand,
         4
       );
-      const width = 2 * SCALE * (same ? 0.8 : 0.55);
+      const width = 2 * SCALE * st.k * (same ? 0.8 : 0.6);
       glowStroke(ctx, pts, width, col, glow, p.intensity * (same ? 0.8 : 0.5));
       // A charge pulse travelling the edge.
       const t = 0.25 + rand() * 0.5;
@@ -260,7 +327,7 @@ function drawWeb(
       ctx.fillStyle = "#fff";
       ctx.globalAlpha = p.intensity;
       ctx.beginPath();
-      ctx.arc(q.x, q.y, 2.4 * SCALE, 0, Math.PI * 2);
+      ctx.arc(q.x, q.y, 2.4 * SCALE * (isSmallStyle(st) ? st.k * 0.6 : 1), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -270,7 +337,7 @@ function drawWeb(
       ctx,
       n.x,
       n.y,
-      18 * SCALE,
+      18 * SCALE * st.halo * (isSmallStyle(st) ? 1.1 : 1),
       n.left ? p.leftColor : p.rightColor,
       p.intensity
     );
@@ -279,21 +346,26 @@ function drawWeb(
 
 export function paintZapTile(
   ctx: CanvasRenderingContext2D,
-  intent: ZapIntent
+  intent: ZapIntent,
+  format: TileFormat = "card"
 ): void {
   const rand = lcg(ZAP_TILE_SEED);
+  const st = isSmall(format)
+    ? SMALL_STYLE[format as "tile" | "chip"]
+    : CARD_STYLE;
+  if (st.view) frame(ctx, format, st.view, 0);
   ground(ctx, [0.03, 0.03, 0.06]);
   // Faint ambient wash in the prop colors so the bolt sits in its own light.
-  blob(ctx, 150, 140, 150, 110, hexToRgb(intent.leftColor), 0.12);
-  blob(ctx, 570, 130, 150, 110, hexToRgb(intent.rightColor), 0.12);
+  blob(ctx, st.A.x, st.A.y, 150, 110, hexToRgb(intent.leftColor), 0.12);
+  blob(ctx, st.B.x, st.B.y, 150, 110, hexToRgb(intent.rightColor), 0.12);
   switch (intent.style) {
     case "plasma":
-      drawPlasma(ctx, intent, rand);
+      drawPlasma(ctx, intent, rand, st);
       break;
     case "web":
-      drawWeb(ctx, intent, rand);
+      drawWeb(ctx, intent, rand, st);
       break;
     default:
-      drawStorm(ctx, intent, rand);
+      drawStorm(ctx, intent, rand, st);
   }
 }

@@ -1,90 +1,79 @@
 import { describe, expect, it } from "vitest";
 import {
+  LAP_MS,
   NUMBERS_CEILING,
-  WAIT_CEILING,
+  OPENING_REACH,
   creepPoints,
+  dashFor,
   drawKeyframes,
   finishDuration,
+  finishPoints,
   fractionAt,
   numbersTarget,
   openingPoints,
   stepPoints,
+  stillLength,
+  travelAnimation,
 } from "./card-arrival-progress.js";
 
-// A drawing that finishes early, stops, or steps backwards still looks like a
-// mandala in any one frame; only the numbers over time show it.
+// A drawing that completes early or grows to a finished-looking figure on a
+// long wait still looks like a mandala in any one frame; only the numbers
+// over time show it.
+
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
 
 describe("openingPoints", () => {
-  it("opens quickly, then draws 3% of the line a second", () => {
+  it("opens quickly to the opening length and keeps it, however long the wait", () => {
     const opening = openingPoints();
     const at = (ms: number) => fractionAt(opening, ms);
     expect(at(0)).toBe(0);
-    expect(at(500)).toBeCloseTo(0.185, 2);
-    expect(at(1000)).toBeCloseTo(0.273, 2);
-    expect(at(2000)).toBeCloseTo(0.349, 2);
-    expect(at(4000)).toBeCloseTo(0.42, 2);
-    expect(at(8000)).toBeCloseTo(0.54, 2);
-    expect(at(12_000)).toBeCloseTo(0.66, 2);
+    expect(at(1 * SECOND)).toBeCloseTo(0.243, 2);
+    expect(at(30 * SECOND)).toBe(OPENING_REACH);
+    expect(at(5 * MINUTE)).toBe(OPENING_REACH);
   });
 
-  it("never slows below a pace a reader can see until it is nearly drawn", () => {
+  it("never grows past the opening length on a clock", () => {
     const opening = openingPoints();
-    for (let ms = 0; ms < 20_000; ms += 250) {
-      const gained = fractionAt(opening, ms + 250) - fractionAt(opening, ms);
-      expect(gained).toBeGreaterThanOrEqual(0.0074);
+    for (let ms = 0; ms <= 10 * MINUTE; ms += 500) {
+      expect(fractionAt(opening, ms)).toBeLessThanOrEqual(OPENING_REACH);
     }
-  });
-
-  it("slows past the numbers' ceiling and stops short of complete", () => {
-    const opening = openingPoints();
-    expect(fractionAt(opening, 20_000)).toBeCloseTo(NUMBERS_CEILING, 3);
-    expect(fractionAt(opening, 23_500)).toBeCloseTo(0.935, 3);
-    expect(fractionAt(opening, 60_000)).toBe(WAIT_CEILING);
+    expect(OPENING_REACH).toBeLessThan(NUMBERS_CEILING);
   });
 });
 
-describe("creepPoints", () => {
-  it("follows t / (t + 1.2 s) of the way to its ceiling", () => {
-    const creep = creepPoints(0, 0.6);
-    const expected = (ms: number) => (0.6 * ms) / (ms + 1200);
-    for (const ms of [500, 1000, 2000, 5000, 10_000]) {
-      expect(fractionAt(creep, ms)).toBeCloseTo(expected(ms), 2);
-    }
-  });
-
-  it("keeps moving and never reaches its ceiling", () => {
-    const creep = creepPoints(0.9, WAIT_CEILING);
-    let before = fractionAt(creep, 0);
-    expect(before).toBe(0.9);
-    for (let ms = 400; ms <= 30_000; ms += 400) {
-      const now = fractionAt(creep, ms);
-      expect(now).toBeGreaterThan(before);
-      expect(now).toBeLessThan(WAIT_CEILING);
-      before = now;
-    }
-  });
-
-  it("holds its line when it is already past the ceiling", () => {
-    const creep = creepPoints(0.95, 0.9);
-    expect(fractionAt(creep, 0)).toBe(0.95);
-    expect(fractionAt(creep, 20_000)).toBe(0.95);
-  });
-});
-
-describe("numbersTarget", () => {
-  it("counts from where the line was to the numbers' ceiling", () => {
+describe("step numbers", () => {
+  it("move the length from where it was toward the ceiling", () => {
     expect(numbersTarget(0.3, 0, 8)).toBe(0.3);
-    expect(numbersTarget(0.3, 4, 8)).toBeCloseTo(0.6, 10);
+    expect(numbersTarget(0.3, 4, 8)).toBeCloseTo(0.5, 10);
     expect(numbersTarget(0.3, 8, 8)).toBeCloseTo(NUMBERS_CEILING, 10);
   });
 
-  it("does not pull back a line already past the ceiling", () => {
-    expect(numbersTarget(0.95, 3, 8)).toBe(0.95);
+  it("never take the length past the ceiling before the picture is ready", () => {
+    // A whole counted render, step by step, then a long wait after the last.
+    const of = 12;
+    let now = OPENING_REACH;
+    for (let done = 1; done <= of; done++) {
+      const target = numbersTarget(OPENING_REACH, done, of);
+      const rest =
+        target +
+        (numbersTarget(OPENING_REACH, done + 1, of) - target) * 0.8;
+      const points = stepPoints(now, target, rest, 280);
+      for (let ms = 0; ms <= 5 * MINUTE; ms += 1000) {
+        expect(fractionAt(points, ms)).toBeLessThanOrEqual(NUMBERS_CEILING);
+      }
+      now = fractionAt(points, 400);
+    }
+    const after = stepPoints(now, NUMBERS_CEILING, NUMBERS_CEILING, 280);
+    expect(fractionAt(after, 5 * MINUTE)).toBeCloseTo(NUMBERS_CEILING, 10);
+    expect(fractionAt(after, 5 * MINUTE)).toBeLessThan(1);
   });
-});
 
-describe("stepPoints", () => {
-  it("reaches the step's target after the ease and creeps short of the rest", () => {
+  it("does not pull back a length already past the ceiling", () => {
+    expect(numbersTarget(0.9, 3, 8)).toBe(0.9);
+  });
+
+  it("ease to the step's target, then creep short of the rest", () => {
     const points = stepPoints(0.3, 0.4, 0.48, 280);
     expect(fractionAt(points, 0)).toBe(0.3);
     expect(fractionAt(points, 280)).toBeCloseTo(0.4, 10);
@@ -96,9 +85,34 @@ describe("stepPoints", () => {
       before = now;
     }
   });
+
+  it("hold the length when the creep's ceiling is behind it", () => {
+    const creep = creepPoints(0.8, 0.7);
+    expect(fractionAt(creep, 0)).toBe(0.8);
+    expect(fractionAt(creep, 20_000)).toBe(0.8);
+  });
 });
 
-describe("finishDuration", () => {
+describe("stillLength", () => {
+  it("shows an unfinished drawing under reduced motion", () => {
+    expect(stillLength(null)).toBe(OPENING_REACH);
+    expect(stillLength({ done: 4, of: 8 })).toBeCloseTo(0.5, 10);
+    expect(stillLength({ done: 8, of: 8 })).toBeCloseTo(NUMBERS_CEILING, 10);
+  });
+});
+
+describe("the finish", () => {
+  it("closes the gap from the current length", () => {
+    const from = OPENING_REACH;
+    const ms = finishDuration(1 - from, 280, 800);
+    const points = finishPoints(from, ms);
+    expect(fractionAt(points, 0)).toBe(from);
+    expect(fractionAt(points, ms / 2)).toBeCloseTo((from + 1) / 2, 10);
+    expect(fractionAt(points, ms)).toBe(1);
+    const late = finishPoints(NUMBERS_CEILING, 280);
+    expect(fractionAt(late, 0)).toBe(NUMBERS_CEILING);
+  });
+
   it("grows with what is left, between emphasis and three quarters of a scene", () => {
     expect(finishDuration(0.03, 280, 800)).toBe(280);
     expect(finishDuration(0.5, 280, 800)).toBe(400);
@@ -107,19 +121,40 @@ describe("finishDuration", () => {
 });
 
 describe("drawKeyframes", () => {
-  it("lays a stretch out as dash offsets in time order", () => {
+  it("lays a stretch out as one dash and its gap, in time order", () => {
     const points = stepPoints(0.2, 0.5, 0.6, 280);
     const { keyframes, duration } = drawKeyframes(points);
     expect(duration).toBe(points[points.length - 1]!.at);
-    expect(keyframes[0]).toEqual({ strokeDashoffset: 0.8, offset: 0 });
+    expect(keyframes[0]).toEqual({ strokeDasharray: "0.2 0.8", offset: 0 });
     expect(keyframes[keyframes.length - 1]!.offset).toBe(1);
     const offsets = keyframes.map((k) => Number(k.offset));
     expect([...offsets].sort((a, b) => a - b)).toEqual(offsets);
   });
 
-  it("shows a finished drawing at once for a stretch with no length", () => {
-    const { keyframes, duration } = drawKeyframes([{ at: 0, d: 1 }]);
+  it("shows a fixed length at once for a stretch with no duration", () => {
+    const { keyframes, duration } = drawKeyframes([{ at: 0, d: 0.3 }]);
     expect(duration).toBe(0);
-    expect(keyframes.every((k) => k.strokeDashoffset === 0)).toBe(true);
+    expect(keyframes.every((k) => k.strokeDasharray === "0.3 0.7")).toBe(true);
+  });
+
+  it("keeps the dash and gap inside one path length", () => {
+    expect(dashFor(1)).toBe("1 0");
+    expect(dashFor(1.2)).toBe("1 0");
+    expect(dashFor(-0.1)).toBe("0 1");
+  });
+});
+
+describe("travelAnimation", () => {
+  it("slides one whole period a lap, evenly and for ever", () => {
+    const { keyframes, timing } = travelAnimation();
+    expect(keyframes).toEqual([
+      { strokeDashoffset: 1 },
+      { strokeDashoffset: 0 },
+    ]);
+    expect(timing.duration).toBe(LAP_MS);
+    expect(LAP_MS).toBeGreaterThanOrEqual(6000);
+    expect(LAP_MS).toBeLessThanOrEqual(8000);
+    expect(timing.iterations).toBe(Infinity);
+    expect(timing.easing).toBe("linear");
   });
 });

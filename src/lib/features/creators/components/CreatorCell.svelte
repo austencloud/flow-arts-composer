@@ -28,9 +28,9 @@
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import FollowButton from "#lib/shared/community/components/FollowButton.svelte";
   import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
-  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { creatorListingStatus } from "#lib/shared/community/domain/listed-creator.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
@@ -73,7 +73,7 @@
   }: Props = $props();
 
   const prop = $derived(getEffectiveProp(creator));
-  const propLabel = $derived(prop ? getPropTypeDisplayInfo(prop)?.label : null);
+  const propLabel = $derived(prop ? localizedPropName(prop) : null);
   const ringTone = $derived(ringToneFor(band));
 
   // The two creators with no lastActiveAt did not "fail to report" — they

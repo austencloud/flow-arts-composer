@@ -5,8 +5,8 @@
  * Extracted from OptionViewer.svelte.
  */
 
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import {
-  formatSectionHeader,
   getColoredText,
   getColoredTextParts,
   type ColoredTextPart,
@@ -112,6 +112,25 @@ export const LETTER_TYPE_DESCRIPTORS = {
   ),
 } as const;
 
+/**
+ * The type or group name in the visitor's language: "Type 1", "Types 4-6".
+ * The descriptors keep the English name as the source.
+ */
+export function localizedTypeName(
+  descriptor: Pick<LetterTypeDescriptor | LetterTypeGroupDescriptor, "typeName">
+): string {
+  const range = /^Types (.+)$/.exec(descriptor.typeName)?.[1];
+  if (range) return t("create_type_name_range", { range });
+  const number = /^Type (.+)$/.exec(descriptor.typeName)?.[1];
+  return number
+    ? t("create_type_name_single", { number })
+    : descriptor.typeName;
+}
+
+function joinTypeNames(names: ReadonlyArray<string>): string {
+  return names.join(t("create_type_list_separator"));
+}
+
 function letterTypeGroup(
   key: LetterTypeGroupKey,
   typeName: string,
@@ -152,7 +171,7 @@ export function getLetterTypeGroupPresentation(
     resolveDescription(LETTER_TYPE_DESCRIPTORS[memberKey])
   );
   const coloredParts = descriptions.flatMap((description, index) => [
-    ...(index === 0 ? [] : [{ text: ", " }]),
+    ...(index === 0 ? [] : [{ text: t("create_type_list_separator") }]),
     ...getColoredTextParts(description),
   ]);
   const paletteColors = [
@@ -166,10 +185,30 @@ export function getLetterTypeGroupPresentation(
   ];
 
   return {
-    accessibleName: `${group.typeName}: ${descriptions.join(", ")}`,
+    accessibleName: t("create_type_group_label", {
+      type: localizedTypeName(group),
+      names: joinTypeNames(descriptions),
+    }),
     coloredParts,
     paletteColors,
   };
+}
+
+// The header joins the type name and its coloured names with the language's
+// own label pattern ("Type 2: Shift", "類型 2：Shift"), keeping a space after an
+// ASCII colon from breaking the line.
+function joinHeader(typeHtml: string, namesHtml: string): string {
+  return t("create_type_group_label", { type: typeHtml, names: namesHtml }).replace(
+    /: /g,
+    ":&nbsp;"
+  );
+}
+
+function escapeHeaderText(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 export function formatSectionTitle(
@@ -189,13 +228,18 @@ export function formatSectionTitle(
     const staticText = getColoredText(
       resolveDescription(LETTER_TYPE_DESCRIPTORS.Type6)
     );
-    return `Types 4-6:&nbsp;${dash},&nbsp;${dualDash},&nbsp;${staticText}`;
+    const separator = t("create_type_list_separator").replace(/ /g, "&nbsp;");
+    const range = localizedTypeName({ typeName: "Types 4-6" });
+    return joinHeader(range, [dash, dualDash, staticText].join(separator));
   }
 
   // Handle individual types
   const typeInfo = getTypeDescription(rawTitle);
   if (typeInfo) {
-    return formatSectionHeader(typeInfo.typeName, resolveDescription(typeInfo));
+    return joinHeader(
+      escapeHeaderText(localizedTypeName(typeInfo)),
+      getColoredText(resolveDescription(typeInfo))
+    );
   }
 
   return rawTitle;

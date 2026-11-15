@@ -479,8 +479,8 @@
                 animateContent={true}
                 leftPropType={PropType.HAND}
                 rightPropType={PropType.HAND}
-                leftNoun="left hand"
-                rightNoun="right hand"
+                leftNoun={t("pictograph_placement_noun_left_hand")}
+                rightNoun={t("pictograph_placement_noun_right_hand")}
                 promptText=""
                 initialLeftLocation={preset.left}
                 initialRightLocation={preset.right}

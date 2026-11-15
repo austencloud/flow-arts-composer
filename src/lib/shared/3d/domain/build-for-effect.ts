@@ -1,5 +1,9 @@
 import type { PropBuild } from "@austencloud/scene-3d";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import {
+  AVAILABLE_FAN_BUILDS,
+  type FanBuild,
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 
 /**
@@ -17,7 +21,9 @@ import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
  * build switch and not as the app taking the prop away.
  *
  * Props with no fire build in the catalog (chicken, buugeng, hoop, sword,
- * guitar) return `null` and burn as they are. Real fire hoops and fire buugeng
+ * guitar) return `null` and burn as they are. So does a fan whose target build
+ * is not offered yet (a look modelled on a maker's product waits for its
+ * maker's approval): the effect plays on the build in hand. Real fire hoops and fire buugeng
  * exist; gating them out would encode our missing model as the prop's limit.
  */
 export interface PropBuildEquip {
@@ -111,19 +117,22 @@ function equipProp(
 
 function fireEquip(
   propType: PropType,
-  current: EffectPropBuild
+  current: EffectPropBuild,
+  available: readonly FanBuild[]
 ): PropBuildEquip | null {
   // Physical fire builds burn from five wicks. Keep the fan the performer
   // chose and only uncover it; pictograph and day builds still equip DoodleGrip.
   if (FAN_PROPS.has(propType)) {
     if (
-      current.fanBuild === "fire" ||
-      current.fanBuild === "lotus" ||
-      current.fanBuild === "flat-grip" ||
-      current.fanBuild === "star"
+      available.includes(current.fanBuild as FanBuild) &&
+      (current.fanBuild === "fire" ||
+        current.fanBuild === "lotus" ||
+        current.fanBuild === "flat-grip" ||
+        current.fanBuild === "star")
     ) {
       return equipBuild({ fanCover: "bare" }, current);
     }
+    if (!available.includes("fire")) return null;
     return equipBuild({ fanBuild: "fire", fanCover: "bare" }, current);
   }
 
@@ -147,11 +156,12 @@ function fireEquip(
 export function buildForEffect(
   propType: PropType,
   effect: EffectType | null,
-  current: EffectPropBuild
+  current: EffectPropBuild,
+  available: readonly FanBuild[] = AVAILABLE_FAN_BUILDS
 ): PropBuildEquip | null {
   switch (effect) {
     case "fire":
-      return fireEquip(propType, current);
+      return fireEquip(propType, current, available);
     case "led":
       if (FAN_PROPS.has(propType)) {
         // Internal model review can select Astral explicitly. Enabling LEDs
@@ -159,6 +169,7 @@ export function buildForEffect(
         if (current.fanBuild === "astral") {
           return equipBuild({ fanCover: "bare" }, current);
         }
+        if (!available.includes("moon")) return null;
         return equipBuild({ fanBuild: "moon", fanCover: "bare" }, current);
       }
       return equipProp(DOUBLE_STAFF_FAMILY, PropType.CAPSULE_BATON, propType);

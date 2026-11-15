@@ -41,6 +41,7 @@ Features:
   import {
     CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS,
     CONSTRUCT_TYPE_RAIL_WIDTH,
+    constructPhoneGridGutter,
   } from "../../../services/construct-phone-split";
   import OptionPicker456Group from "./OptionViewer456Group.svelte";
   import OptionViewerSection from "./OptionViewerSection.svelte";
@@ -130,6 +131,11 @@ Features:
   }
 
   const initialPanelIndex = getInitialPanelIndex();
+
+  // The phone tier's side gutters; wider tiers keep the grid's own insets.
+  const gridGutter = $derived(
+    phoneTier ? constructPhoneGridGutter(typeRail) : undefined
+  );
 
   // ===== State =====
   let contentAreaBounds = $state<{
@@ -275,6 +281,14 @@ Features:
       )
     );
   }
+  function optionCountLabel(name: string, count: number): string {
+    return t(
+      count === 1
+        ? "create_type_option_count_one"
+        : "create_type_option_count_other",
+      { name, count }
+    );
+  }
   const activeGroupKey = $derived(activeGroup.key);
   const activeGroupPresentation = $derived(
     getLocalizedGroupPresentation(activeGroup)
@@ -296,9 +310,7 @@ Features:
       return {
         value: group.key,
         label: presentation.accessibleName,
-        ariaLabel: `${presentation.accessibleName}, ${optionCount} ${
-          optionCount === 1 ? "option" : "options"
-        }`,
+        ariaLabel: optionCountLabel(presentation.accessibleName, optionCount),
         id: `${componentId}-type-tab-${index}`,
         controls: `${componentId}-type-panel-${index}`,
       };
@@ -500,8 +512,7 @@ Features:
     </div>
 
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-      {activeGroupPresentation.accessibleName}, {activeOptionCount}
-      {activeOptionCount === 1 ? "option" : "options"}
+      {optionCountLabel(activeGroupPresentation.accessibleName, activeOptionCount)}
     </p>
   </div>
 {/snippet}
@@ -679,6 +690,7 @@ Features:
                   gridGap={layoutConfig?.gridGap || "8px"}
                   {currentSequence}
                   {contentAreaBounds}
+                  inlineGutter={gridGutter}
                 />
               {:else}
                 <!-- Individual section (Types 1-3) -->
@@ -690,6 +702,7 @@ Features:
                   {currentSequence}
                   {contentAreaBounds}
                   headerOnlyWithRoom={phoneTier}
+                  inlineGutter={gridGutter}
                   columnOptions={(railColumns ?? (typeRail && phoneTier))
                     ? CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS
                     : undefined}
@@ -799,13 +812,17 @@ Features:
       var(--theme-panel-bg, rgba(10, 18, 30, 0.98))
     );
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    border-bottom: 0;
     border-radius: var(--radius-xl, 16px) var(--radius-xl, 16px) 0 0;
     transform-origin: var(
       --bits-popover-content-transform-origin,
       bottom center
     );
     container-type: inline-size;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .workspace-utility-panel {
+    border-bottom: 0;
   }
 
   .workspace-utility-panel .utility-stage {
@@ -892,12 +909,16 @@ Features:
       var(--theme-panel-bg, rgba(10, 18, 30, 0.98))
     );
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    border-top: 0;
     border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
     opacity: 1;
     transition:
       height var(--duration-emphasis) var(--ease-out, var(--ease-standard-out)),
       opacity var(--duration-normal) var(--ease-out, var(--ease-standard-out));
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .utility-disclosure {
+    border-top: 0;
   }
 
   .utility-disclosure[data-starting-style],

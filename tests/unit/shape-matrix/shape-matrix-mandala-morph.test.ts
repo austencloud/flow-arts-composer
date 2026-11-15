@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { SHAPE_MATRIX_ACTIVE_MANDALA_NAME } from "@tka/shape-engine/services/shape-matrix-artwork.js";
 import {
+  claimedMandalaFloor,
   runMandalaMorph,
   SHAPE_MATRIX_MORPH_BACK_CLASS,
   SHAPE_MATRIX_MORPH_CLASS,
+  SHAPE_MATRIX_MORPH_FOLD_CLASS,
+  type FoldBox,
   type MandalaMorphDependencies,
 } from "@tka/shape-engine/app/services/shape-matrix-mandala-morph.js";
 
@@ -167,5 +171,134 @@ describe("runMandalaMorph", () => {
     expect(() => runMandalaMorph(host, () => {}, {}, deps)).toThrow("boom");
     expect(host.endMandalaHandoff).toHaveBeenCalledTimes(1);
     expect(classes.has(SHAPE_MATRIX_MORPH_CLASS)).toBe(false);
+  });
+});
+
+describe("the grid folding into the back chip", () => {
+  // The pane exists only before the mutation and the glyph only after it, so
+  // each box has to be read on its own side; the shell's fold keyframes read
+  // the result from the root and fall back to the plain fade without it.
+  function foldHarness(boxes: {
+    pane: () => FoldBox | null;
+    glyph: () => FoldBox | null;
+  }) {
+    let land: () => void = () => {};
+    const finished = new Promise<void>((resolve) => {
+      land = resolve;
+    });
+    let update: () => Promise<void> = async () => {};
+    const startMorph = vi.fn((_mutate: () => void, settle: () => Promise<void>) => {
+      update = settle;
+      return { finished } as unknown as ViewTransition;
+    });
+    const harness = createHarness(startMorph);
+    const props = new Map<string, string>();
+    const root = harness.deps.root()!;
+    const withStyle = Object.assign(root, {
+      style: {
+        setProperty: (name: string, value: string) => void props.set(name, value),
+        removeProperty: (name: string) => {
+          props.delete(name);
+          return "";
+        },
+      },
+    });
+    harness.deps.root = () => withStyle;
+    harness.deps.foldBoxes = boxes;
+    return { ...harness, props, land: () => land(), update: () => update() };
+  }
+
+  const pane = { left: 0, top: 100, width: 400, height: 600 };
+  const glyph = { left: 20, top: 20, width: 16, height: 16 };
+
+  it("measures the pane before the mutation and the glyph after it, then clears them", async () => {
+    let glyphShowing = false;
+    const { props, classes, host, deps, land, update } = foldHarness({
+      pane: () => (glyphShowing ? null : pane),
+      glyph: () => (glyphShowing ? glyph : null),
+    });
+
+    runMandalaMorph(host, () => {}, {}, deps);
+    glyphShowing = true;
+    await update();
+
+    expect(props.get("--shape-matrix-fold-x")).toBe("-172px");
+    expect(props.get("--shape-matrix-fold-y")).toBe("-372px");
+    expect(props.get("--shape-matrix-fold-scale")).toBe("0.04");
+    expect(classes.has(SHAPE_MATRIX_MORPH_FOLD_CLASS)).toBe(true);
+
+    land();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(props.size).toBe(0);
+    expect(classes.has(SHAPE_MATRIX_MORPH_FOLD_CLASS)).toBe(false);
+  });
+
+  it("reads the same trip going back, glyph first and pane after", async () => {
+    let gridShowing = false;
+    const { props, host, deps, update } = foldHarness({
+      pane: () => (gridShowing ? pane : null),
+      glyph: () => (gridShowing ? null : glyph),
+    });
+
+    runMandalaMorph(host, () => {}, { back: true }, deps);
+    gridShowing = true;
+    await update();
+
+    expect(props.get("--shape-matrix-fold-x")).toBe("-172px");
+    expect(props.get("--shape-matrix-fold-scale")).toBe("0.04");
+  });
+
+  it("sets nothing when a box cannot be measured, so the plain fade runs", async () => {
+    const { props, classes, host, deps, update } = foldHarness({
+      pane: () => pane,
+      glyph: () => null,
+    });
+
+    runMandalaMorph(host, () => {}, {}, deps);
+    await update();
+
+    expect(props.size).toBe(0);
+    expect(classes.has(SHAPE_MATRIX_MORPH_FOLD_CLASS)).toBe(false);
+  });
+});
+
+describe("claimedMandalaFloor", () => {
+  // Both surfaces keep a stage mounted, so the page holds two floors: the
+  // Level Matrix drill's, first in the page and hidden behind the Ratio
+  // Playground, and the Playground's own. Reading the first one recorded the
+  // hidden floor's strength as the strength the flight lands on.
+  function element(
+    viewTransitionName: string,
+    floor: object | null
+  ): HTMLElement {
+    return {
+      style: { viewTransitionName },
+      closest: (selector: string) =>
+        selector === "[data-mandala-floor]" ? floor : null,
+    } as unknown as HTMLElement;
+  }
+  function page(elements: HTMLElement[]): ParentNode {
+    return {
+      querySelectorAll: (selector: string) =>
+        selector === "[style]" ? elements : [],
+    } as unknown as ParentNode;
+  }
+
+  it("reads the floor whose art holds the flower's name, not the first floor", () => {
+    const hiddenFloor = { id: "drill" };
+    const shownFloor = { id: "ratios" };
+    const root = page([
+      element("", hiddenFloor),
+      element(SHAPE_MATRIX_ACTIVE_MANDALA_NAME, shownFloor),
+    ]);
+    expect(claimedMandalaFloor(root)).toBe(shownFloor);
+  });
+
+  it("finds no floor while a tile holds the name", () => {
+    const root = page([
+      element(SHAPE_MATRIX_ACTIVE_MANDALA_NAME, null),
+      element("", { id: "drill" }),
+    ]);
+    expect(claimedMandalaFloor(root)).toBeNull();
   });
 });

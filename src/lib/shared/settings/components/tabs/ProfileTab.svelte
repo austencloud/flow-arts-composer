@@ -924,6 +924,9 @@
   .personal-section .section-body {
     display: flex;
     flex: 1 1 auto;
+    /* The creators switch sits under the fields, not beside them: side by side
+       it squeezed both into half the card at every width. */
+    flex-direction: column;
   }
 
   .personal-section .section-body :global(.account-settings) {

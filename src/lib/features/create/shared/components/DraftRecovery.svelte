@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import StepGrid from "../workspace-panel/sequence-display/components/StepGrid.svelte";
   import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
@@ -13,26 +14,31 @@
     surface: "status" | "dialog";
   } = $props();
   const status = $derived(controller.status?.status ?? "idle");
-  const labels = {
-    idle: "Drafts save on this device",
-    saving: "Saving…",
-    saved: "Saved on this device",
-    error: "Not saved. Your work is still open.",
-    recovery: "An unfinished draft is available",
-    conflict: "Another tab changed this draft",
-  };
-  const modeNames = {
-    construct: "Construct",
-    generate: "Generate",
-    assemble: "Assemble",
-  };
+  const labels = $derived({
+    idle: t("create_draft_status_idle"),
+    saving: t("nav_ui_saving"),
+    saved: t("create_draft_status_saved"),
+    error: t("create_draft_status_error"),
+    recovery: t("create_draft_status_recovery"),
+    conflict: t("create_draft_status_conflict"),
+  });
+  const modeNames = $derived({
+    construct: t("tab_create_construct"),
+    generate: t("tab_create_generate"),
+    assemble: t("tab_create_assemble"),
+  });
   const title = $derived(
     controller.dialogKind === "conflict"
-      ? "Choose a version"
+      ? t("create_draft_title_conflict")
       : controller.dialogKind === "recovery"
-        ? "Recover your draft"
-        : "Saved drafts"
+        ? t("create_draft_title_recovery")
+        : t("create_draft_title_history")
   );
+  function stepCount(count: number) {
+    return t(count === 1 ? "create_draft_steps_one" : "create_draft_steps_other", {
+      count,
+    });
+  }
   function savedTime(value: number) {
     return new Intl.DateTimeFormat(undefined, {
       month: "short",
@@ -57,13 +63,13 @@
     >
     <div class="status-actions">
       <button disabled={controller.busy} onclick={() => controller.retry()}
-        >Retry save</button
+        >{t("nav_ui_retry_save")}</button
       >
       <button
         disabled={controller.busy}
         onclick={() => controller.showDrafts()}
       >
-        Saved drafts
+        {t("create_draft_title_history")}
       </button>
     </div>
   </div>
@@ -89,15 +95,13 @@
         <h2 id="draft-recovery-title">{title}</h2>
         <p id="draft-recovery-description">
           {#if controller.dialogKind === "conflict"}
-            Choose the version you want to continue editing. The others stay
-            available.
+            {t("create_draft_desc_conflict")}
           {:else if controller.dialogKind === "recovery"}
-            Your workspace could not be reopened, but a saved draft is available
-            on this device.
+            {t("create_draft_desc_recovery")}
           {:else if controller.dialogMode !== "assemble"}
-            Continue a saved version with its editing history.
+            {t("create_draft_desc_with_history")}
           {:else}
-            Continue a saved version.
+            {t("create_draft_desc_plain")}
           {/if}
         </p>
       </header>
@@ -118,16 +122,15 @@
           <article class="version" data-testid="draft-version">
             <div class="version-heading">
               <p class="version-recency">
-                {index === 0 ? "Most recent save" : "Earlier save"}
+                {index === 0 ? t("create_draft_most_recent") : t("create_draft_earlier")}
               </p>
               <h3>
                 {word ||
                   sequence?.name ||
-                  (start ? "Starting position" : "Empty draft")}
+                  (start ? t("create_draft_starting_position") : t("create_draft_empty"))}
               </h3>
               <p>
-                {steps.length}
-                {steps.length === 1 ? "step" : "steps"} ·
+                {stepCount(steps.length)} ·
                 <time datetime={new Date(version.savedAt).toISOString()}
                   >{savedTime(version.savedAt)}</time
                 >
@@ -137,7 +140,10 @@
               <div
                 class="version-preview"
                 role="img"
-                aria-label={`${word || "Starting position"}, ${steps.length} ${steps.length === 1 ? "step" : "steps"}. Saved sequence preview.`}
+                aria-label={t("create_draft_preview_aria", {
+                  word: word || t("create_draft_starting_position"),
+                  steps: stepCount(steps.length),
+                })}
               >
                 <div class="preview-content" inert>
                   <StepGrid
@@ -158,14 +164,14 @@
               disabled={controller.busy}
               onclick={() => controller.recover(version.id)}
             >
-              Continue this version
+              {t("create_draft_continue")}
             </button>
           </article>
         {:else}
           <p class="empty">
             {controller.busy
-              ? "Reading saved drafts…"
-              : "No saved drafts yet. Your sequence will appear here after you start building."}
+              ? t("create_draft_reading")
+              : t("create_draft_none_yet")}
           </p>
         {/each}
       </div>
@@ -173,12 +179,12 @@
     {#snippet footer()}
       <footer>
         <button disabled={controller.busy} onclick={() => controller.close()}
-          >Close</button
+          >{t("action_close")}</button
         >
         {#if controller.dialogKind !== "history"}
           <button
             disabled={controller.busy}
-            onclick={() => controller.startFresh()}>Start a new draft</button
+            onclick={() => controller.startFresh()}>{t("create_draft_start_new")}</button
           >
         {/if}
       </footer>

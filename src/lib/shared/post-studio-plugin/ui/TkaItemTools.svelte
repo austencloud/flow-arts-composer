@@ -22,8 +22,11 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PostStaffEffectsTool from "#lib/shared/post-studio-plugin/ui/PostStaffEffectsTool.svelte";
+  import PostCometTrailsTool from "#lib/shared/post-studio-plugin/ui/PostCometTrailsTool.svelte";
   import PostCardAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostCardAppearanceTool.svelte";
+  import PostCardEndingTool from "#lib/shared/post-studio-plugin/ui/PostCardEndingTool.svelte";
   import PostSequenceActionsTool from "#lib/shared/post-studio-plugin/ui/PostSequenceActionsTool.svelte";
+  import PostFlyIntoNextTool from "#lib/shared/post-studio-plugin/ui/PostFlyIntoNextTool.svelte";
   import PostAutoFrameTool from "#lib/shared/post-studio-plugin/ui/PostAutoFrameTool.svelte";
   import { shownLandings } from "#lib/shared/share/components/post-studio/builder/timing-lane-landings.js";
   import { tkaEditorOf, useTkaEditor } from "./tka-editor-context";
@@ -32,7 +35,8 @@
    * tka's panels on core kinds: replacing an overlay video with the live
    * animation (after Trim's own controls), a video's looks, its staff
    * effects (after Effects' own controls), a card's and a QR image's
-   * appearance, the sequence actions, and a video's Auto frame. Renders
+   * appearance, the sequence actions, a video's Auto frame, and Fly into
+   * next clip for the canvas kinds. Renders
    * nothing for a tool none of them owns.
    */
   let { editor, item, tool, locked }: ToolPanelProps = $props();
@@ -157,6 +161,15 @@
       onPick={(effect) => patchItem({ staffEffect: effect })}
     />
   {/if}
+  {#if tka.featureMode}
+    <PostCometTrailsTool
+      {item}
+      mediaUrl={editor.mediaUrl(item.takeId)}
+      playhead={editor.previewSeconds}
+      {locked}
+      onchange={(trails) => patchItem({ cometTrails: trails })}
+    />
+  {/if}
 {:else if tool === "autoframe" && item?.kind === "video"}
   {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
   <!-- Keyed so one clip's tracking and progress never show on the next. -->
@@ -207,6 +220,8 @@
       </div>
     {/key}
   {/if}
+{:else if tool === "ending" && item?.kind === "card"}
+  <PostCardEndingTool {editor} {item} {locked} onpatch={patchItem} />
 {:else if tool === "appearance" && item?.kind === "image"}
   <div class="qr-appearance">
     <strong>QR code</strong>
@@ -232,6 +247,8 @@
     {locked}
     busy={tka.sequenceBusy}
   />
+{:else if tool === "fly" && item}
+  <PostFlyIntoNextTool {editor} {item} {locked} />
 {/if}
 
 <style>

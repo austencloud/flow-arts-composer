@@ -1,5 +1,6 @@
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import { getBaseBeatSize } from "./layout-calculator";
+import { localStepLabels } from "./local-step-labels";
 import type { SequenceExportOptions } from "../domain/models/sequence-export-options";
 import { ImageComposer } from "./image-composer";
 import type { CompositionProgressCallback, RenderCanvas } from "./types";
@@ -258,7 +259,12 @@ export class SequenceRenderer {
     options: Partial<SequenceExportOptions>
   ): SequenceExportOptions {
     const defaults = this.getDefaultOptions();
-    return { ...defaults, ...options };
+    // Exports are drawn on this device, so they carry the visitor's words.
+    return {
+      ...defaults,
+      ...options,
+      stepLabels: options.stepLabels ?? localStepLabels(),
+    };
   }
 }
 

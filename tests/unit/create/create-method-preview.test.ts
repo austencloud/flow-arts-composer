@@ -240,6 +240,53 @@ describe("CreateMethodPreview", () => {
     }
   });
 
+  describe("behind the boot screen", () => {
+    let bootScreen: HTMLElement | null = null;
+
+    afterEach(() => {
+      bootScreen?.remove();
+      bootScreen = null;
+    });
+
+    function coverWithBootScreen(): void {
+      bootScreen = document.createElement("div");
+      bootScreen.id = "app-loading";
+      document.body.append(bootScreen);
+    }
+
+    it("loads at once, without the idle wait, for a host that opts in", async () => {
+      coverWithBootScreen();
+      const loader = vi.fn(fakeLoader);
+      render({ loader, loadBehindBootScreen: true });
+      // Account settings resolve on a microtask; no timer has run.
+      await vi.advanceTimersByTimeAsync(0);
+      flushSync();
+      expect(loader).toHaveBeenCalledTimes(1);
+      expect(host.querySelector(".fake-scene")).not.toBeNull();
+    });
+
+    it("keeps the idle wait for a host that does not opt in", async () => {
+      coverWithBootScreen();
+      const loader = vi.fn(fakeLoader);
+      render({ loader });
+      await vi.advanceTimersByTimeAsync(100);
+      flushSync();
+      expect(loader).not.toHaveBeenCalled();
+      await settle();
+      expect(loader).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps the idle wait on a visible page even when the host opts in", async () => {
+      const loader = vi.fn(fakeLoader);
+      render({ loader, loadBehindBootScreen: true });
+      await vi.advanceTimersByTimeAsync(100);
+      flushSync();
+      expect(loader).not.toHaveBeenCalled();
+      await settle();
+      expect(loader).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("ignores a scene that reports ready after the box is gone", async () => {
     fakeScene.readyDelayMs = 1000;
     const onready = vi.fn();

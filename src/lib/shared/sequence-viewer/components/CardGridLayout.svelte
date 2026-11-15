@@ -96,6 +96,8 @@
     onQrPlayClick?: () => void;
     /** When true, the start-placement cell is clickable too (calls onStepClick(-1)). */
     clickableStart?: boolean;
+    /** A step tap enlarges the step rather than seeking, so the labels say so. */
+    stepTapEnlarges?: boolean;
     onGridScrollRefChange: (el: HTMLDivElement | undefined) => void;
     // CellRenderer pass-through props
     showStepNumbers: boolean;
@@ -159,6 +161,7 @@
     onStepClick,
     onQrPlayClick,
     clickableStart = false,
+    stepTapEnlarges = false,
     onGridScrollRefChange,
     showStepNumbers,
     posePicker = false,
@@ -237,17 +240,23 @@
       },
     };
   }
+  const stepKey = $derived(
+    stepTapEnlarges ? "viewer_ui_enlarge_step" : "browse_audit_go_to_step"
+  );
 </script>
 
 {#snippet startCellBlock(startCell: CellData)}
   {#if clickableStart && onStepClick}
     <button
       class="pictograph-cell clickable"
+      data-card-step={-1}
       class:dark-mode={activeDarkMode}
       class:current={showHighlight && highlightedStepIndex === -1}
       onclick={() => onStepClick(-1)}
       type="button"
-      aria-label={t("viewer_detail_go_to_start_placement")}
+      aria-label={stepTapEnlarges
+        ? t("viewer_ui_enlarge_start")
+        : t("viewer_detail_go_to_start_placement")}
     >
       <CellRenderer
         {exportPresentation}
@@ -273,6 +282,7 @@
   {:else}
     <div
       class="pictograph-cell"
+      data-card-step={-1}
       class:dark-mode={activeDarkMode}
       class:current={showHighlight && highlightedStepIndex === -1}
     >
@@ -405,6 +415,7 @@
                     {#if onStepClick}
                       <button
                         class="pictograph-cell clickable"
+                        data-card-step={cell.index}
                         class:dark-mode={activeDarkMode}
                         class:current={showHighlight &&
                           highlightedStepIndex === cell.index}
@@ -413,7 +424,7 @@
                           cell.index < highlightedStepIndex}
                         onclick={() => onStepClick(cell.index)}
                         type="button"
-                        aria-label={t("browse_audit_go_to_step", {
+                        aria-label={t(stepKey, {
                           step: cell.label,
                         })}
                       >
@@ -441,6 +452,7 @@
                     {:else}
                       <div
                         class="pictograph-cell"
+                        data-card-step={cell.index}
                         class:dark-mode={activeDarkMode}
                         class:current={showHighlight &&
                           highlightedStepIndex === cell.index}
@@ -513,6 +525,7 @@
                   {#if onStepClick}
                     <button
                       class="pictograph-cell clickable"
+                      data-card-step={cell.index}
                       class:dark-mode={activeDarkMode}
                       class:current={showHighlight &&
                         highlightedStepIndex === cell.index}
@@ -521,7 +534,7 @@
                         cell.index < highlightedStepIndex}
                       onclick={() => onStepClick(cell.index)}
                       type="button"
-                      aria-label={t("browse_audit_go_to_step", {
+                      aria-label={t(stepKey, {
                         step: cell.label,
                       })}
                     >
@@ -549,6 +562,7 @@
                   {:else}
                     <div
                       class="pictograph-cell"
+                      data-card-step={cell.index}
                       class:dark-mode={activeDarkMode}
                       class:current={showHighlight &&
                         highlightedStepIndex === cell.index}
@@ -613,6 +627,7 @@
           {#if onStepClick && cell.index >= 0}
             <button
               class="pictograph-cell clickable"
+              data-card-step={cell.index}
               class:dark-mode={activeDarkMode}
               class:current={showHighlight &&
                 highlightedStepIndex === cell.index}
@@ -621,7 +636,7 @@
                 cell.index < highlightedStepIndex}
               onclick={() => onStepClick(cell.index)}
               type="button"
-              aria-label={t("browse_audit_go_to_step", { step: cell.label })}
+              aria-label={t(stepKey, { step: cell.label })}
             >
               <CellRenderer
                 {exportPresentation}
@@ -647,6 +662,7 @@
           {:else}
             <div
               class="pictograph-cell"
+              data-card-step={cell.index}
               class:dark-mode={activeDarkMode}
               class:current={showHighlight &&
                 highlightedStepIndex === cell.index}
@@ -748,6 +764,7 @@
         {#if onStepClick && cell.index >= 0}
           <button
             class="pictograph-cell clickable"
+            data-card-step={cell.index}
             class:dark-mode={activeDarkMode}
             class:current={showHighlight && highlightedStepIndex === cell.index}
             class:played={showHighlight &&
@@ -755,7 +772,7 @@
               cell.index < highlightedStepIndex}
             onclick={() => onStepClick(cell.index)}
             type="button"
-            aria-label={t("browse_audit_go_to_step", { step: cell.label })}
+            aria-label={t(stepKey, { step: cell.label })}
           >
             <CellRenderer
               {exportPresentation}
@@ -781,6 +798,7 @@
         {:else}
           <div
             class="pictograph-cell"
+            data-card-step={cell.index}
             class:dark-mode={activeDarkMode}
             class:current={showHighlight && highlightedStepIndex === cell.index}
             class:played={showHighlight &&

@@ -3,7 +3,9 @@ import type {
   VideoEditorState,
 } from "@austencloud/video-editor";
 import {
+  faBorderTopLeft,
   faCircleNodes,
+  faFont,
   faHeading,
   faPersonRunning,
   faShapes,
@@ -13,6 +15,8 @@ import {
   faXmark,
 } from "@austencloud/video-editor/icons";
 import { newItemStart, overlayAt } from "@austencloud/video-editor/ui";
+import { flashOverlaySpec } from "#lib/shared/media-composition/domain/post-flash-join-edits.js";
+import { creditOverlaySpec } from "#lib/shared/media-composition/domain/credit.js";
 import { createBlankArrangementSnapshot } from "./post-editor-arrangement";
 import { tkaEditorOf } from "./tka-editor-context";
 import { TKA_KIND_UI } from "./tka-kind-ui";
@@ -90,6 +94,36 @@ export const TKA_ADD_ITEMS: Readonly<Record<string, PluginAddItem>> = {
         ? "titles"
         : null,
   },
+  // A flash at the playhead: the playhead is the hit.
+  flash: {
+    id: "flash",
+    icon: faBorderTopLeft,
+    label: (t) => TKA_KIND_UI.flash.label!(t, null),
+    available: always,
+    add: (e) =>
+      e.addOverlay(
+        flashOverlaySpec(e.project, {
+          at: newItemStart(e.durationSeconds, e.previewSeconds),
+        })
+      )
+        ? "flash"
+        : null,
+  },
+  // The ready-made "made with Flow Arts Composer" credit, at the playhead.
+  credit: {
+    id: "credit",
+    icon: faFont,
+    label: (t) => TKA_KIND_UI.credit.label!(t, null),
+    available: always,
+    add: (e) =>
+      e.addOverlay(
+        creditOverlaySpec({
+          at: newItemStart(e.durationSeconds, e.previewSeconds),
+        })
+      )
+        ? "credit"
+        : null,
+  },
   hookAdd: {
     id: "tunnel-hook",
     icon: faCircleNodes,
@@ -111,7 +145,8 @@ export const TKA_ADD_ITEMS: Readonly<Record<string, PluginAddItem>> = {
 
 /**
  * Today's order around the core entries (`text`, `card`). A post with no
- * sequence offers only what needs none: an arrangement, a mandala and text.
+ * sequence offers only what needs none: an arrangement, a mandala, text, a
+ * credit and a flash.
  */
 export function tkaAddItems(
   core: readonly string[],
@@ -120,7 +155,7 @@ export function tkaAddItems(
   const has = (id: string) => (core.includes(id) ? [id] : []);
   const a = TKA_ADD_ITEMS;
   if (editor && tkaEditorOf(editor)?.sequence === null)
-    return [a.arrangement!, a.mandala!, ...has("text")];
+    return [a.arrangement!, a.mandala!, ...has("text"), a.credit!, a.flash!];
   return [
     a.arrangement!,
     a.animation!,
@@ -130,6 +165,8 @@ export function tkaAddItems(
     ...has("text"),
     a.titles!,
     ...has("card"),
+    a.credit!,
+    a.flash!,
     a.hookAdd!,
     a.hookRemove!,
   ];

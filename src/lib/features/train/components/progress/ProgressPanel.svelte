@@ -451,9 +451,13 @@
       color-mix(in srgb, var(--theme-stroke, white) 30%, transparent) 50%,
       var(--theme-stroke) 100%
     );
-    background-size: 200% 100%;
     animation: shimmer 2s ease-in-out infinite;
     border-radius: 6px;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .empty-bar {
+    background-size: 200% 100%;
   }
 
   @keyframes shimmer {

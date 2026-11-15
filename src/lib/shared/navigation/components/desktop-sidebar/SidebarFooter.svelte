@@ -215,7 +215,7 @@
       aria-label={t("nav_change_props_current", { prop: propLabel })}
     >
       <div class="button-icon">
-        <SelectedPropPreview />
+        <SelectedPropPreview box={{ width: 32, height: 32 }} />
       </div>
       <span class="button-label">{propLabel}</span>
     </button>

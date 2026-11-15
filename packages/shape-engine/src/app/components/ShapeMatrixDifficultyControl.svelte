@@ -9,54 +9,42 @@
   the shell's grammar: a caption over its control.
 
   The lesson from the strip stays. Pressing a bare numeral changed the grid
-  and said nothing, so the caption carries the level's name and turns over on
-  every press. Levels are a Kinetic Alphabet idea and most people who open
-  this page have never met one; the question mark opens the full four-level
-  explanation in About, where the rest of the vocabulary already lives. -->
+  and said nothing, and only the pressed level was ever named. So each badge
+  now carries the same small picture the phone's tiles show (how much of a
+  turn one step adds) and its level's name beneath, and the four read side by
+  side before anyone presses. They stay within the cell's old width: the
+  picture sits beside the numeral and the name wraps under both. Levels are a
+  Kinetic Alphabet idea and most people who open this page have never met
+  one; the question mark opens the full four-level explanation in About,
+  where the rest of the vocabulary already lives. -->
 <script lang="ts">
   import { s as t } from "../../strings.svelte.js";
   import LevelSelector from "#lib/shared/components/LevelSelector.svelte";
-  import { flyFade } from "@austencloud/motion";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
-  import { localizedLevelDescription } from "../../services/shape-matrix-display";
+  import { localizedLevelTileDescription } from "../../services/shape-matrix-display";
   import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";
+  import TurnStepGlyph from "./TurnStepGlyph.svelte";
 
   const appState = getShapeMatrixAppContext();
-
-  const current = $derived(localizedLevelDescription(appState.level));
 </script>
 
 <!-- .control-cell and .control-label are the band's own grammar, styled by
      the shell for every cell in the band. -->
 <div class="control-cell difficulty-control">
-  <span class="control-caption">
-    <span class="control-label" id="shape-matrix-difficulty-label"
-      >{t("shape_engine_difficulty")}</span
-    >
-    <!-- The name changes width with the level. Every name sits hidden in the
-         same cell as the live one, so the slot is always as wide as the
-         widest and nothing beside it moves on a press. The live region is the
-         stable slot, not the keyed name, so the announcement lands. -->
-    <span class="level-name-slot" aria-live="polite">
-      {#each SHAPE_MATRIX_LEVELS as level (level)}
-        <span class="level-name ghost" aria-hidden="true"
-          >{localizedLevelDescription(level).name}</span
-        >
-      {/each}
-      {#key appState.level}
-        <span class="level-name" in:flyFade={{ y: -4 }}>{current.name}</span>
-      {/key}
-    </span>
-  </span>
+  <span class="control-label" id="shape-matrix-difficulty-label"
+    >{t("shape_engine_difficulty")}</span
+  >
   <div class="control-row">
     <LevelSelector
       value={appState.level}
       levels={SHAPE_MATRIX_LEVELS}
-      describe={localizedLevelDescription}
+      describe={localizedLevelTileDescription}
       onchange={appState.setLevel}
-      compact={true}
+      tiles={true}
       ariaLabel={t("shape_engine_difficulty_level")}
-    />
+    >
+      {#snippet glyph(level)}<TurnStepGlyph {level} />{/snippet}
+    </LevelSelector>
     <button
       type="button"
       class="control-info"
@@ -74,46 +62,52 @@
     flex: 0 0 auto;
   }
 
-  .control-caption {
-    display: flex;
-    align-items: baseline;
-    gap: 0.45rem;
-    min-width: 0;
-  }
-
-  .level-name-slot {
-    display: grid;
-    min-width: 0;
-  }
-
-  .level-name-slot > * {
-    grid-area: 1 / 1;
-  }
-
-  .level-name {
-    color: var(--theme-text, #fff);
-    font-size: var(--font-size-compact, 0.75rem);
-    font-weight: 650;
-    letter-spacing: 0.01em;
-    white-space: nowrap;
-  }
-
-  .level-name.ghost {
-    visibility: hidden;
-  }
-
   .control-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  /* The badges sit on the band's control height, like the segmented
-     controls beside them, rather than LevelSelector's taller own. */
-  .control-row :global(.lvl) {
-    flex: 0 0 auto;
-    min-width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
+  /* LevelSelector's tiles stack picture, numeral and name for a phone
+     popover with height to spare. The band has width to spare instead, so
+     the picture and numeral share the top line and the name takes the line
+     (or two) under them. Columns are fixed, so pressing never resizes. */
+  .control-row :global(.level-selector.tiles) {
+    grid-template-columns: repeat(var(--level-count, 4), 4.25rem);
+    gap: 0.3rem;
+  }
+
+  .control-row :global(.level-selector.tiles .lvl) {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      "glyph numeral"
+      "name name";
+    justify-content: center;
+    align-content: start;
+    align-items: center;
+    gap: 0.15rem 0.25rem;
+    padding: 0.3rem 0.2rem 0.35rem;
+  }
+
+  .control-row :global(.level-selector.tiles .glyph) {
+    grid-area: glyph;
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+
+  .control-row :global(.level-selector.tiles .numeral) {
+    grid-area: numeral;
+    width: 1.2rem;
+    height: 1.2rem;
+    font-size: var(--font-size-compact, 0.75rem);
+  }
+
+  .control-row :global(.level-selector.tiles .name) {
+    grid-area: name;
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
   }
 
   .control-info {
@@ -142,5 +136,14 @@
   .control-info:focus-visible {
     outline: 2px solid var(--theme-accent, #f59e0b);
     outline-offset: 2px;
+  }
+
+  /* Small laptops, the shell's tightest wide tier: the band only just fits,
+     so the question mark steps out. About stays in the top actions and opens
+     the same explanation. */
+  @container shape-matrix-app (75rem <= width < 84.5rem) and (height >= 42rem) {
+    .control-info {
+      display: none;
+    }
   }
 </style>

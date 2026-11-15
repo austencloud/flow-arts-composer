@@ -1,5 +1,6 @@
 <script lang="ts" module>
   import { getLetterImagePath as getPath } from "../utils/letter-image-getter";
+  import { svgToDataUrl } from "../utils/svg-data-url";
   import { Letter as LetterType } from "#lib/shared/foundation/domain/models/letter.js";
 
   // Restore caches from HMR data if available, otherwise create fresh
@@ -51,11 +52,6 @@
         ? match
         : `<svg${attrs} fill="${DARK_GLYPH_COLOR}">`
     );
-  }
-
-  /** Build a base64 data URL from SVG markup. */
-  function svgToDataUrl(svgText: string): string {
-    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgText)))}`;
   }
 
   /**

@@ -180,9 +180,13 @@
     background: var(--theme-panel-bg, #1a1a2e);
     backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid var(--theme-stroke);
-    border-bottom: none;
     border-radius: 16px 16px 0 0;
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .guide-sheet {
+    border-bottom: none;
   }
 
   .guide-header {

@@ -185,8 +185,12 @@
       var(--semantic-info, var(--semantic-info)),
       var(--theme-accent-strong, var(--theme-accent-strong))
     );
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .icon-container i {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 
@@ -199,8 +203,12 @@
       var(--semantic-info, var(--semantic-info)),
       var(--theme-accent-strong, var(--theme-accent-strong))
     );
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .setup-header h1 {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

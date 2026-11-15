@@ -1,7 +1,7 @@
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 export function computePropsSummary(propLabel: string): string {
-  return propLabel || "Staff";
+  return propLabel || t("viewer_ui_pill_staff_default");
 }
 
 /**
@@ -35,7 +35,10 @@ export interface DisplayFlags {
 export function computeDisplaySummary(flags: DisplayFlags): string {
   const values = Object.values(flags);
   const on = values.filter(Boolean).length;
-  return `${on} / ${values.length} visible`;
+  return t("viewer_ui_pill_visible_count", {
+    shown: on,
+    total: values.length,
+  });
 }
 
 export function computeEffectsSummary(
@@ -44,10 +47,10 @@ export function computeEffectsSummary(
 ): string {
   if (typeof activeEffect !== "string" || activeEffect === "") {
     console.warn("[pill-summaries] invalid activeEffect:", activeEffect);
-    return "Off";
+    return t("viewer_ui_trails_off");
   }
-  if (activeEffect === "none") return "Off";
-  return labels[activeEffect] ?? "Custom";
+  if (activeEffect === "none") return t("viewer_ui_trails_off");
+  return labels[activeEffect] ?? t("viewer_ui_custom");
 }
 
 export type PlaybackModeLike = "continuous" | "step";
@@ -56,12 +59,15 @@ export function computePlaybackSummary(
   bpm: number,
   mode: PlaybackModeLike
 ): string {
-  const modeLabel = mode === "step" ? "Step" : "Cont.";
+  const modeLabel =
+    mode === "step"
+      ? t("train_mode_step")
+      : t("viewer_ui_pill_continuous_short");
   if (!Number.isFinite(bpm) || bpm <= 0) {
     console.warn("[pill-summaries] invalid bpm:", bpm);
-    return `- BPM • ${modeLabel}`;
+    return t("viewer_ui_pill_bpm_unknown_mode", { mode: modeLabel });
   }
-  return `${bpm} BPM • ${modeLabel}`;
+  return t("viewer_ui_pill_bpm_mode", { bpm, mode: modeLabel });
 }
 
 export interface ExportSummaryInput {

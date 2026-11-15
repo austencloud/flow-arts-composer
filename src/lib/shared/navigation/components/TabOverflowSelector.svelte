@@ -282,8 +282,12 @@
 
   .current-tab-icon :global(i) {
     background: var(--current-section-gradient);
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .current-tab-icon :global(i) {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 
@@ -333,7 +337,7 @@
 
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 16px 16px 0 0; /* Round top corners only */
-    border-bottom: none; /* No border at bottom edge */
+     /* No border at bottom edge */
     padding: 16px 12px calc(12px + env(safe-area-inset-bottom, 0px)); /* Safe area for home indicator */
 
     /* Shadows for depth */
@@ -350,6 +354,11 @@
       scale var(--transition-spring),
       overlay var(--transition-emphasis) allow-discrete,
       display var(--transition-emphasis) allow-discrete;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  :global(#tab-overflow-popover) {
+    border-bottom: none;
   }
 
   /* Starting style for smooth open animation - @starting-style is valid CSS */
@@ -479,8 +488,12 @@
 
   .tab-icon :global(i) {
     background: var(--section-gradient, var(--section-color, #667eea));
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .tab-icon :global(i) {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

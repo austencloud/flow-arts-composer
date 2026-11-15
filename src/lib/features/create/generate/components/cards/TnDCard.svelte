@@ -64,7 +64,7 @@
   const tiles = $derived([
     {
       key: "hands" as const,
-      tag: t("create_ui_hands").charAt(0),
+      tag: t("create_ui_hands_tag"),
       element: display.handBlockedElement ?? display.hands.element,
       blocked: display.handBlocked,
       words: describeCreateTnDSelection(handRelationship),
@@ -75,7 +75,7 @@
     },
     {
       key: "props" as const,
-      tag: t("create_ui_props").charAt(0),
+      tag: t("create_ui_props_tag"),
       element: display.props.element,
       blocked: false,
       words: describeCreateTnDSelection(propRelationship),
@@ -236,7 +236,12 @@
     padding: 0.15em 0.5em;
     border-radius: 999px;
     background: color-mix(in srgb, black 28%, transparent);
-    font-size: calc(var(--card-text-size) * 0.6);
+    /* 12px floor: on a phone the shared text size is 16px, which put the tag
+       at 9.6px. */
+    font-size: max(
+      var(--font-size-compact, 12px),
+      calc(var(--card-text-size) * 0.6)
+    );
     font-weight: 800;
     letter-spacing: 0.06em;
     line-height: 1.1;
@@ -274,7 +279,7 @@
     border-radius: 6px;
     background: #f97316;
     color: white;
-    font-size: clamp(8px, calc(var(--card-text-size) * 0.45), 12px);
+    font-size: var(--font-size-compact, 12px);
     font-weight: 800;
     letter-spacing: 0.04em;
     line-height: 1.2;
@@ -291,10 +296,16 @@
 
   .tile-words {
     max-width: 100%;
-    font-size: calc(var(--card-text-size) * 0.62);
+    font-size: max(
+      var(--font-size-compact, 12px),
+      calc(var(--card-text-size) * 0.62)
+    );
     font-weight: var(--card-text-weight);
     letter-spacing: var(--card-text-spacing);
-    line-height: 1.15;
+    /* The two-line clamp clips at the line box, so the line needs room for
+       deep descenders: Arabic ink reaches 3px under the baseline, and at
+       1.15 its bottom was shaved. 1.45 leaves it 1.4px clear. */
+    line-height: 1.45;
     color: color-mix(in srgb, white 92%, transparent);
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -345,12 +356,18 @@
     }
 
     .tile-tag {
-      font-size: calc(var(--card-text-size) * 0.55);
+      font-size: max(
+        var(--font-size-compact, 12px),
+        calc(var(--card-text-size) * 0.55)
+      );
     }
 
+    /* Height sets the icon, but in a narrow card (115px-wide columns on a
+       phone at level 3) the 12px tag beside it leaves less width than that, so
+       the width caps it too. */
     .tile-icon-slot {
-      width: clamp(16px, 62cqh, 52px);
-      height: clamp(16px, 62cqh, 52px);
+      width: clamp(16px, min(62cqh, 27cqw), 52px);
+      height: clamp(16px, min(62cqh, 27cqw), 52px);
     }
   }
 

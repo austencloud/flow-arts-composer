@@ -122,6 +122,7 @@
   } from "../../services/museum-proximity-renderer";
   import { MuseumPlayerController } from "../../services/museum-player-controller";
   import { resolveScene, resolveRenderer } from "../resolve-threlte-scene";
+  import { compileAsyncGuarded } from "#lib/shared/3d/scene-boot/guarded-compile-async.js";
   import { getMuseumPerformanceRecorder } from "../../get-museum-performance-recorder";
 
   // Plaque texture generation uses module-level cache (generatePlaqueCanvas)
@@ -1582,11 +1583,13 @@
       // visitor position lands in another wing), the tick throws inside the
       // timer, the catch below never sees it, and this await parks for good:
       // geometryReady never flips and the museum boots to a black screen.
-      // Cap the wait the way scene-boot/renderer-warmup.ts does.
+      // compileAsyncGuarded counts a released program as done, so that tick no
+      // longer throws; the cap stays for drivers that are just slow, the way
+      // scene-boot/renderer-warmup.ts does.
       try {
         const compiled = Promise.all(
           compileTargets.map((object) =>
-            renderer.compileAsync(object, warmupCamera, scene)
+            compileAsyncGuarded(renderer, object, warmupCamera, scene)
           )
         ).then(() => "settled" as const);
         const capped = new Promise<"capped">((resolve) =>

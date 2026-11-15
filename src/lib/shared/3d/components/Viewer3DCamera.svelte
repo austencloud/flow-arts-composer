@@ -226,7 +226,10 @@
       false
     );
 
-    if (sample.position.done) activeCameraReframe = null;
+    if (sample.position.done) {
+      activeCameraReframe = null;
+      checkOrbitHealth(controls);
+    }
   }
 
   function cancelCameraReframe(): void {
@@ -250,13 +253,17 @@
         JSON.parse(localStorage.getItem("tka-viewer3d-camera") ?? "null"),
         `\n  Auto-recovering to defaults.`
       );
+      // Recover onto the cast's own framing when there is a cast.
+      const shot = viewer3DState.openingShot();
+      const recoverPosition = shot?.position ?? defaultPosition;
+      const recoverTarget = shot?.target ?? defaultTarget;
       controls.setLookAt(
-        defaultPosition.x,
-        defaultPosition.y,
-        defaultPosition.z,
-        defaultTarget.x,
-        defaultTarget.y,
-        defaultTarget.z,
+        recoverPosition.x,
+        recoverPosition.y,
+        recoverPosition.z,
+        recoverTarget.x,
+        recoverTarget.y,
+        recoverTarget.z,
         true
       );
       localStorage.removeItem("tka-viewer3d-camera");
@@ -382,6 +389,8 @@
         animate
       );
     }
+    // setLookAt stores the end pose at once, so the landing can be checked now.
+    checkOrbitHealth(controlsInstance);
   }
 
   onMount(() => {
@@ -481,7 +490,16 @@
     autoRotate={viewer3DState.seededAutoOrbit}
     autoRotateSpeed={viewer3DState.seededAutoOrbitSpeed}
     oncreate={(c) => {
-      const stopOrbitNavigation = configureViewerOrbitNavigation(c);
+      const stopOrbitNavigation = configureViewerOrbitNavigation(c, {
+        pivotCast: () => viewer3DState.castStanding(),
+      });
+      // Dev-only handle for camera checks in headless test runs.
+      if (import.meta.env.DEV) {
+        (globalThis as Record<string, unknown>).__viewerOrbit = {
+          controls: c,
+          cast: () => viewer3DState.castStanding(),
+        };
+      }
       controlsInstance = c;
       const live = viewer3DState.persistedCamera;
       const pos = live?.position ?? initialPosition;
@@ -520,8 +538,9 @@
         viewer3DState.cameraChoreography.unregisterControls(c);
       };
     }}
-    oncontrolstart={() => {
+    oncontrolstart={(c) => {
       cancelCameraReframe();
+      checkOrbitHealth(c);
       viewer3DState.setCameraDragging(true);
     }}
     onchange={(c) => scheduleCameraSave(c)}

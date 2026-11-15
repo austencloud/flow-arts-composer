@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { propTileArtwork, propGlyphArtwork } from "../prop-look";
+
+// These tests draw every fan look, and the looks stay renderable even while
+// only some are offered, so they run with the preview flag on. The hoisted
+// call runs before the modules read the flag.
+vi.hoisted(() => {
+  vi.stubEnv("VITE_MAKER_PREVIEW", "1");
+});
 
 const glyph = "/images/props/buttons/x.svg";
 

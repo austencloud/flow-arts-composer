@@ -651,6 +651,10 @@
     background:
       linear-gradient(var(--theme-plan-line-soft) 1px, transparent 1px),
       linear-gradient(90deg, var(--theme-plan-line-soft) 1px, transparent 1px);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .plan-map {
     background-size: 5.2% 5.7%;
   }
 

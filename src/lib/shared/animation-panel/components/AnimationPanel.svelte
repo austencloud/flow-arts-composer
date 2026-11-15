@@ -23,6 +23,7 @@
     formatExportTimeEstimate,
   } from "../state/export-timing-tracker";
   import EffectsPanel from "#lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
+  import type { EffectTuneHeading } from "#lib/shared/animation-engine/components/effects-panel/effect-tune-heading.js";
   import PlaybackModeToggle from "#lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
   import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import "../bento/rail-tile.css";
@@ -32,17 +33,24 @@
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
-  import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
+  import {
+    EFFORTS,
+    type EffortId,
+  } from "#lib/shared/effort/domain/effort-types.js";
+  import { localizedEffortLabel } from "#lib/shared/effort/domain/effort-label.js";
+  import { effectUiLabel } from "#lib/shared/animation-engine/components/effects-panel/effect-ui-label.js";
   import {
     EFFECT_COLORS,
     EFFECT_LABELS,
     effectNavIcon,
   } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import { EFFECT_GLYPH_WIDTH } from "#lib/shared/sequence-viewer/components/control-dock-tab-form.js";
+  import { effectCatalogLooks } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
   import EffortPanel from "#lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
   import DisplayPanel from "#lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
   import PathShapePanel from "#lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import HandPropToolbar, {
@@ -138,9 +146,12 @@
       steps?: ReadonlyArray<{ letter?: string | null }> | null;
     } | null;
     onPropChange?: (propType: PropType) => void;
-    /** Let a host route the Props destination into its canonical picker drawer
-     * instead of squeezing the catalogue into the bottom dock tray. Sidebar
-     * consumers keep the inline catalogue by omitting this callback. */
+    /** Let a host route the Props destination into the app's one prop
+     * switcher instead of a catalogue of the panel's own. With it, the Props
+     * pill wears the switcher's crossed-props drawing and opens the switcher
+     * on both layouts; the dock tray and the sidebar Props page are never
+     * shown. Hosts whose prop is local (Post Studio, profile photo, landing)
+     * omit it and keep the inline catalogue. */
     onPropPickerRequest?: () => void;
     /** The host's picker is open: the Props pill shows pressed while it is,
      * without a tray of its own, so the way back is visible. */
@@ -154,8 +165,8 @@
     propChirality?: PropChiralitySeam;
     /**
      * Per-hand picking for hosts whose props live in settings. The Props page
-     * gains the Cat Dog chip and, while it is on, Left/Right hand segments;
-     * `selectedPropType` and `onPropChange` then address `hand`. Hosts with
+     * gains the Both / Left / Right choice; `selectedPropType` and
+     * `onPropChange` then address `hand`. Hosts with
      * one local prop (Post Studio, profile photo, landing) omit this and keep
      * the single grid.
      */
@@ -202,6 +213,9 @@
     showSequenceMarks?: boolean;
     /** Leave out the Word tile for a host that never draws a word header. */
     showWordToggle?: boolean;
+    /** Leave out the Progress bar tile for a host whose own transport shows
+     *  the loop's progress. The visibility key and export seed are unchanged. */
+    showProgressToggle?: boolean;
     /** Restrict the effect roster to what the host's renderer can actually
      *  draw. Omit for the full roster. */
     availableEffects?: readonly string[];
@@ -236,6 +250,11 @@
      *  under the stage opens closed so the stage keeps its height; a dock in
      *  a column beside the stage would leave that column empty. */
     dockStartsOpen?: boolean;
+    /** A phone dock whose host draws its own header row (Shape Engine's
+     *  title + Done) can carry the Effects tune view's back button, effect
+     *  name and power button there, so the body keeps its height for the
+     *  controls. Called with null when the tune view closes. */
+    onEffectTuneHeading?: (heading: EffectTuneHeading | null) => void;
   }
 
   let {
@@ -278,6 +297,7 @@
     showMotionVisibility = false,
     showSequenceMarks = true,
     showWordToggle = true,
+    showProgressToggle = true,
     availableEffects,
     showPathShape = true,
     onSettingChange,
@@ -288,6 +308,7 @@
     fitRoom = false,
     dockTrayMaxHeight,
     dockStartsOpen = false,
+    onEffectTuneHeading,
   }: Props = $props();
 
   const effectiveRegionLabel = $derived(
@@ -336,8 +357,9 @@
 
   function handlePillSelect(id: PillId): void {
     const previous = resolvedPill;
-    if (layout === "bottom" && id === "props" && onPropPickerRequest) {
-      if (activePill !== null) {
+    if (id === "props" && onPropPickerRequest) {
+      // The sidebar keeps its current page: the switcher opens over it.
+      if (layout === "bottom" && activePill !== null) {
         activePill = null;
         reportViewerControlChange(
           onSettingChange,
@@ -594,7 +616,15 @@
     return effectsConfigState?.activeEffect ?? "none";
   });
   const effectsSummary = $derived(
-    computeEffectsSummary(activeEffectId, EFFECT_LABELS)
+    computeEffectsSummary(
+      activeEffectId,
+      Object.fromEntries(
+        Object.entries(EFFECT_LABELS).map(([id, label]) => [
+          id,
+          effectUiLabel(label),
+        ])
+      )
+    )
   );
   const effectsAccent = $derived(
     EFFECT_COLORS[activeEffectId] ?? RAIL_CATEGORY_ACCENTS.effects
@@ -603,8 +633,18 @@
   // chosen prop rather than a generic props icon. The wand only stands in
   // while nothing is selected.
   const effectsIcon = $derived(effectNavIcon(activeEffectId));
+  // With an effect on, the Effects pill shows that effect's painted picture
+  // (chip format) instead of the glyph; the glyph returns when none is on.
+  const effectsChip = $derived(
+    effectsConfigState && activeEffectId !== "none"
+      ? {
+          effectId: activeEffectId,
+          look: effectCatalogLooks(effectsConfigState).get(activeEffectId),
+        }
+      : undefined
+  );
 
-  const effortSummary = $derived(activeEffort.label);
+  const effortSummary = $derived(localizedEffortLabel(activeEffort.id as EffortId));
   const effortAccent = $derived(activeEffort.color);
 
   // What the Playback page (and the merged Motion page above Effort) holds.
@@ -613,6 +653,13 @@
   );
   const visualPagesFill = $derived(
     fillPages && (layout === "sidebar" || presentation === "content")
+  );
+  /** One section's page in a phone's bottom dock, under a player that keeps
+   *  its size: about 360 x 215-310px. Effects, Effort and Display take a dock
+   *  arrangement here that fits that box without scrolling. The guide's
+   *  fit-room pages and every sidebar keep their own arrangements. */
+  const phoneDock = $derived(
+    layout === "bottom" && presentation === "content" && fillPages && !fitRoom
   );
 
   const playbackSummary = $derived.by(() => {
@@ -640,14 +687,14 @@
 
   const propsSummary = $derived(
     computePropsSummary(
-      handProps?.catDog
+      handProps && handProps.leftPropType !== handProps.rightPropType
         ? viewingPropLabel({
             leftPropType: handProps.leftPropType,
             rightPropType: handProps.rightPropType,
             catDogMode: true,
           })
         : selectedPropType
-          ? getPropTypeDisplayInfo(selectedPropType).label
+          ? localizedPropName(selectedPropType)
           : ""
     )
   );
@@ -742,6 +789,7 @@
               props: {
                 propType: selectedPropType,
                 fanAppearance,
+                selectedPropGlyph: onPropPickerRequest !== undefined,
                 label: t("viewer_ui_props"),
                 summary: propsSummary,
                 accentColor: RAIL_CATEGORY_ACCENTS.props,
@@ -750,6 +798,7 @@
           : {}),
         effects: {
           icon: effectsIcon,
+          effectChip: effectsChip,
           label: t("viewer_ui_effects"),
           summary: effectsSummary,
           accentColor: effectsAccent,
@@ -813,14 +862,21 @@
   // section. That frame put two copies of Visibility's label id in the document
   // during the crossfade, and left the mobile dock holding a tray with no tab.
   const availableIds = $derived(pillSpecs.map((p) => p.id));
+  // A Props pill routed to the app's switcher is a door, not a page, so a
+  // remembered "props" falls back like any section this host doesn't show.
+  const pageIds = $derived(
+    onPropPickerRequest
+      ? availableIds.filter((id) => id !== "props")
+      : availableIds
+  );
   const requestedPill = $derived(
     controlledSection !== undefined
       ? controlledSection
       : layout === "sidebar" && viewerAnimatorInspector
-        ? (viewerAnimatorInspector.resolve(availableIds) as PillId | null)
+        ? (viewerAnimatorInspector.resolve(pageIds) as PillId | null)
         : activePill
   );
-  const resolvedPill = $derived(resolveActivePill(requestedPill, availableIds));
+  const resolvedPill = $derived(resolveActivePill(requestedPill, pageIds));
 
   // A host that drives the page from its own controls changes sections
   // without handlePillSelect, so the page's slide follows the change itself:
@@ -880,6 +936,9 @@
       icon: p.icon,
       propType: p.propType,
       fanAppearance: p.fanAppearance,
+      selectedPropGlyph: p.selectedPropGlyph,
+      effectChip: p.effectChip,
+      glyphWidth: p.id === "effects" ? EFFECT_GLYPH_WIDTH : undefined,
       accentColor: p.accentColor,
       pressed: p.id === "props" && propPickerActive,
     }))
@@ -922,6 +981,13 @@
       {:then mod}
         <mod.default
           {selectedPropType}
+          previewHand={handProps?.hand === "left" || handProps?.hand === "right"
+            ? handProps.hand
+            : undefined}
+          alsoSelectedPropType={handProps?.hand === "both" &&
+          handProps.leftPropType !== handProps.rightPropType
+            ? handProps.rightPropType
+            : null}
           onSelect={onPropChange}
           chirality={propChirality}
           {allowedProps}
@@ -950,6 +1016,8 @@
         (presentation === "content" && !fillPages)}
       fill={visualPagesFill}
       {fitRoom}
+      dock={phoneDock}
+      onTuneHeading={phoneDock ? onEffectTuneHeading : undefined}
       {bpm}
       onBpmChange={onBpmChange ?? (() => {})}
       {isPlaying}
@@ -1028,8 +1096,9 @@
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
       showSubtitles={layout === "sidebar" || fitRoom}
-      fill={visualPagesFill && !fitRoom}
+      fill={visualPagesFill && !fitRoom && !phoneDock}
       room={fitRoom}
+      dock={phoneDock}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -1108,9 +1177,11 @@
         {showMotionVisibility}
         {showSequenceMarks}
         {showWordToggle}
+        {showProgressToggle}
         {sequence}
         propType={selectedPropType}
-        fill={layout === "sidebar" || visualPagesFill}
+        fill={(layout === "sidebar" || visualPagesFill) && !phoneDock}
+        dock={phoneDock}
         grow={fillPages}
         compact={fitRoom}
         room={fitRoom}
@@ -1354,6 +1425,7 @@
     class="external-section-body dock-dense"
     class:fill={visualPagesFill}
     class:fit-room={fitRoom}
+    class:phone-dock={phoneDock}
     role="region"
     aria-label={activePillLabel || effectiveRegionLabel}
   >
@@ -1766,6 +1838,31 @@
   }
   .dock-dense:not(.fill) :global(.vis-grid .chip-label) {
     font-size: 0.68rem;
+  }
+  /* A phone's dock tray is 229px of scroll box under a 250px cap, and the
+     two rules above lose to DisplayPanel's own picture cap and group gap,
+     which carry more classes. The picture then grew to the column (74px)
+     and the gap stayed 10px: 220px of tiles in English, and 250px once a
+     language wraps the second row's names onto two lines, so the tray
+     scrolled and cut those names off. These win on specificity and budget
+     for two-line names: 4 + 64 + 4 + 24 + 4 = 100px a row, 210px for both
+     with the 4px gap and 6px group break. Phone width only, so a tablet's
+     dock keeps the picture it has. */
+  @container (width < 30rem) {
+    .dock-dense:not(.fill)
+      :global(.vis-grid:not(.fitted):not(.compact):not(.host-sized) .rt-chip) {
+      padding: 4px 3px;
+      --tile-art: 4rem;
+    }
+    .dock-dense:not(.fill)
+      :global(
+        .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(
+            .host-sized
+          ):not(.dock)
+          > :nth-child(n + 5)
+      ) {
+      margin-top: 6px;
+    }
   }
   /* A tablet's dock is 776px wide with a 250px tray — 4rem is a phone's cap
      and leaves a 64px picture inside a 190px tile. 5rem is the largest picture

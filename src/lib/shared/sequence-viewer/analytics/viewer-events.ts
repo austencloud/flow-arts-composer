@@ -1,5 +1,6 @@
 import { withRoute } from "#lib/shared/analytics/analytics-context.js";
 import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
+import type { ViewerCloseMethod } from "./viewer-close-method";
 
 export type SequenceViewerSource =
   | "browse_collection"
@@ -107,6 +108,18 @@ export function trackViewerOpenTiming(
   captureViewerEvent("viewer_open_timing", context, {
     drawer_visible_ms: drawerVisibleMs,
     viewer_revealed_ms: viewerRevealedMs,
+  });
+}
+
+/** One per close: which way the viewer was closed and how long it was open. */
+export function trackViewerClosed(
+  context: ViewerAnalyticsContext,
+  method: ViewerCloseMethod,
+  openMs: number
+): void {
+  captureViewerEvent("viewer_closed", context, {
+    close_method: method,
+    open_ms: openMs,
   });
 }
 

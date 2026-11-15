@@ -62,6 +62,32 @@ export function gateRhythm(
 }
 
 /**
+ * The other way round from fitLoopRhythmToLength: keeps the rhythm and finds
+ * the nearest length it splits evenly. Used when the person has just picked
+ * the rhythm, so their pick wins and the length gives way. A tie goes to the
+ * longer length. Null when no length inside the range works.
+ */
+export function fitLengthToLoopRhythm(
+  components: Set<LOOPComponent>,
+  rhythm: LoopRhythm,
+  sequenceLength: number,
+  range: { min: number; max: number }
+): number | null {
+  const reach = Math.max(sequenceLength - range.min, range.max - sequenceLength);
+  for (let distance = 0; distance <= reach; distance++) {
+    const candidates =
+      distance === 0
+        ? [sequenceLength]
+        : [sequenceLength + distance, sequenceLength - distance];
+    for (const candidate of candidates) {
+      if (candidate < range.min || candidate > range.max) continue;
+      if (gateRhythm(components, rhythm, candidate).ok) return candidate;
+    }
+  }
+  return null;
+}
+
+/**
  * Keeps an exact requested sequence length by relaxing only LOOP expansion
  * intervals. Component semantics, inversion mode, and reflection axis stay
  * untouched. Callers can turn LOOP off when no compatible rhythm exists.

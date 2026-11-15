@@ -48,7 +48,7 @@ export function getCollectionOptions(): CollectionOption[] {
   };
 
   for (const c of collectionsState.collections) push(c);
-  for (const c of communityCollectionsState.items) push(c.collection, c.ownerName);
+  for (const c of communityCollectionsState.shelfItems) push(c.collection, c.ownerName);
 
   return out.sort((a, b) => b.size - a.size);
 }

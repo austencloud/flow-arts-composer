@@ -41,6 +41,20 @@ export function localizedLevelDescription(level: TurnLevel): {
   }
 }
 
+/**
+ * The level as a newcomer meets it in the phone tray's tiles: what the level
+ * lets a turn be, not its curriculum name. "Base Motions" assumes you know what
+ * a base motion is, so Level 1 says "No Turns"; the others already name their
+ * turns. The blurb stays for the hover title and the spoken label.
+ */
+export function localizedLevelTileDescription(level: TurnLevel): {
+  name: string;
+  blurb: string;
+} {
+  const full = localizedLevelDescription(level);
+  return level === 1 ? { ...full, name: t("shape_engine_level_1_short") } : full;
+}
+
 /** Translate the mode's displayed words without changing its canonical code. */
 export function localizedModeWords(
   mode: VtgMode,

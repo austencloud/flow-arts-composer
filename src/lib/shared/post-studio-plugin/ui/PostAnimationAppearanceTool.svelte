@@ -27,6 +27,7 @@
     EFFECT_LABELS,
     effectNavIcon,
   } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import { effectCatalogLooks } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     AnimationVisibilityStateManager,
@@ -260,12 +261,22 @@
         id: "props" as const,
         label: "Props",
         propType: pickedPropType ?? defaultPropType,
+        propPairGlyph: true,
         accentColor: RAIL_CATEGORY_ACCENTS.props,
       },
       {
         id: "effects" as const,
         label: "Effects",
         icon: effectNavIcon(trailEffects.activeEffect),
+        effectChip:
+          trailEffects.activeEffect !== "none"
+            ? {
+                effectId: trailEffects.activeEffect,
+                look: effectCatalogLooks(trailEffects).get(
+                  trailEffects.activeEffect
+                ),
+              }
+            : undefined,
         accentColor:
           EFFECT_COLORS[trailEffects.activeEffect] ??
           RAIL_CATEGORY_ACCENTS.effects,

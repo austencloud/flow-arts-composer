@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  fitLengthToLoopRhythm,
   fitLoopRhythmToLength,
   gateRhythm,
 } from "#lib/shared/create/services/loop-rhythm-gating.js";
@@ -95,6 +96,65 @@ describe("fitLoopRhythmToLength", () => {
         new Set([C.MIRRORED, C.INVERTED, C.ROTATED]),
         { rotationInterval: 4, inversionInterval: 4, inversionMode: "expand" },
         10
+      )
+    ).toBeNull();
+  });
+});
+
+describe("fitLengthToLoopRhythm", () => {
+  const range = { min: 4, max: 64 };
+
+  it("moves 14 steps to the nearest length quartered rotation splits, longer on a tie", () => {
+    expect(
+      fitLengthToLoopRhythm(
+        new Set([C.ROTATED]),
+        { rotationInterval: 4 },
+        14,
+        range
+      )
+    ).toBe(16);
+  });
+
+  it("takes the nearer length when there is no tie", () => {
+    expect(
+      fitLengthToLoopRhythm(
+        new Set([C.ROTATED]),
+        { rotationInterval: 4 },
+        13,
+        range
+      )
+    ).toBe(12);
+  });
+
+  it("keeps a length the rhythm already splits", () => {
+    expect(
+      fitLengthToLoopRhythm(
+        new Set([C.ROTATED]),
+        { rotationInterval: 4 },
+        12,
+        range
+      )
+    ).toBe(12);
+  });
+
+  it("stays under the cap", () => {
+    expect(
+      fitLengthToLoopRhythm(
+        new Set([C.ROTATED]),
+        { rotationInterval: 4 },
+        14,
+        { min: 4, max: 14 }
+      )
+    ).toBe(12);
+  });
+
+  it("returns null when no length in range splits", () => {
+    expect(
+      fitLengthToLoopRhythm(
+        new Set([C.ROTATED]),
+        { rotationInterval: 4 },
+        6,
+        { min: 5, max: 7 }
       )
     ).toBeNull();
   });

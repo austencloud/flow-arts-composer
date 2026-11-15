@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => ({
-  ensureFullAccountForExport: vi.fn(),
   cancelSharedExport: vi.fn(),
   export3DAnimation: vi.fn(),
   clearError: vi.fn(),
@@ -14,10 +13,6 @@ const mocks = vi.hoisted(() => ({
     error: null,
     previewBlobUrl: null,
   },
-}));
-
-vi.mock("#lib/shared/auth/domain/export-gate.js", () => ({
-  ensureFullAccountForExport: mocks.ensureFullAccountForExport,
 }));
 
 vi.mock(
@@ -53,14 +48,7 @@ describe("Scene Studio video export cancellation", () => {
     mocks.sharedState.previewBlobUrl = null;
   });
 
-  it("enters a cancellable state before account and scene startup finish", async () => {
-    let releaseAccountGate!: (allowed: boolean) => void;
-    mocks.ensureFullAccountForExport.mockReturnValue(
-      new Promise<boolean>((resolve) => {
-        releaseAccountGate = resolve;
-      })
-    );
-
+  it("enters a cancellable state before scene startup finishes", async () => {
     const viewer = {
       webglCanvas: null,
       threlteCamera: null,
@@ -82,7 +70,6 @@ describe("Scene Studio video export cancellation", () => {
     expect(exporter.state.isCancelling).toBe(true);
     expect(mocks.cancelSharedExport).toHaveBeenCalledOnce();
 
-    releaseAccountGate(true);
     await expect(renderResult).resolves.toBe(false);
 
     expect(exporter.state.isExporting).toBe(false);

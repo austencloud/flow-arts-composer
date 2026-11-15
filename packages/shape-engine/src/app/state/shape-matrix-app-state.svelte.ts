@@ -537,7 +537,27 @@ export function createShapeMatrixAppState(
   function setSurface(nextSurface: ShapeMatrixSurface): void {
     if (surface === nextSurface) return;
     surface = nextSurface;
+    settleCompactView();
     syncState();
+  }
+
+  /** Whether the current surface has a chosen cell for the detail view to play. */
+  function surfaceHasPair(): boolean {
+    return Boolean(surface === "theory" ? theoryPair : selectedPair);
+  }
+
+  /**
+   * A compact host's detail view is the animation of the current surface's
+   * chosen cell. Each surface keeps its own pair while the view is shared, so
+   * switching surface (or restoring a snapshot) can leave the detail view up
+   * with nothing chosen behind it: an empty stage whose only way out is a back
+   * arrow. With no pair to play, the grid is the screen with something to do.
+   * Focus stays where it is: the surface control that was just used.
+   */
+  function settleCompactView(): void {
+    if (compact && activeView === "detail" && !surfaceHasPair()) {
+      activeView = "matrix";
+    }
   }
 
   function applyTheoryRatios(nextLeft: SpinRatio, nextRight: SpinRatio): void {
@@ -927,6 +947,7 @@ export function createShapeMatrixAppState(
       ? snapshot.propMode
       : null;
     soloHand = selectedPair ? snapshot.solo : null;
+    settleCompactView();
     if (cancelled) void load();
   }
 
@@ -998,7 +1019,7 @@ export function createShapeMatrixAppState(
     if (compact) requestCompactFocus("matrix");
   }
   function showDetail(): void {
-    if (surface === "theory" ? theoryPair : selectedPair) {
+    if (surfaceHasPair()) {
       activeView = "detail";
       if (compact) requestCompactFocus("detail");
     }
@@ -1013,9 +1034,7 @@ export function createShapeMatrixAppState(
     if (compact === nextCompact) return;
     compact = nextCompact;
     if (compact) {
-      activeView = (surface === "theory" ? theoryPair : selectedPair)
-        ? "detail"
-        : "matrix";
+      activeView = surfaceHasPair() ? "detail" : "matrix";
     }
   }
   function openAbout(focus: ShapeMatrixAboutFocus = null): void {

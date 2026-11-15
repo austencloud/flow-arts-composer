@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
   import { replayableImage } from "#lib/shared/analytics/replayable-image.js";
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, untrack } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
@@ -43,6 +43,11 @@
     galleryStepCount,
     type GalleryQrPolicy,
   } from "#lib/shared/browse/services/gallery-render-input.js";
+  import {
+    PREPARE_AHEAD_PRIORITY,
+    VISITOR_ASKED_PRIORITY,
+  } from "#lib/shared/browse/services/thumbnail-render-queue.js";
+  import type { CacheLayer } from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
   import { repairThumbnailCaches } from "#lib/shared/browse/services/thumbnail-repair.js";
   import { calculateGalleryAspectRatio } from "#lib/shared/render/services/layout-calculator.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
@@ -63,6 +68,7 @@
   import { cardMandalaPalette } from "#lib/shared/mandala/domain/mandala-palette.js";
   import { queueArrivalStart } from "#lib/shared/browse/services/card-arrival-queue.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import StartWordOverlay from "./StartWordOverlay.svelte";
   import {
     EASE_STANDARD,
     motionDuration,
@@ -106,10 +112,25 @@
     eager?: boolean;
     /** Allow a QR when this card has a prepared public scan asset. */
     allowQR?: boolean;
+    /** A small picture in a gallery grid: the mandala square, never a QR. */
+    gridCard?: boolean;
     /** Upload a fresh render for later visitors (see ThumbnailRequest). */
     shareRender?: boolean;
     /** Use 5:7 playing card layout for physical card export (different from lightMode/printMode) */
     cardMode?: boolean;
+    /**
+     * A variation the card expects to show next. When set, and once the shown
+     * picture is in place, the next picture is prepared at the lowest priority
+     * so a tap finds it in the memory cache. Never shows status on the card.
+     */
+    prepareNext?: {
+      sequence: SequenceData;
+      leftPropType?: PropType;
+      rightPropType?: PropType;
+      catDogModeEnabled?: boolean;
+    } | null;
+    /** A picture finished loading on the card, with the tier that served it. */
+    onPictureShown?: (source: CacheLayer | undefined) => void;
   }
 
   const {
@@ -135,8 +156,11 @@
     showRightMotion = true,
     eager = false,
     allowQR = true,
+    gridCard = false,
     shareRender = true,
     cardMode = false,
+    prepareNext = null,
+    onPictureShown,
   }: Props = $props();
 
   // State
@@ -151,6 +175,13 @@
 
   // Non-reactive flag to skip cache after 404 (avoids $effect dependency loop)
   let skipCacheOnNextRequest = false;
+  // Set by the card when the visitor tapped for this picture; read once by the
+  // next request, so it jumps the queue ahead of cards that are merely visible.
+  let visitorAskedNextRequest = false;
+  // The tier that served the shown picture, handed on with onPictureShown.
+  let shownSource: CacheLayer | undefined;
+  // True once prepareNext's picture is in the memory cache.
+  let nextPrepared = false;
   // Debounce error handling to prevent rapid re-triggers
   let errorDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -208,8 +239,13 @@
 
   // Derived: Build render input from props via the shared builder so the live
   // card and the gallery-thumbnail-warmer produce byte-identical cache keys.
-  const renderInput = $derived<ThumbnailRenderInput>(
-    buildGalleryRenderInput({
+  function buildInputFor(
+    sequence: SequenceData,
+    leftPropType: PropType | undefined,
+    rightPropType: PropType | undefined,
+    catDogModeEnabled: boolean
+  ): ThumbnailRenderInput {
+    return buildGalleryRenderInput({
       sequence,
       leftPropType,
       rightPropType,
@@ -239,10 +275,15 @@
       showLeftMotion,
       showRightMotion,
       allowQR,
+      gridCard,
       cardMode,
       compositionManager,
       isAuthenticated: loadedAuthState.isAuthenticated,
-    })
+    });
+  }
+
+  const renderInput = $derived<ThumbnailRenderInput>(
+    buildInputFor(sequence, leftPropType, rightPropType, catDogModeEnabled)
   );
 
   // Intersection observer for lazy loading
@@ -391,6 +432,7 @@
     const qrPolicy = galleryQrPolicy({
       variant,
       cardMode,
+      gridCard,
       isAuthenticated: loadedAuthState.isAuthenticated,
     });
     const sameImageKey = key.hash === currentKeyHash;
@@ -416,12 +458,17 @@
     currentKeyHash = key.hash;
     currentQrPolicy = qrPolicy;
 
+    // One use per tap, whichever way this request resolves.
+    const visitorAsked = visitorAskedNextRequest;
+    visitorAskedNextRequest = false;
+
     // Synchronous memory cache check - instant on revisits, no placeholder flash
     if (!skipCacheOnNextRequest) {
       const cached = orchestrator.getCached(key.hash);
       if (cached) {
         if (thumbnailUrl !== cached) releaseUncachedThumbnail();
         displayedKey = key;
+        shownSource = "memory";
         thumbnailUrl = cached;
         status = { state: "complete", url: cached };
         return;
@@ -442,7 +489,10 @@
     skipCacheOnNextRequest = false;
 
     // Calculate priority based on Y position (lower = closer to top = higher priority)
-    const priority = containerRef?.getBoundingClientRect().top ?? Infinity;
+    // A tapped variation sorts ahead of every position-based request.
+    const priority = visitorAsked
+      ? VISITOR_ASKED_PRIORITY
+      : (containerRef?.getBoundingClientRect().top ?? Infinity);
     const requestController = new AbortController();
     currentRequestController = requestController;
     const requestIsCurrent = () =>
@@ -466,6 +516,7 @@
         onPreview: (preview) => {
           if (requestIsCurrent() && preview.url) {
             displayedKey = preview.key;
+            shownSource = preview.source;
             thumbnailUrl = preview.url;
             status = { state: "complete", url: preview.url };
           }
@@ -481,6 +532,7 @@
         if (requestIsCurrent()) {
           if (result.url) {
             displayedKey = result.key;
+            shownSource = result.source;
             thumbnailUrl = result.url;
             // Ensure loading overlay clears - prevents race where a re-queued
             // render sets status back to "queued" while thumbnailUrl persists
@@ -504,6 +556,54 @@
           currentRequestController = null;
         }
       });
+  });
+
+  // Tell the card when a picture is in place. Keyed to the image's own load
+  // (imageReady), not to the URL arriving.
+  $effect(() => {
+    if (!imageReady) return;
+    untrack(() => onPictureShown?.(shownSource));
+  });
+
+  // Prepare the card's next variation ahead of a tap, once the shown picture
+  // is in place. The card sets prepareNext only after its first tap. It asks
+  // for exactly the render input the card would build for that variation, at
+  // the lowest priority, with no status callback. It uses the cache-only QR
+  // policy and never uploads: a guest or signed-in reader gets no scan-cell
+  // warming, no short-code allocation and no anonymous sign-in out of this.
+  // The real view of that variation still runs its own normal request.
+  $effect(() => {
+    nextPrepared = false;
+    const next = prepareNext;
+    if (!next || !imageReady || !orchestrator || !servicesReady) return;
+    const controller = new AbortController();
+    const input = buildInputFor(
+      next.sequence,
+      next.leftPropType,
+      next.rightPropType,
+      next.catDogModeEnabled ?? false
+    );
+    const key = deriveKey(input);
+    if (orchestrator.getCached(key.hash)) {
+      nextPrepared = true;
+      return;
+    }
+    orchestrator
+      .getThumbnail({
+        sequence: next.sequence,
+        input,
+        priority: PREPARE_AHEAD_PRIORITY,
+        signal: controller.signal,
+        qrPolicy: "cache-only",
+        shareRender: false,
+      })
+      .then((result) => {
+        if (!controller.signal.aborted && result.url) nextPrepared = true;
+      })
+      .catch(() => {
+        // Preparing is best effort; a real tap makes its own request.
+      });
+    return () => controller.abort();
   });
 
   // Derive display states
@@ -547,6 +647,15 @@
     arrivalAllowed && isVisible && !thumbnailUrl && !hasError
   );
   const imageReady = $derived(!!thumbnailUrl && loadedUrl === thumbnailUrl);
+
+  // Shared pictures leave the Start corner blank for every language; the
+  // card lays the visitor's word on top once the picture is in place.
+  const startWordPicture = $derived.by(() => {
+    if (!imageReady || !imageEl || hasError) return null;
+    const shared = (displayedKey ?? deriveKey(renderInput)).usesDefaults;
+    if (!shared) return null;
+    return { width: imageEl.naturalWidth, height: imageEl.naturalHeight };
+  });
 
   // The settings the picture is painted with: the shown picture's own once
   // it is here (a signed-in reader's QR can move the right-hand mandala).
@@ -650,6 +759,44 @@
       : null
   );
 
+  /**
+   * The share of the steps rendered, for the caption. Held at 99 until the
+   * picture is here: a card that said 100% and kept waiting would read as
+   * stuck.
+   */
+  const arrivalPercent = $derived(
+    arrivalProgress
+      ? Math.min(
+          99,
+          Math.floor((arrivalProgress.done / arrivalProgress.of) * 100)
+        )
+      : 0
+  );
+
+  // What the drawing says in words (Austen, 2026-11-14: "if I didn't know
+  // that that was a loading screen, I would just think it's frozen. I think
+  // we have to be more explicit."). A cloud download reports checking-cache,
+  // so it says it is waiting its turn too.
+  const arrivalCaption = $derived.by(() => {
+    switch (status.state) {
+      case "idle":
+      case "checking-cache":
+      case "queued":
+        return t("browse_audit_thumbnail_waiting_turn");
+      case "rendering":
+        return arrivalProgress
+          ? t("browse_audit_thumbnail_loading_percent", {
+              percent: arrivalPercent,
+            })
+          : t("browse_audit_thumbnail_loading");
+      case "uploading":
+      case "complete":
+        return t("browse_audit_thumbnail_almost_ready");
+      default:
+        return t("browse_audit_thumbnail_loading");
+    }
+  });
+
   // A card that will draw its mandala shows only its word until the drawing
   // starts. The ring, label and bar there were a second loading language
   // that flashed for a moment and was replaced. They stay for a card that
@@ -727,6 +874,16 @@
     }
   });
 
+  /** The visitor asked for the next picture; it goes to the front. */
+  export function markNextRequestVisitorAsked(): void {
+    visitorAskedNextRequest = true;
+  }
+
+  /** Whether the picture prepared ahead is ready for a tap right now. */
+  export function isNextPrepared(): boolean {
+    return nextPrepared;
+  }
+
   /**
    * Force re-render: delete from all cache tiers, then re-fetch from scratch.
    */
@@ -782,6 +939,15 @@
       onload={handleImageLoad}
       onerror={handleImageError}
     />
+    {#if startWordPicture && !(imageHeld && arrival === "drawing")}
+      <StartWordOverlay
+        naturalWidth={startWordPicture.width}
+        naturalHeight={startWordPicture.height}
+        {stepCount}
+        startPlacementLayout={effectiveStartPlacementLayout}
+        darkMode={!lightMode}
+      />
+    {/if}
     <!-- Loading overlay during re-renders (e.g., prop change) -->
     {#if isLoading}
       <RenderingOverlay
@@ -805,7 +971,11 @@
     <div
       class="loading-placeholder"
       data-mode={arrival === "drawing" ? "mandala" : undefined}
-      aria-label={isLoading ? statusLabel : t("browse_audit_waiting_to_load")}
+      aria-label={arrival === "drawing"
+        ? arrivalCaption
+        : isLoading
+          ? statusLabel
+          : t("browse_audit_waiting_to_load")}
     >
       {#if arrival !== "drawing"}
         <div class="placeholder-glyph" bind:this={placeholderGlyphEl}>
@@ -841,6 +1011,7 @@
       box={arrivalBox}
       {lightMode}
       progress={arrivalProgress}
+      caption={arrivalCaption}
       ready={imageReady}
       onReveal={revealImage}
       onDone={endArrival}
@@ -983,7 +1154,6 @@
   .loading-status {
     font-size: var(--font-size-compact, 12px);
     color: var(--theme-text, rgba(255, 255, 255, 0.9));
-    text-transform: capitalize;
   }
 
   .error-placeholder {

@@ -287,21 +287,25 @@ export function createPostEditorState(deps: PostEditorDeps) {
 
   /**
    * The package state's part, read as tka reads it: the opening tunnel counts
-   * only while the selected animation still carries it (an undo can take the
-   * hook away under the selection).
+   * only while the selected animation still carries it, and its split hands
+   * only while it still splits (an undo can take either away under the
+   * selection).
    */
-  function selectedPart(): "tunnel" | null {
+  function selectedPart(): "tunnel" | "split" | null {
     const item = core.selectedItem;
-    return core.selectedPart === "tunnel" &&
-      item?.kind === "animation" &&
-      item.tunnelHook
-      ? "tunnel"
-      : null;
+    if (item?.kind !== "animation") return null;
+    if (core.selectedPart === "tunnel" && item.tunnelHook) return "tunnel";
+    if (core.selectedPart === "split" && item.split && !item.part?.hand)
+      return "split";
+    return null;
   }
 
   function deleteSelected(): boolean {
     // With a cell in hand, Delete empties the cell; the arrangement stays.
     if (selectedCell) return clearSelectedCell();
+    // With the split hands in hand, Delete leaves the animation alone; the
+    // split is turned off in its own tool.
+    if (selectedPart() === "split") return false;
     if (selectedPart() !== "tunnel") return core.deleteSelected();
     const target = core.selectedItem;
     if (!target || core.isLocked(target.id)) return false;
@@ -454,7 +458,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       if (next !== core.selectedItemId) cellSelection = null;
       core.selectedItemId = next;
     },
-    /** `"tunnel"` while an animation's opening tunnel is what is selected. */
+    /** `"tunnel"` or `"split"` while that part of an animation is what is selected. */
     get selectedPart() {
       return selectedPart();
     },
@@ -463,7 +467,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       cellSelection = null;
       core.selectPart(itemId, "tunnel");
     },
-    /** Package parts; tka's only part is the opening tunnel. */
+    /** Package parts: the opening tunnel, and the split hands' fork. */
     selectPart: (itemId: string, part: string) => core.selectPart(itemId, part),
     get tunnelHook() {
       return timing.tunnelHook;

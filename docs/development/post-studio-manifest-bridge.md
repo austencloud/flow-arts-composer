@@ -25,6 +25,108 @@ node scripts/post-project.mjs ops --file ops.json        # several edits, one un
 
 Ownership: `post-project-ops.ts` maps each named edit onto the existing pure edit, in `core/edit/project-edits.ts` of `@austencloud/video-editor` (the music ops in `core/edit/music-edits.ts`) or, for the titles and tunnel edits only tka has, in tka's `post-project-edits.ts`; `queuePostProjectOps` in the bridge applies them to the session snapshot and reuses the manifest queue below.
 
+### Split hands
+
+An animation clip can part into a left-hand canvas and a right-hand canvas, then rejoin. Set `split` with an `item` patch; `null` removes it:
+
+```powershell
+node scripts/post-project.mjs item --item ITEM_ID --patch '{"split":{"openAt":2,"openSeconds":0.7,"closeAt":6,"style":"echo"}}'
+node scripts/post-project.mjs item --item ITEM_ID --patch '{"split":null}'
+```
+
+Times are seconds on the clip's own clock, from its first frame. `openSeconds` is how long the opening move takes. `closeAt` is optional (without it the hands stay apart to the end), and `closeSeconds` defaults to `openSeconds`. `style` is `glide`, `spring`, `peel` or `echo` (the default). `spread` (0 to 0.5, how far each canvas moves out, as a share of the frame width), `scale` (0.2 to 1.5, each canvas's size at rest) and `flash` (0 to 3, the brightness on the hit; glide has none) are optional. A `closeAt` before `openAt` is moved up to it. Only animation clips take a split, and a clip that shows one hand (`part.hand`) ignores it. The Split hands panel on the clip sets the same fields. To see one, open the harness at `/test/post-studio?fixture=split`.
+
+### Lifted panel
+
+An animation clip can lift its panel: the canvas rises and shrinks inside the clip's box, the step number moves to the box's top-left corner and the progress strip to its top edge. Set `panelLift` with an `item` patch; `null` removes it:
+
+```bash
+node scripts/post-project.mjs item --item ITEM_ID --patch '{"panelLift":{"canvasY":0.344,"canvasScale":0.95,"inAt":1,"inSeconds":0.8,"outAt":8.3,"outSeconds":0.7}}'
+```
+
+Every field is optional. `canvasY` (0.1 to 0.9, the canvas centre as a share of the box height, default 0.344), `canvasScale` (0.3 to 1.5, default 0.95), `stepInsetX` and `stepInsetY` (0 to 0.5, the step number's corner as shares of the box, defaults 0.056 and 0.029) and `barEdge` (`top`, the default, or `bottom`) set the lifted look. Times are seconds on the clip's own clock: `inAt` is when the lift is fully in, reached over `inSeconds` before it (default 0.8), and `outAt` is when it starts going back, over `outSeconds` (default 0.7), retracing the move in. Without `inAt` the clip is lifted from its first frame; without `outAt` it stays lifted to the end. An `outAt` before `inAt` is moved up to it. Breakdown and mandala views ignore the lift. The Lift panel on the clip sets the same fields; the harness shows one at `/test/post-studio?fixture=lift`.
+
+### Titles: leave, arrive and the lit letter
+
+A titles clip takes three optional fields through `item`. `leave` is `"lift"` (the default: the words rise away and fade at the end) or `"stay"` (they hold to the last frame). `enter` is `"rise"` (the default) or `"none"` (shown from the first frame). `lit` is `{ "from": s, "to": s }` in seconds from the clip's start: inside that span only the letter being performed draws at full strength and the rest dim, read from the clock of the footage under the clip. `null` clears `lit`, and the default value clears `leave` or `enter`.
+
+```powershell
+node scripts/post-project.mjs item --item TITLES_ID --patch '{"leave":"stay","lit":{"from":26,"to":76}}'
+```
+
+Any other value is refused with the allowed values, as is one of these fields on a clip that is not titles. A titles clip whose box has keyframes draws as one name-and-spoken-line pair that scales with its box; the titles tool's Park top left button writes those keyframes. A fourth field, `quiet` (`{ "from": s, "to": s }`, shaped like `lit`), fades the spoken line out over 0.3 s at `from` and back in at `to`.
+
+### Card ending: cascade, ring, QR exit and title hand-off
+
+A card clip takes four optional fields through `item`, with times in seconds from the card's start; `null` clears each one, and `"card"` clears `headerTitle`. A card with none of them draws as before.
+
+- `enter`: `{ "style": "cascade", "step"?: 0.035, "each"?: 0.25 }`. The header fades in over `each`, then the tiles in reading order (top row, then pictographs 1 to N), each `step` after the last.
+- `ring`: `{ "at": s, "every"?: s, "late"?: 0.05 }`. The amber ring sits on pictograph 1 from `at` and steps one pictograph every `every`, staying on the last. Without `every` it steps on the music's beat; a post with no beat grid must give `every`.
+- `qrExit`: `{ "at": s, "seconds"?: 1.13, "to"?: { "x", "y", "width", "height" }, "caption"?: text }`. The QR flies and grows to `to` (shares of the frame; default a centred square 0.55 of the width, top at 0.27) while the rest of the card fades, then holds. `caption` (up to 80 letters) travels under it.
+- `headerTitle`: `"clip"` keeps the header's space but leaves the word to the titles clip.
+
+```powershell
+node scripts/post-project.mjs item --item CARD_ID --patch '{"enter":{"style":"cascade"},"ring":{"at":1,"every":0.75},"qrExit":{"at":12.8,"caption":"Scan to try it"}}'
+```
+
+The titles tool's Land on card button measures where the drawn card puts its header word. A script has no drawing to measure, so `land-titles` takes that spot as shares of the card's box (read it from the card in the editor, or use the button): `node scripts/post-project.mjs land-titles --word '{"x":0.3,"y":0.012,"width":0.4,"height":0.05}' [--titles ID] [--card ID] [--at T]`. It writes the titles' box at `--at` (default the card's start) and the landed box 0.6 s later, sets `leave` to `"stay"`, quiets the spoken line from the landing on, and sets the card's `headerTitle` to `"clip"`.
+
+### Flash: a hit with corner marks
+
+A flash clip's start is the hit. A white veil covers the whole frame at `strength` (0 to 1, default 0.22) on the first frame and dies away to nothing over `fade` seconds (0.05 to 5, default 0.4). With `marks` (default `true`), four rounded corner brackets sit at the corners of the clip's box from its first frame to its last, so the box marks what to look at, such as a QR code. Everything is drawn from the playhead, so a paused frame is the exported frame. `add-flash` adds a 3 s clip with a centred square box; `item` changes the three fields afterwards.
+
+```powershell
+node scripts/post-project.mjs add-flash --at 12.5 --strength 0.3 --fade 0.5
+node scripts/post-project.mjs item --item FLASH_ID --patch '{"marks":false}'
+```
+
+A value out of range, or one of these fields on a clip that is not a flash, is refused.
+
+### Hold a clip's last frame
+
+A video clip takes `holdOut` through `item`: seconds (0 to 30) it stays on screen after its footage ends, showing its last frame, silent. The hold counts in the clip's length. Layers over the clip that follow its footage, such as a moves square, an animation or a staff effect, stop on what they showed at the footage's last frame. `null` or 0 clears it; a value out of range, or `holdOut` on a clip that is not a video, is refused.
+
+```powershell
+node scripts/post-project.mjs item --item VIDEO_ID --patch '{"holdOut":2}'
+```
+
+### Fly into next clip
+
+For an animation, moves, mandala or card clip with another of those right after it on the same lane, `fly-into-next` cross-fades the clip into that neighbour over `--seconds` (default 1.13). Over the cross-fade both clips ride one box path, eased in and out, from the outgoing clip's box to the incoming clip's box, keyed at the same two times on both. Outside the cross-fade each keeps its own box and keys. On an overlay lane the incoming clip starts earlier by the cross-fade's length and keeps its end, and every later clip on the lane stays where it was, so a cut timed to a song holds; on the main lane the editor's own cross-fade layout stands. The keys are ordinary box keys; running it again first removes the box keys inside the old and new cross-fade, so it replaces the earlier flight; a run that would write exactly what is there changes nothing and reports `unchanged`. The clip tools' Fly into next button does the same, with the length beside it.
+
+```powershell
+node scripts/post-project.mjs fly-into-next --item ANIMATION_ID --seconds 1.13
+```
+
+A clip with no such neighbour is refused. The harness shows both at `/test/post-studio?fixture=flash` and `?fixture=join`.
+
+### Keyframes
+
+`keyframe --item ID --action A` reads or edits one item's keyframes. Times are post times, written like every other time here; add `--own` (`"own": true` in a batch file) when they are seconds from the item's start instead.
+
+- `list [--channel C] [--json]` prints the keyframes by channel, each with its time from the item's start, its post time and, when the post has a beat grid, its bar and beat. It changes nothing.
+- `set --at T --patch '{...}' [--easing NAME]` keys fields that animate (`box`, `opacity`, and on video `zoom`, `panX`, `panY`, `rotation`, `sourceGeometry`) through the editor's own keyed edit: it changes the keyframe at T, or makes one. A still channel gets its first keyframe. `--easing` (`linear`, `ease-in`, `ease-out`, `ease-in-out`, `smooth`, `overshoot`, `hold`) shapes the move leaving that keyframe, or arriving at it when it is the last.
+- `move --at T --to T2 [--channel C]` moves the keyframe within 0.02 s of T. With no keyframe that close it fails and names the nearest one on each side.
+- `retime --channel C --times T1,T2,...` gives each keyframe on the channel its new time, in order; the count must match.
+- `delete --at T [--channel C]` removes the keyframe at T.
+- `clear [--channel C] [--at T]` removes every keyframe, or one channel's, leaving the value at T (default: the item's start).
+
+Every action refuses a time outside the item, two keyframes of a channel on one moment or out of order, and an item or channel that is not there, saying what it found. A change that alters nothing reports `unchanged`.
+
+```powershell
+node scripts/post-project.mjs keyframe --item SQUARE_ID --action set --at @29.3 --patch '{"opacity":0.5}' --easing ease-out
+```
+
+### Move a clip
+
+`move --item ID --to T [--track N]` moves an overlay with the editor's own overlay move, where `--track` works as it does there (a busy track sends the clip to the nearest free one above, and the number of tracks asks for a new one), or places a main-track clip at T with the editor's own placement. Keyframes and the clip's own timed settings travel with it, because they are stored from the clip's start. The command prints the start and track it landed on.
+
+```powershell
+node scripts/post-project.mjs move --item SQUARE_ID --to 12.5 --track 2
+```
+
+A time in `ops.json` can be a number, a string read by the same parser as the flags (`"12.5"`, `"1:02.5"`, `"@29.3"`), or the object `{"bar": 29, "beat": 3}`.
+
 ## Whole-manifest replacement
 
 With the editor open on the local dev server:

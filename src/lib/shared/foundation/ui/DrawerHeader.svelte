@@ -44,7 +44,7 @@
     icon,
     iconColor,
     closeDisabled = false,
-    closeLabel = "Close",
+    closeLabel = t("action_close"),
   }: Props = $props();
 
   let hapticService: HapticFeedback | null = null;

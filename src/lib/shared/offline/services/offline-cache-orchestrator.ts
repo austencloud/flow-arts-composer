@@ -25,6 +25,10 @@ import { settingsService } from "#lib/shared/settings/state/settings-state.svelt
 // SW Cache Storage is a reliable proxy for "pictographs can render offline".
 const OFFLINE_RENDER_PROBE = "/images/grid/diamond_grid.svg";
 const MAX_BACKGROUND_MISSING_THUMBNAILS = 3;
+/** Browse's first cards come first; the background save waits this long. */
+export const BACKGROUND_START_DELAY_MS = 10_000;
+/** After the delay, wait for an idle moment, but no longer than this. */
+const BACKGROUND_IDLE_TIMEOUT_MS = 5_000;
 
 /**
  * Is there a service-worker cache to warm into HERE? Offline caching is a
@@ -49,6 +53,8 @@ type WarmProgress = (done: number, total: number) => void;
 export class OfflineCacheOrchestrator {
   private cancelled = false;
   private prefetching = false;
+  /** A background start still waiting for its delay or idle moment. */
+  private pendingStart: { abort(): void } | null = null;
 
   constructor(
     private networkMonitor: NetworkStatusMonitor,
@@ -76,6 +82,49 @@ export class OfflineCacheOrchestrator {
     getBrowseLoader();
     await loadManifest();
     await this.warmCloudThumbnails(false);
+  }
+
+  /**
+   * Resolve true once Browse has had its first seconds to itself: after
+   * `delayMs`, then at the next idle moment (or straight away where the
+   * browser has no idle callback). Resolves false when `cancel()` or an
+   * explicit download claims the slot first, so a stale warm never starts.
+   */
+  waitForBackgroundSlot(
+    delayMs: number = BACKGROUND_START_DELAY_MS
+  ): Promise<boolean> {
+    this.pendingStart?.abort();
+    return new Promise<boolean>((resolve) => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      let idleHandle: number | null = null;
+      const finish = (go: boolean) => {
+        if (this.pendingStart === pending) this.pendingStart = null;
+        resolve(go);
+      };
+      const pending = {
+        abort: () => {
+          if (timer !== null) clearTimeout(timer);
+          if (idleHandle !== null && typeof cancelIdleCallback === "function")
+            cancelIdleCallback(idleHandle);
+          finish(false);
+        },
+      };
+      this.pendingStart = pending;
+      timer = setTimeout(() => {
+        timer = null;
+        if (typeof requestIdleCallback === "function") {
+          idleHandle = requestIdleCallback(
+            () => {
+              idleHandle = null;
+              finish(true);
+            },
+            { timeout: BACKGROUND_IDLE_TIMEOUT_MS }
+          );
+        } else {
+          finish(true);
+        }
+      }, delayMs);
+    });
   }
 
   /** True when this environment can actually cache for offline (prod PWA). */
@@ -114,6 +163,9 @@ export class OfflineCacheOrchestrator {
     getBrowseLoader();
     await loadManifest();
 
+    // An explicit click outranks a background start that has not fired yet.
+    this.pendingStart?.abort();
+
     // An explicit click outranks the throttled background warm that Browse
     // kicks off on mount. Cancel it and wait for it to release the guard —
     // otherwise the re-entrancy check reports {0,0}, which the UI would
@@ -136,6 +188,7 @@ export class OfflineCacheOrchestrator {
 
   cancel(): void {
     this.cancelled = true;
+    this.pendingStart?.abort();
   }
 
   /**
@@ -310,7 +363,11 @@ export class OfflineCacheOrchestrator {
 
               // The current manifest and the per-browser missing-object cache
               // filter this list before any image bytes are requested.
-              const url = await getUrl(cloudKey);
+              // Only pictures the card index lists: an unlisted key would cost
+              // one Storage metadata request each, competing with first paint.
+              const url = await getUrl(cloudKey, Infinity, {
+                probeUnknown: false,
+              });
               if (!url) return;
 
               // Warm the SW Cache Storage; no local IndexedDB write.

@@ -207,6 +207,10 @@ export function createChoreoCardRenderLifecycle(
     get flipDuration() {
       return flipDuration;
     },
+    /** The first render (or cache adoption) has ended. */
+    get hasSettledOnce() {
+      return hasMounted;
+    },
     markRenderSettled,
   } as const;
 }

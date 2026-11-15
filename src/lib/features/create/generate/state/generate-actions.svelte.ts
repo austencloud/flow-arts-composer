@@ -58,6 +58,11 @@ import {
 import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
 import { logSequenceAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import {
+  describeGenerateChoices,
+  type GenerateChoiceDetails,
+  type GeneratePlacementChoices,
+} from "./generate-event-details";
 
 import { applyPattern as dpApplyPattern } from "#lib/features/create/shared/services/duration-pattern-manager.js";
 import { getVariationExplorationOrchestrator } from "#lib/features/create/spell/get-variation-exploration-orchestrator.js";
@@ -126,6 +131,19 @@ function noticeForImpossibleRequest(error: unknown): boolean {
     duration: IMPOSSIBLE_REQUEST_NOTICE_MS,
   });
   return true;
+}
+
+/** Settings for the generate event; never throws, so logging can't block a build. */
+function choiceDetails(
+  config: UIGenerationConfig | undefined,
+  placements?: GeneratePlacementChoices
+): GenerateChoiceDetails {
+  if (!config) return {};
+  try {
+    return describeGenerateChoices(config, placements);
+  } catch {
+    return {};
+  }
 }
 
 export function createGenerationActionsState(
@@ -279,6 +297,7 @@ export function createGenerationActionsState(
           sequenceWord: generatedSequence.word,
           sequenceLength: generatedSequence.steps.length,
           generationType: options.mode,
+          ...choiceDetails(currentConfig, options),
         });
       } catch {
         // Silently fail - activity logging is non-critical
@@ -565,6 +584,7 @@ export function createGenerationActionsState(
           sequenceWord: loopedSequence.word,
           sequenceLength: loopedSequence.steps.length,
           generationType: "spell",
+          ...choiceDetails(currentConfig),
         });
       } catch {
         // Silently fail - activity logging is non-critical

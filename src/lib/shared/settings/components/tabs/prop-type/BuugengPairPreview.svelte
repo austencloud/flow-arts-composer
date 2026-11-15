@@ -33,6 +33,7 @@
     leftColor,
     rightColor,
     dimHand = null,
+    animate = false,
   }: {
     /** A buugeng-family prop. */
     propType: PropType;
@@ -42,6 +43,10 @@
     rightColor?: string;
     /** Draws this hand faintly, for a picker that sets only the other hand. */
     dimHand?: "left" | "right" | null;
+    /** Glides the props to a new pair instead of redrawing it in place. The
+     *  renderer glides only live pictographs, which take dark art from a theme
+     *  override rather than a fixed `darkMode`. */
+    animate?: boolean;
   } = $props();
 
   // The 950-unit diamond grid's south hand point (static/images/grid/diamond_grid.svg).
@@ -116,8 +121,9 @@
       showPlacements={false}
       showHandColorKey={false}
       showReversals={false}
-      darkMode
-      disableTransitions
+      darkMode={animate ? undefined : true}
+      themeOverride={animate ? "dark" : undefined}
+      disableTransitions={!animate}
       leftPropTypeOverride={propType}
       rightPropTypeOverride={propType}
       leftBuugengFlippedOverride={leftFlipped}

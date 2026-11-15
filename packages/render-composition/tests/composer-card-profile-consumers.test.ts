@@ -51,7 +51,7 @@ describe("Composer card export profile consumers", () => {
       "utf8"
     );
     expect(source).toContain(
-      "renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode)"
+      "renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode, label)"
     );
     expect(source).not.toContain("BEAT_NUMBER_FONT_SIZE");
   });

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { SnapPoints } from "#lib/shared/foundation/ui/drawer/snap-points.js";
-import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
+import { SwipeToDismiss } from "@austencloud/drawer";
 
 describe("bottom drawer height stops", () => {
   it("expands on an upward pull and returns through the compact and closed stops", () => {
@@ -47,8 +47,9 @@ describe("bottom drawer height stops", () => {
     mouse(drawer, "mousemove", 290);
     mouse(drawer, "mousemove", 150);
     mouse(drawer, "mouseup", 150);
+    // The drag is claimed at 290, so the sheet travelled 140 px from there.
     expect(onDragEnd).toHaveBeenCalledWith(
-      -150,
+      -140,
       expect.any(Number),
       expect.any(Number)
     );

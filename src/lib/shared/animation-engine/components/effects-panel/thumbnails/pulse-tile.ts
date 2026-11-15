@@ -39,6 +39,13 @@ import {
   type PulseUnits,
 } from "#lib/shared/effects/renderers/pulse-2d-renderer.js";
 import { TILE_H, TILE_W, blob, ground, hexToRgb, lcg } from "./tile-paint";
+import {
+  type Box,
+  type TileFormat,
+  frame,
+  isSmall,
+  unitsPerDisplayPx,
+} from "./tile-format";
 
 export type PulseIntent = EffectConfigMap["pulse"];
 export const PULSE_TILE_SEED = 0x9b3a;
@@ -132,7 +139,118 @@ function tipsAt(t: number, phase0: number): [Tip, Tip] {
   ];
 }
 
-/** The renderer's ring state machine, run over the staged motion. */
+/**
+ * Small formats do not run the ring simulation: at 74x27 and 29x20 a stack of
+ * thin fading rings is a haze. They draw the two things a viewer should see,
+ * one bright ring in front and a dimmer one behind it, in the look's own ring
+ * colour and trigger. Stroke width is in display px (`stroke`), converted to
+ * card units per format; the front ring's soft fill is a little stronger than
+ * the card's.
+ */
+interface SmallRing {
+  x: number;
+  y: number;
+  r: number;
+  /** Brightness against the front ring. */
+  gain: number;
+}
+const SMALL: Record<
+  "tile" | "chip",
+  { view: Box; stroke: number; back: SmallRing; front: SmallRing }
+> = {
+  tile: {
+    view: { x: 0, y: 0, w: 720, h: 270 },
+    stroke: 2,
+    back: { x: 215, y: 150, r: 84, gain: 0.5 },
+    front: { x: 445, y: 140, r: 106, gain: 1 },
+  },
+  chip: {
+    view: { x: 205, y: 6, w: 420, h: 280 },
+    stroke: 2,
+    back: { x: 285, y: 158, r: 66, gain: 0.5 },
+    front: { x: 440, y: 142, r: 94, gain: 1 },
+  },
+};
+
+function paintPulseSmall(
+  ctx: CanvasRenderingContext2D,
+  intent: PulseIntent,
+  format: "tile" | "chip"
+): void {
+  const small = SMALL[format];
+  const view = frame(ctx, format, small.view, 0);
+  const upp = unitsPerDisplayPx(view, format);
+  const params = resolvePulse2D({
+    ...intent,
+    colorMode: "solid",
+    intensity: Math.max(intent.intensity, INTENSITY_FLOOR),
+  });
+  const pal = params.resolvedPalette;
+  const ring = hexToRgb(pal.ring);
+  const hot = mixRgb(parseCssRgb(pal.ring), WHITE, 0.45);
+  ground(ctx, [0.03, 0.035, 0.05]);
+  blob(
+    ctx,
+    small.front.x,
+    small.front.y,
+    260,
+    160,
+    ring,
+    pal.emissive ? 0.12 : 0.07 + 0.04 * intent.intensity
+  );
+  const level = 0.78 + 0.22 * clamp01(intent.intensity);
+  const w = small.stroke * upp;
+  // Colours here are 0..1 triples; the hot tint comes in 0..255.
+  const rgba = (c: readonly number[], a: number, scale = 255): string =>
+    `rgba(${Math.round(c[0]! * scale)},${Math.round(c[1]! * scale)},${Math.round(
+      c[2]! * scale
+    )},${a})`;
+  const draw = (r: SmallRing, line: number): void => {
+    const g = r.gain * level;
+    ctx.save();
+    // Soft fill, a touch stronger toward the rim.
+    const fill = ctx.createRadialGradient(r.x, r.y, 0, r.x, r.y, r.r);
+    fill.addColorStop(0, rgba(ring, 0.05 * g));
+    fill.addColorStop(1, rgba(ring, 0.34 * g));
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, TAU);
+    ctx.fill();
+    // Glow, then the ring itself.
+    ctx.lineWidth = line * 2.6;
+    ctx.strokeStyle = rgba(ring, 0.2 * g);
+    ctx.stroke();
+    ctx.lineWidth = line;
+    ctx.strokeStyle = rgba(hot, 0.95 * g, 1);
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  };
+  draw(small.back, w * 0.9);
+  draw(small.front, w);
+  // The tip that rang: a dot at the front ring's centre; a velocity look
+  // throws a brighter flash.
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.beginPath();
+  ctx.arc(
+    small.front.x,
+    small.front.y,
+    (intent.trigger === "velocity" ? 2 : 1.4) * upp,
+    0,
+    TAU
+  );
+  ctx.fill();
+  // Overtones on the tile: one finer ring inside the front one.
+  if (format === "tile" && intent.harmonics > 0.3) {
+    ctx.lineWidth = w * 0.6;
+    ctx.strokeStyle = rgba(ring, 0.5 * level);
+    ctx.beginPath();
+    ctx.arc(small.front.x, small.front.y, small.front.r * 0.55, 0, TAU);
+    ctx.stroke();
+  }
+}
+
 class Sim {
   readonly params: Pulse2DParams;
   readonly colors: RingColors;
@@ -147,10 +265,7 @@ class Sim {
   private readonly last: [Tip | null, Tip | null] = [null, null];
   private ringBeat = -1;
 
-  constructor(
-    intent: PulseIntent,
-    readonly phase0: number
-  ) {
+  constructor(intent: PulseIntent, readonly phase0: number) {
     this.params = resolvePulse2D({
       ...intent,
       colorMode: "solid",
@@ -273,8 +388,13 @@ function simulate(intent: PulseIntent, phase0: number): Sim {
 
 export function paintPulseTile(
   ctx: CanvasRenderingContext2D,
-  intent: PulseIntent
+  intent: PulseIntent,
+  format: TileFormat = "card"
 ): void {
+  if (isSmall(format)) {
+    paintPulseSmall(ctx, intent, format as "tile" | "chip");
+    return;
+  }
   const rand = lcg(PULSE_TILE_SEED);
   const sim = simulate(intent, rand() * TAU);
   const pal = sim.params.resolvedPalette;

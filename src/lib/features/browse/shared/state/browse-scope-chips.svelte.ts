@@ -9,6 +9,7 @@
  * Browse navigation, query and header contexts.
  */
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { collectionDisplayName } from "#lib/shared/library/domain/collection-display-name.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
 import { followedCollectionsState } from "#lib/features/library/state/followed-collections-state.svelte.js";
@@ -61,13 +62,13 @@ export function createBrowseScopeChips(getScope: () => BrowseScope | null) {
     return name.startsWith("fa-") ? `fas ${name}` : name;
   }
 
-  const foundingChips: ScopeChip[] = FOUNDING_SMART_COLLECTIONS.map(
-    toSyntheticCollection
-  ).map((c) => ({
-    scope: { kind: "collection", id: c.id, name: c.name },
-    label: c.name,
-    icon: faClass(c.icon, "fa-book"),
-  }));
+  const foundingChips = $derived<ScopeChip[]>(
+    FOUNDING_SMART_COLLECTIONS.map(toSyntheticCollection).map((c) => ({
+      scope: { kind: "collection", id: c.id, name: c.name },
+      label: collectionDisplayName(c),
+      icon: faClass(c.icon, "fa-book"),
+    }))
+  );
 
   // Everyone, Saved (signed in) and Drafts; the All collections chip
   // follows them.
@@ -117,7 +118,7 @@ export function createBrowseScopeChips(getScope: () => BrowseScope | null) {
             name: item.collection.name,
             ownerName: item.ownerName,
           },
-          label: item.collection.name,
+          label: collectionDisplayName(item.collection),
           icon: "fas fa-user-group",
         });
       }
@@ -130,7 +131,7 @@ export function createBrowseScopeChips(getScope: () => BrowseScope | null) {
             name: item.collection.name,
             ownerName: item.ownerName,
           },
-          label: item.collection.name,
+          label: collectionDisplayName(item.collection),
           icon: "fas fa-bookmark",
         });
       }
@@ -196,7 +197,6 @@ export function createBrowseScopeChips(getScope: () => BrowseScope | null) {
     if (!scope && text) choose(searchScope);
   }
 
-
   return {
     get hasLibrarySession() {
       return hasLibrarySession;
@@ -228,7 +228,8 @@ export function createBrowseScopeChips(getScope: () => BrowseScope | null) {
     choose,
     search,
     viewCollections() {
-      if (currentKey !== ALL_COLLECTIONS_KEY) browseNavigationState.viewCollections();
+      if (currentKey !== ALL_COLLECTIONS_KEY)
+        browseNavigationState.viewCollections();
     },
   };
 }

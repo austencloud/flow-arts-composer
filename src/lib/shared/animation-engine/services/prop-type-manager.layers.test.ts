@@ -6,6 +6,10 @@ vi.mock("./svg-generator", () => ({
   getBaseMotionColors: () => ({ left: "#1111ff", right: "#ff1111" }),
 }));
 
+import {
+  DEFAULT_FAN_APPEARANCE,
+  resolveFanRenderKey,
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { PropTypeManager } from "./prop-type-manager";
 
 function makeManager() {
@@ -63,15 +67,14 @@ describe("PropTypeManager.preloadAdditionalLayerTextures (tunnel export)", () =>
       leftPropType: "sword",
       rightPropType: "club",
     });
-    // PropTypeManager defaults fanAppearance to DEFAULT_FAN_APPEARANCE (build:
-    // "fire" since commit 14fcb713, "default the 2D fan build to DoodleGrip
-    // Fire"), so a forwarded "fan" prop type resolves through
-    // resolveFanRenderKey to its fire-build render key, not the bare notation
-    // name.
+    // PropTypeManager defaults fanAppearance to DEFAULT_FAN_APPEARANCE, so a
+    // forwarded "fan" prop type resolves through resolveFanRenderKey to the
+    // default build's render key.
+    const fanKey = resolveFanRenderKey("fan", DEFAULT_FAN_APPEARANCE);
     expect(calls[1]).toMatchObject({
       i: 1,
-      leftPropType: "fan__fire_bare",
-      rightPropType: "fan__fire_bare",
+      leftPropType: fanKey,
+      rightPropType: fanKey,
     });
   });
 

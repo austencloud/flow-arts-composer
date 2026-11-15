@@ -45,6 +45,8 @@ page the day he makes it.
   of reach. Keep it reachable, then fix the layout.
 - **Everything fits.** Nothing spills out of its box or is cut off, at every
   size on the device list.
+- **Text stays inside its box.** No word runs past the edge of the button or
+  card that holds it, at any size and in any language.
 - **No sideways strips.** Do not make a person scroll a row left and right to
   find options, least of all on a phone. Wrap them, put them in a grid, or
   show a count that opens the full set.
@@ -132,6 +134,7 @@ This is the only list of sizes. Other files point here. Sizes are CSS pixels.
 
 | Screen               | Size      |
 | -------------------- | --------- |
+| Small Android        | 360×640   |
 | Small phone          | 375×667   |
 | Fold cover, upright  | 412×915   |
 | Fold cover, sideways | 915×412   |
@@ -142,6 +145,9 @@ This is the only list of sizes. Other files point here. Sizes are CSS pixels.
 | 4K at 200% scaling   | 1920×1080 |
 | 4K at 150% scaling   | 2560×1440 |
 | 4K at 100% scaling   | 3840×2160 |
+
+The smallest window seen on a real visitor's phone is 360×591 (a 360×640
+screen with the browser's bars showing); check a tight screen there by hand.
 
 A full pass covers every row. Skip a row only when the surface cannot appear
 there, and say why in the evidence.
@@ -154,7 +160,7 @@ A rule that only exists as words gets broken again. These checks exist today:
 - Reduced motion: `src/lib/shared/transitions/reduced-motion-css.test.ts`.
 - Guide words never scale: `tests/unit/guide-fit-type-roles-contract.test.ts`.
 - One type size, type roles, seven window widths, the page never scrolls, text fills and shared owners in source: `npm run layout:scan` (`scripts/layout/scan.mjs`). A branch may not add breaks: for each rule, the count across the files it changed may not go up from where it left `main`. `wt:finish` runs it on style changes. `npm run layout:scan -- --totals` prints today's counts.
-- Fit, scroll, cut-off text, small text, tap size and hero share on real screens at every size: `npm run layout:sweep` (`scripts/layout/sweep.mjs`), run on demand and before a ship.
+- Fit, scroll, cut-off text, text that runs past its box, small text, tap size and hero share on real screens at every size: `npm run layout:sweep` (`scripts/layout/sweep.mjs`, spill check in `scripts/layout/spill.mjs`, tested by `tests/unit/layout/layout-spill.test.ts`), run on demand and before a ship. `--only construct --sizes 360x591` checks one screen at one size.
 - The device list matches `scripts/layout/device-list.json`: `tests/unit/layout/device-list.test.ts`.
 - A loading screen leaves when the page is drawn, for the boot screen only: `tests/unit/boot-bar-self-timing.test.ts`, `tests/unit/startup-splash-handoff.test.ts` and `tests/unit/shared/application/boot-screen.test.ts` (no timer in `src/app.html` takes the screen away; a long wait shows the message and Reload). `node scripts/boot-handoff-check.mjs` proves it in a real browser with the app's code held back 30 s, at 1280×800 and 390×844; run it on demand after a change to the boot screen. Loaders inside the app are still checked by eye.
 

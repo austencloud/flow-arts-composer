@@ -117,6 +117,45 @@ describe("planGroupedLayout", () => {
     expect(usedHeight(plan)).toBeLessThanOrEqual(180);
   });
 
+  it("names each type on one line where a phone has no room for headers", () => {
+    // The phone 4-6 panel a visitor met: Dash, Dual-Dash and Static tiles
+    // with nothing saying which was which.
+    const phone = input({
+      typeCounts: [
+        { type: "Type4", count: 2 },
+        { type: "Type5", count: 1 },
+        { type: "Type6", count: 1 },
+      ],
+      width: 376,
+      height: 310,
+      labelHeight: 20,
+      labelMinWidth: 120,
+    });
+    const plan = planGroupedLayout(phone);
+    expect(plan.showHeaders).toBe(false);
+    expect(plan.showLabels).toBe(true);
+    expect(plan.fits).toBe(true);
+    expect(usedHeight(plan)).toBeLessThanOrEqual(310);
+    for (const row of plan.rows) {
+      expect(rowWidth(row)).toBeLessThanOrEqual(376);
+      for (const section of row.sections) {
+        expect(section.width).toBeGreaterThanOrEqual(120);
+      }
+    }
+    // The label costs its line, not the whole header's.
+    const unlabelled = planGroupedLayout({ ...phone, labelHeight: undefined });
+    expect(unlabelled.showLabels).toBe(false);
+    expect(plan.tileSize).toBeGreaterThanOrEqual(unlabelled.tileSize - 20);
+  });
+
+  it("keeps the full headers over labels when the rows are tall enough", () => {
+    const plan = planGroupedLayout(
+      input({ width: 1400, height: 600, labelHeight: 20, labelMinWidth: 120 })
+    );
+    expect(plan.showHeaders).toBe(true);
+    expect(plan.showLabels).toBe(false);
+  });
+
   it("keeps headers when the rows are tall enough", () => {
     const plan = planGroupedLayout(input({ width: 1400, height: 600 }));
     expect(plan.showHeaders).toBe(true);

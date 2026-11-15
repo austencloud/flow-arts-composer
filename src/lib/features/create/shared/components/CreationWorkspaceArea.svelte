@@ -39,6 +39,7 @@
   import ShareButton from "../workspace-panel/shared/components/buttons/ShareButton.svelte";
   import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
   import { PlaybackPoster } from "../workspace-panel/components/playback-poster";
+  import { PlaybackReturn } from "../workspace-panel/components/playback-return";
   import { isTheaterViewport } from "../services/workspace-theater";
 
   const ctx = getCreateModuleContext();
@@ -166,9 +167,17 @@
   let posterPending = $state(false);
   // The poster sits exactly where the canvas will be.
   let posterLanded = $state(false);
+  // Stop's return: the player shrinks into the whole step grid.
+  const playbackReturn = new PlaybackReturn();
+  // The player was the source on screen for this Play, so Stop can turn it
+  // back into the grid. Plain, not reactive: only the Stop effect reads it.
+  let playerShown = false;
 
   function showPoster() {
     untrack(() => {
+      // First, before the poster measures the start picture, which must not
+      // see a grid still scaled by a return.
+      playbackReturn.finish();
       if (
         !stageEl ||
         !playbackFolds ||
@@ -185,11 +194,23 @@
 
   // Play ended (Stop, or the player failed) while the poster was still up or
   // dissolving into the player: it goes back into its cell as the grid
-  // returns. Once it has gone this does nothing.
+  // returns. Once the player has been on screen, the player as a whole
+  // shrinks into the grid's box instead, the grid growing in around it.
+  // Effects run after the DOM update, so the crossfade has already flipped
+  // to the grid and pinned the leaving player, and the return starts in this
+  // same frame with nothing awaited in between. When neither can run, the
+  // player just fades out and the grid in.
   $effect(() => {
     if (playbackCandidate) return;
     posterPending = false;
-    untrack(() => poster.retreat(reducedMotion()));
+    untrack(() => {
+      const reduced = reducedMotion();
+      const shown = playerShown;
+      playerShown = false;
+      if (poster.retreat(reduced)) return;
+      if (!shown || !stageEl || isTheaterViewport()) return;
+      playbackReturn.start(stageEl, reduced);
+    });
   });
 
   // The player is arriving under the landed poster (DualSourceCrossfade's
@@ -204,7 +225,10 @@
     });
   });
 
-  onDestroy(() => poster.dispose());
+  onDestroy(() => {
+    poster.dispose();
+    playbackReturn.finish();
+  });
 
   const workspaceSource = $derived<"first" | "second">(
     playback !== null &&
@@ -226,6 +250,11 @@
         : null
       : workspaceSource
   );
+
+  // The player reached the screen this Play, so Stop may run the return.
+  $effect(() => {
+    if (stageSource === "second") playerShown = true;
+  });
 
   onDestroy(() => panelState.stopWorkspacePlayback());
 

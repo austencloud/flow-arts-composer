@@ -89,7 +89,6 @@
       color-mix(in srgb, var(--column-color) 3%, rgba(15, 15, 25, 0.98)) 100%
     );
     border: 1px solid color-mix(in srgb, var(--column-color) 20%, transparent);
-    border-top: 3px solid var(--column-color);
     border-radius: clamp(10px, 2.5cqi, 16px);
     overflow: hidden;
     transition:
@@ -103,6 +102,11 @@
     box-shadow:
       0 4px 20px color-mix(in srgb, var(--column-color) 15%, transparent),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .archive-drop-zone {
+    border-top: 3px solid var(--column-color);
   }
 
   .archive-drop-zone.clickable {

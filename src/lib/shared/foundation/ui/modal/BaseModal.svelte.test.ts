@@ -177,7 +177,9 @@ describe("BaseModal fit sizing", () => {
       render(BaseModalTestHarness, { shortContent: true, animation: "none" });
       await expect
         .poll(
-          () => document.querySelector<HTMLDialogElement>("dialog.base-modal")?.dataset.entered
+          () =>
+            document.querySelector<HTMLDialogElement>("dialog.base-modal")
+              ?.dataset.entered
         )
         .toBe("true");
       await nextLayout();
@@ -189,7 +191,8 @@ describe("BaseModal fit sizing", () => {
       await page.getByRole("button", { name: "Toggle content height" }).click();
       await nextLayout();
       expect(
-        document.querySelector<HTMLDialogElement>("dialog.base-modal")?.style.height
+        document.querySelector<HTMLDialogElement>("dialog.base-modal")?.style
+          .height
       ).not.toBe("");
       await expect.poll(() => capturedFrames.length).toBe(1);
       const grow = capturedFrames[0]!;
@@ -243,7 +246,9 @@ describe("BaseModal fit sizing", () => {
       render(BaseModalTestHarness, { shortContent: true, animation: "none" });
       await expect
         .poll(
-          () => document.querySelector<HTMLDialogElement>("dialog.base-modal")?.dataset.entered
+          () =>
+            document.querySelector<HTMLDialogElement>("dialog.base-modal")
+              ?.dataset.entered
         )
         .toBe("true");
       await nextLayout();
@@ -338,6 +343,50 @@ describe("BaseModal fit sizing", () => {
     expect(overlayClicks).toBe(1);
     expect(document.activeElement).toBe(externalOverlay);
     expect(dialogElement?.open ?? false).toBe(true);
+  });
+});
+
+describe("BaseModal system Back", () => {
+  const scope = globalThis as { CloseWatcher?: unknown };
+  const realCloseWatcher = scope.CloseWatcher;
+  afterEach(() => {
+    scope.CloseWatcher = realCloseWatcher;
+  });
+
+  it("closes an external-overlay dialog on Back instead of leaving the page", async () => {
+    // A show() dialog has no close watcher of its own; Android's Back used to
+    // walk history out of the app with the sign-in box still open.
+    const watchers: { fire: () => void }[] = [];
+    scope.CloseWatcher = class {
+      private listener: (() => void) | null = null;
+      constructor() {
+        watchers.push(this as unknown as { fire: () => void });
+      }
+      addEventListener(_type: string, listener: () => void) {
+        this.listener = listener;
+      }
+      destroy() {
+        this.listener = null;
+      }
+      fire() {
+        this.listener?.();
+      }
+    };
+
+    render(BaseModalTestHarness, { allowExternalOverlays: true });
+    const dialog = page.getByRole("dialog", { name: "Scrollable modal" });
+    await expect.element(dialog).toBeVisible();
+    expect(watchers).toHaveLength(1);
+
+    watchers[0]!.fire();
+
+    await expect
+      .poll(
+        () =>
+          document.querySelector<HTMLDialogElement>("dialog.base-modal")
+            ?.open ?? false
+      )
+      .toBe(false);
   });
 });
 

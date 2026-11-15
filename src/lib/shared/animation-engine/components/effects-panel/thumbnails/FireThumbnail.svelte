@@ -3,17 +3,40 @@
   import type { EffectPreset } from "../presets/types";
   import { type Rgb, blob, css, hexToRgb, lcg, mix, toRgb } from "./tile-paint";
   import { queueTilePaint } from "./tile-paint-queue";
+  import {
+    TILE_FORMAT_SIZE,
+    type Box,
+    type TileFormat,
+    frame,
+    unitsPerDisplayPx,
+  } from "./tile-format";
 
   interface Props {
     preset: EffectPreset<"fire">;
     active?: boolean;
+    /** card (default), or the small tile / chip painting. */
+    format?: TileFormat;
   }
 
-  const { preset, active = false }: Props = $props();
+  const { preset, active = false, format = "card" }: Props = $props();
+  const size = $derived(TILE_FORMAT_SIZE[format]);
   let canvas = $state<HTMLCanvasElement>();
 
   const WIDTH = 720;
   const HEIGHT = 270;
+
+  /**
+   * Small formats: two flames filling about 85% of the frame's height, each
+   * fatter than the card's so the column keeps a body at 74px wide, with the
+   * warm wash on the floor. The chip pulls the pair closer together.
+   */
+  const SMALL: Record<
+    "tile" | "chip",
+    { view: Box; gap: number; fat: number; scale: number }
+  > = {
+    tile: { view: { x: 80, y: 42, w: 560, h: 210 }, gap: 118, fat: 1.35, scale: 1.12 },
+    chip: { view: { x: 202.5, y: 42, w: 315, h: 210 }, gap: 72, fat: 1.5, scale: 1.12 },
+  };
 
   /**
    * A stylised portrait of the look, same contract Bloom's tile keeps: every
@@ -97,7 +120,8 @@
     width: number,
     palette: FirePalette,
     rand: () => number,
-    strength: number
+    strength: number,
+    fat = 1
   ): void {
     const STEPS = 26;
     for (let i = 0; i < STEPS; i += 1) {
@@ -106,7 +130,7 @@
       const sway = Math.sin(t * 2.4 + rand() * 0.35) * width * 0.42 * t;
       const y = baseY - t * height;
       const taper = Math.pow(1 - t, 0.72);
-      const r = width * (0.32 + 0.68 * taper) * (0.85 + rand() * 0.3);
+      const r = width * fat * (0.32 + 0.68 * taper) * (0.85 + rand() * 0.3);
       const color = sampleTemp(palette, 1 - t);
       // Cooler tips are dimmer as well as redder, so the plume fades out
       // instead of ending on a line.
@@ -128,7 +152,8 @@
     scale: number,
     palette: FirePalette,
     liquid: boolean,
-    seed: number
+    seed: number,
+    fat = 1
   ): void {
     const rand = lcg(seed);
 
@@ -144,7 +169,7 @@
         const t = i / (BLOBS - 1);
         const falloff = Math.cos((t - 0.5) * Math.PI);
         const roll = 0.62 + 0.38 * Math.sin(t * 8.2 + 0.6);
-        const rise = 48 * scale * falloff * roll;
+        const rise = 48 * scale * falloff * roll * (fat > 1 ? 1.9 : 1);
         const rx = 70 * scale;
         blob(
           ctx,
@@ -176,7 +201,17 @@
 
     // A wide soft base plus a taller narrow lick - the two silhouettes a flame
     // reads as at a glance.
-    drawColumn(ctx, cx, baseY, 150 * scale, 46 * scale, palette, rand, 0.72);
+    drawColumn(
+      ctx,
+      cx,
+      baseY,
+      150 * scale,
+      46 * scale,
+      palette,
+      rand,
+      0.72,
+      fat
+    );
     drawColumn(
       ctx,
       cx + 8 * scale,
@@ -185,7 +220,8 @@
       24 * scale,
       palette,
       rand,
-      0.5
+      0.5,
+      fat
     );
   }
 
@@ -193,12 +229,16 @@
     const node = canvas;
     if (!node) return;
     void preset;
+    void format;
     return queueTilePaint(() => paint(node));
   });
 
   function paint(node: HTMLCanvasElement): void {
     const ctx = node.getContext("2d");
     if (!ctx) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const small = format === "card" ? null : SMALL[format];
+    if (small) frame(ctx, format, small.view, 0);
 
     const intent = { ...DEFAULT_EFFECTS_CONFIG.fire, ...(preset.patch ?? {}) };
     const palette = paletteOf(intent);
@@ -209,7 +249,7 @@
     background.addColorStop(0.6, "#070406");
     background.addColorStop(1, "#030102");
     ctx.fillStyle = background;
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillRect(-WIDTH, -HEIGHT, WIDTH * 3, HEIGHT * 3);
 
     // The flame roots inside the frame, not on its edge. At HEIGHT - 6 the
     // bases were cropped by the tile boundary, so the fire read as something
@@ -224,7 +264,10 @@
     // at full height would now clip against the top edge instead of the bottom.
     // Sized so that tallest lick lands ~30px under the top edge, i.e. the flame
     // is bounded by the tile on both ends rather than running off either.
-    const scale = (0.86 + 0.28 * intent.intensity) * 0.86;
+    const scale =
+      (0.86 + 0.28 * intent.intensity) * 0.86 * (small ? small.scale : 1);
+    const fat = small ? small.fat : 1;
+    const gap = small ? small.gap : 128;
 
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -243,21 +286,22 @@
     wash.addColorStop(0.55, css(palette[1], 0.12));
     wash.addColorStop(1, css(palette[0], 0));
     ctx.fillStyle = wash;
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillRect(-WIDTH, -HEIGHT, WIDTH * 3, HEIGHT * 3);
 
     if (liquid) {
-      drawPlume(ctx, WIDTH / 2, baseY, scale, palette, true, 0x5eed);
+      drawPlume(ctx, WIDTH / 2, baseY, scale, palette, true, 0x5eed, fat);
     } else {
       drawPlume(
         ctx,
-        WIDTH / 2 - 128,
+        WIDTH / 2 - gap,
         baseY,
         scale * 0.9,
         palette,
         false,
-        0x1a7f
+        0x1a7f,
+        fat
       );
-      drawPlume(ctx, WIDTH / 2 + 128, baseY, scale, palette, false, 0x93c1);
+      drawPlume(ctx, WIDTH / 2 + gap, baseY, scale, palette, false, 0x93c1, fat);
     }
 
     ctx.restore();
@@ -265,7 +309,7 @@
 </script>
 
 <div class="fire-thumbnail" class:active aria-hidden="true">
-  <canvas bind:this={canvas} width={WIDTH} height={HEIGHT}></canvas>
+  <canvas bind:this={canvas} width={size.w} height={size.h}></canvas>
 </div>
 
 <style>

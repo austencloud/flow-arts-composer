@@ -81,3 +81,137 @@ Astra back-translation review: SAMPLE 232 / FLAGGED 2 / 0.86%. Both flags
 asked for アルファ/ベータ/ガンマ; dismissed because placement names stay in
 Latin script for ja, ru and ko (glossary decision 2026-10-14). No catalog
 changes.
+
+## Read-back — 2026-11-13
+
+Every released Japanese string was read back against English, in chunks grouped by key prefix (released = `en.json` keys whose prefix is listed under `released` in `scripts/i18n-released-prefixes.json`).
+
+**Totals**
+
+|                       | Keys                                                                                                                              |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Released keys         | 9,001 (the brief said 8,996; `en.json` gained 5 released keys before the run ended, and all 5 already had Japanese)               |
+| Filled (were missing) | 72                                                                                                                                |
+| Changed: off          | 258                                                                                                                               |
+| Changed: wrong        | 48                                                                                                                                |
+| Left as is            | 8,623                                                                                                                             |
+| Still missing         | 0                                                                                                                                 |
+| Same as English       | 186, all fixed terms (Latin-script names such as Shape Engine, Codex, VTG, LOOP and Static, placeholders only, or letter strings) |
+
+The full change list is in the translation desk's `runs/ja/changes.json` (378 rows: key, en, before, after, readBack, grade).
+
+**Checks:** `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`: Test Files 1 passed (1), Tests 72 passed (72). `git diff --check` is clean, `ja.json` parses, and every key has the same placeholders, tags and entities as English (0 mismatches, 0 keys missing from `en.json`).
+
+**Term decisions in this pass**
+
+- Turn is 回転 everywhere. Body turn is 体の回転; no ターン is left for turns, including in the Level 1 guide's ボディターン lines. Dual-turns is デュアル回転.
+- Effort is 力の加減 (`shape_engine_settings_effort`, Phrase Effort lab). Base motions is 基本モーション (`generator_level_no_turns`).
+- Static is Latin in labels, headings and type names. 静止 stays acceptable in running prose.
+- Flip is 上下反転. In the LOOP picker, Mirrored is 左右 and Flipped is 上下.
+- Step is used for sequence positions where the English means a step: First step, step numbers, step carousel, auto-advance, and step-by-step practice. Beat stays ビート where it is a musical unit: durations, downbeats, BPM and beat sync.
+- Swapped is 入れ替え (the guide's print pages had 入替).
+- Choreo Card stays singular when the English is singular, and Choreo Cards is used for the module. Garbled renderings チャレオカード and チェロカード were removed.
+- Module names: Library ライブラリ, Museum ミュージアム (美術館 removed from Museum tab text), Inbox 受信箱, 3D Studio 3Dスタジオ, Collect コレクト, Terrain Lab 地形ラボ, Stage ステージ.
+- Trail is トレイル (残像 replaced in the viewer).
+- Buugeng stays Latin, as it already is across settings, site and FAQ. Poi is ポイ in the app and Latin "Poi" on the public site pages; both are left as they are (see Unsure).
+- Arc is 弧 and Concave is 凹型. Glyph slots are 上段/下段スロット. Path is 経路, except Motion paths, which stays 軌跡. Construct is 構築.
+- Shape Engine solo-flower strings were filled: 花びら{petals}枚のインスピン/アンチスピンフラワー, and clock/counter as 時計回り/反時計回り.
+
+**Unsure**
+
+| Key                                                        | English               | Japanese                               | Read-back                         | Why                                                                                                                    |
+| ---------------------------------------------------------- | --------------------- | -------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| auth_escape_tap_menu / auth_escape_choose / auth_escape_or | Tap the / Choose / or | タップする項目 / 選択する項目 / または | item to tap / item to choose / or | These are sentence fragments whose Japanese word order depends on the parts around them. Needs a look on screen.       |
+| learn_placement_build                                      | Build a               | 作る                                   | make                              | This is a fragment. Japanese puts the verb last, so the joined sentence may read out of order.                         |
+| learn_bridge_and                                           | and                   | 、また                                 | , and also                        | This is a fragment joiner.                                                                                             |
+| guide_eightstep_path_apart_title                           | Turning apart first   | 先に離れて反転                         | first move apart and reverse      | 反転 may read as reversal rather than turning. 先に離れて回る is the alternative.                                      |
+| shape_engine_over                                          | over                  | 上に                                   | on top                            | This connector between two flowers (left over right) may read literally. I could not see how it is used, so I left it. |
+| learn_ui_challenge_choose_the_bridge and other Bridge keys | Bridge                | ブリッジ / つなぎ                      | bridge / link                     | Both renderings are in use. I left them mixed and need a ruling.                                                       |
+| effect_deep_look / effect_deep_looks                       | Look                  | ルック                                 | look                              | 見た目 is the plainer choice.                                                                                          |
+| guide*l2_st*\* (leading/following)                         | leading / following   | リード / 先行・追従                    | lead / precede-follow             | The Level 2 guide and glyph print pages use リード/フォロー, and the Level 1 guide uses 先行/追従. I left both.        |
+| site*prop_poi and other site*\* Poi keys                   | Poi                   | Poi                                    | Poi                               | The site uses Latin script and the app uses ポイ.                                                                      |
+| viewer_final_element_earth vs shape_engine_element_earth   | earth                 | 土 / 地                                | earth / ground                    | The two surfaces name the element differently.                                                                         |
+
+**English to its owner**
+
+- These Gamma strings say "right angle" and were left unchanged. Japanese follows the English (直角):
+  - browse_audit_hands_right_angle
+  - learn_timing_intro_placement_gamma
+  - learn_placement_comparison_gamma
+  - learn_placement_gamma_geometry
+  - pictograph_desc_group_gamma
+  - verified_level1_gamma_definition
+  - verified_level1_placements_seo_description
+  - verified_level1_guide_page_seo_4
+- learn_reference_reading_choreo_cards: the English says "Hand Motions" where the card context suggests something else.
+- loop_picker_description_mirrored / loop_picker_description_flipped: "vertically/horizontally" is ambiguous about the axis.
+- "Beat" used for sequence positions in English. Japanese follows the English with ビート in:
+  - learn*trace*\* keys
+  - animation_shortcut_next/previous_beat
+  - create_record_beat_of
+  - guide_caps_figure_beat
+  - create*review*\*\_beats
+  - effect*deep*_beat_
+
+  If these should say step, the English should change first. Beat # in playback_audit_visual_beat_number became ステップ番号.
+
+- tab_desc_browse_gallery and tab_desc_browse_sequences: the English reads "Browse and browse sequences".
+- train_step_advance_tap / train_step_advance_voice: all three advance options read "Tap or Voice" in English.
+- train_timed_config_title repeats the description sentence as a title.
+
+**May not fit**
+
+- settings_generate_tour 「生成オプションのツアー」 and settings_replay_generate_tour 「生成オプションのツアーを再表示」 are about as wide as the English but long for a settings row.
+- shape_engine_solo_extension 「エクステンション」 is 7 characters wide for "Extension". It is a heading, so it probably fits.
+- No other changed short label came out much wider than its English.
+
+## Unreleased features — 2026-11-14
+
+Headless fill of the not-yet-released strings for Ilo, on Austen's rule of 2026-11-14: everything a visitor will eventually see is translated; screens only he uses stay English. Register as before: polite です・ます in sentences, short noun or verb labels for controls, ASCII `...` for ellipses as the catalog does. Read-backs for plain strings were taken from the zh-Hant fill of the same key (same meaning); they are written separately only where the Japanese text differs.
+
+- Keys filled: 747 (arena 43, attribution 14, beta 4, community 20, connect 65, hall 39, mandala 30, poi 41, post 366, premium 45, voice 56, watch 24).
+- Left English on purpose: `admin_*`, `moderation_*`, `skel2tka_*`, `scheduler_*`, `gallery_*`, `character_*`. These are tools only Austen uses.
+- Existing values were not touched. The change list for Ilo is `E:/tka-languages/runs/unrel/ja/changes.json` (747 entries).
+
+### Term decisions
+
+| English | Japanese |
+| --- | --- |
+| step (of a sequence) | ステップ (every sequence `beat` count) |
+| beat (tapped on a video or a song) | ビート (post tools, where the English means musical beats) |
+| Post Studio editor words | トラック (lane/track), レイヤー, 再生ヘッド (playhead), キーフレーム, クロスフェード, トランジション, ピクチャーインピクチャー, スロー (slow mo), 通し (run-through), 内訳ストリップ (breakdown strip), フラッシュ |
+| Export (Post Studio) | 書き出し (matches the catalog's plain Export); Mandala keeps エクスポート as the English button is the generic one |
+| Arena / Battle | アリーナ / バトル |
+| Hall of Shame | 恥の殿堂 |
+| Premium / Free | プレミアム / 無料 |
+| Poi / poi-legal | ポイ / ポイとして成立 |
+| session | セッション |
+| Take | テイク |
+| Staff | スタッフ |
+| Friends | フレンド |
+| Clockwise / Counterclockwise | 時計回り / 反時計回り |
+
+### Unsure
+
+| Key | English | Text | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| `connect_invited_you_to_join` | invited you to join | があなたを招待しています | invites you | The English is a fragment that follows a name and precedes something else; the Japanese word order can't be a true fragment. |
+| `connect_is_sharing` | is sharing | が共有中 | is sharing | Same fragment problem; assumes it follows a user name. |
+| `post_editor_card_ring` | Ring on beats | ビートでリング | Ring on the beats | Short English; the ring is read as a lit ring that steps with the beat. |
+| `post_editor_hook_spoken` | How to say it | 言い方 | Way of saying it | Context (an opening hook's spoken line) is not visible. |
+| `post_editor_titles_lit` | Light one letter | 1文字を光らせる | Light up one letter | Assumed to light one letter of the name. |
+| `post_editor_split_peel` | Peel | ピール | Peel | Name of a split style; transliterated. |
+
+### English to its owner
+
+- `mandala_copy_count`, `mandala_filter_all`, `poi_lab_beat_count`, `poi_lab_beat_number`, `voice_sessions_days_ago`, `voice_sessions_event_count`, `voice_sessions_hours_ago`, `voice_sessions_minutes_ago`: the English wraps the placeholder in literal quotes (`"{count}" copies`). The quotes were dropped; they look like escaping leftovers.
+- `connect_sharing_sequence`: the key says sharing but the English says "Search for users above to invite them." Translated what it says.
+- `connect_no_sessions_nearby` and `connect_sessions_appear_automatically` carry the same text. So do `connect_no_friends_yet` and `connect_add_friends_hint`.
+- `connect_invited_you_to_join`, `connect_is_sharing`, `premium_user_count_tagline` are sentence fragments that only work in English word order.
+- `post_editor_fly_unavailable` says "lane" while the rest of Post Studio says "track". Read as the same thing.
+
+### May not fit
+
+- `post_editor_tool_split_hands`: "左右の手を分ける" is longer than "Split hands" in a tool tab.
+- `post_editor_card_qr_caption_placeholder`, `post_editor_lift_*`: Japanese labels with a parenthesis such as "ステップ番号（左から）" are longer than the English.
+- `post_editor_tool_panel_lift`: "パネルを持ち上げる" is wider than "Lift panel" in a tool tab.

@@ -28,6 +28,7 @@ even at zero, so it can be dismissed.
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
+  import { collectionDisplayName } from "#lib/shared/library/domain/collection-display-name.js";
 
   let {
     engine,
@@ -76,13 +77,13 @@ even at zero, so it can be dismissed.
     engine.source === "my-library"
       ? collectionsState.collections.map((c) => ({
           id: c.id,
-          name: c.name,
+          name: collectionDisplayName(c),
           color: c.color,
           totalCount: c.sequenceCount,
         }))
-      : communityCollectionsState.items.map((i) => ({
+      : communityCollectionsState.shelfItems.map((i) => ({
           id: i.collection.id,
-          name: i.collection.name,
+          name: collectionDisplayName(i.collection),
           color: i.collection.color,
           totalCount: i.collection.sequenceCount,
         }))
@@ -136,7 +137,7 @@ even at zero, so it can be dismissed.
   >
     <FilterChipBase
       mode="toggle"
-      label="All"
+      label={t("library_videos_all")}
       active={!activeCollectionId}
       onclick={() => engine.removeFilter(COLLECTION_KEY)}
       size="sm"
@@ -156,7 +157,7 @@ even at zero, so it can be dismissed.
       <FilterChipBase
         mode="action"
         icon="fa-solid fa-plus"
-        label="Add collection"
+        label={t("library_add_collection")}
         count={activeCandidate.totalCount}
         chipColor={activeCandidate.color ?? "#c084fc"}
         disabled={addCollectionBusy}

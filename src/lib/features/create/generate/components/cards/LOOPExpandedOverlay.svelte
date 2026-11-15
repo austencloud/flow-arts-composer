@@ -49,6 +49,7 @@ Animates forward in z-axis and expands to fill the container space
     guestGated = false,
     onRequestSignup,
     handRelationship,
+    onPickNeedsFit,
   } = $props<{
     currentType: LOOPType;
     selectedComponents: Set<LOOPComponent>;
@@ -77,6 +78,14 @@ Animates forward in z-axis and expands to fill the container space
     /** The hand mode from the TnD card; reflection modes narrow the LOOP
         choices here. Absent reads as Free (legacy callers unaffected). */
     handRelationship?: TnDSelection;
+    /** A Single pick the current length can't hold (Quartered at 14 steps).
+        The host writes it anyway, bending the rest of the recipe or the
+        length, and returns false when nothing fits. Absent: the pick is only
+        shown with the reason, and closing the panel drops it. */
+    onPickNeedsFit?: (pick: {
+      loopType: LOOPType;
+      rhythm?: Partial<LoopRhythmValue>;
+    }) => boolean;
   }>();
 
   let hapticService: HapticFeedback | null = null;
@@ -300,13 +309,15 @@ Animates forward in z-axis and expands to fill the container space
           : gateRhythm(nextComponents, localRhythm, sequenceLength);
       const isValid = !nextRhythmGate || nextRhythmGate.ok;
 
-      if (isValid) {
-        onChange(newLoopType);
-      }
+      // A pick the length can't hold still lands when the host can fit it,
+      // so closing the panel keeps what was picked.
+      let applied = isValid;
+      if (isValid) onChange(newLoopType);
+      else applied = onPickNeedsFit?.({ loopType: newLoopType }) ?? false;
 
       if (hasComponentConfigurator(component)) return;
 
-      if (isValid) onClose();
+      if (applied) onClose();
       return;
     }
 
@@ -397,10 +408,14 @@ Animates forward in z-axis and expands to fill the container space
       sequenceLength === undefined
         ? null
         : gateRhythm(localSelectedComponents, nextRhythm, sequenceLength);
-    if (nextRhythmGate && !nextRhythmGate.ok) return;
-
-    onRhythmChange?.(updates);
-    onChange(newLoopType);
+    if (nextRhythmGate && !nextRhythmGate.ok) {
+      // The length can't split this rhythm. Write it anyway when the host can
+      // move the length; otherwise it stays shown with the reason.
+      if (!onPickNeedsFit?.({ loopType: newLoopType, rhythm: updates })) return;
+    } else {
+      onRhythmChange?.(updates);
+      onChange(newLoopType);
+    }
 
     // Rotation period and reflection axis are terminal picks: the value is
     // already applied, so the open drawer only costs a manual dismiss.

@@ -22,7 +22,7 @@
     accent = "accent",
     gridColumnSpan = 6,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
     ariaLabel,
   } = $props<{
     title: string;

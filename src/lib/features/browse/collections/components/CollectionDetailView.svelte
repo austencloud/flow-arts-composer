@@ -11,6 +11,7 @@ batched Firestore reads return them shuffled. If the collection disappears or
 becomes private while open, we bail back to the list instead of showing a ghost.
 -->
 <script lang="ts">
+  import { collectionDisplayName } from "#lib/shared/library/domain/collection-display-name.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack, onDestroy, onMount } from "svelte";
   import {
@@ -66,6 +67,13 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   import { openShareCollectionSheet } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
   import BrowseHeaderSlot from "#lib/features/browse/shared/components/BrowseHeaderSlot.svelte";
   import { tryGetBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
+  import { browser } from "$app/env";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import {
+    collectionPlaceholderSteps,
+    resolvePlaceholderSteps,
+  } from "../services/collection-placeholder-steps";
+  import { recordCollectionCardSteps } from "#lib/shared/library/services/collection-manager.js";
 
   let {
     collectionId,
@@ -75,7 +83,22 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     accessRole,
     embedded = false,
     backLabel = t("browse_ui_collections_tab"),
+    preview = null,
+    active = true,
   }: {
+    /**
+     * False from the tap that starts this page leaving. Its name, buttons
+     * and Filters count leave the Browse bar on that tap, so the screen
+     * arriving under the bar has the row to itself from its first frame.
+     */
+    active?: boolean;
+    /**
+     * The collection as the list that opened it already knows it (a feed
+     * card's record). Shown until the live record arrives, so the icon, tint,
+     * by-line count and placeholder count are right on the first frame.
+     * Display only: nothing that acts on the collection reads it.
+     */
+    preview?: LibraryCollection | null;
     collectionId: string;
     onBack: () => void;
     /**
@@ -179,7 +202,14 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     !previewReadOnly && (!foreignOwnerId || accessRole === "editor")
   );
   const canManageAccess = $derived(!previewReadOnly && !foreignOwnerId);
-  const tileColor = $derived(collection?.color ?? "var(--theme-accent)");
+  // What the page draws while the live record is on its way.
+  const shown = $derived(
+    collection ?? (preview?.id === collectionId ? preview : null)
+  );
+  const tileColor = $derived(shown?.color ?? "var(--theme-accent)");
+  // The same question asked of what the page shows, for whether the options
+  // button stands in the header from the first frame.
+  const shownIsSystem = $derived(!!shown && isSystemCollection(shown));
 
   $effect(() => {
     const id = collectionId;
@@ -366,7 +396,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         source: "browse_collection",
         collectionPropType: collection?.propType,
         returnPath: "/browse",
-        returnLabel: collection?.name ?? t("browse_audit_collection"),
+        returnLabel: collection
+          ? collectionDisplayName(collection)
+          : t("browse_audit_collection"),
         variations,
       });
     }
@@ -711,11 +743,59 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   // PUBLIC members (public-collection-loader module invariant), so the
   // header shows it immediately — no blank while members stream in. Owners
   // see their own full-id count.
+  // The opening list's record stands in until the live one lands, so the
+  // by-line is whole on the first frame.
   const visibleCount = $derived(
     foreignOwnerId
-      ? (collection?.sequenceCount ?? null)
-      : (collection?.sequenceIds.length ?? null)
+      ? (shown?.sequenceCount ?? null)
+      : (shown?.sequenceIds.length ?? null)
   );
+  // The placeholders stand where the cards will: as many as the collection
+  // holds (BrowsePanel caps it), today's default while the count is unknown.
+  const placeholderCount = $derived(visibleCount ?? undefined);
+  // And in the cards' own rows, when the public catalogue already in memory
+  // says every card's length. A peek only: nothing is loaded or read for it.
+  // A search, filter or other sort carried in from Browse would reorder or
+  // drop cards, so those keep the even grid, as does anything not certain.
+  const placeholderStepCounts = $derived.by(() => {
+    if (!browser || !shown) return null;
+    if (
+      engine.searchQuery.trim() !== "" ||
+      engine.activeFilters.size > 0 ||
+      engine.sortMethod !== BrowseSortMethod.CURATED ||
+      engine.sortDirection !== "asc"
+    )
+      return null;
+    const owner = foreignOwnerId ?? authState.effectiveUserId;
+    if (!owner) return null;
+    return resolvePlaceholderSteps(
+      shown,
+      owner,
+      getBrowseLoader().peekCatalog(),
+      { publicView: !!foreignOwnerId && !accessRole }
+    );
+  });
+
+  // The owner of a public collection keeps its stored card shapes current:
+  // when the catalogue gives a certain answer for what the PUBLIC page shows,
+  // the record is brought into line (once, only if it differs). Needs the live
+  // record, not the opening preview.
+  $effect(() => {
+    // The catalogue peek is not reactive; the members finishing their load is
+    // the cue to look again.
+    void loadingMembers;
+    if (!browser || !collection || foreignOwnerId || accessRole) return;
+    if (previewReadOnly || !collection.isPublic) return;
+    const owner = authState.effectiveUserId;
+    if (!owner) return;
+    const steps = collectionPlaceholderSteps(
+      collection,
+      owner,
+      getBrowseLoader().peekCatalog(),
+      { publicView: true }
+    );
+    if (steps) void recordCollectionCardSteps(collection, steps);
+  });
 </script>
 
 {#snippet selectionToolbar()}
@@ -763,7 +843,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     class:compact-chrome={header?.compactChrome}
     style="--tile-color: {tileColor};"
   >
-    {#if collection && foreignOwnerId && !accessRole && !previewReadOnly}
+    <!-- Every button is here on the page's first frame, disabled until the
+         live record lands, so none pops in later and the title's box never
+         changes after the page arrives. -->
+    {#if !loadFailed && foreignOwnerId && !accessRole && !previewReadOnly}
       {@const following = followedCollectionsState.isFollowed(
         foreignOwnerId,
         collectionId
@@ -776,6 +859,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
           ? t("browse_audit_following")
           : t("browse_audit_follow")}
         aria-pressed={following}
+        disabled={!collection}
         onclick={() => {
           if (following) {
             void followedCollectionsState.unfollow(
@@ -804,7 +888,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       </button>
     {/if}
 
-    {#if collection && !renaming && canEdit}
+    {#if !loadFailed && !renaming && canEdit}
       <div class="header-actions">
         <button
           type="button"
@@ -822,6 +906,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
             type="button"
             class="header-action-btn"
             aria-label={t("browse_ui_add")}
+            disabled={!collection}
             onclick={() => (addSheetOpen = true)}
           >
             <i class="fas fa-plus" aria-hidden="true"></i>
@@ -831,6 +916,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
             type="button"
             class="header-action-btn"
             aria-label={t("browse_ui_scan")}
+            disabled={!collection}
             onclick={() => (scanSheetOpen = true)}
           >
             <i class="fas fa-qrcode" aria-hidden="true"></i>
@@ -840,10 +926,11 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       </div>
     {/if}
 
-    {#if collection && !renaming && (!isSystem || canEdit)}
+    {#if !loadFailed && !renaming && (!shownIsSystem || canEdit)}
       <button
         type="button"
         class="options-btn"
+        disabled={!collection}
         aria-label={t("browse_ui_collection_options")}
         onclick={handleOptions}
       >
@@ -855,11 +942,12 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 
 {#if inBar}
   <BrowseHeaderSlot
-    leaf={collection?.name ?? null}
+    leaf={collection ? collectionDisplayName(collection) : null}
     leafContent={renaming ? renameLeaf : null}
     actions={headerActions}
     toolbar={selectionState.active ? selectionToolbar : null}
     accent={tileColor}
+    {active}
   />
 {/if}
 
@@ -872,8 +960,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     {#if !selectionState.active}
       <header class="detail-meta" oncontextmenu={handleHeaderContextMenu}>
         <span class="header-icon">
-          <i class={`fas ${collection?.icon ?? "fa-folder"}`} aria-hidden="true"
-          ></i>
+          <i class={`fas ${shown?.icon ?? "fa-folder"}`} aria-hidden="true"></i>
         </span>
         <span class="header-count" class:hidden-count={loadFailed}>
           {#if ownerName}{t("browse_audit_by_owner", { owner: ownerName })} ·
@@ -897,15 +984,16 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   {:else}
     <header class="detail-header" oncontextmenu={handleHeaderContextMenu}>
       <span class="header-icon">
-        <i class={`fas ${collection?.icon ?? "fa-folder"}`} aria-hidden="true"
-        ></i>
+        <i class={`fas ${shown?.icon ?? "fa-folder"}`} aria-hidden="true"></i>
       </span>
 
       {#if renaming}
         {@render renameLeaf()}
       {:else}
         <div class="header-text">
-          <h2 class="header-name">{collection?.name ?? ""}</h2>
+          <h2 class="header-name">
+            {collection ? collectionDisplayName(collection) : ""}
+          </h2>
           <span class="header-count" class:hidden-count={loadFailed}>
             {#if ownerName}{t("browse_audit_by_owner", { owner: ownerName })} ·
             {/if}{visibleCount !== null ? countLabel(visibleCount) : ""}
@@ -946,13 +1034,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
           >
         </button>
       </div>
-    {:else if loadingMembers}
-      <div class="skeleton-grid" aria-hidden="true">
-        {#each Array(6) as _}
-          <span class="card-skeleton"></span>
-        {/each}
-      </div>
-    {:else if members.length === 0}
+    {:else if !loadingMembers && members.length === 0}
       <div class="empty-state">
         <span class="empty-icon">
           <i
@@ -990,15 +1072,23 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         {/if}
       </div>
     {:else}
+      <!-- Mounted from the first frame. While the members load it shows only
+           the gallery's own placeholders (warming), sized by the same
+           columns and padding as the cards, so one placeholder layer carries
+           from the tap until the cards replace it. -->
       <BrowsePanel
         collectionPropType={collection?.propType}
         {engine}
+        warming={loadingMembers}
+        {placeholderCount}
+        {placeholderStepCounts}
         layout="compact"
         eager={false}
         curatedSortLabel={t("browse_audit_collection_order")}
         toolbarVariant="embedded"
         hideToolbarSearch={!!browseQuery}
         headerChrome
+        headerActive={active}
         onOpenFilters={() => (filterSheetOpen = true)}
         resultTotal={visibleCount ?? members.length}
         onSelect={(sequence, variations) =>
@@ -1011,7 +1101,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         collectionContext={canEdit
           ? {
               id: collectionId,
-              name: collection?.name ?? t("browse_audit_this_collection"),
+              name: collection
+                ? collectionDisplayName(collection)
+                : t("browse_audit_this_collection"),
               onRemove: handleRemoveFromCollection,
             }
           : undefined}
@@ -1040,7 +1132,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 <ConfirmDialog
   bind:isOpen={deleteConfirmOpen}
   title={t("browse_audit_delete_named_collection", {
-    name: collection?.name ?? t("browse_audit_collection"),
+    name: collection
+      ? collectionDisplayName(collection)
+      : t("browse_audit_collection"),
   })}
   message={t("browse_audit_delete_collection_message")}
   confirmText={t("action_delete")}
@@ -1064,7 +1158,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 <ConfirmDialog
   bind:isOpen={leaveConfirmOpen}
   title={t("browse_audit_leave_named_collection", {
-    name: collection?.name ?? t("browse_audit_collection"),
+    name: collection
+      ? collectionDisplayName(collection)
+      : t("browse_audit_collection"),
   })}
   message={t("browse_audit_leave_collection_message")}
   confirmText={t("browse_audit_leave_collection")}
@@ -1126,7 +1222,12 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       border-color var(--duration-fast) var(--ease-standard);
   }
 
-  .options-btn:hover {
+  .options-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .options-btn:hover:not(:disabled) {
     border-color: color-mix(in srgb, var(--tile-color) 45%, transparent);
     background: color-mix(in srgb, var(--tile-color) 10%, var(--theme-card-bg));
   }
@@ -1373,33 +1474,6 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     padding: 4px 12px 16px;
   }
 
-  .skeleton-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: var(--spacing-sm, 8px);
-  }
-
-  .card-skeleton {
-    aspect-ratio: 1;
-    border-radius: 8px;
-    background: color-mix(
-      in srgb,
-      var(--theme-text-dim, #888) 12%,
-      transparent
-    );
-    animation: skeleton-pulse 1.2s ease-in-out infinite;
-  }
-
-  @keyframes skeleton-pulse {
-    0%,
-    100% {
-      opacity: 0.5;
-    }
-    50% {
-      opacity: 0.85;
-    }
-  }
-
   .header-count.hidden-count {
     visibility: hidden;
   }
@@ -1471,9 +1545,6 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     .options-btn,
     .header-action-btn {
       transition: none;
-    }
-    .card-skeleton {
-      animation: none;
     }
   }
 </style>

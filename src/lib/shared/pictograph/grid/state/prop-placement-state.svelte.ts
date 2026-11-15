@@ -1,4 +1,5 @@
 import { untrack } from "svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { GridLocation, GridMode } from "../domain/enums/grid-enums";
 import type { PropPlacementChange } from "../domain/prop-placement";
 import type { PlacementGridPoint } from "../services/placement-grid-points";
@@ -153,7 +154,7 @@ export function createPropPlacementState(
   function labelForLocation(location: GridLocation | null): string {
     return (
       inputs.getActivePoints().find((point) => point.location === location)
-        ?.label ?? "unknown point"
+        ?.label ?? t("pictograph_placement_unknown_point")
     );
   }
 
@@ -170,7 +171,10 @@ export function createPropPlacementState(
       const noun =
         color === HandSide.LEFT ? inputs.getLeftNoun() : inputs.getRightNoun();
       dependencies.triggerHaptic();
-      liveAnnouncement = `${noun}: ${label} picked.`;
+      liveAnnouncement = t("pictograph_placement_announce_picked", {
+        prop: noun,
+        point: label,
+      });
       dependencies.onPick?.(color, location);
       return;
     }
@@ -183,21 +187,51 @@ export function createPropPlacementState(
       activeHand =
         rightLocation === null && !leftOnly() ? HandSide.RIGHT : null;
       dependencies.triggerHaptic();
+      const left = inputs.getLeftNoun();
+      const right = inputs.getRightNoun();
       liveAnnouncement = leftOnly()
-        ? `${inputs.getLeftNoun()} ${previous === null ? "placed at" : "moved to"} ${label}.`
+        ? t(
+            previous === null
+              ? "pictograph_placement_announce_placed"
+              : "pictograph_placement_announce_moved",
+            { prop: left, point: label }
+          )
         : rightLocation === null
-          ? `${inputs.getLeftNoun()} placed at ${label}. Place the ${inputs.getRightNoun()}.`
-          : `${inputs.getLeftNoun()} moved to ${label}. Position ready.`;
+          ? t("pictograph_placement_announce_placed_then_place", {
+              prop: left,
+              point: label,
+              other: right,
+            })
+          : t("pictograph_placement_announce_moved_ready", {
+              prop: left,
+              point: label,
+            });
     } else {
       const previous = rightLocation;
       rightLocation = location;
       activeHand = leftLocation === null && !rightOnly() ? HandSide.LEFT : null;
       dependencies.triggerHaptic();
+      const left = inputs.getLeftNoun();
+      const right = inputs.getRightNoun();
       liveAnnouncement = rightOnly()
-        ? `${inputs.getRightNoun()} ${previous === null ? "placed at" : "moved to"} ${label}.`
+        ? t(
+            previous === null
+              ? "pictograph_placement_announce_placed"
+              : "pictograph_placement_announce_moved",
+            { prop: right, point: label }
+          )
         : leftLocation === null
-          ? `${inputs.getRightNoun()} placed at ${label}. Place the ${inputs.getLeftNoun()}.`
-          : `${inputs.getRightNoun()} placed at ${label}. ${inputs.getLeftNoun()} at ${labelForLocation(leftLocation)}, ${inputs.getRightNoun()} at ${label}. Position ready.`;
+          ? t("pictograph_placement_announce_placed_then_place", {
+              prop: right,
+              point: label,
+              other: left,
+            })
+          : t("pictograph_placement_announce_both_ready", {
+              prop: right,
+              point: label,
+              other: left,
+              otherPoint: labelForLocation(leftLocation),
+            });
     }
 
     publishChange(color);
@@ -208,7 +242,9 @@ export function createPropPlacementState(
     activeHand = color;
     const noun =
       color === HandSide.LEFT ? inputs.getLeftNoun() : inputs.getRightNoun();
-    liveAnnouncement = `Choose a new location for the ${noun}.`;
+    liveAnnouncement = t("pictograph_placement_announce_choose_new", {
+      prop: noun,
+    });
     dependencies.triggerHaptic();
     publishChange();
   }
@@ -233,10 +269,15 @@ export function createPropPlacementState(
     dependencies.triggerHaptic();
     liveAnnouncement =
       activeHand === HandSide.RIGHT
-        ? `${inputs.getLeftNoun()} placement restored. Place the ${inputs.getRightNoun()}.`
+        ? t("pictograph_placement_announce_restored_then_place", {
+            other: inputs.getLeftNoun(),
+            prop: inputs.getRightNoun(),
+          })
         : activeHand === HandSide.LEFT
-          ? `Place the ${inputs.getLeftNoun()}.`
-          : "Previous position restored.";
+          ? t("pictograph_placement_announce_place", {
+              prop: inputs.getLeftNoun(),
+            })
+          : t("pictograph_placement_announce_previous_restored");
     publishChange();
   }
 

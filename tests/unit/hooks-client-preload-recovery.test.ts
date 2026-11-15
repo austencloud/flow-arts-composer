@@ -51,6 +51,29 @@ describe("production dynamic-import recovery", () => {
     expect(notice).not.toContain("import(");
   });
 
+  it("lets a link navigation win over the recovery reload", () => {
+    const preloadHandler = between(
+      'window.addEventListener("vite:preloadError"',
+      "// Report unhandled promise rejections"
+    );
+
+    // WebKit and Firefox cancel lazy-chunk loads when a link starts loading.
+    // Reloading then replaced the navigation with the same page, so a leaving
+    // page must return before recovery claims a step or navigates.
+    const guard = preloadHandler.indexOf("if (isPageLeaving()) return;");
+    expect(guard).toBeGreaterThanOrEqual(0);
+    expect(guard).toBeLessThan(
+      preloadHandler.indexOf("chunkRecoveryStarted = true")
+    );
+    expect(guard).toBeLessThan(
+      preloadHandler.indexOf("claimChunkRecoveryStep()")
+    );
+    // Static import: the flag must be live before any lazy chunk loads.
+    expect(hooksSource).toContain(
+      'import { isPageLeaving } from "#lib/shared/net/asset-fetch.js";'
+    );
+  });
+
   it("keeps the expected rejected import quiet while the page exits", () => {
     const rejectionHandler = between(
       'window.addEventListener("unhandledrejection"',

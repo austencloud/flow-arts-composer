@@ -47,6 +47,7 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "module:stage",
         "patterns-guest",
         "prop-collection",
+        "returning-guest",
         "rewind-sequence",
         "rotation-direction",
         "save",

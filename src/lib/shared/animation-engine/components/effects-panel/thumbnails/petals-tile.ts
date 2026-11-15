@@ -20,6 +20,7 @@ import {
   rollEmberFlag,
 } from "#lib/shared/effects/domain/petal-palettes.js";
 import { blob, ground, hexToRgb, lcg } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type PetalsIntent = EffectConfigMap["petals"];
 export const PETALS_TILE_SEED = 0x9e7a;
@@ -130,48 +131,117 @@ function petals(p: PetalsIntent, pal: PetalPalette, rand: Rand): Leaf[] {
   return out;
 }
 
+/** Small formats: five to seven large leaves on a falling curve, one pink pool. */
+const SMALL_VIEW: Record<"tile" | "chip", Box> = {
+  tile: { x: 80, y: 20, w: 560, h: 210 },
+  chip: { x: 210, y: 20, w: 300, h: 200 },
+};
+/** u, v, size (fraction of view height), rotation, face (squash). */
+const SMALL_LEAVES: Record<
+  "tile" | "chip",
+  readonly (readonly [number, number, number, number, number])[]
+> = {
+  tile: [
+    [0.12, 0.32, 0.4, 0.5, 0.9],
+    [0.28, 0.62, 0.44, 2.4, 0.8],
+    [0.45, 0.3, 0.46, 1.1, 0.95],
+    [0.6, 0.66, 0.42, 3.6, 0.85],
+    [0.76, 0.34, 0.44, 5.0, 0.9],
+    [0.9, 0.62, 0.38, 0.2, 0.8],
+  ],
+  chip: [
+    [0.3, 0.34, 0.5, 0.7, 0.95],
+    [0.55, 0.7, 0.52, 2.6, 0.85],
+    [0.76, 0.32, 0.46, 4.4, 0.9],
+    [0.2, 0.74, 0.36, 5.5, 0.8],
+  ],
+};
+
+function smallLeaves(
+  p: PetalsIntent,
+  pal: PetalPalette,
+  rand: Rand,
+  format: "tile" | "chip",
+  view: Box
+): Leaf[] {
+  const k = 0.92 + Math.min(0.16, p.intensity * 0.16);
+  return SMALL_LEAVES[format].map(([u, v, sz, rot, face]) => {
+    const shape = pickPetalSprite(pal, rand);
+    return {
+      x: view.x + u * view.w,
+      y: view.y + v * view.h,
+      size: sz * view.h * k * 0.62,
+      shape,
+      tint: pickPetalTint(pal, rand),
+      rot,
+      face,
+      alpha: 1,
+      ember: false,
+      age: 9,
+    };
+  });
+}
+
 export function paintPetalsTile(
   ctx: CanvasRenderingContext2D,
-  intent: PetalsIntent
+  intent: PetalsIntent,
+  format: TileFormat = "card"
 ): void {
   const rand = lcg(PETALS_TILE_SEED);
   const pal = resolvePetalPalette(intent);
-  const leaves = petals(intent, pal, rand);
+  const view = isSmall(format)
+    ? frame(ctx, format, SMALL_VIEW[format as "tile" | "chip"], 0)
+    : null;
+  const leaves = view
+    ? smallLeaves(intent, pal, rand, format as "tile" | "chip", view)
+    : petals(intent, pal, rand);
   const tint = hexToRgb(pal.tints[0] ?? "#ffffff");
   ground(ctx, [0.035, 0.03, 0.04]);
   // Soft wash in the palette's lead tint along the sweep, and a warm pool
   // under the head where the newest leaves are.
-  blob(ctx, 300, 110, 330, 150, tint, 0.09);
-  const head = arcAt(1);
-  blob(
-    ctx,
-    head.x - 40 - intent.carry * 110,
-    head.y + 10,
-    150,
-    110,
-    tint,
-    0.14
-  );
-  for (const q of leaves) {
-    if (q.alpha <= 0.02) continue;
-    const cos = Math.cos(q.rot);
-    const sin = Math.sin(q.rot);
-    ctx.setTransform(cos * q.face, sin * q.face, -sin, cos, q.x, q.y);
-    ctx.globalAlpha = q.alpha;
-    drawPetalSilhouette(ctx, q.shape, q.size, q.tint);
-    if (q.ember && pal.emberEdge && q.age < 1.35) {
-      const emberAlpha = (1 - q.age / 1.35) * q.alpha * 1.15;
-      if (emberAlpha > 0.02) {
-        drawPetalEmberRim(
-          ctx,
-          q.shape,
-          q.size,
-          pal.emberEdge.color,
-          emberAlpha
-        );
+  if (view) {
+    // The pink glow the leaves sit in.
+    blob(ctx, view.x + view.w * 0.5, view.y + view.h * 0.5, view.w * 0.55, view.h * 0.8, tint, 0.3);
+  } else {
+    blob(ctx, 300, 110, 330, 150, tint, 0.09);
+    const head = arcAt(1);
+    blob(
+      ctx,
+      head.x - 40 - intent.carry * 110,
+      head.y + 10,
+      150,
+      110,
+      tint,
+      0.14
+    );
+  }
+  // A small picture lays each petal down twice, the second time added on top,
+  // so the pink clears the brightness a label would have beside it.
+  for (let pass = 0; pass < (view ? 2 : 1); pass += 1) {
+    ctx.globalCompositeOperation = pass === 0 ? "source-over" : "lighter";
+    for (const q of leaves) {
+      if (q.alpha <= 0.02) continue;
+      const cos = Math.cos(q.rot);
+      const sin = Math.sin(q.rot);
+      ctx.save();
+      ctx.transform(cos * q.face, sin * q.face, -sin, cos, q.x, q.y);
+      ctx.globalAlpha = q.alpha * (pass === 0 ? 1 : 0.22);
+      drawPetalSilhouette(ctx, q.shape, q.size, q.tint);
+      if (pass === 0 && q.ember && pal.emberEdge && q.age < 1.35) {
+        const emberAlpha = (1 - q.age / 1.35) * q.alpha * 1.15;
+        if (emberAlpha > 0.02) {
+          drawPetalEmberRim(
+            ctx,
+            q.shape,
+            q.size,
+            pal.emberEdge.color,
+            emberAlpha
+          );
+        }
       }
+      ctx.restore();
     }
   }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
   ctx.globalAlpha = 1;
 }

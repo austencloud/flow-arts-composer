@@ -146,7 +146,7 @@ c1.globalAlpha=1
 c1.fillStyle="#08080c"
 c1.fillRect(651.138489,1490.486624,428.861511,428.861511)
 c1.globalAlpha=1
-createContext([data-sequence-progress-visible="true"],{height:214.430756,includeStyleProperties:array,onCreateForeignObjectSvg:fn,scale:2,width:214.430756})
+createContext([data-sequence-progress-visible="true"],{filter:fn,height:214.430756,includeStyleProperties:array,onCreateForeignObjectSvg:fn,scale:2,width:214.430756})
 domToCanvas(screenshot-context#1)
 c1.drawImage(canvas#dom-capture,651.138489,1490.486624,428.861511,428.861511)
 c1.restore()

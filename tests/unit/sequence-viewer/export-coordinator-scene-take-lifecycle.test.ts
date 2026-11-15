@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => ({
-  ensureFullAccountForExport: vi.fn(),
   saveFilmRecipe: vi.fn(),
   export3DAnimation: vi.fn(),
   cancel: vi.fn(),
@@ -16,9 +15,6 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("#lib/shared/auth/domain/export-gate.js", () => ({
-  ensureFullAccountForExport: mocks.ensureFullAccountForExport,
-}));
 vi.mock(
   "#lib/shared/animation-panel/state/export-options-state.svelte.js",
   () => ({
@@ -92,7 +88,6 @@ describe("scene take lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    mocks.ensureFullAccountForExport.mockResolvedValue(true);
     mocks.getVideoOptions.mockReturnValue({
       fps: 30,
       loopCount: 1,

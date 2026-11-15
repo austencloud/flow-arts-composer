@@ -25,16 +25,20 @@ function renderOverlay({
   currentType = LOOPType.ROTATED,
   sequenceLength = 8,
   rhythm = HALVED_RHYTHM,
+  fits,
 }: {
   selectedComponents?: Set<LOOPComponent>;
   currentType?: LOOPType;
   sequenceLength?: number;
   rhythm?: RhythmValue;
+  /** Gives the overlay a host that can fit a pick to the length. */
+  fits?: boolean;
 } = {}) {
   const handlers = {
     onChange: vi.fn(),
     onClose: vi.fn(),
     onRhythmChange: vi.fn(),
+    onPickNeedsFit: vi.fn(() => fits ?? false),
   };
 
   render(LOOPExpandedOverlay, {
@@ -44,6 +48,7 @@ function renderOverlay({
     sequenceLength,
     layout: "list",
     ...handlers,
+    onPickNeedsFit: fits === undefined ? undefined : handlers.onPickNeedsFit,
   });
 
   return handlers;
@@ -148,6 +153,72 @@ describe("LOOPExpandedOverlay live single selection", () => {
       rotationInterval: 2,
     });
     expect(handlers.onChange).toHaveBeenLastCalledWith(LOOPType.ROTATED);
+  });
+
+  // Austen 2026-11-14: "when I click quartered and then I click the X button
+  // it saves it as halved because it thinks I just cancelled out what I
+  // said." At 14 steps Quartered can't split evenly, so the pick was shown
+  // but never written, and X dropped it.
+  it("hands a Quartered pick the length can't split to the host, so X keeps it", async () => {
+    const handlers = renderOverlay({
+      selectedComponents: new Set([LOOPComponent.ROTATED]),
+      sequenceLength: 14,
+      fits: true,
+    });
+
+    await page
+      .getByRole("radiogroup", { name: "Rotation period" })
+      .getByRole("radio", { name: "Quartered" })
+      .click();
+
+    expect(handlers.onPickNeedsFit).toHaveBeenCalledTimes(1);
+    expect(handlers.onPickNeedsFit).toHaveBeenLastCalledWith({
+      loopType: LOOPType.ROTATED,
+      rhythm: { rotationInterval: 4 },
+    });
+    // The fitted write replaces the plain one, so the host's length-blind
+    // reconcile never sees Quartered at 14 and turns it back to Halved.
+    expect(handlers.onRhythmChange).not.toHaveBeenCalled();
+    expect(handlers.onChange).not.toHaveBeenCalled();
+
+    await page.getByRole("button", { name: "Close LOOP selection" }).click();
+    expect(handlers.onPickNeedsFit).toHaveBeenCalledTimes(1);
+    expect(handlers.onClose).toHaveBeenCalled();
+  });
+
+  it("applies and closes a component the length can't hold when the host fits it", async () => {
+    const handlers = renderOverlay({ sequenceLength: 7, fits: true });
+
+    await page
+      .getByRole("button", {
+        name: /Swapped - Left and right hands swap roles - not selected/,
+      })
+      .click();
+
+    expect(handlers.onPickNeedsFit).toHaveBeenLastCalledWith({
+      loopType: LOOPType.SWAPPED,
+    });
+    expect(handlers.onChange).not.toHaveBeenCalled();
+    expect(handlers.onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a pick shown but unsaved when the host can't fit it", async () => {
+    const handlers = renderOverlay({
+      selectedComponents: new Set([LOOPComponent.ROTATED]),
+      sequenceLength: 14,
+      fits: false,
+    });
+
+    await page
+      .getByRole("radiogroup", { name: "Rotation period" })
+      .getByRole("radio", { name: "Quartered" })
+      .click();
+
+    expect(handlers.onPickNeedsFit).toHaveBeenCalledTimes(1);
+    expect(handlers.onRhythmChange).not.toHaveBeenCalled();
+    expect(document.body.textContent).toContain(
+      "14 beats can't split into 4 equal parts"
+    );
   });
 
   it("applies and closes a Single LOOP that has no settings", async () => {

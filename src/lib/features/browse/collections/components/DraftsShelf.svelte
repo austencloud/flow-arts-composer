@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { normalizeBrowsePrimary } from "#lib/shared/browse/navigation/browse-route-resolver.js";
   import {
@@ -53,9 +54,9 @@
   }
 
   function modeLabel(mode: DraftVersion["mode"]): string {
-    if (mode === "construct") return "Construct";
-    if (mode === "generate") return "Generate";
-    return "Assemble";
+    if (mode === "construct") return t("tab_create_construct");
+    if (mode === "generate") return t("tab_create_generate");
+    return t("tab_create_assemble");
   }
 
   function savedLabel(savedAt: number): string {
@@ -68,37 +69,37 @@
   function title(version: DraftVersion): string {
     return (
       version.workspace.currentSequence?.name?.trim() ||
-      `${modeLabel(version.mode)} draft`
+      t("browse_drafts_mode_draft", { mode: modeLabel(version.mode) })
     );
   }
 </script>
 
-<section class="drafts" aria-label="Drafts">
+<section class="drafts" aria-label={t("browse_home_drafts")}>
   <header class="drafts-header">
     <div>
-      <h2>Drafts</h2>
-      <p>On this device</p>
+      <h2>{t("browse_home_drafts")}</h2>
+      <p>{t("browse_drafts_on_device")}</p>
     </div>
   </header>
 
   {#if draftsState.loading}
-    <p class="state" role="status">Loading drafts…</p>
+    <p class="state" role="status">{t("browse_drafts_loading")}</p>
   {:else if draftsState.error}
     <div class="state" role="alert">
       <span>{draftsState.error}</span>
       <button type="button" onclick={() => void draftsState.refresh()}
-        >Retry</button
+        >{t("action_retry")}</button
       >
     </div>
   {:else if draftsState.drafts.length === 0}
     <div class="state empty-state">
-      <p>Your unfinished sequences will appear here.</p>
+      <p>{t("browse_drafts_empty")}</p>
       <LinkChip href="/create/construct" data-sveltekit-reload
-        >Start a sequence</LinkChip
+        >{t("browse_drafts_start")}</LinkChip
       >
     </div>
   {:else if visibleDrafts.length === 0}
-    <p class="state" role="status">No drafts match “{browseQuery?.search}”.</p>
+    <p class="state" role="status">{t("browse_drafts_no_match", { query: browseQuery?.search ?? "" })}</p>
   {:else}
     <div class="draft-list">
       {#each visibleDrafts as draft (draft.id)}
@@ -112,7 +113,7 @@
                 shareRender={false}
               />
             {:else}
-              <span class="placement-label">Start placement</span>
+              <span class="placement-label">{t("browse_ui_start_placement")}</span>
             {/if}
           </div>
           <div class="draft-body">
@@ -120,11 +121,15 @@
               <h3>{title(draft.latest)}</h3>
               <span class="mode">{modeLabel(draft.latest.mode)}</span>
             </div>
-            <p class="edited">Last edited {savedLabel(draft.latest.savedAt)}</p>
+            <p class="edited">
+              {t("browse_drafts_last_edited", {
+                date: savedLabel(draft.latest.savedAt),
+              })}
+            </p>
             <div class="draft-actions">
               <LinkChip
                 href={draftResumePath(draft.latest)}
-                data-sveltekit-reload>Resume</LinkChip
+                data-sveltekit-reload>{t("browse_drafts_resume")}</LinkChip
               >
               {#if older.length > 0}
                 <button
@@ -133,9 +138,12 @@
                   aria-expanded={expanded.includes(draft.id)}
                   onclick={() => toggle(draft.id)}
                 >
-                  {older.length} older {older.length === 1
-                    ? "version"
-                    : "versions"}
+                  {t(
+                    older.length === 1
+                      ? "browse_drafts_older_one"
+                      : "browse_drafts_older_other",
+                    { count: older.length }
+                  )}
                   <i
                     class:rotated={expanded.includes(draft.id)}
                     class="fas fa-chevron-down"
@@ -154,7 +162,7 @@
                     <span>{savedLabel(version.savedAt)}</span>
                     <LinkChip
                       href={draftResumePath(version)}
-                      data-sveltekit-reload>Resume</LinkChip
+                      data-sveltekit-reload>{t("browse_drafts_resume")}</LinkChip
                     >
                   </div>
                 {/each}

@@ -29,8 +29,9 @@ Popover uses fixed positioning to escape overflow:hidden containers.
      *  SegmentedControl indicator (use when a toggle sits beside one). */
     emphasis?: "soft" | "solid";
     /** md = default chip · sm = denser padding for tight scrollable filter rows.
-     *  Touch-target floor is preserved in both sizes. */
-    size?: "sm" | "md";
+     *  Touch-target floor is preserved in both sizes. · phone = sm density at
+     *  the 36px phone control height (layout law), for a phone toolbar row. */
+    size?: "sm" | "md" | "phone";
     /**
      * compact (default) = 12px label, correct for a filter bar where the chip
      * qualifies content shown elsewhere · readable = 14px label and leading
@@ -279,7 +280,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     class="filter-chip display-only"
     class:active
     class:solid={emphasis === "solid"}
-    class:size-sm={size === "sm"}
+    class:size-sm={size === "sm" || size === "phone"}
+    class:size-phone={size === "phone"}
     class:scale-readable={labelScale === "readable"}
     style="--chip-color: {chipColor};"
   >
@@ -293,7 +295,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
       class:disabled
       class:expanded
       class:solid={emphasis === "solid"}
-      class:size-sm={size === "sm"}
+      class:size-sm={size === "sm" || size === "phone"}
+      class:size-phone={size === "phone"}
       class:scale-readable={labelScale === "readable"}
       type="button"
       aria-pressed={mode === "toggle" ? active : undefined}
@@ -315,7 +318,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
       class:active
       class:disabled
       class:solid={emphasis === "solid"}
-      class:size-sm={size === "sm"}
+      class:size-sm={size === "sm" || size === "phone"}
+      class:size-phone={size === "phone"}
       class:scale-readable={labelScale === "readable"}
       type="button"
       aria-label={removeAriaLabel ?? `Remove ${label}`}
@@ -332,7 +336,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     class:disabled
     class:expanded
     class:solid={emphasis === "solid"}
-    class:size-sm={size === "sm"}
+    class:size-sm={size === "sm" || size === "phone"}
+    class:size-phone={size === "phone"}
     class:scale-readable={labelScale === "readable"}
     style="--chip-color: {chipColor};"
     type="button"
@@ -408,6 +413,14 @@ Popover uses fixed positioning to escape overflow:hidden containers.
   .filter-chip.size-sm {
     gap: 4px;
     padding: 6px 10px;
+  }
+
+  /* Phone control height: the chip and the global button rule both floor
+     at 44px, so the phone size lifts both. */
+  .filter-chip.size-phone {
+    min-width: 0;
+    min-height: var(--alt-touch-target, 36px);
+    padding-block: 0;
   }
 
   /* Split chip: body action + separate × removal, one visual pill. */

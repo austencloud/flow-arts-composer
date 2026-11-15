@@ -1096,4 +1096,43 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   :global(.grid-container.skewed-mode.dark-mode-override .box-outer-ring) {
     stroke: #d0d0d0;
   }
+
+  /* ====================================================================
+     SMALL ART - a live pictograph under 180px wide (data-art-scale="small"
+     on PictographContainer). The grid steps back so the prop is the loudest
+     thing in the picture. Opacity sits on the layer so the per-point opacity
+     states keep working. No transition: this switches with a resize. See
+     "Props in small pictographs" in docs/architecture/visual-design-canon.md.
+   ==================================================================== */
+  :global([data-art-scale="small"] .grid-container .grid-layer) {
+    opacity: 0.7;
+  }
+
+  :global([data-art-scale="small"] .grid-container #n_diamond_outer_point),
+  :global([data-art-scale="small"] .grid-container #e_diamond_outer_point),
+  :global([data-art-scale="small"] .grid-container #s_diamond_outer_point),
+  :global([data-art-scale="small"] .grid-container #w_diamond_outer_point),
+  :global([data-art-scale="small"] .grid-container .box-outer-ring) {
+    r: 16px;
+  }
+
+  :global([data-art-scale="small"] .grid-container #center_point) {
+    r: 8px;
+  }
+
+  :global(
+    [data-art-scale="small"] .grid-container.box-mode #n_diamond_outer_point
+  ),
+  :global(
+    [data-art-scale="small"] .grid-container.box-mode #e_diamond_outer_point
+  ),
+  :global(
+    [data-art-scale="small"] .grid-container.box-mode #s_diamond_outer_point
+  ),
+  :global(
+    [data-art-scale="small"] .grid-container.box-mode #w_diamond_outer_point
+  ),
+  :global([data-art-scale="small"] .grid-container .box-outer-ring) {
+    stroke-width: 8;
+  }
 </style>

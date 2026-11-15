@@ -138,7 +138,7 @@ function validateString(key, src, out) {
   if (out === src && src.split(/\s+/).length > 1 && !KEEP_ENGLISH.some(t => src.includes(t))) reasons.push("looks untranslated");
   // length outlier — CJK is character-dense (no spaces), legitimately far shorter,
   // so skip the too-short floor for zh/ja/ko; keep the too-long ceiling for all.
-  const CJK = ["zh", "ja", "ko"].includes(locale);
+  const CJK = ["zh", "zh-Hant", "ja", "ko"].includes(locale);
   if (out.length > src.length * 3 + 10 || (!CJK && out.length < src.length * 0.3)) reasons.push("length outlier");
   return { verdict: reasons.length ? "flag" : "pass", reasons };
 }

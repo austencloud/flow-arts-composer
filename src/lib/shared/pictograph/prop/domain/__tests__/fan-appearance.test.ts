@@ -5,11 +5,16 @@ import path from "node:path";
 
 import { PropType } from "../enums/prop-type";
 import {
+  APPROVED_FAN_BUILDS,
   DEFAULT_FAN_APPEARANCE,
+  FAN_BUILDS,
   FAN_PAPER_CONTRAST,
+  defaultFanBuild,
   applyFanFrameColor,
   applyFanPaperContrast,
   fanAppearanceArtwork,
+  chooseCompactFanLook,
+  chooseFanBuild,
   fanBuildPreviewOptions,
   compactFanLookPreviewOptions,
   normalizeFanAppearance,
@@ -18,15 +23,131 @@ import {
 } from "../fan-appearance";
 
 describe("fan appearance", () => {
-  it("defaults to the bare DoodleGrip Fire build", () => {
-    expect(normalizeFanAppearance(undefined)).toEqual({
+  it("defaults to Pictograph until DoodleGrip Fire is offered", () => {
+    expect(normalizeFanAppearance(undefined, APPROVED_FAN_BUILDS)).toEqual({
+      build: "pictograph",
+      frameColor: "black",
+      cover: "bare",
+    });
+    expect(
+      resolveFanRenderKey(
+        "fan",
+        normalizeFanAppearance(null, APPROVED_FAN_BUILDS)
+      )
+    ).toBe("fan");
+  });
+
+  it("defaults to the bare DoodleGrip Fire build when every look is offered", () => {
+    expect(normalizeFanAppearance(undefined, FAN_BUILDS)).toEqual({
       build: "fire",
       frameColor: "black",
       cover: "bare",
     });
-    expect(resolveFanRenderKey("fan", normalizeFanAppearance(null))).toBe(
-      "fan__fire_bare"
-    );
+    expect(
+      resolveFanRenderKey("fan", normalizeFanAppearance(null, FAN_BUILDS))
+    ).toBe("fan__fire_bare");
+    expect(defaultFanBuild(APPROVED_FAN_BUILDS)).toBe("pictograph");
+    expect(defaultFanBuild(FAN_BUILDS)).toBe("fire");
+  });
+
+  describe("maker approval", () => {
+    it("approves exactly Pictograph and Sense until the other makers approve", () => {
+      expect([...APPROVED_FAN_BUILDS]).toEqual(["pictograph", "sense"]);
+    });
+
+    it("lists every look, the approved first and the six others waiting", () => {
+      const appearance = normalizeFanAppearance(null, APPROVED_FAN_BUILDS);
+      const builds = fanBuildPreviewOptions(appearance, APPROVED_FAN_BUILDS);
+      expect(builds.map(({ id }) => id)).toEqual([
+        "pictograph",
+        "sense",
+        "fire",
+        "lotus",
+        "flat-grip",
+        "day",
+        "moon",
+        "star",
+      ]);
+      expect(builds.filter((o) => o.waitingOnMaker).map((o) => o.id)).toEqual([
+        "fire",
+        "lotus",
+        "flat-grip",
+        "day",
+        "moon",
+        "star",
+      ]);
+      const compact = compactFanLookPreviewOptions(
+        appearance,
+        APPROVED_FAN_BUILDS
+      );
+      expect(compact).toHaveLength(9);
+      expect(compact.slice(0, 2).map((o) => o.waitingOnMaker)).toEqual([
+        false,
+        false,
+      ]);
+      expect(compact.slice(2).every((o) => o.waitingOnMaker)).toBe(true);
+      expect(compact.map(({ id }) => id)).toContain("covered-fire");
+    });
+
+    it("marks nothing waiting in preview mode", () => {
+      const appearance = normalizeFanAppearance(null, FAN_BUILDS);
+      for (const options of [
+        fanBuildPreviewOptions(appearance, FAN_BUILDS),
+        compactFanLookPreviewOptions(appearance, FAN_BUILDS),
+      ]) {
+        expect(options.some((o) => o.waitingOnMaker)).toBe(false);
+      }
+    });
+
+    it("never writes a waiting look, from the full or the compact list", () => {
+      const current = normalizeFanAppearance(
+        { build: "sense" },
+        APPROVED_FAN_BUILDS
+      );
+      for (const build of ["fire", "lotus", "flat-grip", "day", "moon", "star"] as const) {
+        expect(chooseFanBuild(current, build, APPROVED_FAN_BUILDS)).toBeNull();
+      }
+      for (const look of ["fire", "covered-fire", "day"] as const) {
+        expect(
+          chooseCompactFanLook(current, look, APPROVED_FAN_BUILDS)
+        ).toBeNull();
+      }
+      expect(
+        chooseFanBuild(current, "pictograph", APPROVED_FAN_BUILDS)
+      ).toEqual({ ...current, build: "pictograph" });
+      expect(
+        chooseCompactFanLook(current, "covered-fire", FAN_BUILDS)
+      ).toEqual({ ...current, build: "fire", cover: "covered" });
+    });
+
+    it("offers all eight builds and the covered fan in preview mode", () => {
+      const appearance = normalizeFanAppearance(null, FAN_BUILDS);
+      expect(
+        fanBuildPreviewOptions(appearance, FAN_BUILDS).map(({ id }) => id)
+      ).toHaveLength(8);
+      expect(
+        new Set(
+          fanBuildPreviewOptions(appearance, FAN_BUILDS).map(({ id }) => id)
+        )
+      ).toEqual(new Set(FAN_BUILDS));
+      const compact = compactFanLookPreviewOptions(appearance, FAN_BUILDS).map(
+        ({ id }) => id
+      );
+      expect(compact).toHaveLength(9);
+      expect(compact).toContain("covered-fire");
+    });
+
+    it("reads a stored unapproved build as the default, without erasing it", () => {
+      const stored = { build: "fire" as const, cover: "covered" as const };
+      expect(normalizeFanAppearance(stored, APPROVED_FAN_BUILDS).build).toBe(
+        "pictograph"
+      );
+      expect(normalizeFanAppearance(stored, FAN_BUILDS).build).toBe("fire");
+      expect(stored.build).toBe("fire");
+      expect(
+        normalizeFanAppearance({ build: "sense" }, APPROVED_FAN_BUILDS).build
+      ).toBe("sense");
+    });
   });
 
   it("normalizes stale persisted values without changing the default", () => {
@@ -98,14 +219,17 @@ describe("fan appearance", () => {
       "/images/props/appearances/fan-day-covered.svg?v=3"
     );
     expect(
-      fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE).find(
+      fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE, FAN_BUILDS).find(
         ({ id }) => id === "lotus"
       )?.image
     ).toBe("/images/props/build-previews/fan-lotus-bare-complete.webp?v=6");
   });
 
   it("keeps the compact 2D covered fan as one direct, honest choice", () => {
-    const options = compactFanLookPreviewOptions(DEFAULT_FAN_APPEARANCE);
+    const options = compactFanLookPreviewOptions(
+      DEFAULT_FAN_APPEARANCE,
+      FAN_BUILDS
+    );
     const covered = options.find(({ id }) => id === "covered-fire");
     const fire = options.find(({ id }) => id === "fire");
 

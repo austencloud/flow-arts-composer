@@ -16,6 +16,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type { HTMLAnchorAttributes } from "svelte/elements";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   type Props = Omit<HTMLAnchorAttributes, "href" | "children"> & {
     href: string;
@@ -33,7 +34,7 @@
     children,
     size = "md",
     wrap = false,
-    newTabLabel = "(opens in a new tab)",
+    newTabLabel,
     class: className = "",
     ...rest
   }: Props = $props();
@@ -56,7 +57,7 @@
   rel={external ? "noopener noreferrer" : undefined}
   {...rest}
   >{@render children()}<i class="fa-solid {icon}" aria-hidden="true"
-  ></i>{#if external}<span class="sr-only"> {newTabLabel}</span>{/if}</a
+  ></i>{#if external}<span class="sr-only"> {newTabLabel ?? t("animation_opens_new_tab")}</span>{/if}</a
 >
 
 <style>

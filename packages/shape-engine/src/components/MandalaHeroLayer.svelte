@@ -12,7 +12,10 @@
   floor keeps its real strength through a handoff, with no transition, and the
   flight lands on exactly what the page will show. Fully transparent, though,
   the browser skips painting the artwork and the snapshot comes out blank, so
-  during a handoff it stays a hair above zero. -->
+  during a handoff it stays a hair above zero.
+  The Ratio Playground's stage mounts the same floor under its own canvas,
+  which draws at a different fit, so it hands in that fit as `boxRatio`. -->
+
 <script lang="ts">
   import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
@@ -32,6 +35,7 @@
     opacity = 1,
     claim = false,
     handoff = false,
+    boxRatio,
   }: {
     paths: MandalaPaths;
     /** Identity of the pair these paths belong to; a change crossfades. */
@@ -43,6 +47,13 @@
     claim?: boolean;
     /** A shared-element transition is capturing: paint the artwork, instantly. */
     handoff?: boolean;
+    /**
+     * The extent box as a fraction of the square, for a canvas that does not
+     * draw at the engine's fit. The Ratio Playground's stage maps a hand
+     * radius differently from the drill's AnimatorCanvas, so it passes
+     * `theoryStageExtentBoxRatio`; left out, the box is the engine's.
+     */
+    boxRatio?: number;
   } = $props();
 
   const transitionDuration = motionDuration(DURATION.normal);
@@ -58,7 +69,7 @@
   const paint = $derived((sizePx: number) =>
     pathsArtworkSrc(paths, sizePx, tipDx, painter)
   );
-  const extentRatio = $derived(engineExtentBoxRatio(paths, tipDx));
+  const extentRatio = $derived(boxRatio ?? engineExtentBoxRatio(paths, tipDx));
 </script>
 
 <!-- The square's box comes from container units, not a measurement, so it is

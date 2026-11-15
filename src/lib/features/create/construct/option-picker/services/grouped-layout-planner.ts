@@ -34,6 +34,8 @@ export interface GroupedLayoutPlan {
   rows: GroupedRowPlan[];
   tileSize: number;
   showHeaders: boolean;
+  /** Rows too short for the full headers carry a one-line type label instead. */
+  showLabels: boolean;
   /** False when even the smallest tile overflows; the panel then clips. */
   fits: boolean;
 }
@@ -58,10 +60,20 @@ export interface GroupedLayoutInput {
   headerMinWidth: number;
   /** Headers are kept only when every row is at least this tall with them. */
   headerMinRowHeight: number;
+  /** Height a one-line type label takes above its grid; omit for no labels. */
+  labelHeight?: number;
+  /** Narrowest section that still fits its one-line label. */
+  labelMinWidth?: number;
   /** Largest tile allowed. */
   maxSize: number;
   /** Smallest tile allowed; below this the panel clips instead. */
   minSize: number;
+}
+
+/** What sits above each section's grid: its height and the width it needs. */
+interface Caption {
+  height: number;
+  minWidth: number;
 }
 
 interface RowFit {
@@ -105,7 +117,7 @@ function gridHeight(rows: number, size: number, tileGap: number) {
 function fitRow(
   counts: readonly GroupedTypeCount[],
   size: number,
-  headers: boolean,
+  caption: Caption | null,
   input: GroupedLayoutInput
 ): RowFit {
   const maxCount = Math.max(1, ...counts.map((c) => c.count));
@@ -118,15 +130,14 @@ function fitRow(
       const tileRows = Math.max(1, Math.ceil(c.count / columns));
       const needed = gridWidth(columns, size, input);
       const width = Math.ceil(
-        headers ? Math.max(needed, input.headerMinWidth) : needed
+        caption ? Math.max(needed, caption.minWidth) : needed
       );
       return { type: c.type, width, columns, tileRows };
     });
     const totalWidth = sections.reduce((sum, s) => sum + s.width, 0);
     const tallest = Math.max(...sections.map((s) => s.tileRows));
     const height =
-      (headers ? input.headerHeight : 0) +
-      gridHeight(tallest, size, input.tileGap);
+      (caption ? caption.height : 0) + gridHeight(tallest, size, input.tileGap);
     last = { sections, height, widthFits: totalWidth <= available };
     if (last.widthFits) return last;
   }
@@ -137,60 +148,73 @@ function fitRow(
 function planArrangement(
   arrangement: number[][],
   size: number,
-  headers: boolean,
+  caption: Caption | null,
   input: GroupedLayoutInput
 ) {
   const rows = arrangement.map((row) =>
     fitRow(
       row.map((i) => input.typeCounts[i]!),
       size,
-      headers,
+      caption,
       input
     )
   );
   const totalHeight =
     rows.reduce((sum, r) => sum + r.height, 0) +
     (rows.length - 1) * input.rowGap;
-  const fits =
-    rows.every((r) => r.widthFits) && totalHeight <= input.height;
+  const fits = rows.every((r) => r.widthFits) && totalHeight <= input.height;
   return { rows, totalHeight, fits };
 }
 
 /** Largest tile size that fits this arrangement, or null if none does. */
 function largestFittingSize(
   arrangement: number[][],
-  headers: boolean,
+  caption: Caption | null,
   input: GroupedLayoutInput
 ): number | null {
   let lo = Math.floor(input.minSize);
   let hi = Math.floor(input.maxSize);
-  if (hi < lo || !planArrangement(arrangement, lo, headers, input).fits) {
+  if (hi < lo || !planArrangement(arrangement, lo, caption, input).fits) {
     return null;
   }
   // Fitting only gets easier as tiles shrink, so the sizes that fit form a
   // prefix and binary search finds its end.
   while (lo < hi) {
     const mid = Math.ceil((lo + hi) / 2);
-    if (planArrangement(arrangement, mid, headers, input).fits) lo = mid;
+    if (planArrangement(arrangement, mid, caption, input).fits) lo = mid;
     else hi = mid - 1;
   }
   return lo;
 }
 
+type CaptionKind = "header" | "label" | "none";
+
+function captionFor(kind: CaptionKind, input: GroupedLayoutInput) {
+  if (kind === "header") {
+    return { height: input.headerHeight, minWidth: input.headerMinWidth };
+  }
+  if (kind === "label" && input.labelHeight !== undefined) {
+    return { height: input.labelHeight, minWidth: input.labelMinWidth ?? 0 };
+  }
+  return null;
+}
+
 function bestPlan(
-  headers: boolean,
+  kind: CaptionKind,
   input: GroupedLayoutInput
 ): GroupedLayoutPlan | null {
+  const caption = captionFor(kind, input);
   let best: GroupedLayoutPlan | null = null;
   for (const arrangement of groupedArrangements(input.typeCounts.length)) {
-    const size = largestFittingSize(arrangement, headers, input);
+    const size = largestFittingSize(arrangement, caption, input);
     if (size === null) continue;
     if (best && size <= best.tileSize) continue;
-    const plan = planArrangement(arrangement, size, headers, input);
+    const plan = planArrangement(arrangement, size, caption, input);
     best = {
       rows: plan.rows.map((r) => ({ sections: r.sections, height: r.height })),
       tileSize: size,
-      showHeaders: headers,
+      showHeaders: kind === "header",
+      showLabels: kind === "label" && caption !== null,
       fits: true,
     };
   }
@@ -202,12 +226,18 @@ export function planGroupedLayout(
 ): GroupedLayoutPlan {
   const typeCounts = input.typeCounts.filter((c) => c.count > 0);
   if (typeCounts.length === 0) {
-    return { rows: [], tileSize: input.minSize, showHeaders: false, fits: true };
+    return {
+      rows: [],
+      tileSize: input.minSize,
+      showHeaders: false,
+      showLabels: false,
+      fits: true,
+    };
   }
   const normalized = { ...input, typeCounts };
 
   // Headers stay only when every row is still tall enough to carry one.
-  const withHeaders = bestPlan(true, normalized);
+  const withHeaders = bestPlan("header", normalized);
   if (
     withHeaders &&
     withHeaders.rows.every((r) => r.height >= input.headerMinRowHeight)
@@ -215,14 +245,22 @@ export function planGroupedLayout(
     return withHeaders;
   }
 
-  const withoutHeaders = bestPlan(false, normalized);
+  // Shorter rows (phones) still name each type, with a one-line label, so
+  // Dash, Dual-Dash and Static never share the panel unnamed. Austen's pick,
+  // 2026-11-13.
+  if (input.labelHeight !== undefined) {
+    const withLabels = bestPlan("label", normalized);
+    if (withLabels) return withLabels;
+  }
+
+  const withoutHeaders = bestPlan("none", normalized);
   if (withoutHeaders) return withoutHeaders;
 
   // Nothing fits even at the smallest tile: take the shortest arrangement at
   // that size and let the panel clip, as it did before.
   let fallback: ReturnType<typeof planArrangement> | null = null;
   for (const arrangement of groupedArrangements(typeCounts.length)) {
-    const plan = planArrangement(arrangement, input.minSize, false, normalized);
+    const plan = planArrangement(arrangement, input.minSize, null, normalized);
     const widthFits = plan.rows.every((r) => r.widthFits);
     const fallbackWidthFits = fallback?.rows.every((r) => r.widthFits);
     if (
@@ -241,6 +279,7 @@ export function planGroupedLayout(
     })),
     tileSize: input.minSize,
     showHeaders: false,
+    showLabels: false,
     fits: false,
   };
 }

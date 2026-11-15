@@ -111,6 +111,9 @@
     const request = ++generation;
     const initialGroundY = untrack(() => userProportionsState.groundY);
     const prefersReducedMotion = reducedMotion();
+    // Sampled per load: a tier step under frame pressure must not reload the
+    // whole world (CelestialScene documents the flash that caused).
+    const loadQualityTier = untrack(() => qualityTier);
     let cancelled = false;
     let mounted: BlossomEnvironmentWorld | null = null;
     let detach: (() => void) | null = null;
@@ -121,7 +124,7 @@
       stageZOffset,
       showDirectionCues,
     }));
-    const dimensions = `width=${initialLayout.stageWidth.toFixed(3)} depth=${initialLayout.stageDepth.toFixed(3)} z=${initialLayout.stageZOffset.toFixed(3)} quality=${qualityTier}`;
+    const dimensions = `width=${initialLayout.stageWidth.toFixed(3)} depth=${initialLayout.stageDepth.toFixed(3)} z=${initialLayout.stageZOffset.toFixed(3)} quality=${loadQualityTier}`;
     tracePasteProbe("load-start", request, dimensions);
     sceneFeatures?.reportProgress("environment", 0);
 
@@ -130,7 +133,7 @@
       config,
       groundY: initialGroundY,
       ...initialLayout,
-      qualityTier,
+      qualityTier: loadQualityTier,
       reducedMotion: prefersReducedMotion,
       onProgress(fraction) {
         if (!cancelled && request === generation) {

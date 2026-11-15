@@ -227,7 +227,6 @@
     );
     /* Vibrant top border accent */
     border: 1px solid color-mix(in srgb, var(--column-color) 25%, transparent);
-    border-top: 3px solid var(--column-color);
     border-radius: var(--kc-radius-md);
     overflow: hidden;
     transition:
@@ -242,6 +241,11 @@
     box-shadow:
       0 4px 20px color-mix(in srgb, var(--column-color) 15%, transparent),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .kanban-column {
+    border-top: 3px solid var(--column-color);
   }
 
   .kanban-column.queue-mode {

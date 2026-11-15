@@ -360,6 +360,24 @@ describe("the Staff Motions page", () => {
     expect(runs).toEqual(SECTIONS);
   });
 
+  it.each([
+    [375, 667],
+    [1440, 900],
+  ])("holds both opener cards and their question on screen 1 at %ix%i", (w, h) => {
+    const { items, screens } = cut(w, h);
+    const first = screens[0]!.items.map((i) => items[i]!);
+    const cards = first.filter(
+      (it) => it.type === "showcase" && it.card.figureCard
+    );
+    expect(cards.map((it) => it.type === "showcase" && it.card.blindTitle)).toEqual(["A", "B"]);
+    const choice = first.find(
+      (it) => it.type === "block" && it.block.kind === "figureChoice"
+    );
+    expect(choice).toBeDefined();
+    expect(screens.map((s) => s.label)).toContain("Shift");
+    expect(screens.filter((s) => s.label === "Shift")).toHaveLength(1);
+  });
+
   it("splits a phone screen at a sentence, never inside one", () => {
     const { items } = cut(375, 667);
     const prose = items.flatMap((it) =>

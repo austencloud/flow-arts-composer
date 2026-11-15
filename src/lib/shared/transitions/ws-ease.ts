@@ -64,5 +64,12 @@ export function cssCubicBezier(
   };
 }
 
+/**
+ * The app's standard `--ease-in-out` curve (app.css) as a JS easing. motion.ts
+ * re-exports it as `standardEasing`; it lives here, with no Svelte import, so
+ * pure timing code (a Post Studio clip's lifted panel) can sample it too.
+ */
+export const standardEasing = cssCubicBezier(0.4, 0, 0.2, 1);
+
 /** The shared `--ws-ease` curve as a JS easing (Material 3 emphasized decelerate). */
 export const wsEase = cssCubicBezier(0.2, 0, 0, 1);

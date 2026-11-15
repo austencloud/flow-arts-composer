@@ -31,7 +31,8 @@ export type AuthNudgeTrigger =
   | "guest-first-save"
   | "prop-collection"
   | "follow"
-  | "share-image-signin";
+  | "share-image-signin"
+  | "returning-guest";
 
 export type AuthMode = "signin" | "signup";
 
@@ -133,6 +134,12 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   // and the send resumes by itself once they are in.
   "share-image-signin":
     "Send the image you shared once you have an account. It stays saved until then. Free, about ten seconds.",
+  // The one-time note a guest gets on a later day (guest-note-state). Named
+  // so finished sign-ups from it show up under its own origin.
+  // Same line as sync-library: the note that opens this sheet already said
+  // what a guest keeps, so the sheet says what an account adds, once.
+  "returning-guest":
+    "Keep your saved sequences and collections on every phone and laptop. Free, about ten seconds.",
 };
 
 // The nudge card and the auth modal meet the user at different moments. The
@@ -293,6 +300,11 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     key: "share-image-signin",
     title: "Send this image",
     body: AUTH_NUDGE_TEXTS["share-image-signin"],
+  },
+  "returning-guest": {
+    key: "returning-guest",
+    title: "Create your account",
+    body: AUTH_NUDGE_TEXTS["returning-guest"],
   },
 };
 

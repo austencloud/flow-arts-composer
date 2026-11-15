@@ -22,6 +22,11 @@ export interface BrowseHeaderEntry {
   toolbar?: () => Snippet | null | undefined;
   /** The screen's tint, for the bar's focus rings and hover tints. */
   accent?: () => string | null | undefined;
+  /** False once the screen that registered this is leaving: the bar drops it
+   * on the tap rather than when the leaving screen finally unmounts. A
+   * leaving screen is frozen, so this has to be a getter its parent keeps
+   * live. Absent means always active. */
+  active?: () => boolean;
 }
 
 /** The scope bar's search, when the bar's own field gives its row to the grid. */
@@ -29,12 +34,19 @@ export interface BrowseHeaderSearch {
   placeholder: () => string;
   value: () => string;
   onSearch: (text: string) => void;
+  active?: () => boolean;
 }
 
 /** The open grid's Filters pill, when its toolbar gives its row to the grid. */
 export interface BrowseHeaderFilters {
   engine: () => BrowseEngine;
   open: () => void;
+  /** True while the grid has not answered yet. The pill then shows
+   * `pendingCount` when it is known, and no number when it is not, so the
+   * count never arrives as a 0 that changes. */
+  pending?: () => boolean;
+  pendingCount?: () => number | null;
+  active?: () => boolean;
 }
 
 export interface BrowseHeaderState {
@@ -58,6 +70,11 @@ export interface BrowseHeaderState {
   register(entry: BrowseHeaderEntry): () => void;
 }
 
+/** A registration whose screen is leaving reads as empty. */
+function live<T extends { active?: () => boolean }>(slot: T | null): T | null {
+  return slot && (slot.active?.() ?? true) ? slot : null;
+}
+
 export function createBrowseHeaderState({
   compactChrome = () => false,
 }: { compactChrome?: () => boolean } = {}): BrowseHeaderState {
@@ -72,10 +89,10 @@ export function createBrowseHeaderState({
       return compactChrome();
     },
     get search() {
-      return search;
+      return live(search);
     },
     get filters() {
-      return filters;
+      return live(filters);
     },
     registerSearch(next) {
       search = next;
@@ -93,19 +110,19 @@ export function createBrowseHeaderState({
       return entry;
     },
     get leaf() {
-      return entry?.leaf?.() ?? null;
+      return live(entry)?.leaf?.() ?? null;
     },
     get leafContent() {
-      return entry?.leafContent?.() ?? null;
+      return live(entry)?.leafContent?.() ?? null;
     },
     get actions() {
-      return entry?.actions?.() ?? null;
+      return live(entry)?.actions?.() ?? null;
     },
     get toolbar() {
-      return entry?.toolbar?.() ?? null;
+      return live(entry)?.toolbar?.() ?? null;
     },
     get accent() {
-      return entry?.accent?.() ?? null;
+      return live(entry)?.accent?.() ?? null;
     },
     register(next) {
       entry = next;

@@ -262,14 +262,22 @@
     const descriptions: string[] = [];
     if (headerPatterns?.turnGlyphEntries?.length) {
       descriptions.push(
-        `Turn pattern: ${deriveTurnLabel(headerPatterns.turnGlyphEntries)}`
+        t("viewer_ui_turn_pattern_label", {
+          pattern: deriveTurnLabel(headerPatterns.turnGlyphEntries),
+        })
       );
     }
     if (headerPatterns?.reversalGlyph) {
       const { sequence: symbols, period } = headerPatterns.reversalGlyph;
-      descriptions.push(`Reversal pattern: ${symbols.slice(0, period)}`);
+      descriptions.push(
+        t("viewer_ui_reversal_pattern_label", {
+          pattern: symbols.slice(0, period),
+        })
+      );
     }
-    return descriptions.length ? descriptions.join(". ") : undefined;
+    return descriptions.length
+      ? descriptions.join(t("pictograph_desc_sentence_end")).trim()
+      : undefined;
   });
   const activeWordStepNumber = $derived(
     ctx.editingPane !== "image" &&
@@ -653,7 +661,11 @@
       {/if}
     {/snippet}
 
-    {#if displayTitle}
+    {#if ctx.practiceActive}
+      <!-- Practice is its own screen; the title says where you are. The word
+           is still on the step strip's glyphs below. -->
+      <span class="header-practice-title">{t("viewer_ui_practice")}</span>
+    {:else if displayTitle}
       <WordActionMenu
         word={isWordTitle ? identityWord : ""}
         enabled={isWordTitle}
@@ -1111,6 +1123,21 @@
     max-width: 100%;
     width: clamp(80px, 19vw, 260px);
     justify-self: center;
+  }
+
+  .header-practice-title {
+    display: flex;
+    min-height: var(--min-touch-target, 44px);
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    overflow: hidden;
+    color: var(--theme-text, #ffffff);
+    font-size: var(--font-size-base, 1rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .header-word-action {

@@ -12,8 +12,8 @@
   - openAppHref: standalone hosts add an app-launch item to the title menu
   - onAccountSignIn: scan-origin viewers add their account entry
   - exportOverrides: scan-origin viewers gate Download through account signup
-  - startInCardThenSplit: scan-origin viewers present the card first, then
-    promote the same shell to Side-by-Side after the card's painted frame
+  - startAnimationAfterCard: scan-origin viewers open on their final view and
+    start animation services only after the card's painted frame
 
   Do NOT rebuild scan-specific header/body variants — extend this shell.
 -->
@@ -57,6 +57,7 @@
   import ViewerHeader from "./ViewerHeader.svelte";
   import FullscreenControls from "./FullscreenControls.svelte";
   import ExportVideoDrawer from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import { propDrawerState } from "#lib/shared/settings/state/prop-drawer-state.svelte.js";
   import ExportImagePanel from "./ExportImagePanel.svelte";
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import PracticeBar from "./PracticeBar.svelte";
@@ -65,7 +66,6 @@
   import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
-  import PracticeSetupBar from "./PracticeSetupBar.svelte";
   import ViewerSharePanel from "./ViewerSharePanel.svelte";
   import { META_POSTING_ENABLED } from "#lib/shared/share/services/meta-publish.js";
   import { computeExportSummary } from "#lib/shared/animation-panel/pill-nav/pill-summaries.js";
@@ -196,8 +196,9 @@
     onAccountSignIn?: () => void;
     /** One-shot reset to the split view on mount. */
     startInSplit?: boolean;
-    /** Present card mode first, then promote after its first stable paint. */
-    startInCardThenSplit?: boolean;
+    /** Start animation services after the card's first stable paint. The view
+     *  never changes for it; the host opens on its final view. */
+    startAnimationAfterCard?: boolean;
     /** Demo scans keep the card's prop choice for this viewer visit. */
     demoScanProps?: boolean;
     exportOverrides?: ViewerShellExportOverrides;
@@ -267,7 +268,7 @@
     onAccountSignIn,
     startInSplit = false,
     reviewPostStudio = false,
-    startInCardThenSplit = false,
+    startAnimationAfterCard = false,
     demoScanProps = false,
     exportOverrides,
     guideAction = null,
@@ -407,10 +408,12 @@
     stage,
     properties = {}
   ) => {
+    // Guests can export since 2026-11-14; this says which exports were theirs.
+    const withGuest = { ...properties, is_guest: !authState.isFullAccount };
     if (!embedded) {
-      trackViewerExport(analyticsContext(), exportKind, stage, properties);
+      trackViewerExport(analyticsContext(), exportKind, stage, withGuest);
     }
-    captureScanExport(exportKind, stage, properties);
+    captureScanExport(exportKind, stage, withGuest);
   };
 
   const captureViewerAndScanPlayback: typeof captureScanPlaybackChanged = (
@@ -471,7 +474,7 @@
       getWorkspaceElement: () => viewerWorkspaceElement,
       getModeSwitcherShown: () => modeSwitcherShown,
       startInSplit,
-      startInCardThenSplit,
+      startAnimationAfterCard,
     },
     {
       getDeviceDetector,
@@ -695,6 +698,21 @@
    */
   const focusedModeActive = $derived(ctx.practiceActive);
 
+  // A run that reaches its goal or cap leaves practice exactly like the back
+  // button: view restored, exit event fired, camera and messages cleared.
+  $effect(() => {
+    const setHandler = ctx.setOnPracticeRunEnded;
+    setHandler(interactions.handlePracticeRunEnded);
+    return () => setHandler(null);
+  });
+
+  // The practice line: a camera message, then a first-time coach line, else
+  // PracticeBar's own ramp caption.
+  const practiceNoticeKey = $derived(ctx.practiceGuide.noticeKey);
+  const practiceNotice = $derived(
+    practiceNoticeKey ? t(practiceNoticeKey) : null
+  );
+
   /**
    * The outbox took it. Say so where the person is and leave the panel open
    * on fresh recipients; the inbox stays closed, the thread is one tap away
@@ -723,6 +741,16 @@
         : undefined,
     });
   }
+
+  // Tell the prop switcher when the 3D scene is what is on screen, so its
+  // look tiles keep the 3D photos there and draw the pair everywhere else.
+  $effect(() => {
+    propDrawerState.watching3D =
+      !studioSurfaces.active && ctx.renderMode === "3d";
+    return () => {
+      propDrawerState.watching3D = false;
+    };
+  });
 
   let consumedShareOnOpen = false;
   $effect(() => {
@@ -770,7 +798,7 @@
       if (isSequenceOverlayOpen()) closeSequenceOverlay();
     } catch (error) {
       console.error("[SequenceViewer] Could not open Post", error);
-      toast.error("Could not open Post. Please try again.");
+      toast.error(t("viewer_ui_post_open_failed"));
     } finally {
       openingPost = false;
     }
@@ -1273,13 +1301,11 @@
       renderMode={studioSurfaces.active ? "2d" : ctx.renderMode}
       playbackMode={ctx.playbackMode}
       selectedPropType={studioSurfaces.controls?.propType ??
-        (ctx.catDogModeEnabled && ctx.propHand === "right"
-          ? ctx.rightPropType
-          : ctx.leftPropType)}
+        (ctx.propHand === "right" ? ctx.rightPropType : ctx.leftPropType)}
       fanAppearance={ctx.fanAppearance}
       onFanAppearanceChange={ctx.handleFanAppearanceChange}
       propChirality={createGlobalChiralitySeam(
-        ctx.catDogModeEnabled ? ctx.propHand : undefined
+        ctx.propHand === "both" ? undefined : ctx.propHand
       )}
       handProps={studioSurfaces.active ||
       ctx.effectiveSequence?.sequenceKind === "hand-path" ||
@@ -1287,15 +1313,15 @@
       ctx.rightPropType === undefined
         ? undefined
         : {
-            catDog: ctx.catDogModeEnabled ?? false,
             hand: ctx.propHand,
             leftPropType: ctx.leftPropType,
             rightPropType: ctx.rightPropType,
-            onToggleCatDog: ctx.handleCatDogToggle,
             onHandChange: ctx.setPropHand,
           }}
       sequence={ctx.effectiveSequence}
       showInlineExportProgress={false}
+      showWordToggle={false}
+      showProgressToggle={false}
       showTempoControls={false}
       showEffectsPlayback={false}
       showPathShape={!studioSurfaces.active}
@@ -1306,11 +1332,15 @@
             interactions.handlePropChange(
               prop,
               "video_export",
-              !studioSurfaces.active && ctx.catDogModeEnabled
-                ? ctx.propHand
-                : "both"
+              studioSurfaces.active ? "both" : ctx.propHand
             );
           }}
+      onPropPickerRequest={studioSurfaces.active ||
+      !propDrawerState.available ||
+      ctx.effectiveSequence?.sequenceKind === "hand-path"
+        ? undefined
+        : () => propDrawerState.open()}
+      propPickerActive={propDrawerState.isOpen}
       onPlaybackToggle={() => {
         if (studioSurfaces.controls) studioSurfaces.controls.toggle();
         else interactions.handlePlaybackToggle("video_export");
@@ -1342,6 +1372,9 @@
   class:landscape={layout.isLandscape}
   class:practice-mobile={isMobile && ctx.practiceActive}
   class:intro-preview={introPreview}
+  data-practice-coach={ctx.practiceActive
+    ? (ctx.practiceGuide.coachTarget ?? undefined)
+    : undefined}
 >
   <!-- One header, three places: its own row above the workspace, or the top
        of a control column when a phone is held sideways (the inspector's, or
@@ -1450,18 +1483,20 @@
        viewer sat open in 2D and the ghost kept trying to open what it was
        already looking at. -->
   {#if introPreview}
-    <div class="intro-mode-switch" role="group" aria-label="Sequence view">
+    <div class="intro-mode-switch" role="group" aria-label={t("viewer_ui_sequence_view")}>
       <button
         type="button"
         class:active={ctx.viewerState.viewerMode === "animation"}
         aria-pressed={ctx.viewerState.viewerMode === "animation"}
-        onclick={() => layout.selectViewerMode("animation")}>Animation</button
+        onclick={() => layout.selectViewerMode("animation")}
+        >{t("viewer_ui_animation_tab")}</button
       >
       <button
         type="button"
         class:active={ctx.viewerState.viewerMode === "card"}
         aria-pressed={ctx.viewerState.viewerMode === "card"}
-        onclick={() => layout.selectViewerMode("card")}>Card</button
+        onclick={() => layout.selectViewerMode("card")}
+        >{t("viewer_ui_card")}</button
       >
     </div>
   {/if}
@@ -1742,6 +1777,9 @@
                         onArtAction={introPreview
                           ? undefined
                           : interactions.handleArtAction}
+                        onCardAction={introPreview
+                          ? undefined
+                          : interactions.handleCardAction}
                         onViewer3DSettingChange={scanInstrumentationEnabled
                           ? interactions.handleViewer3DSetting
                           : undefined}
@@ -1754,6 +1792,8 @@
                         practiceCellSize={ctx.practiceViewPrefs.cellSize}
                         practiceCanvasFraction={0.5}
                         practiceMirrorEnabled={ctx.mirrorEnabled}
+                        onPracticeCameraReady={ctx.practiceGuide.cameraReady}
+                        onPracticeCameraFailure={ctx.practiceGuide.cameraFailed}
                       />
                     </div>
                   {/snippet}
@@ -2110,27 +2150,13 @@
           {@render viewerHeader()}
         </div>
       {/if}
-      <!-- Bottom-bar conveyor: setup config (setup phase) ↔ running cockpit
-           (running phase). Config slides out left as the cockpit slides in
-           from the right on Start. Cockpit is the flow child so it defines
-           the bar's height; config overlays it. -->
+      <!-- The running cockpit. It slides in from the right as the bar rises;
+           there is no setup step before it. -->
       <div class="practice-conveyor">
         <div
-          class="bar-pane config"
-          class:active={!ctx.practiceRunning}
-          inert={ctx.practiceRunning}
-        >
-          <PracticeSetupBar
-            config={ctx.practiceState.userConfig}
-            onSetConfig={interactions.handlePracticeSetConfig}
-            onStart={interactions.handlePracticeStart}
-            configSide={layout.sideways ? "left" : "bottom"}
-          />
-        </div>
-        <div
           class="bar-pane cockpit"
-          class:active={ctx.practiceRunning}
-          inert={!ctx.practiceRunning}
+          class:active={ctx.practiceActive}
+          inert={!ctx.practiceActive}
         >
           <PracticeBar
             placement={layout.sideways ? "column" : "dock"}
@@ -2147,6 +2173,11 @@
             onToggleMetronome={interactions.handleToggleMetronome}
             mirrorOn={ctx.mirrorEnabled}
             onToggleMirror={interactions.handleToggleMirror}
+            rampConfig={ctx.practiceState.userConfig}
+            onSetRampConfig={interactions.handlePracticeSetConfig}
+            notice={practiceNotice}
+            onNoticeTap={ctx.practiceGuide.dismissLine}
+            coachTarget={ctx.practiceGuide.coachTarget}
           />
         </div>
       </div>
@@ -2224,7 +2255,7 @@
       onSaveCardPresentation: ctx.isOwned && ctx.isOwnedLibraryRecord
         ? persistCardPresentation
         : undefined,
-      needsAccountForFiles: !authState.isFullAccount,
+      needsAccountForUploads: !authState.isFullAccount,
       onRequestAccount: () => authDrawerState.show("signup", "export"),
       onOpenPostStudio: canAccessPostStudio()
         ? embedded
@@ -2346,10 +2377,9 @@
      keyword), so the canvas glides into its practice height in step with the
      horizontal rail glide — one diagonal motion, no vertical snap. The cockpit
      itself rides in on a composited transform/opacity for 60fps. Height settles
-     at practice ENTER (setup), so Start/Stop never re-run this — they only slide
-     the cockpit via transform. */
+     at practice enter and clears at exit. */
   .practice-bar-rise {
-    position: relative; /* anchors the absolute config bar-pane */
+    position: relative;
     flex-shrink: 0;
     overflow: hidden;
     height: 0;
@@ -2365,25 +2395,20 @@
       opacity var(--ws-dur) var(--ws-ease),
       height var(--ws-dur) var(--ws-ease);
   }
-  /* Entering practice (setup OR running) reserves the bar's row, growing it from
+  /* Entering practice reserves the bar's row, growing it from
      0 over --ws-dur so the canvas resize is a glide, not a step. */
   .practice-bar-rise.reserved {
     height: auto;
   }
-  /* Practice active: the bar rises a short distance and fades in, carrying the
-     setup config. (Start swaps config→
-     cockpit via the inner conveyor; the bar itself stays put.) */
+  /* Practice active: the bar rises a short distance and fades in with the
+     cockpit. */
   .practice-bar-rise.reserved.up {
     transform: translateY(0);
     opacity: 1;
   }
 
-  /* Inner conveyor: config (setup) ↔ cockpit (running). Cockpit is the flow child
-     so it defines the bar's auto height; config is an absolute overlay. Both slide
-     on the shared clock — config exits left, cockpit enters right on Start.
-     The conveyor is the config's positioning box: under the bottom bar it is
-     the whole bar, and in the sideways practice column it is the cockpit's
-     box under the header rather than the full column. */
+  /* Inner conveyor: the cockpit is the flow child, so it defines the bar's
+     auto height, and it slides in from the right on the shared clock. */
   .practice-conveyor {
     position: relative;
   }
@@ -2391,13 +2416,38 @@
     transition: transform var(--ws-dur) var(--ws-ease);
     will-change: transform;
   }
-  .bar-pane.config {
-    position: absolute;
-    inset: 0;
-    transform: translateX(-100%);
+
+  /* First-time coach ring on the step strip ("Follow the strip"). The strip
+     lives in ViewerPracticeLane; the cockpit rings its own controls. */
+  .drawer-viewer-container[data-practice-coach="strip"]
+    :global(.practice-deck.lane) {
+    outline: 3px solid var(--theme-accent, #8b5cf6);
+    outline-offset: -3px;
+    border-radius: 12px;
+    animation: practice-coach-ring 1.4s var(--ease-standard, ease) infinite;
   }
-  .bar-pane.config.active {
-    transform: translateX(0);
+  @keyframes practice-coach-ring {
+    0%,
+    100% {
+      outline-color: color-mix(
+        in srgb,
+        var(--theme-accent, #8b5cf6) 90%,
+        transparent
+      );
+    }
+    50% {
+      outline-color: color-mix(
+        in srgb,
+        var(--theme-accent, #8b5cf6) 35%,
+        transparent
+      );
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .drawer-viewer-container[data-practice-coach="strip"]
+      :global(.practice-deck.lane) {
+      animation: none;
+    }
   }
   .bar-pane.cockpit {
     position: relative;

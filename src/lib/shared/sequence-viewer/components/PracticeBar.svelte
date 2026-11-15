@@ -9,11 +9,16 @@
 
   The Slower/Faster buttons step by Y (the schedule increment) and show that Y
   on their face, so the step is coupled to the action instead of stranded in a
-  separate row. The BPM readout opens a popover (presets + exact entry +
-  tap-tempo) for jumping straight to any tempo. The auto-climb schedule
-  (Every X loops, +Y BPM, Goal) lives in the ⚙ gear in the viewer header — it is
-  not duplicated here. The number pulses on each bump; a slim fill bar grows
-  toward the next speed-up (or the goal). Exit lives in the header.
+  separate row. The BPM readout opens a popover: tempo chips for jumping
+  straight to any tempo, then the ramp (preset, start tempo, and for Custom
+  the loops, step and goal), all changeable while the run plays. The number
+  pulses on each bump; a slim fill bar grows toward the next speed-up (or the
+  goal). Stop and the header's back button both leave practice.
+
+  The status line is practice's only sentence: a camera message or a
+  first-time coach line when the shell passes one (a tap dismisses it),
+  otherwise the ramp caption. While a coach line names a control, that
+  control wears a ring.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -22,7 +27,13 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Popover } from "bits-ui";
   import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
-  import type { TempoPracticeProgress } from "../services/tempo-practice-orchestrator";
+  import { PLAYBACK_MIN_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
+  import RampConfigForm from "./RampConfigForm.svelte";
+  import type {
+    TempoPracticeConfig,
+    TempoPracticeProgress,
+  } from "../services/tempo-practice-orchestrator";
+  import type { CoachTarget } from "../state/practice-guide-state.svelte";
 
   interface Props {
     progress: TempoPracticeProgress;
@@ -34,7 +45,7 @@
     onStepLevel: (dir: 1 | -1) => void;
     /** Freeze/resume the auto-climb at the current speed. */
     onToggleHold: () => void;
-    /** Stop the ramp and return to the setup screen. */
+    /** Stop the ramp and leave practice. */
     onStop: () => void;
     /** Whether the metronome click is currently on. */
     metronomeOn: boolean;
@@ -50,6 +61,15 @@
      * the dock's top accent and lifted shadow would float mid-column.
      */
     placement?: "dock" | "column";
+    /** The saved ramp, edited from the tempo popover. */
+    rampConfig: Partial<TempoPracticeConfig>;
+    onSetRampConfig: (patch: Partial<TempoPracticeConfig>) => void;
+    /** A camera or coach sentence that takes the status line's place. */
+    notice?: string | null;
+    /** A tap on the notice dismisses it. */
+    onNoticeTap?: () => void;
+    /** The control the current coach line names. */
+    coachTarget?: CoachTarget | null;
   }
 
   let {
@@ -66,6 +86,11 @@
     mirrorOn,
     onToggleMirror,
     placement = "dock",
+    rampConfig,
+    onSetRampConfig,
+    notice = null,
+    onNoticeTap,
+    coachTarget = null,
   }: Props = $props();
 
   let bpmColor = $derived.by(() => {
@@ -77,7 +102,9 @@
 
   // Floor/ceiling shared by the level buttons. Ceiling = the goal when a target
   // is set, else the maxBpm cap (progress.targetBpm carries whichever applies).
-  let atFloor = $derived(bpm <= progress.startBpm);
+  // The floor is the playback floor, not the ramp's start: Slower at the start
+  // lowers the start (playback-controller), so it is never a dead button.
+  let atFloor = $derived(bpm <= PLAYBACK_MIN_BPM);
   let atCeiling = $derived(bpm >= progress.targetBpm);
 
   // Y — the per-step increment, shown on the Slower/Faster buttons so the step
@@ -86,6 +113,47 @@
 
   // BPM popover open state (bits-ui owns dismissal: Esc + outside click).
   let bpmOpen = $state(false);
+
+  // The tempo popover never scrolls, so where it opens follows its measured
+  // height. Above the readout when it fits there; otherwise it rises from the
+  // window's bottom edge and covers the cockpit while open. A window shorter
+  // than the one-column popover (a sideways phone) gets two columns.
+  const POP_EDGE = 12; // matches sideOffset and collisionPadding below
+  let readoutEl = $state<HTMLButtonElement | null>(null);
+  let popEl = $state<HTMLElement | null>(null);
+  // One-column height, measured whenever the popover is one column; the
+  // estimate covers the first frame of the first open.
+  let popColumnHeight = $state(520);
+  let popWide = $state(false);
+  let popFromBottom = $state(false);
+  const windowBottomAnchor = {
+    getBoundingClientRect: () =>
+      new DOMRect(window.innerWidth / 2, window.innerHeight, 0, 0),
+  };
+
+  function placeTempoPopover() {
+    const roomInWindow = window.innerHeight - 2 * POP_EDGE;
+    popWide = roomInWindow < popColumnHeight;
+    const readoutTop = readoutEl?.getBoundingClientRect().top ?? 0;
+    popFromBottom = popWide || readoutTop - 2 * POP_EDGE < popColumnHeight;
+  }
+
+  $effect(() => {
+    if (!bpmOpen || !popEl) return;
+    const el = popEl;
+    const measure = () => {
+      if (!popWide) popColumnHeight = el.offsetHeight;
+      placeTempoPopover();
+    };
+    placeTempoPopover();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  });
 
   // Two knobs + an optional goal. X=1 reads as a continuous creep (no levels).
   let hasTarget = $derived(progress.targetEnabled);
@@ -201,6 +269,7 @@
     <div class="pb-tempo" style="--bpm-color: {bpmColor}">
       <button
         class="pb-btn pb-level down"
+        class:coach-ring={coachTarget === "tempo"}
         type="button"
         onclick={() => onStepLevel(-1)}
         disabled={atFloor}
@@ -215,6 +284,7 @@
           {#snippet child({ props })}
             <button
               {...props}
+              bind:this={readoutEl}
               class="pb-readout-btn"
               class:bumped
               type="button"
@@ -229,19 +299,25 @@
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Content
+            bind:ref={popEl}
+            customAnchor={popFromBottom ? windowBottomAnchor : undefined}
             side="top"
             align="center"
-            sideOffset={12}
-            collisionPadding={12}
-            class="pb-bpm-pop"
+            sideOffset={POP_EDGE}
+            collisionPadding={POP_EDGE}
+            class={popWide ? "pb-bpm-pop wide" : "pb-bpm-pop"}
           >
             <BpmChips
               {bpm}
-              min={progress.startBpm}
+              min={PLAYBACK_MIN_BPM}
               max={progress.maxBpm}
               variant="full"
               {onBpmChange}
             />
+            <div class="pb-ramp">
+              <span class="pb-ramp-title">{t("viewer_detail_practice_ramp")}</span>
+              <RampConfigForm config={rampConfig} onUpdate={onSetRampConfig} />
+            </div>
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>
@@ -249,6 +325,7 @@
       <button
         class="pb-btn pb-level up"
         class:celebrate
+        class:coach-ring={coachTarget === "tempo"}
         type="button"
         onclick={() => onStepLevel(1)}
         disabled={atCeiling}
@@ -333,12 +410,13 @@
            not hold the camera open all night. -->
       <button
         class="pb-btn pb-stop"
+        class:coach-ring={coachTarget === "stop"}
         type="button"
         data-ghost="safe"
         data-ghost-kind="practice-stop"
         data-ghost-label="Stop"
         onclick={onStop}
-        aria-label={t("viewer_ui_stop_and_return_to_setup")}
+        aria-label={t("viewer_practice_stop_and_leave")}
       >
         <i class="fas fa-stop" aria-hidden="true"></i>
         <span>{t("viewer_ui_stop")}</span>
@@ -348,15 +426,32 @@
 
   <!-- Status line: caption above a slim fill bar, full-width below the controls. -->
   <div class="pb-status">
-    <span class="pb-caption-wrap">
-      {#key caption}
-        <span
-          class="pb-caption"
-          class:ready={progress.reachedTarget}
-          in:opaqueFade|local={{ duration: reduceMotion ? 0 : DURATION.fast }}
-          out:opaqueFade|local={{ duration: reduceMotion ? 0 : DURATION.fast }}
-          >{caption}</span
-        >
+    <span class="pb-caption-wrap" aria-live="polite">
+      {#key notice ?? caption}
+        {#if notice}
+          <button
+            type="button"
+            class="pb-caption pb-notice"
+            onclick={onNoticeTap}
+            in:opaqueFade|local={{
+              duration: reduceMotion ? 0 : DURATION.fast,
+            }}
+            out:opaqueFade|local={{
+              duration: reduceMotion ? 0 : DURATION.fast,
+            }}>{notice}</button
+          >
+        {:else}
+          <span
+            class="pb-caption"
+            class:ready={progress.reachedTarget}
+            in:opaqueFade|local={{
+              duration: reduceMotion ? 0 : DURATION.fast,
+            }}
+            out:opaqueFade|local={{
+              duration: reduceMotion ? 0 : DURATION.fast,
+            }}>{caption}</span
+          >
+        {/if}
       {/key}
     </span>
     <div class="pb-fill-track" aria-hidden="true">
@@ -760,6 +855,8 @@
   :global(.pb-bpm-pop) {
     z-index: var(--z-dropdown, 1000);
     width: min(22rem, calc(100vw - 1.5rem));
+    /* No height cap and no scroll: the script picks where it opens and, on
+       a window too short for one column, the two-column layout below. */
     padding: 14px;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: 16px;
@@ -837,20 +934,28 @@
       var(--ease-spring, var(--ease-spring));
   }
 
-  /* Caption crossfades on change; the wrap reserves a line so swaps never
-     reflow. The keyed span stacks absolutely inside it. */
+  /* Two lines reserved, always: a camera or coach sentence can wrap (Italian
+     runs long at 387 wide) without the cockpit, and so the stage, changing
+     height when it appears. The height is fixed, not a minimum, and is
+     measured in the caption's own font size and line height (the wrap
+     carries both), so a two-line notice can never outgrow it; the notice
+     button sets them again because a button does not inherit line-height.
+     Old and new lines share one grid cell to crossfade. */
   .pb-caption-wrap {
-    position: relative;
-    display: block;
+    display: grid;
+    align-items: center;
     width: 100%;
-    height: 1.25em;
+    font-size: var(--font-size-min, 14px);
+    line-height: 1.25;
+    height: calc(2 * 1.25em);
+    overflow: hidden;
   }
   .pb-caption {
-    position: absolute;
-    inset: 0;
+    grid-area: 1 / 1;
     width: 100%;
     text-align: center;
-    font-size: var(--font-size-min, 14px);
+    font-size: inherit;
+    line-height: inherit;
     font-weight: 700;
     color: var(--theme-text, rgba(255, 255, 255, 0.85));
     white-space: nowrap;
@@ -858,6 +963,92 @@
     text-overflow: ellipsis;
     font-variant-numeric: tabular-nums;
   }
+  .pb-notice {
+    /* The site-wide 44px button minimum would make this taller than the
+       two-line box and push the second line under the clip. */
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: normal;
+    overflow: visible;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pb-notice:focus-visible {
+    /* Inside the box: the wrap clips anything outside its two lines. */
+    outline: 2px solid var(--theme-accent, #8b5cf6);
+    outline-offset: -2px;
+    border-radius: 6px;
+  }
+
+  /* First-time coach ring on the control the current line names. */
+  .pb-btn.coach-ring {
+    outline: 3px solid var(--theme-accent, #8b5cf6);
+    outline-offset: 3px;
+    animation: pb-coach-ring 1.4s var(--ease-standard, ease) infinite;
+  }
+  @keyframes pb-coach-ring {
+    0%,
+    100% {
+      outline-color: color-mix(
+        in srgb,
+        var(--theme-accent, #8b5cf6) 90%,
+        transparent
+      );
+    }
+    50% {
+      outline-color: color-mix(
+        in srgb,
+        var(--theme-accent, #8b5cf6) 35%,
+        transparent
+      );
+    }
+  }
+
+  .pb-ramp {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+  }
+  /* Two columns for a sideways phone: the tempo chips beside the ramp. The
+     ramp drops its title (the preset control carries the same name for
+     assistive tech), which leaves it 332px inside a 412px window. */
+  :global(.pb-bpm-pop.wide) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
+    width: min(44rem, calc(100vw - 1.5rem));
+  }
+  :global(.pb-bpm-pop.wide) .pb-ramp {
+    margin-top: 0;
+    padding-top: 0;
+    padding-left: 16px;
+    border-top: 0;
+    border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+  }
+  :global(.pb-bpm-pop.wide) .pb-ramp-title {
+    display: none;
+  }
+  .pb-ramp-title {
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
+
   .pb-caption.ready {
     color: color-mix(in srgb, var(--semantic-success, #22c55e) 60%, white);
   }
@@ -932,6 +1123,7 @@
       transition: none;
     }
     .pb-level.up.celebrate,
+    .pb-btn.coach-ring,
     .pb-fill.creep {
       animation: none;
     }

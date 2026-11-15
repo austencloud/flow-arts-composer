@@ -8,8 +8,10 @@
   BrowseHeaderSlot: a late-loading name, action pills, a selection toolbar
   that takes the whole bar over, and a tint.
 
-  On a phone or tablet it also holds the open grid's Filters pill and the
-  scope bar's search, so the grid gets their bands. The search button swaps the
+  On a phone or tablet it also holds the Source menu (which pile you are
+  browsing), the open grid's Filters pill where a grid has one, the scope
+  bar's search, and a count line under the title ("14 of 1,578"), so the grid
+  gets their bands. The search button swaps the
   row for the field, which stays while there is text: a search is never hidden.
 
   Fixed logical size (the 4K rule): 44px controls, 64px tall, 56px compact.
@@ -27,12 +29,28 @@
   } from "#lib/shared/browse/navigation/browse-trail.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import { Crossfade, flyFade } from "#lib/shared/transitions/motion.js";
+  import {
+    Crossfade,
+    flyFade,
+    growFade,
+  } from "#lib/shared/transitions/motion.js";
   import BrowseFiltersPill from "#lib/shared/browse/components/BrowseFiltersPill.svelte";
   import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
-  let { compact = false }: { compact?: boolean } = $props();
+  import type { Snippet } from "svelte";
+
+  let {
+    compact = false,
+    sourceMenu,
+    subtitle = null,
+  }: {
+    compact?: boolean;
+    /** The Source menu, when the scope bar gives its row to the content. */
+    sourceMenu?: Snippet;
+    /** A short line under the current title (the pile's count). */
+    subtitle?: string | null;
+  } = $props();
 
   const navigation = tryGetBrowseNavigationContext();
   const header = tryGetBrowseHeaderContext();
@@ -174,11 +192,26 @@
               {#if leafContent}
                 <div class="leaf-editor">{@render leafContent()}</div>
               {:else if current}
-                <Crossfade key={current.label} duration={DURATION.fast}>
+                <!-- Swap, not overlap: the old title leaves before the new
+                     one is readable, so two words never share the slot. -->
+                <Crossfade
+                  key={current.label}
+                  duration={DURATION.fast}
+                  mode="swap"
+                >
                   <h1 class="current-label" class:pending={!current.label}>
                     {current.label}
                   </h1>
                 </Crossfade>
+                {#if subtitle !== null}
+                  <!-- Grows in from zero height: the title, centred with it,
+                       glides up 8px instead of jumping. -->
+                  <span
+                    class="current-subtitle"
+                    transition:growFade={{ duration: DURATION.normal }}
+                    >{subtitle}</span
+                  >
+                {/if}
               {/if}
             </li>
           </ol>
@@ -186,7 +219,16 @@
 
         <div class="actions">
           {#if actions}
-            {@render actions()}
+            <!-- A screen's buttons arrive and leave as one group, like the
+                 Filters and search slots beside them, never one by one. -->
+            <span class="action-slot" transition:flyFade>
+              {@render actions()}
+            </span>
+          {/if}
+          {#if sourceMenu}
+            <span class="action-slot source-slot" transition:flyFade>
+              {@render sourceMenu()}
+            </span>
           {/if}
           {#if filters}
             <span class="action-slot" transition:flyFade>
@@ -194,6 +236,8 @@
                 engine={filters.engine()}
                 onOpen={filters.open}
                 label="filters"
+                pending={filters.pending?.() ?? false}
+                pendingCount={filters.pendingCount?.() ?? null}
               />
             </span>
           {/if}
@@ -334,6 +378,34 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* The count line: 12px under the title, which keeps the 56px bar. The
+     title gives up its 44px floor to make room; with the line at zero height
+     the title text sits exactly where the floor centred it, so the switch
+     itself moves nothing and growFade carries the rest. */
+  .crumb-current:has(.current-subtitle) {
+    display: grid;
+    align-content: center;
+  }
+  .crumb-current:has(.current-subtitle) .current-label {
+    min-height: 0;
+  }
+  .current-subtitle {
+    display: block;
+    padding: 0 10px;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
+    font-size: var(--font-size-compact, 12px);
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .source-slot {
+    min-width: 0;
+    flex: 0 1 auto;
   }
 
   /* A name still loading keeps its slot so the row does not jump. */

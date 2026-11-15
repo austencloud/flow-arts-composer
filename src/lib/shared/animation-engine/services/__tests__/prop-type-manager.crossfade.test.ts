@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 
+// These tests exercise every fan look, which stay renderable while only some
+// are offered, so they run with the preview flag on. The hoisted call runs
+// before the modules read the flag.
+vi.hoisted(() => {
+  vi.stubEnv("VITE_MAKER_PREVIEW", "1");
+});
+
+
 // getBaseMotionColors pulls the SVG generator chain; stub it to keep the
 // import light, same as prop-type-manager.layers.test.ts. Not exercised by
 // these tests (only additionalLayerColors calls it).

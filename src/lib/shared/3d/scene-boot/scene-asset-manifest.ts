@@ -2,6 +2,7 @@ import { BackgroundType } from "@austencloud/backgrounds";
 
 import { oceanFloraSceneUrl } from "../environments/scenes/ocean/authored/ocean-flora-url";
 import { AUTUMN_MOON_TEXTURE_URL } from "../environments/scenes/autumn/runtime/lighting/autumn-moon";
+import { CELESTIAL_SHELL_URL } from "../environments/worlds/celestial/celestial-shell-url";
 
 /**
  * What each 3D environment downloads before its loading curtain can lift, so
@@ -32,11 +33,12 @@ export const SCENE_ASSET_MANIFEST: Readonly<
 > = {
   [BackgroundType.AUTUMN]: ["/models/autumn/autumn-environment.glb"],
   [BackgroundType.BLOSSOM]: ["/models/blossom/blossom_environment.glb"],
-  [BackgroundType.CELESTIAL]: ["/models/celestial/sky-citadel.glb"],
-  [BackgroundType.COSMIC]: [
-    "/models/cosmic/cosmic-reliquary.glb",
-    "/models/cosmic/cosmic-stage.glb",
-  ],
+  // The same constant the scene loads, `?v=` tag included, so the warmed
+  // cache entry is the one the scene asks for.
+  [BackgroundType.CELESTIAL]: [CELESTIAL_SHELL_URL],
+  // `cosmic-stage.glb` (5 MB) is not listed: only CosmicStage.svelte names
+  // it, and nothing mounts that component (2026-11-14).
+  [BackgroundType.COSMIC]: ["/models/cosmic/cosmic-reliquary.glb"],
   [BackgroundType.EMBER]: [
     "/models/ember/ember-production-slice.glb",
     "/models/camping/tree-log.glb",

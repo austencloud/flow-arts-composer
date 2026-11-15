@@ -6,6 +6,12 @@
  *
  *   npm run layout:sweep
  *   npm run layout:sweep -- --base https://localhost:5173 --only home,guide
+ *   npm run layout:sweep -- --only construct --sizes 360x640,360x591
+ *
+ * --only takes route names from sweep-routes.json. --sizes takes widths x
+ * heights and replaces the device list for that run, so a check at a real
+ * visitor's window size does not need a device-list entry; a custom size
+ * counts as a phone when its short side is under 600px, like any other.
  *
  * It never starts a server. It loads one page at a time unless --jobs says
  * more, because the dev server on 5173 is shared. Before launching anything
@@ -32,6 +38,7 @@ import https from "node:https";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
+import { findSpills } from "./spill.mjs";
 
 const root = process.cwd();
 const argv = process.argv.slice(2);
@@ -55,9 +62,23 @@ const CHROME =
   "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const SHEET_ROW_HEIGHT = 420;
 
-const DEVICES = JSON.parse(
-  readFileSync(path.join(root, "scripts/layout/device-list.json"), "utf8")
-).devices;
+const SIZES = arg("--sizes", "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean)
+  .map((s) => {
+    const m = /^(\d+)\s*[x×]\s*(\d+)$/.exec(s);
+    if (!m) {
+      console.error(`layout sweep: --sizes wants WIDTHxHEIGHT, got "${s}"`);
+      process.exit(2);
+    }
+    return { name: `Custom ${m[1]}x${m[2]}`, width: +m[1], height: +m[2] };
+  });
+const DEVICES = SIZES.length
+  ? SIZES
+  : JSON.parse(
+      readFileSync(path.join(root, "scripts/layout/device-list.json"), "utf8")
+    ).devices;
 const ALL_ROUTES = JSON.parse(
   readFileSync(path.join(root, "scripts/layout/sweep-routes.json"), "utf8")
 ).routes;
@@ -70,6 +91,7 @@ const RULE = {
   scroll: "The page never scrolls",
   sideways: "Everything fits (sideways overflow)",
   cut: "Everything fits (text cut off)",
+  spill: "Text stays inside its box",
   type: "Type roles (small text)",
   tap: "Tap size",
   scrollers: "Long content scrolls in its own area",
@@ -308,6 +330,15 @@ function measure({ phone, hero }) {
     }
   }
 
+  // Words that run past the button or card holding them (scripts/layout/spill.mjs,
+  // installed as a page global by sweepOne).
+  const spill = (window.__layoutFindSpills?.(document) ?? []).map((s) => ({
+    selector: name(s.el),
+    box: s.box === s.el ? "itself" : name(s.box),
+    text: s.text.split(" ").slice(0, 6).join(" "),
+    over: s.over,
+  }));
+
   // Small controls.
   const floor = phone ? 32 : 44;
   const controls = document.body.querySelectorAll(
@@ -372,6 +403,8 @@ function measure({ phone, hero }) {
     sidewaysCount: sideways.length,
     cut: cap(cut),
     cutCount: cut.length,
+    spill: cap(spill),
+    spillCount: spill.length,
     smallText12: cap(small12),
     smallText12Count: small12.length,
     smallText14: cap(small14),
@@ -429,6 +462,9 @@ async function sweepOne(browser, route, device, outDir) {
     }
     result.bootScreenLeft = await waitForBootScreen(page);
     await settle(page);
+    // measure() is sent to the page as source, so the spill finder goes in
+    // the same way, as a global it can call.
+    await page.evaluate(`window.__layoutFindSpills = ${findSpills.toString()}`);
     Object.assign(
       result,
       await page.evaluate(measure, {
@@ -502,7 +538,7 @@ function summaryMarkdown(results, sheets, totals, meta) {
     lines.push(`| ${t.rule} | ${t.screens} | ${t.items} |`);
   lines.push(``, `## Route by size`, ``);
   lines.push(
-    `Each cell lists what failed: scrolls (page scrolls), wide (sideways overflow), cut (text cut off), tiny (text under 12px), small (text 12 to 14px), tap (controls under the tap size), tight (phone controls 32 to 36px). "ok" means none.`,
+    `Each cell lists what failed: scrolls (page scrolls), wide (sideways overflow), cut (text cut off), spill (text runs past its box), tiny (text under 12px), small (text 12 to 14px), tap (controls under the tap size), tight (phone controls 32 to 36px). "ok" means none.`,
     ``
   );
   const sizes = DEVICES.map((d) => `${d.width}x${d.height}`);
@@ -521,6 +557,7 @@ function summaryMarkdown(results, sheets, totals, meta) {
       if (r.pageScroll.scrolls) bits.push("scrolls");
       if (r.pageWider || r.sidewaysCount) bits.push(`wide ${r.sidewaysCount}`);
       if (r.cutCount) bits.push(`cut ${r.cutCount}`);
+      if (r.spillCount) bits.push(`spill ${r.spillCount}`);
       if (r.smallText12Count) bits.push(`tiny ${r.smallText12Count}`);
       if (r.smallText14Count) bits.push(`small ${r.smallText14Count}`);
       if (r.smallControlsCount) bits.push(`tap ${r.smallControlsCount}`);
@@ -564,6 +601,7 @@ function totalsByRule(results) {
       (r) => r.sidewaysCount + (r.pageWider && !r.sidewaysCount ? 1 : 0)
     ),
     row(RULE.cut, (r) => r.cutCount),
+    row(RULE.spill, (r) => r.spillCount),
     row(`${RULE.type}, under 12px`, (r) => r.smallText12Count),
     row(`${RULE.type}, 12 to 14px`, (r) => r.smallText14Count),
     row(`${RULE.tap}, under the floor`, (r) => r.smallControlsCount),
@@ -645,8 +683,15 @@ async function main() {
         }
         const brief = r.error
           ? `error: ${r.error}`
-          : `${r.bootScreenLeft === false ? "still booting, " : ""}${r.looksEmpty ? "looks empty, " : ""}${r.pageScroll.scrolls ? "scrolls" : "fits"}, wide ${r.sidewaysCount}, cut ${r.cutCount}, tap ${r.smallControlsCount}`;
+          : `${r.bootScreenLeft === false ? "still booting, " : ""}${r.looksEmpty ? "looks empty, " : ""}${r.pageScroll.scrolls ? "scrolls" : "fits"}, wide ${r.sidewaysCount}, cut ${r.cutCount}, spill ${r.spillCount}, tap ${r.smallControlsCount}`;
         console.log(`  ${route.path} ${r.size} (${r.seconds} s): ${brief}`);
+        // Spills are few and each one is a visible defect: print them.
+        for (const x of r.spill ?? []) {
+          const worst = Object.entries(x.over).sort((p, q) => q[1] - p[1])[0];
+          console.log(
+            `      spill: "${x.text}" (${x.selector}) runs ${worst[1]}px past the ${worst[0]} of ${x.box}`
+          );
+        }
       }
     };
     await Promise.all(Array.from({ length: JOBS }, worker));

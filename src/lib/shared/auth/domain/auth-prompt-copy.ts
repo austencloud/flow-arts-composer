@@ -101,6 +101,7 @@ const nudgeKeys = {
   "prop-collection": "auth_nudge_prop_collection",
   follow: "auth_nudge_follow",
   "share-image-signin": "auth_nudge_share_image_signin",
+  "returning-guest": "auth_nudge_returning_guest",
 } satisfies Record<AuthNudgeTrigger, TranslationKey>;
 
 export function authPromptCopy(source: string): string {

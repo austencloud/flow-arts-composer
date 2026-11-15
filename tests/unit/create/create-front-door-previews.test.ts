@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Section } from "#lib/shared/navigation/domain/types.js";
 import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { FIRST_VIEW_WAIT_MS } from "#lib/shared/application/services/boot-screen.js";
 import { METHOD_PREVIEW_SCENES } from "#lib/features/create/shared/components/method-previews/method-preview-scenes.js";
 import {
   METHOD_PREVIEW_TIMING,
@@ -355,16 +356,73 @@ describe("Create front door, method previews", () => {
   });
 
   /** app.html's boot hold registry: which holds are open. */
-  function stubBootHolds(): { open: Set<string>; asked: string[] } {
+  function stubBootHolds(): {
+    open: Set<string>;
+    asked: string[];
+    limits: Map<string, unknown>;
+  } {
     const open = new Set<string>();
     const asked: string[] = [];
-    window.__tkaBootHold = (name: string) => {
+    const limits = new Map<string, unknown>();
+    window.__tkaBootHold = (name: string, waitMs?: number | string) => {
       asked.push(name);
+      limits.set(name, waitMs);
       open.add(name);
       return () => open.delete(name);
     };
-    return { open, asked };
+    return { open, asked, limits };
   }
+
+  /** Replaces every scene loader with one that records the call order. */
+  function spyOnSceneLoaders(): string[] {
+    const requested: string[] = [];
+    for (const id of Object.keys(METHOD_PREVIEW_SCENES)) {
+      vi.spyOn(METHOD_PREVIEW_SCENES, id).mockImplementation(() => {
+        requested.push(id);
+        return Promise.resolve({} as never);
+      });
+    }
+    return requested;
+  }
+
+  it("holds the boot screen with the first-view limit, and warms the scene code once in board order", async () => {
+    bootScreen = document.createElement("div");
+    bootScreen.id = "app-loading";
+    document.body.append(bootScreen);
+    const holds = stubBootHolds();
+    const requested = spyOnSceneLoaders();
+
+    render();
+    expect(requested).toEqual([]);
+    setOpen(true);
+    expect(holds.limits.get("create-previews")).toBe(FIRST_VIEW_WAIT_MS);
+    expect(requested).toEqual(WITH_SCENES);
+
+    // Closing and opening again neither holds nor warms a second time.
+    setOpen(false);
+    setOpen(true);
+    expect(requested).toEqual(WITH_SCENES);
+    vi.restoreAllMocks();
+  });
+
+  it("neither holds nor warms for a board that never opens, or opens after the screen left", () => {
+    bootScreen = document.createElement("div");
+    bootScreen.id = "app-loading";
+    document.body.append(bootScreen);
+    const holds = stubBootHolds();
+    const requested = spyOnSceneLoaders();
+
+    render();
+    advance(1000);
+    expect(holds.asked).toEqual([]);
+    expect(requested).toEqual([]);
+
+    bootScreen.classList.add("loaded");
+    setOpen(true);
+    expect(holds.asked).toEqual([]);
+    expect(requested).toEqual([]);
+    vi.restoreAllMocks();
+  });
 
   it("prepares every card behind the boot screen and holds it until all have drawn", async () => {
     bootScreen = document.createElement("div");

@@ -22,6 +22,7 @@
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { METHOD_PREVIEW_TIMING } from "../../state/method-preview-turns.svelte";
+  import { bootScreenCovers } from "#lib/shared/application/services/boot-screen.js";
   import { awaitAccountSettings } from "#lib/shared/settings/state/account-settings-ready.js";
   import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { classifyPreviewShape } from "./method-preview-layout";
@@ -41,6 +42,7 @@
     onready,
     onfailed,
     loader,
+    loadBehindBootScreen = false,
   }: {
     /**
      * A CREATE_TABS id. Fixed for the box's life: hosts key the box by
@@ -78,6 +80,12 @@
      * outside Create (the Browse home) pass their own, and tests use it too.
      */
     loader?: () => Promise<MethodPreviewSceneModule>;
+    /**
+     * While the boot screen covers the page there is no first paint to
+     * protect, so the scene loads as soon as account settings are ready,
+     * without the idle wait. Off by default: Create's board keeps its wait.
+     */
+    loadBehindBootScreen?: boolean;
   } = $props();
 
   const sceneLoader = $derived(loader ?? METHOD_PREVIEW_SCENES[methodId]);
@@ -124,8 +132,15 @@
     accountSettingsReady = true;
   });
 
+  //
+  // A host that opts in (loadBehindBootScreen) skips the idle wait while the
+  // boot screen still covers the page: nothing is painted yet to protect.
   $effect(() => {
     if (!open || load || !accountSettingsReady) return;
+    if (loadBehindBootScreen && bootScreenCovers()) {
+      load = true;
+      return;
+    }
     return runAfterNamedRouteMorphIdle(() => {
       load = true;
     });

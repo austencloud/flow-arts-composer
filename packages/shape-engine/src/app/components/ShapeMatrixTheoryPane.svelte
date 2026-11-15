@@ -1,11 +1,10 @@
 <script lang="ts">
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { SHAPE_MATRIX_PANE_NAME } from "../../services/shape-matrix-artwork";
   import { s as t } from "../../strings.svelte.js";
   import ShapeMatrixGrid from "../../components/ShapeMatrixGrid.svelte";
   import { MANDALA_STANDARD_TIP_DX } from "#lib/shared/mandala/domain/mandala-constants.js";
-  import {
-    theoryFlowerKey,
-    type TheoryFlower,
-  } from "@tka/shape-domain";
+  import { theoryFlowerKey, type TheoryFlower } from "@tka/shape-domain";
   import { localizedTheoryFlowerLabel } from "../../services/shape-matrix-display.js";
   import {
     theoryCellArtworkSrc,
@@ -32,6 +31,15 @@
   const animationState = getShapeMatrixAnimationContext();
 
   const surprise = $derived(onsurprise ?? (() => appState.surpriseMe()));
+  /* The Level Matrix grid stays mounted behind this one, so the shared names
+     (the selected tile, a soloed header, the pane stepping back) belong to
+     whichever grid is showing. Two claimants abort the flight; a hidden one
+     would be the picture that flies. */
+  const gridShowing = $derived(
+    appState.compact &&
+      appState.surface === "theory" &&
+      appState.activeView === "matrix"
+  );
   /* The customize workspace covers this pane on wide hosts, as on the
      Matrix: the shell mounts it over the pane, once for both surfaces. */
   const workspaceOpen = $derived(
@@ -69,6 +77,10 @@
 <section
   class="theory-pane"
   class:compact={appState.compact}
+  use:claimedViewTransitionName={{
+    name: SHAPE_MATRIX_PANE_NAME,
+    enabled: gridShowing && appState.mandalaHandoff,
+  }}
   aria-label={t("shape_engine_theory_matrix_aria")}
 >
   {#if appState.compact}
@@ -80,7 +92,7 @@
       colAxis={appState.theoryColAxis}
       maxCellPx={320}
       selectedPair={appState.theoryPair}
-      claimSelected={appState.compact && appState.activeView === "matrix"}
+      claimSelected={gridShowing}
       keyOf={theoryFlowerKey}
       labelOf={localizedTheoryFlowerLabel}
       paintHeader={(flower, hand: "left" | "right", sizePx, painter) =>

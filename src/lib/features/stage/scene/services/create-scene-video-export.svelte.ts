@@ -5,7 +5,6 @@ import {
   shareOrDownloadBlob,
 } from "#lib/shared/foundation/services/file-downloader.js";
 import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
-import { ensureFullAccountForExport } from "#lib/shared/auth/domain/export-gate.js";
 import {
   sequenceModalExporter,
   type Video3DExportDependencies,
@@ -67,9 +66,6 @@ export function createSceneVideoExport(viewer: Viewer3DState) {
     isCancelling = false;
 
     try {
-      if (!(await ensureFullAccountForExport()) || attempt.signal.aborted) {
-        return false;
-      }
       if (!(await waitForScene(attempt.signal))) {
         if (!attempt.signal.aborted) {
           localError =

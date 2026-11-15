@@ -30,15 +30,27 @@ import {
   updateItem,
   type EditContext,
   type PostItemPatch,
+  POST_MAX_HOLD_SECONDS,
   POST_MUSIC_MIN_SECONDS,
   removeMusic,
   setMusic,
   syncedSourceIn,
   updateMusic,
   type MusicPatch,
+  beatSeconds,
 } from "@austencloud/video-editor/core";
 import {
   POST_QR_URL_RULE,
+  POST_TITLES_ENTERS,
+  POST_TITLES_LEAVES,
+  POST_TITLES_SPOKEN_SIZE_MAX,
+  POST_TITLES_SPOKEN_SIZE_MIN,
+  PostTitlesLitSchema,
+  CARD_QR_MAX_CAPTION_LENGTH,
+  POST_CARD_HEADER_TITLES,
+  PostCardEnterSchema,
+  PostCardQrExitSchema,
+  PostCardRingSchema,
   isPostCardQrUrl,
   type PostAnimationItem,
 } from "#lib/shared/post-studio-plugin/index.js";
@@ -46,11 +58,33 @@ import {
   addTitlesItem,
   addTunnelHook,
   findTunnelHook,
+  landTitlesOnCard,
   lineUpTunnelHook,
   removeTunnelHook,
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import {
+  FLY_DEFAULT_SECONDS,
+  addFlashItem,
+  flyIntoNextEdit,
+} from "#lib/shared/media-composition/domain/post-flash-join-edits.js";
+import {
+  FLASH_MAX_FADE_SECONDS,
+  FLASH_MAX_STRENGTH,
+  FLASH_MIN_FADE_SECONDS,
+  FLASH_MIN_STRENGTH,
+} from "#lib/shared/media-composition/domain/flash.js";
+import {
+  keyframeEdit,
+  moveItemEdit,
+  type KeyframeOp,
+  type MoveOp,
+} from "#lib/shared/media-composition/domain/post-keyframe-ops.js";
+import {
+  CREDIT_MAX_LEAD_LENGTH,
+  addCreditItem,
+} from "#lib/shared/media-composition/domain/credit.js";
 import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   TAKE_MAX_BPM,
@@ -61,6 +95,9 @@ import {
   WalkthroughScriptSchema,
   buildWalkthrough,
 } from "#lib/shared/media-composition/domain/post-walkthrough.js";
+import { PostAnimationSplitSchema } from "#lib/shared/media-composition/domain/post-animation-split.js";
+import { PostCometTrailsSchema } from "./comet-trails";
+import { PostPanelLiftSchema } from "#lib/shared/media-composition/domain/post-panel-lift.js";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is
@@ -117,6 +154,40 @@ export type PostProjectOp =
   | { op: "remove-hook" }
   | { op: "line-up-hook" }
   | { op: "add-titles"; spoken?: string; at?: PostTimeRef }
+  | {
+      op: "add-flash";
+      /** The hit: where the flash starts. */
+      at?: PostTimeRef;
+      strength?: number;
+      fade?: number;
+      marks?: boolean;
+    }
+  | {
+      op: "add-credit";
+      at?: PostTimeRef;
+      /** The small line over the wordmark; empty draws the wordmark alone. */
+      lead?: string;
+      duration?: number;
+    }
+  | {
+      op: "fly-into-next";
+      item: string;
+      /** The flight and its cross-fade, in seconds. */
+      seconds?: number;
+    }
+  | KeyframeOp
+  | MoveOp
+  | {
+      op: "land-titles";
+      /** The titles clip; defaults to the post's only one. */
+      titles?: string;
+      /** The card; defaults to the first card on screen at or after `at`. */
+      card?: string;
+      /** Post seconds the glide starts; defaults to the card's start. */
+      at?: PostTimeRef;
+      /** Where the card draws its header word, as shares of the card's own box. */
+      word: { x: number; y: number; width: number; height: number };
+    }
   | { op: "hook-speed"; speed: string | number[] }
   | { op: "hook-frame"; zoom?: number; x?: number; y?: number; whole?: boolean }
   | { op: "appearance"; item?: string; set: Record<string, unknown> }
@@ -286,6 +357,141 @@ function checkedMusicOp(op: { op: "music" } & MusicOpPatch): MusicOpPatch {
  * one made a mistake (bpm 1280 for 128), so it hears about it and nothing
  * changes.
  */
+/**
+ * A titles clip's `leave`, `enter` and `lit`, checked before the edit:
+ * the edit itself passes over a value it cannot use, and a script should hear
+ * why.
+ */
+function refuseTitlesValues(
+  project: PostProject,
+  ids: readonly string[],
+  patch: PostItemPatch | undefined
+): void {
+  const { leave, lit, quiet, spokenSize, spokenSizeSmall } = (patch ??
+    {}) as Record<string, unknown>;
+  // An enter given as an object is a card's arrival; see refuseCardValues.
+  const raw = (patch ?? {}) as Record<string, unknown>;
+  const hasTitles = ids.some(
+    (id) => findItem(project, id)?.item.kind === "titles"
+  );
+  // A null enter clears a card's arrival as well as a titles clip's.
+  const enter =
+    (raw.enter !== null && typeof raw.enter === "object") ||
+    (raw.enter === null && !hasTitles)
+      ? undefined
+      : raw.enter;
+  if (
+    leave === undefined &&
+    enter === undefined &&
+    lit === undefined &&
+    quiet === undefined &&
+    spokenSize === undefined &&
+    spokenSizeSmall === undefined
+  )
+    return;
+  if (!hasTitles)
+    throw new Error(
+      "Only a titles clip takes leave, enter, lit, quiet, spokenSize or spokenSizeSmall."
+    );
+  for (const [key, value] of [
+    ["spokenSize", spokenSize],
+    ["spokenSizeSmall", spokenSizeSmall],
+  ] as const) {
+    if (value === undefined || value === null) continue;
+    if (
+      typeof value !== "number" ||
+      !(
+        value >= POST_TITLES_SPOKEN_SIZE_MIN &&
+        value <= POST_TITLES_SPOKEN_SIZE_MAX
+      )
+    )
+      throw new Error(
+        `${key} must be a number from ${POST_TITLES_SPOKEN_SIZE_MIN} to ${POST_TITLES_SPOKEN_SIZE_MAX}, or null to remove it.`
+      );
+  }
+  if (
+    leave !== undefined &&
+    !(POST_TITLES_LEAVES as readonly unknown[]).includes(leave)
+  )
+    throw new Error(`leave must be one of ${POST_TITLES_LEAVES.join(", ")}.`);
+  if (
+    enter !== undefined &&
+    enter !== null &&
+    !(POST_TITLES_ENTERS as readonly unknown[]).includes(enter)
+  )
+    throw new Error(`enter must be one of ${POST_TITLES_ENTERS.join(", ")}.`);
+  if (lit !== undefined && lit !== null) {
+    if (!PostTitlesLitSchema.safeParse(lit).success)
+      throw new Error(
+        "lit must be { from, to }: seconds from the clip's start, to after from."
+      );
+  }
+  if (quiet !== undefined && quiet !== null) {
+    if (!PostTitlesLitSchema.safeParse(quiet).success)
+      throw new Error(
+        "quiet must be { from, to }: seconds from the clip's start, to after from."
+      );
+  }
+}
+
+/**
+ * A card's ending settings (`enter` as an object, `ring`, `qrExit`,
+ * `headerTitle`), checked before the edit for the same reason.
+ */
+function refuseCardValues(
+  project: PostProject,
+  ids: readonly string[],
+  patch: PostItemPatch | undefined
+): void {
+  const raw = (patch ?? {}) as Record<string, unknown>;
+  const enter =
+    raw.enter !== null && typeof raw.enter === "object" ? raw.enter : undefined;
+  const { ring, qrExit, headerTitle } = raw;
+  if (
+    enter === undefined &&
+    ring === undefined &&
+    qrExit === undefined &&
+    headerTitle === undefined
+  )
+    return;
+  if (!ids.some((id) => findItem(project, id)?.item.kind === "card"))
+    throw new Error(
+      "Only a card takes enter { style }, ring, qrExit or headerTitle."
+    );
+  if (enter !== undefined && !PostCardEnterSchema.safeParse(enter).success)
+    throw new Error(
+      'enter must be { style: "cascade", step?, each? }: step 0 to 1 s, each 0.01 to 3 s.'
+    );
+  if (ring !== undefined && ring !== null) {
+    const parsed = PostCardRingSchema.safeParse(ring);
+    if (!parsed.success)
+      throw new Error(
+        "ring must be { at, every?, late? }: at in seconds from the clip's start (before 0 means already under way), every 0.1 to 30 s, late 0 to 1 s."
+      );
+    const r = parsed.data;
+    if (r.every === undefined) {
+      const grid = project.music?.grid;
+      if (!grid || !(beatSeconds(grid) > 0))
+        throw new Error(
+          "ring needs every: this post's music has no beat grid to step on."
+        );
+    }
+  }
+  if (qrExit !== undefined && qrExit !== null) {
+    if (!PostCardQrExitSchema.safeParse(qrExit).success)
+      throw new Error(
+        `qrExit must be { at, seconds?, to?, caption?, captionFace?, captionSize?, plate?, backdrop? }: at in seconds from the clip's start (before 0 means already under way), seconds 0.05 to 10, to { x, y, width, height } as shares of the frame, caption up to ${CARD_QR_MAX_CAPTION_LENGTH} letters, captionFace serif or sans, captionSize 0.03 to 0.3 of the QR's size, plate true or false, backdrop clear or black.`
+      );
+  }
+  if (
+    headerTitle !== undefined &&
+    !(POST_CARD_HEADER_TITLES as readonly unknown[]).includes(headerTitle)
+  )
+    throw new Error(
+      `headerTitle must be one of ${POST_CARD_HEADER_TITLES.join(", ")}.`
+    );
+}
+
 function refuseMusicValues(music: PostMusic, patch: MusicOpPatch): void {
   const { bpm, beatsPerBar, gain, fadeInSeconds, fadeOutSeconds } = patch;
   const { downbeatSeconds } = patch;
@@ -356,6 +562,84 @@ function refuseMusicTimes(
     );
 }
 
+/**
+ * A flash clip's strength, fade and marks, checked before the edit: the
+ * edit keeps a value inside its range quietly, and a script should hear why.
+ */
+function refuseFlashValues(
+  values: Record<string, unknown>,
+  ids?: readonly string[],
+  project?: PostProject
+): void {
+  const { strength, fade, marks } = values;
+  if (strength === undefined && fade === undefined && marks === undefined)
+    return;
+  if (
+    ids &&
+    project &&
+    !ids.some((id) => findItem(project, id)?.item.kind === "flash")
+  )
+    throw new Error("Only a flash clip takes strength, fade or marks.");
+  if (
+    strength !== undefined &&
+    (typeof strength !== "number" ||
+      !(strength >= FLASH_MIN_STRENGTH && strength <= FLASH_MAX_STRENGTH))
+  )
+    throw new Error(
+      `strength must be a number from ${FLASH_MIN_STRENGTH} to ${FLASH_MAX_STRENGTH}.`
+    );
+  if (
+    fade !== undefined &&
+    (typeof fade !== "number" ||
+      !(fade >= FLASH_MIN_FADE_SECONDS && fade <= FLASH_MAX_FADE_SECONDS))
+  )
+    throw new Error(
+      `fade must be seconds from ${FLASH_MIN_FADE_SECONDS} to ${FLASH_MAX_FADE_SECONDS}.`
+    );
+  if (marks !== undefined && typeof marks !== "boolean")
+    throw new Error("marks must be true or false.");
+}
+
+/**
+ * A video clip's held last frame, checked before the edit: the edit keeps a
+ * hold inside its range quietly, and a script should hear why. `null` or 0
+ * clears it.
+ */
+function refuseHoldValue(
+  project: PostProject,
+  ids: readonly string[],
+  patch: PostItemPatch | undefined
+): void {
+  const { holdOut } = (patch ?? {}) as Record<string, unknown>;
+  if (holdOut === undefined) return;
+  if (!ids.some((id) => findItem(project, id)?.item.kind === "video"))
+    throw new Error("Only a video clip holds its last frame.");
+  if (
+    holdOut !== null &&
+    (typeof holdOut !== "number" ||
+      !(holdOut >= 0 && holdOut <= POST_MAX_HOLD_SECONDS))
+  )
+    throw new Error(
+      `holdOut must be seconds from 0 to ${POST_MAX_HOLD_SECONDS}, or null to clear it.`
+    );
+}
+
+function refuseCometValue(
+  project: PostProject,
+  ids: readonly string[],
+  patch: PostItemPatch | undefined
+): void {
+  const { cometTrails } = (patch ?? {}) as Record<string, unknown>;
+  if (cometTrails === undefined) return;
+  if (!ids.some((id) => findItem(project, id)?.item.kind === "video"))
+    throw new Error("Only a video clip draws comet trails.");
+  if (cometTrails === null) return;
+  // updateItem passes over a setting that breaks the schema; say why instead.
+  const parsed = PostCometTrailsSchema.safeParse(cometTrails);
+  if (!parsed.success)
+    throw new Error(`cometTrails: ${firstIssue(parsed.error)}`);
+}
+
 function applyOp(
   project: PostProject,
   op: PostProjectOp,
@@ -407,6 +691,126 @@ function applyOp(
       });
       if (!result) throw new Error("The titles could not be placed.");
       return result.project;
+    }
+    case "add-flash": {
+      refuseFlashValues(op);
+      const result = addFlashItem(project, ctx, {
+        ...(op.at !== undefined
+          ? { at: resolvePostTime(op.at, project.music, "at") }
+          : {}),
+        ...(op.strength !== undefined ? { strength: op.strength } : {}),
+        ...(op.fade !== undefined ? { fade: op.fade } : {}),
+        ...(op.marks !== undefined ? { marks: op.marks } : {}),
+      });
+      if (!result) throw new Error("The flash could not be placed.");
+      return result.project;
+    }
+    case "add-credit": {
+      if (
+        op.lead !== undefined &&
+        (typeof op.lead !== "string" || op.lead.length > CREDIT_MAX_LEAD_LENGTH)
+      )
+        throw new Error(
+          `lead must be text up to ${CREDIT_MAX_LEAD_LENGTH} letters.`
+        );
+      if (
+        op.duration !== undefined &&
+        (typeof op.duration !== "number" || !(op.duration > 0))
+      )
+        throw new Error("duration must be seconds above 0.");
+      const result = addCreditItem(project, ctx, {
+        ...(op.at !== undefined
+          ? { at: resolvePostTime(op.at, project.music, "at") }
+          : {}),
+        ...(op.lead !== undefined ? { lead: op.lead } : {}),
+        ...(op.duration !== undefined ? { duration: op.duration } : {}),
+      });
+      if (!result) throw new Error("The credit could not be placed.");
+      return result.project;
+    }
+    case "fly-into-next": {
+      const id = itemIds(project, op.item)[0]!;
+      if (
+        op.seconds !== undefined &&
+        (typeof op.seconds !== "number" ||
+          !Number.isFinite(op.seconds) ||
+          op.seconds <= 0)
+      )
+        throw new Error("seconds must be more than 0.");
+      const flown = flyIntoNextEdit(
+        project,
+        id,
+        op.seconds ?? FLY_DEFAULT_SECONDS,
+        ctx
+      );
+      if (flown.outcome === "refused")
+        throw new Error(
+          "Only an animation, moves, mandala or card clip flies, into the animation, moves, mandala or card clip right after it on the same lane."
+        );
+      if (flown.outcome === "too-short")
+        throw new Error(
+          "The two clips are too short to overlap for a cross-fade."
+        );
+      // "unchanged" returns the same project, which the bridge reports as unchanged.
+      return flown.project;
+    }
+    case "keyframe":
+      return keyframeEdit(project, op, ctx);
+    case "move":
+      return moveItemEdit(project, op, ctx);
+    case "land-titles": {
+      const items = project.tracks.flatMap((track) => track.items);
+      const titles = op.titles
+        ? findItem(project, op.titles)?.item
+        : items.find((item) => item.kind === "titles");
+      if (titles?.kind !== "titles")
+        throw new Error(
+          op.titles
+            ? `No titles clip "${op.titles}".`
+            : "This post has no titles clip."
+        );
+      const at =
+        op.at === undefined
+          ? undefined
+          : resolvePostTime(op.at, project.music, "at");
+      const card = op.card
+        ? findItem(project, op.card)?.item
+        : items
+            .filter(
+              (item) =>
+                item.kind === "card" &&
+                (at === undefined || item.start + item.duration > at)
+            )
+            .sort((a, b) => a.start - b.start)[0];
+      if (card?.kind !== "card")
+        throw new Error(
+          op.card ? `No card "${op.card}".` : "No card is on screen then."
+        );
+      const word = op.word;
+      if (
+        !word ||
+        ![word.x, word.y, word.width, word.height].every(
+          (value) => typeof value === "number" && Number.isFinite(value)
+        ) ||
+        word.width <= 0 ||
+        word.height <= 0
+      )
+        throw new Error(
+          "word must be { x, y, width, height }: where the card draws its header word, as shares of the card's box."
+        );
+      const next = landTitlesOnCard(
+        project,
+        titles.id,
+        card.id,
+        at ?? card.start,
+        word,
+        ctx
+      );
+      if (next === project)
+        throw new Error(
+          "The name cannot land there: both clips must still be on screen 0.6 s after it starts."
+        );
+      return next;
     }
     case "hook-frame": {
       const hook = findTunnelHook(project);
@@ -460,6 +864,35 @@ function applyOp(
     }
     case "item": {
       const qrUrl = (op.patch as { qrUrl?: unknown } | undefined)?.qrUrl;
+      const split = (op.patch as { split?: unknown } | undefined)?.split;
+      // updateItem passes over a split that breaks the schema; say why instead.
+      if (split !== undefined && split !== null) {
+        const parsed = PostAnimationSplitSchema.safeParse(split);
+        if (!parsed.success)
+          throw new Error(`split: ${firstIssue(parsed.error)}`);
+      }
+      if (
+        split !== undefined &&
+        !itemIds(project, op.item).some(
+          (id) => findItem(project, id)?.item.kind === "animation"
+        )
+      )
+        throw new Error("Only an animation clip splits its hands.");
+      const panelLift = (op.patch as { panelLift?: unknown } | undefined)
+        ?.panelLift;
+      // As with the split: say why a lift is refused instead of passing over it.
+      if (panelLift !== undefined && panelLift !== null) {
+        const parsed = PostPanelLiftSchema.safeParse(panelLift);
+        if (!parsed.success)
+          throw new Error(`panelLift: ${firstIssue(parsed.error)}`);
+      }
+      if (
+        panelLift !== undefined &&
+        !itemIds(project, op.item).some(
+          (id) => findItem(project, id)?.item.kind === "animation"
+        )
+      )
+        throw new Error("Only an animation clip lifts its panel.");
       // updateItem passes over a link that breaks the rule; a script should hear why.
       if (qrUrl !== undefined && qrUrl !== null && !isPostCardQrUrl(qrUrl))
         throw new Error(POST_QR_URL_RULE);
@@ -469,6 +902,15 @@ function applyOp(
         !ids.some((id) => findItem(project, id)?.item.kind === "card")
       )
         throw new Error("Only a card keeps a scan link.");
+      refuseTitlesValues(project, ids, op.patch);
+      refuseCardValues(project, ids, op.patch);
+      refuseHoldValue(project, ids, op.patch);
+      refuseCometValue(project, ids, op.patch);
+      refuseFlashValues(
+        (op.patch ?? {}) as Record<string, unknown>,
+        ids,
+        project
+      );
       let next = project;
       for (const id of ids) {
         const item = findItem(next, id)?.item;

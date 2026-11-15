@@ -12,7 +12,16 @@
        the knob and cord carry the club's blue-grey tint, which selective mode
        preserves. The knob is a full step darker than the cord (luminance 0.39
        vs 0.64) and the cord is thin, so at animation scale the eye separates
-       head, cord and handle instead of reading one grey mass. -->
+       head, cord and handle instead of reading one grey mass.
+
+       That holds for the regular drawing. The small drawing
+       (data-poi-art="small", hidden by its display attribute) is shown only
+       by the app's CSS in live pictographs under 180px wide: one bold mark,
+       cord and head both #BDBDBD so the selective pass paints the whole poi
+       in the hand's colour, no knob. Renderers that do not run that CSS
+       (canvas, bitmap cells, exports, the MCP server) never draw it. Its head
+       overflows the viewBox on purpose. See "Props in small pictographs" in
+       docs/architecture/visual-design-canon.md. -->
   <g data-poi-art="regular">
     <!-- Mirror reserve (invisible): keeps the geometric bbox symmetric about
          the grip, matching the unilateral-prop convention. -->
@@ -34,5 +43,9 @@
     <path data-poi-part="knob"
       d="M137.6 19C137.6 10.9 140.2 9 145 9C150.2 9 154.1 13 154.1 19C154.1 25 150.2 29 145 29C140.2 29 137.6 27.1 137.6 19Z"
       fill="#5A6472" stroke="#202126" stroke-width=".8"/>
+  </g>
+  <g data-poi-art="small" display="none">
+    <rect data-poi-part="tether" x="145.83" y="7" width="129.34" height="24" rx="12" fill="#BDBDBD"/>
+    <circle data-poi-part="head" cx="275.17" cy="19" r="34" fill="#BDBDBD" stroke-width="5"/>
   </g>
 </svg>

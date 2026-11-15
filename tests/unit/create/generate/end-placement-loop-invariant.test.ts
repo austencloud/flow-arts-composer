@@ -59,4 +59,23 @@ describe("LOOP end-placement invariant", () => {
     expect(restored.options.endPlacement).toBeNull();
     expect(restored.options.endPlacements).toEqual([]);
   });
+
+  it("applies a saved setup that predates the end-placement list without breaking LOOP", () => {
+    const state = createStartEndOptionsState(undefined, GridMode.DIAMOND);
+    // A setup saved before endPlacements and the letter lists existed.
+    const oldSetup = {
+      blockedStartPlacements: [],
+      startPlacement: null,
+      endPlacement: null,
+      leftStartOrientation: "in",
+      rightStartOrientation: "in",
+    } as unknown as Parameters<typeof state.setOptions>[0];
+
+    state.setOptions(oldSetup);
+
+    expect(state.options.endPlacements).toEqual([]);
+    expect(state.options.mustContainLetters).toEqual([]);
+    expect(state.options.mustNotContainLetters).toEqual([]);
+    expect(() => state.reconcileLoopEnabled(true)).not.toThrow();
+  });
 });

@@ -61,7 +61,7 @@ it("translates held generation options across en→de→en without changing save
   expect(styleOptions.map((option) => option.hint)).toEqual([
     "Richtungswechsel werden auf ein Minimum beschränkt.",
     "Richtungswechsel sind erlaubt, wo sie passen.",
-    "Bei jedem Schritt ein Richtungswechsel — das schränkt die Auswahl ein, daher wiederholen sich Ergebnisse häufiger.",
+    "Bei jedem Schritt ein Richtungswechsel, daher wiederholen sich Ergebnisse häufiger.",
   ]);
   expect(dashOptions.map((option) => option.hint)).toEqual([
     "Dashes werden vermieden.",
@@ -69,7 +69,7 @@ it("translates held generation options across en→de→en without changing save
     "Dashes werden bevorzugt.",
   ]);
   expect(ORIENTATION_SHORT).toBe(orientationLabels);
-  expect(readOrientationLabels()).toEqual(["Innen", "Mit", "Außen", "Gegen"]);
+  expect(readOrientationLabels()).toEqual(["Innen", "Rechtsherum", "Außen", "Linksherum"]);
   expect(styleOptions.map((option) => option.value)).toEqual(styleValues);
   expect(dashOptions.map((option) => option.value)).toEqual(dashValues);
 

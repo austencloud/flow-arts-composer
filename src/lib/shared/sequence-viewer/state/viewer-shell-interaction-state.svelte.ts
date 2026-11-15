@@ -1,3 +1,4 @@
+import { isEscapeShortcutActivation } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
 import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { ViewerPropHand } from "./viewer-prop-visibility-state.svelte";
@@ -219,7 +220,9 @@ export function createViewerShellInteractionState(
   }
 
   function handleClose(): void {
-    dependencies.endScanViewerSession("close_button");
+    dependencies.endScanViewerSession(
+      isEscapeShortcutActivation() ? "escape" : "close_button"
+    );
     inputs.onClose();
   }
 
@@ -283,6 +286,11 @@ export function createViewerShellInteractionState(
     headerActions.onDeleteRequest?.();
   }
 
+  /**
+   * One tap in: the practice screen opens and the run starts (count-in, then
+   * the ramp). "entered" and "started" both fire from this tap now that there
+   * is no setup step between them.
+   */
   function handleEnterPractice(): void {
     const ctx = inputs.getContext();
     if (ctx.practiceActive) return;
@@ -293,7 +301,11 @@ export function createViewerShellInteractionState(
       splitConfig: { ...ctx.viewerState.rawSplitConfig },
       exportContext: ctx.viewerState.exportContext,
     };
-    ctx.enterPracticeMode();
+    if (!ctx.enterPracticeMode()) {
+      // The animation wasn't ready (a toast says so): put the view back.
+      restorePracticeReturnState();
+      return;
+    }
     dependencies.captureScanViewChanged(
       previousMode,
       ctx.viewerState.viewerMode,
@@ -301,8 +313,13 @@ export function createViewerShellInteractionState(
       { count: false }
     );
     dependencies.captureScanPracticeChanged("entered");
+    dependencies.captureScanPracticeChanged(
+      "started",
+      buildPracticeConfigProperties(ctx.practiceState.userConfig)
+    );
   }
 
+  /** Header back button: leave practice and return to the view it came from. */
   function handleExitPractice(): void {
     const ctx = inputs.getContext();
     if (!ctx.practiceActive) return;
@@ -312,7 +329,16 @@ export function createViewerShellInteractionState(
       bpm: ctx.bpmLocal,
     });
     ctx.exitPracticeMode();
+    restorePracticeReturnState();
+  }
 
+  /** A run that reached its goal or cap leaves exactly like the back button. */
+  function handlePracticeRunEnded(): void {
+    handleExitPractice();
+  }
+
+  function restorePracticeReturnState(): void {
+    const ctx = inputs.getContext();
     const returnState = practiceReturnState;
     practiceReturnState = null;
     // A mode choice made while Practice was open is newer intent than the
@@ -536,15 +562,6 @@ export function createViewerShellInteractionState(
     );
   }
 
-  function handlePracticeStart(): void {
-    const ctx = inputs.getContext();
-    dependencies.captureScanPracticeChanged(
-      "started",
-      buildPracticeConfigProperties(ctx.practiceState.userConfig)
-    );
-    ctx.handlePracticeStart();
-  }
-
   function handlePracticeStepLevel(direction: 1 | -1): void {
     const ctx = inputs.getContext();
     dependencies.captureScanPracticeChanged("tempo_step", {
@@ -566,10 +583,17 @@ export function createViewerShellInteractionState(
     ctx.handlePracticeToggleHold();
   }
 
+  /** Cockpit Stop: the run ends and practice closes, same as the back button. */
   function handlePracticeStop(): void {
     const ctx = inputs.getContext();
+    if (!ctx.practiceActive) return;
     dependencies.captureScanPracticeChanged("stopped", { bpm: ctx.bpmLocal });
+    dependencies.captureScanPracticeChanged("exited", {
+      was_running: ctx.practiceRunning,
+      bpm: ctx.bpmLocal,
+    });
     ctx.handlePracticeStop();
+    restorePracticeReturnState();
   }
 
   function handleToggleMetronome(): void {
@@ -616,6 +640,14 @@ export function createViewerShellInteractionState(
     dependencies.captureScanAction(action, properties, {
       count: options.count,
     });
+  }
+
+  // The enlarged step on a focused Card: one event per open, one per close.
+  function handleCardAction(
+    action: string,
+    properties: Record<string, ScanAnalyticsValue> = {}
+  ): void {
+    dependencies.captureScanAction(action, { source: "card_step", ...properties });
   }
 
   function handleCardSettingChange(
@@ -797,7 +829,7 @@ export function createViewerShellInteractionState(
     handleUnfocusPane,
     handleMotionToggle,
     handlePracticeSetConfig,
-    handlePracticeStart,
+    handlePracticeRunEnded,
     handlePracticeStepLevel,
     handlePracticeToggleHold,
     handlePracticeStop,
@@ -805,6 +837,7 @@ export function createViewerShellInteractionState(
     handleToggleMirror,
     handleArtSettingChange,
     handleArtAction,
+    handleCardAction,
     handleCardSettingChange,
     handleCardContextAction,
     handleDeleteConfirm,

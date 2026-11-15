@@ -16,6 +16,7 @@
   level's own tint, border and glow.
 -->
 <script lang="ts" generics="T extends number = LevelNumber">
+  import type { Snippet } from "svelte";
   import type { TransitionConfig } from "svelte/transition";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
@@ -34,6 +35,14 @@
     describe?: (level: T) => { name: string; blurb: string };
     /** Numerals only — for bars too tight to carry the level name. */
     compact?: boolean;
+    /**
+     * Stacked tiles: a picture over the numeral over the name. For a newcomer
+     * who has not met the levels yet, where a bare numeral says nothing and
+     * phones never show the hover title. Pair it with `glyph`.
+     */
+    tiles?: boolean;
+    /** The picture a tile carries for its level, drawn in the level's colour. */
+    glyph?: Snippet<[T]>;
     ariaLabel?: string;
     disabled?: boolean;
     /**
@@ -49,6 +58,8 @@
     levels = [1, 2, 3] as unknown as readonly T[],
     describe,
     compact = false,
+    tiles = false,
+    glyph,
     ariaLabel,
     disabled = false,
     buttonIn = () => ({ duration: 0 }),
@@ -104,6 +115,8 @@
 <div
   class="level-selector"
   class:compact
+  class:tiles
+  style="--level-count: {levels.length}"
   role="group"
   aria-label={ariaLabel ?? t("create_level_difficulty")}
 >
@@ -126,6 +139,9 @@
       onclick={() => onchange(n)}
       in:buttonIn|global
     >
+      {#if tiles && glyph}<span class="glyph" aria-hidden="true"
+          >{@render glyph(n)}</span
+        >{/if}
       <span class="numeral">{n}</span>
       {#if !compact}<span class="name">{meta.name}</span>{/if}
     </button>
@@ -297,7 +313,59 @@
     }
   }
 
+  /* Tiles: four even columns, the name allowed to wrap under the numeral.
+     The width is fixed so a selection never resizes the row; the host's
+     popover takes its width from the row. */
+  .level-selector.tiles {
+    display: grid;
+    grid-template-columns: repeat(var(--level-count, 4), 4.75rem);
+    gap: 0.4rem;
+    align-items: stretch;
+  }
+
+  .level-selector.tiles .lvl {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0.3rem;
+    width: auto;
+    height: auto;
+    min-height: var(--min-touch-target, 44px);
+    padding: 0.5rem 0.25rem 0.55rem;
+  }
+
+  .level-selector.tiles .glyph {
+    display: block;
+    width: 2rem;
+    height: 2rem;
+    color: var(--lvl-accent);
+    opacity: 0.75;
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+
+  .level-selector.tiles .lvl.selected .glyph {
+    opacity: 1;
+  }
+
+  .level-selector.tiles .numeral {
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: var(--font-size-min, 0.875rem);
+  }
+
+  .level-selector.tiles .name {
+    font-size: var(--font-size-min, 0.875rem);
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .level-selector.tiles .lvl.selected .name {
+    color: white;
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .glyph,
     .lvl,
     .numeral,
     .name {

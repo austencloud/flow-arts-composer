@@ -132,7 +132,6 @@
     /* Subtle glass effect */
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
-    border-bottom: none;
     border-radius: 6px;
 
     /* Text styling */
@@ -151,6 +150,11 @@
       border-bottom-width var(--duration-fast) var(--ease-standard),
       color var(--duration-fast) var(--ease-standard),
       transform var(--duration-fast) var(--ease-standard);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .kbd {
+    border-bottom: none;
   }
 
   /* Modifier keys - theme accent tint */

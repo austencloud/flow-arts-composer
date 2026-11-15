@@ -100,8 +100,12 @@
       var(--theme-card-bg) 50%,
       rgba(255, 255, 255, 0.04) 75%
     );
-    background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-text {
+    background-size: 200% 100%;
   }
 
   .skeleton-meta {

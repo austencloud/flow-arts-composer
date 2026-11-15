@@ -54,8 +54,13 @@
       var(--theme-text) 0%,
       color-mix(in srgb, var(--theme-accent) 60%, var(--theme-text)) 100%
     );
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .initial,
+  .tail-text {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

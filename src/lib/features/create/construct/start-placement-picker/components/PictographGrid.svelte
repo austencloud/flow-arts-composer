@@ -8,7 +8,7 @@
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 
   const {
@@ -18,6 +18,8 @@
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     gridJoin = null,
+    layout = "presets",
+    settleOnMount = true,
   }: {
     pictographDataSet: PictographData[];
     selectedPictograph?: PictographData | null;
@@ -28,6 +30,14 @@
     /** The sequence's grid join, drawn on the tiles only; selection hands
      *  back the plain placement. */
     gridJoin?: GridJoin | null;
+    /** "presets" lays out the three presets in a row or column. "family"
+     *  lays out one family's four or eight variations as squares sized by
+     *  the parent box alone (it must be a `container-type: size` box). */
+    layout?: "presets" | "family";
+    /** Hide the tiles for the first 200ms while the workspace settles. A
+     *  family switch remounts the grid inside a settled picker, so it skips
+     *  the wait. Read once, at mount. */
+    settleOnMount?: boolean;
   } = $props();
 
   const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
@@ -37,7 +47,7 @@
 
   // Layout stabilization: Force horizontal layout briefly on mount to prevent
   // flicker during workspace collapse animation (container is transiently narrow)
-  let isLayoutStabilizing = $state(true);
+  let isLayoutStabilizing = $state(untrack(() => settleOnMount));
 
   // Services
   let hapticService: HapticFeedback | undefined;
@@ -47,6 +57,10 @@
       "construct:start-grid-stabilize"
     );
     hapticService = getHapticFeedback();
+    if (!isLayoutStabilizing) {
+      finishStabilizing();
+      return;
+    }
 
     // Brief stabilization to let container queries settle after layout change
     // Matches the parent's in:scale delay (200ms) so both views feel symmetric
@@ -81,7 +95,13 @@
   }
 </script>
 
-<div class="pictograph-row" class:layout-stabilizing={isLayoutStabilizing}>
+<div
+  class="pictograph-row"
+  class:family={layout === "family"}
+  class:count-8={layout === "family" && pictographDataSet.length > 4}
+  class:layout-stabilizing={isLayoutStabilizing}
+  class:no-reveal={!settleOnMount}
+>
   {#each pictographDataSet as pictographData, index (pictographData.id)}
     <div
       class="pictograph-container"
@@ -264,6 +284,124 @@
     .pictograph-wrapper {
       width: min(100%, 31cqh);
     }
+  }
+
+  /* A remount inside a settled picker: the parent's Crossfade owns the
+     reveal, so the grid does not fade in a second time. */
+  .pictograph-row.no-reveal:not(.layout-stabilizing) {
+    animation: none;
+    opacity: 1;
+  }
+
+  /* ============================================
+     Family layout: one family's 4 or 8 variations.
+     The row is not a container, so cq units here resolve against the
+     parent box (StartPlacementPicker's .family-box). Each arrangement sets
+     --tile to the largest square that fits both ways, capped at 25rem (a
+     row of four then matches the presets row's 105rem limit), and the block
+     centres in the box:
+       4 tiles: one row above 2:1, otherwise two by two.
+       8 tiles: four by two above 4:3, two columns of four below 3:4,
+                otherwise 3 + 3 + 2 with the last row centred.
+     ============================================ */
+  .pictograph-row.family {
+    --tile-gap: 8px;
+    --tile-cap: 25rem;
+    --tile: min(
+      calc((100cqw - var(--tile-gap)) / 2),
+      calc((100cqh - var(--tile-gap)) / 2),
+      var(--tile-cap)
+    );
+    container-type: normal;
+    display: grid;
+    grid-template-columns: repeat(2, var(--tile));
+    grid-template-rows: none;
+    grid-auto-rows: var(--tile);
+    gap: var(--tile-gap);
+    justify-content: center;
+    align-content: center;
+    max-width: none;
+    margin-inline: 0;
+    transition: none;
+  }
+
+  @container (aspect-ratio > 2 / 1) {
+    .pictograph-row.family:not(.count-8) {
+      --tile: min(
+        calc((100cqw - 3 * var(--tile-gap)) / 4),
+        100cqh,
+        var(--tile-cap)
+      );
+      grid-template-columns: repeat(4, var(--tile));
+      grid-template-rows: none;
+    }
+  }
+
+  /* 3 + 3 + 2: six half-tracks, each tile spans two, and the seventh starts
+     one half-track in so the last pair sits centred. */
+  .pictograph-row.family.count-8 {
+    --tile: min(
+      calc((100cqw - 2 * var(--tile-gap)) / 3),
+      calc((100cqh - 2 * var(--tile-gap)) / 3),
+      var(--tile-cap)
+    );
+    grid-template-columns: repeat(
+      6,
+      calc((var(--tile) - var(--tile-gap)) / 2)
+    );
+  }
+
+  .pictograph-row.family.count-8 > .pictograph-container {
+    grid-column: span 2;
+  }
+
+  .pictograph-row.family.count-8 > .pictograph-container:nth-child(7) {
+    grid-column: 2 / span 2;
+  }
+
+  @container (aspect-ratio > 4 / 3) {
+    .pictograph-row.family.count-8 {
+      --tile: min(
+        calc((100cqw - 3 * var(--tile-gap)) / 4),
+        calc((100cqh - var(--tile-gap)) / 2),
+        var(--tile-cap)
+      );
+      grid-template-columns: repeat(4, var(--tile));
+      grid-template-rows: none;
+    }
+
+    .pictograph-row.family.count-8 > .pictograph-container,
+    .pictograph-row.family.count-8 > .pictograph-container:nth-child(7) {
+      grid-column: auto;
+    }
+  }
+
+  @container (aspect-ratio < 3 / 4) {
+    .pictograph-row.family.count-8 {
+      --tile: min(
+        calc((100cqw - var(--tile-gap)) / 2),
+        calc((100cqh - 3 * var(--tile-gap)) / 4),
+        var(--tile-cap)
+      );
+      grid-template-columns: repeat(2, var(--tile));
+      grid-template-rows: none;
+    }
+
+    .pictograph-row.family.count-8 > .pictograph-container,
+    .pictograph-row.family.count-8 > .pictograph-container:nth-child(7) {
+      grid-column: auto;
+    }
+  }
+
+  /* The tile is the grid cell: no inset, the card fills it. */
+  .pictograph-row.family > .pictograph-container {
+    width: var(--tile);
+    height: var(--tile);
+    padding: 0;
+  }
+
+  .pictograph-row.family .pictograph-wrapper {
+    width: 100%;
   }
 
   /* Ensure the pictograph inside fills the wrapper exactly */

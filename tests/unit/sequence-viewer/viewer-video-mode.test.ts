@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  initialSplitConfigForUrl,
   initialViewerModeForUrl,
   viewerModeForRenderMode,
   viewerModeOptions,
@@ -61,8 +62,14 @@ describe("sequence viewer Video mode", () => {
     // render-derived mode.
     expect(initialViewerModeForUrl(false, null, "3d")).toBe("animation-3d");
     expect(initialViewerModeForUrl(false, null, "2d")).toBe("animation");
-    // A scan boot forces the card regardless of every other param.
-    expect(initialViewerModeForUrl(true, "tunnel", "3d")).toBe("card");
+    // A scan boot opens on Side by Side (animation beside the card) regardless
+    // of every other param, with that split seeded for it.
+    expect(initialViewerModeForUrl(true, "tunnel", "3d")).toBe("split");
+    expect(initialSplitConfigForUrl(true)).toEqual({
+      leftPane: "animation",
+      rightPane: "card",
+    });
+    expect(initialSplitConfigForUrl(false)).toBeUndefined();
     // Nothing in the URL: defer to the device-local remembered surface.
     expect(initialViewerModeForUrl(false, null, null)).toBeUndefined();
   });

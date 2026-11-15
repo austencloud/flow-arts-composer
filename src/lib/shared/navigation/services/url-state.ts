@@ -177,6 +177,35 @@ export function isShallowGoto(navigation: object): boolean {
   );
 }
 
+interface NavigationEnd {
+  url?: URL;
+  route?: { id?: string | null };
+}
+
+/**
+ * True for the browser's Back or Forward between two addresses one module
+ * wrote for itself (Browse's collection and its list, say). The module's own
+ * popstate listener moves its screens, so a page-wide fade on top would show
+ * the arrived screen a second time, a pixel off, once the route settles.
+ * Moves to another route or another module are not this, and only the
+ * modules named (those whose own listener animates the step) count.
+ */
+export function isInModuleHistoryStep(
+  navigation: object,
+  modules: readonly string[]
+): boolean {
+  if (!("type" in navigation) || navigation.type !== "popstate") return false;
+  const { from, to } = navigation as {
+    from?: NavigationEnd;
+    to?: NavigationEnd;
+  };
+  if (!from?.url || !to?.url) return false;
+  if (!from.route?.id || from.route.id !== to.route?.id) return false;
+  const moduleOf = (url: URL) => url.pathname.split("/").filter(Boolean)[0];
+  const module = moduleOf(from.url);
+  return !!module && modules.includes(module) && module === moduleOf(to.url);
+}
+
 export function writeUrl(
   destination: string | URL,
   options: UrlStateOptions = {}

@@ -70,14 +70,14 @@ describe("cardMode cache identity", () => {
   it("leaves every existing key byte-identical", () => {
     // Regression guard for the whole warmed population: adding a field to the
     // hash input is only safe because it appears when cardMode is true. These
-    // are the hashes main produced before the fix.
-    expect(deriveKey(galleryInput).hash).toBe("-vcnc1v");
+    // are the hashes main produced before the fix (re-pinned at the r8 renderer bump).
+    expect(deriveKey(galleryInput).hash).toBe("bjvy66");
     expect(deriveKey({ ...galleryInput, cardMode: false }).hash).toBe(
-      "-vcnc1v"
+      "bjvy66"
     );
-    expect(deriveKey(designerCard).hash).toBe("60kre8");
+    expect(deriveKey(designerCard).hash).toBe("90rxo1");
     expect(deriveKey({ ...galleryInput, variant: "wordcard" }).hash).toBe(
-      "wjnlut"
+      "cz4d8k"
     );
   });
 });

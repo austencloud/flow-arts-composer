@@ -1867,12 +1867,20 @@
         "de",
         "pt",
         "zh",
+        "zh-Hant",
         "ja",
         "ko",
         "ar",
         "ru",
         "it",
       ];
+      // "zh-TW", "zh-HK" and "zh-Hant" read Traditional; other Chinese tags
+      // read Simplified. Everything else is matched by its language part.
+      function __tkaBootNormalize(tag) {
+        var lower = String(tag).toLowerCase();
+        if (/^zh-(hant|tw|hk|mo)(-|$)/.test(lower)) return "zh-Hant";
+        return lower.split("-")[0];
+      }
       // A language folder (/de/guide/...) names the page's language.
       var __tkaBootFolder = location.pathname.split("/")[1] || "";
       var __tkaBootCookie = document.cookie.match(
@@ -1882,34 +1890,120 @@
         ["de", "es", "fr", "it", "pt"].indexOf(__tkaBootFolder) !== -1
           ? __tkaBootFolder
           : __tkaBootCookie
-            ? __tkaBootCookie[1].split("-")[0].toLowerCase()
+            ? __tkaBootNormalize(__tkaBootCookie[1])
             : "";
       if (__tkaBootLocales.indexOf(__tkaBootLocale) === -1) {
         __tkaBootLocale =
           (navigator.languages || [navigator.language])
-            .map(function (language) {
-              return language.split("-")[0].toLowerCase();
-            })
+            .map(__tkaBootNormalize)
             .find(function (language) {
               return __tkaBootLocales.indexOf(language) !== -1;
             }) || "en";
       }
+      // The four strings the screen can show, plus its aria-label, per
+      // language. English is the key. Keep in step with messages/*.json.
       var __tkaBootGerman = {
         "Opening Flow Arts Composer": "Flow Arts Composer wird geöffnet",
         "Almost there": "Gleich geschafft",
         "Still loading. This is taking longer than usual.":
           "Lädt noch. Das dauert länger als üblich.",
         Reload: "Neu laden",
+        "Loading Flow Arts Composer": "Flow Arts Composer wird geladen",
+      };
+      var __tkaBootStrings = {
+        de: __tkaBootGerman,
+        es: {
+          "Opening Flow Arts Composer": "Abriendo Flow Arts Composer",
+          "Almost there": "Ya casi está",
+          "Still loading. This is taking longer than usual.":
+            "Sigue cargando. Está tardando más de lo habitual.",
+          Reload: "Recargar",
+          "Loading Flow Arts Composer": "Cargando Flow Arts Composer",
+        },
+        fr: {
+          "Opening Flow Arts Composer": "Ouverture de Flow Arts Composer",
+          "Almost there": "Presque prêt",
+          "Still loading. This is taking longer than usual.":
+            "Chargement en cours. C'est plus long que d'habitude.",
+          Reload: "Recharger",
+          "Loading Flow Arts Composer": "Chargement de Flow Arts Composer",
+        },
+        it: {
+          "Opening Flow Arts Composer": "Apertura di Flow Arts Composer",
+          "Almost there": "Quasi pronto",
+          "Still loading. This is taking longer than usual.":
+            "Caricamento in corso. Ci vuole più del solito.",
+          Reload: "Ricarica",
+          "Loading Flow Arts Composer": "Caricamento di Flow Arts Composer",
+        },
+        pt: {
+          "Opening Flow Arts Composer": "Abrindo o Flow Arts Composer",
+          "Almost there": "Quase lá",
+          "Still loading. This is taking longer than usual.":
+            "Ainda carregando. Está demorando mais que o normal.",
+          Reload: "Recarregar",
+          "Loading Flow Arts Composer": "Carregando o Flow Arts Composer",
+        },
+        ru: {
+          "Opening Flow Arts Composer": "Открываем Flow Arts Composer",
+          "Almost there": "Почти готово",
+          "Still loading. This is taking longer than usual.":
+            "Всё ещё загружается. Это дольше обычного.",
+          Reload: "Перезагрузить",
+          "Loading Flow Arts Composer": "Загрузка Flow Arts Composer",
+        },
+        ko: {
+          "Opening Flow Arts Composer": "Flow Arts Composer 여는 중",
+          "Almost there": "거의 다 됐어요",
+          "Still loading. This is taking longer than usual.":
+            "아직 불러오는 중입니다. 평소보다 오래 걸리고 있어요.",
+          Reload: "새로고침",
+          "Loading Flow Arts Composer": "Flow Arts Composer 불러오는 중",
+        },
+        ar: {
+          "Opening Flow Arts Composer": "جارٍ فتح Flow Arts Composer",
+          "Almost there": "أوشكنا على الانتهاء",
+          "Still loading. This is taking longer than usual.":
+            "ما زال التحميل جاريًا. يستغرق وقتًا أطول من المعتاد.",
+          Reload: "إعادة التحميل",
+          "Loading Flow Arts Composer": "جارٍ تحميل Flow Arts Composer",
+        },
+        ja: {
+          "Opening Flow Arts Composer": "Flow Arts Composer を開いています",
+          "Almost there": "もう少しです",
+          "Still loading. This is taking longer than usual.":
+            "読み込み中です。いつもより時間がかかっています。",
+          Reload: "再読み込み",
+          "Loading Flow Arts Composer": "Flow Arts Composer を読み込み中",
+        },
+        zh: {
+          "Opening Flow Arts Composer": "正在打开 Flow Arts Composer",
+          "Almost there": "马上就好",
+          "Still loading. This is taking longer than usual.":
+            "仍在加载，比平时慢一些。",
+          Reload: "重新加载",
+          "Loading Flow Arts Composer": "正在加载 Flow Arts Composer",
+        },
+        "zh-Hant": {
+          "Opening Flow Arts Composer": "正在開啟 Flow Arts Composer",
+          "Almost there": "馬上就好",
+          "Still loading. This is taking longer than usual.":
+            "仍在載入，比平常慢一些。",
+          Reload: "重新載入",
+          "Loading Flow Arts Composer": "正在載入 Flow Arts Composer",
+        },
       };
       function __tkaBootMessage(message) {
-        return __tkaBootLocale === "de"
-          ? __tkaBootGerman[message] || message
-          : message;
+        var table = __tkaBootStrings[__tkaBootLocale];
+        return (table && table[message]) || message;
       }
-      if (__tkaBootLocale === "de") {
+      if (__tkaBootStrings[__tkaBootLocale]) {
         document
           .getElementById("app-loading")
-          .setAttribute("aria-label", "Flow Arts Composer wird geladen");
+          .setAttribute(
+            "aria-label",
+            __tkaBootMessage("Loading Flow Arts Composer")
+          );
       }
       var __tkaReduceMotion = false;
       try {

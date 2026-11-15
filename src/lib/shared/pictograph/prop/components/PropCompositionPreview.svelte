@@ -37,12 +37,22 @@
   import {
     colorPropPreview,
     modelPreviewColorMatrix,
+    previewArtworkPath,
   } from "../domain/prop-preview-color";
   import { isFanPropType } from "../domain/fan-appearance";
+  import {
+    fitBoundsInBox,
+    handArtworkSize,
+    pairHandPlacements,
+    pairPaintedBounds,
+    placementTransform,
+    svgSourceAspect,
+  } from "../domain/pair-fit";
 
   let {
     propType,
     size = 64,
+    box,
     recipeOverride = undefined,
     darkBackground = false,
     neutral = false,
@@ -57,6 +67,10 @@
   }: {
     propType: PropType;
     size?: number;
+    /** Paired glyph only: the width x height box the drawing must fit. The
+     *  canvas crops to what the pair paints, so the drawing is as large as
+     *  the box allows and never larger. `size` is ignored when set. */
+    box?: { width: number; height: number };
     /** Override the default recipe (used by lab tab for live tuning) */
     recipeOverride?: CompositionRecipe;
     darkBackground?: boolean;
@@ -159,7 +173,7 @@
     let current = true;
     void Promise.all(
       paths.map(async (path) => {
-        const response = await assetFetch(path);
+        const response = await assetFetch(previewArtworkPath(path));
         if (!response.ok)
           throw new Error(`Prop preview artwork: ${response.status}`);
         return [path, await response.text()] as const;
@@ -196,8 +210,11 @@
   const coloredRight = $derived(
     coloredArtwork(rightGlyph, rightPropType, palette.right)
   );
-  const smallLeftFan = $derived(size <= 40 && isFanPropType(propType));
-  const smallRightFan = $derived(size <= 40 && isFanPropType(rightPropType));
+  const drawnSize = $derived(box ? Math.max(box.width, box.height) : size);
+  const smallLeftFan = $derived(drawnSize <= 40 && isFanPropType(propType));
+  const smallRightFan = $derived(
+    drawnSize <= 40 && isFanPropType(rightPropType)
+  );
   // Different families need separate slots; a crossed staff recipe can hide a fan.
   const mixedPair = $derived(propType !== rightPropType);
   const plainArt = $derived<PropTileArtwork>({
@@ -243,6 +260,43 @@
       normalizeCompositionRecipe(savedOverrides[propType]) ??
       getCompositionRecipe(propType, pairedGlyph)
     );
+  });
+
+  // Where each hand sits on the pair canvas; the box fit measures these same
+  // placements.
+  const placements = $derived(
+    pairHandPlacements(recipe, mixedPair, singleHand)
+  );
+  // Artwork without a crop window is drawn at its own aspect, so read it from
+  // the loaded (and recoloured) source.
+  function artAspect(art: PropTileArtwork, type: PropType, color: string) {
+    if (art.crop || art.prelit) return 1;
+    const source = sources[art.href];
+    return svgSourceAspect(
+      source ? colorPropPreview(source, type, color) : null
+    );
+  }
+  const pairFit = $derived.by(() => {
+    if (!box || !pairedGlyph) return null;
+    const hands = [];
+    if (placements.left)
+      hands.push({
+        placement: placements.left,
+        artwork: handArtworkSize(
+          leftGlyph.crop,
+          artAspect(leftGlyph, propType, palette.left)
+        ),
+      });
+    if (placements.right)
+      hands.push({
+        placement: placements.right,
+        artwork: handArtworkSize(
+          rightGlyph.crop,
+          artAspect(rightGlyph, rightPropType, palette.right)
+        ),
+      });
+    const bounds = pairPaintedBounds(hands);
+    return bounds ? fitBoundsInBox(bounds, box.width, box.height) : null;
   });
 
   // Build transform strings for each prop
@@ -324,9 +378,10 @@
 {#if pairedGlyph}
   <svg
     class="prop-composition-preview"
-    width={size}
-    height={size}
-    viewBox="0 0 100 100"
+    width={pairFit ? box?.width : size}
+    height={pairFit ? box?.height : size}
+    viewBox={pairFit?.viewBox ?? "0 0 100 100"}
+    preserveAspectRatio="xMidYMid meet"
     aria-hidden="true"
   >
     <defs>
@@ -341,11 +396,7 @@
     </defs>
     {#if singleHand !== "right"}
       <g
-        transform={singleHand
-          ? "translate(50, 50) scale(0.55)"
-          : mixedPair
-            ? "translate(28, 42) scale(0.34)"
-            : leftTransform}
+        transform={placementTransform(placements.left!)}
         filter={smallLeftFan ? `url(#${id}-fan-coverage)` : undefined}
       >
         <g transform={`scale(${leftFlipped ? -1 : 1}, 1)`}>
@@ -355,11 +406,7 @@
     {/if}
     {#if singleHand !== "left"}
       <g
-        transform={singleHand
-          ? "translate(50, 50) scale(0.55)"
-          : mixedPair
-            ? "translate(72, 58) scale(0.34)"
-            : rightTransform}
+        transform={placementTransform(placements.right!)}
         filter={smallRightFan ? `url(#${id}-fan-coverage)` : undefined}
       >
         <g transform={`scale(${rightFlipped ? -1 : 1}, 1)`}>

@@ -14,6 +14,7 @@
   import type SequenceViewerDrawerContent from "./SequenceViewerDrawerContent.svelte";
   import { afterNavigate, goto } from "$app/navigation";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import type { CloseReason } from "@austencloud/drawer";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ScanSequenceLoader from "./ScanSequenceLoader.svelte";
@@ -71,9 +72,16 @@
     type ViewerOpenMilestone,
   } from "../analytics/viewer-open-timing";
   import {
+    trackViewerClosed,
     trackViewerOpenTiming,
     type ViewerAnalyticsContext,
   } from "../analytics/viewer-events";
+  import {
+    closeMethodFromDrawer,
+    createViewerCloseRecorder,
+  } from "../analytics/viewer-close-method";
+  import { endScanViewerSession } from "#lib/shared/analytics/scan-analytics.js";
+  import { isEscapeShortcutActivation } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
 
   const overlay = getSequenceOverlayState();
 
@@ -90,6 +98,19 @@
     },
     send: ({ context, drawerVisibleMs, viewerRevealedMs }) =>
       trackViewerOpenTiming(context, drawerVisibleMs, viewerRevealedMs),
+  });
+
+  // One `viewer_closed` event per close, naming the way it was closed. The
+  // context is read at close time: a scan's open starts before its sequence
+  // has loaded.
+  const closeRecorder = createViewerCloseRecorder<() => ViewerAnalyticsContext>({
+    now: () => performance.now(),
+    send: (context, method, openMs) =>
+      trackViewerClosed(context(), method, openMs),
+  });
+  const closeContext = (): ViewerAnalyticsContext => ({
+    sequenceId: overlay.sequence?.id ?? overlay.activeShortCode ?? "",
+    source: overlay.analyticsSource,
   });
 
   let isMobileWidth = $state(true);
@@ -277,6 +298,7 @@
               isPrewarmedContent(dormantPrewarm, overlay.sequence);
           }
           startOpenTiming();
+          closeRecorder.opened(closeContext);
         }
       }
       if (!open) openTiming.end();
@@ -482,6 +504,8 @@
 
   function handlePopState(event: PopStateEvent) {
     if (overlay.isOpen) {
+      closeRecorder.closed("back");
+      endScanViewerSession("back");
       closeSequenceOverlay();
     }
   }
@@ -663,15 +687,23 @@
     removeCurrentUrlParams(["v"]);
   }
 
-  function handleDismiss(reason?: "navigate") {
+  function handleDismiss(reason?: "navigate" | "escape") {
     openTiming.end();
+    // Escape usually reaches here by pressing the close button for the
+    // visitor; that press still counts as Escape. The scan summary for a
+    // button press is recorded by the viewer shell.
+    const escape = reason === "escape" || isEscapeShortcutActivation();
+    closeRecorder.closed(
+      reason === "navigate" ? "navigate" : escape ? "escape" : "close_button"
+    );
+    if (reason === "escape") endScanViewerSession("escape");
     // A plain close slides the drawer away; its close callback finishes the
     // dismissal once the viewer is off-screen.
     if (reason !== "navigate" && drawerOpen) {
       drawerOpen = false;
       return;
     }
-    finishDismiss(reason);
+    finishDismiss(reason === "navigate" ? reason : undefined);
   }
 
   function finishDismiss(reason?: "navigate") {
@@ -705,8 +737,20 @@
     }
   }
 
-  function handleDrawerClose() {
+  function handleDrawerClose(
+    event?: CustomEvent<{ reason: CloseReason; viaBack?: boolean }>
+  ) {
     openTiming.end();
+    // Swipe, tap outside, Escape and Android's Back arrive here; the close
+    // button and Back in the address bar were recorded on their own paths.
+    const method = closeMethodFromDrawer(
+      event?.detail?.reason,
+      event?.detail?.viaBack === true
+    );
+    closeRecorder.closed(method);
+    if (method && method !== "navigate" && method !== "close_button") {
+      endScanViewerSession(method);
+    }
     if (overlay.isOpen) dismissAfterSlide();
     else finishDismiss();
   }

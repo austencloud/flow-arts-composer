@@ -162,12 +162,20 @@ export function describePictograph(
       : deriveTnDFromPictograph(p as never).tndMode;
   const tndPart = tndMode ? t(TND_NAME[tndMode]) : null;
 
-  const head = [letterPart, posPhrase, tndPart].filter(Boolean).join(", ");
+  // Each language supplies its own list comma, clause break and full stop,
+  // so Chinese and Japanese read 、，；。 instead of English punctuation.
+  // The full stop carries its own trailing space where the script wants one.
+  const end = t("pictograph_desc_sentence_end");
+  const head = [letterPart, posPhrase, tndPart]
+    .filter(Boolean)
+    .join(t("pictograph_desc_list_join"));
   const motions = [
     motionPhrase("Left", left),
     motionPhrase("Right", right),
   ].filter(Boolean);
-  const motionSentence = motions.length ? motions.join("; ") + "." : "";
+  const motionSentence = motions.length
+    ? motions.join(t("pictograph_desc_motion_join")) + end
+    : "";
 
-  return [head + ".", motionSentence].filter(Boolean).join(" ").trim();
+  return (head + end + motionSentence).trim();
 }

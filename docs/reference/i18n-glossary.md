@@ -9,7 +9,7 @@ reference; the other nine columns are proposals until the review log at the
 end says otherwise.
 
 Locales: `de`, `es`, `fr`, `it`, `pt` (Brazilian), `ja`, `ru`, `ko`, `zh`
-(Simplified), `ar`. English is the source and never edited by translators.
+(Simplified), `zh-Hant` (Traditional, Taiwan wording), `ar`. English is the source and never edited by translators.
 
 ## 1. Never translate
 
@@ -36,6 +36,8 @@ These stay exactly as written, in every locale and every script. The
 | `{placeholders}`                                                                                                          | Same name, same braces, same count. Reorder freely.                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `<strong>`, `<em>`, `<br>`                                                                                                | The only markup allowed. Wrap the locale's own emphasized words; do not mirror English positions.                                                                                                                                                                                                                                                                                                                                                                                                |
 
+`zh-Hant` follows `zh` in this section: the same terms stay Latin.
+
 ## 2. Placements (where the hands are)
 
 | English                         | Meaning                               | de                          | es                       | fr                             | it                          | pt                      | ja                              | ru                           | ko                    | zh                  | ar                     |
@@ -47,6 +49,8 @@ These stay exactly as written, in every locale and every script. The
 | right angle (gamma)             |                                       | rechter Winkel              | ángulo recto             | angle droit                    | angolo retto                | ângulo reto             | 直角                            | прямой угол                  | 직각                  | 直角                | زاوية قائمة            |
 | centric placement               | one or both hands at center (Level 4) | zentrische Position         | posición céntrica        | position centrée               | posizione centrica          | posição cêntrica        | センターポジション              | центрическая позиция         | 중심 위치             | 中心位置            | موضع مركزي             |
 | skewed placement                | obtuse/acute (Level 5)                | schiefgelegene Position     | posición sesgada         | position oblique               | posizione obliqua           | posição inclinada       | 斜めポジション                  | скошенная позиция            | 기울어진 위치         | 倾斜位置            | موضع مائل              |
+
+`zh-Hant` (Traditional Chinese, Taiwan and Hong Kong): 位置, 起始位置／結束位置, 相對的點, 雙手併攏, 中心位置, 傾斜位置. Gamma says 直角 only where the English says "right angle"; never add it elsewhere.
 
 ## 3. Hand paths and prop rotation
 
@@ -61,20 +65,24 @@ These stay exactly as written, in every locale and every script. The
 | clockwise / counterclockwise         |                                                                                 | im / gegen den Uhrzeigersinn | horario / antihorario            | horaire / antihoraire       | orario / antiorario      | horário / anti-horário          | 時計回り / 反時計回り | по / против часовой стрелки | 시계 / 반시계 방향  | 顺时针 / 逆时针 | مع / عكس عقارب الساعة   |
 | rotation (prop spin)                 |                                                                                 | Drehung                      | rotación                         | rotation                    | rotazione                | rotação                         | 回転                  | вращение                    | 회전                | 旋转            | دوران                   |
 
+`zh-Hant`: 手部路徑, 手部動作, 靜止, 轉, 整轉／半轉, 旋轉方向, 順時針／逆時針, 旋轉.
+
 ## 4. Orientations (where the prop points)
 
 Short labels fit a chip; hints are full phrases. The interradial compounds
 (clock-in, counter-out) join the two short labels with the locale's own
-connector, the way German writes "Mit–innen".
+connector, the way German writes "Uhrzeigersinn·Innen". German short labels spell the direction out; "Mit Uhr" and "Gegen Uhr" were not German.
 
-| English             | de short / hint                 | es                 | fr                  | it                    | pt                  | ja                    | ru                        | ko                | zh            | ar                |
-| ------------------- | ------------------------------- | ------------------ | ------------------- | --------------------- | ------------------- | --------------------- | ------------------------- | ----------------- | ------------- | ----------------- |
-| in                  | Nach innen / innen              | hacia dentro       | vers l'intérieur    | verso l'interno       | para dentro         | 内向き                | внутрь                    | 안쪽              | 向内          | للداخل            |
-| out                 | Nach außen / außen              | hacia fuera        | vers l'extérieur    | verso l'esterno       | para fora           | 外向き                | наружу                    | 바깥쪽            | 向外          | للخارج            |
-| clock               | Mit / Im Uhrzeigersinn          | horario            | horaire             | orario                | horário             | 時計回り              | по часовой                | 시계 방향         | 顺时针        | مع عقارب الساعة   |
-| counter             | Gegen / Gegen den Uhrzeigersinn | antihorario        | antihoraire         | antiorario            | anti-horário        | 反時計回り            | против часовой            | 반시계 방향       | 逆时针        | عكس عقارب الساعة  |
-| radial / non-radial | radial / nicht radial           | radial / no radial | radial / non radial | radiale / non radiale | radial / não radial | ラジアル / 非ラジアル | радиальный / нерадиальный | 방사형 / 비방사형 | 径向 / 非径向 | شعاعي / غير شعاعي |
-| orientation         | Ausrichtung                     | orientación        | orientation         | orientamento          | orientação          | 向き                  | ориентация                | 방향              | 朝向          | اتجاه             |
+| English             | de short / hint                              | es                 | fr                  | it                    | pt                  | ja                    | ru                        | ko                | zh            | ar                |
+| ------------------- | -------------------------------------------- | ------------------ | ------------------- | --------------------- | ------------------- | --------------------- | ------------------------- | ----------------- | ------------- | ----------------- |
+| in                  | Nach innen / innen                           | hacia dentro       | vers l'intérieur    | verso l'interno       | para dentro         | 内向き                | внутрь                    | 안쪽              | 向内          | للداخل            |
+| out                 | Nach außen / außen                           | hacia fuera        | vers l'extérieur    | verso l'esterno       | para fora           | 外向き                | наружу                    | 바깥쪽            | 向外          | للخارج            |
+| clock               | Uhrzeigersinn / im Uhrzeigersinn             | horario            | horaire             | orario                | horário             | 時計回り              | по часовой                | 시계 방향         | 顺时针        | مع عقارب الساعة   |
+| counter             | Gegenuhrzeigersinn / gegen den Uhrzeigersinn | antihorario        | antihoraire         | antiorario            | anti-horário        | 反時計回り            | против часовой            | 반시계 방향       | 逆时针        | عكس عقارب الساعة  |
+| radial / non-radial | radial / nicht radial                        | radial / no radial | radial / non radial | radiale / non radiale | radial / não radial | ラジアル / 非ラジアル | радиальный / нерадиальный | 방사형 / 비방사형 | 径向 / 非径向 | شعاعي / غير شعاعي |
+| orientation         | Ausrichtung                                  | orientación        | orientation         | orientamento          | orientação          | 向き                  | ориентация                | 방향              | 朝向          | اتجاه             |
+
+`zh-Hant`: 向內, 向外, 順時針, 逆時針 (Shape Engine short labels 順時／逆時), 徑向／非徑向, 朝向.
 
 ## 5. Grids, levels, types
 
@@ -89,6 +97,8 @@ connector, the way German writes "Mit–innen".
 | Level 1 … Level 9      | Level 1            | Nivel 1             | Niveau 1           | Livello 1         | Nível 1         | レベル1        | Уровень 1         | 레벨 1      | 级别 1   | المستوى 1        |
 | Type 1 … Type 6        | Typ 1              | Tipo 1              | Type 1             | Tipo 1            | Tipo 1          | タイプ1        | Тип 1             | 유형 1      | 类型 1   | النوع 1          |
 | Base motions (Level 1) | Grundbewegungen    | movimientos base    | mouvements de base | movimenti base    | movimentos base | 基本モーション | базовые движения  | 기본 동작   | 基础动作 | الحركات الأساسية |
+
+`zh-Hant`: 網格, 菱形, 方形, 混合網格, 聯結網格, 中心點, 等級 1 (not 級別), 類型 1 (not OpenCC's 型別), 基礎動作. Grid rows are 列 and columns 欄, the Taiwan convention (mainland 行/列 reads the other way round).
 
 The German catalog currently mixes "Level", "Stufe" and "Ebene" for the same
 concept (59 keys use Stufe/Ebene). "Level" is the glossary choice; the German
@@ -114,6 +124,8 @@ the timing, use these words.
 | timing                                     | Timing                                    | sincronización    | timing              | timing            | timing         | タイミング   | тайминг                        | 타이밍     | 节奏时机     | التوقيت       |
 | direction                                  | Richtung                                  | dirección         | direction           | direzione         | direção        | 方向         | направление                    | 방향       | 方向         | الاتجاه       |
 
+`zh-Hant`: 同時, 交替, 四分之一交錯, 同向, 反向, 強拍, 節奏時機, 方向.
+
 ## 7. LOOP transforms
 
 | English                         | de                    | es                      | fr                     | it                 | pt                       | ja            | ru                    | ko            | zh          | ar                |
@@ -125,6 +137,8 @@ the timing, use these words.
 | reflection (across an axis)     | Spiegelung            | reflexión               | réflexion              | riflessione        | reflexão                 | 反射          | отражение             | 반사          | 反射        | انعكاس            |
 | Quartered / Halved (period)     | Geviertelt / Halbiert | En cuartos / A la mitad | En quarts / En moitiés | In quarti / A metà | Em quartos / Pela metade | 4分割 / 2分割 | На четверти / Пополам | 4등분 / 2등분 | 四分 / 二分 | مُربَّع / مُنصَّف |
 | extend (a sequence with a LOOP) | verlängern            | extender                | prolonger              | estendere          | estender                 | 延長          | продлить              | 확장          | 延长        | تمديد             |
+
+`zh-Hant`: 鏡像 (not OpenCC's 映象), 旋轉, 反轉, 交換, 反射, 四分／二分, 延長.
 
 ## 8. Units of a sequence
 
@@ -142,6 +156,8 @@ the timing, use these words.
 | collection  |                                                                        | Sammlung    | colección   | collection   | raccolta    | coleção         | コレクション   | коллекция          | 컬렉션     | 合集       | مجموعة        |
 | library     | the user's own sequences                                               | Bibliothek  | biblioteca  | bibliothèque | libreria    | biblioteca      | ライブラリ     | библиотека         | 라이브러리 | 库         | المكتبة       |
 | performer   |                                                                        | Performer   | intérprete  | artiste      | performer   | performer       | パフォーマー   | исполнитель        | 퍼포머     | 表演者     | مؤدٍّ         |
+
+`zh-Hant`: 序列, 單字, 字母, 象形圖, 步, 拍 (only where the English counts musical beats), 時長, 速度／BPM, 變體, 合輯, 收藏庫 (bare 庫 does not read as a library in Taiwan), 表演者. A filmed take is 錄影.
 
 German uses "Schritt" for a sequence position even where English says
 "beat" (`train_auto_advance`). Follow the meaning, not the English word: a
@@ -161,6 +177,8 @@ position in the sequence is a step; a musical count is a beat.
 | left hand / right hand | linke / rechte Hand  | mano izquierda / derecha | main gauche / droite    | mano sinistra / destra   | mão esquerda / direita | 左手 / 右手               | левая / правая рука   | 왼손 / 오른손        | 左手 / 右手 | اليد اليسرى / اليمنى   |
 | blue hand / red hand   | blaue / rote Hand    | mano azul / roja         | main bleue / rouge      | mano blu / rossa         | mão azul / vermelha    | 青い手 / 赤い手           | синяя / красная рука  | 파란 손 / 빨간 손    | 蓝手 / 红手 | اليد الزرقاء / الحمراء |
 | chirality (buugeng)    | Ausrichtung          | quiralidad               | chiralité               | chiralità                | quiralidade            | 向き                      | хиральность           | 방향성               | 手性        | التجانس اليدوي         |
+
+`zh-Hant`: 道具, 棍／雙棍, 扇, 呼拉圈, 棒, 劍, 大／迷你, 左手／右手, 藍手／紅手, 手性.
 
 Spanish and Portuguese flow artists use "props" as a loanword; `es` and `pt`
 keep it until a native reviewer objects.
@@ -185,20 +203,23 @@ Module and tab names are navigation labels; keep them one or two words.
 | Sign in / Sign out           | Anmelden / Abmelden | Iniciar sesión / Cerrar sesión | Se connecter / Se déconnecter | Accedi / Esci   | Entrar / Sair    | ログイン / ログアウト | Войти / Выйти | 로그인 / 로그아웃 | 登录 / 退出登录 | تسجيل الدخول / تسجيل الخروج |
 | effect (visual trail effect) | Effekt              | efecto                         | effet                         | effetto         | efeito           | エフェクト            | эффект        | 효과              | 效果            | تأثير                       |
 
+`zh-Hant`: 創作, 瀏覽, 學習, 練習, 編排, 設定, 收藏庫, 分享, 檢視器, 指南, 收件匣, 登入／登出, 效果.
+
 ## 11. Voice and formality
 
-| Locale | Address                | Notes                                                                                                                                                                         |
-| ------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| de     | du                     | Decided in `de.json` (546 du-forms). 26 leftover Sie-forms get fixed in the German finishing batch. Imperatives for buttons ("Speichern"), infinitive style for menu entries. |
-| es     | tú                     | Neutral Latin American vocabulary; no vosotros.                                                                                                                               |
-| fr     | tu                     | Matches the casual voice of the German. Buttons use the infinitive ("Enregistrer").                                                                                           |
-| it     | tu                     | Buttons use the second-person imperative ("Salva"), the Italian app convention.                                                                                               |
-| pt     | você (Brazilian)       | Brazilian spelling and vocabulary ("bambolê", "salvar").                                                                                                                      |
-| ja     | です・ます polite      | Short labels drop the copula; sentences keep polite form. Katakana loanwords for flow arts jargon.                                                                            |
-| ru     | вы (lowercase)         | Standard UI register.                                                                                                                                                         |
-| ko     | 해요체                 | Short labels as noun phrases ("저장"); sentences polite informal.                                                                                                             |
-| zh     | 你                     | Simplified characters, no 您.                                                                                                                                                 |
-| ar     | Modern Standard Arabic | Neutral imperative for buttons. Natural phrasing only; the browser handles direction, so never insert directional marks or reorder for RTL.                                   |
+| Locale  | Address                | Notes                                                                                                                                                                         |
+| ------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| de      | du                     | Decided in `de.json` (546 du-forms). 26 leftover Sie-forms get fixed in the German finishing batch. Imperatives for buttons ("Speichern"), infinitive style for menu entries. |
+| es      | tú                     | Neutral Latin American vocabulary; no vosotros.                                                                                                                               |
+| fr      | tu                     | Matches the casual voice of the German. Buttons use the infinitive ("Enregistrer").                                                                                           |
+| it      | tu                     | Buttons use the second-person imperative ("Salva"), the Italian app convention.                                                                                               |
+| pt      | você (Brazilian)       | Brazilian spelling and vocabulary ("bambolê", "salvar").                                                                                                                      |
+| ja      | です・ます polite      | Short labels drop the copula; sentences keep polite form. Katakana loanwords for flow arts jargon.                                                                            |
+| ru      | вы (lowercase)         | Standard UI register.                                                                                                                                                         |
+| ko      | 해요체                 | Short labels as noun phrases ("저장"); sentences polite informal.                                                                                                             |
+| zh      | 你                     | Simplified characters, no 您.                                                                                                                                                 |
+| zh-Hant | 你                     | Traditional characters with Taiwan software wording (設定, 影片, 檔案, 預設, 網路), for zh-TW and zh-HK. Full-width punctuation with 「」 quotes; no 您.                      |
+| ar      | Modern Standard Arabic | Neutral imperative for buttons. Natural phrasing only; the browser handles direction, so never insert directional marks or reorder for RTL.                                   |
 
 Length: German runs about 30% longer than English, Russian and French about
 20%, CJK shorter. Chips and buttons (keys ending in `_short`, `_chip`,

@@ -19,7 +19,11 @@ function createHarness(options?: {
   ignoredStarts?: number;
   playbackReleased?: boolean;
   hydrateSequence?: (sequence: SequenceData) => Promise<SequenceData>;
+  deferredStartup?: boolean;
+  failServices?: boolean;
+  animationDrawn?: boolean;
 }) {
+  let animationDrawn = options?.animationDrawn ?? true;
   let loadedCells = options?.loadedCells ?? 5;
   let totalCells = options?.totalCells ?? 5;
   let isPlaying = false;
@@ -54,13 +58,18 @@ function createHarness(options?: {
       } as never,
       viewerState: { viewerMode: "split" } as never,
       cloudBackedScan: true,
+      deferredStartup: options?.deferredStartup,
+      getAnimationDrawn: () => animationDrawn,
       getCellsLoaded: () => loadedCells,
       getTotalCells: () => totalCells,
       getViewMode: () => "split",
       getPlaybackReleased: () => playbackReleased,
     },
     {
-      getAnimationPlaybackController: () => playbackController,
+      getAnimationPlaybackController: () => {
+        if (options?.failServices) throw new Error("no controller");
+        return playbackController;
+      },
       getHapticFeedback: () => ({}) as never,
       getLanSyncCoordinator: () => ({}) as never,
       initializeLanSync: vi.fn(),
@@ -84,6 +93,9 @@ function createHarness(options?: {
       loadedCells = loaded;
       totalCells = total;
     },
+    drawAnimation() {
+      animationDrawn = true;
+    },
     releasePlayback() {
       playbackReleased = true;
     },
@@ -93,6 +105,48 @@ function createHarness(options?: {
     dispose: () => modalAnimationState.dispose(),
   };
 }
+
+describe("viewer deferred startup", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: false }))
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("reads as loading until a deferred scan starts its animation", async () => {
+    // The scan opens on Side by Side with services held until the card has
+    // painted; the motion pane holds its slot with its loading state.
+    const harness = createHarness({ deferredStartup: true });
+    expect(harness.state.animationLoading).toBe(true);
+    harness.state.ensureInteractiveServices();
+    await Promise.resolve();
+    await harness.state.initializeAnimation(sequence);
+    expect(harness.state.animationLoading).toBe(false);
+    harness.dispose();
+  });
+
+  it("does not read as loading for hosts that start services at once", () => {
+    const harness = createHarness();
+    expect(harness.state.animationLoading).toBe(false);
+    harness.dispose();
+  });
+
+  it("lets a failed deferred start show its error instead of loading forever", async () => {
+    const harness = createHarness({ deferredStartup: true, failServices: true });
+    harness.state.ensureInteractiveServices();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(harness.state.animationLoading).toBe(false);
+    harness.dispose();
+  });
+});
 
 describe("viewer interactive autoplay", () => {
   beforeEach(() => {
@@ -146,6 +200,35 @@ describe("viewer interactive autoplay", () => {
     expect(
       harness.playbackController.updateSequenceData
     ).toHaveBeenCalledOnce();
+    harness.dispose();
+  });
+
+  it("holds a deferred scan's playback until the canvas has drawn its first frame", async () => {
+    // The film: the beat count ran over an empty canvas while the grid and
+    // prop textures were still loading.
+    const harness = createHarness({
+      deferredStartup: true,
+      animationDrawn: false,
+    });
+
+    harness.state.ensureInteractiveServices();
+    await harness.state.initializeAnimation(sequence);
+    vi.advanceTimersByTime(500);
+    expect(harness.togglePlayback).not.toHaveBeenCalled();
+
+    harness.drawAnimation();
+    vi.advanceTimersByTime(50);
+    expect(harness.togglePlayback).toHaveBeenCalledOnce();
+    harness.dispose();
+  });
+
+  it("does not hold hosts that start services at once on the canvas", async () => {
+    const harness = createHarness({ animationDrawn: false });
+
+    harness.state.ensureInteractiveServices();
+    await harness.state.initializeAnimation(sequence);
+
+    expect(harness.togglePlayback).toHaveBeenCalledOnce();
     harness.dispose();
   });
 

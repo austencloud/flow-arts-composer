@@ -50,8 +50,24 @@
     FRONT_PROP_COLORS,
     castPartDraw,
     followerPropColors,
+    type CastPartDraw,
     type PostCastPart,
   } from "../tunnel-performers";
+  import {
+    SPLIT_ONE_CANVAS,
+    splitFitScale,
+    splitMountSpan,
+    splitMiddleRise,
+    splitPose,
+    splitSpreadOf,
+    type PostAnimationSplit,
+  } from "#lib/shared/media-composition/domain/post-animation-split.js";
+  import { splitClipSettings, type SplitHandCast } from "../split-hands-paint";
+  import {
+    panelLiftLayout,
+    type PostPanelLift,
+  } from "#lib/shared/media-composition/domain/post-panel-lift.js";
+  import PostStudioSplitHands from "./PostStudioSplitHands.svelte";
 
   let {
     sequence,
@@ -72,6 +88,9 @@
     followerSequences = [],
     followerFrames = [],
     part = undefined,
+    split = null,
+    panelLift = null,
+    contentSeconds = undefined,
     chromeOpacity = 1,
     mandalaIn = 1,
     lookBlend,
@@ -94,6 +113,12 @@
     leftPropType?: PropType;
     rightPropType?: PropType;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+    /**
+     * The clip's lifted panel: the canvas higher and smaller in its box, the
+     * step number in the box's corner and the strip on its top edge, by the
+     * clip's content time. Absent keeps the app's own layout.
+     */
+    panelLift?: PostPanelLift | null;
     /** The opening hook: extra performers around the sequence, leaving as it settles. */
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
     /**
@@ -116,6 +141,13 @@
      * one performer. Absent draws everyone.
      */
     part?: PostCastPart;
+    /**
+     * The clip's split hands: partway through, the canvas parts into a left
+     * hand's canvas and a right hand's. Ignored while `part.hand` is set.
+     */
+    split?: PostAnimationSplit | null;
+    /** The clip's content time, its keyframes' clock, which the split reads. */
+    contentSeconds?: number;
     /** Grid, glyph, step number and progress strip: 0 during the hook, 1 once they have faded in. */
     chromeOpacity?: number;
     /**
@@ -480,13 +512,183 @@
   const drawnExtraLayers = $derived(
     extraLayers.filter((layer) => layer.leftProp || layer.rightProp).length
   );
+  // Split hands. A clip already drawing one hand, the breakdown square and
+  // the breakdown mandala keep their single picture.
+  const activeSplit = $derived(
+    split && !part?.hand && !breakdownMotion && !showMandala ? split : null
+  );
+  // The stage's size: a split without its own size fits each grid in its
+  // half of this box.
+  let stageWidth = $state(0);
+  let stageHeight = $state(0);
+  const splitFallbackScale = $derived(
+    splitFitScale(stageWidth, stageHeight, sequence.gridMode)
+  );
+  // The lifted panel. Its layout is a function of the clip's content time
+  // alone, so scrubbing, playing backwards and the export all agree, and it
+  // places by transform only: nothing is laid out again while it moves.
+  let barHeight = $state(0);
+  const lift = $derived(
+    panelLift && !breakdownMotion && !showMandala ? panelLift : null
+  );
+  const liftLayout = $derived(
+    panelLiftLayout(
+      { width: stageWidth, height: stageHeight + barHeight, barHeight },
+      lift,
+      contentSeconds ?? Number.NaN
+    )
+  );
+  const lifting = $derived(liftLayout.amount > 0);
+  const splitShown = $derived(
+    activeSplit && contentSeconds !== undefined
+      ? splitPose(activeSplit, contentSeconds, splitFallbackScale)
+      : SPLIT_ONE_CANVAS
+  );
+  // Three across: the single canvas stays, both hands on it, and shrinks to
+  // the middle's size toward its top grid point while the hands peel out.
+  const splitThree = $derived(Boolean(activeSplit?.three));
+  const middleRise = $derived(
+    splitThree && splitShown.middle !== 1
+      ? splitMiddleRise(
+          splitShown.middle,
+          liftLayout.canvas.size,
+          sequence.gridMode
+        )
+      : 0
+  );
+  /** Whether the canvas is moved from where the app puts it. */
+  const canvasMoved = $derived(lifting || splitShown.middle !== 1);
+  /**
+   * Where the split hands part from, as box shares: the lifted canvas, or
+   * the middle canvas when three across. Its scale is the lift's alone: the
+   * hands' size is against the single canvas before the middle shrinks.
+   */
+  const splitLift = $derived(
+    (lifting || splitThree) && stageWidth > 0 && stageHeight > 0
+      ? {
+          x: liftLayout.canvas.x / stageWidth,
+          y: (liftLayout.canvas.y - middleRise) / stageHeight,
+          scale: liftLayout.canvas.scale,
+        }
+      : null
+  );
+  // The two extra animators are mounted only around the split, from a little
+  // before it first moves, so the rest of the clip runs one animator and the
+  // hit never waits on them starting.
+  const splitMounted = $derived.by(() => {
+    if (!activeSplit || contentSeconds === undefined) return false;
+    const span = splitMountSpan(activeSplit);
+    return contentSeconds >= span.start && contentSeconds < span.end;
+  });
+  let splitReady = $state(false);
+  /** One hand's canvas: every drawn performer's prop on that side. */
+  function handCast(drawn: CastPartDraw): SplitHandCast {
+    const index =
+      drawn.primary !== null && drawn.primary > 0 ? drawn.primary - 1 : null;
+    const pair =
+      index !== null
+        ? sampleTunnelProps(
+            followerSequences?.[index] ?? sequence,
+            followerPositions[index]!
+          )
+        : drawn.primary === 0
+          ? { left: leftProp, right: rightProp }
+          : { left: null, right: null };
+    return {
+      left: drawn.primaryHands.left ? pair.left : null,
+      right: drawn.primaryHands.right ? pair.right : null,
+      colors:
+        index !== null
+          ? followerPropColors(index, followerPositions.length)
+          : followerPositions.length > 0
+            ? FRONT_PROP_COLORS
+            : undefined,
+      layers:
+        drawn.followers.length > 0
+          ? followerPositions.map((position, i): AdditionalLayerProps => {
+              const props = sampleTunnelProps(
+                followerSequences?.[i] ?? sequence,
+                position
+              );
+              const hands = drawn.followers[i]!;
+              return {
+                leftProp: hands.left ? props.left : null,
+                rightProp: hands.right ? props.right : null,
+                leftPropType: propConfig.leftPropType,
+                rightPropType: propConfig.rightPropType,
+              };
+            })
+          : [],
+    };
+  }
+  const leftHandCast = $derived(
+    splitMounted
+      ? handCast(
+          castPartDraw({ ...part, hand: "left" }, followerPositions.length)
+        )
+      : null
+  );
+  const rightHandCast = $derived(
+    splitMounted
+      ? handCast(
+          castPartDraw({ ...part, hand: "right" }, followerPositions.length)
+        )
+      : null
+  );
+  /** What both hands' animators share with the single canvas. */
+  const splitCanvasProps = $derived({
+    ...splitClipSettings(animationAppearance, {
+      visibility: itemVisibility,
+      effects: itemEffects,
+      trail: itemTrailSettings,
+    }),
+    chromeOpacity,
+    gridMode: sequence.gridMode ?? null,
+    letter: stepData?.letter ?? null,
+    stepData,
+    sequenceData: sequence,
+    currentStep: sequencePosition,
+    isPlaying: playing,
+    leftPropType: animationAppearance?.propType ?? leftPropType,
+    rightPropType: animationAppearance?.propType ?? rightPropType,
+    word: null,
+    virtualTime:
+      animationTimeSeconds === undefined
+        ? undefined
+        : animationTimeSeconds * 1000,
+  });
+
   /** Extra performers still loading their prop artwork; an export waits for them. */
   const extrasPending = $derived(
-    (Boolean(tunnelHook) && hookCopies.length === 0) ||
+    (splitMounted && splitShown.show > 0 && !splitReady) ||
+      (Boolean(tunnelHook) && hookCopies.length === 0) ||
       ((followerLayers.length > 0 || promoted !== null) &&
         followerSequences === null) ||
       ((Boolean(tunnelHook) || followerLayers.length > 0) &&
         hookTexturesPending)
+  );
+
+  // The tunnel carries none of the canvas's notation. The overlay is hidden
+  // under it anyway, but its labels kept following the tunnel's own beats,
+  // so the last one (the 16) was still cross-fading out as the overlay faded
+  // in at the hand-off. Unmounted until the tunnel ends, the letter and the
+  // number come back on beat 1 at once, under the overlay's own fade.
+  // They come back a frame after the tunnel ends: the canvas engine takes
+  // the new beat in its own props effect, so a label mounted on the hand-off
+  // flush itself still read the tunnel's 16 and cross-faded it into the 1.
+  // The overlay is still fully faded out during that frame.
+  let tunnelNotationReleased = $state(true);
+  $effect(() => {
+    if (tunnelHook) {
+      tunnelNotationReleased = false;
+      return;
+    }
+    if (untrack(() => tunnelNotationReleased)) return;
+    const frame = requestAnimationFrame(() => (tunnelNotationReleased = true));
+    return () => cancelAnimationFrame(frame);
+  });
+  const tunnelNotationHidden = $derived(
+    Boolean(tunnelHook) || !tunnelNotationReleased
   );
 
   // With footage behind the tunnel, the panel stays clear while the canvas
@@ -515,144 +717,107 @@
   data-sequence-progress-dark={animationAppearance?.darkMode ?? true}
   data-tunnel-hook-pending={extrasPending}
   data-performers={1 + followerLayers.length}
+  class:lifted={lift !== null}
+  class:three={splitThree}
+  data-panel-lift={lift ? liftLayout.amount : undefined}
 >
-  <div class="animation-stage" use:destination={animationAppearance}>
-    {#if showMandala}
-      <PostStudioBreakdownMandala
-        {sequence}
-        {sequencePosition}
-        leftPropType={animationAppearance?.propType ?? leftPropType}
-        rightPropType={animationAppearance?.propType ?? rightPropType}
-        darkMode={animationAppearance?.darkMode ?? true}
-      />
-    {:else if animationAppearance}
-      <!-- One surface for the animation and the square it hands off to: the
+  <div
+    class="animation-stage"
+    class:splitting={splitShown.show > 0 && !splitThree}
+    style:--split-single={splitShown.show > 0 && !splitThree
+      ? 1 - splitShown.show
+      : undefined}
+    bind:clientWidth={stageWidth}
+    bind:clientHeight={stageHeight}
+  >
+    <!-- The canvas and everything drawn over it: the lifted panel moves and
+         scales this one box, and shifts the step number inside it. -->
+    <div
+      class="stage-canvas"
+      class:lifting
+      style:transform={canvasMoved
+        ? `translate(0px, ${liftLayout.canvas.offsetY - middleRise}px) scale(${liftLayout.canvas.scale * splitShown.middle})`
+        : undefined}
+      style:--lift-step-x={lifting
+        ? `${liftLayout.step.sceneShiftX}px`
+        : undefined}
+      style:--lift-step-y={lifting
+        ? `${liftLayout.step.sceneShiftY}px`
+        : undefined}
+      use:destination={animationAppearance}
+    >
+      {#if showMandala}
+        <PostStudioBreakdownMandala
+          {sequence}
+          {sequencePosition}
+          leftPropType={animationAppearance?.propType ?? leftPropType}
+          rightPropType={animationAppearance?.propType ?? rightPropType}
+          darkMode={animationAppearance?.darkMode ?? true}
+        />
+      {:else if animationAppearance}
+        <!-- One surface for the animation and the square it hands off to: the
          square changes the look of this canvas instead of starting its own. -->
-      <div
-        class="pictograph-motion"
-        data-pictograph-motion={arrowsMounted && arrowShare > 0 && stepData
-          ? ""
-          : undefined}
-      >
-        {#key animationAppearance.propType}
-          <AnimatorCanvas
-            leftProp={canvasLeftProp}
-            rightProp={canvasRightProp}
-            additionalLayers={extraLayers}
-            primaryPropColors={canvasPropColors}
-            onAdditionalLayerTextureStatusChange={(status) =>
-              (hookTexturesPending =
-                (Boolean(tunnelHook) || followerLayers.length > 0) &&
-                (status.requested === 0 ||
-                  status.loaded < Math.min(status.requested, drawnExtraLayers)))}
-            gridVisible={animationAppearance.gridMode !== "none"}
-            {chromeOpacity}
-            gridMode={sequence.gridMode ?? null}
-            letter={stepData?.letter ?? null}
-            {stepData}
-            sequenceData={sequence}
-            currentStep={sequencePosition}
-            isPlaying={playing}
-            leftPropType={animationAppearance.propType ?? leftPropType}
-            rightPropType={animationAppearance.propType ?? rightPropType}
-            word={sequence.word}
-            previewDarkMode={animationAppearance.darkMode ?? true}
-            mandalaStrokeWidthOverride={animationAppearance.mandalaThickness}
-            hideProgressBar
-            hideHeader={animationAppearance.wordHeader !== true}
-            visibilityManagerOverride={itemVisibility}
-            effectsConfigState={itemEffects}
-            trailSettings={itemTrailSettings}
-            fillContainer
-            virtualTime={animationTimeSeconds === undefined
-              ? undefined
-              : animationTimeSeconds * 1000}
-          />
-        {/key}
-        {#if arrowsMounted && stepData}
-          <div
-            class="arrow-overlay"
-            class:unseen={arrowShare <= 0}
-            style:opacity={arrowShare < 1 ? arrowShare : undefined}
-          >
-            <PictographContainer
-              pictographData={joinedStepData}
-              motionStartData={joinedStartData}
-              {motionProgress}
-              arrowOpacity={arrowLayers.currentOpacity}
-              leftPropTypeOverride={animationAppearance.propType ??
-                leftPropType}
-              rightPropTypeOverride={animationAppearance.propType ??
-                rightPropType}
-              leftColorOverride={frontArrowColors.left}
-              rightColorOverride={frontArrowColors.right}
-              disableTransitions
-              darkMode={animationAppearance.darkMode ?? true}
-              transparentBackground
-              showProps={false}
-              showGrid={false}
-              showTKA={false}
-              showTnD={false}
-              showElemental={false}
-              showPropTnD={false}
-              showPlacements={false}
-              showHandColorKey={false}
-              showReversals={false}
-              showNonRadialPoints={false}
-              showHandPoints={false}
-              stepNumberOverride={false}
+        <div
+          class="pictograph-motion"
+          data-pictograph-motion={arrowsMounted && arrowShare > 0 && stepData
+            ? ""
+            : undefined}
+        >
+          {#key animationAppearance.propType}
+            <AnimatorCanvas
+              leftProp={canvasLeftProp}
+              rightProp={canvasRightProp}
+              additionalLayers={extraLayers}
+              primaryPropColors={canvasPropColors}
+              onAdditionalLayerTextureStatusChange={(status) =>
+                (hookTexturesPending =
+                  (Boolean(tunnelHook) || followerLayers.length > 0) &&
+                  (status.requested === 0 ||
+                    status.loaded <
+                      Math.min(status.requested, drawnExtraLayers)))}
+              gridVisible={animationAppearance.gridMode !== "none"}
+              {chromeOpacity}
+              gridMode={sequence.gridMode ?? null}
+              letter={stepData?.letter ?? null}
+              {stepData}
+              sequenceData={sequence}
+              currentStep={sequencePosition}
+              isPlaying={playing}
+              leftPropType={animationAppearance.propType ?? leftPropType}
+              rightPropType={animationAppearance.propType ?? rightPropType}
+              word={sequence.word}
+              previewDarkMode={animationAppearance.darkMode ?? true}
+              mandalaStrokeWidthOverride={animationAppearance.mandalaThickness}
+              hideProgressBar
+              hideTkaGlyph={tunnelNotationHidden}
+              hideStepNumbers={tunnelNotationHidden}
+              hideHeader={animationAppearance.wordHeader !== true}
+              visibilityManagerOverride={itemVisibility}
+              effectsConfigState={itemEffects}
+              trailSettings={itemTrailSettings}
+              fillContainer
+              virtualTime={animationTimeSeconds === undefined
+                ? undefined
+                : animationTimeSeconds * 1000}
             />
-          </div>
-          <div
-            class="outgoing-arrows"
-            class:unseen={arrowShare <= 0}
-            style:opacity={arrowLayers.previousOpacity * arrowShare}
-            data-pictograph-capture-required={arrowShare > 0 &&
-              arrowLayers.previousOpacity > 0}
-            aria-hidden="true"
-          >
-            <PictographContainer
-              pictographData={joinedPreviousArrowData}
-              leftPropTypeOverride={animationAppearance.propType ??
-                leftPropType}
-              rightPropTypeOverride={animationAppearance.propType ??
-                rightPropType}
-              leftColorOverride={frontArrowColors.left}
-              rightColorOverride={frontArrowColors.right}
-              disableTransitions
-              darkMode={animationAppearance.darkMode ?? true}
-              transparentBackground
-              showProps={false}
-              showGrid={false}
-              showTKA={false}
-              showTnD={false}
-              showElemental={false}
-              showPropTnD={false}
-              showPlacements={false}
-              showHandColorKey={false}
-              showReversals={false}
-              showNonRadialPoints={false}
-              showHandPoints={false}
-              stepNumberOverride={false}
-            />
-          </div>
-          {#each followerArrows as arrows, index (index)}
-            {@const propType = animationAppearance.propType}
+          {/key}
+          {#if arrowsMounted && stepData}
             <div
               class="arrow-overlay"
               class:unseen={arrowShare <= 0}
               style:opacity={arrowShare < 1 ? arrowShare : undefined}
-              aria-hidden="true"
             >
               <PictographContainer
-                pictographData={arrows.step}
-                motionStartData={arrows.start}
-                motionProgress={arrows.progress}
-                arrowOpacity={arrows.opacity}
-                leftPropTypeOverride={propType ?? leftPropType}
-                rightPropTypeOverride={propType ?? rightPropType}
-                leftColorOverride={arrows.left}
-                rightColorOverride={arrows.right}
+                pictographData={joinedStepData}
+                motionStartData={joinedStartData}
+                {motionProgress}
+                arrowOpacity={arrowLayers.currentOpacity}
+                leftPropTypeOverride={animationAppearance.propType ??
+                  leftPropType}
+                rightPropTypeOverride={animationAppearance.propType ??
+                  rightPropType}
+                leftColorOverride={frontArrowColors.left}
+                rightColorOverride={frontArrowColors.right}
                 disableTransitions
                 darkMode={animationAppearance.darkMode ?? true}
                 transparentBackground
@@ -673,15 +838,19 @@
             <div
               class="outgoing-arrows"
               class:unseen={arrowShare <= 0}
-              style:opacity={arrows.previousOpacity * arrowShare}
+              style:opacity={arrowLayers.previousOpacity * arrowShare}
+              data-pictograph-capture-required={arrowShare > 0 &&
+                arrowLayers.previousOpacity > 0}
               aria-hidden="true"
             >
               <PictographContainer
-                pictographData={arrows.previous}
-                leftPropTypeOverride={propType ?? leftPropType}
-                rightPropTypeOverride={propType ?? rightPropType}
-                leftColorOverride={arrows.left}
-                rightColorOverride={arrows.right}
+                pictographData={joinedPreviousArrowData}
+                leftPropTypeOverride={animationAppearance.propType ??
+                  leftPropType}
+                rightPropTypeOverride={animationAppearance.propType ??
+                  rightPropType}
+                leftColorOverride={frontArrowColors.left}
+                rightColorOverride={frontArrowColors.right}
                 disableTransitions
                 darkMode={animationAppearance.darkMode ?? true}
                 transparentBackground
@@ -699,100 +868,179 @@
                 stepNumberOverride={false}
               />
             </div>
-          {/each}
-        {/if}
-      </div>
-    {:else if breakdownMotion && stepData}
-      <div class="pictograph-motion" data-pictograph-motion>
-        <div>
-          <PictographContainer
-            pictographData={joinedStepData}
-            motionStartData={joinedStartData}
-            {motionProgress}
-            arrowOpacity={arrowLayers.currentOpacity}
-            leftPropTypeOverride={leftPropType}
-            rightPropTypeOverride={rightPropType}
-            disableTransitions
-            darkMode
-            transparentBackground={false}
-            showProps
-            showGrid
-            showTKA={false}
-            showTnD={false}
-            showElemental={false}
-            showPropTnD={false}
-            showPlacements={false}
-            showHandColorKey={false}
-            showReversals={false}
-            showNonRadialPoints={false}
-            showHandPoints={false}
-            stepNumberOverride={false}
-          />
+            {#each followerArrows as arrows, index (index)}
+              {@const propType = animationAppearance.propType}
+              <div
+                class="arrow-overlay"
+                class:unseen={arrowShare <= 0}
+                style:opacity={arrowShare < 1 ? arrowShare : undefined}
+                aria-hidden="true"
+              >
+                <PictographContainer
+                  pictographData={arrows.step}
+                  motionStartData={arrows.start}
+                  motionProgress={arrows.progress}
+                  arrowOpacity={arrows.opacity}
+                  leftPropTypeOverride={propType ?? leftPropType}
+                  rightPropTypeOverride={propType ?? rightPropType}
+                  leftColorOverride={arrows.left}
+                  rightColorOverride={arrows.right}
+                  disableTransitions
+                  darkMode={animationAppearance.darkMode ?? true}
+                  transparentBackground
+                  showProps={false}
+                  showGrid={false}
+                  showTKA={false}
+                  showTnD={false}
+                  showElemental={false}
+                  showPropTnD={false}
+                  showPlacements={false}
+                  showHandColorKey={false}
+                  showReversals={false}
+                  showNonRadialPoints={false}
+                  showHandPoints={false}
+                  stepNumberOverride={false}
+                />
+              </div>
+              <div
+                class="outgoing-arrows"
+                class:unseen={arrowShare <= 0}
+                style:opacity={arrows.previousOpacity * arrowShare}
+                aria-hidden="true"
+              >
+                <PictographContainer
+                  pictographData={arrows.previous}
+                  leftPropTypeOverride={propType ?? leftPropType}
+                  rightPropTypeOverride={propType ?? rightPropType}
+                  leftColorOverride={arrows.left}
+                  rightColorOverride={arrows.right}
+                  disableTransitions
+                  darkMode={animationAppearance.darkMode ?? true}
+                  transparentBackground
+                  showProps={false}
+                  showGrid={false}
+                  showTKA={false}
+                  showTnD={false}
+                  showElemental={false}
+                  showPropTnD={false}
+                  showPlacements={false}
+                  showHandColorKey={false}
+                  showReversals={false}
+                  showNonRadialPoints={false}
+                  showHandPoints={false}
+                  stepNumberOverride={false}
+                />
+              </div>
+            {/each}
+          {/if}
         </div>
-        <div
-          class="outgoing-arrows"
-          style:opacity={arrowLayers.previousOpacity}
-          data-pictograph-capture-required={arrowLayers.previousOpacity > 0}
-          aria-hidden="true"
-        >
-          <PictographContainer
-            pictographData={joinedPreviousArrowData}
-            leftPropTypeOverride={leftPropType}
-            rightPropTypeOverride={rightPropType}
-            disableTransitions
-            darkMode
-            transparentBackground
-            showProps={false}
-            showGrid={false}
-            showTKA={false}
-            showTnD={false}
-            showElemental={false}
-            showPropTnD={false}
-            showPlacements={false}
-            showHandColorKey={false}
-            showReversals={false}
-            showNonRadialPoints={false}
-            showHandPoints={false}
-            stepNumberOverride={false}
-          />
+      {:else if breakdownMotion && stepData}
+        <div class="pictograph-motion" data-pictograph-motion>
+          <div>
+            <PictographContainer
+              pictographData={joinedStepData}
+              motionStartData={joinedStartData}
+              {motionProgress}
+              arrowOpacity={arrowLayers.currentOpacity}
+              leftPropTypeOverride={leftPropType}
+              rightPropTypeOverride={rightPropType}
+              disableTransitions
+              darkMode
+              transparentBackground={false}
+              showProps
+              showGrid
+              showTKA={false}
+              showTnD={false}
+              showElemental={false}
+              showPropTnD={false}
+              showPlacements={false}
+              showHandColorKey={false}
+              showReversals={false}
+              showNonRadialPoints={false}
+              showHandPoints={false}
+              stepNumberOverride={false}
+            />
+          </div>
+          <div
+            class="outgoing-arrows"
+            style:opacity={arrowLayers.previousOpacity}
+            data-pictograph-capture-required={arrowLayers.previousOpacity > 0}
+            aria-hidden="true"
+          >
+            <PictographContainer
+              pictographData={joinedPreviousArrowData}
+              leftPropTypeOverride={leftPropType}
+              rightPropTypeOverride={rightPropType}
+              disableTransitions
+              darkMode
+              transparentBackground
+              showProps={false}
+              showGrid={false}
+              showTKA={false}
+              showTnD={false}
+              showElemental={false}
+              showPropTnD={false}
+              showPlacements={false}
+              showHandColorKey={false}
+              showReversals={false}
+              showNonRadialPoints={false}
+              showHandPoints={false}
+              stepNumberOverride={false}
+            />
+          </div>
         </div>
-      </div>
-    {:else if !breakdownMotion && !shared?.ownsCanvas(owner)}
-      <AnimatorCanvas
-        leftProp={frontLeftProp}
-        rightProp={frontRightProp}
-        additionalLayers={hookLayers}
-        onAdditionalLayerTextureStatusChange={(status) =>
-          (hookTexturesPending =
-            Boolean(tunnelHook) &&
-            (status.requested === 0 || status.loaded < status.requested))}
-        gridVisible
-        {chromeOpacity}
-        gridMode={sequence.gridMode ?? null}
-        letter={stepData?.letter ?? null}
-        {stepData}
-        sequenceData={sequence}
-        currentStep={sequencePosition}
-        isPlaying={playing}
-        {leftPropType}
-        {rightPropType}
-        word={null}
-        previewDarkMode
-        hideProgressBar
-        hideHeader
-        hideTkaGlyph={labelsPainted}
-        hideStepNumbers={labelsPainted}
-        hideElementalGlyph={labelsPainted}
-        fillContainer
-        virtualTime={animationTimeSeconds === undefined
-          ? undefined
-          : animationTimeSeconds * 1000}
+      {:else if !breakdownMotion && !shared?.ownsCanvas(owner)}
+        <AnimatorCanvas
+          leftProp={frontLeftProp}
+          rightProp={frontRightProp}
+          additionalLayers={hookLayers}
+          onAdditionalLayerTextureStatusChange={(status) =>
+            (hookTexturesPending =
+              Boolean(tunnelHook) &&
+              (status.requested === 0 || status.loaded < status.requested))}
+          gridVisible
+          {chromeOpacity}
+          gridMode={sequence.gridMode ?? null}
+          letter={stepData?.letter ?? null}
+          {stepData}
+          sequenceData={sequence}
+          currentStep={sequencePosition}
+          isPlaying={playing}
+          {leftPropType}
+          {rightPropType}
+          word={null}
+          previewDarkMode
+          hideProgressBar
+          hideHeader
+          hideTkaGlyph={labelsPainted || tunnelNotationHidden}
+          hideStepNumbers={labelsPainted || tunnelNotationHidden}
+          hideElementalGlyph={labelsPainted}
+          fillContainer
+          virtualTime={animationTimeSeconds === undefined
+            ? undefined
+            : animationTimeSeconds * 1000}
+        />
+      {/if}
+    </div>
+    {#if splitMounted && activeSplit && leftHandCast && rightHandCast}
+      <PostStudioSplitHands
+        pose={splitShown}
+        spread={splitSpreadOf(activeSplit)}
+        lift={splitLift}
+        leftHand={leftHandCast}
+        rightHand={rightHandCast}
+        canvas={splitCanvasProps}
+        onReadyChange={(ready) => (splitReady = ready)}
       />
     {/if}
   </div>
   <div
     class="sequence-progress"
     style:opacity={chromeOpacity < 1 ? chromeOpacity : undefined}
+    style:transform={lifting && liftLayout.bar.rise > 0
+      ? `translateY(${liftLayout.bar.offsetY}px)`
+      : undefined}
+    bind:clientHeight={barHeight}
   >
     <SequenceProgressBar
       currentStep={sequencePosition}
@@ -835,6 +1083,48 @@
   .animation-layer.light {
     background: #fff;
   }
+  /* The box the canvas, its glyphs and its overlays share. The lifted panel
+     moves it by transform about its centre, where the canvas sits. */
+  .stage-canvas {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% 50%;
+  }
+  /* Inside the moved canvas, the step number takes its own shift to the box's
+     corner, in the glyph scene's units. It moves the label's steady slot: on
+     the cross-fading number itself, Chrome dropped the shift while the
+     number's pop-in transform ran, so each new number faded in out of sight. */
+  .stage-canvas.lifting :global(.step-label-slot) {
+    translate: var(--lift-step-x) var(--lift-step-y);
+  }
+  /* A clip with a lifted panel: the panel colour moves from the canvas to the
+     whole box, so the moved canvas leaves no edge, and the strip is drawn
+     under the canvas so it slides up behind the drawing. */
+  .animation-layer.lifted {
+    background: #0a0a0f;
+  }
+  .animation-layer.light.lifted {
+    background: #f5f5f5;
+  }
+  .animation-layer.lifted :global(.canvas-wrapper) {
+    background: transparent;
+  }
+  /* Three across moves the canvas the same way, so it clears its panel too. */
+  .animation-layer.three {
+    background: #0a0a0f;
+  }
+  .animation-layer.light.three {
+    background: #f5f5f5;
+  }
+  .animation-layer.three :global(.canvas-wrapper) {
+    background: transparent;
+  }
+  .animation-layer.lifted .animation-stage {
+    z-index: 1;
+  }
+  .animation-layer.lifted .sequence-progress {
+    z-index: 0;
+  }
   /* The same panel colours, faded by --panel-alpha while footage plays
      behind the tunnel. */
   .animation-layer.see-through {
@@ -850,6 +1140,13 @@
   .animation-layer.see-through
     :global(.canvas-wrapper[data-dark-mode="false"]) {
     background: rgb(245 245 245 / var(--panel-alpha));
+  }
+  /* While the hands are split the single canvas's drawing, its path lines
+     included, fades under the two canvases; its panel and its beat count stay.
+     A filter, not opacity, so it composes with the look fades above. */
+  .animation-stage.splitting :global(canvas:not(.split-composite)),
+  .animation-stage.splitting :global(svg.path-lines-overlay) {
+    filter: opacity(var(--split-single));
   }
   .pictograph-motion {
     width: 100%;

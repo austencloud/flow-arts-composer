@@ -188,7 +188,8 @@
 
   .view-sequence-button.play-purpose {
     width: var(--workspace-play-action-width, 50px);
-    min-width: 50px;
+    /* A phone rail may set Play to its controls' height (ButtonPanel). */
+    min-width: var(--workspace-play-action-min-width, 50px);
     height: var(--workspace-play-action-height, 50px);
     border-width: 2px;
     transform-origin: center bottom;

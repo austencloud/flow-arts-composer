@@ -169,6 +169,45 @@
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
   }
 
+  /* Phones and narrow panels: the line wraps (balanced) rather than running
+     off the screen, and keeps 8px clear of the Undo/Redo circles that show
+     at the panel's top left after a Clear (.clear-recovery-action, which sets
+     --picker-leading-action-offset to the circles plus their 8px gap). The
+     inset is the same on both sides, so the line stays centred.
+
+     Its box is at least the old top margin plus one line tall, less 8px kept
+     clear at the panel's top edge, and the words sit at its foot, so extra
+     lines grow up into that margin, beside the circles, before they take any
+     height from the cards: a second line costs nothing, and only a longer
+     wrap pushes the cards down by what it needs. From 707px wide up nothing
+     changes. */
+  /* The 707px seam is the panel's own width (the container query), and the
+     window test keeps a desktop's narrow side panel on the one-line form. */
+  @media (max-width: 768px) {
+    @container (max-width: 706.98px) {
+      /* The circle inset sits on the line alone, on top of the block's own
+         1rem: the tour offer shares this block and keeps the room it has
+         always had. */
+      .workspace-hint {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        box-sizing: border-box;
+        padding-inline: max(
+          0px,
+          calc(
+            clamp(6px, 1.5cqw, 18px) + var(--picker-leading-action-offset, 0px) -
+              1rem
+          )
+        );
+        min-height: calc(clamp(2.5rem, 11vmin, 6.5rem) + 1.2em - 8px);
+        margin-top: calc(8px - clamp(2.5rem, 11vmin, 6.5rem));
+        white-space: normal;
+        text-wrap: balance;
+      }
+    }
+  }
+
   /* Offer — occupies the same upper region as the hint so swapping between
      them moves nothing below (the cards keep their position). */
   .tour-offer {

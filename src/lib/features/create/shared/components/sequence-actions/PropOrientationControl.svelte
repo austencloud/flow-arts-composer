@@ -11,6 +11,8 @@
     /** Restrict the control to the vocabulary allowed by its host. */
     allowedOrientations?: readonly string[];
     compact?: boolean;
+    /** The phone control height: a 42px track with icon over word. */
+    phone?: boolean;
     disabled?: boolean;
     /**
      * Opt this control into the attract presenter, per host. Absent by default:
@@ -27,6 +29,7 @@
     showInterradial = false,
     allowedOrientations,
     compact = false,
+    phone = false,
     disabled = false,
     ghostKind,
   }: Props = $props();
@@ -100,9 +103,10 @@
   );
 </script>
 
-<div class="orientation-control" class:compact>
+<div class="orientation-control" class:compact class:phone>
   <SegmentedControl
     {options}
+    size={phone ? "phone" : "md"}
     value={orientation}
     onchange={onOrientationChange}
     color={tone}
@@ -164,5 +168,24 @@
 
   .compact .orientation-option i {
     font-size: 16px;
+  }
+
+  /* Phone: icon (14) over word (12px, 13 tall) fits a 34px segment. */
+  .phone .orientation-option {
+    min-height: 0;
+    gap: 2px;
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.1;
+  }
+
+  .phone .orientation-option i {
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .phone .orientation-option span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

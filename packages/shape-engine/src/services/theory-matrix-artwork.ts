@@ -26,6 +26,7 @@ import {
   MANDALA_GRID_RADIUS,
 } from "#lib/shared/mandala/domain/mandala-constants.js";
 import { traceScaledPath } from "@tka/shape-domain";
+import { mandalaGuideScale } from "#lib/shared/mandala/services/mandala-guide-image.js";
 import {
   CLUB_ARTWORK_PAINTER,
   type ShapeMatrixArtworkPainter,
@@ -109,6 +110,69 @@ function toPathData(points: Array<{ x: number; y: number }>): SVGPathData[] {
     )
     .join(" ");
   return [{ d, tipIndex: 0 }];
+}
+
+/**
+ * Half the side of the Ratio Playground stage's square, in stage units (one
+ * stage unit is one hand-orbit radius). The live stage maps the shorter side
+ * of its canvas onto twice this, and the still under it is sized from the
+ * same number, so the two agree by construction rather than by measurement.
+ */
+export const THEORY_STAGE_VIEW = 2.45;
+
+/** One hand's guide as the live stage draws it, in stage units. */
+export interface TheoryStageGuide {
+  side: "left" | "right";
+  guide?: ReadonlyArray<{ x: number; y: number }> | null;
+}
+
+/**
+ * The live stage's own guides as mandala paths, for the still that sits under
+ * its canvas.
+ *
+ * A tile is each hand's shape unpaired; the stage draws the PAIRED shapes,
+ * with the timing offset and direction in them. The still has to be the
+ * picture the canvas blooms over, so it is built from the stage's guides
+ * themselves, only rescaled from hand radii to the painter's mandala units.
+ */
+export function theoryStagePaths(
+  guides: ReadonlyArray<TheoryStageGuide>
+): MandalaPaths {
+  const paths: MandalaPaths = { left: [], right: [], purple: [] };
+  for (const { side, guide } of guides) {
+    if (!guide || guide.length < 2) continue;
+    paths[side].push(
+      ...toPathData(
+        guide.map((point) => ({
+          x: point.x * MANDALA_GRID_RADIUS,
+          y: point.y * MANDALA_GRID_RADIUS,
+        }))
+      )
+    );
+  }
+  return paths;
+}
+
+/**
+ * The side of the extent-fit box that holds exactly the drawing the live
+ * stage paints in its square, as a fraction of that square: the Ratio
+ * Playground's answer to `engineExtentBoxRatio`. The stage puts one hand
+ * radius at `side / (2 * THEORY_STAGE_VIEW)` pixels, a different fit from the
+ * drill's engine, so the still under it needs its own box. Both fits are
+ * linear in their box, so the ratio belongs to the paths alone.
+ */
+export function theoryStageExtentBoxRatio(
+  paths: MandalaPaths,
+  tipDx: number
+): number {
+  const stageScale = 1 / (2 * THEORY_STAGE_VIEW * MANDALA_GRID_RADIUS);
+  const extentScale = mandalaGuideScale(paths, {
+    size: 1,
+    fit: "extent",
+    show: "both",
+    tipDx,
+  });
+  return stageScale / extentScale;
 }
 
 export function theoryFlowerPaths(

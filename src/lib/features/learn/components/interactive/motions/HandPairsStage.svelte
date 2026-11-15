@@ -649,8 +649,8 @@
               hands={red ? "right" : "left"}
               leftPropType={PropType.HAND}
               rightPropType={PropType.HAND}
-              leftNoun="blue hand"
-              rightNoun="red hand"
+              leftNoun={t("pictograph_placement_noun_blue_hand")}
+              rightNoun={t("pictograph_placement_noun_red_hand")}
               promptText=""
               renderTray={false}
               showUndo={false}
@@ -700,8 +700,8 @@
           gridMode={GridMode.DIAMOND}
           leftPropType={PropType.HAND}
           rightPropType={PropType.HAND}
-          leftNoun="blue hand"
-          rightNoun="red hand"
+          leftNoun={t("pictograph_placement_noun_blue_hand")}
+          rightNoun={t("pictograph_placement_noun_red_hand")}
           promptText=""
           renderTray={false}
           showUndo={false}

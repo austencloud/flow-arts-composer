@@ -32,7 +32,7 @@
     parts.push(
       presentationSummary.effectLabels.length
         ? presentationSummary.effectLabels.join(", ")
-        : "No effects"
+        : t("library_look_no_effects")
     );
     return parts.join(" · ");
   });
@@ -46,7 +46,7 @@
     <PropPairField bind:value hint={t("prop_pair_saved_default_hint")} />
     {#if presentationSummary}
       <div class="look" class:muted={useDefaultLook}>
-        <span class="look-label">Saved look</span>
+        <span class="look-label">{t("library_look_saved")}</span>
         <span class="swatches" aria-hidden="true">
           <span
             class="swatch"
@@ -58,10 +58,12 @@
           ></span>
         </span>
         <span class="look-text">
-          {presentationSummary.colors ? "Custom colors" : "Theme colors"} · {lookText}
+          {presentationSummary.colors
+            ? t("library_look_custom_colors")
+            : t("library_look_theme_colors")} · {lookText}
         </span>
         <FilterChipBase
-          label="Use default look"
+          label={t("library_look_use_default")}
           mode="toggle"
           active={useDefaultLook}
           labelScale="readable"

@@ -11,7 +11,6 @@
     KINETIC_SHAPE_ENGINE_AUTHOR,
     KINETIC_SHAPE_ENGINE_NAME,
     ORIGINAL_SHAPE_MATRIX_URL,
-    ORIGINAL_SHAPE_MATRIX_VTG_RATIOS,
     SPIN_SCIENCE_URL,
   } from "../shape-engine-identity";
 
@@ -55,7 +54,9 @@
   <div class="about-copy">
     <p>
       {t("shape_engine_about_intro_before")}
-      {KINETIC_SHAPE_ENGINE_AUTHOR}. {t("shape_engine_about_intro_middle")}
+      {KINETIC_SHAPE_ENGINE_AUTHOR}{t("shape_engine_about_author_end")}{t(
+        "shape_engine_about_intro_middle"
+      )}
       <LinkChip size="inline" href="/composer">Flow Arts Composer</LinkChip>{t(
         "shape_engine_about_intro_after"
       )}
@@ -66,7 +67,7 @@
         <h2>{t("shape_engine_notation_heading")}</h2>
         <p>
           {t("shape_engine_notation_prose", {
-            ratios: ORIGINAL_SHAPE_MATRIX_VTG_RATIOS,
+            ratios: t("shape_engine_vtg_ratio_list"),
           })}
         </p>
       </section>

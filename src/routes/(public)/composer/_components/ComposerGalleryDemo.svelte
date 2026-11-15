@@ -197,7 +197,6 @@
             <ChoreoCardThumbnail
               {sequence}
               eager
-              allowQR={false}
               shareRender={false}
               onHover={prefetch}
               onPrimaryAction={open}

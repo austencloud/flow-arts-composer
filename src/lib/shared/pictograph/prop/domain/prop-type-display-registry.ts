@@ -1,3 +1,4 @@
+import { CONTACT_BALL_PROP_TYPES } from "./contact-ball-props";
 import { PropType } from "./enums/prop-type";
 
 export type PropCategory = "staves-clubs" | "curved" | "novelty" | "singles";
@@ -239,12 +240,19 @@ export const PROP_TYPE_DISPLAY_REGISTRY: Record<PropType, PropTypeDisplayInfo> =
 
 /**
  * Props temporarily deactivated from selection UIs.
- * They still exist in the enum, registry, and saved data - just hidden from pickers.
- * Remove from this set to reactivate.
+ * They still exist in the enum, registry, artwork and encoders - just hidden
+ * from pickers. A sequence, card or shared piece saved with one still draws it.
+ * A person's own chosen setting does not: it moves to Staff (see
+ * settings/domain/prop-pair-rule.ts). Remove from this set to reactivate.
  */
 export const DEACTIVATED_PROP_TYPES: ReadonlySet<PropType> = new Set([
-  // Empty since 2026-09-06: every prop with artwork is selectable, including
-  // Ukulele, the contact-ball family, and Poi. (Fractalgeng removed 2026-06-30.)
+  // Empty from 2026-09-06 to 2026-11-14: every prop with artwork was selectable.
+  // The contact-ball family left the selector on 2026-11-14: Austen, asked
+  // whether contact balls should come out of the prop selector, said "Yes,
+  // remove". The props stay in the enum, registry, artwork and encoders, so a
+  // sequence saved with one still draws as before. A person's own chosen
+  // contact ball moves to Staff (Austen, 2026-11-15: "Move to Staff").
+  ...CONTACT_BALL_PROP_TYPES,
 ]);
 
 /**
@@ -252,6 +260,11 @@ export const DEACTIVATED_PROP_TYPES: ReadonlySet<PropType> = new Set([
  */
 export function isPropActive(propType: PropType): boolean {
   return !DEACTIVATED_PROP_TYPES.has(propType);
+}
+
+/** Every prop type that is not deactivated, in display order. */
+export function getActivePropTypes(): PropType[] {
+  return getAllPropTypes().filter(isPropActive);
 }
 
 /**

@@ -79,6 +79,26 @@ export function withOwnPublicCollections(
   );
 }
 
+/**
+ * The public shelf: collections a visitor can pick from.
+ *
+ * A public collection with nothing a visitor can see reads as broken when
+ * someone taps it, so it stays off the shelf, except for its owner, who still
+ * sees their own (publishing something and not finding it would read as a bug).
+ * `sequenceCount` on a feed item is already the number of members a visitor
+ * can see. The input order is kept.
+ */
+export function visibleOnShelf(
+  items: CommunityCollection[],
+  viewerId: string | null | undefined
+): CommunityCollection[] {
+  return items.filter(
+    (item) =>
+      item.collection.sequenceCount > 0 ||
+      (!!viewerId && item.ownerId === viewerId)
+  );
+}
+
 class CommunityCollectionsState {
   /** What the cross-user listener has delivered, owners resolved. */
   private feed = $state<CommunityCollection[]>([]);
@@ -86,8 +106,10 @@ class CommunityCollectionsState {
   error = $state<string | null>(null);
 
   /**
-   * The feed plus the viewer's own public collections (see
-   * withOwnPublicCollections). Consumers read this, never `feed`.
+   * Every public collection: the feed plus the viewer's own (see
+   * withOwnPublicCollections), empty ones included. Use this to look a
+   * collection up by id, so a direct link to an empty one still opens. Lists
+   * people pick from read `shelfItems`. Never read `feed`.
    */
   items = $derived.by(() =>
     withOwnPublicCollections(
@@ -97,14 +119,22 @@ class CommunityCollectionsState {
     )
   );
 
+  /**
+   * What the public shelf lists: `items` without other people's empty
+   * collections (see visibleOnShelf).
+   */
+  shelfItems = $derived.by(() =>
+    visibleOnShelf(this.items, currentOwner()?.id)
+  );
+
   private started = false;
   private unsubscribe: (() => void) | null = null;
   private updateEpoch = 0;
 
   /**
-   * Start once per session. EVERY public collection is here, including your
-   * own and including empty ones. Publishing something and not seeing it in
-   * Community reads as a bug, so the feed shows exactly what the flag says.
+   * Start once per session. The feed holds EVERY public collection, empty
+   * ones included, so any of them opens by id or link. The shelf
+   * (`shelfItems`) leaves out empty ones for everyone but their owner.
    */
   async ensureLoaded(): Promise<void> {
     if (this.started) return;

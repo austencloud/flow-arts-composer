@@ -10,6 +10,7 @@ Dark mode: Controlled via prop (for preview isolation) or falls back to :root.da
 Supports letter highlighting during animation playback.
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     simplifyAndTruncate,
     compressWord,
@@ -398,6 +399,18 @@ Supports letter highlighting during animation playback.
   });
   const showTurnGlyph = $derived(patternsFit && !!turnGlyphEntries?.length);
   const showReversalGlyph = $derived(patternsFit && !!reversalGlyph);
+  const turnPatternLabel = $derived(
+    t("viewer_ui_turn_pattern_label", {
+      pattern: turnGlyphEntries ? deriveTurnLabel(turnGlyphEntries) : "",
+    })
+  );
+  const reversalPatternLabel = $derived(
+    reversalGlyph
+      ? t("viewer_ui_reversal_pattern_label", {
+          pattern: reversalGlyph.sequence.slice(0, reversalGlyph.period),
+        })
+      : ""
+  );
   const leftIndicatorWidth = $derived(
     (difficultyLevel != null ? difficultyBadgeWidth : 0) +
       (showTurnGlyph ? (turnGlyphWidth || patternWidth) + patternGap : 0)
@@ -518,8 +531,8 @@ Supports letter highlighting during animation playback.
           ? difficultyBadgeWidth + patternGap
           : 0}px)"
         role="img"
-        aria-label="Turn pattern: {deriveTurnLabel(turnGlyphEntries)}"
-        title="Turn pattern: {deriveTurnLabel(turnGlyphEntries)}"
+        aria-label={turnPatternLabel}
+        title={turnPatternLabel}
       >
         <TurnPatternGlyph
           entries={turnGlyphEntries}
@@ -535,14 +548,8 @@ Supports letter highlighting during animation playback.
           ? loopBadgeWidth + patternGap
           : 0}px)"
         role="img"
-        aria-label="Reversal pattern: {reversalGlyph.sequence.slice(
-          0,
-          reversalGlyph.period
-        )}"
-        title="Reversal pattern: {reversalGlyph.sequence.slice(
-          0,
-          reversalGlyph.period
-        )}"
+        aria-label={reversalPatternLabel}
+        title={reversalPatternLabel}
       >
         <ReversalPatternGlyph
           {...reversalGlyph}

@@ -15,7 +15,10 @@
   import type { Snippet, Component } from "svelte";
   import { onMount } from "svelte";
   import { afterNavigate, beforeNavigate, onNavigate, goto } from "$app/navigation";
-  import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
+  import {
+    isInModuleHistoryStep,
+    isShallowGoto,
+  } from "#lib/shared/navigation/services/url-state.js";
   import { keepBareParams } from "#lib/shared/navigation/services/url-bare-params.js";
   import { page } from "$app/state";
   import { finishBootScreen } from "#lib/shared/application/services/boot-screen.js";
@@ -122,11 +125,17 @@
     };
   }
 
+  // Writes the page made itself, and Browse's Back and Forward between its
+  // own screens, are the page's motion: a route fade on top replays the
+  // arrived screen once the route settles.
+  const pageOwnsMotion = (navigation: object) =>
+    isShallowGoto(navigation) || isInModuleHistoryStep(navigation, ["browse"]);
+
   installRouteMotion({
     routes: {},
     onNavigate,
     morphs: navigationMorphs,
-    isShallow: isShallowGoto,
+    isShallow: pageOwnsMotion,
     onTransition: (transition, navigation) => {
       startSiteFlight(transition, navigation);
       if (import.meta.env.DEV) {

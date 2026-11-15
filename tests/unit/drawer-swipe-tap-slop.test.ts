@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
+import { SwipeToDismiss } from "@austencloud/drawer";
 
 /**
  * Regression cover for the swallowed-tap bug behind the PostHog rage-clicks on

@@ -4,6 +4,63 @@ import {
   SELECTIVE_COLOR_PROP_TYPES,
 } from "#lib/shared/utils/svg-color-utils.js";
 import type { HandSide } from "../../shared/domain/enums/pictograph-enums";
+import { PropType } from "./enums/prop-type";
+import { applyTorchContrastPalette, isTorchProp } from "./torch-contrast";
+
+/**
+ * The torch's notation tiles (buttons/) carry no part markers, so the shared
+ * dark-surface palette cannot find the shaft in them. The pictograph artwork
+ * is the same drawing in the same coordinates with the parts marked; tiles
+ * fetch that file and frame it with the tile artwork's own viewBox.
+ */
+const TORCH_TILE_ARTWORK: Record<string, { path: string; viewBox: string }> = {
+  "/images/props/buttons/torch.svg": {
+    path: "/images/props/pictograph/torch.svg",
+    viewBox: "146.5 0 153.5 15.5",
+  },
+  "/images/props/buttons/bigtorch.svg": {
+    path: "/images/props/pictograph/bigtorch.svg",
+    viewBox: "0 0 250 25.1",
+  },
+};
+
+/** Where a preview should fetch its artwork text for a tile `href`. */
+export function previewArtworkPath(href: string): string {
+  return TORCH_TILE_ARTWORK[href]?.path ?? href;
+}
+
+/**
+ * Dark-surface torch for a tile: the pictograph palette (light shaft and
+ * metal, flame appended), then the grown viewBox trimmed back on the left so
+ * the torch is framed as tightly as the tile artwork was, flame included.
+ */
+function torchTilePreview(svg: string, propType: string): string {
+  const frame =
+    TORCH_TILE_ARTWORK[
+      propType === PropType.BIGTORCH
+        ? "/images/props/buttons/bigtorch.svg"
+        : "/images/props/buttons/torch.svg"
+    ]!;
+  const tileBox = svg.replace(
+    /(<svg\b[^>]*\bviewBox\s*=\s*["'])[^"']+(["'])/i,
+    `$1${frame.viewBox}$2`
+  );
+  const themed = applyTorchContrastPalette(tileBox, propType, "dark");
+  const pad = themed.match(
+    /data-torch-contrast-frame="true"\s+transform="translate\(([\d.]+) [\d.]+\)"/
+  );
+  const box = themed.match(/<svg\b[^>]*\bviewBox\s*=\s*["']([^"']+)["']/i);
+  if (!pad?.[1] || !box?.[1]) return themed;
+  const [minX, minY, width, height] = box[1]
+    .trim()
+    .split(/\s+/)
+    .map(Number) as [number, number, number, number];
+  const trim = Number(pad[1]);
+  return themed.replace(
+    /(<svg\b[^>]*\bviewBox\s*=\s*["'])[^"']+(["'])/i,
+    `$1${minX + trim} ${minY} ${width - trim} ${height}$2`
+  );
+}
 
 /**
  * Repaint artwork that propSvgLoader has already colored with the default hand
@@ -33,7 +90,7 @@ export function colorPropPreview(
   propType: string,
   color: string
 ): string {
-  return applyColorToSvg(svg, color, {
+  const colored = applyColorToSvg(svg, color, {
     transformStroke: true,
     selectiveColorMode: (
       SELECTIVE_COLOR_PROP_TYPES as readonly string[]
@@ -47,6 +104,8 @@ export function colorPropPreview(
       "#dc2626",
     ],
   });
+  // The switcher is always dark, so torches take the dark-surface palette.
+  return isTorchProp(propType) ? torchTilePreview(colored, propType) : colored;
 }
 
 /** Change a pre-lit capture's (a fan build photo's) chromatic paint while

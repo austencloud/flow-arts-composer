@@ -71,6 +71,13 @@ import {
   prefetchWorkerSceneAssets,
   selectWorkerSceneAssets,
 } from "../services/worker-scene-assets";
+import { guardEveryWebGLRenderer } from "../../scene-boot/guarded-compile-async";
+
+// The worker is its own module world, so the page's guard never reaches it.
+// Install it here, before any renderer is built: an unguarded compileAsync
+// throws inside three's timer when a material is disposed mid-compile, and in
+// the worker that throw is silent and its promise never settles.
+guardEveryWebGLRenderer();
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 

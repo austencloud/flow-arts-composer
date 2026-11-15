@@ -26,6 +26,8 @@
   import { createPerformerSequences } from "../performer-sequences.svelte";
   import { postFollowers } from "../tunnel-performers";
   import { sequencePositionToAnimationTime } from "#lib/shared/animation-engine/services/step-calculator.js";
+  import { beatSeconds, hasGrid } from "@austencloud/video-editor/core";
+  import { cardEndingOf } from "../card-ending";
 
   /**
    * tka's sequence surfaces inside a media layer: the live animation, the
@@ -109,6 +111,15 @@
   const displayedBeatNumber = $derived(
     staggered?.leader.move ?? layer.displayedBeatNumber
   );
+
+  /** A card clip's ending settings, and the song's beat its ring may step on. */
+  const cardEnding = $derived(
+    sourceItem?.kind === "card" ? cardEndingOf(sourceItem) : null
+  );
+  const songBeatSeconds = $derived.by(() => {
+    const music = editor.project.music;
+    return music && hasGrid(music) ? beatSeconds(music.grid) : null;
+  });
 
   const arrangement = $derived(
     sourceItem?.kind === "arrangement" ? sourceItem : null
@@ -223,6 +234,9 @@
     {followerPositions}
     followerSequences={followerSequences.current}
     part={sourceItem?.kind === "animation" ? sourceItem.part : undefined}
+    split={sourceItem?.kind === "animation" ? sourceItem.split : undefined}
+    panelLift={sourceItem?.kind === "animation" ? sourceItem.panelLift : undefined}
+    contentSeconds={sourceItem ? editor.previewSeconds - sourceItem.start : undefined}
     {chromeOpacity}
     {mandalaIn}
     {lookBlend}
@@ -242,6 +256,11 @@
     {qrUrl}
     followers={postFollowers(editor.project)}
     tunnelSource={tkaEditorOf(editor)?.sequence ?? null}
+    cardId={sourceItem?.kind === "card" ? sourceItem.id : null}
+    ending={cardEnding}
+    seconds={layer.sourceTimeSeconds}
+    opacity={layer.opacity}
+    beatSeconds={songBeatSeconds}
   />
 {:else if binding.renderMode === "tunnel" && sequence}
   <PostStudioTunnelLayer

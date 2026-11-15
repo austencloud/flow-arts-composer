@@ -10,7 +10,15 @@ const mocks = vi.hoisted(() => ({
   getSequence: vi.fn(async () => null),
   updateSequence: vi.fn(async () => undefined),
   computeHash: vi.fn(async () => "content-hash-1"),
-  authState: { user: { uid: "viewer-test-user" } },
+  hasSavedFirebaseUser: vi.fn(async () => false),
+  authState: {
+    user: { uid: "viewer-test-user" } as { uid: string } | null,
+    initialized: false,
+  },
+}));
+
+vi.mock("#lib/shared/auth/services/saved-firebase-user.js", () => ({
+  hasSavedFirebaseUser: mocks.hasSavedFirebaseUser,
 }));
 
 vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
@@ -134,6 +142,9 @@ describe("sequence viewer library action feedback", () => {
     mocks.getSequence.mockReset().mockResolvedValue(null);
     mocks.updateSequence.mockReset().mockResolvedValue(undefined);
     mocks.computeHash.mockReset().mockResolvedValue("content-hash-1");
+    mocks.hasSavedFirebaseUser.mockReset().mockResolvedValue(false);
+    mocks.authState.user = { uid: "viewer-test-user" };
+    mocks.authState.initialized = false;
 
     // 8f74d8edd9 moved the pending toast, duplicate handling and in-flight
     // dedupe out of this handler and into VisualSequenceSaveCoordinator, which
@@ -483,6 +494,60 @@ describe("sequence viewer library action feedback", () => {
 
     expect(mocks.getSequence).toHaveBeenCalledWith("sequence-1");
     expect(handler.isSaved).toBe(true);
+  });
+
+  describe("a visitor nobody has signed in", () => {
+    // /sequence/[id] leaves the auth listener off for a first visit, so authState
+    // has no user. That is not "already saved": the footer Save has to stay on
+    // offer, because tapping it is what makes the visitor a guest.
+    beforeEach(() => {
+      mocks.authState.user = null;
+    });
+
+    it("offers Save for a sequence they do not own", async () => {
+      const handler = makeHandler(false);
+      await vi.waitFor(() => expect(handler.isSaved).toBe(false));
+      expect(mocks.hasMatchingContent).not.toHaveBeenCalled();
+    });
+
+    it("offers Save to a visitor whose auth has settled signed out", () => {
+      mocks.authState.initialized = true;
+      expect(makeHandler(false).isSaved).toBe(false);
+    });
+
+    it("keeps Save quiet while a saved session is still being restored", async () => {
+      mocks.hasSavedFirebaseUser.mockResolvedValue(true);
+      const handler = makeHandler(false);
+      await vi.waitFor(() =>
+        expect(mocks.hasSavedFirebaseUser).toHaveBeenCalled()
+      );
+      await Promise.resolve();
+      expect(handler.isSaved).toBe(true);
+    });
+
+    it("checks the library once the session restores", async () => {
+      mocks.hasSavedFirebaseUser.mockResolvedValue(true);
+      const handler = makeHandler(false);
+      mocks.authState.user = { uid: "restored-guest" };
+      mocks.hasMatchingContent.mockResolvedValue(false);
+      handler.syncSavedState(sequence as never);
+      await vi.waitFor(() => expect(handler.isSaved).toBe(false));
+      expect(mocks.hasMatchingContent).toHaveBeenCalledWith("content-hash-1");
+    });
+
+    it("shows Saved to a restored guest who already saved it", async () => {
+      mocks.hasMatchingContent.mockResolvedValue(true);
+      const handler = makeHandler(false);
+      mocks.authState.user = { uid: "restored-guest" };
+      handler.syncSavedState(sequence as never);
+      await vi.waitFor(() => expect(handler.isSaved).toBe(true));
+    });
+
+    it("has nothing to save when no sequence is loaded", () => {
+      const handler = makeHandler(false);
+      handler.syncSavedState(null);
+      expect(handler.isSaved).toBe(true);
+    });
   });
 
   it("patches only cardPresentation on an owned saved record", async () => {

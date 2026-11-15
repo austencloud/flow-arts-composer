@@ -21,6 +21,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
   import BrowseSheetControls from "#lib/shared/browse/components/BrowseSheetControls.svelte";
   import { tryGetBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { BrowseFilterSurface } from "#lib/shared/analytics/browse-events.js";
 
   let {
     engine,
@@ -33,6 +34,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
     chooserHint,
     onOpenMandala,
     gridControls,
+    surface = null,
   }: {
     engine: BrowseEngine;
     isOpen?: boolean;
@@ -57,6 +59,8 @@ their own copies drifted (dropdown popovers, stale search) within days.
       onSaveSmart?: (() => void) | undefined;
       onEnterSelection?: (() => void) | undefined;
     };
+    /** Browse's filter path tags its picks for `browse_filter_applied`. */
+    surface?: BrowseFilterSurface | null;
   } = $props();
 
   const header = tryGetBrowseHeaderContext();
@@ -74,7 +78,9 @@ their own copies drifted (dropdown popovers, stale search) within days.
 
   // The one copy of the drill's add/remove rules (FilterWorkspace and the
   // desktop menu row use it too).
-  const filters = createDrillFilterBindings(() => engine);
+  const filters = createDrillFilterBindings(() => engine, {
+    surface: () => surface,
+  });
 
   function applySearch(query: string) {
     engine.setSearch(query);
@@ -82,7 +88,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
   }
 
   function showAllResults() {
-    engine.clearUserFilters();
+    filters.clearAll();
     isOpen = false;
   }
 </script>

@@ -5,6 +5,7 @@
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import {
     currentTracePick,
+    engineOwnsPropPicker,
     getShapeEngineHostContext,
   } from "../context/shape-engine-host-context";
 
@@ -22,6 +23,8 @@
   // A mirror host traces the pick itself; the Composer's viewer, library and
   // share links are not there to open.
   const mirror = $derived(host.variant === "mirror");
+  // No prop handlers, no Props pill: inside the Composer the bottom bar picks.
+  const picksProps = $derived(engineOwnsPropPicker(host.variant));
 
   function trace(): void {
     const pick = currentTracePick(state);
@@ -46,10 +49,12 @@
         onmodechange={state.setMode}
         onpropmodechange={state.setPropMode}
         selectedPropType={state.addressedPropType}
-        onproptypechange={(propType) => void state.setPropType(propType)}
+        onproptypechange={picksProps
+          ? (propType) => void state.setPropType(propType)
+          : undefined}
         handProps={state.handProps}
         propPickerOpen={state.propPickerOpen}
-        onproppickertoggle={state.togglePropPicker}
+        onproppickertoggle={picksProps ? state.togglePropPicker : undefined}
         onselectRealization={mirror ? trace : undefined}
         selectLabel={t("shape_engine_trace_this")}
         onopenRealization={mirror
@@ -60,7 +65,10 @@
           : (realization) => onrealizationAction(realization, "save")}
         onshareRealization={mirror ? undefined : onshareRealization}
         mandalaTransition={{
-          claim: state.compact && state.activeView === "detail",
+          claim:
+            state.compact &&
+            state.surface === "matrix" &&
+            state.activeView === "detail",
           handoff: state.mandalaHandoff,
         }}
       />

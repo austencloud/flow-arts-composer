@@ -87,3 +87,118 @@ four wording fixes (viewer resize label, performer color label, turn-pattern
 preset name, "thumbs stay in" phrasing). Dismissed three flags asking for
 Альфа/Бета: the coordinator kept placement names in Latin script for ru, ja
 and ko to match all 31 existing catalog strings; the glossary now says so.
+
+## Read-back — 2026-11-13
+
+- Scope: every released key (en.json keys whose prefix is in `released` in `scripts/i18n-released-prefixes.json`). Each Russian string was read back into English and graded against its English source.
+- Released total: 9138. Filled (missing, now translated): 214. Changed: 323 (off 282, wrong 41). Left as is: 8601.
+- After the pass: 0 released keys missing; placeholders, tags and entities match English on every released key. 207 values remain identical to English; all are fixed terms, product names, Latin termbase labels, format strings made only of placeholders, or data examples (`form_placeholder_email`, `nav_ui_your_username`).
+- Contract test: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts` → `Tests  5 failed | 67 passed (72)`. No ru test fails. The fallback test fails only on 107 keys missing from de.json (expected). The other four failures are the released-coverage floor for es, fr, it and pt (`8936 of 9138 released keys`, floor 0.98); those catalogs are not touched by this change.
+- `git diff --check` is clean and `messages/ru.json` parses.
+- Per-key change list (key, English, before, after, read-back, grade): `E:/tka-languages/runs/ru/changes.json`.
+
+### Term decisions
+
+- Effort → «Характер движения» (short «Характер»), never усилие. Effort names (Laban-style): Скольжение, Касание, Давление, Удар, Упругость, Отскок, Замах.
+- Base Motions → «Базовые движения». Pattern is never «режим»: turn/reversal patterns → «шаблон», guide prose keeps паттерн/схема.
+- step → шаг (sequence position); beat → доля only for a musical count. Counts use «Шагов: {count}».
+- take → дубль. Playground → «Песочница»; Ratio Playground → «Песочница соотношений».
+- preset → «пресет» (share, settings, viewer), not шаблон.
+- Orientation chips → «по часовой» / «против часовой», never CW/CCW.
+- Loop picker: mirrored = left-right, flipped = top-bottom.
+- Latin labels kept: Static, Float, Gamma, Alpha, Beta, Dash, Shift, LOOP, Pro, Anti, Book, Poi, Choreo Cards, Tika, Austen Cloud. Prospin/Antispin keep the existing Cyrillic проспин/антиспин in running prose, per the termbase note.
+- Timing modes: Split → «Вразнобой», Quarter → «Сдвиг на четверть», Same/Opposite → «Одинаково»/«Противоположно». Halved/quartered → Пополам/На четверти. Swapped → «Замена рук».
+- Mirror (verb) → Отразить; Rewind → «В обратном порядке»; Generate → Сгенерировать; Reversal → смена направления.
+- placement → позиция; Exposure → Экспозиция; account → аккаунт; Follow → Подписаться; Creators → Авторы; Timeline → «Шкала времени»; Visuals → Визуализации; Skewed → Смешанная.
+- combo → «серия»; trail → «След» (replaces «Шлейф»).
+- negative space → «отрицательное пространство» (all негативн- forms converted).
+- bridge letter → «переходная буква». 3D Studio → «3D-студия». module_compose → «Композиция».
+- Create tabs: Construct → «Построить», Generate → «Сгенерировать», Spell → «По буквам», Shape → «Shape». Stage → «Постановка».
+- "Flow arts" in SEO titles → «флоу-искусств» (39 keys converted from флоу-арта or Latin).
+- Placement prompts use colon phrasing to avoid case agreement («Разместите: {noun}», «Размещено: {prop}, точка {point}.»).
+- Flower solo labels → «Цветок Antispin/Inspin, лепестков: {petals}».
+
+### Unsure
+
+| Key | English | Russian | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| guide_eightstep_turns_back | Left, back | Левая, назад | Left, back | No context for what "back" refers to (likely the left hand's return leg); kept literal and short |
+| library_look_trail_loop_clear | Loop-clear trail | След до конца цикла | Trail until the end of the loop | Assumed the trail clears each time the animation loop restarts |
+| shape_engine_trace_this | Trace this | Нарисовать след | Draw the trace | Button context not seen; could mean start a live trace of the flower |
+| viewer_ui_effort_name_anticipation | Anticipation | Замах | Wind-up | Animation term for the preparatory move; «Подготовка» is the other candidate |
+| viewer_ui_effort_name_dab | Dab | Касание | Light touch | Laban effort name; the termbase has no settled Russian term |
+
+### English to its owner
+
+- browse_audit_hands_right_angle: gamma still described as "right angle" (hands adjacent is the current wording). Russian left as is.
+- learn_timing_intro_placement_gamma: "A right angle apart." Russian left as is.
+- learn_placement_comparison_gamma: "A right angle apart". Russian left as is.
+- learn_placement_gamma_geometry: "a right angle". Russian left as is.
+- pictograph_desc_group_gamma: "gamma (right angle)". Russian left as is.
+- verified_level1_gamma_definition: "the hands form a right angle". Russian left as is.
+- verified_level1_placements_seo_description: ends "in Gamma they form a right angle". Russian left as is.
+- verified_level1_guide_page_seo_4: ends "in Gamma they form a right angle". Russian left as is.
+- learn_reference_reading_choreo_cards: reads "Hand Motions" for the Reading a Choreo Card link; looks copied from learn_reference_hand_motions_intro. Translated as written.
+- loop_picker_description_mirrored / loop_picker_description_flipped: English says "vertically" / "horizontally", which reads opposite to left-right / top-bottom. Russian follows left-right / top-bottom.
+- module_write and module_choreo: both English labels read "Choreo", so two modules show the same name.
+- English drifted from its own Russian on: verified_level1_hm_gamma_98, _101, _102, verified_level1_hm_type2_116, playback_audit_visual_progress_bar_in_word_header, tab_browse_collections, tab_desc_browse_collections, tab_desc_settings_profile, tab_desc_stage_editor, tab_desc_toys_third_order, train_journey_subtitle. Russian now follows the current English.
+
+### May not fit
+
+- loop_picker_description_mirrored
+- loop_picker_description_flipped
+- module_desc_stage
+- tab_create_generate
+- tab_create_construct
+
+No native review or live UI inspection was done in this run.
+
+## Unreleased features — 2026-11-14
+
+Headless fill of the not-yet-released strings for Ilo, on Austen's rule of 2026-11-14: everything a visitor will eventually see is translated; screens only he uses stay English. Register as before: lowercase вы, infinitive action labels, number-independent counts such as «Шагов: {count}», ASCII `...` for ellipses as the catalog does. Read-backs for plain strings were taken from the zh-Hant fill of the same key (same meaning); they are written separately only where the Russian text differs.
+
+- Keys filled: 747 (arena 43, attribution 14, beta 4, community 20, connect 65, hall 39, mandala 30, poi 41, post 366, premium 45, voice 56, watch 24).
+- Left English on purpose: `admin_*`, `moderation_*`, `skel2tka_*`, `scheduler_*`, `gallery_*`, `character_*`. These are tools only Austen uses.
+- Existing values were not touched. The change list for Ilo is `E:/tka-languages/runs/unrel/ru/changes.json` (747 entries).
+
+### Term decisions
+
+| English | Russian |
+| --- | --- |
+| step (of a sequence) | шаг (every sequence `beat` count) |
+| beat (tapped on a video or a song) | доля (post tools, where the English means musical beats) |
+| Post Studio editor words | дорожка (lane/track), слой, маркер воспроизведения (playhead), ключевой кадр, кроссфейд, переход, картинка в картинке, замедленно (slow mo), полный прогон (run-through), полоса разбора (breakdown strip), вспышка |
+| Arena / Battle | арена / битва |
+| Hall of Shame | Доска позора (termbase) |
+| Premium / Free | Премиум / Бесплатно |
+| Poi | poi / Poi (kept Latin as the catalog does) |
+| session | сессия |
+| Take | дубль |
+| Staff | посох |
+| Friends | друзья |
+| Choreo card | Choreo Card (kept English as the catalog does) |
+| Clockwise / Counterclockwise | по часовой стрелке / против часовой стрелки |
+
+### Unsure
+
+| Key | English | Text | Read-back | Why |
+| --- | --- | --- | --- | --- |
+| `connect_invited_you_to_join` | invited you to join | приглашает вас присоединиться | invites you to join | Fragment that follows a name; gender and case of the name are unknown. |
+| `connect_is_sharing` | is sharing | делится | shares | Same fragment problem. |
+| `post_editor_card_ring` | Ring on beats | Кольцо по долям | Ring by the beats | Short English; the ring is read as a lit ring that steps with the beat. |
+| `post_editor_hook_spoken` | How to say it | Как это сказать | How to say it | Context (an opening hook line) is not visible. |
+| `voice_sessions_*pattern*` | Pattern Analysis, Unresolved Patterns | Анализ шаблонов, Неразобранные шаблоны | Template analysis, unparsed templates | `pattern` here means a regex-like voice command pattern; шаблон chosen over узор. |
+| `post_editor_titles_land` | Land on card | Посадить на карточку | Land (put) on the card | Assumed to mean the title name lands on the card. |
+
+### English to its owner
+
+- `mandala_copy_count`, `mandala_filter_all`, `poi_lab_beat_count`, `poi_lab_beat_number`, `voice_sessions_days_ago`, `voice_sessions_event_count`, `voice_sessions_hours_ago`, `voice_sessions_minutes_ago`: the English wraps the placeholder in literal quotes (`"{count}" copies`). The quotes were dropped; they look like escaping leftovers.
+- `connect_sharing_sequence`: the key says sharing but the English says "Search for users above to invite them." Translated what it says.
+- `connect_no_sessions_nearby` and `connect_sessions_appear_automatically` carry the same text. So do `connect_no_friends_yet` and `connect_add_friends_hint`.
+- `connect_invited_you_to_join`, `connect_is_sharing`, `premium_user_count_tagline` are sentence fragments that only work in English word order.
+- `post_editor_fly_unavailable` says "lane" while the rest of Post Studio says "track". Read as the same thing.
+
+### May not fit
+
+- Russian is longer than English in several tool tabs and labels: `post_editor_tool_fly` (Пролёт в следующий), `post_editor_tool_panel_lift` (Поднять панель), `post_editor_tool_split_hands` (Разделить руки).
+- `post_editor_lift_in_here`, `post_editor_lift_out_here`, `post_editor_split_close_here`: roughly twice as long as the English.

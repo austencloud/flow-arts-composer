@@ -19,6 +19,7 @@ export type LoopStageProps = Pick<
   | "guestGated"
   | "onRequestSignup"
   | "handRelationship"
+  | "onPickNeedsFit"
 >;
 
 export type TnDStageProps = Omit<

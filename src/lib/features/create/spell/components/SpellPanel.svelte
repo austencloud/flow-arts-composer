@@ -712,6 +712,10 @@ Same functionality, different density.
     .generate-sweep {
       animation: none;
       background: var(--theme-card-bg, rgba(255, 255, 255, 0.15));
+    }
+
+    /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+    .generate-sweep {
       background-size: 100% 100%;
     }
   }

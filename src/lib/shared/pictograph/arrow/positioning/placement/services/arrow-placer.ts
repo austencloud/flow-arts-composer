@@ -186,8 +186,20 @@ export class ArrowPlacer {
     const files = this.filesFor(propType);
     this.allPlacements[placementFrame] ??= {};
     const byMotion: GridPlacementData = {};
-    for (const [motionType, filePath] of Object.entries(files)) {
-      const raw = await this.loadJsonFile(filePath);
+    const entries = Object.entries(files);
+    // Ask for every file at once so a slow connection pays one round trip, not
+    // one per file. Settle them all, then rethrow the first failure in file
+    // order: the same error the one-after-another loop surfaced, with nothing
+    // stored, and no rejection left unhandled for the files behind it.
+    const settled = await Promise.allSettled(
+      entries.map(([, filePath]) => this.loadJsonFile(filePath))
+    );
+    for (const result of settled) {
+      if (result.status === "rejected") throw result.reason;
+    }
+    for (const [index, [motionType]] of entries.entries()) {
+      const raw = (settled[index] as PromiseFulfilledResult<JsonPlacementData>)
+        .value;
       const filtered: GridPlacementData[string] = {};
       for (const [placementKey, turnsData] of Object.entries(raw ?? {})) {
         filtered[placementKey] = {};

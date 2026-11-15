@@ -383,10 +383,12 @@
     height: var(--solo);
   }
 
-  /* A frame taller than it is wide (a phone held upright) cannot afford a
-     solo on each side, so the pair sits beneath the hero instead: Blue under
-     its left half, Red under its right. */
-  @container fuse-frame (max-aspect-ratio: 999 / 1000) {
+  /* A frame less than 1.2 times as wide as it is tall (a phone held upright)
+     cannot afford a solo on each side without shrinking the hero, so the pair
+     sits beneath the hero instead: Blue under its left half, Red under its
+     right. 6 / 5 is about where the two arrangements give the same hero; below
+     it, stacking gives the bigger one (at 324 x 296, 216 against 193). */
+  @container fuse-frame (max-aspect-ratio: 6 / 5) {
     .decomposed .preview-unit {
       --hero: min(
         var(--frame-w),

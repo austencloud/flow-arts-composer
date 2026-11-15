@@ -126,7 +126,7 @@ describe("viewer practice wake lock", () => {
     wakeLock.dispose.mockClear();
   });
 
-  it("holds the screen from Start through count-in and releases on Stop", () => {
+  it("holds the screen from the Practice tap through count-in and releases on Stop", () => {
     const playback = createPlaybackController({
       modalAnimationState: createModalAnimationState(),
       initialBpm: 60,
@@ -135,7 +135,6 @@ describe("viewer practice wake lock", () => {
     playback.setPlaybackController(createAnimationPlaybackController());
 
     playback.enterPracticeMode();
-    playback.handlePracticeStart();
 
     expect(wakeLock.setActive).toHaveBeenCalledTimes(1);
     expect(wakeLock.setActive).toHaveBeenLastCalledWith(true);
@@ -157,7 +156,6 @@ describe("viewer practice wake lock", () => {
     playback.setPlaybackController(createAnimationPlaybackController());
 
     playback.enterPracticeMode();
-    playback.handlePracticeStart();
     playback.dispose();
 
     expect(wakeLock.setActive).toHaveBeenCalledWith(true);

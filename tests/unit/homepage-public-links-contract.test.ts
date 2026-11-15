@@ -37,7 +37,11 @@ interface HrefEntry {
 function collectHrefs(): HrefEntry[] {
   const entries: HrefEntry[] = [];
   for (const tile of LAUNCHPAD_TILES) {
-    entries.push({ href: tile.href, source: `tile:${tile.id}` });
+    // A tile that opens the app links the app shell, not a public page; its
+    // own test below pins that link.
+    if (!tile.opensApp) {
+      entries.push({ href: tile.href, source: `tile:${tile.id}` });
+    }
     for (const chip of tile.chips ?? []) {
       entries.push({
         href: chip.href,
@@ -173,6 +177,19 @@ describe("homepage public-links contract", () => {
         `href "${entry.href}" (from ${entry.source}) has no +page.svelte or +page.ts at src/routes/(public)/${cleanPath} or src/routes/${cleanPath}`
       );
     }
+  });
+
+  it("the Composer tile opens the app and its chip leads to About Composer", () => {
+    const composer = LAUNCHPAD_TILES.find((tile) => tile.id === "composer");
+    expect(composer).toMatchObject({
+      href: "/create",
+      opensApp: true,
+      opensOutsideShell: true,
+    });
+    expect(composer?.chips).toEqual([
+      { label: "About Composer", href: "/composer" },
+    ]);
+    expect(LAUNCHPAD_TILES.filter((tile) => tile.opensApp)).toHaveLength(1);
   });
 
   it("tile headings are unique and non-empty, descriptors are non-empty", () => {

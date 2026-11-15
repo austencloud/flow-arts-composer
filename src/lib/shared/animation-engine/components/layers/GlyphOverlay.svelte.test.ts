@@ -1,6 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import GlyphOverlay from "./GlyphOverlay.svelte";
+import { turnNumberArt } from "../../../pictograph/tka-glyph/utils/turn-number-art";
 
 vi.mock("$app/env", () => ({
   browser: true,
@@ -60,6 +61,34 @@ describe("GlyphOverlay step labels", () => {
       expect(screen.container.querySelector(".beat-number-group")).toBeNull()
     );
     expect(screen.container.textContent).not.toContain("End");
+  });
+
+  // Post Studio's lifted panel shifts the step number with CSS `translate`.
+  // On the cross-fading group itself, Chrome painted the incoming number
+  // without that shift while its pop-in transform ran, so it faded in out of
+  // sight and then appeared at full strength. The shift has a steady slot to
+  // sit on: both numbers of a cross-fade share it, and it outlives the swap.
+  it("cross-fades the numbers inside one steady slot", async () => {
+    const screen = render(GlyphOverlay, {
+      stepNumbersVisible: true,
+      displayedStepNumber: 1,
+    });
+    await expect.element(screen.getByText("1")).toBeInTheDocument();
+    const slot = screen.container.querySelector(".step-label-slot");
+    expect(slot).not.toBeNull();
+
+    await screen.rerender({ displayedStepNumber: 2 });
+    await vi.waitFor(() =>
+      expect(
+        [...slot!.querySelectorAll(".beat-number-group")]
+          .map((group) => group.textContent?.trim())
+          .sort()
+      ).toEqual(["1", "2"])
+    );
+    expect(screen.container.querySelector(".step-label-slot")).toBe(slot);
+    expect(
+      screen.container.querySelectorAll(".step-label-slot .beat-number-group")
+    ).toHaveLength(screen.container.querySelectorAll(".beat-number-group").length);
   });
 });
 
@@ -145,7 +174,7 @@ describe("GlyphOverlay turns", () => {
       tkaGlyphVisible: true,
     });
     await vi.waitFor(() =>
-      expect(turnNumbers(screen.container)).toContain("/images/numbers/1.svg")
+      expect(turnNumbers(screen.container)).toContain(turnNumberArt("/images/numbers/1.svg"))
     );
     expect(screen.container.querySelectorAll(".glyph-group")).toHaveLength(1);
   });

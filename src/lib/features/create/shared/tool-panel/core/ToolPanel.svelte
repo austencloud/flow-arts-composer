@@ -19,9 +19,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
-  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
-  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -55,7 +53,6 @@
   });
 
   // Services
-  let hapticService: HapticFeedback;
   let deviceDetector: DeviceDetector | null = null;
   let navigationLayout = $state<"top" | "bottom" | "right">("top");
 
@@ -89,7 +86,6 @@
   });
 
   onMount(() => {
-    hapticService = getHapticFeedback();
     deviceDetector = getDeviceDetector();
 
     if (deviceDetector) {
@@ -189,14 +185,6 @@
   export function getAnimationStateRef() {
     return animationStateRef;
   }
-
-  function handleNavigateToAdvanced() {
-    hapticService?.trigger("selection");
-  }
-
-  function handleNavigateToDefault() {
-    hapticService?.trigger("selection");
-  }
 </script>
 
 <div
@@ -243,8 +231,6 @@
                 startPlacementState={constructTabState.startPlacementStateService}
                 currentSequence={currentSequenceData}
                 {onOptionSelected}
-                onStartPlacementNavigateToAdvanced={handleNavigateToAdvanced}
-                onStartPlacementNavigateToDefault={handleNavigateToDefault}
                 {isSideBySideLayout}
                 {onOpenFilters}
                 {onCloseFilters}

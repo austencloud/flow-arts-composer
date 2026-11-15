@@ -23,7 +23,10 @@
   import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { withResultsMorph } from "#lib/shared/transitions/results-morph.js";
-  import { createDestinationFade, growFade } from "#lib/shared/transitions/motion.js";
+  import {
+    createDestinationFade,
+    growFade,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { tryGetBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
 
@@ -56,10 +59,27 @@
      * grid step aside, the Filters pill moves to the Browse header, and the
      * host's Filters sheet carries the rest (see BrowseSheetControls). */
     headerChrome?: boolean;
+    /** With `headerChrome`: false keeps the Filters pill out of the header
+     * bar while the toolbar still steps aside. Browse's Sequences grid opens
+     * its sheet from its own answer row's More button instead. */
+    headerFiltersPill?: boolean;
+    /** The empty state's "Clear all filters". A host that reports filter
+     * clears passes its own reset; others clear the engine directly. */
+    onClearFilters?: () => void;
     /** Instant-tap warm-up: render only the skeleton (no grid/sidebar, so no
      * filtered-set read) for the frame a new filter is applied, so the layout
      * paints immediately and the compute lands behind the skeleton. */
     warming?: boolean;
+    /** How many cards the skeleton draws, when the host knows how many are
+     * coming (a collection's count). Capped at the default; unknown keeps it. */
+    placeholderCount?: number;
+    /** The step counts of the cards coming, in order, when the host knows them
+     * all (a collection with its public catalogue in memory). The skeleton then
+     * draws the flat grid's justified rows instead of its even grid. */
+    placeholderStepCounts?: readonly number[] | null;
+    /** False from the tap that starts this grid's screen leaving, so its
+     * Filters pill leaves the Browse header on that tap. */
+    headerActive?: boolean;
     /** Passthrough to the filter bar's "Save as Smart Collection" action. */
     onSaveSmart?: () => void;
     /** CTA shown ONLY in a genuine empty-library state (no active filters).
@@ -138,7 +158,12 @@
     selectedIds,
     onOpenFilters,
     headerChrome = false,
+    headerFiltersPill = true,
+    onClearFilters,
     warming = false,
+    placeholderCount,
+    placeholderStepCounts = null,
+    headerActive = true,
     onSaveSmart,
     emptyAction,
     emptyState,
@@ -160,10 +185,15 @@
     headerChrome && !!onOpenFilters && !!header?.compactChrome
   );
   $effect(() => {
-    if (!chromeInHeader || !header) return;
+    if (!chromeInHeader || !header || !headerFiltersPill) return;
     return header.registerFilters({
       engine: () => engine,
       open: () => onOpenFilters?.(),
+      // Until the grid answers, the pill shows the count the host already
+      // knows (a collection's size), or no number, never a passing 0.
+      pending: () => warming || isInitializing,
+      pendingCount: () => placeholderCount ?? null,
+      active: () => headerActive,
     });
   });
 
@@ -293,13 +323,26 @@
     if (revealHoldTimer) clearTimeout(revealHoldTimer);
   });
 
+  // Never more than a screenful: the same twelve the skeleton always drew.
+  const MAX_PLACEHOLDERS = 12;
+  const skeletonCount = $derived(
+    placeholderCount === undefined
+      ? MAX_PLACEHOLDERS
+      : Math.max(0, Math.min(MAX_PLACEHOLDERS, Math.floor(placeholderCount)))
+  );
+
   let showSkeleton = $state(true);
   let skeletonFading = $state(false);
 
   // A filter still working out its answer (a restored Mandala filter while
   // its shapes are measured) reads as loading, never as "no sequences".
+  // Saved results or the first page show as soon as the engine has sections
+  // with matches, while the rest of the catalogue arrives; an early pool with
+  // no matches keeps loading, so "no sequences" waits for the full catalogue.
   const isInitializing = $derived(
-    engine.isLoading || engine.isResolvingFilters
+    (engine.isLoading &&
+      (!engine.sectionsReady || engine.sequences.length === 0)) ||
+      engine.isResolvingFilters
   );
   // `!warming` short-circuits FIRST so the filtered-set read (which triggers the
   // filter/sort/section compute) is skipped during the instant-tap warm frame.
@@ -582,8 +625,9 @@
            filtered-set read → the layout paints before the compute. -->
       <div class="grid-area">
         <BrowseThumbnailSkeleton
-          count={12}
+          count={skeletonCount}
           pinchColumnOverride={engine.columnCount}
+          stepCounts={placeholderStepCounts}
         />
       </div>
     {:else if isEmpty}
@@ -603,7 +647,10 @@
         {#if engine.hasActiveFilters}
           <button
             class="clear-filters-btn"
-            onclick={() => withResultsMorph(() => engine.clearUserFilters())}
+            onclick={() =>
+              withResultsMorph(() =>
+                onClearFilters ? onClearFilters() : engine.clearUserFilters()
+              )}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
             {t("browse_verified_clear_all_filters")}
@@ -668,8 +715,9 @@
       {#if showSkeleton}
         <div class="skeleton-overlay" class:fading={skeletonFading}>
           <BrowseThumbnailSkeleton
-            count={12}
+            count={skeletonCount}
             pinchColumnOverride={engine.columnCount}
+            stepCounts={placeholderStepCounts}
           />
         </div>
       {/if}

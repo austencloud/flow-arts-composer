@@ -130,6 +130,30 @@ body {
   color: var(--foreground, #ffffff);
 }
 
+/* Traditional Chinese: name real sans faces so bold is a true weight, not a
+   faked one on a serif fallback. Scoped to body so special fonts stay put. */
+body:lang(zh-Hant) {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Microsoft JhengHei",
+    "PingFang TC",
+    "Noto Sans TC",
+    sans-serif;
+}
+
+/* reason: Chinese, Japanese and Korean have no capitals, so forced uppercase
+   only shouts the Latin words inside a label. The component rules are scoped
+   classes that outrank any global selector, hence !important. */
+:lang(zh),
+:lang(ja),
+:lang(ko) {
+  text-transform: none !important;
+}
+
 img,
 picture,
 video,
@@ -855,9 +879,13 @@ h6 {
 body {
   position: relative;
   background: var(--gradient-cosmic);
+  color: var(--foreground);
+}
+
+/* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+body {
   background-attachment: fixed;
   background-size: 400% 400%;
-  color: var(--foreground);
 }
 
 /* Background Animation System - Apply animations to body */

@@ -87,7 +87,9 @@
   </div>
 </div>
 
-{#snippet propIcon()}<SelectedPropPreview size={36} />{/snippet}
+{#snippet propIcon()}<SelectedPropPreview
+    box={{ width: 32, height: 26 }}
+  />{/snippet}
 
 <style>
   .prop-nav-button-wrapper {

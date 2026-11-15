@@ -23,13 +23,13 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     PROP_TYPE_DISPLAY_REGISTRY,
-    getAllPropTypes,
+    getActivePropTypes,
   } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // All prop types for the random pool (excludes POI which is momentum-based).
   function pickRandomPropType(): PropType {
-    const availableProps = getAllPropTypes().filter(
+    const availableProps = getActivePropTypes().filter(
       (pt) => pt !== PropType.POI
     );
     return availableProps[Math.floor(Math.random() * availableProps.length)]!;

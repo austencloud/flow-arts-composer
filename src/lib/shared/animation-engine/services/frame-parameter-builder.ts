@@ -249,6 +249,7 @@ export class FrameParameterBuilder {
     const fp = this.frameParams;
     fp.stepData = props.stepData ?? null;
     fp.currentStep = props.currentStep ?? 0;
+    fp.motionCues = props.motionCues ?? null;
     fp.primaryPropColors =
       props.tunnelPropColors ?? props.primaryPropColors ?? null;
     fp.virtualTime = props.virtualTime;

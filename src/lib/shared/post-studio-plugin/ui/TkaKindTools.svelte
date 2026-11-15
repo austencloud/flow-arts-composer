@@ -15,11 +15,19 @@
   import {
     POST_MAX_BEATS_BEHIND,
     POST_MAX_SPOKEN_LENGTH,
+    POST_TITLES_SPOKEN_SIZE_MAX,
+    POST_TITLES_SPOKEN_SIZE_MIN,
     type PostAnimationAppearance,
     type PostAnimationItem,
     type PostMovesMode,
+    type PostTitlesEnter,
+    type PostTitlesItem,
+    type PostTitlesLeave,
+    type PostTitlesLit,
   } from "#lib/shared/post-studio-plugin/index.js";
   import {
+    landTitlesOnCard,
+    parkTitles,
     setTunnelAppearance,
     setTunnelHookBackdropFrame,
     setTunnelHookSpeed,
@@ -36,8 +44,25 @@
   import PostAnimationAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
   import PostMandalaSequencesTool from "./PostMandalaSequencesTool.svelte";
   import PostStage3DTool from "./PostStage3DTool.svelte";
+  import PostSplitHandsTool from "./PostSplitHandsTool.svelte";
+  import PostPanelLiftTool from "./PostPanelLiftTool.svelte";
+  import {
+    FLASH_MAX_FADE_SECONDS,
+    FLASH_MAX_STRENGTH,
+    FLASH_MIN_FADE_SECONDS,
+    FLASH_MIN_STRENGTH,
+  } from "#lib/shared/media-composition/domain/flash.js";
+  import {
+    CREDIT_MAX_LEAD_LENGTH,
+    CREDIT_WORDMARK,
+  } from "#lib/shared/media-composition/domain/credit.js";
   import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import { useTkaEditor } from "./tka-editor-context";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { CARD_TITLE_LANDING_SECONDS } from "../card-ending";
+  import { TITLES_SPOKEN_SIZE } from "#lib/shared/media-composition/domain/tunnel-titles.js";
+  import { measureCardLayout } from "../card-ending-draw";
+  import { cardLayerOf } from "./card-layer-registry";
 
   /**
    * The item tool's panels for tka's own kinds: an animation's backdrop
@@ -217,6 +242,95 @@
   ]);
 
   const percent = (value: number) => `${Math.round(value)}%`;
+
+  const secondsText = (seconds: number) => `${seconds.toFixed(2)} s`;
+
+  /** A spoken line's size against the name, as a share of it. */
+  function spokenSizeText(value: number): string {
+    return `${(value * 100).toFixed(1)}%`;
+  }
+
+  /** The playhead as seconds into the titles clip, kept inside it. */
+  function playheadIn(titles: PostTitlesItem): number {
+    const into = editor.previewSeconds - titles.start;
+    return Math.min(titles.duration, Math.max(0, into));
+  }
+
+  /** Lighting starts at the playhead and runs to the clip's end. */
+  function defaultLit(titles: PostTitlesItem): PostTitlesLit {
+    const from = Math.min(playheadIn(titles), titles.duration * 0.5);
+    return { from, to: titles.duration };
+  }
+
+  /** Frames to wait for a card to draw after seeking to it, before giving up. */
+  const LAND_MEASURE_FRAMES = 60;
+  /** Why the last "Land on card" did nothing, shown under its button. */
+  let landNote = $state<string | null>(null);
+
+  function nextFrame(): Promise<void> {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  }
+
+  /**
+   * Lands the titles' name on the first card on screen at or after the
+   * playhead. Only a drawn card knows where its word is, so a card not on
+   * screen yet is sought to first and measured once it draws.
+   */
+  async function landOnCard(titles: PostTitlesItem): Promise<void> {
+    if (locked) return;
+    landNote = null;
+    const at = editor.previewSeconds;
+    const card = editor.project.tracks
+      .flatMap((track) => track.items)
+      .filter((candidate) => candidate.kind === "card")
+      .filter((candidate) => candidate.start + candidate.duration > at)
+      .sort((a, b) => a.start - b.start)[0];
+    if (!card) {
+      landNote = t("post_editor_titles_land_none");
+      return;
+    }
+    const from = Math.max(at, card.start, titles.start);
+    let layer = cardLayerOf(card.id);
+    if (!layer) {
+      editor.seek(from + CARD_TITLE_LANDING_SECONDS);
+      for (let frame = 0; frame < LAND_MEASURE_FRAMES && !layer; frame++) {
+        await nextFrame();
+        layer = cardLayerOf(card.id);
+      }
+      // Let the card finish laying out its header before it is measured.
+      await nextFrame();
+    }
+    const word = layer ? measureCardLayout(layer).word : undefined;
+    if (!word) {
+      landNote = t("post_editor_titles_land_failed");
+      return;
+    }
+    let landed = false;
+    editor.edit((project, ctx) => {
+      const next = landTitlesOnCard(
+        project,
+        titles.id,
+        card.id,
+        from,
+        word,
+        ctx
+      );
+      landed = next !== project;
+      return next;
+    });
+    if (!landed) landNote = t("post_editor_titles_land_failed");
+  }
+
+  /** Moves one end of the lit span; an end that would cross the other is refused. */
+  function commitLit(
+    titles: PostTitlesItem,
+    change: Partial<PostTitlesLit>
+  ): void {
+    if (!titles.lit) return;
+    const next = { ...titles.lit, ...change };
+    if (next.to <= next.from) return;
+    patchItem({ lit: next });
+  }
 </script>
 
 {#if item?.kind === "animation"}
@@ -333,6 +447,10 @@
       onchange={(value) => patchItem({ overlay: value === "shown" })}
       ariaLabel={t("share_studio_deep_beat_and_letter")}
     />
+  {:else if tool === "hands" && item.kind === "animation"}
+    <PostSplitHandsTool {editor} {item} {locked} />
+  {:else if tool === "lift" && item.kind === "animation"}
+    <PostPanelLiftTool {editor} {item} {locked} />
   {:else if tool === "performers" && item.kind === "animation"}
     {@const follower = item.followers?.[0]}
     <SegmentedControl
@@ -388,6 +506,7 @@
   {/if}
 {:else if item?.kind === "titles"}
   {#if tool === "titles" && item.kind === "titles"}
+    {@const titles = item}
     <div class="hook-titles">
       <span class="readout-name">{t("post_editor_hook_spoken")}</span>
       <input
@@ -400,6 +519,206 @@
         oninput={(event) =>
           change("titles-spoken", { spoken: event.currentTarget.value })}
       />
+      <span class="readout-name">{t("post_editor_titles_leave")}</span>
+      <SegmentedControl
+        color="accent"
+        options={[
+          {
+            value: "lift",
+            label: t("post_editor_titles_leave_lift"),
+            disabled: locked,
+          },
+          {
+            value: "stay",
+            label: t("post_editor_titles_leave_stay"),
+            disabled: locked,
+          },
+        ]}
+        value={item.leave ?? "lift"}
+        onchange={(leave) => patchItem({ leave: leave as PostTitlesLeave })}
+        ariaLabel={t("post_editor_titles_leave")}
+      />
+      <span class="readout-name">{t("post_editor_titles_arrive")}</span>
+      <SegmentedControl
+        color="accent"
+        options={[
+          {
+            value: "rise",
+            label: t("post_editor_titles_arrive_rise"),
+            disabled: locked,
+          },
+          {
+            value: "none",
+            label: t("post_editor_titles_arrive_none"),
+            disabled: locked,
+          },
+        ]}
+        value={item.enter ?? "rise"}
+        onchange={(enter) => patchItem({ enter: enter as PostTitlesEnter })}
+        ariaLabel={t("post_editor_titles_arrive")}
+      />
+      {#if item.spoken}
+        {@const large = item.spokenSize ?? TITLES_SPOKEN_SIZE}
+        <ValueSlider
+          label={t("post_editor_titles_spoken_size")}
+          value={large}
+          min={POST_TITLES_SPOKEN_SIZE_MIN}
+          max={POST_TITLES_SPOKEN_SIZE_MAX}
+          step={0.001}
+          format={spokenSizeText}
+          disabled={locked}
+          onchange={(spokenSize) =>
+            change("titles-spoken-size", { spokenSize })}
+        />
+        {#if item.keyframes?.box?.length}
+          <!-- With box keys the line can grow as the box shrinks. -->
+          <ValueSlider
+            label={t("post_editor_titles_spoken_size_small")}
+            value={item.spokenSizeSmall ?? large}
+            min={POST_TITLES_SPOKEN_SIZE_MIN}
+            max={POST_TITLES_SPOKEN_SIZE_MAX}
+            step={0.001}
+            format={spokenSizeText}
+            disabled={locked}
+            onchange={(spokenSizeSmall) =>
+              change("titles-spoken-size-small", { spokenSizeSmall })}
+          />
+        {/if}
+      {/if}
+      <span class="readout-name">{t("post_editor_titles_lit")}</span>
+      <SegmentedControl
+        color="accent"
+        options={[
+          {
+            value: "off",
+            label: t("post_editor_titles_lit_off"),
+            disabled: locked,
+          },
+          {
+            value: "on",
+            label: t("post_editor_titles_lit_on"),
+            disabled: locked,
+          },
+        ]}
+        value={item.lit ? "on" : "off"}
+        onchange={(value) =>
+          patchItem({ lit: value === "on" ? defaultLit(titles) : null })}
+        ariaLabel={t("post_editor_titles_lit")}
+      />
+      {#if item.lit}
+        {@const lit = item.lit}
+        <div class="lit-span" transition:growFade>
+          <ValueSlider
+            label={t("post_editor_titles_lit_from")}
+            value={lit.from}
+            min={0}
+            max={item.duration}
+            step={0.05}
+            format={secondsText}
+            disabled={locked}
+            onchange={(from) => commitLit(titles, { from })}
+          />
+          <PanelButton
+            disabled={locked}
+            onclick={() => commitLit(titles, { from: playheadIn(titles) })}
+          >
+            {t("post_editor_titles_set_to_playhead")}
+          </PanelButton>
+          <ValueSlider
+            label={t("post_editor_titles_lit_to")}
+            value={lit.to}
+            min={0}
+            max={item.duration}
+            step={0.05}
+            format={secondsText}
+            disabled={locked}
+            onchange={(to) => commitLit(titles, { to })}
+          />
+          <PanelButton
+            disabled={locked}
+            onclick={() => commitLit(titles, { to: playheadIn(titles) })}
+          >
+            {t("post_editor_titles_set_to_playhead")}
+          </PanelButton>
+        </div>
+      {/if}
+      <PanelButton
+        disabled={locked}
+        onclick={() =>
+          editor.edit((project, ctx) =>
+            parkTitles(project, titles.id, editor.previewSeconds, ctx)
+          )}
+      >
+        {t("post_editor_titles_park")}
+      </PanelButton>
+      <PanelButton disabled={locked} onclick={() => void landOnCard(titles)}>
+        {t("post_editor_titles_land")}
+      </PanelButton>
+      {#if landNote}
+        <p class="hint" role="status" transition:growFade>{landNote}</p>
+      {/if}
+    </div>
+  {/if}
+{:else if item?.kind === "flash"}
+  {#if tool === "flash" && item.kind === "flash"}
+    <div class="flash-tools">
+      <ValueSlider
+        label={t("post_editor_flash_strength")}
+        value={item.strength}
+        min={FLASH_MIN_STRENGTH}
+        max={FLASH_MAX_STRENGTH}
+        step={0.01}
+        format={(value) => `${Math.round(value * 100)}%`}
+        disabled={locked}
+        onchange={(strength) => change("flash-strength", { strength })}
+      />
+      <ValueSlider
+        label={t("post_editor_flash_fade")}
+        value={item.fade}
+        min={FLASH_MIN_FADE_SECONDS}
+        max={FLASH_MAX_FADE_SECONDS}
+        step={0.05}
+        format={secondsText}
+        disabled={locked}
+        onchange={(fade) => change("flash-fade", { fade })}
+      />
+      <span class="readout-name">{t("post_editor_flash_marks")}</span>
+      <SegmentedControl
+        color="accent"
+        options={[
+          {
+            value: "on",
+            label: t("post_editor_flash_marks_on"),
+            disabled: locked,
+          },
+          {
+            value: "off",
+            label: t("post_editor_flash_marks_off"),
+            disabled: locked,
+          },
+        ]}
+        value={item.marks ? "on" : "off"}
+        onchange={(value) => patchItem({ marks: value === "on" })}
+        ariaLabel={t("post_editor_flash_marks")}
+      />
+    </div>
+  {/if}
+{:else if item?.kind === "credit"}
+  {#if tool === "credit" && item.kind === "credit"}
+    <div class="flash-tools">
+      <span class="readout-name">{t("post_editor_credit_lead")}</span>
+      <input
+        class="field"
+        value={item.lead}
+        maxlength={CREDIT_MAX_LEAD_LENGTH}
+        aria-label={t("post_editor_credit_lead")}
+        disabled={locked}
+        oninput={(event) =>
+          change("credit-lead", { lead: event.currentTarget.value })}
+      />
+      <p class="hint">
+        {t("post_editor_credit_hint", { wordmark: CREDIT_WORDMARK })}
+      </p>
     </div>
   {/if}
 {/if}
@@ -411,6 +730,18 @@
   }
 
   .hook-titles {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .flash-tools {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .lit-span {
     display: grid;
     gap: 0.5rem;
     min-width: 0;

@@ -84,7 +84,8 @@ export function createTunnelPresentationState(
       ? (initialSnapshot.props.catDogMode ?? false)
       : (inputs.initialCatDogMode ?? false)) || leftPropType !== rightPropType
   );
-  let propHand = $state<"left" | "right">("left");
+  // The picker's Both / Left / Right choice; opens on Both, never saved.
+  let propHand = $state<"both" | "left" | "right">("both");
   let unattachedTunnel = $state({
     config: clone(
       initialSnapshot?.tunnel.config ??
@@ -131,8 +132,16 @@ export function createTunnelPresentationState(
         rightBuugengFlipped = patch.rightBuugengFlipped;
       }
       if (patch.catDogMode !== undefined) catDog = patch.catDogMode;
-      if (leftPropType !== rightPropType) catDog = true;
-      if (!catDog) propHand = "left";
+      // A saved pair keeps its flag; a new pick makes the flag follow whether
+      // the hands differ.
+      if (
+        patch.catDogMode === undefined &&
+        (patch.leftPropType !== undefined || patch.rightPropType !== undefined)
+      ) {
+        catDog = leftPropType !== rightPropType;
+      } else if (leftPropType !== rightPropType) {
+        catDog = true;
+      }
     },
   };
 
@@ -236,15 +245,8 @@ export function createTunnelPresentationState(
     };
   }
 
-  function toggleCatDog(): void {
-    catDog = !catDog;
-    propHand = "left";
-    if (!catDog) rightPropType = leftPropType;
-    inputs.animationSettings.setCurrentPropType(leftPropType);
-  }
-
-  function selectPropHand(hand: "left" | "right"): void {
-    if (catDog) propHand = hand;
+  function selectPropHand(hand: "both" | "left" | "right"): void {
+    propHand = hand;
   }
 
   return {
@@ -277,7 +279,7 @@ export function createTunnelPresentationState(
     },
     /** The prop the picker grid shows as selected: the addressed hand's. */
     get addressedPropType() {
-      return catDog && propHand === "right" ? rightPropType : leftPropType;
+      return propHand === "right" ? rightPropType : leftPropType;
     },
     // Not annotated as HandPropToolbarProps: that type lives in a real .svelte
     // component's module block, which a plain .ts file's typechecker cannot
@@ -285,15 +287,12 @@ export function createTunnelPresentationState(
     // the .svelte hosts that consume it (TunnelLayout) check the match there.
     get handProps() {
       return {
-        catDog,
         hand: propHand,
         leftPropType: leftPropType as PropType,
         rightPropType: rightPropType as PropType,
-        onToggleCatDog: toggleCatDog,
         onHandChange: selectPropHand,
       };
     },
-    toggleCatDog,
     selectPropHand,
     get chirality(): PropChiralitySeam {
       const handState = (hand: ChiralityHand) => ({
@@ -303,12 +302,13 @@ export function createTunnelPresentationState(
         },
       });
       return {
-        hands: catDog
-          ? [handState(propHand)]
-          : [handState("left"), handState("right")],
-        ...(catDog
-          ? { partner: handState(propHand === "left" ? "right" : "left") }
-          : {}),
+        hands:
+          propHand === "both"
+            ? [handState("left"), handState("right")]
+            : [handState(propHand)],
+        ...(propHand === "both"
+          ? {}
+          : { partner: handState(propHand === "left" ? "right" : "left") }),
         onChange(hand, flipped) {
           if (hand === "left") leftBuugengFlipped = flipped;
           else rightBuugengFlipped = flipped;
@@ -342,12 +342,13 @@ export function createTunnelPresentationState(
       playing = !playing;
     },
     setPropType(propType: string) {
-      if (catDog && propHand === "right") rightPropType = propType;
-      else if (catDog) leftPropType = propType;
+      if (propHand === "right") rightPropType = propType;
+      else if (propHand === "left") leftPropType = propType;
       else {
         leftPropType = propType;
         rightPropType = propType;
       }
+      catDog = leftPropType !== rightPropType;
       inputs.animationSettings.setCurrentPropType(leftPropType);
     },
   };

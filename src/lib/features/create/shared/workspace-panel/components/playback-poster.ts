@@ -11,6 +11,9 @@
  * has landed, so the picture becomes the player rather than settling onto
  * one already there: the player's controls arrive around the landed picture,
  * and the poster dissolves into the live canvas once those have arrived.
+ *
+ * Stop does not use the poster; playback-return.ts turns the player back
+ * into the grid.
  */
 import { DURATION } from "#lib/shared/transitions/transitions.js";
 import {
@@ -77,7 +80,6 @@ export class PlaybackPoster {
   #flight: Animation | null = null;
   #landed = false;
   #onLanded: (() => void) | null = null;
-
   get shown(): boolean {
     return this.#el !== null && !this.#leaving;
   }
@@ -111,13 +113,20 @@ export class PlaybackPoster {
       tile.bottom <= stageRect.bottom &&
       tile.left >= stageRect.left &&
       tile.right <= stageRect.right;
-    this.#home = tileOnStage
-      ? `translate(${tile.left - stageRect.left - box.left}px, ${
-          tile.top - stageRect.top - box.top
-        }px) scale(${tile.width / box.size})`
+    const homeRect = tileOnStage
+      ? {
+          left: tile.left - stageRect.left,
+          top: tile.top - stageRect.top,
+          size: tile.width,
+        }
+      : null;
+    this.#home = homeRect
+      ? `translate(${homeRect.left - box.left}px, ${
+          homeRect.top - box.top
+        }px) scale(${homeRect.size / box.size})`
       : null;
 
-    // A Play during the retreat turns the same poster around.
+    // A Play during a retreat turns the same poster around.
     const el = this.#el ?? this.#create(stage, picture);
     Object.assign(el.style, {
       left: `${box.left}px`,
@@ -180,17 +189,18 @@ export class PlaybackPoster {
   }
 
   /** Play ended before the player had fully arrived, the poster still up
-   *  or dissolving: back into the grid, and gone. */
-  retreat(reduced: boolean): void {
+   *  or dissolving: back into the grid, and gone. Returns false when there
+   *  was nothing to send back (no poster, or one already leaving). */
+  retreat(reduced: boolean): boolean {
     const el = this.#el;
-    if (!el || (this.#leaving && !this.#revealing)) return;
+    if (!el || (this.#leaving && !this.#revealing)) return false;
     this.#leaving = true;
     this.#revealing = false;
     this.#flight = null;
     this.#onLanded = null;
     if (reduced) {
       this.dispose();
-      return;
+      return true;
     }
     const from = this.#present(el) ?? { transform: "none", opacity: "1" };
     const motion = el.animate(
@@ -210,6 +220,7 @@ export class PlaybackPoster {
     motion.onfinish = () => {
       if (this.#el === el && this.#leaving) this.dispose();
     };
+    return true;
   }
 
   dispose(): void {

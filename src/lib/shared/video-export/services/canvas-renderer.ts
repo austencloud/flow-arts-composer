@@ -22,6 +22,7 @@ export {
 } from "#lib/shared/animation-engine/services/sequence-progress-renderer.js";
 
 import { textRenderer } from "#lib/shared/render/services/text-renderer.js";
+import { localStepLabels } from "#lib/shared/render/services/local-step-labels.js";
 
 // Constants from standalone_animator.html
 // Using "strict" hand point offset (actual hand position, further from center)
@@ -283,7 +284,9 @@ function drawStepNumber(
   // Font size matches StepNumber.svelte: 100 for numbers, 80 for "Start"
   const isStart = stepNumber === 0;
   const fontSize = (isStart ? 80 : 100) * gridScaleFactor;
-  const displayText = isStart ? "Start" : stepNumber.toString();
+  const displayText = isStart
+    ? localStepLabels().start
+    : stepNumber.toString();
 
   ctx.save();
 

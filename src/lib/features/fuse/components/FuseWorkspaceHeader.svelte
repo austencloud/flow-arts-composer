@@ -48,9 +48,14 @@
       rule: fuseState.rule,
     })
   );
-  const compactSummary = $derived(
-    `${summaries.length} · L${fuseState.generationLevel} · ${summaries.grid} · ${summaries.pairing}`
+  // One summary, in two pieces: where the switch sits on its own row under the
+  // button it already says Separate or Linked (and in Linked the rule row under
+  // it says the rest), so the pairing tail drops out there and the recipe part
+  // gets the whole line.
+  const recipeSummary = $derived(
+    `${summaries.length} · L${fuseState.generationLevel} · ${summaries.grid}`
   );
+  const pairingSummary = $derived(` · ${summaries.pairing}`);
 
   $effect(() => {
     if (optionsDisabled) activeSetting = null;
@@ -116,7 +121,10 @@
       <i class="fas fa-sliders" aria-hidden="true"></i>
       <span class="recipe-label">
         <span>Fuse recipe</span>
-        <strong>{compactSummary}</strong>
+        <strong
+          >{recipeSummary}<span class="summary-tail">{pairingSummary}</span
+          ></strong
+        >
       </span>
       <i class="fas fa-chevron-right recipe-chevron" aria-hidden="true"></i>
     </PanelButton>
@@ -237,12 +245,38 @@
     .mode-switch :global(.fuse-mode-bar) {
       width: 100%;
     }
+
+    /* The switch directly below already names the pairing. */
+    .summary-tail {
+      display: none;
+    }
   }
 
+  /* The phone header: 7 + 44 (Fuse and the recipe button) + 6 + 44 (the
+     switch: 36px segments in the control's 3px padding and 1px border) + 7,
+     plus the header's 1px border top and bottom: 110px. */
   @container fuse (max-width: 520px) {
     .fuse-header {
-      gap: 8px;
+      gap: 6px 8px;
       padding: 7px 8px;
+    }
+
+    .mode-switch :global(.segment) {
+      min-height: var(--alt-touch-target, 36px);
+      padding-block: 0;
+    }
+
+    /* Two lines in 44px: 1px border, 4px padding, then 12px and 14px lines at
+       a 1.2 line height with the 1px gap between them. */
+    .recipe-trigger :global(.panel-btn) {
+      min-height: 44px;
+      height: 44px;
+      padding-block: 4px;
+    }
+
+    .recipe-label > span,
+    .recipe-label strong {
+      line-height: 1.2;
     }
 
     .title-full,

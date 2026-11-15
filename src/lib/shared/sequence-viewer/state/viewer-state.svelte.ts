@@ -85,6 +85,12 @@ export function createViewerState(options?: ViewerStateOptions) {
 		videoUploadOpen = false;
 	}
 
+	// The split half of a host's opening view. Like seedViewerMode, page
+	// intent that this device does not keep.
+	function seedSplitConfig(config: SplitConfig) {
+		splitConfig = { ...config };
+	}
+
 	function setExportContext(ctx: ExportContext) {
 		exportContext = ctx;
 	}
@@ -192,6 +198,7 @@ export function createViewerState(options?: ViewerStateOptions) {
 		setSubject,
 		setViewerMode,
 		seedViewerMode,
+		seedSplitConfig,
 		setExportContext,
 		setSplitPaneContent,
 		setSplitConfig,

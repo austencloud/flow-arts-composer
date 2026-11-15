@@ -22,6 +22,7 @@ import type {
 
 import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+import { resolveInitialSort } from "#lib/shared/browse/engine/resolve-initial-sort.js";
 import { resolvePersistedFilterType } from "#lib/shared/browse/services/legacy-filter-type-aliases.js";
 import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
 import {
@@ -86,6 +87,9 @@ import {
   getWidthBucketKey,
   clampColumnsToWidth,
 } from "#lib/shared/browse/services/grid-column-breakpoints.js";
+
+/** A catalogue read in full this recently is reused instead of re-read. */
+export const FRESH_CATALOG_MAX_AGE_MS = 5 * 60 * 1000;
 
 // Helpers
 
@@ -250,12 +254,15 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
   let allSequences = $state<SequenceData[]>([]);
   let sectionsReady = $state(false);
 
-  let sortMethod = $state<BrowseSortMethod>(
-    persisted?.sortMethod ?? config.initialSort ?? BrowseSortMethod.ALPHABETICAL
-  );
-  let sortDirection = $state<"asc" | "desc">(
-    persisted?.sortDirection ?? config.initialSortDirection ?? "asc"
-  );
+  const restoredSort = resolveInitialSort(persisted, {
+    sort: config.initialSort,
+    direction: config.initialSortDirection,
+  });
+  let sortMethod = $state<BrowseSortMethod>(restoredSort.method);
+  let sortDirection = $state<"asc" | "desc">(restoredSort.direction);
+  // True once the visitor picks an order themselves. Persisted, so a later
+  // change of the host's default never overrides a real choice.
+  let sortChosen = $state(restoredSort.chosen);
 
   let activeFilters = $state<Map<string, ActiveFilter>>(buildInitialFilters());
 
@@ -436,6 +443,8 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     [BrowseSortMethod.DENSITY]: "density",
     [BrowseSortMethod.AUTHOR]: "author",
     [BrowseSortMethod.POPULARITY]: "letter",
+    // Today's mix is one flat wall: no letter or other sections.
+    [BrowseSortMethod.TODAYS_MIX]: "none",
     // Curated has no natural section; letter sections keep the index useful,
     // which is what the missing-key fallback below always resolved to anyway.
     [BrowseSortMethod.CURATED]: "letter",
@@ -600,6 +609,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       source: _source,
       sortMethod: _sortMethod,
       sortDirection: _sortDirection,
+      sortChosen,
       activeFilters: userFilters,
       connectives: _connectives,
       columns: _columns,
@@ -703,6 +713,19 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       isLoading = true;
       sectionsReady = false;
       error = null;
+      // Another view read the whole catalogue from Firestore moments ago:
+      // use it as-is instead of re-reading ~1,600 documents. Optional-called
+      // so stub loaders without the method keep the old path.
+      const fresh = refresh
+        ? null
+        : (loaderService.getFreshCatalog?.(FRESH_CATALOG_MAX_AGE_MS) ?? null);
+      if (fresh) {
+        if (!isCurrentRequest()) return;
+        allSequences = deduplicateById(fresh);
+        sectionsReady = true;
+        appendExtraCommunitySequences(requestRevision);
+        return;
+      }
       // Saved results or the first Firestore page can populate Browse while
       // the remainder of the public catalog is still arriving.
       const early = refresh
@@ -1145,6 +1168,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     setSort(method: BrowseSortMethod, direction: "asc" | "desc"): void {
       sortMethod = method;
       sortDirection = direction;
+      sortChosen = true;
       // Pipeline recomputes via $derived automatically
     },
 

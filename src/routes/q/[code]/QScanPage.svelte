@@ -213,6 +213,12 @@
           data.physicalCardProps,
           record
         );
+      // Start the card's picture downloads now, while the viewer code is
+      // still arriving, instead of after the card mounts.
+      const cellSequence = sequence;
+      void import("#lib/shared/render/services/scan-cell-prefetch.js")
+        .then((m) => m.prefetchScanCardCells(cellSequence, propConfig))
+        .catch(() => {});
       const word = sequence.word || sequence.displayName || sequence.name;
       updateScanAttribution({
         sequenceWord: word || null,

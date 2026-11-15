@@ -79,8 +79,12 @@
     font-size: inherit;
     letter-spacing: inherit;
     background: linear-gradient(90deg, var(--c1), var(--c2));
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .motion-pill.dual::after {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

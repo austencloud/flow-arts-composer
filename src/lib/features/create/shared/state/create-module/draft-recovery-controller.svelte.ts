@@ -1,3 +1,4 @@
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
 import type { SequenceState } from "../sequence-state-orchestrator.svelte";
 import type {
@@ -59,7 +60,7 @@ export function createDraftRecoveryController(deps: {
     );
     if (preserved) return true;
     message =
-      "Your latest edits are still changing. Try again before choosing a draft.";
+      t("create_draft_error_still_changing");
     versions = distinctVisibleVersions(await deps.persister.listDrafts(mode));
     return false;
   }
@@ -83,7 +84,7 @@ export function createDraftRecoveryController(deps: {
       versions = distinctVisibleVersions(await deps.persister.listDrafts(mode));
     } catch {
       message =
-        "Your latest edits could not be saved. Try again before choosing a draft.";
+        t("create_draft_error_not_saved_choose");
     } finally {
       busy = false;
     }
@@ -99,7 +100,7 @@ export function createDraftRecoveryController(deps: {
       const workspace = await deps.persister.recoverDraft(dialogMode, id);
       if (!workspace) {
         message =
-          "This version could not be opened. Review the saved versions and try again.";
+          t("create_draft_error_open_review");
         versions = distinctVisibleVersions(
           await deps.persister.listDrafts(dialogMode)
         );
@@ -111,7 +112,7 @@ export function createDraftRecoveryController(deps: {
       return true;
     } catch {
       message =
-        "This version could not be opened. Your drafts are still available.";
+        t("create_draft_error_open_available");
       return false;
     } finally {
       busy = false;
@@ -137,7 +138,7 @@ export function createDraftRecoveryController(deps: {
       await deps.persister.startFreshDraft(dialogMode);
       if (deps.persister.getDraftStatus(dialogMode).status !== "idle") {
         message =
-          "A new draft could not be started. Your saved work is still available.";
+          t("create_draft_error_new_failed");
         return;
       }
       deps.getSequenceState(dialogMode).restoreDraftState({
@@ -150,7 +151,7 @@ export function createDraftRecoveryController(deps: {
       open = false;
     } catch {
       message =
-        "Your latest edits could not be saved. Try again before starting a new draft.";
+        t("create_draft_error_not_saved_new");
     } finally {
       busy = false;
     }

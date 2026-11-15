@@ -1,7 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// These tests exercise every fan look, which stay renderable while only some
+// are offered, so they run with the preview flag on. The hoisted call runs
+// before the modules read the flag.
+vi.hoisted(() => {
+  vi.stubEnv("VITE_MAKER_PREVIEW", "1");
+});
+
 
 import {
   fanAppearanceArtwork,
@@ -60,6 +68,7 @@ describe("Moon fan appearance", () => {
       // Each build's photograph frames its fan differently, so the compact
       // rail scales them to one apparent size rather than one box size.
       imageScale: 1.54,
+      waitingOnMaker: false,
       designCredit: {
         originator: "Lighttoys",
         sourceUrl: "https://www.lighttoys.cz/product/moon-fans-ft/",

@@ -18,6 +18,8 @@ import {
   loadCanonicalTnDBaseSequences,
   loadCanonicalTnDSequences,
 } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export interface FoundingSmartCollection {
@@ -130,6 +132,43 @@ export const FOUNDING_SMART_COLLECTIONS: FoundingSmartCollection[] = [
   },
 ];
 
+/**
+ * The constants above stay the English source; this is what a visitor reads.
+ */
+const FOUNDING_TEXT_KEYS: Record<
+  string,
+  { name: TranslationKey; description: TranslationKey }
+> = {
+  "founding_tka-1": {
+    name: "browse_collections_founding_tka1_name",
+    description: "browse_collections_founding_tka1_description",
+  },
+  "founding_tka-2": {
+    name: "browse_collections_founding_tka2_name",
+    description: "browse_collections_founding_tka2_description",
+  },
+  "founding_tka-3": {
+    name: "browse_collections_founding_tka3_name",
+    description: "browse_collections_founding_tka3_description",
+  },
+  founding_book: {
+    name: "browse_collections_founding_book_name",
+    description: "browse_collections_founding_book_description",
+  },
+};
+
+export function foundingCollectionName(f: FoundingSmartCollection): string {
+  const key = FOUNDING_TEXT_KEYS[f.id]?.name;
+  return key ? t(key) : f.name;
+}
+
+export function foundingCollectionDescription(
+  f: FoundingSmartCollection
+): string {
+  const key = FOUNDING_TEXT_KEYS[f.id]?.description;
+  return key ? t(key) : f.description;
+}
+
 export function isFoundingId(id: string): boolean {
   return id.startsWith("founding_");
 }
@@ -181,8 +220,8 @@ export function toSyntheticCollection(
 ): LibraryCollection {
   return {
     id: f.id,
-    name: f.name,
-    description: f.description,
+    name: foundingCollectionName(f),
+    description: foundingCollectionDescription(f),
     ownerId: "system",
     sequenceIds: [],
     sequenceCount: f.sequenceCount,

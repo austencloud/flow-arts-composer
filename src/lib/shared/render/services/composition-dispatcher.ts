@@ -8,6 +8,7 @@ import { convertGlyphCacheToBitmaps } from "./glyph-bitmap-loader";
 import type { GlyphBitmapEntry } from "./glyph-bitmap-loader";
 import { bundleTransferables } from "./card-asset-bundle";
 import { captureException } from "#lib/shared/analytics/services/posthog.js";
+import { localStepLabels } from "#lib/shared/render/services/local-step-labels.js";
 
 type CompositionProgress = Parameters<CompositionProgressCallback>[0];
 
@@ -21,6 +22,15 @@ function reportFinalizing(
     total: latestProgress?.total ?? 1,
     stage: "finalizing",
   });
+}
+
+// The worker has no locale, so the Start/End words travel with each request.
+function withStepLabels(
+  options: Partial<SequenceExportOptions>
+): Partial<SequenceExportOptions> {
+  return options.stepLabels
+    ? options
+    : { ...options, stepLabels: localStepLabels() };
 }
 
 // ---- Protocol types (shared with composition.worker.ts) ----
@@ -328,6 +338,7 @@ export class CompositionDispatcher {
      * reads it via options.qrImageBitmap. Null = no QR baked. */
     qrBitmap: ImageBitmap | null = null
   ): Promise<Blob> {
+    options = withStepLabels(options);
     if (CompositionDispatcher.canUseWorker()) {
       try {
         return await this.composeOnWorker(
@@ -435,6 +446,7 @@ export class CompositionDispatcher {
     signal?: AbortSignal,
     onProgress?: CompositionProgressCallback
   ): Promise<ImageBitmap> {
+    options = withStepLabels(options);
     await this.ensureInitialized();
 
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");

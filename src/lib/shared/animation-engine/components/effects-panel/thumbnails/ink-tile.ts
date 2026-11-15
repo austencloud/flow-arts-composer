@@ -31,6 +31,7 @@ import {
   mix,
   smoothstep,
 } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type InkIntent = EffectConfigMap["ink"];
 export const INK_TILE_SEED = 0x1a4b;
@@ -60,6 +61,8 @@ interface Params {
   readonly blood: boolean;
   readonly lifetime: number;
   readonly peakAlpha: number;
+  /** Stroke weight multiplier: 1 on the card, more where it must read tiny. */
+  readonly widthK: number;
 }
 
 interface StrokePoint {
@@ -119,7 +122,7 @@ function isDark(hex: string): boolean {
 }
 
 function strokeWidth(P: Params, speedPx: number): number {
-  return resolveInkStrokeWidth(P.p, speedPx, SCALE);
+  return resolveInkStrokeWidth(P.p, speedPx, SCALE) * P.widthK;
 }
 
 // --- The swash: Catmull-Rom through a loop, sampled at the renderer's 60 points/s ---
@@ -138,11 +141,15 @@ const KNOTS: ReadonlyArray<readonly [number, number]> = [
   [680, 150],
 ];
 
-function catmull(i: number, t: number): Pt {
-  const p0 = KNOTS[Math.max(0, i - 1)]!;
-  const p1 = KNOTS[i]!;
-  const p2 = KNOTS[Math.min(KNOTS.length - 1, i + 1)]!;
-  const p3 = KNOTS[Math.min(KNOTS.length - 1, i + 2)]!;
+function catmull(
+  knots: ReadonlyArray<readonly [number, number]>,
+  i: number,
+  t: number
+): Pt {
+  const p0 = knots[Math.max(0, i - 1)]!;
+  const p1 = knots[i]!;
+  const p2 = knots[Math.min(knots.length - 1, i + 1)]!;
+  const p3 = knots[Math.min(knots.length - 1, i + 2)]!;
   const t2 = t * t;
   const t3 = t2 * t;
   const f = (a: number, b: number, c: number, d: number) =>
@@ -154,18 +161,50 @@ function catmull(i: number, t: number): Pt {
   return { x: f(p0[0], p1[0], p2[0], p3[0]), y: f(p0[1], p1[1], p2[1], p3[1]) };
 }
 
-function densePath(): Pt[] {
+function densePath(knots: ReadonlyArray<readonly [number, number]>): Pt[] {
   const out: Pt[] = [];
-  for (let i = 0; i < KNOTS.length - 1; i++) {
-    for (let k = 0; k < 40; k++) out.push(catmull(i, k / 40));
+  for (let i = 0; i < knots.length - 1; i++) {
+    for (let k = 0; k < 40; k++) out.push(catmull(knots, i, k / 40));
   }
-  out.push(catmull(KNOTS.length - 2, 1));
+  out.push(catmull(knots, knots.length - 2, 1));
   return out;
 }
 
+/**
+ * Small formats: the same swash, a heavier hand. The chip squeezes the stroke
+ * to half its width so the loop fills a 3:2 frame.
+ */
+interface InkSmall {
+  view: Box;
+  widthK: number;
+  squeeze: number;
+  drops: number;
+  dropK: number;
+}
+const SMALL: Record<"tile" | "chip", InkSmall> = {
+  tile: {
+    view: { x: 20, y: 28, w: 680, h: 255 },
+    widthK: 1.7,
+    squeeze: 1,
+    drops: 4,
+    dropK: 1.8,
+  },
+  chip: {
+    view: { x: 150, y: 30, w: 420, h: 280 },
+    widthK: 2.3,
+    squeeze: 0.55,
+    drops: 3,
+    dropK: 2.2,
+  },
+};
+
 /** Sample the swash as the tip would have been recorded: spacing follows speed, slow in the loop. */
-function recordStroke(P: Params, rand: Rand): StrokePoint[] {
-  const fine = densePath();
+function recordStroke(
+  P: Params,
+  rand: Rand,
+  knots: ReadonlyArray<readonly [number, number]> = KNOTS
+): StrokePoint[] {
+  const fine = densePath(knots);
   const curv = fine.map((_, i) =>
     resolveInkTurnLoad(
       fine[Math.max(0, i - 6)]!,
@@ -252,7 +291,7 @@ function buildRibbon(
       nx: -dy,
       ny: dx,
       width:
-        Math.max(0.75 * SCALE, strokeWidth(P, pt.spawnSpeedPx)) *
+        Math.max(0.75 * SCALE * P.widthK, strokeWidth(P, pt.spawnSpeedPx)) *
         widthNoise *
         nib *
         (1 + load * 0.42),
@@ -627,8 +666,11 @@ function breakupTail(
 
 export function paintInkTile(
   ctx: CanvasRenderingContext2D,
-  intent: InkIntent
+  intent: InkIntent,
+  format: TileFormat = "card"
 ): void {
+  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  if (small) frame(ctx, format, small.view, 0);
   const p = resolveInk2D(intent);
   const pal = p.resolvedPalette;
   const emissive = pal.emissive === true;
@@ -638,6 +680,7 @@ export function paintInkTile(
     blood: pal.id === "blood",
     lifetime: p.lifetimeSeconds,
     peakAlpha: Math.min(1, p.opacityMax * (0.48 + p.intensity * 0.52)),
+    widthK: small?.widthK ?? 1,
   };
   const rand = lcg(INK_TILE_SEED);
 
@@ -656,7 +699,12 @@ export function paintInkTile(
     );
   } else blob(ctx, 330, 140, 360, 170, hexToRgb(pal.pigment), 0.05);
 
-  const all = recordStroke(P, rand);
+  const knots = small
+    ? KNOTS.map(
+        ([x, y]) => [CENTER.x + (x - 370) * small.squeeze, y] as const
+      )
+    : KNOTS;
+  const all = recordStroke(P, rand, knots);
   const { kept: points, drops: breakDrops } = breakupTail(P, all, rand);
   const ribbon = buildRibbon(points, P, !emissive);
 
@@ -720,7 +768,14 @@ export function paintInkTile(
   }
   drawGranulation(L, P, points, STAMPS.get(p));
   drawBristles(L, P, points);
-  drawDroplets(L, P, [...breakDrops, ...droplets(P, points, rand)]);
+  let drops = [...breakDrops, ...droplets(P, points, rand)];
+  if (small) {
+    drops = drops
+      .sort((a, b) => b.radius - a.radius)
+      .slice(0, small.drops)
+      .map((d) => ({ ...d, radius: d.radius * small.dropK }));
+  }
+  drawDroplets(L, P, drops);
 
   if (emissive) {
     ctx.save();

@@ -97,10 +97,14 @@
     position: relative;
     background: var(--retro-button-face, #c0c0c0);
     border: 2px outset var(--retro-button-face, #c0c0c0);
-    border-bottom: none;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
     color: var(--retro-black, #000);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .retro-tab {
+    border-bottom: none;
   }
 
   .retro-tab:not(.active) {

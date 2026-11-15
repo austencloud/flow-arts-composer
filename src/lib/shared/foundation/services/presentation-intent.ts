@@ -5,6 +5,9 @@ import {
   type TrailSettings,
 } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type { EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+import { effectUiLabel } from "#lib/shared/animation-engine/components/effects-panel/effect-ui-label.js";
 import { EFFECT_LABELS } from "#lib/shared/effects/domain/effect-meta.js";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { migrateEffectsConfig } from "#lib/shared/effects/domain/migrations.js";
@@ -49,11 +52,11 @@ export interface PresentationSummary {
   effectLabels: string[];
 }
 
-const TRAIL_MODE_LABELS: Record<TrailMode, string> = {
-  [TrailMode.OFF]: "No trail",
-  [TrailMode.FADE]: "Fade trail",
-  [TrailMode.LOOP_CLEAR]: "Loop-clear trail",
-  [TrailMode.PERSISTENT]: "Persistent trail",
+const TRAIL_MODE_LABEL_KEYS: Record<TrailMode, TranslationKey> = {
+  [TrailMode.OFF]: "library_look_trail_off",
+  [TrailMode.FADE]: "library_look_trail_fade",
+  [TrailMode.LOOP_CLEAR]: "library_look_trail_loop_clear",
+  [TrailMode.PERSISTENT]: "library_look_trail_persistent",
 };
 
 /**
@@ -267,12 +270,14 @@ export function summarizePresentation(
 ): PresentationSummary {
   const effectLabels: string[] = [];
   for (const effect of referencedEffects(value.effects.tipEffectMap)) {
-    const label = EFFECT_LABELS[effect] ?? effect;
+    const label = effectUiLabel(EFFECT_LABELS[effect] ?? effect);
     if (!effectLabels.includes(label)) effectLabels.push(label);
   }
   return {
     colors: value.primaryPropColors,
-    trailLabel: TRAIL_MODE_LABELS[value.trail.mode] ?? "Trail",
+    trailLabel: t(
+      TRAIL_MODE_LABEL_KEYS[value.trail.mode] ?? "library_look_trail"
+    ),
     effectLabels,
   };
 }

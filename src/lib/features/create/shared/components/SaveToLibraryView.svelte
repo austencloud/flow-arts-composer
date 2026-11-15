@@ -385,6 +385,8 @@
     <div class="optional-section">
       <ExpandableField
         label={t("create_review_notes")}
+        addLabel={t("create_save_add_notes")}
+        removeLabel={t("create_save_remove_notes")}
         expanded={s.showNotes}
         onExpandedChange={(v) => (s.showNotes = v)}
         onCollapse={() => (s.notes = "")}
@@ -601,6 +603,14 @@
     .view-body {
       --scrollbar-room: 10px;
     }
+  }
+
+  /* The body scrolls, so its rows keep their content height instead of
+     shrinking to fit. Signed in, the Collections card overflows the body and
+     squeezed the public row to its 36px floor: its second line sat on the
+     card's border (two lines of Chinese, or the English description). */
+  .view-body > :global(*) {
+    flex-shrink: 0;
   }
 
   .save-props > :global(.prop-pair-field) {

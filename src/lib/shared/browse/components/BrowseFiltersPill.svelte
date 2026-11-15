@@ -16,10 +16,18 @@
     engine,
     onOpen,
     label = "count",
+    pending = false,
+    pendingCount = null,
   }: {
     engine: BrowseEngine;
     onOpen: () => void;
     label?: "count" | "filters";
+    /** The host's grid has not answered yet, whatever the engine says. */
+    pending?: boolean;
+    /** What the host already knows the answer will be (a collection's size).
+     * Shown while pending, so the number on the first frame is the one that
+     * stays. Unknown shows no number until the grid answers. */
+    pendingCount?: number | null;
   } = $props();
 
   const activeUserFilterCount = $derived(
@@ -27,13 +35,29 @@
   );
   // While the pool loads or a filter is still working out its answer, the
   // count is not an answer yet: an ellipsis holds its place instead of "0".
-  const countPending = $derived(engine.isLoading || engine.isResolvingFilters);
+  const engineCounting = $derived(
+    pending || engine.isLoading || engine.isResolvingFilters
+  );
+  // A known size only stands for the answer when nothing narrows it.
+  const knownCount = $derived(
+    engineCounting &&
+      pendingCount !== null &&
+      !engine.searchQuery &&
+      activeUserFilterCount === 0
+      ? pendingCount
+      : null
+  );
+  const countPending = $derived(engineCounting && knownCount === null);
+  const resultCount = $derived(knownCount ?? engine.resultCount);
+  const libraryComplete = $derived(
+    knownCount !== null || engine.isLibraryComplete
+  );
   const results = $derived(
     countPending
       ? t("browse_audit_counting_matches")
-      : engine.resultCount === 1
-        ? t("browse_audit_one_sequence", { count: engine.resultCount })
-        : t("browse_audit_many_sequences", { count: engine.resultCount })
+      : resultCount === 1
+        ? t("browse_audit_one_sequence", { count: resultCount })
+        : t("browse_audit_many_sequences", { count: resultCount })
   );
 </script>
 
@@ -42,8 +66,8 @@
   class="filters-pill"
   class:header={label === "filters"}
   onclick={onOpen}
-  aria-label={!engine.isLibraryComplete
-    ? `At least ${engine.resultCount} sequences loaded. More may be available.`
+  aria-label={!libraryComplete
+    ? `At least ${resultCount} sequences loaded. More may be available.`
     : activeUserFilterCount > 0
       ? t("browse_audit_filters_with_active", {
           results,
@@ -56,11 +80,10 @@
     <span class="filters-word">{t("browse_ui_filters")}</span>
   {/if}
   <span class="filters-pill-count">
-    <span class="count-number">{countPending ? "…" : engine.resultCount}</span
-    >{engine.isLibraryComplete || countPending
-      ? ""
-      : "+"}{#if label === "count"}<span class="result-count-word"
-        >&nbsp;{engine.resultCount === 1 && !countPending
+    <span class="count-number">{countPending ? "…" : resultCount}</span
+    >{libraryComplete || countPending ? "" : "+"}{#if label === "count"}<span
+        class="result-count-word"
+        >&nbsp;{resultCount === 1 && !countPending
           ? t("browse_audit_sequence")
           : t("browse_audit_sequences")}</span
       >{/if}
@@ -70,9 +93,9 @@
   {/if}
 </button>
 <span class="sr-only" aria-live="polite" aria-atomic="true">
-  {engine.isLibraryComplete || countPending
+  {libraryComplete || countPending
     ? results
-    : `At least ${engine.resultCount} sequences loaded`}
+    : `At least ${resultCount} sequences loaded`}
 </span>
 
 <style>

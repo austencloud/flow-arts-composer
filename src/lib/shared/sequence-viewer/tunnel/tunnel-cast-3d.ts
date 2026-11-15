@@ -18,7 +18,7 @@ import type { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scen
 import {
   getViewerFrontStageCameraZ,
   getViewerFrontStageFacingAngle,
-} from "#lib/shared/3d/domain/viewer-formation-facing.js";
+} from "#lib/shared/3d/domain/viewer-front-stage.js";
 import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
 import type { PerformerPropColors } from "#lib/shared/3d/rendering/performer-prop-tint.js";
 import type { BuiltTunnelLayer } from "./tunnel-layer-builder";

@@ -12,12 +12,16 @@ Presentational component for a single toggle option with icon and label
     isActive,
     isLandscapeMobile,
     optionsAreSideBySide = false,
+    solo = false,
   } = $props<{
     label: string;
     icon?: string;
     isActive: boolean;
     isLandscapeMobile: boolean;
     optionsAreSideBySide?: boolean;
+    /** The chosen option shown alone as the card's value, at the stepper
+        cards' value size (ToggleCard's short, narrow form). */
+    solo?: boolean;
   }>();
 
   // Helper function to detect if icon is a Font Awesome icon name
@@ -41,6 +45,7 @@ Presentational component for a single toggle option with icon and label
   class:inactive={!isActive}
   class:landscape-mobile={isLandscapeMobile}
   class:side-by-side={optionsAreSideBySide}
+  class:solo
   role="presentation"
   title={label}
   aria-label={label}
@@ -109,7 +114,7 @@ Presentational component for a single toggle option with icon and label
     text-overflow: ellipsis;
     text-align: center;
     line-height: 1.2;
-    font-size: clamp(11px, 7cqi, 28px);
+    font-size: clamp(var(--font-size-compact, 12px), 7cqi, 28px);
   }
 
   /* When options are side-by-side: Stack icon on TOP of text for better fit */
@@ -127,18 +132,46 @@ Presentational component for a single toggle option with icon and label
     font-size: clamp(12px, 2.2vmin, 18px);
   }
 
+  /* Matches LandscapeStepperValue, the value the sibling stepper cards show:
+     clamp(18px, 5cqh, 28px) is 18px on any card under 70px tall, the only
+     place ToggleCard shows a single value, so the 18px role is the same size. */
+  .toggle-option.solo {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    gap: 4px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font-size: var(--font-size-lg, 18px);
+    font-weight: 700;
+    line-height: 1.2;
+    text-shadow: var(--card-value-shadow, 0 1px 3px rgba(0, 0, 0, 0.2));
+    transform: none;
+  }
+
+  .toggle-option.solo .option-icon {
+    font-size: inherit;
+  }
+
+  .toggle-option.solo .option-label {
+    min-width: 0;
+    font-size: inherit;
+  }
+
   .toggle-option.landscape-mobile {
     padding: clamp(2px, 0.5vw, 4px);
   }
 
   .toggle-option.landscape-mobile .option-label {
-    font-size: clamp(9px, 1.5vmin, 12px);
+    font-size: var(--font-size-compact, 12px);
     white-space: nowrap;
   }
 
   @media (max-width: 320px) {
     .option-label {
-      font-size: clamp(9px, 1.8vmin, 12px);
+      font-size: var(--font-size-compact, 12px);
     }
   }
 </style>

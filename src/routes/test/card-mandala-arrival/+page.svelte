@@ -9,9 +9,11 @@
   The page patches the shared thumbnail orchestrator while it is open (no
   memory hits, no early previews, each result held for the chosen delay) and
   puts it back when it closes. The card hears a pretend loading story in
-  place of the real one: waiting in line for the whole delay, or on the
-  counted speed waiting, then step numbers, then saving, so the drawing's
-  creep, its step numbers and its finish can each be seen.
+  place of the real one: waiting in line for the whole delay; loading with
+  no step numbers (Stuck, the long wait that once drew the figure whole and
+  stopped); or waiting, then step numbers, then saving. So the travelling
+  line, its length following the steps, each caption and the finish can all
+  be seen. The captions come from the cards themselves, as on the gallery.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
@@ -22,26 +24,86 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
-  type Speed = "phone" | "slow" | "long" | "counted" | "mixed" | "fast";
+  type Speed =
+    | "phone"
+    | "slow"
+    | "long"
+    | "counted"
+    | "stuck"
+    | "lined"
+    | "mixed"
+    | "fast";
+  /**
+   * What the card hears over its wait: "line" waiting in line the whole
+   * time, "loading" rendering with no step numbers the whole time, or
+   * "counted" in line, then step numbers, then saving.
+   */
+  type Story = "line" | "loading" | "counted";
   interface SpeedOption {
     id: Speed;
     label: string;
     range: [number, number];
-    /** The card reports step numbers on the way. */
-    counted?: boolean;
+    story: Story;
+    /**
+     * For a counted story, the in-line and saving parts in ms; without
+     * them they are shares of the wait (COUNT_FROM, COUNT_TO).
+     */
+    lineMs?: number;
+    saveMs?: number;
   }
   const SPEEDS: SpeedOption[] = [
-    { id: "phone", label: "Phone (0.4 to 4 s)", range: [400, 4000] },
-    { id: "slow", label: "Slow (3 to 5 s)", range: [3000, 5000] },
-    { id: "long", label: "Long (8 to 10 s)", range: [8000, 10000] },
+    {
+      id: "phone",
+      label: "Phone (0.4 to 4 s)",
+      range: [400, 4000],
+      story: "line",
+    },
+    {
+      id: "slow",
+      label: "Slow (3 to 5 s)",
+      range: [3000, 5000],
+      story: "line",
+    },
+    {
+      id: "long",
+      label: "Long (8 to 10 s)",
+      range: [8000, 10000],
+      story: "line",
+    },
     {
       id: "counted",
       label: "Counted steps (6 to 9 s)",
       range: [6000, 9000],
-      counted: true,
+      story: "counted",
     },
-    { id: "mixed", label: "Mixed (0.05 to 2 s)", range: [50, 2000] },
-    { id: "fast", label: "Fast (under 0.2 s)", range: [0, 200] },
+    // The fault Austen filmed: a long wait with no step numbers. The line
+    // must keep travelling and never draw itself whole.
+    {
+      id: "stuck",
+      label: "Stuck (45 s, no numbers)",
+      range: [45_000, 45_000],
+      story: "loading",
+    },
+    {
+      id: "lined",
+      label: "In line, then counted (15 s + 15 s)",
+      range: [32_000, 32_000],
+      story: "counted",
+      lineMs: 15_000,
+      saveMs: 2000,
+    },
+    {
+      id: "mixed",
+      label: "Mixed (0.05 to 2 s)",
+      range: [50, 2000],
+      story: "line",
+    },
+    {
+      id: "fast",
+      label: "Fast (under 0.2 s)",
+      range: [0, 200],
+      story: "line",
+    },
   ];
   /** The counted speed's story: in line, then steps, then saving. */
   const COUNT_FROM = 0.25;
@@ -71,23 +133,28 @@
     hold: number
   ): () => void {
     const say = request.onStatusChange;
+    if (option.story === "loading") {
+      say?.({ state: "rendering" });
+      return () => {};
+    }
     say?.({ state: "queued", position: 0 });
-    if (!option.counted) return () => {};
+    if (option.story !== "counted") return () => {};
     const total = (request.sequence.steps?.length ?? 0) + 1;
+    const countFrom = option.lineMs ?? hold * COUNT_FROM;
+    const countTo =
+      option.saveMs !== undefined ? hold - option.saveMs : hold * COUNT_TO;
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const at = (share: number, tell: () => void) =>
-      timers.push(setTimeout(tell, hold * share));
+    const at = (ms: number, tell: () => void) =>
+      timers.push(setTimeout(tell, ms));
     for (let current = 1; current <= total; current++) {
-      const share =
-        COUNT_FROM + ((COUNT_TO - COUNT_FROM) * (current - 1)) / total;
-      at(share, () =>
+      at(countFrom + ((countTo - countFrom) * (current - 1)) / total, () =>
         say?.({
           state: "rendering",
           progress: { current, total, stage: "rendering" },
         })
       );
     }
-    at(COUNT_TO, () => say?.({ state: "uploading" }));
+    at(countTo, () => say?.({ state: "uploading" }));
     return () => timers.forEach(clearTimeout);
   }
 

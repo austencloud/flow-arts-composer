@@ -73,7 +73,7 @@
       aria-checked={viewMode.subject === "props"}
       onclick={() => setSubject("props")}
     >
-      Props
+      {t("viewer_ui_props")}
     </button>
     <button
       class="toggle-chip"
@@ -82,7 +82,7 @@
       aria-checked={viewMode.subject === "hands"}
       onclick={() => setSubject("hands")}
     >
-      Hands
+      {t("create_ui_hands")}
     </button>
   </div>
 

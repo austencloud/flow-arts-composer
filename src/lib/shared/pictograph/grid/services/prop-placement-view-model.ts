@@ -11,17 +11,23 @@ import {
 } from "../../shared/domain/enums/pictograph-enums";
 import type { PictographData } from "../../shared/domain/models/pictograph-data";
 import { createMotionData } from "../../shared/domain/models/motion-data";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   calculateBetaOffset,
   type BetaMotionInput,
 } from "#lib/shared/render/core/calculations/beta-offset.js";
 
+export interface PlacementPromptSegment {
+  kind: "text" | "noun" | "aim";
+  text: string;
+}
+
 export interface PlacementPromptParts {
-  lead: string;
-  noun: string;
+  /** The sentence in reading order, so each language places the noun itself. */
+  segments: PlacementPromptSegment[];
   color: HandSide;
-  aim: string | null;
 }
 
 interface PlacementPromptInput {
@@ -38,20 +44,43 @@ interface PlacementPromptInput {
   rightNoun: string;
 }
 
-const AIM_LABELS: Partial<Record<Orientation, string>> = {
-  [Orientation.IN]: "In",
-  [Orientation.OUT]: "Out",
-  [Orientation.CLOCK]: "Clock",
-  [Orientation.COUNTER]: "Counter",
-  [Orientation.CENTER_N]: "North",
-  [Orientation.CENTER_NE]: "Northeast",
-  [Orientation.CENTER_E]: "East",
-  [Orientation.CENTER_SE]: "Southeast",
-  [Orientation.CENTER_S]: "South",
-  [Orientation.CENTER_SW]: "Southwest",
-  [Orientation.CENTER_W]: "West",
-  [Orientation.CENTER_NW]: "Northwest",
+const AIM_LABEL_KEYS: Partial<Record<Orientation, TranslationKey>> = {
+  [Orientation.IN]: "create_ui_orientation_in_label",
+  [Orientation.OUT]: "create_ui_orientation_out_label",
+  [Orientation.CLOCK]: "create_ui_orientation_clock_label",
+  [Orientation.COUNTER]: "create_ui_orientation_counter_label",
+  [Orientation.CENTER_N]: "create_ui_orientation_centerN_label",
+  [Orientation.CENTER_NE]: "create_ui_orientation_centerNE_label",
+  [Orientation.CENTER_E]: "create_ui_orientation_centerE_label",
+  [Orientation.CENTER_SE]: "create_ui_orientation_centerSE_label",
+  [Orientation.CENTER_S]: "create_ui_orientation_centerS_label",
+  [Orientation.CENTER_SW]: "create_ui_orientation_centerSW_label",
+  [Orientation.CENTER_W]: "create_ui_orientation_centerW_label",
+  [Orientation.CENTER_NW]: "create_ui_orientation_centerNW_label",
 };
+
+// Stand-ins for the noun and aim while the whole sentence is translated, so
+// the sentence can be cut back into pieces in the order the language uses.
+const NOUN_MARK = "\u0001";
+const AIM_MARK = "\u0002";
+
+function splitSentence(
+  key: TranslationKey,
+  noun: string,
+  aim: string | null
+): PlacementPromptSegment[] {
+  const sentence = t(key, { noun: NOUN_MARK, aim: AIM_MARK });
+  return sentence
+    .split(/([\u0001\u0002])/)
+    .filter((piece) => piece !== "")
+    .map((piece) =>
+      piece === NOUN_MARK
+        ? { kind: "noun" as const, text: noun }
+        : piece === AIM_MARK
+          ? { kind: "aim" as const, text: aim ?? "" }
+          : { kind: "text" as const, text: piece }
+    );
+}
 
 export function buildPlacementPrompt(input: PlacementPromptInput): {
   parts: PlacementPromptParts | null;
@@ -60,9 +89,9 @@ export function buildPlacementPrompt(input: PlacementPromptInput): {
   const build = (
     noun: string,
     color: HandSide,
-    lead: string,
+    key: TranslationKey,
     aim: string | null = null
-  ): PlacementPromptParts => ({ lead, noun, color, aim });
+  ): PlacementPromptParts => ({ segments: splitSentence(key, noun, aim), color });
 
   let parts: PlacementPromptParts | null = null;
 
@@ -70,45 +99,39 @@ export function buildPlacementPrompt(input: PlacementPromptInput): {
     if (input.dragHand !== null && input.dragAim !== null) {
       const noun =
         input.dragHand === HandSide.LEFT ? input.leftNoun : input.rightNoun;
+      const aimKey = AIM_LABEL_KEYS[input.dragAim];
+      const aim = aimKey ? t(aimKey) : null;
       parts = build(
         noun,
         input.dragHand,
-        "Aiming the",
-        AIM_LABELS[input.dragAim] ?? null
+        aim ? "pictograph_placement_aiming_at" : "pictograph_placement_aiming",
+        aim
       );
     } else if (input.activeHand === null && input.hoverHand !== null) {
       const noun =
         input.hoverHand === HandSide.LEFT ? input.leftNoun : input.rightNoun;
-      parts = build(noun, input.hoverHand, "Drag to aim the");
-    } else if (input.activeHand === HandSide.LEFT) {
+      parts = build(noun, input.hoverHand, "pictograph_placement_drag_to_aim");
+    } else if (input.activeHand !== null) {
+      const left = input.activeHand === HandSide.LEFT;
+      const location = left ? input.leftLocation : input.rightLocation;
       parts = build(
-        input.leftNoun,
-        HandSide.LEFT,
-        input.leftLocation !== null
-          ? "Choose a new location for the"
+        left ? input.leftNoun : input.rightNoun,
+        input.activeHand,
+        location !== null
+          ? "pictograph_placement_choose_new_location"
           : input.canAim
-            ? "Press a point and drag to aim the"
-            : "Place the"
-      );
-    } else if (input.activeHand === HandSide.RIGHT) {
-      parts = build(
-        input.rightNoun,
-        HandSide.RIGHT,
-        input.rightLocation !== null
-          ? "Choose a new location for the"
-          : input.canAim
-            ? "Press a point and drag to aim the"
-            : "Place the"
+            ? "pictograph_placement_press_and_drag"
+            : "pictograph_placement_place"
       );
     }
   }
 
   const text = parts
-    ? `${parts.lead} ${parts.noun}${parts.aim ? `: ${parts.aim}` : ""}`
+    ? parts.segments.map((segment) => segment.text).join("")
     : !input.disabled && input.isComplete
       ? input.canAim
-        ? "Drag a prop to aim it"
-        : "Position ready"
+        ? t("pictograph_placement_drag_a_prop")
+        : t("pictograph_placement_ready")
       : "";
 
   return { parts, text };

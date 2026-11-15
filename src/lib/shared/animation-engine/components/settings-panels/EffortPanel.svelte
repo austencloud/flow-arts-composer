@@ -3,6 +3,10 @@
     EFFORTS,
     type EffortId,
   } from "#lib/shared/effort/domain/effort-types.js";
+  import {
+    localizedEffortLabel,
+    localizedEffortSubtitle,
+  } from "#lib/shared/effort/domain/effort-label.js";
   import { sampleEffortCurve } from "#lib/shared/effort/domain/effort-easing-unified.js";
 
   // Each effort's timing curve: time through the beat across, how far the
@@ -52,6 +56,7 @@
     fill = false,
     fit = false,
     room = false,
+    dock = false,
     onSettingChange,
     visibilityManagerOverride,
   }: {
@@ -63,6 +68,9 @@
     fit?: boolean;
     /** The host's box is all there is: the tiles share it and nothing scrolls. */
     room?: boolean;
+    /** A phone's bottom dock: four across two rows that share the body's
+     *  height, each row capped at 120px, and nothing scrolls. */
+    dock?: boolean;
     onSettingChange?: (previousValue: string, value: string) => void;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
@@ -88,7 +96,7 @@
   onDestroy(() => vm.unregisterObserver(handleVisibilityChange));
 </script>
 
-<div class="effort-panel" class:fill class:fit class:room>
+<div class="effort-panel" class:fill class:fit class:room class:dock>
   <div class="effort-grid" class:fill style:--effort-cols={columns}>
     {#each EFFORTS as effort}
       <button
@@ -122,9 +130,9 @@
           />
           <path class="curve-line" d={CURVE_PATHS.get(effort.id)} />
         </svg>
-        <span class="effort-label">{effort.label}</span>
+        <span class="effort-label">{localizedEffortLabel(effort.id)}</span>
         {#if showSubtitles && effort.subtitle}
-          <span class="effort-sub">{effort.subtitle}</span>
+          <span class="effort-sub">{localizedEffortSubtitle(effort.id)}</span>
         {/if}
       </button>
     {/each}
@@ -217,6 +225,52 @@
     .room .effort-sub {
       display: block;
     }
+  }
+
+  /* Phone dock, about 336 x 200-295px. Two rows of four share the height
+     (about 98px at a 215px body, 113px at 245, capped at 120 and centred
+     above that), so the curve gets everything the name leaves. A tile is
+     about 74px inside; "Anticipation" at 12px is right at that width, so a
+     name may break onto a second line rather than truncate. The portrait
+     flip of `.room` is left out: the dock is always wider than tall. */
+  .effort-panel.dock {
+    container: effort-panel / size;
+    display: flex;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .dock .effort-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 120px));
+    align-content: center;
+    gap: 4px;
+  }
+  .dock .effort-btn {
+    min-height: 0;
+    padding: 4px 2px;
+    gap: 2px;
+    overflow: hidden;
+    font-size: var(--font-size-compact, 12px);
+  }
+  .dock .effort-curve {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+  }
+  .dock .effort-label {
+    flex: none;
+    max-width: 100%;
+    line-height: 1.1;
+    text-align: center;
+    hyphens: auto;
+    overflow-wrap: anywhere;
+  }
+  /* At this size the 50% border read as one more outline among eight; the
+     chosen tile takes its full colour so it stands apart at a glance. */
+  .dock .effort-btn.active {
+    border-color: var(--effort-color);
   }
 
   .effort-grid {

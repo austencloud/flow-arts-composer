@@ -445,8 +445,16 @@
       // The welcome shot needs the same rig height as the worker's stage.
       viewer.setStageGroundOffset(CANONICAL_PERFORMER_ANCHOR_Y);
       const stopOrbitNavigation = configureViewerOrbitNavigation(
-        controller.controls
+        controller.controls,
+        { pivotCast: () => viewer.castStanding() }
       );
+      // Dev-only handle for camera checks in headless test runs.
+      if (import.meta.env.DEV) {
+        (globalThis as Record<string, unknown>).__viewerOrbit = {
+          controls: controller.controls,
+          cast: () => viewer.castStanding(),
+        };
+      }
       const unregisterSnapTo = viewer.registerSnapTo(
         (position, target, spherical, animate = true) => {
           void controller.snapTo(position, target, spherical, animate);

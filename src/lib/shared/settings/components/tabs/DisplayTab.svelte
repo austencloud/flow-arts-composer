@@ -67,6 +67,14 @@
   theme and then it immediately changes the background? I think that would be
   better, the second one." The Use theme button
   is gone on both tiers; BackgroundTab applies a theme when its tile is pressed.
+
+  Revision: two-by-two boxes (2026-11-13). Austen, at about 1108x1130, a
+  window just under the cells tier: "Take a look at this display. Why don't
+  you fix it up for me." The tab was near square, so the boxes stood four in
+  a row, 240 by 971: each thumbnail a fifth of its box, its title 350px
+  under it, black boxes on the black glass. The boxes now stand two by two
+  from a 3:5 screen up to 8:5, a row of four only wider than that, rows only
+  narrower; and they are outlines on the glass with no fill of their own.
 -->
 <script lang="ts">
   import { onMount, untrack, type Component } from "svelte";
@@ -550,7 +558,9 @@
     padding: var(--box-pad);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: 0.875rem;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
+    /* An outline on the workspace's theme glass, no second fill: a card fill
+       on the glass made a black slab that hid the theme (2026-11-13). */
+    background: transparent;
     color: var(--theme-text, #fff);
     container: drill-box / size;
   }
@@ -669,15 +679,43 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
   }
 
-  /* A screen wider than it is tall (a phone on its side, a zoomed desktop):
-     the four boxes stand in one row, each its thumbnail above its title. */
-  @container display-screen (orientation: landscape) {
+  /* A screen anywhere near square (a desktop just under the cells tier, a
+     tablet, the Fold): the boxes stand two by two, each its thumbnail above
+     its title. Under 3:5 (a phone upright) the rows above give the bigger
+     picture; at 8:5 and wider (a phone on its side) one row of four does.
+     The cuts are where the thumbnail of one shape outgrows the other's. */
+  @container display-screen (min-aspect-ratio: 3/5) {
+    .drill-boxes {
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      width: 100%;
+      padding: 0.75rem;
+    }
+
+    .drill-box {
+      padding: 0.75rem 0.875rem 0.875rem;
+    }
+
+    .drill-thumb-area {
+      margin-bottom: 0.5rem;
+    }
+
+    /* Two lines kept for every summary, so boxes side by side keep their
+       titles and thumbnails level whether a summary wraps or not. */
+    .drill-summary {
+      min-height: calc(2 * 1.35em);
+    }
+  }
+
+  @container display-screen (min-aspect-ratio: 8/5) {
     .drill-boxes {
       grid-template-rows: minmax(0, 1fr);
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      width: 100%;
     }
+  }
 
+  @container display-screen (min-aspect-ratio: 3/5) {
     .drill-box {
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-rows: minmax(0, 1fr) auto auto;

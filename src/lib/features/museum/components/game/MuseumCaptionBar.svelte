@@ -58,12 +58,16 @@
     padding: 12px 18px 10px;
     background: rgba(10, 10, 16, 0.86);
     border: 1px solid var(--museum-gold-20);
-    border-left: 3px solid var(--museum-gold-60);
     border-radius: 6px;
     color: var(--museum-gold-90);
     pointer-events: none;
     z-index: 11;
     animation: caption-in var(--duration-normal) var(--ease-standard);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .caption-bar {
+    border-left: 3px solid var(--museum-gold-60);
   }
 
   .caption-stamp {

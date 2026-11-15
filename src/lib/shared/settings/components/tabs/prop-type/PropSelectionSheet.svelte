@@ -3,8 +3,8 @@
   Bottom drawer for selecting props.
   Uses BentoPropGrid to show all variations organized by family.
 
-  Optional cat/dog mode: pass showTabs=true to render left/right tab bar.
-  Optional cat/dog toggle: pass showCatDogToggle=true to let users enable it.
+  Optional per-hand picking: pass handProps to put the Both / Left / Right
+  choice at the top (HandPropToolbar).
   Parent controls which prop is selected and handles the selection callback.
 -->
 <script lang="ts">
@@ -18,7 +18,9 @@
   import { growFade } from "#lib/shared/transitions/motion.js";
   import BentoPropGrid from "./BentoPropGrid.svelte";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
-  import CatDogToggle from "./CatDogToggle.svelte";
+  import HandPropToolbar, {
+    type HandPropToolbarProps,
+  } from "./HandPropToolbar.svelte";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
   let {
@@ -27,12 +29,8 @@
     color = "blue",
     title,
     onSelect,
-    showTabs = false,
-    activeTab = $bindable<"left" | "right">("left"),
+    handProps,
     onOpenChange,
-    showCatDogToggle = false,
-    catDogEnabled = false,
-    onCatDogToggle,
     chirality,
     showColors = true,
     fanAppearance,
@@ -43,18 +41,10 @@
     color?: "blue" | "red";
     title?: string;
     onSelect: (propType: PropType) => void;
-    /** Show left/right tab bar for cat/dog mode */
-    showTabs?: boolean;
-    /** Active tab when showTabs is true */
-    activeTab?: "left" | "right";
+    /** Both / Left / Right choice at the top; omit for one shared prop. */
+    handProps?: HandPropToolbarProps;
     /** Reports drawer dismissal when the owner does not use two-way binding. */
     onOpenChange?: (open: boolean) => void;
-    /** Show a cat/dog mode toggle in the drawer header */
-    showCatDogToggle?: boolean;
-    /** Current cat/dog mode state (read by toggle) */
-    catDogEnabled?: boolean;
-    /** Callback when user toggles cat/dog mode */
-    onCatDogToggle?: () => void;
     /**
      * Buugeng chirality seam, forwarded to the grid. The sheet is opened per
      * hand, so hosts pass the hand this sheet is editing and it writes that
@@ -108,12 +98,6 @@
     onSelect(propType);
   }
 
-  function handleTabChange(tab: "left" | "right") {
-    const hapticService = getHapticFeedback();
-    hapticService?.trigger("selection");
-    activeTab = tab;
-  }
-
   function handleClose() {
     const hapticService = getHapticFeedback();
     hapticService?.trigger("selection");
@@ -142,51 +126,21 @@
     />
 
     <div class="picker-body">
-      {#if !isDrilled && (showCatDogToggle || showTabs)}
+      {#if !isDrilled && handProps}
         <div class="picker-toolbar" transition:growFade={{ axis: "y" }}>
-          {#if showCatDogToggle}
-            <CatDogToggle
-              catDogMode={catDogEnabled}
-              onToggle={() => onCatDogToggle?.()}
-            />
-          {/if}
-
-          {#if showTabs}
-            <div
-              class="segment-control"
-              role="tablist"
-              aria-label={t("settings_prop_hand_selection")}
-              transition:growFade={{ axis: "y" }}
-            >
-              <button
-                type="button"
-                role="tab"
-                class="segment-btn"
-                class:active={activeTab === "left"}
-                aria-selected={activeTab === "left"}
-                onclick={() => handleTabChange("left")}
-              >
-                <span class="color-dot blue" aria-hidden="true"></span>
-                {t("settings_left")}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                class="segment-btn"
-                class:active={activeTab === "right"}
-                aria-selected={activeTab === "right"}
-                onclick={() => handleTabChange("right")}
-              >
-                <span class="color-dot red" aria-hidden="true"></span>
-                {t("settings_right")}
-              </button>
-            </div>
-          {/if}
+          <HandPropToolbar {handProps} />
         </div>
       {/if}
 
       <BentoPropGrid
         {selectedPropType}
+        previewHand={handProps?.hand === "left" || handProps?.hand === "right"
+          ? handProps.hand
+          : undefined}
+        alsoSelectedPropType={handProps?.hand === "both" &&
+        handProps.leftPropType !== handProps.rightPropType
+          ? handProps.rightPropType
+          : null}
         {color}
         title={displayTitle}
         variant="inline"
@@ -262,93 +216,7 @@
   }
 
   .picker-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 12px 18px 4px;
     flex-shrink: 0;
-  }
-
-  .segment-control {
-    display: flex;
-    gap: 2px;
-    padding: 3px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 10px;
-    width: fit-content;
-  }
-
-  .segment-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    justify-content: center;
-    padding: 8px 20px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    font-size: var(--font-size-min, 14px);
-    font-weight: 600;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard),
-      opacity var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard),
-      width var(--duration-fast) var(--ease-standard);
-    min-height: 36px;
-    font-family:
-      -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .segment-btn:hover {
-    background: color-mix(
-      in srgb,
-      var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08)) 50%,
-      transparent
-    );
-    color: var(--theme-text, white);
-  }
-
-  .segment-btn.active {
-    background: color-mix(in srgb, var(--theme-accent) 25%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent) 40%, transparent);
-    color: var(--theme-text, white);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--theme-accent) 20%, transparent),
-      0 2px 8px color-mix(in srgb, var(--theme-accent) 20%, transparent);
-  }
-
-  .segment-btn:focus-visible {
-    outline: 2px solid var(--theme-accent, #6366f1);
-    outline-offset: 2px;
-  }
-
-  .color-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .color-dot.blue {
-    background: var(--prop-blue, #3b82f6);
-  }
-
-  .color-dot.red {
-    background: var(--prop-red, #ef4444);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .segment-btn {
-      transition: none;
-    }
+    padding: 4px 2px 0;
   }
 </style>

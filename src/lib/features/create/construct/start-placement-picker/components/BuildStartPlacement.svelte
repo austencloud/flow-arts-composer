@@ -70,10 +70,10 @@
         2
     )
   );
-  const gridModes = [
-    { value: GridMode.DIAMOND, label: "Diamond" },
-    { value: GridMode.BOX, label: "Box" },
-  ];
+  const gridModes = $derived([
+    { value: GridMode.DIAMOND, label: t("browse_grid_diamond") },
+    { value: GridMode.BOX, label: t("browse_grid_box") },
+  ]);
 
   const builtPlacement = $derived.by((): StartPlacementPlacement | null => {
     if (!leftLocation || !rightLocation) return null;

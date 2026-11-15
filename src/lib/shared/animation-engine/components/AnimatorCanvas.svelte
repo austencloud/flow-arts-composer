@@ -84,6 +84,11 @@ Last audit: 2025-12-27
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
+  import type { MotionCueFrame } from "../domain/types/motion-cue-types";
+  import {
+    motionCueMandalaOverride,
+    motionCueProgressOnCanvas,
+  } from "../domain/types/motion-cue-types";
 
   // Props
   let {
@@ -96,6 +101,7 @@ Last audit: 2025-12-27
     tunnelPropColors = null,
     primaryPropColors,
     tunnelSelectedLayer = null,
+    motionCues = null,
     gridVisible = true,
     gridOpacity = undefined,
     chromeOpacity = 1,
@@ -125,6 +131,7 @@ Last audit: 2025-12-27
     propElementalType = null,
     glyphFrame = "pictograph",
     hidePathLines = false,
+    boldPathLines = false,
     hideProgressBar = false,
     overlayVisibility = undefined,
     shareStudioTransport = false,
@@ -187,6 +194,8 @@ Last audit: 2025-12-27
     tunnelPropColors?: TunnelPropColorPair | null;
     primaryPropColors?: TunnelPropColorPair | null;
     tunnelSelectedLayer?: number | readonly number[] | null;
+    /** Opt-in teaching marks: ghosts, hand path, thumb ring. */
+    motionCues?: MotionCueFrame | null;
     gridVisible?: boolean;
     /** Optional externally choreographed grid alpha. The Sequence Viewer uses
      * this when 2D transforms into Tunnel on one reversible timeline. */
@@ -233,6 +242,8 @@ Last audit: 2025-12-27
     /** Force-hide the dotted prop-center path lines regardless of the visibility
      *  manager (e.g. the Tunnel art view, which never wants path overlays). */
     hidePathLines?: boolean;
+    /** Draw the path lines heavy enough to follow on a phone (the viewer). */
+    boldPathLines?: boolean;
     hideProgressBar?: boolean;
     /**
      * Overlay choices that win over the visibility manager, for a preview of
@@ -972,6 +983,8 @@ Last audit: 2025-12-27
       {tunnelPropColors}
       {primaryPropColors}
       {tunnelSelectedLayer}
+      {motionCues}
+      mandalaVisibleOverride={motionCueMandalaOverride(motionCues)}
       {gridVisible}
       gridOpacity={chromeOpacity < 1
         ? (gridOpacity ?? 1) * Math.max(0, chromeOpacity)
@@ -1012,6 +1025,7 @@ Last audit: 2025-12-27
       {effectiveBeatNumbersVisible}
       leftPathLinesVisible={effectiveLeftPathLinesVisible}
       rightPathLinesVisible={effectiveRightPathLinesVisible}
+      {boldPathLines}
       {gridJoin}
       {suppress2DOverlays}
       {resizePaused}
@@ -1063,8 +1077,13 @@ Last audit: 2025-12-27
       />
     {/if}
 
-    <!-- Always mounted, same reason as header-slot above. -->
-    <div class="progress-slot">
+    <!-- Always mounted, same reason as header-slot above. A motion-cue card
+         lays its minimal line along the canvas's bottom edge instead of in a
+         band of its own, so its small square spends no height on it. -->
+    <div
+      class="progress-slot"
+      class:on-canvas={progressLine && motionCueProgressOnCanvas(motionCues)}
+    >
       {#if progressLine}
         <SequenceProgressBar
           {currentStep}
@@ -1621,6 +1640,26 @@ Last audit: 2025-12-27
   .shared-transport {
     width: 100%;
     min-width: 0;
+  }
+  /* The line on the canvas's bottom edge: the slot takes no height and its
+     grab band rises over the canvas, clear, so scrubbing still has its
+     whole target. */
+  .progress-slot.on-canvas {
+    position: relative;
+    z-index: 4;
+    height: 0;
+  }
+  .progress-slot.on-canvas :global(.progress-row) {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+  }
+  .progress-slot.on-canvas :global(.progress-row.band) {
+    --playback-line-band: transparent;
+  }
+  .progress-slot.on-canvas :global(.playback-line .line) {
+    top: auto;
+    bottom: 0;
   }
 
   /* The live canvas has its own flight while its transport takes another slot.

@@ -163,6 +163,67 @@ describe("ChoreoCard contained sizing motion", () => {
   });
 });
 
+describe("ChoreoCard arriving in a pane that opens from hidden", () => {
+  // The Card was last painted in another layout (Side by Side, readable but a
+  // different size). Entering Card from 2D, 3D, Tunnel or Mandala opens the
+  // pane from nothing, so that old box is not on screen to fly from: flying
+  // shows the Card at the stale size first and then jumps to the right one.
+  function arrive(phase: "restore" | "focus") {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      }
+    );
+    const container = document.createElement("div");
+    const stack = document.createElement("div");
+    stack.getBoundingClientRect = () =>
+      ({ width: 345, height: 270 }) as DOMRect;
+    let exposed = false;
+    let sizing!: ReturnType<typeof createChoreoCardSizingState>;
+    disposals.push(
+      effect_root(() => {
+        sizing = createChoreoCardSizingState(() => ({
+          containerElement: exposed ? container : undefined,
+          previewStackElement: exposed ? stack : undefined,
+          previewAspectRatio: 345 / 270,
+          forceContain: true,
+          needsScroll: false,
+          fitWidth: true,
+          containSizeMotion: phase,
+          containMotionBox: { width: 392, height: 560 },
+          containModel: {
+            cols: 2,
+            gridHeightUnits: 3,
+            headerUnits: 0,
+            footerUnits: 0,
+            headerMinPx: 0,
+          },
+        }));
+      })
+    );
+    exposed = true;
+    sizing.updateContainedDimensions({ width: 0, height: 0 });
+    exposed = false;
+    return sizing;
+  }
+
+  it("places the Card at its destination size instead of flying from the stale box", () => {
+    const sizing = arrive("restore");
+    expect(sizing.containedWidth).toBe(392);
+    expect(sizing.sizeJump).toBe(true);
+  });
+
+  it("still flies the Card when Side by Side focuses into Card", () => {
+    // That growth is the designed motion: the Card is on screen in both
+    // layouts, so it travels from one box to the other.
+    const sizing = arrive("focus");
+    expect(sizing.containedWidth).toBe(392);
+    expect(sizing.sizeJump).toBe(false);
+  });
+});
+
 describe("ChoreoCard container observer", () => {
   it("keeps one observer when its fractional size disagrees with the rounded clientHeight", () => {
     const observers: Array<(entries: ResizeObserverEntry[]) => void> = [];

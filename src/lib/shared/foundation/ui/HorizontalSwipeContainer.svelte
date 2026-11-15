@@ -302,6 +302,24 @@
     };
   });
 
+  // Embla moves the slides with transforms; the viewport itself must never
+  // scroll. It clips with overflow: hidden, but the browser still scrolls it
+  // natively to bring a focused tile or a scrollIntoView target into view
+  // (a tap on a tile in a slide still moving does this). Embla's own focus
+  // handling (watchFocus, 8.6) resets only scrollLeft and only after a Tab
+  // key, so any other native scroll left the page resting between
+  // positions. Hold both offsets at 0.
+  $effect(() => {
+    const node = emblaNode;
+    if (!node) return;
+    const holdAtOrigin = () => {
+      if (node.scrollLeft !== 0) node.scrollLeft = 0;
+      if (node.scrollTop !== 0) node.scrollTop = 0;
+    };
+    node.addEventListener("scroll", holdAtOrigin, { passive: true });
+    return () => node.removeEventListener("scroll", holdAtOrigin);
+  });
+
   onDestroy(() => {
     resizeObserver?.disconnect();
 

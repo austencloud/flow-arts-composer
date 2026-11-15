@@ -178,6 +178,43 @@ function addMagicLinkState(continueUrl: string, state: string): string {
   return url.toString();
 }
 
+export type ProviderRejectionReason =
+  | "provider/ip-not-authorised"
+  | "provider/unauthorized"
+  | "provider/rejected";
+
+/**
+ * Reads Brevo's error body for a short, recipient-free reason. Brevo answers
+ * 401 both for a bad key and for a request from an address outside the
+ * account's authorised-IP list; Cloud Functions has no fixed address, so the
+ * second one blocks every send until IP blocking is turned off in Brevo.
+ */
+export async function readProviderRejection(
+  response: Pick<Response, "status" | "json">
+): Promise<{ providerCode: string | null; reason: ProviderRejectionReason }> {
+  let body: { code?: unknown; message?: unknown } = {};
+  try {
+    body = ((await response.json()) ?? {}) as typeof body;
+  } catch {
+    body = {};
+  }
+  const providerCode =
+    typeof body.code === "string" && /^[a-z0-9_-]{1,40}$/i.test(body.code)
+      ? body.code
+      : null;
+  const message = typeof body.message === "string" ? body.message : "";
+
+  if (response.status === 401 || response.status === 403) {
+    return {
+      providerCode,
+      reason: /unrecogni[sz]ed ip/i.test(message)
+        ? "provider/ip-not-authorised"
+        : "provider/unauthorized",
+    };
+  }
+  return { providerCode, reason: "provider/rejected" };
+}
+
 function safeErrorCode(error: unknown): string {
   if (error instanceof functions.https.HttpsError) {
     return `https/${error.code}`;
@@ -333,6 +370,8 @@ export async function handleSendMagicLink(
   const authHost = resolveAuthHost(data.continueUrl);
   let stage: MagicLinkStage = "configuration";
   let providerStatus: number | undefined;
+  let providerCode: string | null = null;
+  let providerReason: ProviderRejectionReason | null = null;
 
   runtime.logger.info("Magic link request started", {
     requestId,
@@ -405,7 +444,23 @@ https://tkaflowarts.com`;
     providerStatus = response.status;
 
     if (!response.ok) {
-      throw new functions.https.HttpsError("internal", "Failed to send email");
+      const rejection = await readProviderRejection(response);
+      providerCode = rejection.providerCode;
+      providerReason = rejection.reason;
+      if (rejection.reason !== "provider/rejected") {
+        // Brevo refused our credentials or our server's address. Retrying
+        // cannot help; this is a configuration fault on our side, so the
+        // client hears "service not configured" and the reason travels in
+        // the error details for its console and analytics.
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "Email service not configured",
+          { reason: rejection.reason }
+        );
+      }
+      throw new functions.https.HttpsError("internal", "Failed to send email", {
+        reason: rejection.reason,
+      });
     }
 
     stage = "provider_response";
@@ -442,6 +497,8 @@ https://tkaflowarts.com`;
       stage,
       errorCode,
       providerStatus: providerStatus ?? null,
+      providerCode,
+      providerReason,
       authHost,
       durationMs: runtime.now() - startedAt,
     });

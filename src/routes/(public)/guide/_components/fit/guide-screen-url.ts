@@ -141,6 +141,9 @@ export type ScreenRoom = {
   card?: number;
   /** Whether a figure card has its words beside it (else over it). */
   cardBeside?: boolean;
+  /** Whether a row of two figure cards has its words beside the pair (else
+      under it): only where the cards come out larger that way. */
+  rowBeside?: boolean;
   /** Words a note above the first screen's content takes (a page's "Video
       coming" note), so that screen is cut with room for it. */
   lead?: number;
@@ -170,6 +173,8 @@ export const FIGURE_CARD = {
   gapPx: 60,
   wordsMinPx: 256,
   wordsMaxPx: 480,
+  /** The words column beside a row of two cards (FigureCardRow's 20rem). */
+  rowWordsPx: 320,
 } as const;
 
 const LINE_PX = 32.6;
@@ -277,6 +282,18 @@ export function screenRoom(width: number, height: number): ScreenRoom {
             (frameH * (1 - FIGURE_CARD.stackedHeightShare)) / LINE_PX
           )
       );
+  // A pair of cards: beside its words only where that makes the cards
+  // larger than stacking the words under them (FigureCardRow's widths).
+  const pairGap = Math.min(64, Math.max(16, frameW * 0.06));
+  const rowBesideW = Math.min(
+    fullCardW,
+    (frameW - FIGURE_CARD.gapPx - FIGURE_CARD.rowWordsPx - pairGap) / 2
+  );
+  const rowStackedW = Math.min(
+    (frameH * FIGURE_CARD.stackedHeightShare) / FIGURE_CARD.aspect,
+    (frameW - pairGap) / 2
+  );
+  const rowBeside = cardBeside && rowBesideW >= rowStackedW;
   const cols = Math.max(1, Math.floor(frameW / (MIN_TILE_PX + TILE_GAP_PX)));
   const rows = Math.max(
     1,
@@ -295,6 +312,7 @@ export function screenRoom(width: number, height: number): ScreenRoom {
     bandShowsTagline: height > BAND_TAGLINE_HIDDEN_MAX_H,
     card,
     cardBeside,
+    rowBeside,
   };
 }
 

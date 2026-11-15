@@ -28,7 +28,7 @@ describe("viewer boot downloads", () => {
   it("warms scene assets only while 3D has not been opened", () => {
     const source = read(`${VIEWER_DIR}/ViewerMotionSurface.svelte`);
     const effect = source.match(
-      /\$effect\(\(\) => \{([^}]*?)warmSelectedSceneAssets\(sceneWarmup\.signal\);/s
+      /\$effect\(\(\) => \{([^}]*?)warmViewer3DSwitch\(\s*sceneWarmup\.signal,/s
     );
     expect(effect, "warm-up effect not found").not.toBeNull();
     expect(effect![1]).toMatch(
@@ -38,7 +38,10 @@ describe("viewer boot downloads", () => {
     // or the hidden companion fetches the models during a direct 3D open.
     expect(effect![1]).toMatch(/if \(side !== "left"\) return;/);
     // Exactly one call site, so the gate cannot be bypassed by a second one.
-    expect(source.match(/warmSelectedSceneAssets\(/g)).toHaveLength(1);
+    expect(source.match(/warmViewer3DSwitch\(/g)).toHaveLength(1);
+    // It waits for the viewer's own data, so it never holds the connection
+    // while the 2D pane's arrow data is still loading.
+    expect(effect![1]).toMatch(/if \(!viewerDataIn \|\| warmupStarted\) return;/);
   });
 
   it("cancels the warm-up when the viewer goes away", () => {

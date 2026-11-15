@@ -64,6 +64,14 @@
   import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
   import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
   import { createInlineVideoExportAttempt } from "./inline-video-export-attempt";
+  import type { InlinePlayerControls } from "./inline-player-controls";
+  import {
+    sampleMotionCueSides,
+    type MotionCueFrame,
+    type MotionCueOptions,
+    type MotionCueSide,
+  } from "#lib/shared/animation-engine/domain/types/motion-cue-types.js";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
   // BPM/Speed conversion constant
   const DEFAULT_BPM = 60;
@@ -191,6 +199,9 @@
     playbackAllowed = true,
     resumeWhenPlaybackAllowed = false,
     onTogglePlaybackRef = undefined,
+    onControlsRef = undefined,
+    onPlayingChange = undefined,
+    motionCues = null,
     onReady = undefined,
     onCanvasInitialized = undefined,
     onLoadError = undefined,
@@ -397,6 +408,15 @@
      *  control, demo acts). Same contract as AnimationPlayer's prop of the
      *  same name. */
     onTogglePlaybackRef?: (toggleFn: () => void) => void;
+    /** Hands the host this player's replay and rest controls: replay() plays
+     *  once from the start, restAtEnd() stops on the end pose. */
+    onControlsRef?: (controls: InlinePlayerControls) => void;
+    /** Reports each play start and stop (from the 50 ms playing mirror). */
+    onPlayingChange?: (playing: boolean) => void;
+    /** Opt-in teaching marks on the canvas: ghost copies at fixed times, the
+     *  hand path with a dot at the hand, and a ring on the thumb end. Null
+     *  (the default) draws none. */
+    motionCues?: MotionCueOptions | null;
     /** Fires after the sequence and its playback services are ready. The load
      * identity lets a retained host reject an older async reload. */
     onReady?: (loadIdentity: string | null) => void;
@@ -578,6 +598,54 @@
     checkPlaying();
     const interval = setInterval(checkPlaying, 50);
     return () => clearInterval(interval);
+  });
+
+  // Motion cues: poses sampled once per load; everPlayed flips on the first
+  // play so a card that has not played yet shows its whole picture.
+  let cueSides = $state.raw<{
+    left: MotionCueSide | null;
+    right: MotionCueSide | null;
+    stepCount: number;
+  } | null>(null);
+  let cueEverPlayed = $state(false);
+  $effect(() => {
+    if (isPlaying) cueEverPlayed = true;
+  });
+  const motionCueFrame = $derived.by((): MotionCueFrame | null => {
+    if (!motionCues || !cueSides) return null;
+    return {
+      ghosts: motionCues.ghosts ?? false,
+      handPath: motionCues.handPath ?? false,
+      thumbRing: motionCues.thumbRing ?? false,
+      stepCount: cueSides.stepCount,
+      everPlayed: cueEverPlayed,
+      left: cueSides.left,
+      right: cueSides.right,
+    };
+  });
+  function sampleCues(controller: AnimationPlaybackController, seq: SequenceData) {
+    if (!motionCues) {
+      cueSides = null;
+      return;
+    }
+    const steps = seq.steps ?? [];
+    const sides = {
+      left: steps.some((step) => isVisibleMotion(step?.motions?.left)),
+      right: steps.some((step) => isVisibleMotion(step?.motions?.right)),
+    };
+    cueSides = {
+      ...sampleMotionCueSides(
+        (step) => controller.samplePropStateAt(step),
+        steps.length,
+        sides
+      ),
+      stepCount: steps.length,
+    };
+  }
+
+  $effect(() => {
+    const playing = isPlaying;
+    untrack(() => onPlayingChange?.(playing));
   });
 
   $effect(() => {
@@ -930,6 +998,8 @@
         playbackController.seekToStep(initialStep);
       }
 
+      cueEverPlayed = false;
+      sampleCues(playbackController, animationState.sequenceData ?? fullSequence);
       hasLoadedOnce = true;
       onReady?.(loadIdentity);
     } catch (err) {
@@ -982,6 +1052,26 @@
 
   $effect(() => {
     onTogglePlaybackRef?.(togglePlayback);
+  });
+
+  // Replay plays once from the start; restAtEnd parks on the end pose (and
+  // counts as played, so cue marks show their finished picture).
+  const playerControls: InlinePlayerControls = {
+    replay() {
+      if (externalPlaying !== null || !playbackController) return;
+      playbackController.stop();
+      playbackController.togglePlayback();
+      isPlaying = animationState.isPlaying;
+    },
+    restAtEnd() {
+      if (!playbackController) return;
+      playbackController.restAtEnd();
+      isPlaying = animationState.isPlaying;
+    },
+    isAtEnd: () => isAtEnd(),
+  };
+  $effect(() => {
+    onControlsRef?.(playerControls);
   });
 
   function togglePlayback() {
@@ -1108,6 +1198,7 @@
         isPlaying={canvasPlaying}
         onPlaybackToggle={togglePlayback}
         trailSettings={trailSettingsOverride ?? animationSettings.trail}
+        motionCues={motionCueFrame}
         {backgroundAlpha}
         {tipEffectMap}
         {tipEffortMap}

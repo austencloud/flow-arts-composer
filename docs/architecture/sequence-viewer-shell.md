@@ -69,7 +69,7 @@ through shell props:
 - `onRemix` — optional host-specific edit routing
 - `openAppHref` — "Open TKA" escape hatch for standalone hosts
 - `onAccountSignIn` — scan-origin standalone viewers expose account sign-in
-- `startInCardThenSplit` — scan-origin viewers reveal the card before split view
+- `startAnimationAfterCard` — scan-origin viewers open on their final view (Side by Side) and start animation services after the card paints; the view never switches by itself
 - `exportOverrides` — scan-origin download gating replaces `ctx.handleExport`
   replaces `ctx.handleExport`; omitted in-app
 - `navigation` — standalone-route back action in the shared header

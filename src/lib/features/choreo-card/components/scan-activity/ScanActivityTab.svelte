@@ -690,9 +690,13 @@
       var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08)) 35%,
       var(--theme-card-bg) 55%
     );
-    background-size: 250% 100%;
     animation: map-shimmer 1.8s infinite;
     pointer-events: none;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .map-skeleton {
+    background-size: 250% 100%;
   }
 
   .skeleton-pin {

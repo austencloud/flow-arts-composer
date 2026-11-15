@@ -2,6 +2,7 @@
 QuizCompleteSection - Results display and actions
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     score,
     totalQuestions,
@@ -48,7 +49,7 @@ QuizCompleteSection - Results display and actions
     </button>
     <button class="action-btn primary" onclick={onComplete}>
       <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-      Continue
+      {t("common_continue")}
     </button>
   </div>
 </div>

@@ -59,7 +59,12 @@ Card-based architecture with integrated Generate button:
   } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
-  import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
+  import {
+    getMaxSteps,
+    resolveAccessTier,
+  } from "#lib/shared/auth/domain/access-tier.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { resolveLoopPick, type LoopPick } from "../state/loop-pick-fit";
   import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   // Get context for panel coordination (optional - may not be available in all contexts)
   const context = tryGetCreateModuleContext();
@@ -168,6 +173,40 @@ Card-based architecture with integrated Generate button:
     authDrawerState.show("signup", "loop-locked-guest");
   }
 
+  // A Single LOOP pick the length can't hold (Quartered at 14 steps) still
+  // lands: the pick wins and the length moves to the nearest one that fits.
+  // It used to be shown but never saved, so closing the panel dropped it
+  // (Austen, 2026-11-14). The toast says what moved and offers the way back.
+  function fitLoopPick(pick: LoopPick): boolean {
+    const before = configState.config;
+    const fields = resolveLoopPick(before, pick, getMaxSteps(accessTier));
+    if (!fields) return false;
+    const previous = {
+      loopType: before.loopType,
+      loopEnabled: before.loopEnabled,
+      period: before.period,
+      inversionInterval: before.inversionInterval,
+      inversionMode: before.inversionMode,
+      reflectionAxis: before.reflectionAxis,
+      length: before.length,
+    };
+    configState.updateConfig(fields);
+    if (fields.length !== previous.length) {
+      showToast({
+        message: t("generator_length_changed_for_loop", {
+          count: fields.length,
+        }),
+        type: "info",
+        duration: 6_000,
+        action: {
+          label: t("settings_undo"),
+          onClick: () => configState.updateConfig(previous),
+        },
+      });
+    }
+    return true;
+  }
+
   // Spell mode: derived from word presence (if there's a word, it's spell mode)
   const hasWord = $derived(!!spellModeState.inputWord?.trim());
   const isMobile = $derived(deviceState.isMobile);
@@ -176,11 +215,15 @@ Card-based architecture with integrated Generate button:
   const isAnonymousViewer = $derived(
     !authState.isAuthenticated || authState.isAnonymous
   );
-  let favoriteIdentity = $state<string | null>(getEffectiveUserId());
+  // A guest who makes an account keeps the same uid, so the key also carries
+  // the guest flag and an account made from a guest session reloads the lists.
+  const favoriteIdentityKey = () =>
+    `${getEffectiveUserId() ?? ""}|${isAnonymousViewer ? "guest" : "member"}`;
+  let favoriteIdentity = $state<string>(favoriteIdentityKey());
 
   $effect(() => {
     const initialized = authState.initialized;
-    const nextIdentity = getEffectiveUserId();
+    const nextIdentity = favoriteIdentityKey();
     if (!initialized || nextIdentity === favoriteIdentity) return;
 
     favoriteIdentity = nextIdentity;
@@ -197,11 +240,6 @@ Card-based architecture with integrated Generate button:
               setup.userId === source.userId && setup.setupId === source.setupId
           );
     if (!saved) return;
-
-    if (source.kind === "community" && isAnonymousViewer) {
-      authDrawerState.show("signup", "community-setups");
-      return;
-    }
 
     const snapshot = captureSetupSnapshot(
       saved.config,
@@ -370,11 +408,12 @@ Card-based architecture with integrated Generate button:
       onOpenWordInput={() => spellModeState.openWordInput()}
       {favoriteState}
     >
-      {#snippet expandedCard()}
+      {#snippet expandedCard(footprintHeight: number)}
         {#if panelState}
           <ExpandedCardStage
             {panelState}
             isDesktopLayout={isDesktop}
+            {footprintHeight}
             loop={{
               rhythm: {
                 rotationInterval:
@@ -398,6 +437,7 @@ Card-based architecture with integrated Generate button:
                 morphGenerateCard("loop", () => panelState.closeLOOPPanel());
                 openLoopGateAuth();
               },
+              onPickNeedsFit: fitLoopPick,
               onRhythmChange: (u) =>
                 configState.updateConfig({
                   ...(u.rotationInterval
@@ -442,9 +482,8 @@ Card-based architecture with integrated Generate button:
               isSignedOut,
               isPreview,
               isAnonymous: isAnonymousViewer,
+              authKnown: authState.initialized,
               onApply: handleApplySource,
-              onRequestCommunityAccount: () =>
-                authDrawerState.show("signup", "community-setups"),
               onRequestSaveAccount: () =>
                 authDrawerState.show("signup", "save-setup"),
               onRequestSignIn: () =>

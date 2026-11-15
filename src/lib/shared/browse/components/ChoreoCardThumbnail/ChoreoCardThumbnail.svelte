@@ -41,6 +41,9 @@ Variation support:
   import { ignoreViewTransitionSkip } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
   import VariationPill from "./VariationPill.svelte";
+  import { createVariationSwapTracker } from "#lib/shared/browse/services/variation-swap-timing.js";
+  import { nextVariationToPrepare } from "#lib/shared/browse/services/variation-prepare-ahead.js";
+  import { trackBrowseVariationSwap } from "#lib/shared/analytics/browse-events.js";
   import PreviewPlayChip from "./PreviewPlayChip.svelte";
   import SyncStatusBadge from "./SyncStatusBadge.svelte";
   import type { authState as AuthStateModule } from "#lib/shared/auth/state/auth-state.svelte.js";
@@ -75,7 +78,6 @@ Variation support:
     showRightMotion = true,
     addWord,
     addDifficultyLevel,
-    allowQR = true,
     shareRender = true,
     collectionContext,
     selectedIds,
@@ -104,12 +106,6 @@ Variation support:
     showRightMotion?: boolean;
     addWord?: boolean;
     addDifficultyLevel?: boolean;
-    /** Allow a baked-in QR (signed-in only, gated by the user's showQRCode
-     * setting + a spare grid cell). Default true so the gallery honors the
-     * setting. The QR variant is its own shared cache class (deterministic
-     * short code), so it still loads from static/cloud — no per-card local
-     * render. Pass false for surfaces too small to scan (e.g. peeks). */
-    allowQR?: boolean;
     /** Upload a fresh render to the shared thumbnail cache. Pass false on a
      * public page that must not sign a visitor in (see ThumbnailRequest). */
     shareRender?: boolean;
@@ -163,10 +159,50 @@ Variation support:
     variations.length > 1 ? variations.length : 0
   );
 
+  // One timing event per tap on the pill (tap to the new picture loading).
+  const swapTracker = createVariationSwapTracker(trackBrowseVariationSwap);
+  // Preparing the next variation starts only after a first tap on this card,
+  // and only while the shown variation's picture is in place.
+  let hasTappedPill = $state(false);
+  let pictureShown = $state(false);
+
+  const prepareIndex = $derived(
+    nextVariationToPrepare({
+      variationCount: variations.length,
+      currentIndex: currentVariationIndex,
+      hasTapped: hasTappedPill,
+      pictureShown,
+    })
+  );
+  const prepareNext = $derived.by(() => {
+    if (prepareIndex === null) return null;
+    const next = variations[prepareIndex];
+    if (!next) return null;
+    const config = resolveViewingProps(
+      getSettings(),
+      next,
+      collectionPropType
+    ).config;
+    return {
+      sequence: next,
+      leftPropType: config.leftPropType,
+      rightPropType: config.rightPropType,
+      catDogModeEnabled: config.catDogMode,
+    };
+  });
+
   // Cycle to next variation
   function handleCycleVariation() {
     if (variations.length <= 1) return;
     const wasPlaying = previewActive;
+    swapTracker.tap({
+      variationCount: variations.length,
+      prepared: thumbnailRef?.isNextPrepared() ?? false,
+    });
+    // This picture was asked for by the visitor: it goes to the front.
+    thumbnailRef?.markNextRequestVisitorAsked();
+    hasTappedPill = true;
+    pictureShown = false;
     currentVariationIndex = (currentVariationIndex + 1) % variations.length;
     // Keep playing across the swap. The preview is keyed by sequence id, so
     // without this the new variation reads as a different card and the
@@ -200,6 +236,8 @@ Variation support:
       return;
     }
 
+    // Opened before the swapped picture showed: the swap ends as "left".
+    swapTracker.left();
     onPrimaryAction?.(displayedSequence);
   }
 
@@ -517,6 +555,10 @@ Variation support:
   $effect(() => {
     const id = sequence.id;
     untrack(() => {
+      // A recycled card is a different card: close any swap still timing.
+      swapTracker.left();
+      hasTappedPill = false;
+      pictureShown = false;
       if (variations.length > 1) {
         const ownIndex = variations.findIndex((v) => v.id === id);
         currentVariationIndex = ownIndex >= 0 ? ownIndex : 0;
@@ -729,6 +771,7 @@ Variation support:
       clearTimeout(hoverTimer);
     }
     cancelHoverDwell();
+    swapTracker.left();
     // The virtualized grid recycles cards out from under an open preview.
     cardHoverPreview.dismiss(displayedSequence.id);
   });
@@ -762,8 +805,13 @@ Variation support:
       {showRightMotion}
       {addWord}
       {addDifficultyLevel}
-      {allowQR}
+      gridCard
       {shareRender}
+      {prepareNext}
+      onPictureShown={(source) => {
+        pictureShown = true;
+        swapTracker.shown(source);
+      }}
     />
 
     {#if previewActive}

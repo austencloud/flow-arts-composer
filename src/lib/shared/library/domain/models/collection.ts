@@ -1,5 +1,6 @@
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { Timestamp } from "firebase/firestore";
+import type { CollectionCardSteps } from "../collection-card-steps.js";
 
 /**
  * DeckMetadata - Configuration for a collection that has been promoted to a deck.
@@ -121,6 +122,17 @@ export const SYSTEM_COLLECTION_CONFIG: Record<
   },
 };
 
+/** A collection's name and description in one language. */
+export interface CollectionTextTranslation {
+  readonly name?: string;
+  readonly description?: string;
+}
+
+/** Translations of a collection's text, keyed by locale. */
+export type CollectionTranslations = Readonly<
+  Record<string, CollectionTextTranslation>
+>;
+
 /**
  * LibraryCollection - A named collection of sequences
  */
@@ -133,6 +145,14 @@ export interface LibraryCollection {
 
   /** Collection name (user-defined, or system-defined for system collections) */
   readonly name: string;
+
+  /**
+   * Optional name and description per language, keyed by locale ("zh-Hant",
+   * "ja"...). Only collections we publish ourselves carry these; a visitor
+   * sees their language and everyone else sees `name` as typed. Read through
+   * collectionDisplayName, never directly.
+   */
+  readonly translations?: CollectionTranslations;
 
   /** Optional description — free notes shown on the collection's detail header */
   readonly description?: string;
@@ -167,6 +187,15 @@ export interface LibraryCollection {
    * even after its owner made it private again.
    */
   readonly galleryOwnerIds?: Readonly<Record<string, string>>;
+
+  /**
+   * Step counts of the cards the PUBLIC page shows, in page order, stamped
+   * with a key of the `sequenceIds` they were computed for. Lets a first-time
+   * visitor's placeholders take the cards' row shapes before the catalogue
+   * loads. A hint only: readers ignore it unless the key matches (see
+   * collection-card-steps.ts).
+   */
+  readonly cardSteps?: CollectionCardSteps;
 
   /** Sequence count (denormalized for display without loading sequences) */
   readonly sequenceCount: number;

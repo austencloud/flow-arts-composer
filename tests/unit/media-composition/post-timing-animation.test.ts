@@ -229,3 +229,17 @@ describe("take mapping animation", () => {
     expect(nextMappedLanding(resolved, 3.45)).toBeNull();
   });
 });
+
+describe("layer timing over a held last frame", () => {
+  it("hears the footage's timing up to the hold and none across it", () => {
+    const original = project(
+      [video("clip", { sourceOut: 6, duration: 8, holdOut: 2 })],
+      [[overlay("moves", "moves", { duration: 8 })]]
+    );
+    const parts = layerTimingParts(original, { start: 0, duration: 8 }, () =>
+      mappedTiming(0.25)
+    );
+    expect(parts).toHaveLength(1);
+    expect(parts[0]).toMatchObject({ clipId: "clip", start: 0, end: 6 });
+  });
+});

@@ -10,8 +10,9 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
 Two layouts. `stack` (default) puts the quick choices and status line above
 the grid and any `aside` content below it, the grid as wide as the picker.
 `split` fits the picker to the box its host gives it (placement-picker-fit.ts):
-it measures the box and picks stacked or side by side (grid left, a column of
-choices, status and aside beside it), whichever draws the grid larger. When
+it measures the box and picks stacked, side by side (grid left, a column of
+choices, status and aside beside it) or wide (eight across, two down, under
+one row of choices and the folded aside), whichever draws the cells larger. When
 neither draws it comfortably and the host passed `asideFolded`, the aside
 gives way to that folded form, a row that opens it on a screen of its own.
 The aside that is not showing stays mounted, out of sight, because fitting
@@ -28,7 +29,11 @@ measures it to decide when it returns.
   } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { onMount, type Snippet } from "svelte";
-  import { fitPicker, type PickerArrangement } from "./placement-picker-fit";
+  import {
+    fitPicker,
+    type PickerArrangement,
+    type PickerReserve,
+  } from "./placement-picker-fit";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import {
@@ -58,6 +63,8 @@ measures it to decide when it returns.
     layout = "stack",
     aside,
     asideFolded,
+    modeChips = true,
+    reserve,
   } = $props<{
     blockedPlacements: GridPlacement[];
     onBlockedChange: (blocked: GridPlacement[]) => void;
@@ -72,6 +79,12 @@ measures it to decide when it returns.
     aside?: Snippet;
     /** The aside folded to one row, for a box too small for it (`split`). */
     asideFolded?: Snippet;
+    /** False when the host owns All, Custom and Choose one in a control of
+     *  its own (the Start Placement chooser). Named presets still show. */
+    modeChips?: boolean;
+    /** A corner at the box's top end the host keeps for a control of its own
+     *  (`split`); the grid's choices keep clear of it. */
+    reserve?: PickerReserve;
   }>();
 
   // State
@@ -225,15 +238,22 @@ measures it to decide when it returns.
   let folded = $state(false);
   let gridSize = $state(0);
   let column = $state(0);
+  let columns = $state<4 | 8>(4);
+  let band = $state(0);
+  let fold = $state(0);
+  let inset = $state(0);
 
   // A part's height at another width: set the width, free the height (a
   // parked part is held at zero), read, put it back.
-  function heightAt(el: HTMLElement, width: number): number {
+  function heightAt(el: HTMLElement, width: number, row = false): number {
     const previous = el.style.cssText;
     el.style.width = `${width}px`;
     el.style.height = "auto";
+    const wasRow = el.classList.contains("as-row");
+    el.classList.toggle("as-row", row);
     const height = el.offsetHeight;
     el.style.cssText = previous;
+    el.classList.toggle("as-row", wasRow);
     return height;
   }
 
@@ -250,18 +270,31 @@ measures it to decide when it returns.
     const controls = controlsEl;
     const asidePart = asideEl;
     const foldedPart = foldedEl;
+    // The host measures its corner from the picker's outer top.
+    const corner = reserve
+      ? {
+          width: reserve.width,
+          height: Math.max(0, reserve.height - parseFloat(box.paddingTop)),
+        }
+      : undefined;
     const next = fitPicker({
       width,
       height,
       rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
       controlsHeightAt: (w) => heightAt(controls, w),
+      controlsRowHeightAt: (w) => heightAt(controls, w, true),
       asideHeightAt: asidePart ? (w) => heightAt(asidePart, w) : undefined,
       foldedHeightAt: foldedPart ? (w) => heightAt(foldedPart, w) : undefined,
+      reserve: corner,
     });
     arrangement = next.arrangement;
     folded = next.folded;
     gridSize = next.gridSize;
     column = next.column;
+    columns = next.columns;
+    band = next.band;
+    fold = next.fold;
+    inset = corner?.height ?? 0;
   }
 
   // A ResizeObserver reports after layout and before paint, so the picker is
@@ -272,6 +305,14 @@ measures it to decide when it returns.
     observer.observe(root);
     return () => observer.disconnect();
   });
+
+  // The host's corner moves without the box resizing (its own arrangement
+  // changed), so a new corner fits again.
+  $effect(() => {
+    void reserve?.width;
+    void reserve?.height;
+    if (layout === "split") fit();
+  });
 </script>
 
 <div
@@ -281,6 +322,12 @@ measures it to decide when it returns.
   data-arrangement={layout === "split" ? arrangement : null}
   style:--fit-grid={gridSize ? `${gridSize}px` : null}
   style:--fit-column={column ? `${column}px` : null}
+  style:--fit-columns={layout === "split" ? columns : null}
+  style:--fit-band={band ? `${band}px` : null}
+  style:--fit-fold={fold ? `${fold}px` : null}
+  style:--fit-inset={inset ? `${inset}px` : null}
+  style:--fit-reserve-width={reserve ? `${reserve.width}px` : null}
+  data-reserved={layout === "split" && reserve ? "" : undefined}
 >
   {#if isLoading}
     <div class="loading-placeholder">
@@ -288,21 +335,27 @@ measures it to decide when it returns.
     </div>
   {:else}
     <div class="picker-layout">
-      <div class="picker-controls" bind:this={controlsEl}>
+      <div
+        class="picker-controls"
+        class:as-row={arrangement === "wide"}
+        bind:this={controlsEl}
+      >
         <div
           class="quick-actions"
           role="toolbar"
           aria-label={t("shared_placement_quick_choices")}
         >
-          <FilterChipBase
-            label={t("create_option_all")}
-            icon="fas fa-check-double"
-            mode="toggle"
-            size="sm"
-            active={activeSelection === "all"}
-            ariaLabel={t("shared_placement_enable_all")}
-            onclick={selectAll}
-          />
+          {#if modeChips}
+            <FilterChipBase
+              label={t("create_option_all")}
+              icon="fas fa-check-double"
+              mode="toggle"
+              size="sm"
+              active={activeSelection === "all"}
+              ariaLabel={t("shared_placement_enable_all")}
+              onclick={selectAll}
+            />
+          {/if}
           {#each presets as preset (preset.id)}
             <FilterChipBase
               label={preset.label}
@@ -316,26 +369,28 @@ measures it to decide when it returns.
               onclick={() => selectPreset(preset)}
             />
           {/each}
-          <FilterChipBase
-            label={t("compose_custom")}
-            icon="fas fa-sliders"
-            mode="toggle"
-            size="sm"
-            active={activeSelection === "custom"}
-            ariaLabel={t("shared_placement_custom_mix")}
-            onclick={selectCustom}
-          />
-          <FilterChipBase
-            label={t("shared_placement_choose_one")}
-            icon="fas fa-bullseye"
-            mode="toggle"
-            size="sm"
-            active={activeSelection === "one"}
-            ariaLabel={selectionMode === "one"
-              ? t("shared_placement_cancel_one")
-              : t("shared_placement_exactly_one")}
-            onclick={toggleChooseOne}
-          />
+          {#if modeChips}
+            <FilterChipBase
+              label={t("compose_custom")}
+              icon="fas fa-sliders"
+              mode="toggle"
+              size="sm"
+              active={activeSelection === "custom"}
+              ariaLabel={t("shared_placement_custom_mix")}
+              onclick={selectCustom}
+            />
+            <FilterChipBase
+              label={t("shared_placement_choose_one")}
+              icon="fas fa-bullseye"
+              mode="toggle"
+              size="sm"
+              active={activeSelection === "one"}
+              ariaLabel={selectionMode === "one"
+                ? t("shared_placement_cancel_one")
+                : t("shared_placement_exactly_one")}
+              onclick={toggleChooseOne}
+            />
+          {/if}
         </div>
 
         <!-- Status indicator -->
@@ -522,9 +577,33 @@ measures it to decide when it returns.
     margin-inline: auto;
   }
 
-  /* Fitted: the grid takes the size fitting chose. */
+  /* Fitted: the grid takes the size and column count fitting chose. Its cells
+     follow the fit, which keeps them at the touch target wherever the box
+     allows and goes under it only rather than spill out of the box. */
   .split .variations-grid {
     width: var(--fit-grid, 100%);
+    grid-template-columns: repeat(var(--fit-columns, 4), minmax(0, 1fr));
+  }
+
+  /* Fitted, the arrangement owns the room above and below the grid
+     (BLOCK_EDGE): stack and side keep it, wide gives it to the grid. */
+  .multi-select-grid.split {
+    padding-block: 0;
+  }
+
+  [data-arrangement="stack"] .picker-layout,
+  [data-arrangement="side"] .picker-layout {
+    padding-block: 8px;
+  }
+
+  .split .placement-cell {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /* A stack starts below the host's corner. */
+  [data-reserved][data-arrangement="stack"] .picker-layout {
+    padding-top: var(--fit-inset, 0px);
   }
 
   /* Stacked, the grid is centred whenever the box is wider than it; the
@@ -561,6 +640,66 @@ measures it to decide when it returns.
 
   [data-arrangement="side"] .picker-aside {
     grid-area: aside;
+  }
+
+  /* With a host's corner at the top end, the grid keeps the left edge and the
+     top, and the column sits at the end edge, starting below the corner. */
+  [data-reserved][data-arrangement="side"] .picker-layout {
+    justify-content: space-between;
+  }
+
+  [data-reserved][data-arrangement="side"] .picker-controls {
+    margin-top: var(--fit-inset, 0px);
+  }
+
+  /* Eight across, two down, the full width, under one row: the choices and
+     status, then the folded aside, then the host's corner if it keeps one. */
+  [data-arrangement="wide"] .picker-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--fit-fold, 0px);
+    grid-template-rows: var(--fit-band, auto) auto;
+    grid-template-areas:
+      "controls aside"
+      "grid grid";
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 8px;
+  }
+
+  [data-reserved][data-arrangement="wide"] .picker-layout {
+    grid-template-columns:
+      minmax(0, 1fr) var(--fit-fold, 0px)
+      var(--fit-reserve-width, 0px);
+    grid-template-areas:
+      "controls aside ."
+      "grid grid grid";
+  }
+
+  [data-arrangement="wide"] .picker-controls {
+    grid-area: controls;
+  }
+
+  /* The choices and status as one row (wide, and while fitting measures that
+     form): the status line takes what the chips leave and wraps its hint
+     under it rather than drop to a row of its own. */
+  .picker-controls.as-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .as-row > .status-row {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  [data-arrangement="wide"] .picker-aside {
+    grid-area: aside;
+  }
+
+  [data-arrangement="wide"] .variations-grid {
+    grid-area: grid;
+    justify-self: center;
   }
 
   /* The aside not in use: mounted and measurable, but taking no room and

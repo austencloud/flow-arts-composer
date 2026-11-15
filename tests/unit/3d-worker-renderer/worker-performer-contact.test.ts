@@ -1,7 +1,16 @@
 import { Group, Vector3, type Object3D } from "three";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PlaneMode } from "@austencloud/scene-3d";
-import type { WorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
+import { PlaneMode, propFinishState } from "@austencloud/scene-3d";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import {
+  resolveLed3D,
+  resolveTrails3D,
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
+import type {
+  WorkerPerformerEffectIntent,
+  WorkerPerformerSnapshot,
+  WorkerTrailEffectFrame,
+} from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
 import { WorkerPerformer } from "#lib/shared/3d/worker-renderer/worlds/worker-performer.js";
 import { createWorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/services/worker-performer-snapshot.js";
 import {
@@ -123,6 +132,27 @@ function snapshot(
   };
 }
 
+/** Trails on both ends of the left staff, playing. */
+function trailsOnLeftStaff(): WorkerPerformerEffectIntent {
+  return {
+    playing: true,
+    sampledAtMs: 1_000,
+    currentStep: 2.5,
+    totalSteps: 16,
+    seamlesslyLoopable: true,
+    qualityTier: "high",
+    propBuild: propFinishState.build,
+    tips: [
+      { propIndex: 0, tipIndex: 0, effect: "trails" },
+      { propIndex: 0, tipIndex: 1, effect: "trails" },
+    ],
+    handTrailEffects: ["none", "none"],
+    trails: resolveTrails3D(DEFAULT_EFFECTS_CONFIG.trails),
+    led: resolveLed3D(DEFAULT_EFFECTS_CONFIG.led),
+    pooled: {},
+  };
+}
+
 function part(performer: WorkerPerformer, name: string): Object3D {
   const found = performer.root.getObjectByName(name);
   if (!found) throw new Error(`no ${name}`);
@@ -198,6 +228,39 @@ describe("worker performer contact", () => {
     expect(
       left.position.clone().normalize().dot(far.clone().normalize())
     ).toBeCloseTo(1, 9);
+    performer.dispose();
+  });
+
+  it("keeps tip effects on the staff as drawn when the palm lock moves it", async () => {
+    const performer = await WorkerPerformer.create({
+      ...snapshot({ contactResetKey: 1, pairSeparation: false }),
+      effectIntent: trailsOnLeftStaff(),
+    });
+    const trailTips = () =>
+      (performer.getEffects().imperative ?? [])
+        .filter(
+          (frame): frame is WorkerTrailEffectFrame => frame.renderer === "trail"
+        )
+        .map((frame) => new Vector3().fromArray(frame.position));
+    const drawnStaff = () =>
+      part(performer, "left-prop-correction").getWorldPosition(new Vector3());
+
+    palmOffLeftAnchor(performer, new Vector3());
+    performer.update(1 / 60);
+    const tipsBefore = trailTips();
+    const staffBefore = drawnStaff();
+    expect(tipsBefore).toHaveLength(2);
+
+    palmOffLeftAnchor(performer, new Vector3(0.02, -0.01, 0.015));
+    performer.update(1 / 60);
+    const staffMoved = drawnStaff().sub(staffBefore);
+    expect(staffMoved.length()).toBeCloseTo(Math.hypot(0.02, 0.01, 0.015), 9);
+    const tipsAfter = trailTips();
+    expect(tipsAfter).toHaveLength(2);
+    tipsAfter.forEach((tip, index) => {
+      const tipMoved = tip.clone().sub(tipsBefore[index]!);
+      expect(tipMoved.distanceTo(staffMoved)).toBeLessThan(1e-9);
+    });
     performer.dispose();
   });
 

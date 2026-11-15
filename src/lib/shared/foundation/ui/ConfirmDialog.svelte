@@ -303,13 +303,7 @@
     font-size: var(--font-size-2xl);
     font-weight: 600;
     color: var(--text-color, #ffffff);
-    font-family:
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      sans-serif;
+    font-family: inherit;
   }
 
   :global(.dialog-message) {

@@ -242,9 +242,13 @@
       var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1)) 50%,
       var(--theme-card-bg, rgba(255, 255, 255, 0.05)) 75%
     );
-    background-size: 200% 100%;
     animation: skeleton-shimmer 1.4s ease-in-out infinite;
     border-radius: 0.5rem;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .skeleton-block {
+    background-size: 200% 100%;
   }
 
   .skeleton-text {

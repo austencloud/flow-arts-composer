@@ -6,14 +6,12 @@ import type { PendingActionType } from "#lib/shared/sequence-viewer/services/pen
  * (save, favorite) and no-write actions (remix navigates to Create; sendTo
  * shares a URL) are allowed for anonymous guests.
  *
- * download is here for the /q scan funnel: watching stays free, taking the
- * export home is the account-creation moment. Outside this set the gate
- * silently provisions an anonymous guest and never prompts — which would
- * make the gate a no-op.
+ * Downloads left this set on 2026-11-14: guests take their export home
+ * with no account ask first (Austen: "Yes, let them"). Outside this set the
+ * gate silently provisions an anonymous guest and never prompts.
  */
 const FULL_ACCOUNT_ACTIONS: ReadonlySet<PendingActionType> = new Set([
   "publish",
-  "download",
 ]);
 
 export function requiresFullAccount(type: PendingActionType): boolean {

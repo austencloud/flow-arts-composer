@@ -25,6 +25,7 @@
   {isOpen}
   ariaLabel="Fuse recipe settings"
   surface="panel"
+  fullHeightOnPhone={destination === "pairing"}
   onClose={closeDrawer}
 >
   {#snippet children()}

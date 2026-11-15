@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   POST_DEFAULT_CARD_SECONDS,
   findItem,
+  type PostItem,
   type PostProject,
 } from "@austencloud/video-editor/core";
 import {
@@ -133,5 +134,86 @@ describe("sound", () => {
     expect(() =>
       apply(project([video("v1")]), loose({ op: "sound", sound: "loud" }))
     ).toThrow("sound must be takes or silent.");
+  });
+});
+
+describe("trim carries the app's own times", () => {
+  it("keeps a card's ring on the same moment when its start is trimmed", () => {
+    const before = project(
+      [video("v1")],
+      [[card("end", 6, { start: 10, ring: { at: 3, every: 0.5 } } as Partial<PostItem>)]]
+    );
+    // The card runs 10 to 16 over the clip; its ring arrives at post 13.
+    const next = apply(before, {
+      op: "trim",
+      item: "end",
+      edge: "start",
+      seconds: 12,
+    });
+    const trimmed = findItem(next, "end")!.item as PostItem & {
+      ring?: { at: number };
+    };
+    expect(trimmed.start).toBeCloseTo(12);
+    expect(trimmed.ring?.at).toBeCloseTo(1);
+  });
+
+  it("keeps a titles clip's lit span on the same moments when its start is trimmed", () => {
+    const titles = {
+      ...card("t", 6),
+      kind: "titles",
+      start: 1,
+      lit: { from: 2, to: 4 },
+    } as unknown as PostItem;
+    const before = project([video("v1")], [[titles]]);
+    // Lit from post 3 to 5; the start moves to post 4.
+    const next = apply(before, {
+      op: "trim",
+      item: "t",
+      edge: "start",
+      seconds: 4,
+    });
+    const trimmed = findItem(next, "t")!.item as PostItem & {
+      lit?: { from: number; to: number };
+    };
+    expect(trimmed.start).toBeCloseTo(4);
+    expect(trimmed.lit).toEqual({ from: 0, to: 1 });
+  });
+});
+
+describe("the item op and a clip's held last frame", () => {
+  const held = (p: PostProject) =>
+    (findItem(p, "v1")!.item as PostItem & { holdOut?: number }).holdOut;
+
+  it("sets holdOut on a video clip, and null or 0 clears it", () => {
+    const before = project([video("v1")]);
+    const set = apply(before, {
+      op: "item",
+      item: "v1",
+      patch: { holdOut: 2 },
+    });
+    expect(held(set)).toBe(2);
+    expect(findItem(set, "v1")!.item.duration).toBeCloseTo(12);
+    const cleared = apply(set, {
+      op: "item",
+      item: "v1",
+      patch: { holdOut: null },
+    });
+    expect(held(cleared)).toBeUndefined();
+    expect(findItem(cleared, "v1")!.item.duration).toBeCloseTo(10);
+    expect(
+      held(apply(set, { op: "item", item: "v1", patch: { holdOut: 0 } }))
+    ).toBeUndefined();
+  });
+
+  it("names what is wrong", () => {
+    const before = project([video("v1")], [[card("end", 5)]]);
+    for (const holdOut of [-1, 31, "2"]) {
+      expect(() =>
+        apply(before, loose({ op: "item", item: "v1", patch: { holdOut } }))
+      ).toThrow("holdOut must be seconds from 0 to 30, or null to clear it.");
+    }
+    expect(() =>
+      apply(before, { op: "item", item: "end", patch: { holdOut: 2 } })
+    ).toThrow("Only a video clip holds its last frame.");
   });
 });

@@ -18,6 +18,18 @@ interface ViewerInteractiveServicesInputs {
   playback: PlaybackControllerState;
   viewerState: ReturnType<typeof createViewerState>;
   cloudBackedScan: boolean;
+  /**
+   * The host starts services itself, later (a scan, once its card painted).
+   * Until then the animation reads as loading, so the motion pane holds its
+   * slot with its loading state instead of an empty canvas.
+   */
+  deferredStartup?: boolean;
+  /**
+   * The animation canvas has drawn its first frame. A deferred host does not
+   * start playback before it, so the beat count never runs over an empty
+   * canvas.
+   */
+  getAnimationDrawn?: () => boolean;
   getCellsLoaded: () => number;
   getTotalCells: () => number;
   getViewMode: () => ViewMode;
@@ -46,7 +58,7 @@ export function createViewerInteractiveServicesState(
   dependencies: ViewerInteractiveServicesDependencies
 ) {
   let animationServicesReady = $state(false);
-  let animationLoading = $state(false);
+  let animationLoading = $state(inputs.deferredStartup ?? false);
   let playbackController = $state<AnimationPlaybackController | null>(null);
   let hapticService: HapticFeedback | null = null;
   let lastLoadedSequenceId: string | null = null;
@@ -58,6 +70,9 @@ export function createViewerInteractiveServicesState(
 
   function tryCompleteAutoplay(startedAt: number): boolean {
     if (!inputs.getPlaybackReleased()) return false;
+    if (inputs.deferredStartup && inputs.getAnimationDrawn?.() === false) {
+      return false;
+    }
 
     const ready = dependencies.isViewerReadyToAutoplay({
       cloudBackedScan: inputs.cloudBackedScan,
@@ -112,6 +127,7 @@ export function createViewerInteractiveServicesState(
         "[SequenceViewerOrchestrator] Failed to load services:",
         error
       );
+      animationLoading = false;
       inputs.modalAnimationState.setError("Failed to load animation services");
     }
   }

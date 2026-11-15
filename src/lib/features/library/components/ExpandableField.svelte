@@ -11,8 +11,12 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
-    /** Label shown on the chip and field header */
+    /** Label shown on the field header */
     label: string;
+    /** Translated text on the add chip ("Add Notes") */
+    addLabel: string;
+    /** Translated name of the remove button ("Remove notes") */
+    removeLabel: string;
     /** Whether the field is currently expanded */
     expanded: boolean;
     /** Called when expand state changes */
@@ -30,6 +34,8 @@
 
   let {
     label,
+    addLabel,
+    removeLabel,
     expanded,
     onExpandedChange,
     onCollapse,
@@ -99,7 +105,7 @@
         onclick={handleExpand}
       >
         <i class="fas fa-plus" aria-hidden="true"></i>
-        Add {label}
+        {addLabel}
       </button>
     {:else}
       <div class="expandable-field">
@@ -109,7 +115,7 @@
             type="button"
             class="collapse-btn"
             onclick={handleCollapse}
-            aria-label="Remove {label.toLowerCase()}"
+            aria-label={removeLabel}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
           </button>

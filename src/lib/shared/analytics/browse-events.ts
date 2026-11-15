@@ -51,3 +51,42 @@ export function trackPerformancePlaybackIntent(): void {
     withRoute({ subject_type: "sequence" })
   );
 }
+
+/** Where in Browse a filter value was applied or cleared. */
+export type BrowseFilterSurface = "ask" | "answer_button" | "more_filters";
+
+/** Filter types whose values name a person or a private object. Their value
+ * is withheld, per this file's rule: no creator or collection ids. */
+const WITHHELD_FILTER_VALUES = new Set(["owner", "author", "collection"]);
+
+export function trackBrowseFilterApplied(event: {
+  filter: string;
+  value: string | number;
+  action: "apply" | "clear";
+  surface: BrowseFilterSurface;
+  result_count: number;
+}): void {
+  captureWhenReady(
+    "browse_filter_applied",
+    withRoute({
+      ...event,
+      value: WITHHELD_FILTER_VALUES.has(event.filter)
+        ? null
+        : String(event.value),
+    })
+  );
+}
+
+/**
+ * One tap on a gallery card's variation pill. Carries no sequence id, name or
+ * user detail: only how long the new picture took and how it was served.
+ */
+export function trackBrowseVariationSwap(event: {
+  duration_ms: number;
+  outcome: "shown" | "tapped_again" | "left";
+  source?: "memory" | "static" | "local" | "cloud" | "render";
+  variation_count: number;
+  prepared: boolean;
+}): void {
+  captureWhenReady("browse_variation_swap", withRoute({ ...event }));
+}

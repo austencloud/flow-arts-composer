@@ -161,8 +161,10 @@
   }
 
   /* Compact mode: tighter padding and gaps */
+  /* A host may tighten the padding with --compact-hand-card-padding: the
+     step editor on a phone wraps one row of 36px controls in 3px, a 44px card. */
   .prop-pair.compact .prop-card {
-    padding: 8px;
+    padding: var(--compact-hand-card-padding, 8px);
     gap: 6px;
     border-radius: 10px;
   }

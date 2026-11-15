@@ -110,7 +110,6 @@
         activeTab={state.dockTab}
         onTabSelect={state.toggleDockTab}
         tray={dockTray}
-        labelMinWidth={0}
         trayMaxHeight="40vh"
       />
       <QftTransport compact />

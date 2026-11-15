@@ -11,22 +11,23 @@
  *
  * Every function is best-effort and never throws: a miss, a parse failure, a
  * shape we can't revive, or a quota error all degrade to today's behavior
- * (skeletons until the snapshot lands).
+ * (skeletons until the snapshot lands). Storage and versioning go through the
+ * shared `local-mirror` owner.
  */
 
 import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import type { FollowedCollection } from "#lib/features/library/state/followed-collections-state.svelte.js";
+import {
+  readMirror,
+  removeMirror,
+  writeMirror,
+} from "#lib/shared/foundation/services/local-mirror.js";
 
 const OWN_PREFIX = "tka:collections-mirror:own:";
 const FOLLOWED_PREFIX = "tka:collections-mirror:followed:";
 
 /** Bump when the persisted shape changes so stale blobs are ignored, not mis-read. */
 const SCHEMA_VERSION = 1;
-
-interface Envelope<T> {
-  v: number;
-  data: T;
-}
 
 /**
  * `createdAt`/`updatedAt` are `Date`s; JSON.stringify turns them into ISO
@@ -57,43 +58,11 @@ function reviveCollection(c: SerializedCollection): LibraryCollection {
   return { ...c, createdAt, updatedAt };
 }
 
-function storage(): Storage | null {
-  try {
-    return typeof localStorage !== "undefined" ? localStorage : null;
-  } catch {
-    // localStorage access can throw in locked-down/private contexts.
-    return null;
-  }
-}
-
-function readEnvelope<T>(key: string): T | null {
-  const store = storage();
-  if (!store) return null;
-  try {
-    const raw = store.getItem(key);
-    if (!raw) return null;
-    const env = JSON.parse(raw) as Envelope<T>;
-    if (!env || env.v !== SCHEMA_VERSION) return null;
-    return env.data;
-  } catch {
-    return null;
-  }
-}
-
-function writeEnvelope<T>(key: string, data: T): void {
-  const store = storage();
-  if (!store) return;
-  try {
-    const env: Envelope<T> = { v: SCHEMA_VERSION, data };
-    store.setItem(key, JSON.stringify(env));
-  } catch {
-    // Quota exceeded / private mode — best-effort, stay silent.
-  }
-}
-
-
 export function readOwnMirror(uid: string): LibraryCollection[] | null {
-  const serialized = readEnvelope<SerializedCollection[]>(OWN_PREFIX + uid);
+  const serialized = readMirror<SerializedCollection[]>(
+    OWN_PREFIX + uid,
+    SCHEMA_VERSION
+  )?.data;
   if (!serialized || !Array.isArray(serialized)) return null;
   try {
     return serialized.map(reviveCollection);
@@ -104,7 +73,7 @@ export function readOwnMirror(uid: string): LibraryCollection[] | null {
 }
 
 export function writeOwnMirror(uid: string, cols: readonly LibraryCollection[]): void {
-  writeEnvelope(OWN_PREFIX + uid, cols.map(serializeCollection));
+  writeMirror(OWN_PREFIX + uid, SCHEMA_VERSION, cols.map(serializeCollection));
 }
 
 
@@ -115,7 +84,10 @@ type SerializedFollowed = {
 };
 
 export function readFollowedMirror(uid: string): FollowedCollection[] | null {
-  const serialized = readEnvelope<SerializedFollowed[]>(FOLLOWED_PREFIX + uid);
+  const serialized = readMirror<SerializedFollowed[]>(
+    FOLLOWED_PREFIX + uid,
+    SCHEMA_VERSION
+  )?.data;
   if (!serialized || !Array.isArray(serialized)) return null;
   try {
     return serialized.map((s) => ({
@@ -132,8 +104,9 @@ export function writeFollowedMirror(
   uid: string,
   items: readonly FollowedCollection[],
 ): void {
-  writeEnvelope(
+  writeMirror(
     FOLLOWED_PREFIX + uid,
+    SCHEMA_VERSION,
     items.map((i) => ({
       collection: serializeCollection(i.collection),
       ownerId: i.ownerId,
@@ -145,12 +118,5 @@ export function writeFollowedMirror(
 
 /** Drop a user's mirrors so their list never seeds the next signed-in account. */
 export function clearMirror(uid: string): void {
-  const store = storage();
-  if (!store) return;
-  try {
-    store.removeItem(OWN_PREFIX + uid);
-    store.removeItem(FOLLOWED_PREFIX + uid);
-  } catch {
-    // best-effort
-  }
+  removeMirror(OWN_PREFIX + uid, FOLLOWED_PREFIX + uid);
 }

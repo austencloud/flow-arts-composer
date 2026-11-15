@@ -54,6 +54,8 @@ export const FEATURE_VIDEO_MEDIA_TYPES: Readonly<Record<string, string>> = {
   ".jpeg": "image/jpeg",
   ".png": "image/png",
   ".webp": "image/webp",
+  /** A take's comet light map, see `comet-light-map.ts`. */
+  ".cometmap": "application/octet-stream",
 };
 
 export const FeatureVideoFileSchema = z

@@ -963,8 +963,12 @@
     height: clamp(6rem, 32%, 8rem);
     border: 1px solid
       color-mix(in srgb, var(--theme-stroke, #fff) 70%, transparent);
-    border-left: none;
     border-radius: 0 12px 12px 0;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .side-strip .playback-strip {
+    border-left: none;
   }
 
   .bottom-strip .playback-strip {

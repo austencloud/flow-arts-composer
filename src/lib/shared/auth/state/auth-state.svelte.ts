@@ -843,13 +843,20 @@ async function releaseUserScopedListeners(outgoingUid: string): Promise<void> {
     }),
   ]);
 
-  // Drop the local text mirror so this user's list never seeds the next
+  // Drop the local text mirrors so this user's lists never seed the next
   // signed-in account on the same device.
-  await release("collection mirror", async () => {
-    const { clearMirror } =
-      await import("#lib/features/library/services/collection-cache-mirror.js");
-    clearMirror(outgoingUid);
-  });
+  await Promise.all([
+    release("collection mirror", async () => {
+      const { clearMirror } =
+        await import("#lib/features/library/services/collection-cache-mirror.js");
+      clearMirror(outgoingUid);
+    }),
+    release("setups mirror", async () => {
+      const { clearSetupsMirror } =
+        await import("#lib/features/create/generate/services/setups-cache-mirror.js");
+      clearSetupsMirror(outgoingUid);
+    }),
+  ]);
 }
 
 /**

@@ -43,25 +43,25 @@
       {
         id: BrowseSortMethod.ALPHABETICAL,
         label: t("browse_sort_alphabetical"),
-        chipLabel: "A-Z",
+        chipLabel: t("browse_sort_chip_az"),
         icon: "fa-font",
       },
       {
         id: BrowseSortMethod.DATE_ADDED,
         label: t("browse_sort_date_added"),
-        chipLabel: "Date",
+        chipLabel: t("browse_sort_chip_date"),
         icon: "fa-clock",
       },
       {
         id: BrowseSortMethod.SEQUENCE_LENGTH,
         label: t("browse_sort_length"),
-        chipLabel: "Length",
+        chipLabel: t("browse_chip_length"),
         icon: "fa-ruler",
       },
       {
         id: BrowseSortMethod.DENSITY,
         label: t("browse_sort_mandala"),
-        chipLabel: "Mandala",
+        chipLabel: t("browse_sort_mandala"),
         icon: "fa-dharmachakra",
       },
     ];

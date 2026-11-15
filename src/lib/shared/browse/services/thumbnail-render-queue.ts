@@ -12,6 +12,17 @@
  * - Supports cancellation
  */
 
+/**
+ * Priorities are lower-first. Position-based callers pass the card's top Y
+ * (a few hundred, never beyond a few thousand), so these two finite values sit
+ * on either side of every real position. They are finite because the cloud
+ * lookup queue sorts by subtraction, which Infinity would turn into NaN.
+ */
+/** A picture the visitor just asked for (tapped the variation pill). */
+export const VISITOR_ASKED_PRIORITY = -1_000_000_000;
+/** Speculative work (the next variation, ahead of a tap): after everything. */
+export const PREPARE_AHEAD_PRIORITY = 1_000_000_000;
+
 export interface QueueStats {
   /** Number of tasks waiting in queue */
   queued: number;
@@ -118,6 +129,10 @@ export class ThumbnailRenderQueue {
     }
 
     const pending = this.pendingTasks.get(id);
+    // A request that joins an already queued task may be more urgent than the
+    // one that queued it (a tap that lands on a prepared-ahead task). Running
+    // tasks are never touched; only a waiting one moves forward.
+    if (pending) this.promoteQueued(pending.token, priority);
     let corePromise = pending?.promise as Promise<T> | undefined;
     let token = pending?.token ?? 0;
     if (!corePromise) {
@@ -155,6 +170,17 @@ export class ThumbnailRenderQueue {
     }
 
     return this.attachConsumer(token, corePromise, consumerSignal);
+  }
+
+  private promoteQueued(token: number, priority: number): void {
+    const index = this.queue.findIndex((task) => task.token === token);
+    const task = this.queue[index];
+    if (!task || !(priority < task.priority)) return;
+    this.queue.splice(index, 1);
+    task.priority = priority;
+    const insertIndex = this.queue.findIndex((t) => t.priority > priority);
+    if (insertIndex === -1) this.queue.push(task);
+    else this.queue.splice(insertIndex, 0, task);
   }
 
   cancel(id: string): void {

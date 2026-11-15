@@ -4,6 +4,8 @@
 
   interface Props {
     variant?: "primary" | "secondary" | "quiet";
+    /** md = 44px touch target; compact = the 36px phone control (layout law). */
+    size?: "md" | "compact";
     href?: string;
     accentColor?: string;
     children: Snippet;
@@ -23,6 +25,7 @@
 
   let {
     variant = "secondary",
+    size = "md",
     href,
     accentColor,
     children,
@@ -53,13 +56,17 @@
       variant === "quiet"
         ? "--ui-quiet-bg: color-mix(in srgb, var(--theme-text) 4%, transparent)"
         : "",
-    ].join("; "),
+    ].join("; ")
   );
 </script>
 
 <Button
   {variant}
-  class="panel-btn panel-btn--{variant} {fullWidth ? 'panel-btn--full-width' : ''} {accentColor ? 'panel-btn--tinted' : ''}"
+  class="panel-btn panel-btn--{variant} {fullWidth
+    ? 'panel-btn--full-width'
+    : ''} {accentColor ? 'panel-btn--tinted' : ''} {size === 'compact'
+    ? 'panel-btn--compact'
+    : ''}"
   {href}
   {children}
   {onclick}
@@ -76,3 +83,15 @@
   aria-pressed={ariaPressed}
   data-save-shortcut={saveShortcut ? "" : undefined}
 />
+
+<style>
+  /* The phone control height. The shared button and the global button rule
+     both floor at 44px, so the compact size lifts both floors. */
+  :global(.ui-button.panel-btn.panel-btn--compact) {
+    min-width: var(--alt-touch-target, 36px);
+    min-height: var(--alt-touch-target, 36px);
+    height: var(--alt-touch-target, 36px);
+    padding-block: 0;
+    padding-inline: 0.75rem;
+  }
+</style>

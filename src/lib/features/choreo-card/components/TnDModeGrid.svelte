@@ -29,6 +29,7 @@
     disabledModes = [],
     reasons = {},
     fullLabels = false,
+    size = "md",
     ariaLabel = t("shape_engine_timing_direction"),
     modeContent,
     onpick,
@@ -42,6 +43,12 @@
     reasons?: Partial<Record<VtgMode, string>>;
     /** Uses complete words when the host gives each choice enough room. */
     fullLabels?: boolean;
+    /**
+     * `sm` is the phone form: 36px chips (layout law, Tap size) with the
+     * icon beside the two words, in content-sized rows, for a host that has to
+     * fit the whole editor on a phone screen without scrolling.
+     */
+    size?: "md" | "sm";
     ariaLabel?: string;
     /** Lets a host compose around a chip without changing the default grid. */
     modeContent?: Snippet<[VtgMode, Snippet]>;
@@ -72,7 +79,12 @@
   }
 </script>
 
-<div class="mode-grid" role="radiogroup" aria-label={ariaLabel}>
+<div
+  class="mode-grid"
+  class:sm={size === "sm"}
+  role="radiogroup"
+  aria-label={ariaLabel}
+>
   {#each chips as c (c.mode)}
     {#snippet defaultChip()}
       <RelationshipChoiceChip
@@ -107,6 +119,30 @@
     grid-auto-rows: minmax(0, 1fr);
     gap: 8px;
     min-width: 0;
+  }
+
+  /* The phone form: three 36px rows, 6px apart (120px for the grid). The icon
+     sits beside the two 12px words (two 14.4px lines in 36px less a 1px
+     border and 2px padding each way), and the check mark keeps its corner. */
+  .mode-grid.sm {
+    grid-auto-rows: auto;
+    gap: 6px;
+  }
+
+  .mode-grid.sm :global(.relationship-choice) {
+    height: var(--alt-touch-target, 36px);
+    min-height: var(--alt-touch-target, 36px);
+    padding: 2px 8px;
+  }
+
+  .mode-grid.sm :global(.relationship-choice .choice-icon) {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .mode-grid.sm :global(.relationship-choice .choice-check) {
+    top: 50%;
+    margin-top: -0.6rem;
   }
 
   /* A chip that has grown to twice its natural height with the same 2.1rem

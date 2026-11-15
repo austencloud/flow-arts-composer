@@ -24,6 +24,12 @@ export function browseSortOptions({
 }): SortChoiceOption<BrowseSortMethod>[] {
   const all: SortChoiceOption<BrowseSortMethod>[] = [
     {
+      id: BrowseSortMethod.TODAYS_MIX,
+      label: t("browse_ui_todays_mix"),
+      chipLabel: t("browse_ui_todays_mix"),
+      icon: "fa-shuffle",
+    },
+    {
       id: BrowseSortMethod.ALPHABETICAL,
       label: "A-Z",
       chipLabel: "A-Z",

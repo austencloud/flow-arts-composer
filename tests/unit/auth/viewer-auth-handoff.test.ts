@@ -30,7 +30,6 @@ import { createAuthActionQueue } from "#lib/shared/sequence-viewer/components/au
 import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
 import { learnWhoIsSignedIn } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
-import { ensureFullAccountForExport } from "#lib/shared/auth/domain/export-gate.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const callbacks = {
@@ -55,7 +54,7 @@ beforeEach(() => {
 });
 
 describe("viewer account handoff", () => {
-  it.each(["save", "favorite", "remix", "sendTo"])(
+  it.each(["save", "favorite", "remix", "sendTo", "download"])(
     "resumes guest %s links without a sign-in prompt",
     (type) => {
       history.replaceState(null, "", `/q/example?pending=${type}`);
@@ -69,7 +68,7 @@ describe("viewer account handoff", () => {
     }
   );
 
-  it.each(["download", "publish"])(
+  it.each(["publish"])(
     "retains pending %s until the guest becomes a full account",
     (type) => {
       Object.assign(auth, { isAuthenticated: true, isAnonymous: true });
@@ -93,13 +92,13 @@ describe("viewer account handoff", () => {
   );
 
   it("discards the pending action when the account prompt is dismissed", () => {
-    history.replaceState(null, "", "/q/example?pending=download");
+    history.replaceState(null, "", "/q/example?pending=publish");
     const queue = createAuthActionQueue();
     queue.bootstrapFromUrl();
     queue.closeSignInSheet();
     Object.assign(auth, { isAuthenticated: true, isFullAccount: true });
     expect(queue.replayPendingAction(callbacks)).toBe(false);
-    expect(callbacks.handleDownload).not.toHaveBeenCalled();
+    expect(callbacks.handlePublishAction).not.toHaveBeenCalled();
   });
 });
 
@@ -144,24 +143,13 @@ describe("a visitor the page never signed in", () => {
     expect(queue.signInSheetOpen).toBe(false);
   });
 
-  it("asks a signed-out visitor to sign in, with authState listening", async () => {
+  it("downloads for a signed-out guest with no sign-in sheet", async () => {
     const download = vi.fn();
     const queue = createAuthActionQueue();
     queue.invokeGatedAction("download", download, sequence);
-    await vi.waitFor(() => expect(queue.signInSheetOpen).toBe(true));
-    expect(learnWhoIsSignedIn).toHaveBeenCalled();
-    expect(pending.peek()?.type).toBe("download");
-    expect(download).not.toHaveBeenCalled();
-  });
-
-  it("lets an account holder past the export gate", async () => {
-    firebase.who = "account";
-    await expect(ensureFullAccountForExport()).resolves.toBe(true);
+    await vi.waitFor(() => expect(download).toHaveBeenCalledOnce());
+    expect(queue.signInSheetOpen).toBe(false);
     expect(authDrawerState.show).not.toHaveBeenCalled();
-  });
-
-  it("offers sign-up at the export gate instead of waiting forever", async () => {
-    await expect(ensureFullAccountForExport()).resolves.toBe(false);
-    expect(authDrawerState.show).toHaveBeenCalledWith("signup", "export");
+    expect(pending.peek()).toBeNull();
   });
 });

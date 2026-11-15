@@ -16,6 +16,7 @@ import {
 import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { hasSavedFirebaseUser } from "#lib/shared/auth/services/saved-firebase-user.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { trackSequenceKept } from "#lib/shared/analytics/services/posthog-activity-logger.js";
@@ -81,8 +82,31 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     const revision = ++savedStateRevision;
     const seq = sequence as LibrarySequence | null;
     isOwnedLibraryRecord = false;
-    if (!seq || !authState.user?.uid) {
-      isSaved = !(deps.getIsOwned() && seq && !seq.contentHash);
+    if (!seq) {
+      isSaved = true;
+      return;
+    }
+    if (!authState.user?.uid) {
+      // Nobody is signed in on this page yet, so no library holds this
+      // sequence and Save stays on offer: tapping it is what makes the visitor
+      // a guest (invokeGatedAction). Reporting "saved" here left every
+      // signed-out visitor with a disabled button.
+      //
+      // /sequence/[id] never starts auth for a first visit, but a returning
+      // visitor's saved session is restored a moment after load and this runs
+      // again with their library. Until it does, hold "saved" instead of
+      // flashing Save at someone who may already have it.
+      if (authState.initialized) {
+        isSaved = false;
+        return;
+      }
+      hasSavedFirebaseUser()
+        .then((hasSession) => {
+          if (revision === savedStateRevision && !authState.user?.uid) {
+            isSaved = hasSession;
+          }
+        })
+        .catch(() => {});
       return;
     }
 

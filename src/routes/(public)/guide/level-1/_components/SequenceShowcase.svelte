@@ -36,6 +36,15 @@
     PoolEntry,
   } from "../_data/guide-content-blocks";
   import type { Snippet } from "svelte";
+  import FigureCardControls from "./FigureCardControls.svelte";
+  import { figureCardBpm } from "./guide-half-speed.svelte";
+  import type { FigureRowTurns } from "./figure-row-turns.svelte";
+  import type { FigureCues } from "../_data/guide-content-blocks";
+  import type { InlinePlayerControls } from "#lib/features/browse/sequences/display/components/media-viewer/inline-player-controls";
+  import {
+    DEFAULT_TRAIL_SETTINGS,
+    TrailMode,
+  } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
   let {
     sequence,
@@ -58,6 +67,9 @@
     stripMinCell,
     exampleLine,
     cardBeside = false,
+    cues = null,
+    thumbRingOn,
+    turns = null,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -164,7 +176,42 @@
         decides from the window's room (screenRoom's cardBeside), so its
         cut and this layout agree. */
     cardBeside?: boolean;
+    /** Card variant: teaching marks on the canvas (ghosts, hand path, thumb
+        ring) and the Replay / ½× row under it. Omitted: as before. */
+    cues?: FigureCues | null;
+    /** Overrides `cues.thumbRing` (a question's answer reveals it). */
+    thumbRingOn?: boolean;
+    /** Card variant: the row this card plays in turn with, and its place in
+        it. The row starts the opening play in place of the card's autoplay. */
+    turns?: { row: FigureRowTurns; index: number } | null;
   } = $props();
+
+  // Cue cards: the hand path is the one line, so the default trail is off.
+  const CUE_TRAIL = { ...DEFAULT_TRAIL_SETTINGS, mode: TrailMode.OFF };
+  const motionCues = $derived(
+    cues && (cues.ghosts || cues.handPath || cues.thumbRing || thumbRingOn)
+      ? {
+          ghosts: !!cues.ghosts,
+          handPath: !!cues.handPath,
+          thumbRing: thumbRingOn ?? !!cues.thumbRing,
+        }
+      : null
+  );
+  const playerTrail = $derived(motionCues?.handPath ? CUE_TRAIL : trail);
+  const playerBpm = $derived(cues?.controls ? figureCardBpm(bpm) : bpm);
+  let controls: InlinePlayerControls | null = null;
+  let playerReady = $state(false);
+  function handlePlayerReady() {
+    playerReady = true;
+    if (!controls) return;
+    if (turns) turns.row.ready(turns.index, controls);
+    // A cue card that will not play by itself rests on its end pose, where
+    // its marks show the whole motion.
+    else if (reducedMotion && motionCues) controls.restAtEnd();
+  }
+  const dimmed = $derived(
+    turns ? (turns.row.dimmed[turns.index] ?? false) : false
+  );
 
   const propType = $derived(render?.propType ?? PropType.HAND);
   // The text alternative names only what the strip draws: no letter when the
@@ -253,6 +300,9 @@
     if (inView && !hasEnteredView) hasEnteredView = true;
   });
   const shouldAutoPlay = $derived(!reducedMotion && hasEnteredView);
+  $effect(() => {
+    if (hasEnteredView) turns?.row.enterView();
+  });
 
   // ── Playhead sync (spec decision 4 / ledger B1) ─────────────────────────
   // The live 1-based fractional beat from InlineAnimationPlayer.onStepChange,
@@ -272,6 +322,10 @@
     return Math.max(0, Math.min(1, zeroBased / totalBeats));
   });
   const activeBeat = $derived(liveStep < 1 ? 0 : Math.floor(liveStep));
+  // A card in a play-in-turn row marks a cell only while it plays: a card
+  // waiting its turn (or resting after) shows no "playing" ring.
+  let cardPlaying = $state(false);
+  const cardBeat = $derived(turns && !cardPlaying ? null : activeBeat);
 
   onMount(() => {
     if (typeof window !== "undefined" && "matchMedia" in window) {
@@ -322,14 +376,21 @@
         : null}
       chrome="minimal"
       fill={true}
-      autoPlay={shouldAutoPlay}
-      externalBpm={bpm}
+      autoPlay={turns ? false : shouldAutoPlay}
+      externalBpm={playerBpm}
       leftPropType={propType}
       rightPropType={propType}
       scrubbable
       singlePlay={!loop}
       beatIndicators={false}
-      trailSettingsOverride={trail}
+      trailSettingsOverride={playerTrail}
+      {motionCues}
+      onControlsRef={(c) => (controls = c)}
+      onReady={handlePlayerReady}
+      onPlayingChange={(playing) => {
+        cardPlaying = playing;
+        turns?.row.playingChange(turns.index, playing);
+      }}
       hideTkaGlyph={!canvasLetter}
       visibilityManagerOverride={visibility}
       onStepChange={handleStepChange}
@@ -415,11 +476,17 @@
       {#if text}
         <div class="card-words">{@render text()}</div>
       {/if}
-      <div class="figure-card" class:in-view={inView}>
+      <div class="figure-card" class:in-view={inView} class:dimmed>
         <div class="canvas-box">
           {@render player()}
+          {#if cues?.controls}
+            <FigureCardControls
+              disabled={!playerReady}
+              onreplay={() => controls?.replay()}
+            />
+          {/if}
         </div>
-        <GuideStepStrip {items} {numbered} {render} {picTheme} {activeBeat} fill />
+        <GuideStepStrip {items} {numbered} {render} {picTheme} activeBeat={cardBeat} fill />
       </div>
     </div>
   {:else if variant === "pair"}
@@ -888,7 +955,12 @@
       color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
     transition:
       border-color var(--duration-emphasis) var(--ease-standard),
-      box-shadow var(--duration-emphasis) var(--ease-standard);
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-dramatic) var(--ease-standard);
+  }
+  /* Waiting its turn in a row that plays in turn. */
+  .figure-card.dimmed {
+    opacity: 0.32;
   }
   .card-band.beside .figure-card {
     width: var(

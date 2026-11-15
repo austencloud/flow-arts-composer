@@ -119,10 +119,6 @@
     right: 0;
     height: var(--spotlight-filmstrip-height, 80px);
     padding: var(--spotlight-chrome-padding, 16px);
-    padding-bottom: calc(
-      var(--spotlight-chrome-padding, 16px) +
-        var(--spotlight-safe-area-bottom, 0px)
-    );
     background: linear-gradient(
       to top,
       rgba(0, 0, 0, 0.8) 0%,
@@ -139,6 +135,14 @@
     /* Hide scrollbar */
     scrollbar-width: none;
     -ms-overflow-style: none;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .spotlight-filmstrip {
+    padding-bottom: calc(
+      var(--spotlight-chrome-padding, 16px) +
+        var(--spotlight-safe-area-bottom, 0px)
+    );
   }
 
   .spotlight-filmstrip::-webkit-scrollbar {
@@ -211,6 +215,10 @@
   @media (max-width: 768px) {
     .spotlight-filmstrip {
       padding: var(--spotlight-chrome-padding-mobile, 12px);
+    }
+
+    /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+    .spotlight-filmstrip {
       padding-bottom: calc(
         var(--spotlight-chrome-padding-mobile, 12px) +
           var(--spotlight-safe-area-bottom, 0px)

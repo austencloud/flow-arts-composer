@@ -1,5 +1,9 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  GENERATE_PHONE_PANEL_NEED,
+  GENERATE_PHONE_ROW_FLOORS,
   MIN_TOOL_PANEL_HEIGHT,
   MIN_TOOL_PANEL_SHARE,
   sequenceRowCount,
@@ -85,7 +89,10 @@ describe("whole-sequence floor", () => {
     const [workspace, tool] = stackedWorkspaceSplit({
       height: 779,
       preferredWorkspace: 779 * USUAL_WORKSPACE_SHARE,
-      workspaceFloor: workspaceFloorHeight({ width: 707, chromeHeight: CHROME }),
+      workspaceFloor: workspaceFloorHeight({
+        width: 707,
+        chromeHeight: CHROME,
+      }),
       sequenceFloor,
     });
     expect(sequenceFloor).toBe(553);
@@ -113,5 +120,74 @@ describe("whole-sequence floor", () => {
     });
     expect(tool).toBe(MIN_TOOL_PANEL_HEIGHT);
     expect(workspace).toBe(728 - MIN_TOOL_PANEL_HEIGHT);
+  });
+});
+
+describe("Generate's panel need on a narrow phone", () => {
+  // A 360 x 591 phone: 546px between the top and the bottom bar.
+  const height = 546;
+  const usual = height * USUAL_WORKSPACE_SHARE;
+
+  it("adds up the narrow compact rows: 56 + 3 x 44 + 56, four gaps, padding", () => {
+    expect(GENERATE_PHONE_PANEL_NEED).toBe(268);
+  });
+
+  it("gives a short phone's panel what its rows need from the workspace's share", () => {
+    const [workspace, tool] = stackedWorkspaceSplit({
+      height,
+      preferredWorkspace: usual,
+      workspaceFloor: 200,
+      toolPanelNeed: GENERATE_PHONE_PANEL_NEED,
+    });
+    expect(tool).toBe(GENERATE_PHONE_PANEL_NEED);
+    expect(workspace).toBe(height - GENERATE_PHONE_PANEL_NEED);
+  });
+
+  it("leaves a tall phone's split as it was", () => {
+    const tall = 870;
+    const without = stackedWorkspaceSplit({
+      height: tall,
+      preferredWorkspace: tall * USUAL_WORKSPACE_SHARE,
+      workspaceFloor: 300,
+    });
+    const withNeed = stackedWorkspaceSplit({
+      height: tall,
+      preferredWorkspace: tall * USUAL_WORKSPACE_SHARE,
+      workspaceFloor: 300,
+      toolPanelNeed: GENERATE_PHONE_PANEL_NEED,
+    });
+    expect(withNeed).toEqual(without);
+  });
+
+  it("lets the workspace floor win on a window too short for both", () => {
+    const short = 480;
+    const [workspace, tool] = stackedWorkspaceSplit({
+      height: short,
+      preferredWorkspace: short * USUAL_WORKSPACE_SHARE,
+      workspaceFloor: 250,
+      toolPanelNeed: GENERATE_PHONE_PANEL_NEED,
+    });
+    expect(workspace).toBe(250);
+    expect(tool).toBe(230);
+  });
+
+  it("matches the floors in the narrow compact CSS rule", () => {
+    const css = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "src/lib/features/create/generate/components/CardBasedSettingsContainer.svelte"
+      ),
+      "utf8"
+    );
+    const start = css.indexOf(
+      "@container settings-grid (width < 630px) and (height < 560px) {"
+    );
+    const rule = css.slice(start, css.indexOf("@container", start + 10));
+    expect(rule).toContain(
+      `minmax(${GENERATE_PHONE_ROW_FLOORS.generate}px, 1.15fr)`
+    );
+    expect(css).toContain(
+      `--compact-level-row: clamp(${GENERATE_PHONE_ROW_FLOORS.level}px,`
+    );
   });
 });

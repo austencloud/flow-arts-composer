@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { collectionDisplayName } from "#lib/shared/library/domain/collection-display-name.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
@@ -86,7 +87,7 @@
       </span>
       <span class="tile-text">
         <span class="tile-name-row">
-          <span class="tile-name">{collection.name}</span>
+          <span class="tile-name">{collectionDisplayName(collection)}</span>
           {#if isSmart && !minimalMetadata}
             <span class="smart-label">
               <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
@@ -130,7 +131,9 @@
       <button
         type="button"
         class="kebab"
-        aria-label={t("browse_audit_options_for", { name: collection.name })}
+        aria-label={t("browse_audit_options_for", {
+          name: collectionDisplayName(collection),
+        })}
         onclick={onOptions}
       >
         <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>

@@ -29,7 +29,7 @@ In spell mode, shows bridge count as subtitle and allows upward adjustment.
     color = "radial-gradient(ellipse at top left, var(--card-blue, #3b82f6) 0%, var(--card-blue, #3b82f6) 40%, var(--card-blue-end, #1d4ed8) 100%)",
     shadowColor = "220deg 80% 55%",
     gridColumnSpan = 2,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
   } = $props<{
     currentLength: number;
     currentMode: GenerationMode;

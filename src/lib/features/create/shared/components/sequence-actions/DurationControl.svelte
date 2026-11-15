@@ -12,8 +12,13 @@
     row     — one line: ≪ − value + ≫ (default)
     stacked — fine pair over coarse pair, for a short landscape drawer where
               the control sits beside the preview instead of under it
-  Compact mode tightens spacing and, in a drawer at least 300px wide, keeps the
-  label beside the row so the pictograph gets the height back.
+  Compact mode uses the 36px phone controls in a 44px card and, in a drawer at
+  least 300px wide, keeps the label beside the row so the pictograph gets the
+  height back. Fill is the phone step editor's column beside the picture:
+  the card spans that column, the label is visually hidden (it still names
+  the group), and the value takes whatever the buttons leave. Fill with the
+  row layout puts all five in one line (a column about 200 wide); with the
+  stacked layout the fine pair stands over the coarse pair (about 150 wide).
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -32,6 +37,8 @@
     compact?: boolean;
     /** Stacked puts the coarse pair under the fine pair (short landscape). */
     layout?: "row" | "stacked";
+    /** Span the column beside the phone editor's picture (see header). */
+    fill?: boolean;
     onDurationChange: (newDuration: number) => void;
   }
 
@@ -39,12 +46,15 @@
     duration,
     compact = false,
     layout = "row",
+    fill = false,
     onDurationChange,
   }: Props = $props();
 
   const displayDuration = $derived(formatDurationDisplay(duration));
   const canDecrease = $derived(duration > MIN_DURATION);
   const canIncrease = $derived(duration < MAX_DURATION);
+
+  const labelId = $props.id();
 
   let editing = $state(false);
   let editValue = $state("");
@@ -92,8 +102,11 @@
   class="duration-control"
   class:compact
   class:stacked={layout === "stacked"}
+  class:fill
+  role="group"
+  aria-labelledby="{labelId}-label"
 >
-  <span class="duration-label">{t("clip_duration")}</span>
+  <span class="duration-label" id="{labelId}-label">{t("clip_duration")}</span>
 
   <div class="duration-row">
     <!-- Coarse decrease (−0.5) -->
@@ -253,7 +266,12 @@
     grid-template-columns: repeat(3, auto);
     grid-template-areas:
       "fdown value fup"
-      "cdown . cup";
+      "cdown value cup";
+  }
+
+  /* The value spans both rows, centred, so no hole sits under it. */
+  .duration-control.stacked .value-slot {
+    align-self: center;
   }
 
   .coarse-down {
@@ -386,19 +404,32 @@
     cursor: default;
   }
 
+  /* The 36px phone control; the global button floor is lifted with it. */
   .duration-control.compact .ctrl-btn {
+    width: var(--alt-touch-target, 36px);
+    height: var(--alt-touch-target, 36px);
+    min-width: 0;
+    min-height: 0;
     border-radius: 8px;
     font-size: 0.95rem;
   }
 
+  .duration-control.compact .duration-value,
+  .duration-control.compact .duration-input {
+    min-height: var(--alt-touch-target, 36px);
+    min-width: 0;
+    padding-block: 0;
+  }
+
   /* The iPhone-width editor has room for one clear toolbar. Keeping the label
-     beside the controls returns an entire row to the pictograph stage. */
+     beside the controls returns an entire row to the pictograph stage: 36px
+     buttons in 3px of padding and a 1px border make a 44px card. */
   @container step-editor (min-width: 300px) {
     .duration-control.compact:not(.stacked) {
       flex-direction: row;
       justify-content: center;
       gap: 4px;
-      padding: 8px;
+      padding: 3px 8px;
       margin-bottom: 0;
     }
   }
@@ -413,6 +444,59 @@
         margin-bottom: 0;
       }
     }
+  }
+
+  /* Fill: the card spans the column beside the phone editor's picture. The
+     label leaves the screen but still names the group. */
+  .duration-control.compact.fill {
+    width: 100%;
+    margin: 0;
+    padding: 3px;
+  }
+
+  .duration-control.compact.fill .duration-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .duration-control.compact.fill .value-slot {
+    min-width: 0;
+  }
+
+  /* One line, about 200px: four 36px buttons, 2px gaps and the value in what
+     is left. */
+  .duration-control.compact.fill:not(.stacked) .duration-row {
+    width: 100%;
+    grid-template-columns:
+      var(--alt-touch-target, 36px) var(--alt-touch-target, 36px)
+      minmax(0, 1fr) var(--alt-touch-target, 36px)
+      var(--alt-touch-target, 36px);
+    gap: 2px;
+  }
+
+  .duration-control.compact.fill:not(.stacked) .duration-value,
+  .duration-control.compact.fill:not(.stacked) .duration-input {
+    padding-inline: 2px;
+    overflow: hidden;
+    font-size: var(--font-size-min, 14px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Fine pair over coarse pair, 84px tall (3 + 36 + 4 + 36 + 3 and the
+     border): the value keeps the middle column at its compact size. */
+  .duration-control.compact.fill.stacked .duration-row {
+    width: 100%;
+    grid-template-columns:
+      var(--alt-touch-target, 36px) minmax(0, 1fr)
+      var(--alt-touch-target, 36px);
   }
 
   /* Beside the preview there is no row under it to separate from. */

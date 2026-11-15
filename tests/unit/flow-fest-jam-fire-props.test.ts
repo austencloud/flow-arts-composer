@@ -1,4 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// These tests exercise every fan look, which stay renderable while only some
+// are offered, so they run with the preview flag on. The hoisted call runs
+// before the modules read the flag.
+vi.hoisted(() => {
+  vi.stubEnv("VITE_MAKER_PREVIEW", "1");
+});
+
 import type { PropBuild } from "@austencloud/scene-3d";
 import type { JamPropFamily } from "../../src/lib/features/flow-fest-sim/domain/flow-fest-jam-layout";
 import { buildFlowFestJamLayout } from "../../src/lib/features/flow-fest-sim/domain/flow-fest-jam-layout";

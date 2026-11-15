@@ -28,7 +28,7 @@ c1.globalAlpha=1
 c1.fillStyle="#08080c"
 c1.fillRect(0,960,1080,960)
 c1.globalAlpha=1
-createContext([data-sequence-progress-visible="true"],{height:480,includeStyleProperties:array,onCreateForeignObjectSvg:fn,scale:2,width:540})
+createContext([data-sequence-progress-visible="true"],{filter:fn,height:480,includeStyleProperties:array,onCreateForeignObjectSvg:fn,scale:2,width:540})
 domToCanvas(screenshot-context#1)
 c1.drawImage(canvas#dom-capture,0,960,1080,960)
 c1.restore()

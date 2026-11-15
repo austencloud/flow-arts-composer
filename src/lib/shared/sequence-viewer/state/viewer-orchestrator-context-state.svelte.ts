@@ -31,6 +31,8 @@ type PracticeViewPrefs = ReturnType<typeof createPracticeViewPrefs>;
 type ViewerState = ReturnType<typeof createViewerState>;
 
 interface ViewerOrchestratorContextHandlers {
+  /** The 2D animator's canvas is ready (textures loaded, loop starting). */
+  handleCanvasReady: (canvas: HTMLCanvasElement | null) => void;
   setResolvedCardAutoLayout: (layout: ResolvedAutoLayout | null) => void;
   onRenderProgress: (loaded: number, total: number) => void;
   handlePropTypeChange: (
@@ -38,7 +40,6 @@ interface ViewerOrchestratorContextHandlers {
     hand?: ViewerPropHand | "both"
   ) => void;
   setPropHand: (hand: ViewerPropHand) => void;
-  handleCatDogToggle: () => void;
   handleFanAppearanceChange: (appearance: FanAppearance) => void;
   enterEditMode: (pane: "animation" | "image" | "video-upload") => void;
   exitEditMode: () => void;
@@ -54,8 +55,7 @@ interface ViewerOrchestratorContextHandlers {
   invokeGatedAction: OrchestratorContext["invokeGatedAction"];
   openSignInPrompt: () => void;
   handleUnifiedDarkModeToggle: () => void;
-  handlePracticeStart: () => void;
-  enterPracticeMode: () => void;
+  enterPracticeMode: () => boolean;
   handleBpmChange: (bpm: number) => void;
   handleStepClick: (stepIndex: number) => void;
   handleClose: () => void;
@@ -160,6 +160,8 @@ export function createViewerOrchestratorContextState(
       handleToggleMetronome: inputs.playback.handleToggleMetronome,
       mirrorEnabled: inputs.playback.mirrorEnabled,
       handleToggleMirror: inputs.playback.handleToggleMirror,
+      practiceGuide: inputs.playback.practiceGuide,
+      setOnPracticeRunEnded: inputs.playback.setOnPracticeRunEnded,
 
       collectionPropType: inputs.getCollectionPropType?.() ?? null,
       leftPropType: inputs.getLeftPropType(),
@@ -167,7 +169,6 @@ export function createViewerOrchestratorContextState(
       catDogModeEnabled: inputs.getCatDogModeEnabled(),
       propHand: inputs.getPropHand(),
       setPropHand: inputs.handlers.setPropHand,
-      handleCatDogToggle: inputs.handlers.handleCatDogToggle,
       handlePropTypeChange: inputs.handlers.handlePropTypeChange,
       fanAppearance: inputs.getFanAppearance(),
       handleFanAppearanceChange: inputs.handlers.handleFanAppearanceChange,
@@ -239,7 +240,7 @@ export function createViewerOrchestratorContextState(
       handleExport: inputs.handlers.handleExport,
       resolvedCardAutoLayout: inputs.getResolvedCardAutoLayout(),
       setResolvedCardAutoLayout: inputs.handlers.setResolvedCardAutoLayout,
-      handleCanvasReady: inputs.exportCoordinator.handleCanvasReady,
+      handleCanvasReady: inputs.handlers.handleCanvasReady,
       captureAnimationPreview: () => {
         const canvas =
           inputs.viewer3D.current?.renderMode === "3d"
@@ -280,7 +281,6 @@ export function createViewerOrchestratorContextState(
       invokeGatedAction: inputs.handlers.invokeGatedAction,
       openSignInPrompt: inputs.handlers.openSignInPrompt,
       handleUnifiedDarkModeToggle: inputs.handlers.handleUnifiedDarkModeToggle,
-      handlePracticeStart: inputs.handlers.handlePracticeStart,
       enterPracticeMode: inputs.handlers.enterPracticeMode,
       exitPracticeMode: inputs.playback.exitPracticeMode,
       handlePracticeStepLevel: inputs.playback.handlePracticeStepLevel,

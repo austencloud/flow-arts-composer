@@ -89,6 +89,7 @@
   import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
   import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import { resolveTheoryPlaybackTick } from "../../services/theory-playback-clock.js";
+  import { THEORY_STAGE_VIEW } from "../../services/theory-matrix-artwork.js";
 
   interface Props {
     hands: LiveHand[];
@@ -145,7 +146,8 @@
    */
   const scope = getAnimationScopeContext();
 
-  const VIEW = 2.45;
+  /* Shared with the still under this canvas, which is sized from it. */
+  const VIEW = THEORY_STAGE_VIEW;
 
   /*
    * The pictograph grid, at the scale the hands are already drawn at.

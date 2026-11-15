@@ -1,9 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   basePropTypeOfRenderKey,
   propArtworkStem,
   resolvePropRenderKey,
 } from "../prop-look";
+
+// These tests draw every fan look, and the looks stay renderable even while
+// only some are offered, so they run with the preview flag on. The hoisted
+// call runs before the modules read the flag.
+vi.hoisted(() => {
+  vi.stubEnv("VITE_MAKER_PREVIEW", "1");
+});
 
 describe("prop render keys", () => {
   it("keeps a plain prop's type, the one look it has", () => {

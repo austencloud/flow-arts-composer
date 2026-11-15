@@ -222,7 +222,13 @@
         },
       ],
     },
-    { label: "Composer", href: "/composer", icon: "fa-wand-magic-sparkles" },
+    // The page about the app, named so nobody takes it for the app itself.
+    // The bar's Open Flow Arts Composer button is the way into the app.
+    {
+      label: "About Composer",
+      href: "/composer",
+      icon: "fa-wand-magic-sparkles",
+    },
     {
       label: "Learn",
       icon: "fa-book-open",

@@ -14,6 +14,9 @@ import {
 export interface UsernameValidationResult {
 	isValid: boolean;
 	error?: string;
+	/** Catalog key for the same message, so screens can show it in the visitor's language. */
+	errorKey?: string;
+	errorParams?: Record<string, string | number>;
 	suggestions?: string[];
 }
 
@@ -41,28 +44,34 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
 	if (!trimmed) {
 		return {
 			isValid: false,
-			error: 'Username is required'
+			error: 'Username is required',
+			errorKey: 'auth_username_required'
 		};
 	}
 
 	if (trimmed.length < USERNAME_RULES.MIN_LENGTH) {
 		return {
 			isValid: false,
-			error: `Username must be at least ${USERNAME_RULES.MIN_LENGTH} characters`
+			error: `Username must be at least ${USERNAME_RULES.MIN_LENGTH} characters`,
+			errorKey: 'auth_username_too_short',
+			errorParams: { count: USERNAME_RULES.MIN_LENGTH }
 		};
 	}
 
 	if (trimmed.length > USERNAME_RULES.MAX_LENGTH) {
 		return {
 			isValid: false,
-			error: `Username must be no more than ${USERNAME_RULES.MAX_LENGTH} characters`
+			error: `Username must be no more than ${USERNAME_RULES.MAX_LENGTH} characters`,
+			errorKey: 'auth_username_too_long',
+			errorParams: { count: USERNAME_RULES.MAX_LENGTH }
 		};
 	}
 
 	if (!USERNAME_RULES.PATTERN.test(trimmed)) {
 		return {
 			isValid: false,
-			error: 'Username can only contain letters, numbers, dots, and underscores'
+			error: 'Username can only contain letters, numbers, dots, and underscores',
+			errorKey: 'auth_username_invalid_chars'
 		};
 	}
 
@@ -71,7 +80,8 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
 	if ((USERNAME_RULES.RESERVED as readonly string[]).includes(lower)) {
 		return {
 			isValid: false,
-			error: 'This username is reserved'
+			error: 'This username is reserved',
+			errorKey: 'auth_username_reserved'
 		};
 	}
 
@@ -79,14 +89,16 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
 	if (trimmed.startsWith('.') || trimmed.startsWith('_')) {
 		return {
 			isValid: false,
-			error: 'Username cannot start with a dot or underscore'
+			error: 'Username cannot start with a dot or underscore',
+			errorKey: 'auth_username_bad_start'
 		};
 	}
 
 	if (trimmed.endsWith('.') || trimmed.endsWith('_')) {
 		return {
 			isValid: false,
-			error: 'Username cannot end with a dot or underscore'
+			error: 'Username cannot end with a dot or underscore',
+			errorKey: 'auth_username_bad_end'
 		};
 	}
 
@@ -94,7 +106,8 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
 	if (trimmed.includes('..') || trimmed.includes('___')) {
 		return {
 			isValid: false,
-			error: 'Username cannot contain ".." or "___"'
+			error: 'Username cannot contain ".." or "___"',
+			errorKey: 'auth_username_bad_repeat'
 		};
 	}
 

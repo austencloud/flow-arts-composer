@@ -4,6 +4,7 @@ import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appea
 import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
+import type { CameraFailureKind } from "#lib/shared/train/services/camera-failure.js";
 import type { ArtExportEventSink } from "../domain/art-export-analytics";
 import type { MandalaViewerController } from "../state/mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
@@ -24,6 +25,7 @@ import type {
 } from "../tunnel/tunnel-composition";
 import type { TunnelSavedCallback } from "../tunnel/tunnel-snapshot";
 import type { ViewerPaneBox } from "./viewer-panel-layout";
+import type { ExportStartResult } from "../domain/export-attempt-guard";
 
 export type ViewerPaneSide = "left" | "right";
 
@@ -76,7 +78,7 @@ export interface ViewerSplitPaneProps {
     artType: "mandala" | "tunnel";
     controller: TunnelViewController;
     mandalaController: MandalaViewerController;
-  }) => void;
+  }) => ExportStartResult;
   /** Hands the active art view to the shell's post-share sheet. */
   onArtShare?: (
     args: {
@@ -103,6 +105,8 @@ export interface ViewerSplitPaneProps {
     source?: string
   ) => void;
   onArtAction?: ViewerActionSink;
+  /** Records what a visitor does with the enlarged step on a focused Card. */
+  onCardAction?: ViewerActionSink;
   onViewer3DSettingChange?: ViewerControlSink;
   onViewer3DAction?: ViewerActionSink;
   suppressProgress?: boolean;
@@ -114,6 +118,10 @@ export interface ViewerSplitPaneProps {
   practiceRunning?: boolean;
   practiceCountdown?: number;
   practiceMirrorEnabled?: boolean;
+  /** The Mirror camera went live. */
+  onPracticeCameraReady?: () => void;
+  /** The Mirror camera could not start, as a kind the practice line words. */
+  onPracticeCameraFailure?: (kind: CameraFailureKind) => void;
   tunnelComposition?: TunnelComposition | null;
   tunnelSaveTarget?: TunnelSaveTarget | null;
   onTunnelSaved?: TunnelSavedCallback;
@@ -148,6 +156,8 @@ export interface ViewerMotionSurfaceProps {
   showcasePlayback?: boolean;
   practiceActive: boolean;
   practiceMirrorEnabled: boolean;
+  onPracticeCameraReady?: () => void;
+  onPracticeCameraFailure?: (kind: CameraFailureKind) => void;
   practiceResizePaused: boolean;
 }
 
@@ -195,6 +205,8 @@ export interface ViewerCompanionSurfaceProps {
   onArtExportEvent?: ArtExportEventSink;
   onArtSettingChange?: ViewerSplitPaneProps["onArtSettingChange"];
   onArtAction?: ViewerActionSink;
+  /** Records what a visitor does with the enlarged step on a focused Card. */
+  onCardAction?: ViewerActionSink;
   tunnelComposition?: TunnelComposition | null;
   tunnelSaveTarget?: TunnelSaveTarget | null;
   onTunnelSaved?: TunnelSavedCallback;

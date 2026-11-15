@@ -85,6 +85,31 @@ describe("Create display language", () => {
     await setLocale("en");
     expect(describePictograph(pictograph)).toBe(english);
   });
+
+  it("punctuates pictograph descriptions in the reader's own script", async () => {
+    const motion = (hand: HandSide) =>
+      createMotionData({
+        hand,
+        motionType: MotionType.STATIC,
+        startLocation: GridLocation.CENTER,
+        endLocation: GridLocation.CENTER,
+        isVisible: true,
+      });
+    const pictograph = {
+      letter: "α",
+      startPlacement: "alpha1",
+      endPlacement: "alpha1",
+      motions: { left: motion(HandSide.LEFT), right: motion(HandSide.RIGHT) },
+    };
+    for (const locale of ["zh", "zh-Hant", "ja"] as const) {
+      await setLocale(locale);
+      const text = describePictograph(pictograph);
+      expect(text, locale).toMatch(/。$/);
+      expect(text, locale).not.toMatch(/[,;] |\. /);
+    }
+    await setLocale("en");
+    expect(describePictograph(pictograph)).toMatch(/; .*\.$/);
+  });
 });
 
 describe("German audit display helpers", () => {

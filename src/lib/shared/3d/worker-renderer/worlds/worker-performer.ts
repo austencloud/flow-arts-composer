@@ -547,8 +547,10 @@ export class WorkerPerformer {
       return;
     }
     this.root.updateMatrixWorld(true);
-    this.left.anchor.getWorldPosition(this.leftTarget);
-    this.right.anchor.getWorldPosition(this.rightTarget);
+    // The palm lock moves each prop's correction group, not its anchor, so
+    // the effects take the drawn prop's position from the correction.
+    this.left.correction.getWorldPosition(this.leftTarget);
+    this.right.correction.getWorldPosition(this.rightTarget);
     this.root.getWorldQuaternion(this.rigWorldQuaternion);
     this.leftEffectRotation
       .copy(this.rigWorldQuaternion)

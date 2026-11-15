@@ -14,7 +14,7 @@
   import { DURATION } from "@austencloud/motion";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import type { MatrixLabelMode } from "@tka/shape-domain";
-  import type { Flower } from "@tka/shape-domain";
+  import type { Flower, TheoryFlower } from "@tka/shape-domain";
   import { KINETIC_SHAPE_ENGINE_NAME } from "../shape-engine-identity";
   import { shareOrCopyLink } from "#lib/shared/share/services/link-share.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
@@ -329,7 +329,7 @@
      the grid. A compact host travels to the detail view, and the pressed
      header is the flower that flies there. */
   function selectSolo(hand: "left" | "right", flower: Flower): void {
-    if (!appState.compact || theory) {
+    if (!appState.compact) {
       appState.selectSolo(hand, flower);
       return;
     }
@@ -347,18 +347,44 @@
       before: () => appState.selectPair(pair, { navigate: false }),
     });
   }
-  // The morph is a shared-element handoff between the matrix tile and the
-  // matrix hero. Theory tiles do not own that name, so theory navigates
-  // plainly rather than capturing the hidden matrix behind it.
+  /* The Ratio Playground flies the same way. Its grid and stage take the
+     names the Level Matrix ones hold, and every claim is gated on the surface
+     showing, so the hidden surface behind it is never what gets captured. */
+  function selectTheoryPair(pair: {
+    left: TheoryFlower;
+    right: TheoryFlower;
+  }): void {
+    if (!appState.compact) {
+      appState.selectTheoryPair(pair);
+      return;
+    }
+    runMandalaMorph(appState, () => appState.showDetail(), {
+      before: () => appState.selectTheoryPair(pair, { navigate: false }),
+    });
+  }
+  function selectTheorySolo(
+    hand: "left" | "right",
+    flower: TheoryFlower
+  ): void {
+    if (!appState.compact) {
+      appState.selectTheorySolo(hand, flower);
+      return;
+    }
+    runMandalaMorph(appState, () => appState.showDetail(), {
+      before: () =>
+        appState.selectTheorySolo(hand, flower, { navigate: false }),
+    });
+  }
+
   function showDetail(): void {
-    if (!appState.compact || theory) {
+    if (!appState.compact) {
       appState.showDetail();
       return;
     }
     runMandalaMorph(appState, () => appState.showDetail());
   }
   function showMatrix(): void {
-    if (!appState.compact || theory) {
+    if (!appState.compact) {
       appState.showMatrix();
       return;
     }
@@ -366,6 +392,10 @@
   }
 
   function surpriseMe(): void {
+    // A Ratios surprise rolls a whole new grid, so there is no tile on screen
+    // to fly from: flown, the screen sat empty for half a second while the new
+    // tiles painted, then a flower left a grid nobody had seen. It opens the
+    // stage plainly.
     if (!appState.compact || theory || appState.activeView === "detail") {
       appState.surpriseMe();
       return;
@@ -439,6 +469,8 @@
   <div class="pane-source">
     <ShapeMatrixTheoryPane
       emphasizedAxis={theoryEditingAxis}
+      onselect={selectTheoryPair}
+      onsolo={selectTheorySolo}
       onsurprise={surpriseMe}
     />
   </div>
@@ -539,27 +571,22 @@
               name: SHAPE_MATRIX_BAR_LEAD_NAME,
               enabled: appState.mandalaHandoff,
             }}
-            aria-label={theory
-              ? t("shape_engine_back_theory_matrix")
-              : t("shape_engine_back_shape_matrix")}
+            aria-label={t("shape_engine_back_all_shapes")}
             onclick={showMatrix}
           >
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            <span
-              >{theory
-                ? t("shape_engine_playground")
-                : t("shape_engine_matrix")}</span
-            >
+            <!-- The grid glyph, not an arrow: this is the way to the pattern
+                 grid, and the tile-to-hero morph makes the same trip visible. -->
+            <i class="fas fa-table-cells-large" aria-hidden="true"></i>
+            <!-- One name on both surfaces: it says what the chip gives back,
+                 the grid of shapes that just folded into it. -->
+            <span>{t("shape_engine_all_shapes")}</span>
           </button>
         {:else}
           <strong
             use:claimedViewTransitionName={{
               name: SHAPE_MATRIX_BAR_LEAD_NAME,
               enabled: appState.mandalaHandoff,
-            }}
-            >{theory
-              ? t("shape_engine_ratio_playground")
-              : t("shape_engine_level_matrix")}</strong
+            }}>{t("shape_engine_name")}</strong
           >
         {/if}
         <!-- The compact value editor keeps the grid as the hero. Matrix opens
@@ -1162,6 +1189,17 @@
      row can hold it. The height clause keeps this out of the compact tier,
      whose Detail pill needs its word. */
   @container shape-matrix-app (75rem <= width < 84.5rem) and (height >= 42rem) {
+    /* Even then the row ran past the right edge and clipped the actions, so
+       this tier also lets the title column shrink to the title itself and
+       pulls the gaps in. The Difficulty cell tightens its own tiles here. */
+    .topbar {
+      grid-template-columns:
+        minmax(max-content, 1fr)
+        max-content
+        minmax(max-content, 1fr);
+      column-gap: 0.5rem;
+    }
+
     .top-actions .top-action {
       max-width: none;
       padding-inline: 0;
@@ -1326,6 +1364,40 @@
      controls exist on both sides and travel. */
   :global(html.shape-matrix-morph) {
     --flight: calc(var(--duration-dramatic) * 1.6);
+    /* The surface and the flower swap pictures on one schedule, as shares of
+       --flight. Opening: the tile's picture hands over in the first
+       `stage-swap-open`. Going back: the stage's picture holds until
+       `stage-swap-back-delay`, then the tile's takes over in `stage-swap-back`. */
+    --stage-swap-open: 0.14;
+    --stage-swap-back-delay: 0.36;
+    --stage-swap-back: 0.16;
+    /* Opening, the still gives way to the live figure only once the figure is
+       mostly in: it starts at `floor-rest-delay`, after the figure's bloom has
+       begun (`settle-figure-delay`), and lasts `floor-rest`. Under a playing
+       stage the still rests at zero, so letting go any earlier leaves a moment
+       with no flower at all. */
+    --floor-rest-delay: 0.5;
+    --floor-rest: 0.35;
+    /* Going back, the still comes up to full strength from `floor-wake-delay`,
+       over `floor-wake`. It is the other half of the live figure's exit (the
+       first 0.16), which draws the same lines: it leads, so the still is at
+       strength before the figure is half gone. Start it later and the flower
+       dips while neither is at strength. */
+    --floor-wake-delay: 0;
+    --floor-wake: 0.08;
+    /* Opening, the page assembles: each layer starts at its share of --flight
+       and lasts `settle-length`, so the last one ends by 1.0. */
+    --settle-length: 0.5;
+    --settle-modes: 0.3;
+    --settle-actions: 0.34;
+    --settle-controls: 0.34;
+    --settle-strip: 0.38;
+    --settle-stage-head: 0.42;
+    --settle-stage-transport: 0.46;
+    --settle-stage-rotate: 0.48;
+    /* The live figure's bloom around the landed flower. */
+    --settle-figure-delay: 0.42;
+    --settle-figure: 0.3;
   }
 
   /* A name that exists on only the arriving side is painted after the ones that
@@ -1397,7 +1469,8 @@
   :global(
     html.shape-matrix-morph::view-transition-old(shape-matrix-active-mandala)
   ) {
-    animation: shape-matrix-page-out calc(var(--flight) * 0.14) linear both;
+    animation: shape-matrix-page-out
+      calc(var(--flight) * var(--stage-swap-open)) linear both;
   }
   /* Landed, the bright still gives way to the live figure blooming over it, so
      the flight ends on exactly what the page shows. */
@@ -1405,9 +1478,11 @@
     html.shape-matrix-morph::view-transition-new(shape-matrix-active-mandala)
   ) {
     animation:
-      shape-matrix-page-in calc(var(--flight) * 0.14) linear both,
-      shape-matrix-floor-rest calc(var(--flight) * 0.55) var(--ease-standard)
-        calc(var(--flight) * 0.68) forwards;
+      shape-matrix-page-in calc(var(--flight) * var(--stage-swap-open)) linear
+        both,
+      shape-matrix-floor-rest calc(var(--flight) * var(--floor-rest))
+        var(--ease-standard) calc(var(--flight) * var(--floor-rest-delay))
+        forwards;
   }
   @keyframes -global-shape-matrix-floor-rest {
     from {
@@ -1445,28 +1520,50 @@
       )
   ) {
     animation:
-      shape-matrix-floor-wake calc(var(--flight) * 0.16) linear both,
-      shape-matrix-page-out calc(var(--flight) * 0.16) linear
-        calc(var(--flight) * 0.36) forwards;
+      shape-matrix-floor-wake calc(var(--flight) * var(--floor-wake)) linear
+        calc(var(--flight) * var(--floor-wake-delay)) both,
+      shape-matrix-page-out calc(var(--flight) * var(--stage-swap-back)) linear
+        calc(var(--flight) * var(--stage-swap-back-delay)) forwards;
   }
   :global(
     html.shape-matrix-morph-back::view-transition-new(
         shape-matrix-active-mandala
       )
   ) {
-    animation: shape-matrix-page-in calc(var(--flight) * 0.16) linear
-      calc(var(--flight) * 0.36) both;
+    animation: shape-matrix-page-in calc(var(--flight) * var(--stage-swap-back))
+      linear calc(var(--flight) * var(--stage-swap-back-delay)) both;
   }
 
-  /* The tile's wash becomes the stage's surface early in the flight. */
+  /* The surface swaps on the flower's own schedule, so the box never shows the
+     tile's tint stretched to stage size. Opening, the tile's tint hands over
+     to the stage's surface in the first `stage-swap-open`, while the box is
+     still tile-sized. Going back, the stage's surface holds and the tile's
+     tint takes over late, as the flower's pictures do. Complementary linear
+     ramps, so the surface never dips. */
   :global(
     html.shape-matrix-morph::view-transition-old(shape-matrix-active-stage)
-  ),
+  ) {
+    animation: shape-matrix-page-out
+      calc(var(--flight) * var(--stage-swap-open)) linear both;
+  }
   :global(
     html.shape-matrix-morph::view-transition-new(shape-matrix-active-stage)
   ) {
-    animation-duration: calc(var(--flight) * 0.5);
-    animation-timing-function: linear;
+    animation: shape-matrix-page-in calc(var(--flight) * var(--stage-swap-open))
+      linear both;
+  }
+  :global(
+    html.shape-matrix-morph-back::view-transition-old(shape-matrix-active-stage)
+  ) {
+    animation: shape-matrix-page-out
+      calc(var(--flight) * var(--stage-swap-back)) linear
+      calc(var(--flight) * var(--stage-swap-back-delay)) both;
+  }
+  :global(
+    html.shape-matrix-morph-back::view-transition-new(shape-matrix-active-stage)
+  ) {
+    animation: shape-matrix-page-in calc(var(--flight) * var(--stage-swap-back))
+      linear calc(var(--flight) * var(--stage-swap-back-delay)) both;
   }
   /* The tile and the stage are different rectangles. Each snapshot fills the
      travelling box for the whole flight instead of keeping its own aspect
@@ -1555,6 +1652,171 @@
     animation: shape-matrix-page-in calc(var(--flight) * 0.35) linear
       calc(var(--flight) * 0.25) both;
   }
+
+  /* The grid folds into the back chip. Opening, the grid shrinks and travels
+     into the chip's grid glyph and fades as it arrives, and the chip gives one
+     small catch; going back, the grid grows out of that glyph to its place.
+     That trip is what tells you the chip is the way back to the grid.
+
+     The runner (shape-matrix-mandala-morph.ts) measures the pane and the glyph
+     and sets `--shape-matrix-fold-x/-y` (pane centre to glyph centre, px) and
+     `--shape-matrix-fold-scale` (glyph width over pane width), with the
+     `shape-matrix-morph-fold` class, only when both boxes measure. Without
+     them the rules above (recede and return) run unchanged.
+
+     The tunables, as shares of `--flight` (the pulse scale aside).
+     Opening: the grid holds full strength for `fold-fade-hold` of its trip,
+     and the chip's new picture fades in over `fold-chip-in` after
+     `fold-chip-in-delay`, so it is there before the grid reaches it. Going
+     back: the grid fades in over `unfold-fade-in` from its first frame, so it
+     is seen leaving the chip, and the chip's old picture stays fully visible
+     as the source for `unfold-chip-hold`. */
+  :global(html.shape-matrix-morph.shape-matrix-morph-fold) {
+    --fold-duration: 0.5;
+    --fold-delay: 0;
+    --fold-fade-hold: 0.6;
+    --unfold-duration: 0.5;
+    --unfold-delay: 0.05;
+    --fold-pulse-delay: 0.4;
+    --fold-pulse-duration: 0.3;
+    --fold-pulse-scale: 1.12;
+    --fold-chip-in-delay: 0.1;
+    --fold-chip-in: 0.2;
+    --unfold-fade-in: 0.15;
+    --unfold-chip-hold: 0.2;
+  }
+  @keyframes -global-shape-matrix-fold-travel {
+    from {
+      translate: 0 0;
+      scale: 1;
+    }
+    to {
+      translate: var(--shape-matrix-fold-x, 0) var(--shape-matrix-fold-y, 0);
+      scale: var(--shape-matrix-fold-scale, 0.985);
+    }
+  }
+  @keyframes -global-shape-matrix-unfold-travel {
+    from {
+      translate: var(--shape-matrix-fold-x, 0) var(--shape-matrix-fold-y, 0);
+      scale: var(--shape-matrix-fold-scale, 0.985);
+    }
+    to {
+      translate: 0 0;
+      scale: 1;
+    }
+  }
+  @keyframes -global-shape-matrix-fold-catch {
+    0%,
+    100% {
+      scale: 1;
+    }
+    50% {
+      scale: var(--fold-pulse-scale);
+    }
+  }
+  /* The grid passes under the whole top bar, not over it: the chip, the tabs
+     and the buttons beside them stay readable as it crosses, both ways. */
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-fold::view-transition-group(
+        shape-matrix-bar-lead
+      )
+  ),
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-fold::view-transition-group(
+        shape-matrix-bar-surface
+      )
+  ),
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-fold::view-transition-group(
+        shape-matrix-bar-turns
+      )
+  ),
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-fold::view-transition-group(
+        shape-matrix-bar-swap
+      )
+  ) {
+    z-index: 5;
+  }
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-fold::view-transition-old(
+        shape-matrix-pane
+      )
+  ) {
+    animation:
+      shape-matrix-fold-travel calc(var(--flight) * var(--fold-duration))
+        var(--ease-surface-travel) calc(var(--flight) * var(--fold-delay)) both,
+      shape-matrix-page-out
+        calc(var(--flight) * var(--fold-duration) * (1 - var(--fold-fade-hold)))
+        var(--ease-standard)
+        calc(
+          var(--flight) *
+            (var(--fold-delay) + var(--fold-duration) * var(--fold-fade-hold))
+        )
+        both;
+  }
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-new(
+        shape-matrix-pane
+      )
+  ) {
+    animation:
+      shape-matrix-unfold-travel calc(var(--flight) * var(--unfold-duration))
+        var(--ease-surface-travel) calc(var(--flight) * var(--unfold-delay))
+        both,
+      shape-matrix-page-in calc(var(--flight) * var(--unfold-fade-in)) linear
+        calc(var(--flight) * var(--unfold-delay)) both;
+  }
+  /* The chip is there before the grid reaches it, and catches it. */
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-fold:not(
+        .shape-matrix-morph-back
+      )::view-transition-new(shape-matrix-bar-lead)
+  ) {
+    animation:
+      shape-matrix-page-in calc(var(--flight) * var(--fold-chip-in)) linear
+        calc(var(--flight) * var(--fold-chip-in-delay)) both,
+      shape-matrix-fold-catch calc(var(--flight) * var(--fold-pulse-duration))
+        var(--ease-standard) calc(var(--flight) * var(--fold-pulse-delay));
+  }
+  /* Going back, the bar holds still while the chip is the source, then slides
+     as the chip fades, as it did before the hold. */
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-group(
+        shape-matrix-bar-lead
+      )
+  ),
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-group(
+        shape-matrix-bar-surface
+      )
+  ),
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-group(
+        shape-matrix-bar-turns
+      )
+  ) {
+    animation-delay: calc(var(--flight) * var(--unfold-chip-hold));
+    animation-duration: calc(var(--flight) * (0.85 - var(--unfold-chip-hold)));
+  }
+  /* Going back, the chip stays as the source while the grid comes out of it,
+     and the bar's title arrives after. */
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-old(
+        shape-matrix-bar-lead
+      )
+  ) {
+    animation: shape-matrix-page-out calc(var(--flight) * 0.25) linear
+      calc(var(--flight) * var(--unfold-chip-hold)) both;
+  }
+  :global(
+    html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-new(
+        shape-matrix-bar-lead
+      )
+  ) {
+    animation: shape-matrix-page-in calc(var(--flight) * 0.3) linear
+      calc(var(--flight) * (var(--unfold-chip-hold) + 0.2)) both;
+  }
   :global(
     html.shape-matrix-morph::view-transition-old(shape-matrix-bar-surface)
   ),
@@ -1586,8 +1848,8 @@
 
   /* The action row arrives with the controls. */
   :global(html.shape-matrix-morph::view-transition-new(shape-matrix-actions)) {
-    animation: shape-matrix-settle-in var(--duration-emphasis) var(--ease-out)
-      calc(var(--flight) * 0.4) both;
+    animation: shape-matrix-settle-in calc(var(--flight) * var(--settle-length))
+      var(--ease-out) calc(var(--flight) * var(--settle-actions)) both;
     --settle-y: 0.625rem;
   }
   :global(html.shape-matrix-morph::view-transition-old(shape-matrix-actions)) {
@@ -1631,8 +1893,8 @@
   :global(
     html.shape-matrix-morph::view-transition-new(shape-matrix-stage-rotate)
   ) {
-    animation: shape-matrix-settle-in var(--duration-emphasis) var(--ease-out)
-      both;
+    animation: shape-matrix-settle-in calc(var(--flight) * var(--settle-length))
+      var(--ease-out) both;
   }
   :global(html.shape-matrix-morph::view-transition-old(shape-matrix-modes)),
   :global(html.shape-matrix-morph::view-transition-old(shape-matrix-solo-card)),
@@ -1690,36 +1952,36 @@
   :global(
     html.shape-matrix-morph::view-transition-new(shape-matrix-solo-card)
   ) {
-    animation-delay: calc(var(--flight) * 0.35);
+    animation-delay: calc(var(--flight) * var(--settle-modes));
   }
   :global(html.shape-matrix-morph::view-transition-new(shape-matrix-controls)) {
-    animation-delay: calc(var(--flight) * 0.45);
+    animation-delay: calc(var(--flight) * var(--settle-controls));
   }
   :global(html.shape-matrix-morph::view-transition-new(shape-matrix-strip)) {
-    animation-delay: calc(var(--flight) * 0.55);
+    animation-delay: calc(var(--flight) * var(--settle-strip));
   }
   :global(
     html.shape-matrix-morph::view-transition-new(shape-matrix-stage-head)
   ) {
-    animation-delay: calc(var(--flight) * 0.7);
+    animation-delay: calc(var(--flight) * var(--settle-stage-head));
   }
   :global(
     html.shape-matrix-morph::view-transition-new(shape-matrix-stage-transport)
   ) {
-    animation-delay: calc(var(--flight) * 0.8);
+    animation-delay: calc(var(--flight) * var(--settle-stage-transport));
   }
   :global(
     html.shape-matrix-morph::view-transition-new(shape-matrix-stage-rotate)
   ) {
-    animation-delay: calc(var(--flight) * 0.85);
+    animation-delay: calc(var(--flight) * var(--settle-stage-rotate));
   }
 
   /* The stage's grid and prop bloom in place around the flower once it is down,
      and clear first on the way back. They hold still: the live figure draws the
      same lines as the flower beneath it, and a scale would pull them apart. */
   :global(html.shape-matrix-morph::view-transition-new(shape-matrix-figure)) {
-    animation: shape-matrix-page-in calc(var(--flight) * 0.55)
-      var(--ease-standard) calc(var(--flight) * 0.68) both;
+    animation: shape-matrix-page-in calc(var(--flight) * var(--settle-figure))
+      var(--ease-standard) calc(var(--flight) * var(--settle-figure-delay)) both;
   }
   :global(html.shape-matrix-morph::view-transition-old(shape-matrix-figure)) {
     animation: shape-matrix-page-out calc(var(--flight) * 0.16) linear both;
@@ -1774,6 +2036,46 @@
     :global(html.shape-matrix-morph::view-transition-old(shape-matrix-actions)),
     :global(html.shape-matrix-morph::view-transition-new(shape-matrix-pane)),
     :global(html.shape-matrix-morph::view-transition-old(shape-matrix-pane)),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-fold::view-transition-old(
+          shape-matrix-pane
+        )
+    ),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-new(
+          shape-matrix-pane
+        )
+    ),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-fold:not(
+          .shape-matrix-morph-back
+        )::view-transition-new(shape-matrix-bar-lead)
+    ),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-group(
+          shape-matrix-bar-lead
+        )
+    ),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-group(
+          shape-matrix-bar-surface
+        )
+    ),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-group(
+          shape-matrix-bar-turns
+        )
+    ),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-old(
+          shape-matrix-bar-lead
+        )
+    ),
+    :global(
+      html.shape-matrix-morph.shape-matrix-morph-back.shape-matrix-morph-fold::view-transition-new(
+          shape-matrix-bar-lead
+        )
+    ),
     :global(
       html.shape-matrix-morph::view-transition-new(shape-matrix-solo-card)
     ),

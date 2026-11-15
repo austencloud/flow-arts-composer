@@ -1,7 +1,9 @@
 <!--
-StartPlacementPicker.svelte - Simplified version with advanced variations
-Shows 3 start placements (Alpha, Beta, Gamma) with toggle to view all 16 variations
-Controls moved below the grid for better UX
+StartPlacementPicker.svelte - Choose the start placement for a new sequence.
+Presets: a family switch (alpha, beta, gamma), that family's variations in one
+box sized by container queries, the orientation cyclers, and a Diamond | Box
+switch. Embedded hosts (tutorial, /composer demo) keep the three presets.
+Build: BuildStartPlacement.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -21,9 +23,8 @@ Controls moved below the grid for better UX
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import AdvancedStartPlacementPicker from "./AdvancedStartPlacementPicker.svelte";
   import BuildStartPlacement from "./BuildStartPlacement.svelte";
-  import GridModeToggle from "../../shared/components/GridModeToggle.svelte";
+  import HandsStartDrawing from "#lib/shared/create/components/HandsStartDrawing.svelte";
   import OrientationCycler from "./OrientationCycler.svelte";
   import PictographGrid from "./PictographGrid.svelte";
   import {
@@ -43,11 +44,45 @@ Controls moved below the grid for better UX
     { value: "build" as const, label: t("create_ui_build") },
   ]);
 
+  type StartFamily = "alpha" | "beta" | "gamma";
+  const START_FAMILIES: readonly StartFamily[] = ["alpha", "beta", "gamma"];
+  // The visible label is the plain word; the accessible name adds the family
+  // name after it, so it starts with what is on screen.
+  const FAMILY_OPTIONS = $derived([
+    {
+      value: "alpha" as const,
+      label: t("create_start_hands_apart"),
+      ariaLabel: `${t("create_start_hands_apart")} (${t("learn_staff_answer_alpha")})`,
+    },
+    {
+      value: "beta" as const,
+      label: t("create_start_hands_together"),
+      ariaLabel: `${t("create_start_hands_together")} (${t("learn_staff_answer_beta")})`,
+    },
+    {
+      value: "gamma" as const,
+      label: t("create_start_hands_adjacent"),
+      ariaLabel: `${t("create_start_hands_adjacent")} (${t("learn_staff_answer_gamma")})`,
+    },
+  ]);
+  const FAMILY_DRAWING = {
+    alpha: "apart",
+    beta: "together",
+    gamma: "adjacent",
+  } as const;
+  const FAMILY_HINTS = $derived({
+    alpha: t("create_start_hands_apart_hint"),
+    beta: t("create_start_hands_together_hint"),
+    gamma: t("create_start_hands_adjacent_hint"),
+  });
+  const GRID_OPTIONS = $derived([
+    { value: GridMode.DIAMOND, label: t("generator_grid_diamond") },
+    { value: GridMode.BOX, label: t("generator_grid_box") },
+  ]);
+
   // Props - receive navigation callbacks
   const {
     startPlacementState,
-    onNavigateToAdvanced,
-    onNavigateToDefault,
     embedded = false,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
@@ -62,8 +97,6 @@ Controls moved below the grid for better UX
     morphIntoWorkspace = false,
   } = $props<{
     startPlacementState?: SimplifiedStartPlacementState | null;
-    onNavigateToAdvanced?: () => void;
-    onNavigateToDefault?: () => void;
     // When rendered inside another surface (e.g. the create tutorial), that
     // surface owns the heading and the "show me how" entry point. Suppress the
     // picker's own hint + guide link so they don't duplicate — and so the guide
@@ -102,12 +135,34 @@ Controls moved below the grid for better UX
     startPlacementState ?? createSimplifiedStartPlacementState()
   );
 
-  // State for showing advanced picker
-  let showAdvancedPicker = $state(false);
   let pickerPath = $state<StartPlacementPath>("presets");
   const activePath = $derived(lockedPath ?? pickerPath);
   let buildPathOpened = false;
   let buildPlacementSubmitted = false;
+
+  // The family view is the Construct tab's preset screen. Embedded hosts
+  // keep the three presets they were built around.
+  const showFamilies = $derived(!embedded);
+  let openFamily = $state<StartFamily>("alpha");
+  // The first family grid waits for the workspace to settle, as the presets
+  // always have; a later switch happens inside a settled picker.
+  let familySwitched = $state(false);
+
+  // Variations arrive in picker order (four alpha, four beta, eight gamma).
+  // Grouping by placement name keeps that order inside each family.
+  const familyVariations = $derived.by(() => {
+    const groups: Record<StartFamily, PictographData[]> = {
+      alpha: [],
+      beta: [],
+      gamma: [],
+    };
+    for (const variation of pickerState.allVariations) {
+      const name = variation.startPlacement?.toLowerCase() ?? "";
+      const family = START_FAMILIES.find((f) => name.startsWith(f));
+      if (family) groups[family].push(variation);
+    }
+    return groups;
+  });
 
   const effectiveLeftPropType = $derived(
     leftPropTypeOverride ??
@@ -151,9 +206,21 @@ Controls moved below the grid for better UX
       void pickerState.setRightOrientation(initialRightOrientation);
     }
 
-    // Always ensure placements are loaded - loadPersistedPreferences may
-    // skip loadPlacements if there are no stored prefs or no gridMode pref.
-    if (pickerState.placements.length === 0 && !showAdvancedPicker) {
+    // Always ensure the shown set is loaded - loadPersistedPreferences may
+    // skip it when there are no stored prefs or no gridMode pref. The
+    // variations come from a static table synchronously, so the family grid
+    // has its tiles as early as the presets had theirs.
+    // The state object can outlive this picker, so reload for the grid now
+    // in force (saved, locked or current) rather than trusting what it holds.
+    if (showFamilies) {
+      const mode = pickerState.currentGridMode;
+      if (
+        pickerState.allVariations.length === 0 ||
+        pickerState.allVariations[0]?.gridMode !== mode
+      ) {
+        void pickerState.loadAllVariations(mode);
+      }
+    } else if (pickerState.placements.length === 0) {
       void pickerState.loadPlacements();
     }
 
@@ -179,8 +246,9 @@ Controls moved below the grid for better UX
         localStorage.getItem(LEGACY_STORAGE_KEY);
       if (!stored) return;
 
+      // Older saves also carry `showAdvanced` from the removed
+      // all-variations view; it is ignored and no longer written.
       const prefs = JSON.parse(stored) as {
-        showAdvanced?: boolean;
         pickerPath?: StartPlacementPath;
         gridMode?: string;
         orientation?: string; // legacy single orientation
@@ -189,14 +257,6 @@ Controls moved below the grid for better UX
         blueOrientation?: string;
         redOrientation?: string;
       };
-
-      // Restore advanced/simple view preference
-      if (typeof prefs.showAdvanced === "boolean") {
-        showAdvancedPicker = prefs.showAdvanced;
-        if (showAdvancedPicker) {
-          onNavigateToAdvanced?.();
-        }
-      }
 
       if (prefs.pickerPath === "presets" || prefs.pickerPath === "build") {
         pickerPath = prefs.pickerPath;
@@ -236,7 +296,7 @@ Controls moved below the grid for better UX
       if (prefs.gridMode === "DIAMOND" || prefs.gridMode === "BOX") {
         const mode =
           prefs.gridMode === "DIAMOND" ? GridMode.DIAMOND : GridMode.BOX;
-        if (showAdvancedPicker) {
+        if (showFamilies) {
           void pickerState.loadAllVariations(mode);
         } else {
           void pickerState.loadPlacements(mode);
@@ -254,7 +314,6 @@ Controls moved below the grid for better UX
     if (!rememberPreferences) return;
     try {
       const prefs = {
-        showAdvanced: showAdvancedPicker,
         pickerPath,
         gridMode:
           pickerState.currentGridMode === GridMode.DIAMOND ? "DIAMOND" : "BOX",
@@ -268,19 +327,6 @@ Controls moved below the grid for better UX
         error
       );
     }
-  }
-
-  // Derived labels for action-oriented toggles
-  const viewModeLabel = $derived(
-    showAdvancedPicker ? t("create_ui_simple") : t("create_ui_all_variations")
-  );
-  // Expose state for parent components
-  export function isShowingAdvanced() {
-    return showAdvancedPicker;
-  }
-
-  export function goBackToDefault() {
-    handleBackToDefault();
   }
 
   // The card that travels into the workspace is the one under the press that
@@ -342,36 +388,25 @@ Controls moved below the grid for better UX
     persistPreferences();
   }
 
-  // Handle toggle between simple and advanced
-  function handleToggleView() {
+  function handleFamilyChange(family: StartFamily) {
+    if (family === openFamily) return;
     hapticService?.trigger("selection");
-
-    if (!showAdvancedPicker) {
-      showAdvancedPicker = true;
-      pickerState.loadAllVariations(pickerState.currentGridMode);
-      onNavigateToAdvanced?.();
-    } else {
-      showAdvancedPicker = false;
-      onNavigateToDefault?.();
-    }
-    persistPreferences();
+    familySwitched = true;
+    openFamily = family;
   }
 
-  // Handle return to the default picker (exposed for external triggers)
-  function handleBackToDefault() {
-    hapticService?.trigger("selection");
-    if (showAdvancedPicker) {
-      handleToggleView();
-    }
-  }
-
-  // Handle grid mode change
+  // Handle grid mode change. The open family stays open.
   async function handleGridModeChange(newMode: GridMode) {
     if (pickerState.currentGridMode === newMode) return;
 
     await pickerState.loadPlacements(newMode);
     await pickerState.loadAllVariations(newMode);
     persistPreferences();
+  }
+
+  function handleGridSwitch(newMode: GridMode) {
+    hapticService?.trigger("selection");
+    void handleGridModeChange(newMode);
   }
 
   // Handle per-hand orientation changes from cyclers
@@ -394,6 +429,7 @@ Controls moved below the grid for better UX
   class="start-placement-picker"
   class:headerless={embedded && lockedPath !== undefined}
   class:with-footer={!embedded && activePath === "presets"}
+  class:families={showFamilies && activePath === "presets"}
   data-testid="start-placement-picker"
   onclickcapture={noteActivation}
   onkeydowncapture={noteActivation}
@@ -437,13 +473,9 @@ Controls moved below the grid for better UX
     <p class="validation-message" role="alert">{validationMessage}</p>
   {/if}
 
-  <!-- Path/view changes crossfade; grid mode still updates in place. -->
+  <!-- Path and family changes crossfade; grid mode updates in place. -->
   <div class="picker-view">
-    <Crossfade
-      key={`${activePath}-${showAdvancedPicker}`}
-      duration={DURATION.normal}
-      fill
-    >
+    <Crossfade key={activePath} duration={DURATION.normal} fill>
       <div class="picker-content">
         {#if activePath === "build"}
           <BuildStartPlacement
@@ -461,15 +493,33 @@ Controls moved below the grid for better UX
               : undefined}
             onApply={handlePlacementSelect}
           />
-        {:else if showAdvancedPicker}
-          <!-- Advanced picker with all 16 variations -->
-          <AdvancedStartPlacementPicker
-            pictographDataSet={pickerState.allVariations}
-            selectedPictograph={pickerState.selectedPlacement}
-            currentGridMode={pickerState.currentGridMode}
-            onPictographSelect={handlePlacementSelect}
-            {gridJoin}
-          />
+        {:else if showFamilies}
+          <div class="family-switch">
+            <SegmentedControl
+              options={FAMILY_OPTIONS}
+              value={openFamily}
+              onchange={handleFamilyChange}
+              color="accent"
+              ariaLabel={t("browse_ui_alpha_beta_gamma")}
+              optionContent={familySegment}
+            />
+          </div>
+          <div class="family-view">
+            <Crossfade key={openFamily} duration={DURATION.normal} fill>
+              <div class="family-box" data-family={openFamily}>
+                <PictographGrid
+                  layout="family"
+                  settleOnMount={!familySwitched}
+                  pictographDataSet={familyVariations[openFamily]}
+                  selectedPictograph={pickerState.selectedPlacement}
+                  onPictographSelect={handlePlacementSelect}
+                  {leftPropTypeOverride}
+                  {rightPropTypeOverride}
+                  {gridJoin}
+                />
+              </div>
+            </Crossfade>
+          </div>
         {:else}
           <!-- Simple 3-placement grid -->
           <div class="grid-container">
@@ -506,48 +556,37 @@ Controls moved below the grid for better UX
         />
       </div>
 
-      <div class="mode-controls">
-        <button
-          class="control-button"
-          onclick={handleToggleView}
-          aria-label={t("create_ui_show_named", { name: viewModeLabel })}
-        >
-          <svg
-            class="control-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            {#if showAdvancedPicker}
-              <!-- Minimize icon -->
-              <polyline points="4 14 10 14 10 20" />
-              <polyline points="20 10 14 10 14 4" />
-              <line x1="14" y1="10" x2="21" y2="3" />
-              <line x1="3" y1="21" x2="10" y2="14" />
-            {:else}
-              <!-- Grid/expand icon -->
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-            {/if}
-          </svg>
-          <span class="control-label">{viewModeLabel}</span>
-        </button>
-
-        {#if lockedGridMode === undefined}
-          <GridModeToggle
-            currentGridMode={pickerState.currentGridMode}
-            onGridModeChange={handleGridModeChange}
+      {#if lockedGridMode === undefined}
+        <div class="grid-switch">
+          <SegmentedControl
+            options={GRID_OPTIONS}
+            value={pickerState.currentGridMode}
+            onchange={handleGridSwitch}
+            color="accent"
+            ariaLabel={t("generator_grid")}
           />
-        {/if}
-      </div>
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
+
+{#snippet familySegment(family: StartFamily)}
+  <span class="family-segment">
+    <span class="family-drawing">
+      <HandsStartDrawing
+        kind={FAMILY_DRAWING[family]}
+        gridMode={pickerState.currentGridMode}
+      />
+    </span>
+    <span class="family-text">
+      <span class="family-word">
+        {FAMILY_OPTIONS.find((option) => option.value === family)?.label}
+      </span>
+      <span class="family-hint">{FAMILY_HINTS[family]}</span>
+    </span>
+  </span>
+{/snippet}
 
 <style>
   .start-placement-picker {
@@ -629,6 +668,154 @@ Controls moved below the grid for better UX
     flex-direction: column;
   }
 
+  /* ============================================
+     Family view: switch, then one box that takes every pixel left over.
+     PictographGrid sizes the tiles from this box alone.
+     ============================================ */
+  .family-switch {
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 600px;
+    margin: 8px auto 0;
+    padding-inline: 16px;
+  }
+
+  /* Stacked (base): the drawing above the word in every option, so the three
+     options share one arrangement whatever the word. The 2px side padding
+     keeps the longest word inside a 106px option. */
+  .family-switch :global(.ui-segments button) {
+    min-height: 48px;
+    padding-block: 4px;
+    padding-inline: 2px;
+  }
+
+  .family-segment {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .family-drawing {
+    display: block;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    pointer-events: none;
+  }
+
+  .family-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .family-word {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .family-hint {
+    display: none;
+  }
+
+  /* Row: the drawing beside the word in a 48px row. */
+  @container (min-width: 540px) {
+    .family-switch :global(.ui-segments button) {
+      padding-block: 0;
+      padding-inline: 0.7rem;
+    }
+
+    .family-segment {
+      flex-direction: row;
+      gap: 6px;
+    }
+  }
+
+  /* Wide: a roomy picker in a tall window. */
+  @container (min-width: 860px) {
+    @media (min-height: 760px) {
+      .family-switch {
+        max-width: 860px;
+      }
+
+      .family-switch :global(.ui-segments button) {
+        min-height: 64px;
+      }
+
+      .family-segment {
+        justify-content: flex-start;
+        gap: 12px;
+      }
+
+      .family-drawing {
+        width: 52px;
+        height: 52px;
+      }
+
+      .family-text {
+        align-items: flex-start;
+        text-align: left;
+      }
+
+      .family-word {
+        font-size: var(--font-size-lg);
+      }
+
+      .family-hint {
+        display: block;
+        font-size: var(--font-size-compact);
+        font-weight: 400;
+        color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
+      }
+    }
+  }
+
+  /* Tall wide: the full-size drawing. */
+  @container (min-width: 860px) {
+    @media (min-height: 1200px) {
+      .family-switch :global(.ui-segments button) {
+        min-height: 96px;
+      }
+
+      .family-drawing {
+        width: 76px;
+        height: 76px;
+      }
+    }
+  }
+
+  .family-view {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  .family-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    container-type: size;
+    /* No bottom padding: the controls footer's own top padding is the gap. */
+    padding: 8px 16px 0;
+    box-sizing: border-box;
+  }
+
+  .grid-switch {
+    width: 100%;
+  }
+
+  /* 36px segments in the control's padding and border: 44px. */
+  .grid-switch :global(.ui-segments button) {
+    min-height: 36px;
+    padding-block: 0;
+  }
+
   .grid-container {
     width: 100%;
     flex: 1;
@@ -668,8 +855,7 @@ Controls moved below the grid for better UX
     width: 100%;
   }
 
-  .orientation-controls,
-  .mode-controls {
+  .orientation-controls {
     display: flex;
     align-items: stretch;
     gap: clamp(8px, 2vmin, 12px);
@@ -679,115 +865,13 @@ Controls moved below the grid for better UX
   /* Make orientation cyclers stretch to fill their row equally */
   .orientation-controls :global(.orientation-cycler) {
     flex: 1;
-  }
-
-  /* Both rows share one control height */
-  .orientation-controls :global(.orientation-cycler),
-  .mode-controls :global(.grid-mode-toggle),
-  .control-button {
     min-height: 48px;
   }
 
-  .mode-controls :global(.grid-mode-toggle) {
-    flex: 1;
-    min-width: 0;
-    border-radius: 12px;
-  }
-
-  .control-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    gap: 8px;
-
-    /* Height comes from the shared footer rule above */
-    padding: 10px 16px;
-
-    /* Theme-aware styling */
-    background: var(--theme-card-bg);
-    border: 1.5px solid var(--theme-stroke);
-    border-radius: 12px;
-
-    /* Typography */
-    font-size: var(--font-size-min);
-    font-weight: 600;
-    color: var(--theme-text, var(--theme-text));
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-
-    /* Interaction */
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-
-    transition:
-      background var(--transition-fast),
-      border-color var(--transition-fast),
-      transform var(--transition-fast);
-  }
-
-  .control-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    opacity: 0.8;
-  }
-
-  .control-label {
-    white-space: nowrap;
-  }
-
-  /* Hover state */
-  @media (hover: hover) {
-    .control-button:hover {
-      background: var(--theme-card-hover-bg);
-      border-color: var(--theme-stroke-strong);
-      transform: translateY(-1px);
-    }
-
-    .control-button:hover .control-icon {
-      opacity: 1;
-    }
-  }
-
-  /* Active/pressed state */
-  .control-button:active {
-    transform: translateY(0) scale(0.98);
-    transition: transform var(--transition-micro);
-  }
-
-  /* Focus state */
-  .control-button:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    .control-button {
-      transition: none;
-    }
-
-    .control-button:hover {
-      transform: none;
-    }
-  }
-
-  /* Narrow container: compact buttons but keep labels */
   @container (max-width: 500px) {
     .path-selector {
       margin-right: 12px;
       margin-left: 12px;
-    }
-
-    .control-button {
-      padding: 8px 12px;
-    }
-
-    .control-icon {
-      width: 16px;
-      height: 16px;
     }
   }
 
@@ -922,17 +1006,20 @@ Controls moved below the grid for better UX
       box-sizing: border-box;
     }
 
-    .with-footer .orientation-controls,
-    .with-footer .mode-controls {
+    .with-footer .orientation-controls {
       flex-direction: column;
       gap: 8px;
     }
 
-    .with-footer .orientation-controls :global(.orientation-cycler),
-    .with-footer .mode-controls :global(.grid-mode-toggle),
-    .with-footer .control-button {
+    .with-footer .orientation-controls :global(.orientation-cycler) {
       flex: 0 0 auto;
       min-height: 44px;
+    }
+
+    /* The footer sits beside the box here, so the box keeps its own gap
+       above the window's bottom edge. */
+    .with-footer .family-box {
+      padding-bottom: 8px;
     }
   }
 

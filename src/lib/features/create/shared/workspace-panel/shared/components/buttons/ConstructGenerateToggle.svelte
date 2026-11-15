@@ -12,6 +12,7 @@ Design Principles:
 - Consistent: Same size as other action buttons (48px circle), neutral slate color
 -->
 <script lang="ts">
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 
@@ -50,9 +51,13 @@ Design Principles:
     targetMode === "generate" ? "fa-wand-magic-sparkles" : "fa-hammer"
   );
   const targetLabel = $derived(
-    targetMode === "generate" ? "Generate" : "Construct"
+    targetMode === "generate"
+      ? t("tab_create_generate")
+      : t("tab_create_construct")
   );
-  const ariaLabel = $derived(`Switch to ${targetLabel} mode`);
+  const ariaLabel = $derived(
+    tDynamic("create_switch_to_mode", { mode: targetLabel })
+  );
 </script>
 
 <button

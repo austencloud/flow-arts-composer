@@ -12,10 +12,10 @@
    * carries on from there. This component tells it which milestones the
    * scene has reached; the bar's timing comes from the last completed load.
    *
-   * The reveal runs in order, so each piece has the screen to itself: the
-   * bar fills to the end under the status it already showed, the title and
-   * bar leave, the stage pushes through into the scene, and `onRevealed`
-   * lets the host bring its controls in once the scene is showing.
+   * The reveal starts the moment the scene is ready: the bar finishes under
+   * the status it already showed while the title and bar leave, the stage
+   * dissolves into the scene within 300 ms, and `onRevealed` lets the host
+   * bring its controls in once the scene is showing.
    */
 
   import { onDestroy, onMount } from "svelte";
@@ -96,9 +96,12 @@
       : [...SCENE_LOADING_LABELS, additionalRevealLabel]
   );
 
-  // The bar takes 200 ms to fill once the load completes; the reveal waits
-  // for it and one beat more so the full bar is seen.
-  const FINISH_HOLD_MS = DURATION.normal + DURATION.instant;
+  // The whole reveal, from "ready" to the scene standing alone, is at most
+  // REVEAL_TOTAL_MS. It used to hold the full bar on screen for 300 ms and
+  // then push through for 950 ms more; measured 2026-11-14 that was 0.85 s of
+  // a ready scene hidden on purpose. The bar's last stretch now fills while
+  // the chrome fades.
+  const REVEAL_TOTAL_MS = 300;
 
   // Track whether the initial load has completed. Once it has,
   // the curtain never comes back - even if the user toggles on
@@ -127,23 +130,23 @@
   // and shortens the dissolve to a plain fade.
   const motion = reducedMotion()
     ? {
-        hold: FINISH_HOLD_MS,
-        chrome: DURATION.fast,
+        hold: 0,
+        chrome: DURATION.instant,
         delay: 0,
         stage: DURATION.normal,
         scale: 1,
         lift: 0,
       }
     : {
-        hold: FINISH_HOLD_MS,
-        chrome: DURATION.normal,
-        delay: DURATION.fast,
-        stage: DURATION.scene,
-        scale: 1.08,
-        lift: 8,
+        hold: 0,
+        chrome: DURATION.fast,
+        delay: 0,
+        stage: REVEAL_TOTAL_MS,
+        scale: 1.04,
+        lift: 4,
       };
 
-  type RevealPhase = "loading" | "finishing" | "leaving" | "gone";
+  type RevealPhase = "loading" | "leaving" | "gone";
   let phase = $state<RevealPhase>("loading");
   const timers: ReturnType<typeof setTimeout>[] = [];
   const after = (ms: number, run: () => void) =>
@@ -154,14 +157,11 @@
     if (!revealSettled || initialLoadComplete) return;
     initialLoadComplete = true;
     session.complete();
-    phase = "finishing";
-    after(motion.hold, () => {
-      phase = "leaving";
-      // Halfway through the dissolve the scene is the larger part of the
-      // picture, so the controls arrive onto it rather than onto the stage.
-      after(motion.delay + motion.stage / 2, () => onRevealed?.());
-      after(motion.delay + motion.stage, () => (phase = "gone"));
-    });
+    phase = "leaving";
+    // Halfway through the dissolve the scene is the larger part of the
+    // picture, so the controls arrive onto it rather than onto the stage.
+    after(motion.delay + motion.stage / 2, () => onRevealed?.());
+    after(motion.delay + motion.stage, () => (phase = "gone"));
   });
 
   const showCurtain = $derived(phase !== "gone");

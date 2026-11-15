@@ -23,6 +23,7 @@ instead of showing an empty shell.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { onMount, type Component } from "svelte";
   import { dev } from "$app/env";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
@@ -196,7 +197,9 @@ instead of showing an empty shell.
   const loading = $derived(collectionsState.loading);
 
   // Founding decks (TKA 1/2/3) — read-only, config-defined, shown to everyone.
-  const foundingCards = FOUNDING_SMART_COLLECTIONS.map(toSyntheticCollection);
+  const foundingCards = $derived(
+    FOUNDING_SMART_COLLECTIONS.map(toSyntheticCollection)
+  );
 
   // Own smart collections render the live-derived view; everything else uses
   // the standard member grid. (Foreign collections are never smart in v1.)
@@ -249,7 +252,7 @@ instead of showing an empty shell.
 
   const allShelf = $derived<LibraryCollection>({
     id: "all",
-    name: "Saved sequences",
+    name: t("browse_verified_saved_sequences"),
     ownerId: authState.effectiveUserId ?? "",
     sequenceIds: [],
     sequenceCount: libraryCount,
@@ -267,7 +270,7 @@ instead of showing an empty shell.
   const PERFORMANCES_SHELF_ID = "video_performances";
   const performancesShelf = $derived<LibraryCollection>({
     id: PERFORMANCES_SHELF_ID,
-    name: "Performances",
+    name: t("browse_ui_performances"),
     ownerId: authState.effectiveUserId ?? "",
     sequenceIds: [],
     sequenceCount: 0,
@@ -423,7 +426,7 @@ instead of showing an empty shell.
       filter: {
         type: "collectionName",
         value: name,
-        displayName: ownerName ?? "Collection owner",
+        displayName: ownerName ?? t("browse_collections_owner_fallback"),
       },
     });
   }
@@ -442,28 +445,28 @@ instead of showing an empty shell.
   const ART_DETAIL: Record<
     string,
     {
-      label: string;
+      labelKey: TranslationKey;
       load: () => Promise<{ default: Component }>;
       /** Hidden, and unresolvable from a stale link, unless `canSeeFilms`. */
       adminOnly?: boolean;
     }
   > = {
     art_tunnels: {
-      label: "Tunnels",
+      labelKey: "browse_home_tunnels",
       load: () =>
         import("#lib/features/tunnel-collection/TunnelCollectionModule.svelte"),
     },
     art_scenes: {
-      label: "3D Scenes",
+      labelKey: "browse_collections_scenes_title",
       load: () =>
         import("#lib/features/scene-3d-collection/Scene3DCollectionModule.svelte"),
     },
     art_mandala: {
-      label: "Mandalas",
+      labelKey: "browse_home_mandalas",
       load: () => import("#lib/features/mandala/MandalaModule.svelte"),
     },
     art_films: {
-      label: "Films",
+      labelKey: "browse_collections_films_title",
       adminOnly: true,
       load: () =>
         import("#lib/features/film-collection/FilmCollectionGallery.svelte"),
@@ -491,7 +494,7 @@ instead of showing an empty shell.
     if (visualType) trackBrowseVisualTypeOpened(visualType);
     browseNavigationState.viewCollectionDetail(
       id,
-      ART_DETAIL[id]?.label ?? "Visuals"
+      ART_DETAIL[id] ? t(ART_DETAIL[id].labelKey) : t("browse_home_visuals")
     );
   }
 
@@ -534,7 +537,7 @@ instead of showing an empty shell.
   const tunnelsArtCard = $derived(
     artCollection(
       "art_tunnels",
-      "Tunnels",
+      t("browse_home_tunnels"),
       "fa-fan",
       playgroundTabColor("tunnels"),
       tunnelCollectionState.collection.length,
@@ -544,7 +547,7 @@ instead of showing an empty shell.
   const scenesArtCard = $derived(
     artCollection(
       "art_scenes",
-      "3D Scenes",
+      t("browse_collections_scenes_title"),
       "fa-cube",
       playgroundTabColor("scenes"),
       scene3dCollectionState.collection.length,
@@ -555,7 +558,7 @@ instead of showing an empty shell.
     // Mandalas have no poster field — the card falls back to icon + color.
     artCollection(
       "art_mandala",
-      "Mandalas",
+      t("browse_home_mandalas"),
       "fa-dharmachakra",
       playgroundTabColor("mandala"),
       mandalaCollectionState.collection.length,
@@ -567,7 +570,7 @@ instead of showing an empty shell.
     // than borrowed — it has to stay distinct from tunnels, scenes, mandalas.
     artCollection(
       "art_films",
-      "Films",
+      t("browse_collections_films_title"),
       "fa-clapperboard",
       "#fbbf24",
       filmCollectionState.collection.length,
@@ -575,8 +578,12 @@ instead of showing an empty shell.
     )
   );
 
-  function unitLabel(n: number, singular: string, plural: string): string {
-    return `${n} ${n === 1 ? singular : plural}`;
+  function unitLabel(
+    n: number,
+    singular: TranslationKey,
+    plural: TranslationKey
+  ): string {
+    return t(n === 1 ? singular : plural, { count: n });
   }
 
   // ── New collection (inline, same interaction as the picker's add tile) ──
@@ -625,8 +632,16 @@ instead of showing an empty shell.
       collection={f}
       readonly
       countLabel={f.id === "founding_tka-1"
-        ? unitLabel(f.sequenceCount, "letter", "letters")
-        : unitLabel(f.sequenceCount, "sequence", "sequences")}
+        ? unitLabel(
+              f.sequenceCount,
+              "browse_collections_letters_one",
+              "browse_collections_letters_other"
+            )
+        : unitLabel(
+              f.sequenceCount,
+              "browse_audit_one_sequence",
+              "browse_audit_many_sequences"
+            )}
       minimalMetadata
       selected={!!sel && sel.id === f.id && !sel.ownerId}
       onOpen={() => openCollection(f.id, f.name)}
@@ -692,10 +707,14 @@ instead of showing an empty shell.
   <CollectionCard
     collection={allShelf}
     countLabel={libraryCountComplete
-      ? unitLabel(libraryCount, "sequence", "sequences")
+      ? unitLabel(
+          libraryCount,
+          "browse_audit_one_sequence",
+          "browse_audit_many_sequences"
+        )
       : libraryCount > 0
-        ? `${libraryCount}+ sequences loading`
-        : "Loading sequences"}
+        ? t("browse_collections_loading_count", { count: libraryCount })
+        : t("browse_collections_loading")}
     readonly
     selected={!!sel && sel.id === "all" && !sel.ownerId}
     onOpen={() => openCollection("all", t("browse_verified_saved_sequences"))}
@@ -768,11 +787,11 @@ instead of showing an empty shell.
     collection={performancesShelf}
     readonly
     selected={!!sel && !sel.ownerId && isPerformancesId(sel.id)}
-    countLabel="Uploads, collaborations, and invites"
+    countLabel={t("browse_collections_performances_desc")}
     onOpen={() =>
       openCollection(
         PERFORMANCES_SHELF_ID,
-        "Performances",
+        t("browse_ui_performances"),
         "performance-shelf"
       )}
   />
@@ -783,21 +802,33 @@ instead of showing an empty shell.
     collection={tunnelsArtCard}
     readonly
     selected={!!sel && !sel.ownerId && sel.id === "art_tunnels"}
-    countLabel={unitLabel(tunnelsArtCard.sequenceCount, "tunnel", "tunnels")}
+    countLabel={unitLabel(
+      tunnelsArtCard.sequenceCount,
+      "browse_collections_tunnels_one",
+      "browse_collections_tunnels_other"
+    )}
     onOpen={() => openArtDetail("art_tunnels")}
   />
   <CollectionCard
     collection={scenesArtCard}
     readonly
     selected={!!sel && !sel.ownerId && sel.id === "art_scenes"}
-    countLabel={unitLabel(scenesArtCard.sequenceCount, "3D scene", "3D scenes")}
+    countLabel={unitLabel(
+      scenesArtCard.sequenceCount,
+      "browse_collections_scenes_one",
+      "browse_collections_scenes_other"
+    )}
     onOpen={() => openArtDetail("art_scenes")}
   />
   <CollectionCard
     collection={mandalaArtCard}
     readonly
     selected={!!sel && !sel.ownerId && sel.id === "art_mandala"}
-    countLabel={unitLabel(mandalaArtCard.sequenceCount, "mandala", "mandalas")}
+    countLabel={unitLabel(
+      mandalaArtCard.sequenceCount,
+      "browse_collections_mandalas_one",
+      "browse_collections_mandalas_other"
+    )}
     onOpen={() => openArtDetail("art_mandala")}
   />
   {#if canSeeFilms}
@@ -805,7 +836,11 @@ instead of showing an empty shell.
       collection={filmsArtCard}
       readonly
       selected={!!sel && !sel.ownerId && sel.id === "art_films"}
-      countLabel={unitLabel(filmsArtCard.sequenceCount, "film", "films")}
+      countLabel={unitLabel(
+        filmsArtCard.sequenceCount,
+        "browse_collections_films_one",
+        "browse_collections_films_other"
+      )}
       onOpen={() => openArtDetail("art_films")}
     />
   {/if}
@@ -958,8 +993,8 @@ instead of showing an empty shell.
                   ? t("browse_verified_loading_shared_collections")
                   : followedCollectionsState.items.length > 0 ||
                       sharedCollections.length > 0
-                    ? "Choose a collection from the list."
-                    : "Collections you follow or that people share with you will appear here."}
+                    ? t("browse_collections_choose_from_list")
+                    : t("browse_collections_following_empty")}
               </p>
             </div>
           {:else if railSelection.id === "all" && !railSelection.ownerId}

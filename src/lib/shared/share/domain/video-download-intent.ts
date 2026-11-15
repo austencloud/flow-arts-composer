@@ -86,8 +86,8 @@ export function videoDownloadSettingsKey(value: {
 export type FileRequestPlan = "deliver" | "render" | "request-account";
 
 /**
- * One Download click resolves to exactly one outcome. The take-it-home account
- * gate is decided here, before any render is requested, so a guest never sees
+ * One Download click resolves to exactly one outcome. An account requirement
+ * (when a host sets one) is decided here, before any render, so a guest never sees
  * a render start and then read "canceled" while a sign-in shell sits painted
  * underneath the sheet.
  */

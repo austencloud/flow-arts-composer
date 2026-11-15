@@ -70,6 +70,13 @@ async function loadFirestore() {
 
 export class PublicSequencesLoader {
   private cachedSequences: SequenceData[] | null = null;
+  /**
+   * When `cachedSequences` last came from a complete Firestore read in this
+   * session. A catalogue warmed from IndexedDB, the offline fallback, or the
+   * first page clears it. Read only through `getFreshCatalog`, which treats a
+   * null catalogue as never fresh (the reconnect handler nulls it directly).
+   */
+  private fullCatalogReadAt: number | null = null;
   private initialPageSequences: SequenceData[] | null = null;
   private loadPromise: Promise<SequenceData[]> | null = null;
   private refreshPromise: Promise<SequenceData[]> | null = null;
@@ -201,6 +208,8 @@ export class PublicSequencesLoader {
       const hasCache = await this.galleryOfflineCache.hasCachedData();
       if (hasCache) {
         const cached = await this.galleryOfflineCache.loadCached();
+        // The saved catalogue is about to stand in; it is not a fresh read.
+        this.fullCatalogReadAt = null;
         for (const [key, value] of cached.sourceRefs) {
           this.sourceRefCache.set(key, value);
         }
@@ -466,6 +475,7 @@ export class PublicSequencesLoader {
   ): void {
     if (this.cachedSequences) return; // Already warmed or loaded - don't overwrite
     this.cachedSequences = sequences;
+    this.fullCatalogReadAt = null;
     for (const [key, value] of sourceRefs) {
       this.sourceRefCache.set(key, value);
     }
@@ -520,6 +530,28 @@ export class PublicSequencesLoader {
   }
 
   /**
+   * The catalogue as it stands in memory, or null. Never loads and never
+   * judges freshness. `cachedSequences` only ever holds a whole catalogue: a
+   * complete Firestore read, or the saved copy of one (IndexedDB warm-up,
+   * offline fallback). The first page lives in `initialPageSequences` and the
+   * preview page is never kept, so neither can show up here.
+   */
+  peekCatalog(): readonly SequenceData[] | null {
+    return this.cachedSequences;
+  }
+
+  /**
+   * The catalogue, when it came from a complete Firestore read in this
+   * session less than `maxAgeMs` ago; otherwise null. Lets a new Browse
+   * engine skip re-reading ~1,600 documents another view just read.
+   */
+  getFreshCatalog(maxAgeMs: number): SequenceData[] | null {
+    if (!this.cachedSequences || this.fullCatalogReadAt === null) return null;
+    if (Date.now() - this.fullCatalogReadAt >= maxAgeMs) return null;
+    return this.cachedSequences;
+  }
+
+  /**
    * Force a fresh Firestore fetch regardless of cache state.
    * Used by the prefetcher to sync in the background after warming from IndexedDB.
    * Updates the in-memory cache and persists to IndexedDB offline cache.
@@ -540,6 +572,7 @@ export class PublicSequencesLoader {
     this.refreshPromise = this.fetchPublicSequences(resolveFirst)
       .then((sequences) => {
         this.cachedSequences = sequences;
+        this.fullCatalogReadAt = Date.now();
         this.initialPageSequences = null;
         if (this.galleryOfflineCache) {
           this.persistToOfflineCache().catch((err) =>

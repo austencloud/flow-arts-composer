@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { FAN_BUILDS } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import {
   fanBuildPreviewOptions,
   fanCoverPreviewOptions,
@@ -63,7 +64,7 @@ describe("prop studio build previews", () => {
       frameColor: "white" as const,
       cover: "covered" as const,
     };
-    const builds = fanBuildPreviewOptions(appearance);
+    const builds = fanBuildPreviewOptions(appearance, FAN_BUILDS);
     expect(builds.find((option) => option.id === "day")?.image).toContain(
       "fan-day-white-covered"
     );

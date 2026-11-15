@@ -12,11 +12,15 @@ import {
 } from "@austencloud/video-editor/core";
 import {
   itemIdFromArrangementRole,
+  itemIdFromCreditRole,
+  itemIdFromFlashRole,
   itemIdFromMandalaRole,
   itemIdFromMovesAnimationRole,
   itemIdFromStage3DRole,
   itemIdFromStaffEffectRole,
   staffEffectRole,
+  itemIdFromCometTrailsRole,
+  cometTrailsRole,
 } from "#lib/shared/post-studio-plugin/index.js";
 import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
 import type {
@@ -30,7 +34,13 @@ import { createBeatCarouselPainter } from "#lib/shared/media-composition/service
 import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { createStaffEffectPainter } from "#lib/shared/media-composition/services/staff-effect-painter.js";
+import {
+  createCometTrailsPainter,
+  loadCometLightMap,
+} from "#lib/shared/media-composition/services/comet-trails-painter.js";
 import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
+import { createFlashPainter } from "#lib/shared/media-composition/services/flash-painter.js";
+import { createCreditPainter } from "#lib/shared/media-composition/services/credit-painter.js";
 import { createStaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
 import { loadAnimationOverlayPainter } from "#lib/shared/media-composition/services/animation-overlay-painter-registry.js";
 import { qrImageForAppearance } from "./post-qr-image-appearance";
@@ -99,14 +109,50 @@ export function createTkaBindings(env: {
         () =>
           editor.compiled?.titles.find((plan) => plan.itemId === itemId) ??
           null,
-        () => {
-          const sequence = tka.displaySequence;
-          return sequence
-            ? simplifyRepeatedWord(sequence.word || deriveWord(sequence))
-            : (editor.project.title ?? "");
+        {
+          word: () => {
+            const sequence = tka.displaySequence;
+            return sequence
+              ? simplifyRepeatedWord(sequence.word || deriveWord(sequence))
+              : (editor.project.title ?? "");
+          },
+          // The letter of each move, which the lit letter follows.
+          beatLetters: () =>
+            tka.displaySequence?.steps.map((step) => step.letter ?? null) ??
+            [],
         }
       );
       titlesPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  /** One painter per credit: its small line and the wordmark. */
+  const creditPainters = new Map<string, PostStudioLayerPainter>();
+  function creditPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = creditPainters.get(itemId);
+    if (!painter) {
+      painter = createCreditPainter(
+        () =>
+          editor.compiled?.credits.find((plan) => plan.itemId === itemId) ??
+          null
+      );
+      creditPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  /** One painter per flash clip: its veil and corner marks. */
+  const flashPainters = new Map<string, PostStudioLayerPainter>();
+  function flashPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = flashPainters.get(itemId);
+    if (!painter) {
+      painter = createFlashPainter(
+        () =>
+          editor.compiled?.flashes.find((plan) => plan.itemId === itemId) ??
+          null
+      );
+      flashPainters.set(itemId, painter);
     }
     return painter;
   }
@@ -140,6 +186,20 @@ export function createTkaBindings(env: {
         fit: () => videoItem(itemId)?.fit ?? "cover",
       });
       staffPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  /** One painter per clip, replaying its take's light map. */
+  const cometPainters = new Map<string, PostStudioLayerPainter>();
+  function cometPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = cometPainters.get(itemId);
+    if (!painter) {
+      painter = createCometTrailsPainter({
+        trails: () => videoItem(itemId)?.cometTrails ?? null,
+        fit: () => videoItem(itemId)?.fit ?? "cover",
+      });
+      cometPainters.set(itemId, painter);
     }
     return painter;
   }
@@ -199,6 +259,23 @@ export function createTkaBindings(env: {
         painter: staffPainterFor(staffItemId),
         status: "ready",
         bareWhileCropping: true,
+        // Drawn on the picture: while playing it follows the frame on screen.
+        ridesFootage: true,
+      };
+    }
+    const cometItemId = itemIdFromCometTrailsRole(role);
+    if (cometItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_comet_trails"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: cometPainterFor(cometItemId),
+        status: "ready",
+        bareWhileCropping: true,
+        // Drawn on the picture: while playing it follows the frame on screen.
+        ridesFootage: true,
       };
     }
     const titlesItemId = itemIdFromTitlesRole(role);
@@ -208,6 +285,32 @@ export function createTkaBindings(env: {
         t("post_editor_kind_titles"),
         titlesPainterFor(titlesItemId)
       );
+    }
+    // A credit needs no sequence either.
+    const creditItemId = itemIdFromCreditRole(role);
+    if (creditItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_editor_kind_credit"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: creditPainterFor(creditItemId),
+        status: "ready",
+      };
+    }
+    // A flash needs no sequence, so it is ready even in a post without one.
+    const flashItemId = itemIdFromFlashRole(role);
+    if (flashItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_editor_kind_flash"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: flashPainterFor(flashItemId),
+        status: "ready",
+      };
     }
     if (itemIdFromMovesAnimationRole(role)) {
       return {
@@ -340,7 +443,10 @@ export function createTkaBindings(env: {
   async function prepareRender(): Promise<void> {
     await Promise.all(
       editor.project.tracks.flatMap((track) =>
-        track.items.flatMap((item) => {
+        track.items.flatMap((item): Promise<unknown>[] => {
+          // Every light map read before the first frame is drawn.
+          if (item.kind === "video" && item.cometTrails)
+            return [loadCometLightMap(item.cometTrails.map)];
           if (item.kind !== "image") return [];
           const url = editor.imageUrl(item.imageId);
           if (!url) return [];
@@ -414,10 +520,19 @@ export function createTkaBindings(env: {
     for (const plan of editor.compiled?.titles ?? []) {
       painters.set(plan.role, titlesPainterFor(plan.itemId));
     }
+    for (const plan of editor.compiled?.flashes ?? []) {
+      painters.set(plan.role, flashPainterFor(plan.itemId));
+    }
+    for (const plan of editor.compiled?.credits ?? []) {
+      painters.set(plan.role, creditPainterFor(plan.itemId));
+    }
     for (const track of editor.project.tracks) {
       for (const item of track.items) {
         if (item.kind === "video" && item.staffEffect) {
           painters.set(staffEffectRole(item.id), staffPainterFor(item.id));
+        }
+        if (item.kind === "video" && item.cometTrails) {
+          painters.set(cometTrailsRole(item.id), cometPainterFor(item.id));
         }
       }
     }

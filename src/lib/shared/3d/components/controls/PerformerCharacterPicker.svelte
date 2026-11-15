@@ -412,10 +412,14 @@
     height: 1.5rem;
     border: 2px solid
       color-mix(in srgb, var(--performer-color) 25%, transparent);
-    border-top-color: var(--performer-color);
     border-radius: 50%;
     animation: character-loading-spin calc(var(--duration-dramatic) * 2) linear
       infinite;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .character-loading {
+    border-top-color: var(--performer-color);
   }
 
   @keyframes character-loading-spin {

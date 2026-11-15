@@ -179,7 +179,7 @@
     initialPlaybackMode?: PlaybackMode;
     initialStep?: number;
     initialViewMode?: ViewMode;
-    onClose: (reason?: "navigate") => void;
+    onClose: (reason?: "navigate" | "escape") => void;
     onUrlParamChange?: (key: string, value: string) => void;
     /** Reports tempo changes made through viewer controls. Internal practice
      *  ramp changes stay private so hosts can persist deliberate choices. */
@@ -192,14 +192,19 @@
     playbackReleased?: boolean;
     forceGuest?: boolean;
     initialRenderMode?: "2d" | "3d";
-    /** Initial shared-shell surface. Scan uses card so animation work stays out
-     *  of the first visible frame; other hosts retain persisted mode. */
+    /** Initial shared-shell surface. Scan opens on Side by Side; other hosts
+     *  retain persisted mode. */
     initialViewerMode?: ViewerMode;
+    /** The split layout that goes with an opening Side by Side. Seeded, not
+     *  saved, like initialViewerMode. */
+    initialSplitConfig?: SplitConfig;
     /** Keep a page-owned preview out of the viewer URL and saved view mode. */
     passivePreview?: boolean;
     /** A host can demonstrate a consistent path style without saving it. */
     pathPolicyOverride?: AnimationPathPolicy;
-    /** Hold animation/LAN services until the host promotes away from card. */
+    /** Hold animation/LAN services until the host starts them (a scan does
+     *  once its card has painted). The motion pane shows its loading state
+     *  in its slot meanwhile. */
     deferInteractiveStartup?: boolean;
     /** Built hidden before anyone opened it. Until it wakes it leaves the
      *  shared playback engine, keys, address bar and view analytics alone. */
@@ -244,6 +249,7 @@
     forceGuest = false,
     initialRenderMode,
     initialViewerMode,
+    initialSplitConfig,
     passivePreview = false,
     pathPolicyOverride,
     deferInteractiveStartup = false,
@@ -587,12 +593,13 @@
   });
   // Precedence: an explicit open option beats the URL, which beats localStorage.
   // A programmatic open (`openSequenceOverlay({ initialViewerMode })`, the scan
-  // funnel's card-first boot) is a deliberate app action, so it lands last.
+  // funnel's Side by Side boot) is a deliberate app action, so it lands last.
   // It is seeded, not set: the device's remembered view stays its own.
   if (initialViewerMode) {
     viewerState.seedViewerMode(initialViewerMode);
     viewerState.setExportContext(null);
   }
+  if (initialSplitConfig) viewerState.seedSplitConfig(initialSplitConfig);
   // The capture reads the RAW (pre-coercion) mode and split. The address bar
   // rewrites within 400 ms of any change, so capturing the viewport-coerced
   // getters would turn a 3D link into a 2D one the moment it opened on a
@@ -633,6 +640,26 @@
 
   const exportType = $derived(resolveExportType(editingPane));
 
+  // The 2D animator's canvas has drawn its first frame. Its ready callback
+  // fires once the grid and prop textures are loaded, just before the render
+  // loop starts, so two paints later the frame is on screen.
+  let animationCanvasDrawn = $state(false);
+  let animationCanvasFrame = 0;
+  function handleAnimationCanvasReady(canvas: HTMLCanvasElement | null): void {
+    exportCoord.handleCanvasReady(canvas);
+    cancelAnimationFrame(animationCanvasFrame);
+    if (!canvas) {
+      animationCanvasDrawn = false;
+      return;
+    }
+    animationCanvasFrame = requestAnimationFrame(() => {
+      animationCanvasFrame = requestAnimationFrame(() => {
+        animationCanvasDrawn = true;
+      });
+    });
+  }
+  $effect(() => () => cancelAnimationFrame(animationCanvasFrame));
+
   let cellsLoaded = $state(0);
   let totalCells = $state(0);
   let cardReady = $state(false);
@@ -646,6 +673,8 @@
       playback,
       viewerState,
       cloudBackedScan,
+      deferredStartup: deferInteractiveStartup,
+      getAnimationDrawn: () => animationCanvasDrawn,
       getCellsLoaded: () => cellsLoaded,
       getTotalCells: () => totalCells,
       getViewMode: () => viewMode,
@@ -1202,7 +1231,8 @@
         runSequenceViewerEscapeFallback({
           isFullscreen: () => fullscreen.isFullscreen,
           exitFullscreen: () => fullscreen.exitFullscreen(),
-          close: handleClose,
+          // Named so close analytics can tell Escape from the close button.
+          close: () => handleClose("escape"),
         });
       });
       return;
@@ -1231,7 +1261,7 @@
     }
   }
 
-  function handleClose(reason?: "navigate") {
+  function handleClose(reason?: "navigate" | "escape") {
     libraryActions.finishPropChoice(false);
     playback.stopPracticeIfActive();
 
@@ -1313,8 +1343,11 @@
   }
 
   function preparePracticeView(): void {
-    if (viewerState.viewerMode === "split") return;
+    // Practice is its own screen: an open tools panel (Effects, Display ...)
+    // closes even when the viewer is already side by side, or it would push
+    // the animation off a phone screen. Leaving practice restores it.
     viewerState.exitExport();
+    if (viewerState.viewerMode === "split") return;
     viewerState.setSplitConfig({
       leftPane: "animation",
       rightPane: "card",
@@ -1322,14 +1355,11 @@
     viewerState.setViewerMode("split");
   }
 
-  function handlePracticeStart(): void {
+  /** Into practice and straight into the run. False when the animation is
+   *  not ready; the caller puts the view back. */
+  function enterPracticeMode(): boolean {
     preparePracticeView();
-    playback.handlePracticeStart();
-  }
-
-  function enterPracticeMode(): void {
-    preparePracticeView();
-    playback.enterPracticeMode();
+    return playback.enterPracticeMode();
   }
 
   const contextState = createViewerOrchestratorContextState({
@@ -1347,11 +1377,11 @@
     viewerVisibility,
     viewer3D,
     handlers: {
+      handleCanvasReady: handleAnimationCanvasReady,
       setResolvedCardAutoLayout,
       onRenderProgress: handleRenderProgress,
       handlePropTypeChange: propVisibility.handlePropTypeChange,
       setPropHand: propVisibility.setPropHand,
-      handleCatDogToggle: propVisibility.handleCatDogToggle,
       handleFanAppearanceChange,
       enterEditMode: editMode.enterEditMode,
       exitEditMode: editMode.exitEditMode,
@@ -1368,7 +1398,6 @@
         authQueue.invokeGatedAction(type, realHandler, sequence),
       openSignInPrompt: () => authQueue.openSignInSheet("account"),
       handleUnifiedDarkModeToggle: propVisibility.handleUnifiedDarkModeToggle,
-      handlePracticeStart,
       enterPracticeMode,
       handleBpmChange,
       handleStepClick,

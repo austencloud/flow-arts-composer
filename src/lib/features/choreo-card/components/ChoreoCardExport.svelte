@@ -15,7 +15,6 @@
   import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
   import { onMount } from "svelte";
   import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
-  import { ensureFullAccountForExport } from "#lib/shared/auth/domain/export-gate.js";
   import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
 
   interface Props {
@@ -68,9 +67,6 @@
 
   async function handleExport() {
     if (sequences.length === 0 || isExporting) return;
-
-    // Take-it-home gate: a free account is required to download cards.
-    if (!(await ensureFullAccountForExport())) return;
 
     isExporting = true;
     exportCancelled = false;

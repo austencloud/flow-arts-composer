@@ -8,14 +8,16 @@
  * setting.
  */
 
-/** Plain-language reading of an intensity ceiling. */
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+
+/** Plain-language reading of an intensity ceiling, in the visitor's language. */
 export function describeTurnIntensity(value: number): string {
-  if (value <= 0.5) return "Minimal turns";
-  if (value <= 1.0) return "Gentle turns";
-  if (value <= 1.5) return "Light turns";
-  if (value <= 2.0) return "Moderate turns";
-  if (value <= 2.5) return "Strong turns";
-  return "Intense turns";
+  if (value <= 0.5) return t("generator_turns_minimal");
+  if (value <= 1.0) return t("generator_turns_gentle");
+  if (value <= 1.5) return t("generator_turns_light");
+  if (value <= 2.0) return t("generator_turns_moderate");
+  if (value <= 2.5) return t("generator_turns_strong");
+  return t("generator_turns_intense");
 }
 
 /** Green through red, for the ordinary dark backgrounds. */

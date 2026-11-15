@@ -228,13 +228,27 @@ describe("shape matrix mandala continuity", () => {
     const hero = read("components/MandalaHeroLayer.svelte");
     expect(hero).toMatch(/<ShapeMatrixMandalaArt[\s\S]*?\{claim\}/);
 
-    const matrixPane = read("app/components/ShapeMatrixMatrixPane.svelte");
-    expect(matrixPane).toContain(
-      'claimSelected={state.compact && state.activeView === "matrix"}'
+    // Both surfaces keep their grid and stage mounted, the hidden one behind
+    // the one showing, so every endpoint's claim names its own surface. An
+    // ungated hidden claimant is captured instead, or aborts on a duplicate.
+    const flat = (relative: string) => read(relative).replace(/\s+/g, " ");
+    expect(flat("app/components/ShapeMatrixMatrixPane.svelte")).toContain(
+      'claimSelected={state.compact && state.surface === "matrix" && state.activeView === "matrix"}'
     );
-    const detailPane = read("app/components/ShapeMatrixDetailPane.svelte");
-    expect(detailPane).toContain(
-      'claim: state.compact && state.activeView === "detail"'
+    expect(flat("app/components/ShapeMatrixDetailPane.svelte")).toContain(
+      'claim: state.compact && state.surface === "matrix" && state.activeView === "detail"'
+    );
+    const theoryPane = flat("app/components/ShapeMatrixTheoryPane.svelte");
+    expect(theoryPane).toContain(
+      'appState.compact && appState.surface === "theory" && appState.activeView === "matrix"'
+    );
+    expect(theoryPane).toContain("claimSelected={gridShowing}");
+    const theoryDetail = flat("app/components/ShapeMatrixTheoryDetail.svelte");
+    expect(theoryDetail).toContain(
+      'app.compact && app.surface === "theory" && app.activeView === "detail"'
+    );
+    expect(theoryDetail).toMatch(
+      /<MandalaHeroLayer[^>]*claim=\{stageShowing\}/
     );
 
     // No file stamps the name as a literal style: the registry owns it.
@@ -354,13 +368,44 @@ describe("shape matrix mandala continuity", () => {
     expect(shell).toContain("@keyframes -global-shape-matrix-settle-out");
     // Every leg of the wave has its own beat on one clock, and each frame
     // travels from the side it sits on, so the page assembles around the stage.
+    // The beats are named tunables, in order, and every opening animation is
+    // over by the end of the flight (a share of 1.0).
+    const tunable = (name: string) =>
+      Number(
+        shell.match(new RegExp(`--${name}: (\\d+(?:\\.\\d+)?);`))?.[1] ??
+          Number.NaN
+      );
+    const length = tunable("settle-length");
     const beats = [
-      ...shell.matchAll(
-        /animation-delay: calc\(var\(--flight\) \* ([\d.]+)\)/g
-      ),
-    ].map((beat) => Number(beat[1]));
-    expect(beats).toEqual([...new Set(beats)].sort((a, b) => a - b));
-    expect(beats.length).toBeGreaterThanOrEqual(6);
+      "settle-modes",
+      "settle-controls",
+      "settle-strip",
+      "settle-stage-head",
+      "settle-stage-transport",
+      "settle-stage-rotate",
+    ].map(tunable);
+    expect(beats).toEqual([...beats].sort((a, b) => a - b));
+    // Nothing starts before the grid has begun folding into the chip.
+    expect(
+      Math.min(...beats, tunable("settle-actions"))
+    ).toBeGreaterThanOrEqual(0.3);
+    for (const end of [
+      ...beats.map((beat) => beat + length),
+      tunable("settle-actions") + length,
+      tunable("settle-figure-delay") + tunable("settle-figure"),
+      tunable("floor-rest-delay") + tunable("floor-rest"),
+    ]) {
+      expect(end).toBeLessThanOrEqual(1);
+    }
+    // The still and the live figure draw the same lines, and under a playing
+    // stage the still rests at zero. Opening, the still lets go only after the
+    // figure has begun to bloom, or there is a moment with no flower at all.
+    expect(tunable("floor-rest-delay")).toBeGreaterThanOrEqual(
+      tunable("settle-figure-delay")
+    );
+    expect(shell).toContain(
+      "animation-delay: calc(var(--flight) * var(--settle-strip));"
+    );
     expect(shell).toContain("--settle-y: -0.625rem;");
     expect(shell).toContain("--settle-x: -0.75rem;");
     for (const name of [
@@ -389,6 +434,24 @@ describe("shape matrix mandala continuity", () => {
       /view-transition-new\(root\)\) \{\s*animation: shape-matrix-page-in calc\(var\(--flight\) \* 0\.5\) linear both/
     );
     expect(shell).toContain("mix-blend-mode: plus-lighter;");
+
+    // The grid's fold into the back chip outranks the plain recede/return, so
+    // reduced motion has to name each fold rule or it would still travel.
+    const reduced = shell.slice(
+      shell.lastIndexOf("@media (prefers-reduced-motion: reduce)")
+    );
+    const foldRules = [
+      ...shell.matchAll(
+        /html\.shape-matrix-morph\.[\w.-]*shape-matrix-morph-fold[^{]*?::view-transition-(?:old|new)\(\s*[\w-]+\s*\)/g
+      ),
+    ].map((m) => m[0].replace(/\s+/g, ""));
+    // The grid's two (fold, unfold), the chip's catch opening, and the chip's
+    // old and new pictures going back.
+    expect(new Set(foldRules).size).toBeGreaterThanOrEqual(5);
+    const reducedFlat = reduced.replace(/\s+/g, "");
+    for (const rule of new Set(foldRules)) {
+      expect(reducedFlat).toContain(rule);
+    }
   });
 
   it("keeps the flying flower sharp and on the page", () => {
@@ -396,11 +459,23 @@ describe("shape matrix mandala continuity", () => {
     // A tile's picture stretched to the stage's size is a blur, so it may only
     // show in the first moments of the opening, never across the whole flight.
     expect(shell).toMatch(
-      /view-transition-old\(\s*shape-matrix-active-mandala\s*\)\s*\) \{\s*animation: shape-matrix-page-out calc\(var\(--flight\) \* 0\.14\)/
+      /view-transition-old\(\s*shape-matrix-active-mandala\s*\)\s*\) \{\s*animation: shape-matrix-page-out\s*calc\(var\(--flight\) \* var\(--stage-swap-open\)\)/
+    );
+    expect(shell).toContain("--stage-swap-open: 0.14;");
+    // The surface swaps on the same schedule as the flower's pictures.
+    expect(shell).toMatch(
+      /morph-back::view-transition-new\(\s*shape-matrix-active-stage\s*\)\s*\) \{\s*animation: shape-matrix-page-in calc\(var\(--flight\) \* var\(--stage-swap-back\)\)\s*linear calc\(var\(--flight\) \* var\(--stage-swap-back-delay\)\)/
+    );
+    // Going back, the still is awake before the swap.
+    expect(
+      Number(shell.match(/--floor-wake-delay: ([\d.]+);/)?.[1]) +
+        Number(shell.match(/--floor-wake: ([\d.]+);/)?.[1])
+    ).toBeLessThanOrEqual(
+      Number(shell.match(/--stage-swap-back-delay: ([\d.]+);/)?.[1])
     );
     // Going back, the stage's picture holds until the flower is nearly home.
     expect(shell).toMatch(
-      /shape-matrix-morph-back::view-transition-new\(\s*shape-matrix-active-mandala\s*\)\s*\) \{\s*animation: shape-matrix-page-in calc\(var\(--flight\) \* 0\.16\) linear\s*calc\(var\(--flight\) \* 0\.36\)/
+      /shape-matrix-morph-back::view-transition-new\(\s*shape-matrix-active-mandala\s*\)\s*\) \{\s*animation: shape-matrix-page-in calc\(var\(--flight\) \* var\(--stage-swap-back\)\)\s*linear calc\(var\(--flight\) \* var\(--stage-swap-back-delay\)\)/
     );
     // The flight ends on the strength the floor really rests at, not at full
     // brightness with a fade still to come.
@@ -442,10 +517,18 @@ describe("shape matrix mandala continuity", () => {
     // localizedLevelDescription(level) helper, which calls t() per level
     // under the hood; SHAPE_MATRIX_LEVEL_DESCRIPTIONS itself still lives in
     // shape-matrix-levels.ts as the canonical English source those keys mirror.
-    expect(popover).toContain("localizedLevelDescription");
+    // Since 2026-11-13 the phone tray's tiles read localizedLevelTileDescription,
+    // which keeps that same source and only swaps Level 1's name for "No Turns".
+    expect(popover).toContain("localizedLevelTileDescription");
+    const display = read("services/shape-matrix-display.ts");
+    expect(display).toMatch(
+      /localizedLevelTileDescription[\s\S]*localizedLevelDescription\(level\)/
+    );
     const control = read("app/components/ShapeMatrixDifficultyControl.svelte");
-    expect(control).toContain("localizedLevelDescription");
-    expect(control).toContain("{#key appState.level}");
+    // Since 2026-11-14 the desktop band names every level on its own tile,
+    // with the phone tray's picture, instead of naming only the pressed one.
+    expect(control).toContain("localizedLevelTileDescription");
+    expect(control).toContain("<TurnStepGlyph {level} />");
     const about = read("app/components/ShapeMatrixAboutModal.svelte");
     expect(about).toContain("localizedLevelDescription");
 
@@ -532,16 +615,33 @@ describe("shape matrix mandala continuity", () => {
     expect(card).toMatch(
       /class="words" use:followHeight=\{true\}>\s*<div class="name-words sizer" aria-hidden="true">/
     );
-    expect(card).not.toContain("animateHeight");
     // Every piece of changing text crosses over; none is written straight in.
     const words = card.slice(
       card.indexOf('<div class="name">'),
       card.indexOf("<style>")
     );
+    // The picker's two-columns/one-set swap may ease its box; the words never.
+    expect(words).not.toContain("animateHeight");
     expect(words).toMatch(/<Crossfade key=\{wordsKey\} fill mode="swap"/);
     expect(words).not.toMatch(/<dd>\{description/);
     expect(words).not.toMatch(/class="eyebrow">\{description/);
     // A flight snapshots the card the frame it changes.
     expect(card).toMatch(/wordMotion = \$derived\(morphing \? 0 :/);
+  });
+
+  it("shows the solo card's shapes once when both hands offer the same ones", () => {
+    const card = read("components/ShapeMatrixSoloCard.svelte");
+    // Same turns on both hands = the same flowers twice, so one set stands for
+    // both, with the shared switch naming the hand on stage.
+    expect(card).toContain("handsOfferSameShapes(axes.left, axes.right)");
+    expect(card).toMatch(/\{#if sameShapes\}\s*<div class="one-set"/);
+    expect(card).toContain("<SegmentedControl");
+    expect(card).toContain('ariaLabel={t("shape_engine_solo_hand_switch")}');
+    // The tile ink follows the hand on stage, so its art key carries the side.
+    expect(card).toContain("artKey={`${side}:${key}:${artSuffix}`}");
+    // Two columns and one set cross over instead of snapping, and a flight
+    // settles at once.
+    expect(card).toMatch(/<Crossfade\s+key=\{sameShapes\}/);
+    expect(card).toMatch(/pickerMotion = \$derived\(morphing \? 0 :/);
   });
 });

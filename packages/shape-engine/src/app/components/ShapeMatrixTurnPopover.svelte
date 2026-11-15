@@ -3,7 +3,7 @@
 <script lang="ts">
   import { s as t } from "../../strings.svelte.js";
   import {
-    localizedLevelDescription,
+    localizedLevelTileDescription,
     localizedMatrixTurnSpokenLabel,
   } from "../../services/shape-matrix-display";
   import { Popover } from "bits-ui";
@@ -25,6 +25,7 @@
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import ShapeMatrixTheoryControls from "./ShapeMatrixTheoryControls.svelte";
   import ShapeMatrixTurnControls from "./ShapeMatrixTurnControls.svelte";
+  import TurnStepGlyph from "./TurnStepGlyph.svelte";
 
   interface Props {
     onratiofocuschange?: (hand: "left" | "right" | "both" | null) => void;
@@ -171,15 +172,22 @@
                   class="level-row"
                   transition:growFade={{ duration: DURATION.normal }}
                 >
-                  <span class="row-label">{t("shape_engine_level")}</span>
+                  <!-- Numerals alone told a first-time visitor nothing (a phone
+                       never shows the hover title), so each level is a tile:
+                       a picture of the turn step it adds, then its name. -->
+                  <span class="row-label">{t("shape_engine_turn_level")}</span>
                   <LevelSelector
                     value={appState.level}
                     levels={SHAPE_MATRIX_LEVELS}
-                    describe={localizedLevelDescription}
+                    describe={localizedLevelTileDescription}
                     onchange={applyLevel}
-                    compact={true}
+                    tiles={true}
                     ariaLabel={t("shape_engine_difficulty_level")}
-                  />
+                  >
+                    {#snippet glyph(level)}
+                      <TurnStepGlyph {level} />
+                    {/snippet}
+                  </LevelSelector>
                 </div>
               {/if}
               {#if theory}

@@ -40,6 +40,10 @@
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import {
+    engineOwnsPropPicker,
+    getShapeEngineHostContext,
+  } from "../context/shape-engine-host-context";
+  import {
     customizeRequest,
     customizeSection,
     surfaceHasPair,
@@ -47,6 +51,10 @@
 
   const appState = getShapeMatrixAppContext();
   const animationState = getShapeMatrixAnimationContext();
+  // Inside the Composer the bottom bar picks props, so the rail has no Props page.
+  const picksProps = $derived(
+    engineOwnsPropPicker(getShapeEngineHostContext().variant)
+  );
 
   /* The surface changes which effects and marks the pages offer, never the
      workspace itself. */
@@ -152,7 +160,9 @@
         showEffectsPlayback={false}
         selectedPropType={appState.addressedPropType}
         sequence={theory ? null : animationState.previewSequence}
-        onPropChange={(propType) => void appState.setPropType(propType)}
+        onPropChange={picksProps
+          ? (propType) => void appState.setPropType(propType)
+          : undefined}
         handProps={appState.handProps}
         allowedProps={shapeMatrixPickerProps()}
         showPathShape={false}

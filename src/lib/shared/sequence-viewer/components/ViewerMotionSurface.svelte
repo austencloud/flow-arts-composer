@@ -15,18 +15,28 @@
   import ContactViewerRequired from "#lib/shared/3d/components/ContactViewerRequired.svelte";
   import { getViewer3DSource } from "#lib/shared/3d/context/viewer-3d-context.js";
   import ScenePreparationSurface from "#lib/shared/3d/scene-features/components/ScenePreparationSurface.svelte";
-  import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { provideSceneLoadingSession } from "#lib/shared/3d/scene-features/scene-loading-session.svelte.js";
   import { sceneNeedsContactViewer } from "#lib/shared/3d/domain/prop-motion-discipline.js";
   import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import Viewer3DRailHint from "#lib/shared/3d/components/onboarding/Viewer3DRailHint.svelte";
-  import { warmSelectedSceneAssets } from "#lib/shared/3d/scene-boot/scene-prefetch.js";
+  import { warmViewer3DSwitch } from "#lib/shared/3d/scene-boot/scene-prefetch.js";
+  import { warmViewer3DCode } from "#lib/shared/3d/scene-boot/viewer-3d-code-prefetch.js";
+  import { releaseViewer3DWarmupGuard } from "#lib/shared/3d/scene-boot/viewer-3d-warmup-guard.js";
+  import { viewer3DCodeWarmed } from "#lib/shared/3d/scene-boot/viewer-3d-code-prefetch.js";
+  import { viewer3DSwitchAssetsWarmed } from "#lib/shared/3d/scene-boot/scene-prefetch.js";
+  import {
+    captureViewer3DAbandoned,
+    captureViewer3DVisible,
+    startViewer3DLoadRecord,
+    workerRendererAvailable,
+    type Viewer3DLoadRecord,
+  } from "#lib/shared/analytics/viewer-3d-load-events.js";
   import { releaseReplayHold } from "#lib/shared/analytics/services/replay-hold.js";
   import {
     isViewer3DIntroReplayRequested,
     shouldShowViewer3DIntro,
   } from "#lib/shared/onboarding/state/viewer3d-intro-state.js";
-  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { motionDuration, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Tween } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
@@ -75,6 +85,8 @@
     showcasePlayback = false,
     practiceActive,
     practiceMirrorEnabled,
+    onPracticeCameraReady,
+    onPracticeCameraFailure,
     practiceResizePaused,
   }: ViewerMotionSurfaceProps = $props();
 
@@ -192,25 +204,23 @@
     }
   });
 
-  // 3D is one click away from here, and its models are the slowest thing in the
-  // app to arrive. Pull them into the browser cache while it is idle so the
-  // first open spends its curtain on compiling rather than downloading.
-  // Once 3D is open (or has been), the real loaders own those downloads and a
-  // warm-up would only fetch them a second time, plus models the worker world
-  // never loads. So only a visitor on a 2D pane warms. The viewer mounts a
-  // surface per side, so the primary side alone decides, and it also stands
-  // down while the companion side shows 3D; otherwise the hidden companion
-  // would warm during a direct 3D open.
-  // Leaving the viewer cancels the warm-up. Otherwise a download still queued
-  // or running would carry on into the next page (Remix into Create, say) and
-  // compete with everything that page has to load.
+  // Leaving the viewer cancels the warm-up (see the effect at the end of
+  // this script). Otherwise a download still queued or running would carry on
+  // into the next page (Remix into Create, say) and compete with everything
+  // that page has to load.
   const sceneWarmup = new AbortController();
   $effect(() => () => sceneWarmup.abort());
+  // Once 3D is asked for, the real loaders own every download: the warm-up
+  // stops, and the file it had in flight is cancelled rather than left to
+  // compete at low priority with the load the visitor is now watching.
+  let threeDRequested = false;
   $effect(() => {
-    if (side !== "left") return;
-    if (splitConfig.rightPane === "animation-3d") return;
-    if (is3DActive || is3DMounted) return;
-    warmSelectedSceneAssets(sceneWarmup.signal);
+    if (!is3DActive && !is3DMounted) return;
+    threeDRequested = true;
+    // From the tap on, a failed 3D chunk is the visitor's own load and may
+    // take the stale-deploy recovery in hooks.client.ts.
+    releaseViewer3DWarmupGuard();
+    sceneWarmup.abort();
   });
   let scene3DReady = $state(false);
   // Ready is when the stage is set; revealed is when the loading curtain has
@@ -230,6 +240,51 @@
   $effect(() => {
     if (was3DActive && !is3DActive) releaseReplayHold("left-3d");
     was3DActive = is3DActive;
+  });
+  // One record per wait for 3D: visible when the curtain lifts, abandoned
+  // when the visitor leaves 3D or the page first (viewer-3d-load-events.ts).
+  // The first wait on a page that opened straight into 3D is a direct open.
+  let load3DRecord: Viewer3DLoadRecord | null = null;
+  let first3DWait = true;
+  function abandon3DWait() {
+    if (!load3DRecord) return;
+    captureViewer3DAbandoned(
+      load3DRecord,
+      performance.now(),
+      scene3DReady ? "revealing" : "preparing"
+    );
+    load3DRecord = null;
+  }
+  $effect(() => {
+    if (side !== "left") return;
+    const entry = first3DWait && is3DActive ? "direct_open" : "switch";
+    first3DWait = false;
+    if (!is3DActive) {
+      abandon3DWait();
+      return;
+    }
+    if (scene3DRevealed || load3DRecord) return;
+    load3DRecord = startViewer3DLoadRecord({
+      startedAt: performance.now(),
+      entry,
+      codeWarm: viewer3DCodeWarmed(),
+      assetsWarm: viewer3DSwitchAssetsWarmed(),
+      workerCapable: workerRendererAvailable(),
+    });
+  });
+  $effect(() => {
+    if (side !== "left" || !scene3DRevealed || !load3DRecord) return;
+    captureViewer3DVisible(load3DRecord, performance.now());
+    load3DRecord = null;
+  });
+  $effect(() => {
+    if (side !== "left") return;
+    const onPageHide = () => abandon3DWait();
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      abandon3DWait();
+    };
   });
   let animatorReady = $state(false);
   let animatorReadyFrame = 0;
@@ -586,6 +641,51 @@
   }
 
   $effect(() => () => cancelAnimationFrame(animatorReadyFrame));
+
+  // The 2D canvas mounts once the animation has loaded, then loads its grid
+  // and prop textures before it draws anything; until then its label, letter
+  // and beat count sat over an empty canvas. The loading state holds the pane
+  // until the animator's first frame (animatorReady), once per surface.
+  let firstFramePainted = $state(false);
+  $effect.pre(() => {
+    if (animatorReady && !firstFramePainted) firstFramePainted = true;
+  });
+  const showMotionLoading = $derived(
+    side === "left" &&
+      (playback.animationLoading ||
+        (is2DPresented &&
+          !firstFramePainted &&
+          !playback.animationState.error))
+  );
+
+  // 3D is one tap away from here, and its downloads are the slowest part of
+  // opening it. Warm exactly what the switch will load (the place this
+  // visitor will see, their performer, the decoders) at low priority, once
+  // the viewer's own data is in: on a throttled tablet the warm-up used to
+  // hold the connection while the 2D pane's arrow data timed out behind it.
+  // Once 3D is open (or has been), the real loaders own those downloads, so
+  // only a visitor on a 2D or card pane warms. The viewer mounts a surface per
+  // side, so the primary side alone decides, and it also stands down while
+  // the companion side shows 3D; otherwise the hidden companion would warm
+  // during a direct 3D open.
+  const viewerDataIn = $derived(
+    !playback.animationLoading &&
+      !!playback.animationState.sequenceData &&
+      (!is2DMounted || firstFramePainted)
+  );
+  let warmupStarted = false;
+  $effect(() => {
+    if (side !== "left") return;
+    if (splitConfig.rightPane === "animation-3d") return;
+    if (is3DActive || is3DMounted) return;
+    if (!viewerDataIn || warmupStarted) return;
+    warmupStarted = true;
+    warmViewer3DSwitch(
+      sceneWarmup.signal,
+      () => threeDRequested,
+      () => warmViewer3DCode(() => threeDRequested)
+    );
+  });
 </script>
 
 {#snippet viewer3DLoading()}
@@ -593,9 +693,6 @@
     statusText="Opening 3D"
     session={sceneLoading.current}
     bare
-    title={playback.animationState.sequenceData
-      ? getSequenceDisplayName(playback.animationState.sequenceData)
-      : null}
   />
 {/snippet}
 
@@ -750,10 +847,19 @@
       </div>
     {/if}
 
-    {#if side === "left" && playback.animationLoading}
-      <div class="loading-state">
+    {#if showMotionLoading}
+      <!-- One loading state from the first frame of the pane to the canvas's
+           first drawn frame, then it fades off the canvas in place. -->
+      <div
+        class="loading-state motion-loading-hold"
+        class:covers-canvas={!playback.animationLoading}
+        out:opaqueFade={{ duration: DURATION.normal }}
+      >
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
       </div>
+    {/if}
+    {#if side === "left" && playback.animationLoading}
+      <!-- The loading state above holds the pane. -->
     {:else if side === "left" && playback.animationState.error}
       <div class="error-state">
         <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
@@ -762,7 +868,14 @@
     {:else}
       {#if side === "left" && practiceActive && practiceMirrorEnabled}
         <div class="practice-mirror-layer">
-          <CameraPreview mirrored={true} />
+          <!-- Quiet: the camera's state and any failure are worded on the
+               practice line under the cockpit, never over the stage. -->
+          <CameraPreview
+            mirrored={true}
+            quiet
+            onCameraReady={onPracticeCameraReady}
+            onCameraFailure={onPracticeCameraFailure}
+          />
         </div>
       {/if}
       <div
@@ -845,6 +958,7 @@
           fillContainer
           glyphFrame="stage"
           hideProgressBar={inStudio ||
+            practiceActive ||
             (side === "left"
               ? !showcasePlayback &&
                 (suppressProgress ||
@@ -857,6 +971,7 @@
           hideStepNumbers={tunnelVisualActive || !!studioFrame?.labelsPainted}
           hideElementalGlyph={!!studioFrame?.labelsPainted}
           hidePathLines={tunnelVisualActive}
+          boldPathLines
           tapToToggle={side === "left" && !inStudio}
           hoverHint={showcasePlayback
             ? "pill"
@@ -942,6 +1057,18 @@
 {/if}
 
 <style>
+  .motion-loading-hold {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* Over a mounted canvas that has not drawn yet, hide its labels too. */
+  .motion-loading-hold.covers-canvas {
+    background: var(--background, #0a0a0a);
+  }
+
   /* A relocated surface cannot depend on the split pane's ancestor selectors
      for its height. Its destination owns the box in either workspace. */
   .canvas-2d-layer {

@@ -36,11 +36,7 @@
   }>();
 
   const isSentinel = $derived(color === "blue" || color === "red");
-  const customStyle = $derived(
-    isSentinel
-      ? ""
-      : `background: ${color};`
-  );
+  const customStyle = $derived(isSentinel ? "" : `background: ${color};`);
 </script>
 
 <button
@@ -70,7 +66,10 @@
   </span>
 
   {#if badge}
-    <span class="variant-badge" aria-label={t("settings_variant_count", { count: badge })}>{badge}</span>
+    <span
+      class="variant-badge"
+      aria-label={t("settings_variant_count", { count: badge })}>{badge}</span
+    >
   {/if}
 
   {#if selected || selectedLeft || selectedRight}
@@ -251,8 +250,7 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family:
-      -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    font-family: inherit;
   }
 
   .prop-label {
@@ -285,22 +283,20 @@
     opacity: 1;
   }
 
+  /* The build count is a quiet corner number, never a filled disc: a light
+     disc was the brightest shape in the tile and drew the eye off the prop
+     (Austen, 2026-11-13). Rule: visual-design-canon.md, "Marks on an
+     artifact". */
   .variant-badge {
     position: absolute;
-    top: 7px;
-    left: 7px;
+    top: 6px;
+    left: 8px;
     z-index: 10;
-    display: flex;
-    width: 22px;
-    height: 22px;
-    align-items: center;
-    justify-content: center;
-    color: var(--theme-panel-bg, #121218);
-    background: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-    border-radius: 50%;
+    color: var(--theme-text-tertiary, rgba(255, 255, 255, 0.52));
     font-size: var(--font-size-compact, 12px);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
     pointer-events: none;
   }
 

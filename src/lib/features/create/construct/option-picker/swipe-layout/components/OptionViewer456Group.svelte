@@ -23,6 +23,10 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
   } from "#lib/shared/foundation/domain/models/letter.js";
   import type { TypeFilter } from "../../domain/option-picker-types";
   import OptionViewerSection from "./OptionViewerSection.svelte";
+  import {
+    TYPE_GROUP_LABEL_HEIGHT,
+    TYPE_GROUP_LABEL_MIN_WIDTH,
+  } from "./TypeGroupLabel.svelte";
 
   // Services - resolve synchronously to ensure they're available for $derived computations
   const animationService = getAnimator();
@@ -59,6 +63,7 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
     contentAreaBounds = null,
     forcedPictographSize,
     fitToViewport = false,
+    inlineGutter,
   } = $props<{
     pictographs?: PictographData[];
     onPictographSelected?: (pictograph: PictographData) => void;
@@ -70,6 +75,10 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
     contentAreaBounds?: { left: number; right: number; width: number } | null;
     forcedPictographSize?: number;
     fitToViewport?: boolean;
+    /** The least distance in px from the panel's sides to any tile. Each
+     *  section's grid already insets its tiles by GRID_INSET / 2, so the
+     *  widget pads the rest, never less than its usual 8px. */
+    inlineGutter?: { start: number; end: number };
   }>();
 
   // Reactive container dimension tracking (width AND height) - $effect syncs from prop
@@ -120,9 +129,8 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
       actualContainerWidth > 0 ? actualContainerWidth : containerWidth;
     const areaWidth = contentAreaWidth();
     const rawWidth = areaWidth && areaWidth > 0 ? areaWidth : observedWidth;
-    // Subtract group-widget padding (8px on each side = 16px total)
-    const GROUP_WIDGET_PADDING = 16;
-    return Math.max(0, rawWidth - GROUP_WIDGET_PADDING);
+    // Subtract the group widget's side padding.
+    return Math.max(0, rawWidth - widgetPadding.start - widgetPadding.end);
   });
 
   const effectiveContainerHeight = $derived(() => {
@@ -198,7 +206,6 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
   }
 
   const ROW_GAP = 12;
-  const SECTION_GAP = 8;
   const MIN_PICTOGRAPH_SIZE = 40;
   // Tiles stop growing here so they never dwarf the step grid's cells.
   const MAX_PICTOGRAPH_SIZE = 200;
@@ -211,8 +218,22 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
   const HEADER_MIN_ROW_HEIGHT = 200;
   // .pictographs-grid pads 4px on each side.
   const GRID_INSET = 8;
+  // The widget's usual padding on each side.
+  const WIDGET_PADDING = 8;
+  const widgetPadding = $derived({
+    start: Math.max(
+      WIDGET_PADDING,
+      (inlineGutter?.start ?? 0) - GRID_INSET / 2
+    ),
+    end: Math.max(WIDGET_PADDING, (inlineGutter?.end ?? 0) - GRID_INSET / 2),
+  });
 
   const tileGap = $derived(parseInt(gridGap.replace("px", "")) || 8);
+  // Each section's grid already pads its tiles by GRID_INSET / 2, so two
+  // sections side by side are tileGap apart only when the gap between them
+  // makes up the rest. A fixed 8 doubled the gap and pulled that row's tiles
+  // 4px wider than a row holding one section.
+  const SECTION_GAP = $derived(Math.max(0, tileGap - GRID_INSET));
 
   let headerHeight = $state(HEADER_HEIGHT_GUESS);
   $effect(() => {
@@ -250,6 +271,9 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
       headerHeight,
       headerMinWidth: HEADER_MIN_WIDTH,
       headerMinRowHeight: HEADER_MIN_ROW_HEIGHT,
+      // Shorter rows still name each type, on one line.
+      labelHeight: TYPE_GROUP_LABEL_HEIGHT,
+      labelMinWidth: TYPE_GROUP_LABEL_MIN_WIDTH,
       maxSize: forcedPictographSize ?? MAX_PICTOGRAPH_SIZE,
       minSize: MIN_PICTOGRAPH_SIZE,
     });
@@ -275,6 +299,7 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
   style:--content-area-width={contentAreaWidth()
     ? `${contentAreaWidth()}px`
     : null}
+  style:padding-inline={`${widgetPadding.start}px ${widgetPadding.end}px`}
   style:--row-gap={`${ROW_GAP}px`}
   style:--section-gap={`${SECTION_GAP}px`}
 >
@@ -299,6 +324,7 @@ OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
               {contentAreaBounds}
               forcedPictographSize={layoutPlan.tileSize}
               showHeader={layoutPlan.showHeaders}
+              showLabel={layoutPlan.showLabels}
               {fitToViewport}
             />
           </div>

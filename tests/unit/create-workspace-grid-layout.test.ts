@@ -517,8 +517,13 @@ describe("Create workspace action rail contract", () => {
   });
 
   it("keeps Play centered in the single-row phone layout", () => {
+    // Play's column is the rail's Play size: 50px unless a tier sets it
+    // (Construct's phone tier: 36px, the bar's control height).
     expect(buttonPanelSource).toMatch(
-      /grid-template-columns:\s*minmax\(0, 1fr\)\s*50px\s*minmax\(0, 1fr\)/
+      /grid-template-columns:\s*minmax\(0, 1fr\)\s*var\(--rail-play-size\)\s*minmax\(0, 1fr\)/
+    );
+    expect(buttonPanelSource).toMatch(
+      /--rail-play-size:\s*var\(--workspace-rail-play-size, 50px\)/
     );
     expect(buttonPanelSource).not.toMatch(
       /grid-template-areas:\s*"\. center \."\s*"left \. right"/

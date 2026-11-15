@@ -19,6 +19,7 @@
    */
 
   import { useThrelte } from "@threlte/core";
+  import { clampFanBuild } from "#lib/shared/3d/domain/fan-appearance.js";
   import { EffectMotionClock } from "./scene-effects/effect-motion-clock";
   import { flushSync, onDestroy } from "svelte";
   import { resolveCapturedPropTransforms } from "./captured-prop-transforms";
@@ -182,7 +183,9 @@
     trailConfig = {},
   }: Props = $props();
 
-  const propBuild = $derived(propBuildOverride ?? propFinishState.build);
+  const propBuild = $derived(
+    clampFanBuild(propBuildOverride ?? propFinishState.build)
+  );
 
   const { scene, camera } = useThrelte();
   const qualityTierDetector = getQualityTierDetector();

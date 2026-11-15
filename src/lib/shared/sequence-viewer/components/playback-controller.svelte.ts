@@ -21,6 +21,9 @@ import { createTempoPracticeState } from "#lib/shared/sequence-viewer/state/temp
 import { Metronome } from "#lib/shared/audio/metronome.js";
 import type { PracticeViewPrefs } from "#lib/shared/sequence-viewer/state/practice-view-prefs.svelte.js";
 import { createScreenWakeLockManager } from "#lib/shared/device/services/screen-wake-lock-manager.js";
+import { createPracticeGuide } from "#lib/shared/sequence-viewer/state/practice-guide-state.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { PLAYBACK_MIN_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
 
 export interface PlaybackControllerDeps {
   modalAnimationState: AnimationPanelState;
@@ -36,15 +39,18 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
   let bpmLocal = $state(deps.initialBpm);
   let arrivedViaStepping = $state(false);
 
-  // Practice phase: off (normal viewer) → setup (config screen) → running (ramp).
-  // `practiceActive` = in-mode (setup|running); `practiceRunning` = ramp active.
-  let practicePhase = $state<"off" | "setup" | "running">("off");
+  // Practice phase: off (normal viewer) or running (count-in, then the ramp).
+  // There is no setup phase: entering practice starts the run, and every way
+  // out (header back, Stop, a run that ends itself) returns to off.
+  let practicePhase = $state<"off" | "running">("off");
 
   // 3·2·1 count-in before a practice ramp starts. practiceCountdown drives the
   // overlay (3/2/1 while counting, 0 = idle/hidden); _countInActive guards
   // re-entry + marks the pre-roll window; _countInTimer is the fixed ticker.
   let practiceCountdown = $state(0);
   let _countInActive = false;
+  /** The viewer's tempo when practice began; every way out puts it back. */
+  let _bpmBeforePractice: number | null = null;
   let _countInTimer: ReturnType<typeof setTimeout> | null = null;
   const COUNT_IN_MS = 700;
 
@@ -55,6 +61,9 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
   let _isAnimationVisible: (() => boolean) | null = null;
   let _practiceViewPrefs: PracticeViewPrefs | null = null;
   let _metronome: Metronome | null = null;
+  // Set by the shell so a run that ends by itself leaves practice the same way
+  // the back button does (view restored, exit event fired).
+  let _onRunEnded: (() => void) | null = null;
 
   let lastStepNumber = 0;
 
@@ -120,6 +129,9 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
   const practiceOrchestrator = new TempoPracticeOrchestrator();
   const practiceState = createTempoPracticeState();
   const screenWakeLockManager = createScreenWakeLockManager();
+  const practiceGuide = createPracticeGuide({
+    getPrefs: () => _practiceViewPrefs,
+  });
 
   let wasPlayingBeforeScrub = false;
 
@@ -153,13 +165,26 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
 
   function handleBpmChange(newBpm: number) {
     _hapticService?.trigger("selection");
-    const speedMultiplier = newBpm / 60;
-    _playbackController?.setSpeed(speedMultiplier);
-    _onUrlParamChange?.("bpm", String(newBpm));
+    applyBpm(newBpm);
     if (practiceOrchestrator.isActive()) {
+      // Going below the ramp's start tempo lowers the start with it (saved for
+      // the next run, as the popover's start tempo is), so Slower and the
+      // tempo minus keep working down to the playback floor.
+      if (newBpm < practiceOrchestrator.getProgress().startBpm) {
+        const startBpm = Math.max(PLAYBACK_MIN_BPM, newBpm);
+        practiceOrchestrator.patchConfig({ startBpm });
+        practiceState.updateConfig({ startBpm });
+      }
       practiceOrchestrator.adjustBpm(newBpm);
       practiceState.updateProgress(practiceOrchestrator.getProgress());
     }
+  }
+
+  /** Speed, readout and URL param for a tempo, with no haptic or ramp side effects. */
+  function applyBpm(newBpm: number) {
+    _playbackController?.setSpeed(newBpm / 60);
+    bpmLocal = newBpm;
+    _onUrlParamChange?.("bpm", String(newBpm));
   }
 
   function handlePlaybackModeChange(mode: PlaybackMode) {
@@ -207,27 +232,29 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
     _playbackController.seekToStep(targetStep);
   }
 
-  function handlePracticeStart() {
+  /** Start the run: count-in, then the ramp. False when it could not start. */
+  function startRun(): boolean {
     if (!_playbackController) {
-      showToast("Animation not ready yet. Wait for it to load.", "info");
-      return;
+      showToast(t("viewer_practice_not_ready"), "info");
+      return false;
     }
 
     // Re-entrancy guard (synchronous): a double-tap (common on mobile) would
     // otherwise spawn two count-ins whose GO toggles cancel out, leaving
     // practicePhase "running" but playback paused. Everything below is async.
-    if (_countInActive || practicePhase === "running") return;
+    if (_countInActive || practicePhase === "running") return false;
     _countInActive = true;
 
-    // Ask from the Start tap itself. The practice run begins with timer-driven
+    // Ask from the Practice tap itself. The practice run begins with timer-driven
     // count-in ticks, so waiting for GO would lose the initiating user gesture.
     screenWakeLockManager.setActive(true);
     _hapticService?.trigger("selection");
-    // Start is a user gesture; unlock audio now so the count-in ticks — which
+    // The Practice tap is a user gesture; unlock audio now so the count-in ticks — which
     // fire on later, non-gesture timer turns — can play.
     if (_practiceViewPrefs?.metronomeEnabled) ensureMetronome();
     practiceState.clearCompletion();
 
+    _bpmBeforePractice = bpmLocal;
     const startBpm = practiceOrchestrator.start(practiceState.userConfig);
     practiceState.updateProgress(practiceOrchestrator.getProgress());
     handleBpmChange(startBpm); // ramp speed for AFTER the count-in (not playing yet)
@@ -257,7 +284,7 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
         }
 
         if (!practiceOrchestrator.isActive()) {
-          handlePracticeStop();
+          endRunBySelf();
         }
       });
 
@@ -265,22 +292,39 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
       if (!isPlayingLocal) {
         _playbackController.togglePlayback();
       }
+      practiceGuide.startCoach();
     });
+    return true;
   }
 
-  /** Enter practice mode → setup screen. Does NOT start the ramp. */
-  function enterPracticeMode() {
-    practiceState.clearCompletion();
-    practicePhase = "setup";
-    _hapticService?.trigger("selection");
+  /**
+   * Enter practice: straight into the count-in and the run, with the saved
+   * ramp settings. Returns false (and stays off) when the animation is not
+   * ready yet.
+   */
+  function enterPracticeMode(): boolean {
+    if (practicePhase !== "off") return false;
+    if (!startRun()) return false;
+    void practiceGuide.resumeMirrorOnEntry();
+    return true;
   }
 
-  /** Leave practice mode entirely; stop the ramp if it's running. */
+  /** Leave practice entirely: ramp stopped, camera off, messages cleared. */
   function exitPracticeMode() {
-    if (practicePhase === "running") stopPracticeIfActive();
+    if (practicePhase === "off") return;
+    stopPracticeIfActive();
+    practiceGuide.reset();
     screenWakeLockManager.setActive(false);
     practicePhase = "off";
+    restoreTempoBeforePractice();
     _hapticService?.trigger("selection");
+  }
+
+  function restoreTempoBeforePractice() {
+    if (_bpmBeforePractice === null) return;
+    const bpm = _bpmBeforePractice;
+    _bpmBeforePractice = null;
+    applyBpm(bpm);
   }
 
   /**
@@ -289,6 +333,21 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
    */
   function handlePracticeStepLevel(dir: 1 | -1) {
     if (!_playbackController) return;
+
+    if (dir < 0) {
+      // At the ramp's start, Slower lowers the start itself by the step on
+      // its face, down to the playback floor.
+      const progress = practiceOrchestrator.getProgress();
+      if (progress.active && progress.currentBpm <= progress.startBpm) {
+        const lower = Math.max(
+          PLAYBACK_MIN_BPM,
+          progress.currentBpm - progress.increment
+        );
+        if (lower < progress.currentBpm) handleBpmChange(lower);
+        practiceState.updateProgress(practiceOrchestrator.getProgress());
+        return;
+      }
+    }
 
     const newBpm =
       dir > 0 ? practiceOrchestrator.advanceLevel() : practiceOrchestrator.decreaseLevel();
@@ -300,7 +359,7 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
     }
 
     if (!practiceOrchestrator.isActive()) {
-      handlePracticeStop();
+      endRunBySelf();
     }
   }
 
@@ -364,53 +423,73 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
     _hapticService?.trigger("selection");
   }
 
-  /** Cockpit toggle: flip the persisted AR-mirror pref. The camera itself is
-   *  owned by the mirror layer's mount/unmount — no side effect here. */
+  /** Cockpit Mirror: off → starting (camera asked for now) → on, or back off.
+   *  The guide owns the state and the saved pref; the camera preview reports
+   *  ready or failed back to it. */
   function handleToggleMirror() {
-    const next = !(_practiceViewPrefs?.mirrorEnabled ?? false);
-    _practiceViewPrefs?.setMirrorEnabled(next);
+    practiceGuide.toggleMirror();
     _hapticService?.trigger("selection");
   }
 
-  /** Apply a live config change from the bar's inline controls (loops X, step Y,
-   *  goal, target on/off). Persists for the next session too. */
+  /**
+   * Apply a ramp change from the cockpit (preset, start tempo, loops X, step Y,
+   * goal). Persists for the next run too. In a run it applies live: the tempo
+   * reached so far is kept and the new step and loop count take over from the
+   * next speed-up. A start tempo above the current tempo lifts the run to it,
+   * since the start is also the run's floor.
+   */
   function handlePracticeSetConfig(patch: Partial<TempoPracticeConfig>) {
     practiceOrchestrator.patchConfig(patch);
     practiceState.updateConfig(patch);
+    const floor = practiceOrchestrator.getProgress().startBpm;
+    if (
+      patch.startBpm !== undefined &&
+      practiceOrchestrator.isActive() &&
+      bpmLocal < floor
+    ) {
+      handleBpmChange(floor);
+    }
     practiceState.updateProgress(practiceOrchestrator.getProgress());
     _hapticService?.trigger("selection");
   }
 
-  function handlePracticeStop() {
+  /** Stop the ramp and say how far it got. Quiet when it never left the count-in. */
+  function finishRun() {
     screenWakeLockManager.setActive(false);
-    if (!_playbackController) return;
-
-    // Cancelled during the count-in — the ramp never ran, so skip the completion
-    // celebration; unwind quietly back to the setup screen.
-    if (_countInActive) {
-      cancelCountIn();
-      practiceOrchestrator.stop();
-      _playbackController.offLoopComplete();
-      practiceState.updateProgress(practiceOrchestrator.getProgress());
-      practicePhase = "setup";
+    if (_countInActive || !practiceOrchestrator.isActive()) {
+      stopPracticeIfActive();
       return;
     }
+    announceCompletion(practiceOrchestrator.stop());
+  }
 
-    const finalBpm = practiceOrchestrator.stop();
+  function announceCompletion(finalBpm: number) {
     practiceState.updateProgress(practiceOrchestrator.getProgress());
-
-    _playbackController.offLoopComplete();
-
+    _playbackController?.offLoopComplete();
     practiceState.showCompletion(finalBpm);
     _hapticService?.trigger("success");
-
     // No "personal best" — we don't track props, so a best BPM would just be
-    // "the highest the slider was dragged to". Honest completion only.
-    showToast(`Practice complete: reached ${finalBpm} BPM`, "success");
+    // "the highest the slider was dragged to". Honest completion only. The
+    // toast lands as practice closes, so during practice the cockpit line stays
+    // the only place a sentence appears.
+    showToast(t("viewer_practice_complete_toast", { bpm: finalBpm }), "success");
+  }
 
-    // Stop returns to the setup screen (not out of practice mode); exiting the
-    // mode entirely is exitPracticeMode().
-    practicePhase = "setup";
+  /** Cockpit Stop: end the run and leave practice completely. */
+  function handlePracticeStop() {
+    if (practicePhase === "off") return;
+    finishRun();
+    exitPracticeMode();
+  }
+
+  /** The ramp reached its goal or cap: leave practice the same way Stop does. */
+  function endRunBySelf() {
+    // The ramp already stopped itself at its goal, so finishRun would read it
+    // as a run that never started; announce the tempo it reached instead.
+    screenWakeLockManager.setActive(false);
+    announceCompletion(bpmLocal);
+    if (_onRunEnded) _onRunEnded();
+    else exitPracticeMode();
   }
 
   // ── Stepping ──
@@ -437,6 +516,7 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
       startHoldTimer = null;
     }
     stopPracticeIfActive();
+    practiceGuide.dispose();
     screenWakeLockManager.dispose();
     _metronome?.dispose();
     _metronome = null;
@@ -463,8 +543,9 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
     get practiceRunning() { return practicePhase === "running"; },
     get practiceCountdown() { return practiceCountdown; },
     get metronomeEnabled() { return _practiceViewPrefs?.metronomeEnabled ?? false; },
-    get mirrorEnabled() { return _practiceViewPrefs?.mirrorEnabled ?? false; },
+    get mirrorEnabled() { return practiceGuide.mirrorOn; },
     practiceState,
+    practiceGuide,
 
     // Dependency injection (set after service load)
     setPlaybackController(pc: AnimationPlaybackController) { _playbackController = pc; },
@@ -473,6 +554,7 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
     setAnimationVisible(fn: () => boolean) { _isAnimationVisible = fn; },
     setOnUrlParamChange(cb: ((key: string, value: string) => void) | undefined) { _onUrlParamChange = cb; },
     setPracticeViewPrefs(p: PracticeViewPrefs) { _practiceViewPrefs = p; },
+    setOnPracticeRunEnded(cb: (() => void) | null) { _onRunEnded = cb; },
 
     // Handlers
     handlePlaybackToggle,
@@ -482,7 +564,6 @@ export function createPlaybackController(deps: PlaybackControllerDeps) {
     handleBpmChange,
     handlePlaybackModeChange,
     handleStepClick,
-    handlePracticeStart,
     enterPracticeMode,
     exitPracticeMode,
     handlePracticeStepLevel,

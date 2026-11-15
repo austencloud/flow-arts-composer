@@ -13,6 +13,7 @@
   } from "#lib/shared/effects/domain/effect-control-manifest.js";
   import EffectControlStack from "#lib/shared/effects/components/EffectControlStack.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
+  import EffectLookChips from "./EffectLookChips.svelte";
   import LedCustomize from "./customize/LedCustomize.svelte";
   import type { EffectRegistration } from "./effect-registry";
   import { effectInk } from "./effect-ink";
@@ -37,6 +38,12 @@
     pagedRichDetail?: boolean;
     compactPresets?: boolean;
     boundedFine?: boolean;
+    /** A phone dock under the player: one compact row per control (looks as
+     *  chips, colours, each slider, the anchor) and no section titles. */
+    dock?: boolean;
+    /** Off when the host draws the back button, name and power button in its
+     *  own header row (EffectTuneHeading). */
+    showHeader?: boolean;
     onDisable: () => void;
     onSelectPreset: (presetId: string) => void;
     onSettingChange?: (
@@ -64,6 +71,8 @@
     pagedRichDetail = false,
     compactPresets = false,
     boundedFine = false,
+    dock = false,
+    showHeader = true,
     onDisable,
     onSelectPreset,
     onSettingChange,
@@ -114,10 +123,11 @@
   class:fine-open={fineTuningOpen}
   class:compact-presets={compactPresets}
   class:bounded-fine={boundedFine}
+  class:dock
   style:--effect-accent={accent}
   style:--effect-accent-soft={`${accent}22`}
 >
-  <header class="inspector-header" class:without-back={!showBack}>
+  {#if showHeader}<header class="inspector-header" class:without-back={!showBack}>
     {#if showBack}<button class="back-action" type="button" onclick={onBack}>
         <span class="back-arrow" aria-hidden="true">
           <i class="fas fa-arrow-left"></i>
@@ -143,9 +153,27 @@
       <i class="fas fa-power-off" aria-hidden="true"></i>
       <span>{t("effect_deep_off")}</span>
     </button>
-  </header>
+  </header>{/if}
 
-  {#if hasLooks}
+  {#if dock}
+    <!-- One row of chips, a swatch of each look beside its name. Original is
+         always there, so it is this effect's reset. A row with more looks
+         than fit scrolls sideways (EffectLookChips fades the cut edge). -->
+    <section class="inspector-section looks-section">
+      <EffectLookChips
+        presetGroup={registration.presetGroup}
+        {activePresetId}
+        {defaultChipId}
+        {customChipId}
+        {customDisabled}
+        {customColors}
+        accentColor={accent}
+        effectLabel={registration.meta.label}
+        onSelect={onSelectPreset}
+        dock
+      />
+    </section>
+  {:else if hasLooks}
     <section class="inspector-section looks-section">
       <EffectPresetsSection
         presetGroup={registration.presetGroup}
@@ -179,7 +207,8 @@
         <!-- No help line here. Every control in this section already writes to
            the canvas the instant it moves, so saying so cost a row of height
            and told the user nothing they were not about to see. -->
-        <span class="section-title">{t("effect_deep_tune_look")}</span>
+        {#if !dock}<span class="section-title">{t("effect_deep_tune_look")}</span
+          >{/if}
         {#if effect === "led"}
           <LedCustomize {onBack} embedded paged={pagedRichDetail} />
         {:else if richPanel}
@@ -671,6 +700,148 @@
     .inspector:not(.compact-presets) .looks-section :global(.preset-trait) {
       align-self: start;
     }
+  }
+
+  /* ── Phone dock ──
+     One row per control, 6px apart, inside 6px of padding. For Trails with
+     the heading in the host's header: looks 36 + colours 36 + three sliders
+     at 32 + anchor 32 + five 6px gaps + 12px padding = 242px, inside the
+     245px body of a 360x670 phone. The control stack is the shared one
+     (EffectControlStack); only its arrangement changes here. */
+  .inspector.dock {
+    gap: 6px;
+    padding: 6px 12px;
+  }
+
+  .inspector.dock .inspector-section {
+    padding: 0;
+    border-top: 0;
+  }
+
+  .inspector.dock .tune-section {
+    gap: 6px;
+  }
+
+  /* The heading row, when the host has no header to carry it: back, name and
+     power on one 36px line. */
+  .inspector.dock .inspector-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "back identity off";
+    gap: 8px;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .inspector.dock .back-action,
+  .inspector.dock .off-action {
+    min-height: var(--alt-touch-target, 36px);
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .inspector.dock .off-action {
+    width: var(--alt-touch-target, 36px);
+    padding: 0;
+  }
+
+  .inspector.dock .off-action span {
+    display: none;
+  }
+
+  .inspector.dock .back-arrow {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .inspector.dock .effect-identity {
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .inspector.dock .effect-icon {
+    width: auto;
+    height: auto;
+    flex: none;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    font-size: var(--font-size-base, 1rem);
+  }
+
+  .inspector.dock .effect-name {
+    font-size: var(--font-size-min, 14px);
+  }
+
+  /* Sliders, the anchor and any other full row take the width; the colour
+     pair and its Rainbow chip share one 32px line. Rows sit 4px apart so the
+     whole view fits a 232px dock (a 360 x 640 phone) without scrolling. */
+  .inspector.dock :global(.control-stack) {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 4px;
+  }
+
+  .inspector.dock :global(.control-stack .ctl-row) {
+    flex: 1 0 100%;
+    min-width: 0;
+    height: var(--min-touch-target-compact, 32px);
+    grid-template-columns: 4.5rem minmax(0, 1fr) 2.75rem;
+    gap: 8px;
+  }
+
+  .inspector.dock :global(.control-stack .ctl-row-wide) {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+
+  .inspector.dock :global(.control-stack .ctl-row:has(.ctl-pair)),
+  .inspector.dock :global(.control-stack .ctl-row:has(> .ctl-chip)) {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    height: var(--min-touch-target-compact, 32px);
+  }
+
+  .inspector.dock :global(.control-stack .ctl-row:has(.ctl-pair) > .ctl-label) {
+    width: 4.5rem;
+  }
+
+  /* The touch floor would make the chip 44px and the shared line with it. */
+  .inspector.dock :global(.control-stack .ctl-row > .ctl-chip) {
+    min-height: 0;
+    height: var(--min-touch-target-compact, 32px);
+  }
+
+  /* The chip names itself ("Rainbow"); a label beside it says it twice. */
+  .inspector.dock :global(.control-stack .ctl-row:has(> .ctl-chip) > .ctl-label) {
+    display: none;
+  }
+
+  /* The segmented anchor row at 32px. Its four names share the width, and
+     "Pinky + Thumb" may take two lines inside its segment. */
+  .inspector.dock :global(.control-stack .ctl-row .ui-segments) {
+    height: var(--min-touch-target-compact, 32px);
+    padding: 2px;
+  }
+
+  .inspector.dock :global(.control-stack .ctl-row .ui-segments button) {
+    min-width: 0;
+    min-height: 0;
+    padding: 0 3px;
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.05;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .inspector.dock .fine-toggle {
+    min-height: var(--alt-touch-target, 36px);
+    padding: 0;
+  }
+
+  .inspector.dock .fine-controls {
+    padding: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {

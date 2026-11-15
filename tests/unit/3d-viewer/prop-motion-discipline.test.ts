@@ -44,7 +44,9 @@ describe("prop motion discipline", () => {
     const spinnerCategories = filterSpinnerPropCategories(globalCategories);
     const filtered = [...spinnerCategories.values()].flat();
 
-    expect(before).toContain(PropType.DOUBLECONTACTBALL);
+    // The contact family is deactivated in the picker (2026-11-14), so the
+    // global map no longer lists it; the 3D filter must still keep it out.
+    expect(before).not.toContain(PropType.DOUBLECONTACTBALL);
     expect(filtered).not.toContain(PropType.DOUBLECONTACTBALL);
     expect([...globalCategories.values()].flat()).toEqual(before);
     expect(filtered).toContain(PropType.STAFF);

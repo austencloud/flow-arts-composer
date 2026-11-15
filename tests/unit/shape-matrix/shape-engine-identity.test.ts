@@ -43,19 +43,26 @@ describe("Shape Engine identity", () => {
     expect(page).toContain("KINETIC_SHAPE_ENGINE_NAME");
     expect(page).toContain("SHAPE_MATRIX_EXPLORER_LEGACY_NAME");
     expect(shell).toContain("{KINETIC_SHAPE_ENGINE_NAME}");
-    // The compact header's theory/matrix label switch moved behind i18n keys.
-    expect(shell).toContain('t("shape_engine_ratio_playground")');
-    expect(shell).toContain('t("shape_engine_level_matrix")');
+    // The compact header carries the product's one name on both surfaces, and
+    // its way back says what it returns to. The two surface names belong to
+    // the mode switch only, never to the top left.
+    expect(shell).toContain('{t("shape_engine_name")}</strong');
+    expect(shell).toContain('t("shape_engine_all_shapes")');
     expect(surface).toContain('ariaLabel={t("shape_engine_choose_mode")}');
-    expect(surface).toContain('t("shape_engine_level_matrix")');
+    expect(surface).toContain('t("shape_engine_levels")');
     expect(surface).toContain('t("shape_engine_explore_levels")');
-    expect(surface).toContain('t("shape_engine_ratio_playground")');
+    expect(surface).toContain('t("shape_engine_ratios")');
 
     const en = readEnglishMessages();
     expect(en["shape_engine_choose_mode"]).toBe("Choose a Shape Engine mode");
-    expect(en["shape_engine_level_matrix"]).toBe("Level Matrix");
+    expect(en["shape_engine_levels"]).toBe("Levels");
     expect(en["shape_engine_explore_levels"]).toBe("Explore Levels 1–4");
-    expect(en["shape_engine_ratio_playground"]).toBe("Ratio Playground");
+    expect(en["shape_engine_ratios"]).toBe("Ratios");
+    // One name per tab at every width: the longer desktop names are gone.
+    expect(en["shape_engine_level_matrix"]).toBeUndefined();
+    expect(en["shape_engine_ratio_playground"]).toBeUndefined();
+    expect(en["shape_engine_name"]).toBe("Shape Engine");
+    expect(en["shape_engine_all_shapes"]).toBe("All shapes");
   });
 
   it("keeps Lorq Nichols' source visible and the independent-work boundary explicit", () => {

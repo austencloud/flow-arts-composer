@@ -86,7 +86,6 @@ function props(
       isPreview: false,
       isAnonymous: false,
       onApply: vi.fn(),
-      onRequestCommunityAccount: vi.fn(),
       onRequestSaveAccount: vi.fn(),
       onRequestSignIn: vi.fn(),
     },
@@ -856,15 +855,17 @@ describe("ExpandedCardStage on stacked layouts", () => {
       "Setups",
       "Close generator setups",
       (s: PanelCoordinationState) => s.openPresetDrawer(),
+      "sheet",
     ],
     [
       "Timing",
       "Close timing and direction",
       (s: PanelCoordinationState) => s.openTnDPanel(),
+      "fill",
     ],
   ])(
     "closes %s from its X on a phone without throwing",
-    async (_name, label, open) => {
+    async (_name, label, open, presentation) => {
       await page.viewport(375, 667);
       const errors: unknown[] = [];
       const onError = (event: ErrorEvent) => {
@@ -884,7 +885,7 @@ describe("ExpandedCardStage on stacked layouts", () => {
         open(state);
         flushSync();
         await tick();
-        expect(viewportRoot().dataset.presentation).toBe("fill");
+        expect(viewportRoot().dataset.presentation).toBe(presentation);
 
         await page.getByRole("button", { name: label }).click();
         await vi.waitFor(() => {
@@ -919,6 +920,251 @@ describe("ExpandedCardStage on stacked layouts", () => {
     flushSync();
     await tick();
     expect(viewportRoot().dataset.presentation).toBe("sheet");
+  });
+
+  it("keeps Setups a bottom panel sized by its content on a phone", async () => {
+    await page.viewport(390, 844);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openPresetDrawer();
+    flushSync();
+    await tick();
+
+    const root = viewportRoot();
+    expect(root.dataset.presentation).toBe("sheet");
+    const box = root.getBoundingClientRect();
+    expect(Math.round(box.bottom)).toBe(innerHeight);
+    // An empty Saved tab is a few rows, not the screen.
+    expect(box.height).toBeLessThan(innerHeight * 0.6);
+    const panel = root.querySelector<HTMLElement>(
+      ".generation-settings-overlay"
+    )!;
+    expect(
+      Math.abs(panel.getBoundingClientRect().height - box.height)
+    ).toBeLessThanOrEqual(1);
+    expect(
+      document.body.querySelector(":scope > .expanded-card-backdrop")
+    ).not.toBeNull();
+  });
+
+  it("stops a long Setups list short of the top and scrolls only the list", async () => {
+    await page.viewport(360, 640);
+    const state = createPanelCoordinationState();
+    const base = props(state, false);
+    const now = new Date("2026-11-14T12:00:00Z");
+    const favoriteState = {
+      ...fakeFavorites(),
+      setups: Array.from({ length: 10 }, (_, i) => ({
+        id: `s${i}`,
+        name: `Setup ${i + 1}`,
+        config: { level: 2, length: 8, gridMode: "box", loopEnabled: false },
+        startEndOptions: null,
+        createdAt: now,
+        updatedAt: now,
+      })),
+    } as unknown as FavoriteState;
+    render(ExpandedCardStage, {
+      ...base,
+      setups: { ...base.setups, favoriteState },
+    });
+
+    state.openPresetDrawer();
+    flushSync();
+    await tick();
+
+    const root = viewportRoot();
+    const box = root.getBoundingClientRect();
+    expect(Math.round(box.bottom)).toBe(innerHeight);
+    expect(box.top).toBeGreaterThanOrEqual(15);
+    const list = root.querySelector<HTMLElement>(".setup-list")!;
+    expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
+    // The title, the tabs and the save row stay inside the panel above it.
+    const save = page.getByRole("button", { name: "Save current setup" });
+    await expect.element(save).toBeVisible();
+    const saveBox = save.element().getBoundingClientRect();
+    expect(saveBox.top).toBeGreaterThanOrEqual(box.top);
+    expect(saveBox.bottom).toBeLessThanOrEqual(
+      list.getBoundingClientRect().top
+    );
+  });
+
+  it("portals into the app's overlay layer, where its modals stack", () => {
+    const layer = document.createElement("div");
+    layer.setAttribute("data-overlay-layer", "");
+    document.body.append(layer);
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, false));
+
+      state.openPresetDrawer();
+      flushSync();
+
+      expect(
+        layer.querySelector(":scope > .expanded-card-stage")
+      ).not.toBeNull();
+      expect(
+        layer.querySelector(":scope > .expanded-card-backdrop")
+      ).not.toBeNull();
+
+      state.closeGenerateCard();
+      flushSync();
+    } finally {
+      layer.remove();
+    }
+  });
+});
+
+// Side by side, Customize leaves a short cards' footprint for the window: the
+// whole screen on a phone held sideways, a centred float on a short laptop.
+describe("ExpandedCardStage: Customize and a short footprint", () => {
+  afterEach(async () => {
+    await page.viewport(414, 896);
+  });
+
+  async function openCustomize(
+    viewport: [number, number],
+    footprintHeight: number
+  ) {
+    await page.viewport(...viewport);
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, {
+      ...props(state, true),
+      footprintHeight,
+    });
+    state.openCustomizeOverlay(customizeProps());
+    flushSync();
+    await tick();
+    const inGrid = container.querySelector<HTMLElement>(".expanded-card-stage");
+    const onViewport = document.body.querySelector<HTMLElement>(
+      ":scope > .expanded-card-stage"
+    );
+    return { state, root: (inGrid ?? onViewport)! };
+  }
+
+  it("stays in a footprint tall enough for it", async () => {
+    const { root } = await openCustomize([1440, 900], 525);
+    expect(root.dataset.destination).toBe("stage");
+  });
+
+  it("keeps the stage while the footprint is unmeasured", async () => {
+    const { root } = await openCustomize([1000, 600], 0);
+    expect(root.dataset.destination).toBe("stage");
+  });
+
+  it("fills the screen of a phone held sideways", async () => {
+    const { root } = await openCustomize([915, 412], 250);
+    expect(root.dataset.destination).toBe("viewport");
+    expect(root.dataset.presentation).toBe("fill");
+    const box = root.getBoundingClientRect();
+    expect(Math.round(box.width)).toBe(innerWidth);
+    expect(Math.round(box.height)).toBe(innerHeight);
+    expect(
+      document.body.querySelector(":scope > .expanded-card-backdrop")
+    ).toBeNull();
+  });
+
+  it("floats centred on a short laptop window, and a backdrop tap closes it", async () => {
+    const { state, root } = await openCustomize([1000, 600], 400);
+    expect(root.dataset.presentation).toBe("float");
+    const box = root.getBoundingClientRect();
+    expect(Math.round(box.height)).toBe(568);
+    expect(Math.round(box.width)).toBe(880);
+    document.body
+      .querySelector<HTMLElement>(":scope > .expanded-card-backdrop")!
+      .click();
+    await vi.waitFor(() => {
+      flushSync();
+      expect(state.openGenerateCard).toBeNull();
+    });
+  });
+
+  it("leaves LOOP and Setups to their own rules", async () => {
+    await page.viewport(1000, 800);
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, {
+      ...props(state, true),
+      footprintHeight: 300,
+    });
+    state.openPresetDrawer();
+    flushSync();
+    expect(
+      container.querySelector<HTMLElement>(".expanded-card-stage")!.dataset
+        .destination
+    ).toBe("stage");
+  });
+});
+
+describe("ExpandedCardStage and the system Back", () => {
+  // A stand-in for the browser's CloseWatcher: the newest live one is what
+  // Android's back gesture closes.
+  class FakeCloseWatcher {
+    static live: FakeCloseWatcher[] = [];
+    listeners: (() => void)[] = [];
+    destroyed = false;
+    constructor() {
+      FakeCloseWatcher.live.push(this);
+    }
+    addEventListener(_type: "close", listener: () => void) {
+      this.listeners.push(listener);
+    }
+    destroy() {
+      this.destroyed = true;
+      FakeCloseWatcher.live = FakeCloseWatcher.live.filter((w) => w !== this);
+    }
+    back() {
+      FakeCloseWatcher.live = FakeCloseWatcher.live.filter((w) => w !== this);
+      for (const listener of this.listeners) listener();
+    }
+  }
+
+  afterEach(() => {
+    FakeCloseWatcher.live = [];
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["Setups", (s: PanelCoordinationState) => s.openPresetDrawer(), false],
+    ["Timing", (s: PanelCoordinationState) => s.openTnDPanel(), false],
+    [
+      "Setups beside the workspace",
+      (s: PanelCoordinationState) => s.openPresetDrawer(),
+      true,
+    ],
+  ])("closes %s on Back", async (_name, open, desktop) => {
+    vi.stubGlobal("CloseWatcher", FakeCloseWatcher);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, desktop));
+
+    open(state);
+    flushSync();
+    await tick();
+    expect(FakeCloseWatcher.live).toHaveLength(1);
+
+    FakeCloseWatcher.live[0]!.back();
+    await vi.waitFor(() => {
+      flushSync();
+      expect(state.openGenerateCard).toBeNull();
+    });
+  });
+
+  it("drops its watcher when closed another way, so Back is left as it was", async () => {
+    vi.stubGlobal("CloseWatcher", FakeCloseWatcher);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openPresetDrawer();
+    flushSync();
+    await tick();
+    const watcher = FakeCloseWatcher.live[0]!;
+
+    await page.getByRole("button", { name: "Close generator setups" }).click();
+    await vi.waitFor(() => {
+      flushSync();
+      expect(state.openGenerateCard).toBeNull();
+    });
+    expect(watcher.destroyed).toBe(true);
+    expect(FakeCloseWatcher.live).toHaveLength(0);
   });
 });
 

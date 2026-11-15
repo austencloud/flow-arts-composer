@@ -40,6 +40,7 @@
   import FusePathBuilderDialog from "./FusePathBuilderDialog.svelte";
   import FuseWorkspaceHeader from "./FuseWorkspaceHeader.svelte";
   import FuseLinkedRulePanel from "./FuseLinkedRulePanel.svelte";
+  import FuseLinkedRuleRow from "./FuseLinkedRuleRow.svelte";
 
   const { state: fuseState } = getFuseContext();
   const settings = getSettings();
@@ -48,12 +49,18 @@
   let landscapeSplit = $state(false);
   let shortLandscape = $state(false);
   let tallPortrait = $state(false);
-  // Older sessions stored the rule editor as a recipe destination. Linked now
-  // keeps those controls in the workspace, so retire that restored drawer.
-  if (fuseRecipePanel.destination === "pairing") {
-    fuseRecipePanel.destination = null;
-    fuseRecipePanel.open = false;
-  }
+  // The rule editor is a recipe destination only on the compact workspace in
+  // Linked, where the rule row under the switch opens it as its own screen.
+  // Wider workspaces keep the rule panel open in the workspace, so a restored
+  // or resized-into `pairing` destination there is retired.
+  $effect(() => {
+    if (fuseRecipePanel.destination !== "pairing") return;
+    if (compact && fuseState.mode === "symmetry") return;
+    untrack(() => {
+      fuseRecipePanel.destination = null;
+      fuseRecipePanel.open = false;
+    });
+  });
   let actionSide = $state<FuseSide | null>(null);
   let firstStepOpen = $state(false);
   let inlineFirstStepSide = $state<FuseSide | null>(null);
@@ -755,7 +762,6 @@
     class="fuse-workspace themed-scrollbar"
     bind:this={workspaceEl}
     class:compact-workspace={compact}
-    class:linked-workspace={fuseState.mode === "symmetry"}
     class:short-landscape-workspace={shortLandscape}
     class:tall-portrait-workspace={tallPortrait}
     class:landscape-workspace={landscapeSplit}
@@ -781,8 +787,14 @@
         onModeChange={changeMode}
       />
       {#if fuseState.mode === "symmetry"}
+        <!-- A phone has no room for the open rule panel: there the rule is
+             one summary row that drills into the rule editor. -->
         <div transition:growFade>
-          <FuseLinkedRulePanel />
+          {#if compact}
+            <FuseLinkedRuleRow onOpen={() => openSettings("pairing")} />
+          {:else}
+            <FuseLinkedRulePanel />
+          {/if}
         </div>
       {/if}
     </div>
@@ -1066,13 +1078,6 @@
     grid-template-areas:
       "header"
       "preview";
-  }
-
-  /* Keep the result usable when the permanent controls exceed a phone's
-     available height. The workspace scrolls as one page. */
-  .fuse-workspace.compact-workspace.linked-workspace {
-    grid-template-rows: max-content minmax(480px, 1fr);
-    overflow-y: auto;
   }
 
   /* Full-card markup and its grid must change as one state transition. Keeping

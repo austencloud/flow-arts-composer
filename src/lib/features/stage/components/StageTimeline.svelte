@@ -1898,13 +1898,17 @@
         rgba(255, 255, 255, 0.06) var(--pixels-per-beat)
       ),
       color-mix(in srgb, var(--theme-panel-bg, #0c0d14) 88%, black);
+    /* Deliberately NOT --theme-accent: the themed accent collides with the
+       performer clip colours and makes the spine read as a fifth lane. */
+    --formation-accent: #7cd4e8;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .formation-track {
     background-size:
       var(--timeline-width) 100%,
       100% 100%;
     background-repeat: no-repeat;
-    /* Deliberately NOT --theme-accent: the themed accent collides with the
-       performer clip colours and makes the spine read as a fifth lane. */
-    --formation-accent: #7cd4e8;
   }
 
   .context-track {
@@ -2046,10 +2050,14 @@
     max-width: 14rem;
     border: 1px solid
       color-mix(in srgb, var(--formation-accent) 40%, transparent);
-    border-left: 2px solid var(--formation-accent);
     border-radius: 0 0.45rem 0.45rem 0;
     background: color-mix(in srgb, var(--formation-accent) 14%, #0e1018);
     box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.4);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .formation-block {
+    border-left: 2px solid var(--formation-accent);
   }
   .formation-block.selected {
     outline: 2px solid white;
@@ -2155,6 +2163,10 @@
         rgba(255, 255, 255, 0.06) var(--pixels-per-beat)
       ),
       color-mix(in srgb, var(--theme-panel-bg, #0c0d14) 94%, black);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .sequence-lane {
     background-size:
       var(--timeline-width) 100%,
       100% 100%;

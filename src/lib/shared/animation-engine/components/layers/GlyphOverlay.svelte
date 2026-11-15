@@ -400,20 +400,27 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
          while the label was still invisible, so only the grow-back showed,
          late and with a velocity kick at the reversal.
          The Start/End words are step labels too: the step-numbers toggle hides
-         all three, matching the export compositor's single showStepNumbers gate. -->
+         all three, matching the export compositor's single showStepNumbers gate.
+         A host that moves the label (Post Studio's lifted panel) moves the
+         steady slot, never the keyed group: Chrome painted an SVG group whose
+         transform was animating without its own `translate`, so the incoming
+         number faded in at the unmoved spot, out of sight, and only appeared,
+         at full strength, once its settle had finished. -->
     {#if stepNumbersVisible}
-      {#key stepKey}
-        <g
-          class="beat-number-group"
-          in:popIn={{ start: STEP_NUMBER_SETTLE_SCALE, ...stepLabelTiming() }}
-          out:opaqueFade={{
-            duration: stepLabelTiming().duration,
-            easing: cubicOut,
-          }}
-        >
-          <StepNumber stepNumber={stepLabelValue} {darkMode} />
-        </g>
-      {/key}
+      <g class="step-label-slot">
+        {#key stepKey}
+          <g
+            class="beat-number-group"
+            in:popIn={{ start: STEP_NUMBER_SETTLE_SCALE, ...stepLabelTiming() }}
+            out:opaqueFade={{
+              duration: stepLabelTiming().duration,
+              easing: cubicOut,
+            }}
+          >
+            <StepNumber stepNumber={stepLabelValue} {darkMode} />
+          </g>
+        {/key}
+      </g>
     {/if}
   </svg>
 </div>

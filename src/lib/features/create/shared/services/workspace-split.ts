@@ -46,6 +46,32 @@ export const MIN_TOOL_PANEL_SHARE = 2 / 7;
  */
 export const MIN_TOOL_PANEL_HEIGHT = 260;
 
+/**
+ * What Generate's settings cards need on a narrow short phone, from the
+ * narrow compact rule in CardBasedSettingsContainer.svelte
+ * (`@container settings-grid (width < 630px) and (height < 560px)`): the
+ * 56px Level row, three 44px card rows (Length/Setups, Grid/Customize,
+ * Turns/LOOP), the 56px Generate row, four 4px gaps, and the panel's 8px of
+ * padding. A 360 x 591 phone gave the panel 243px of its usual 4/9 and the
+ * Generate button ended under the bottom bar (2026-11-14). Change both
+ * together; workspace-split.test.ts reads the CSS to keep them in step.
+ */
+export const GENERATE_PHONE_ROW_FLOORS = {
+  level: 56,
+  cardRow: 44,
+  cardRows: 3,
+  generate: 56,
+  gap: 4,
+  padding: 8,
+} as const;
+
+export const GENERATE_PHONE_PANEL_NEED =
+  GENERATE_PHONE_ROW_FLOORS.level +
+  GENERATE_PHONE_ROW_FLOORS.cardRow * GENERATE_PHONE_ROW_FLOORS.cardRows +
+  GENERATE_PHONE_ROW_FLOORS.generate +
+  GENERATE_PHONE_ROW_FLOORS.gap * (GENERATE_PHONE_ROW_FLOORS.cardRows + 1) +
+  GENERATE_PHONE_ROW_FLOORS.padding;
+
 /** Steps in one workspace row: a full row is four steps beside the start. */
 const STEPS_PER_ROW = 4;
 
@@ -83,23 +109,40 @@ export function workspaceFloorHeight(params: {
  * the share the view prefers, the legible floor (capped at the usual 5:4
  * share) and, when given, the whole-sequence floor (capped where the tool
  * panel would drop below MIN_TOOL_PANEL_SHARE or MIN_TOOL_PANEL_HEIGHT).
+ *
+ * `toolPanelNeed`, when given, is what the tool panel's controls need
+ * (GENERATE_PHONE_PANEL_NEED on a narrow phone in Generate): the workspace
+ * gives up part of its share so the panel gets it, but never goes below its
+ * own floor, so on a window too short for both the workspace floor wins.
  */
 export function stackedWorkspaceSplit(params: {
   height: number;
   preferredWorkspace: number;
   workspaceFloor: number;
   sequenceFloor?: number;
+  toolPanelNeed?: number;
 }): [number, number] {
-  const { height, preferredWorkspace, workspaceFloor, sequenceFloor = 0 } =
-    params;
+  const {
+    height,
+    preferredWorkspace,
+    workspaceFloor,
+    sequenceFloor = 0,
+    toolPanelNeed = 0,
+  } = params;
   const floor = Math.min(workspaceFloor, height * USUAL_WORKSPACE_SHARE);
   const wholeSequence = Math.min(
     sequenceFloor,
     height * (1 - MIN_TOOL_PANEL_SHARE),
     height - MIN_TOOL_PANEL_HEIGHT
   );
-  const workspace = Math.round(
-    Math.min(height, Math.max(0, preferredWorkspace, floor, wholeSequence))
+  const usual = Math.min(
+    height,
+    Math.max(0, preferredWorkspace, floor, wholeSequence)
   );
+  const yielded =
+    toolPanelNeed > 0
+      ? Math.min(usual, Math.max(height - toolPanelNeed, workspaceFloor))
+      : usual;
+  const workspace = Math.round(yielded);
   return [workspace, height - workspace];
 }

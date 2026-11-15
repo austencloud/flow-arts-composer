@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import GuidePictograph from "./GuidePictograph.svelte";
 
@@ -100,7 +101,7 @@
   </div>
 
   <div class="controls">
-    <button class="play-btn" onclick={play} aria-label={playing ? "Pause" : "Play"}>
+    <button class="play-btn" onclick={play} aria-label={playing ? t("viewer_ui_pause") : t("viewer_ui_play")}>
       {#if playing}
         <svg width="14" height="14" viewBox="0 0 14 14">
           <rect x="1" y="1" width="4" height="12" fill="currentColor" />

@@ -3,6 +3,7 @@ import { scanPropProperties } from "#lib/shared/analytics/scan-prop-attribution.
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
 import type { TempoPracticeConfig } from "./tempo-practice-orchestrator";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 const DEFAULT_RAIL_WIDTH = 180;
 const MIN_RAIL_WIDTH = 72;
@@ -123,19 +124,19 @@ export function buildViewerShareActions(
   return [
     {
       id: "share-sequence",
-      label: "Share Sequence…",
+      label: t("viewer_share_menu_share"),
       icon: "fa-share-nodes",
       section: "share",
     },
     {
       id: "send-sequence",
-      label: "Send in Flow Arts Composer",
+      label: t("viewer_share_menu_send"),
       icon: "fa-paper-plane",
       section: "share",
     },
     {
       id: "copy-link",
-      label: linkCopied ? "Copied" : "Copy Link",
+      label: linkCopied ? t("shared_error_copied") : t("viewer_detail_copy_link"),
       icon: linkCopied ? "fa-check" : "fa-link",
       section: "share",
       tone: linkCopied ? "success" : "default",

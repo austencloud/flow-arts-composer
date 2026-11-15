@@ -16,6 +16,9 @@ export class PostStudioPictographCapture {
   private context: ModernScreenshot.Context<HTMLElement> | null = null;
   private screenshot: typeof ModernScreenshot | null = null;
 
+  /** `filter` drops a node, and everything in it, from the capture when false. */
+  constructor(private readonly filter?: (node: Node) => boolean) {}
+
   async capture(
     element: HTMLElement,
     width: number,
@@ -45,6 +48,7 @@ export class PostStudioPictographCapture {
           // Copying inherited custom tokens into every cloned child dominates
           // capture time without changing those painted values.
           includeStyleProperties: resolvedStyleProperties(element),
+          ...(this.filter ? { filter: this.filter } : {}),
           ...POST_STUDIO_DOM_CAPTURE_OPTIONS,
         });
       }

@@ -15,6 +15,7 @@ import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
 import {
   trackBrowseCollectionOpened,
   trackBrowseDestinationEntered,
+  trackBrowseVariationSwap,
   trackBrowseVisualTypeOpened,
   trackPerformancePlaybackIntent,
   trackTunnelEditStarted,
@@ -56,5 +57,24 @@ describe("browse decision events", () => {
         { page: "/browse/[section]", subject_type: "sequence" },
       ],
     ]);
+  });
+
+  it("sends a variation swap with timing only", () => {
+    trackBrowseVariationSwap({
+      duration_ms: 240,
+      outcome: "shown",
+      source: "memory",
+      variation_count: 52,
+      prepared: true,
+    });
+
+    expect(captureWhenReady).toHaveBeenCalledWith("browse_variation_swap", {
+      page: "/browse/[section]",
+      duration_ms: 240,
+      outcome: "shown",
+      source: "memory",
+      variation_count: 52,
+      prepared: true,
+    });
   });
 });

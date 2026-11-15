@@ -47,7 +47,6 @@ const CHROME_INTERNALS = [
   "ExportImagePanel.svelte",
   "VideoPreviewPanel.svelte",
   "PracticeBar.svelte",
-  "PracticeSetupBar.svelte",
   "DeleteConfirmDialog.svelte",
   "services/viewer-actions",
 ];
@@ -219,7 +218,7 @@ describe("SequenceViewerShell host contract", () => {
     expect(shellSource).toContain("openAppHref");
     expect(shellSource).toContain("onAccountSignIn");
     expect(shellSource).toContain("startInSplit");
-    expect(shellSource).toContain("startInCardThenSplit");
+    expect(shellSource).toContain("startAnimationAfterCard");
     expect(shellSource).toContain("contextContent");
     expect(shellSource).toContain("showFullscreenControls");
     expect(shellSource).toContain("navigation");
@@ -277,10 +276,10 @@ describe("SequenceViewerShell host contract", () => {
       "onActionSelect={onShareActionSelect}"
     );
     expect(shellSource).toContain("createViewerShellShareState");
-    expect(shellModelSource).toContain('label: "Share Sequence…"');
-    expect(shellModelSource).toContain('label: "Send in Flow Arts Composer"');
+    expect(shellModelSource).toContain('label: t("viewer_share_menu_share")');
+    expect(shellModelSource).toContain('label: t("viewer_share_menu_send")');
     expect(shellModelSource).toMatch(
-      /label:\s*linkCopied\s*\?\s*"Copied"\s*:\s*"Copy Link"/
+      /label:\s*linkCopied\s*\?\s*t\("shared_error_copied"\)\s*:\s*t\("viewer_detail_copy_link"\)/
     );
     expect(shellShareStateSource).toContain("shareLinkCopied = true");
     expect(viewerHeaderSource).not.toContain("onSendTo={handleSendTo}");

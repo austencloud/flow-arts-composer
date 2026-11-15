@@ -9,6 +9,7 @@
   import CoalThumbnail from "./thumbnails/CoalThumbnail.svelte";
   import LedThumbnail from "./thumbnails/LedThumbnail.svelte";
   import PortraitTile from "./thumbnails/PortraitTile.svelte";
+  import type { TileFormat } from "./thumbnails/tile-format";
   import { tilePainterFor } from "./thumbnails/tile-registry";
 
   interface Props {
@@ -18,6 +19,8 @@
     /** The prop Ghost and Silk portray; null means the current prop. */
     propType?: string | null;
     active?: boolean;
+    /** card (default), or the small tile / chip painting. */
+    format?: TileFormat;
   }
 
   const {
@@ -26,17 +29,18 @@
     legacyModel,
     propType = null,
     active = false,
+    format = "card",
   }: Props = $props();
 </script>
 
 {#if effectType === "bloom"}
-  <BloomThumbnail preset={preset as EffectPreset<"bloom">} {active} />
+  <BloomThumbnail preset={preset as EffectPreset<"bloom">} {active} {format} />
 {:else if effectType === "fire"}
-  <FireThumbnail preset={preset as EffectPreset<"fire">} {active} />
+  <FireThumbnail preset={preset as EffectPreset<"fire">} {active} {format} />
 {:else if effectType === "trails"}
-  <TrailThumbnail preset={preset as EffectPreset<"trails">} {active} />
+  <TrailThumbnail preset={preset as EffectPreset<"trails">} {active} {format} />
 {:else if effectType === "charcoal"}
-  <CoalThumbnail preset={preset as EffectPreset<"charcoal">} {active} />
+  <CoalThumbnail preset={preset as EffectPreset<"charcoal">} {active} {format} />
 {:else if effectType === "led"}
   <!-- The one effect whose tile runs the shipping renderer rather than a 2D
        portrait of it. LED's look is a flux budget, a splat kernel, a streak
@@ -44,7 +48,7 @@
        hand-drawn tile is a second implementation free to drift, and the last
        one did: it read as convincing LEDs for weeks while the effect on stage
        was a formless blob. See led-thumbnail-renderer.ts. -->
-  <LedThumbnail preset={preset as EffectPreset<"led">} {active} />
+  <LedThumbnail preset={preset as EffectPreset<"led">} {active} {format} />
 {:else if tilePainterFor(effectType)}
   <!-- A stylised portrait of the look, composed from the preset's own
        parameters, exposed so it reads at ~304x114. Each painter lives in
@@ -54,6 +58,7 @@
     {preset}
     {propType}
     {active}
+    {format}
   />
 {:else}
   <!-- Frost is the one effect left on the generic card; it is retired from

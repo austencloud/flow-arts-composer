@@ -58,9 +58,9 @@ it("updates a held action help item without changing its action identity", async
     icon: action.icon,
     category: action.category,
   }).toEqual(identity);
-  expect(action.name).toBe("Umkehren");
+  expect(action.name).toBe("Invertieren");
   expect(action.shortDesc).toBe("Drehrichtung und Bewegungsart umkehren");
-  expect(action.fullDesc).toContain("Aus CW wird CCW");
+  expect(action.fullDesc).toContain("im Uhrzeigersinn");
   expect(action.warning).toBe("Dadurch ändern sich die Buchstaben deiner Sequenz!");
 
   await setLocale("en");

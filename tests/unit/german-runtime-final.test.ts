@@ -28,9 +28,9 @@ describe("German runtime display", () => {
     document.body.append(host);
 
     for (const [duration, label] of [
-      [1, "Dauer ändern: 1 Taktschlag"],
-      [1.5, "Dauer ändern: 1,5 Taktschläge"],
-      [2, "Dauer ändern: 2 Taktschläge"],
+      [1, "Dauer ändern: 1 Beat"],
+      [1.5, "Dauer ändern: 1,5 Beats"],
+      [2, "Dauer ändern: 2 Beats"],
     ] as const) {
       const component = mount(DurationResizeHandle, {
         target: host,

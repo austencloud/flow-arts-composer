@@ -53,8 +53,7 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 12px; /* iOS medium corner radius */
     color: white;
-    font-family:
-      -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    font-family: inherit;
     font-size: var(--font-size-sm); /* iOS footnote size */
     font-weight: 600; /* iOS semibold */
     line-height: 1.5; /* WCAG AAA compliant */

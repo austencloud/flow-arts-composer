@@ -26,7 +26,14 @@ const row = (
 
 describe("tka tool rows are today's rows", () => {
   it("nothing selected, and music", () => {
-    expect(row(null)).toEqual(["videos", "add", "canvas", "split", "look", "reel"]);
+    expect(row(null)).toEqual([
+      "videos",
+      "add",
+      "canvas",
+      "split",
+      "look",
+      "reel",
+    ]);
     expect(row(null, {}, true)).toEqual(["back", "music", "delete"]);
   });
   it("video, with and without a layout", () => {
@@ -71,6 +78,8 @@ describe("tka tool rows are today's rows", () => {
       "appearance",
       "sequence",
       "performers",
+      "hands",
+      "lift",
       "timing",
       ...TAIL,
     ]);
@@ -81,6 +90,8 @@ describe("tka tool rows are today's rows", () => {
         "appearance",
         "sequence",
         "performers",
+      "hands",
+        "lift",
         "speed",
         "crop",
         "timing",
@@ -113,6 +124,8 @@ describe("tka tool rows are today's rows", () => {
     ]);
     expect(row("text")).toEqual(["back", "split", "text", "timing", ...TAIL]);
     expect(row("titles")).toEqual(["back", "titles", "timing", ...TAIL]);
+    expect(row("flash")).toEqual(["back", "flash", "timing", ...TAIL]);
+    expect(row("credit")).toEqual(["back", "credit", "timing", ...TAIL]);
     expect(row("mandala")).toEqual([
       "back",
       "sequence",
@@ -134,10 +147,27 @@ describe("tka tool rows are today's rows", () => {
       "back",
       "split",
       "appearance",
+      "ending",
       "sequence",
       "timing",
       ...TAIL,
     ]);
+  });
+  it("Fly sits before Timing on the canvas kinds that have a clip to fly into", () => {
+    for (const kind of ["animation", "moves", "mandala", "card"]) {
+      const plain = row(kind);
+      const flying = row(kind, { canFly: true });
+      const at = plain.indexOf("timing");
+      expect(flying).toEqual([
+        ...plain.slice(0, at),
+        "fly",
+        ...plain.slice(at),
+      ]);
+    }
+    expect(row("text", { canFly: true })).not.toContain("fly");
+    expect(isPanelTool("fly", TKA_TOOLS)).toBe(true);
+    expect(isPanelTool("flash", TKA_TOOLS)).toBe(true);
+    expect(isPanelTool("credit", TKA_TOOLS)).toBe(true);
   });
   it("arrangement: Grid, Speed and the look tools; a cell's own tools", () => {
     expect(row("arrangement")).toEqual([
@@ -175,6 +205,8 @@ describe("tka tool rows are today's rows", () => {
       "text",
       "titles",
       "card",
+      "credit",
+      "flash",
       "tunnel-hook",
     ]);
   });

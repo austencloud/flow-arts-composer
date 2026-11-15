@@ -18,6 +18,16 @@ PWA install, fullscreen, gestures, and share helpers.
 - `/start` calls `promptInstallPWA()` when `canInstallPWA()` is true and opens
   the sheet otherwise.
 
+## Install card
+
+On a phone still in a browser tab, `src/lib/shared/pwa/` shows a small card
+above the bottom bar once the person has made a sequence this visit
+(`install-nudge-state.svelte.ts`, `components/InstallNudgeCard.svelte`). It
+uses Chrome's prompt when it has one, shows Share then Add to Home Screen on
+iPhone, and sends Instagram or Facebook visitors out to a real browser. It
+shows on its own at most twice, two weeks apart, and never after an install;
+the menu's "Get the app" button opens it any time.
+
 Screenshots live in `static/images/install-guides/`. The Android ones are crops
 of the captures in `docs/install-guide-captures/`. The iPhone steps have no
 screenshots yet; set `image` on an ios-safari step to add one.

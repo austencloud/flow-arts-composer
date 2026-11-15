@@ -325,7 +325,14 @@ export function createStartEndOptionsState(
       JSON.stringify(options.blockedStartPlacements) !==
       JSON.stringify(newOptions.blockedStartPlacements);
 
-    options = { ...newOptions };
+    // A setup saved before the end-placement list and letter lists existed
+    // arrives without them; every reader calls .length on these arrays.
+    options = {
+      ...newOptions,
+      endPlacements: newOptions.endPlacements ?? [],
+      mustContainLetters: newOptions.mustContainLetters ?? [],
+      mustNotContainLetters: newOptions.mustNotContainLetters ?? [],
+    };
 
     // If blocked placements changed, save to Firebase
     if (blockedChanged) {

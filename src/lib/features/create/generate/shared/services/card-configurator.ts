@@ -28,7 +28,7 @@ import {
  * Reads `period` from config if present, otherwise falls back to
  * periodToNumber.
  */
-function deriveLoopMinOverride(
+export function deriveLoopMinOverride(
   config: UIGenerationConfig,
   loopEnabled: boolean
 ): number | undefined {

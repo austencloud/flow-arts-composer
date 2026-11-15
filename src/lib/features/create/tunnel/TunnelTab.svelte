@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import CreatePanelDrawer from "#lib/features/create/shared/components/CreatePanelDrawer.svelte";
@@ -99,7 +100,7 @@
     setPendingBrowseIntent({
       kind: "art-shelf",
       shelfId: "art_tunnels",
-      label: "Tunnels",
+      label: t("create_ui_tunnels"),
     });
     libraryOpen = false;
     await handleModuleChange("browse", "you");
@@ -136,7 +137,7 @@
   focusTrap={true}
   lockScroll={true}
   keepMounted={true}
-  ariaLabel="Tunnels"
+  ariaLabel={t("create_ui_tunnels")}
 >
   <TunnelLibraryPicker
     items={collection}

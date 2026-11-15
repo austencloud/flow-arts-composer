@@ -17,6 +17,7 @@
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
@@ -66,7 +67,7 @@
     interactive = false,
     lit = $bindable(null),
     onMove,
-    leftNoun = "blue hand",
+    leftNoun = t("pictograph_placement_noun_blue_hand"),
     demo = true,
   }: Props = $props();
 

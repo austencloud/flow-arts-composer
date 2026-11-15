@@ -36,6 +36,7 @@ import type {
   GridMode,
 } from "../../state/animation-visibility-state.svelte";
 import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
+import { localizedEffortLabel } from "#lib/shared/effort/domain/effort-label.js";
 import { animationSettings } from "../../state/animation-settings-state.svelte";
 import { fits3DViewportNow } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
 import { TrackingMode } from "../../domain/types/trail-types";
@@ -143,7 +144,7 @@ function buildEffortChildren(
   const currentEffort = vm.getEffortPreset();
   return EFFORTS.map((effort) => ({
     id: `effort-${effort.id}`,
-    label: effort.label,
+    label: localizedEffortLabel(effort.id),
     icon: "fa-circle",
     iconColor: effort.color,
     checked: currentEffort === effort.id,

@@ -3,6 +3,7 @@ import { PropType } from "../enums/prop-type";
 import {
   DEACTIVATED_PROP_TYPES,
   PROP_PICKER_SECTIONS,
+  PROP_TYPE_DISPLAY_REGISTRY,
   getAllVariations,
   getBasePropType,
   hasBigVariant,
@@ -14,10 +15,20 @@ import {
 } from "../prop-type-display-registry";
 
 describe("prop picker catalog", () => {
-  it("hides nothing", () => {
-    expect(DEACTIVATED_PROP_TYPES.size).toBe(0);
+  it("hides exactly the contact ball family", () => {
+    const hidden = [
+      PropType.CONTACTBALL,
+      PropType.BIGCONTACTBALL,
+      PropType.DOUBLECONTACTBALL,
+      PropType.BIGDOUBLECONTACTBALL,
+    ];
+    expect([...DEACTIVATED_PROP_TYPES].sort()).toEqual([...hidden].sort());
     for (const prop of Object.values(PropType)) {
-      expect(isPropActive(prop), prop).toBe(true);
+      expect(isPropActive(prop), prop).toBe(!hidden.includes(prop));
+    }
+    // Hidden from the picker, not removed: a saved sequence still draws them.
+    for (const prop of hidden) {
+      expect(PROP_TYPE_DISPLAY_REGISTRY[prop]?.label, prop).toBeTruthy();
     }
   });
 

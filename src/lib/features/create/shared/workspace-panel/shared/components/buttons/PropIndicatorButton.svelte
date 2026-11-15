@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     getSettings,
@@ -17,7 +18,7 @@
   } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { propDrawerState } from "#lib/shared/settings/state/prop-drawer-state.svelte.js";
-  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
   import {
     propCollection,
     remainingLockedProps,
@@ -76,14 +77,16 @@
 <button
   class="prop-indicator-button glass-button"
   onclick={(e) => handleClick(e)}
-  aria-label={t("create_change_prop_type", { prop: displayInfo.label })}
-  title={displayInfo.label}
+  aria-label={t("create_change_prop_type", {
+    prop: localizedPropName(leftPropType),
+  })}
+  title={localizedPropName(leftPropType)}
   data-testid="prop-indicator-button"
   data-ghost="safe"
   data-ghost-kind="prop-picker"
   data-ghost-label="props"
 >
-  <PropCompositionPreview propType={leftPropType} size={40} />
+  <SelectedPropPreview box={{ width: 30, height: 24 }} />
   {#if hasPendingPick}
     <span class="redeem-dot" aria-label={t("create_ui_claim_your_new_prop")}
     ></span>

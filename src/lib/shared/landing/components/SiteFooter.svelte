@@ -77,7 +77,7 @@
     {
       title: "Explore",
       links: [
-        { label: "Composer", href: "/composer" },
+        { label: "About Composer", href: "/composer" },
         { label: "Shop", href: "/shop" },
         { label: "About", href: "/about" },
       ],

@@ -161,3 +161,33 @@ describe("DisplayPanel header parts", () => {
     expect(group.getByRole("button").elements()).toHaveLength(10);
   });
 });
+
+// The sequence viewer's own transport shows the loop's progress and its header
+// shows the word, so its Display panel leaves both video-only switches out.
+// The silent failure is one of them creeping back, or the filter taking a
+// neighbour with it.
+describe("DisplayPanel in the sequence viewer", () => {
+  it("has no Word or Progress bar switch and keeps the other eight", async () => {
+    render(DisplayPanel, {
+      chips: true,
+      showWordToggle: false,
+      showProgressToggle: false,
+    });
+    const group = page.getByRole("group");
+    await expect.element(group).toBeVisible();
+    const labels = group
+      .getByRole("button")
+      .elements()
+      .map((el) => el.textContent?.trim());
+    expect(labels).toEqual([
+      "Props",
+      "Grid",
+      "Hand paths",
+      "Mandala",
+      "TKA glyph",
+      "Hand TnD",
+      "Prop TnD",
+      "Step numbers",
+    ]);
+  });
+});

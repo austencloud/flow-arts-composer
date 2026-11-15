@@ -7,6 +7,19 @@
 
   Mobile: Full-height panel with step grid at top, stacked controls at bottom
   Desktop: Side panel with pictograph preview, horizontal controls
+
+  Phone held upright (.phone): 36px controls, and the arrangement that gives
+  the picture the most room without an empty band under it, chosen from the
+  top zone's measured size (choosePhoneStepForm / choosePhoneStartForm in
+  editor-layout.ts, which holds the arithmetic for each):
+    step  - tall (header, picture, Duration), side (picture beside a column of
+            title, actions and Duration in one row), column (the same column
+            with Duration as fine pair over coarse pair), below (picture beside
+            the title and actions, Duration full width under both).
+    start - side (board in a full-height column beside the controls) or stack
+            (title, hand picker and Done in one row, the board, then Location
+            beside Orientation).
+  The arrangement follows the drawer's size, not a tap, so it does not animate.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -16,6 +29,7 @@
   import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
   import StartPlacementEditMode from "./StartPlacementEditMode.svelte";
   import DurationControl from "./DurationControl.svelte";
+  import { planStepWidth } from "./step-width-motion";
   import PictographInspectModal from "./PictographInspectModal.svelte";
   import ArrowAdjustmentPanel from "./ArrowAdjustmentPanel.svelte";
   import ArrowAdjustmentHistory from "./ArrowAdjustmentHistory.svelte";
@@ -24,7 +38,13 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { NARROW_EDITOR_WIDTH, SHORT_EDITOR_HEIGHT } from "./editor-layout";
+  import {
+    NARROW_EDITOR_WIDTH,
+    SHORT_EDITOR_HEIGHT,
+    choosePhoneStartForm,
+    choosePhoneStepForm,
+    tallHeaderExtraHeight,
+  } from "./editor-layout";
   import { getViewportManager } from "#lib/shared/device/get-viewport-manager.js";
   import { stepEditorTourState } from "#lib/shared/onboarding/state/step-editor-tour-state.svelte.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
@@ -53,7 +73,7 @@
   } from "#lib/shared/create/services/rotation-helpers.js";
   import { setGridRotationDirection } from "#lib/shared/pictograph/grid/state/grid-rotation-state.svelte.js";
   import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
 
   // Persist whether the inspect modal is open so a dev HMR / page refresh
   // restores it instead of closing it. load() re-reads localStorage on every
@@ -127,6 +147,10 @@
   const narrowEditor = $derived(
     editorWidth > 0 ? editorWidth < NARROW_EDITOR_WIDTH : !isSideBySideLayout
   );
+  // Compact arrangements take the 36px phone controls; a phone held upright
+  // also gets the tall / short top-zone arrangements described above.
+  const compactControls = $derived(narrowEditor || isShortLandscape);
+  const phoneLayout = $derived(narrowEditor && !isShortLandscape);
   const startPlacementHitTargetRadius = $derived(
     isShortWideEditor ? 160 : isSideBySideLayout ? 75 : 85
   );
@@ -179,6 +203,47 @@
     displayedStepNumber !== null && displayedStepData !== null
   );
   const isStartPlacementSelected = $derived(displayedStepNumber === 0);
+
+  // The preview is as wide as the step's duration, the way the step's cell
+  // widens in the grid; planStepWidth (step-width-motion.ts) times the card
+  // and the drawing so the step never dips smaller mid-move. Opening the
+  // editor, or coming to a step from the start, sizes it at once.
+  const stepDuration = $derived(
+    displayedStepData && !isStartPlacementSelected
+      ? (displayedStepData.duration ?? 1)
+      : null
+  );
+  let cardDuration = $state(1);
+  let drawnDuration = $state(1);
+  let durationMoving = $state(false);
+  let lastStepDuration: number | null = null;
+
+  $effect(() => {
+    const target = stepDuration;
+    const previous = lastStepDuration;
+    lastStepDuration = target;
+    if (target === null) {
+      durationMoving = false;
+      return;
+    }
+    const ms = motionDuration(DURATION.normal);
+    const plan = planStepWidth(
+      previous,
+      target,
+      untrack(() => drawnDuration),
+      ms
+    );
+    cardDuration = plan.card;
+    drawnDuration = plan.drawn;
+    durationMoving = plan.moving;
+    if (!plan.moving) return;
+    const settle = setTimeout(() => {
+      drawnDuration = plan.settledDrawn;
+      durationMoving = false;
+    }, ms);
+    return () => clearTimeout(settle);
+  });
+
   const startLeftMotion = $derived(displayedStepData?.motions?.[HandSide.LEFT]);
   const startRightMotion = $derived(
     displayedStepData?.motions?.[HandSide.RIGHT]
@@ -247,6 +312,22 @@
     // Steps after the selected one (stepNumber 1 = index 0, so steps after index (n-1))
     return Math.max(0, sequence.steps.length - displayedStepNumber);
   });
+
+  // Deleting a middle step takes every step after it with it (the steps after
+  // start where it ended, so they can't stay without it). The header says so
+  // before the tap: "Delete takes steps 2–8". On the last step the pill's own
+  // word is the whole truth, so there is no line.
+  const deleteRange = $derived.by(() => {
+    if (!onDelete || displayedStepNumber === null || displayedStepNumber < 1)
+      return null;
+    const last = sequence?.steps?.length ?? 0;
+    return displayedStepNumber < last
+      ? { from: displayedStepNumber, to: last }
+      : null;
+  });
+  const deleteScopeText = $derived(
+    deleteRange ? t("create_ui_delete_takes_steps", deleteRange) : ""
+  );
 
   // Track sequence changes to trigger pulse animation when cascade occurs
   // We watch the sequence's steps array - when it changes and we have cascade steps,
@@ -327,6 +408,107 @@
     );
   });
   const isBetaSwapped = $derived(!!displayedStepData?.betaSwapped);
+
+  // Phone arrangement (see the header comment). The column form must hold the
+  // header's widest line without cutting it, so the layout reads the lines'
+  // own widths from the page: the action row (Delete pill, Done, and the
+  // admin inspect button) and the title and red scope line as text. A longer
+  // translation widens the column instead of being cut or running past the
+  // screen edge. The action row never counts for less than the old English
+  // estimate (pill 90, gap 6, Done 72), so English keeps its picture; the
+  // beta chip is still estimated at 56 and its gap 6.
+  let titleEl = $state<HTMLElement>();
+  let scopeEl = $state<HTMLElement>();
+  let actionsRect = $state<DOMRectReadOnly>();
+  let headerTextWidth = $state(0);
+  // The tall form wraps the title and red line instead of cutting them, so
+  // the chooser hears how tall that makes the header in this language.
+  let titleTextWidth = $state(0);
+  let scopeTextWidth = $state(0);
+  let titleLineHeight = $state(18.4);
+  let scopeLineHeight = $state(14.4);
+
+  // Read on one line: the tall form lets these wrap, and a wrapped line's
+  // box is not the words' own width.
+  function naturalTextWidth(el: HTMLElement | undefined): number {
+    if (!el) return 0;
+    const wrap = el.style.whiteSpace;
+    el.style.whiteSpace = "nowrap";
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const width = range.getBoundingClientRect().width;
+    el.style.whiteSpace = wrap;
+    return width;
+  }
+
+  $effect(() => {
+    void modeLabel;
+    void deleteScopeText;
+    const title = titleEl;
+    const scope = scopeEl;
+    const measure = () => {
+      titleTextWidth = naturalTextWidth(title);
+      scopeTextWidth = naturalTextWidth(scope);
+      headerTextWidth = Math.max(titleTextWidth, scopeTextWidth);
+      if (title) {
+        titleLineHeight =
+          parseFloat(getComputedStyle(title).lineHeight) || titleLineHeight;
+      }
+      if (scope) {
+        scopeLineHeight =
+          parseFloat(getComputedStyle(scope).lineHeight) || scopeLineHeight;
+      }
+    };
+    measure();
+    document.fonts?.ready.then(measure);
+  });
+
+  const stepActionsWidth = $derived.by(() => {
+    const estimate = 90 + 6 + 72 + (isAdmin() && hasSelection ? 36 + 6 : 0);
+    const actions = Math.max(estimate, Math.ceil(actionsRect?.width ?? 0));
+    return Math.max(
+      actions + (isBetaPlacement ? 56 + 6 : 0),
+      Math.ceil(headerTextWidth)
+    );
+  });
+  // The tall header's text room: the row less its 12px padding each side,
+  // the 6px gap, the action row and the beta chip (estimated 56 + 6). The
+  // action row is read only while the tall form shows: beside the picture it
+  // wraps to the column's width, and feeding that back flipped the form
+  // between tall and below without end.
+  let tallActionsWidth = $state(0);
+  const tallHeaderExtra = $derived.by(() => {
+    const estimate = 90 + 6 + 72 + (isAdmin() && hasSelection ? 36 + 6 : 0);
+    const actions =
+      Math.max(estimate, tallActionsWidth) + (isBetaPlacement ? 56 + 6 : 0);
+    return tallHeaderExtraHeight({
+      textRoom: editorWidth - 24 - 6 - actions,
+      titleWidth: titleTextWidth,
+      titleLine: titleLineHeight,
+      scopeWidth: deleteRange ? scopeTextWidth : 0,
+      scopeLine: scopeLineHeight,
+    });
+  });
+  const phoneChoice = $derived.by(() => {
+    if (!phoneLayout || editorWidth <= 0 || editorHeight <= 0) return null;
+    return isStartPlacementSelected
+      ? choosePhoneStartForm(editorWidth, editorHeight)
+      : choosePhoneStepForm(
+          editorWidth,
+          editorHeight,
+          stepActionsWidth,
+          tallHeaderExtra
+        );
+  });
+  const phoneForm = $derived(phoneChoice?.form ?? null);
+  $effect(() => {
+    if (phoneForm !== "tall" || !actionsRect) return;
+    const width = Math.ceil(actionsRect.width);
+    if (width !== tallActionsWidth) tallActionsWidth = width;
+  });
+  const startTwoUp = $derived(
+    phoneChoice && "twoUp" in phoneChoice ? phoneChoice.twoUp : true
+  );
 
   // Keyboard handler for B key beta swap toggle
   function handleBetaSwapKeydown(event: KeyboardEvent) {
@@ -534,207 +716,254 @@
   <!-- Step Editor Tour overlay -->
   <StepEditorTour />
 
-  <!-- Header -->
-  <header
-    class="panel-header"
-    class:short-landscape={isShortLandscape}
-    class:tour-dim={tourHighlight !== "none"}
+  <div
+    class="editor-layout"
+    class:phone={phoneLayout}
+    class:start={isStartPlacementSelected}
+    class:form-side={phoneForm === "side"}
+    class:form-column={phoneForm === "column"}
+    class:form-below={phoneForm === "below"}
+    class:form-stack={phoneForm === "stack"}
+    style:--phone-board={phoneChoice ? `${phoneChoice.board}px` : undefined}
   >
-    <div class="header-info">
-      <h2>{modeLabel}</h2>
-      {#if cascadeCount > 0 && !isStartPlacementSelected}
-        <span class="subtitle">
-          <span class="cascade-indicator" class:pulse={showCascadePulse}>
-            → +{t(
-              cascadeCount === 1
-                ? "create_deep_step_count_one"
-                : "create_deep_step_count_many",
-              { count: cascadeCount }
-            )}
+    <!-- Header -->
+    <header
+      class="panel-header"
+      class:compact={compactControls}
+      class:short-landscape={isShortLandscape}
+      class:tour-dim={tourHighlight !== "none"}
+    >
+      <div class="header-info">
+        <h2 bind:this={titleEl}>{modeLabel}</h2>
+        {#if deleteRange}
+          <span class="subtitle">
+            <span class="delete-scope" bind:this={scopeEl}
+              >{deleteScopeText}</span
+            >
           </span>
-        </span>
-      {/if}
-    </div>
+        {:else if cascadeCount > 0 && !isStartPlacementSelected}
+          <span class="subtitle">
+            <span class="cascade-indicator" class:pulse={showCascadePulse}>
+              → +{t(
+                cascadeCount === 1
+                  ? "create_deep_step_count_one"
+                  : "create_deep_step_count_many",
+                { count: cascadeCount }
+              )}
+            </span>
+          </span>
+        {/if}
+      </div>
 
-    <!-- Beta swap is an on/off toggle, so it is the shared filter chip. The
+      <!-- Beta swap is an on/off toggle, so it is the shared filter chip. The
          keyboard hint is in the chip itself (pointer devices only), which is
          what makes the window-level "b" shortcut discoverable. -->
-    {#if isBetaPlacement}
-      <div class="beta-swap">
-        <FilterChipBase
-          label="β⇄"
-          mode="toggle"
-          size="sm"
-          active={isBetaSwapped}
-          chipColor="var(--feature-edit, #8b5cf6)"
-          ariaLabel={isBetaSwapped
-            ? t("create_review_beta_offset_swapped_press_b_to_toggle")
-            : t("create_review_swap_beta_offset_press_b_to_toggle")}
-          onclick={() => onBetaSwapToggle?.()}
-        >
-          {#snippet iconSnippet()}
-            <kbd class="key-hint" aria-hidden="true">B</kbd>
-          {/snippet}
-        </FilterChipBase>
-      </div>
-    {/if}
-
-    <!-- Arrow adjustment panel in header when arrow is selected -->
-    {#if isAdmin() && hasArrowSelected && displayedStepData}
-      <ArrowAdjustmentPanel
-        stepData={displayedStepData}
-        onStepDataUpdate={handleStepDataUpdate}
-        {onPushUndoSnapshot}
-        keyboardActive={!showInspectModal}
-      />
-      <ArrowAdjustmentHistory />
-    {/if}
-
-    <div class="header-actions">
-      {#if isAdmin() && hasSelection && displayedStepData}
-        <button
-          class="icon-btn inspect"
-          onclick={handleOpenInspect}
-          aria-label="Inspect pictograph data"
-          title="Inspect pictograph data (dev)"
-        >
-          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-        </button>
+      {#if isBetaPlacement}
+        <div class="beta-swap">
+          <FilterChipBase
+            label="β⇄"
+            mode="toggle"
+            size={compactControls ? "phone" : "sm"}
+            active={isBetaSwapped}
+            chipColor="var(--feature-edit, #8b5cf6)"
+            ariaLabel={isBetaSwapped
+              ? t("create_review_beta_offset_swapped_press_b_to_toggle")
+              : t("create_review_swap_beta_offset_press_b_to_toggle")}
+            onclick={() => onBetaSwapToggle?.()}
+          >
+            {#snippet iconSnippet()}
+              <kbd class="key-hint" aria-hidden="true">B</kbd>
+            {/snippet}
+          </FilterChipBase>
+        </div>
       {/if}
-      <!-- No delete button on the start placement: with only a start placement
+
+      <!-- Arrow adjustment panel in header when arrow is selected -->
+      {#if isAdmin() && hasArrowSelected && displayedStepData}
+        <ArrowAdjustmentPanel
+          stepData={displayedStepData}
+          onStepDataUpdate={handleStepDataUpdate}
+          {onPushUndoSnapshot}
+          keyboardActive={!showInspectModal}
+        />
+        <ArrowAdjustmentHistory />
+      {/if}
+
+      <div class="header-actions" bind:contentRect={actionsRect}>
+        {#if isAdmin() && hasSelection && displayedStepData}
+          <button
+            class="icon-btn inspect"
+            onclick={handleOpenInspect}
+            aria-label="Inspect pictograph data"
+            title="Inspect pictograph data (dev)"
+          >
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          </button>
+        {/if}
+        <!-- No delete button on the start placement: with only a start placement
            the user can already edit it in place, and "deleting" it means
            clearing the whole sequence — that lives on the Clear button. -->
-      {#if onDelete && hasSelection && !isStartPlacementSelected}
-        <button
-          class="icon-btn delete"
-          onclick={() => onDelete()}
-          aria-label={t("create_ui_delete_step")}
-          title={t("create_ui_delete_this_step")}
-        >
-          <i class="fa-solid fa-trash" aria-hidden="true"></i>
-        </button>
-      {/if}
-      <!-- Done, not a bare ×: it ends the selection and brings the tools
-           back, which reads as finishing an edit rather than dismissing a
-           sheet. -->
-      <PanelButton
-        onclick={handleClose}
-        title={t("create_ui_close_step_editor")}
-      >
-        {t("create_editor_done")}
-      </PanelButton>
-    </div>
-  </header>
-
-  <div class="editor-content" class:short-landscape={isShortLandscape}>
-    <!-- Pictograph Preview - shown on both mobile and desktop when beat selected -->
-    <!-- Duration is now rendered INSIDE the pictograph via DurationGlyph -->
-    {#if hasSelection && displayedStepData}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div
-        class="preview-section"
-        class:mobile={!isSideBySideLayout}
-        class:short-landscape={isShortLandscape}
-        class:tour-highlight={tourHighlight === "preview"}
-        class:tour-dim={tourHighlight !== "none" && tourHighlight !== "preview"}
-        onclick={(e) => {
-          if (
-            hasArrowSelected &&
-            !(e.target as HTMLElement).closest('[role="button"]')
-          ) {
-            selectedArrowState.clearSelection();
-          }
-        }}
-      >
-        <div class="pictograph-container" class:aiming={canAimStartPlacement}>
-          {#if canAimStartPlacement && startLeftLocation && startRightLocation}
-            <div class="start-placement-aim" data-swipe-block>
-              <PropPlacementGrid
-                bind:this={placementGrid}
-                gridMode={startGridMode}
-                leftPropType={startLeftPropType}
-                rightPropType={startRightPropType}
-                leftOrientation={startLeftMotion?.startOrientation ??
-                  Orientation.IN}
-                rightOrientation={startRightMotion?.startOrientation ??
-                  Orientation.IN}
-                initialLeftLocation={startLeftLocation}
-                initialRightLocation={startRightLocation}
-                betaSwapped={displayedStepData.betaSwapped}
-                previewPictographData={displayedStepData}
-                {gridJoin}
-                resetEpoch={placementResetEpoch}
-                motionMove={placementMotionMove}
-                showCenter={startPlacementUsesCenter}
-                editAfterCompletion
-                disabled={isRepositioning}
-                showUndo={false}
-                renderTray={false}
-                hitTargetRadius={startPlacementHitTargetRadius}
-                onChange={handlePlacementChange}
-                onPlacementComplete={handlePlacementComplete}
-                {onOrientationChange}
-              />
-            </div>
-          {:else}
-            <!-- No crossfade between steps; a turns or orientation change
-                 glides this step's props and arrows to the new drawing. -->
-            <PictographContainer
-              pictographData={joinedStepData}
-              arrowsClickable={isAdmin()}
-              disableContentTransitions
-            />
-          {/if}
-        </div>
-      </div>
-    {/if}
-
-    <!-- Controls - different layout for mobile vs desktop -->
-    <div
-      class="controls-section"
-      class:mobile={!isSideBySideLayout}
-      class:short-landscape={isShortLandscape}
-      class:duration-only={hasSelection && !isStartPlacementSelected}
-    >
-      {#if !hasSelection}
-        <div class="no-selection">
-          <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-          <p>{t("create_ui_select_a_step_to_edit")}</p>
-        </div>
-      {:else if isStartPlacementSelected}
-        <StartPlacementEditMode
-          startPlacementData={displayedStepData}
-          stacked={narrowEditor}
-          compact={narrowEditor || isShortWideEditor}
-          focused={isShortWideEditor}
-          {activeMoveHand}
-          repositionDisabled={startPlacementUsesCenter}
-          {isRepositioning}
-          {onOrientationChange}
-          onLocationRotate={handleLocationRotate}
-          onMoveProp={handleMoveProp}
-        />
-      {:else}
-        {#if onDurationChange}
-          <div
-            class="tour-section"
-            class:tour-highlight={tourHighlight === "duration"}
-            class:tour-dim={tourHighlight !== "none" &&
-              tourHighlight !== "duration"}
-          >
-            <DurationControl
-              duration={displayedStepData?.duration ?? 1}
-              compact={narrowEditor || isShortLandscape}
-              layout={isShortLandscape ? "stacked" : "row"}
-              {onDurationChange}
-            />
+        {#if onDelete && hasSelection && !isStartPlacementSelected}
+          <!-- The pill says Delete, and the line under the title says how much
+             goes when that is more than this step. The button's name carries
+             the same sentence, so a screen reader hears it too. -->
+          <div class="delete-action">
+            <PanelButton
+              variant="primary"
+              accentColor="var(--semantic-error)"
+              size={compactControls ? "compact" : "md"}
+              onclick={() => onDelete()}
+              ariaLabel={deleteRange
+                ? deleteScopeText
+                : t("create_ui_delete_this_step")}
+              title={deleteRange
+                ? deleteScopeText
+                : t("create_ui_delete_this_step")}
+            >
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              {t("action_delete")}
+            </PanelButton>
           </div>
         {/if}
-        <!-- Blue/red turns controls now live in the shared, persistent
+        <!-- Done, not a bare ×: it ends the selection and brings the tools
+           back, which reads as finishing an edit rather than dismissing a
+           sheet. -->
+        <PanelButton
+          size={compactControls ? "compact" : "md"}
+          onclick={handleClose}
+          title={t("create_ui_close_step_editor")}
+        >
+          {t("create_editor_done")}
+        </PanelButton>
+      </div>
+    </header>
+
+    <div class="editor-content" class:short-landscape={isShortLandscape}>
+      <!-- Pictograph Preview - shown on both mobile and desktop when beat selected -->
+      <!-- Duration is now rendered INSIDE the pictograph via DurationGlyph -->
+      {#if hasSelection && displayedStepData}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="preview-section"
+          class:mobile={!isSideBySideLayout}
+          class:short-landscape={isShortLandscape}
+          class:tour-highlight={tourHighlight === "preview"}
+          class:tour-dim={tourHighlight !== "none" &&
+            tourHighlight !== "preview"}
+          onclick={(e) => {
+            if (
+              hasArrowSelected &&
+              !(e.target as HTMLElement).closest('[role="button"]')
+            ) {
+              selectedArrowState.clearSelection();
+            }
+          }}
+        >
+          <div
+            class="pictograph-container"
+            class:aiming={canAimStartPlacement}
+            class:duration-moving={durationMoving}
+            style:--step-duration={cardDuration}
+          >
+            {#if canAimStartPlacement && startLeftLocation && startRightLocation}
+              <div class="start-placement-aim" data-swipe-block>
+                <PropPlacementGrid
+                  bind:this={placementGrid}
+                  gridMode={startGridMode}
+                  leftPropType={startLeftPropType}
+                  rightPropType={startRightPropType}
+                  leftOrientation={startLeftMotion?.startOrientation ??
+                    Orientation.IN}
+                  rightOrientation={startRightMotion?.startOrientation ??
+                    Orientation.IN}
+                  initialLeftLocation={startLeftLocation}
+                  initialRightLocation={startRightLocation}
+                  betaSwapped={displayedStepData.betaSwapped}
+                  previewPictographData={displayedStepData}
+                  {gridJoin}
+                  resetEpoch={placementResetEpoch}
+                  motionMove={placementMotionMove}
+                  showCenter={startPlacementUsesCenter}
+                  editAfterCompletion
+                  disabled={isRepositioning}
+                  showUndo={false}
+                  renderTray={false}
+                  compactPrompt={phoneLayout}
+                  hitTargetRadius={startPlacementHitTargetRadius}
+                  onChange={handlePlacementChange}
+                  onPlacementComplete={handlePlacementComplete}
+                  {onOrientationChange}
+                />
+              </div>
+            {:else}
+              <!-- No crossfade between steps; a turns or orientation change
+                 glides this step's props and arrows to the new drawing. -->
+              <PictographContainer
+                pictographData={joinedStepData}
+                widthMultiplier={drawnDuration}
+                arrowsClickable={isAdmin()}
+                disableContentTransitions
+              />
+            {/if}
+          </div>
+        </div>
+      {/if}
+
+      <!-- Controls - different layout for mobile vs desktop -->
+      <div
+        class="controls-section"
+        class:mobile={!isSideBySideLayout}
+        class:short-landscape={isShortLandscape}
+        class:duration-only={hasSelection && !isStartPlacementSelected}
+      >
+        {#if !hasSelection}
+          <div class="no-selection">
+            <i class="fas fa-hand-pointer" aria-hidden="true"></i>
+            <p>{t("create_ui_select_a_step_to_edit")}</p>
+          </div>
+        {:else if isStartPlacementSelected}
+          <StartPlacementEditMode
+            startPlacementData={displayedStepData}
+            stacked={narrowEditor}
+            compact={narrowEditor || isShortWideEditor}
+            focused={isShortWideEditor}
+            phone={phoneLayout}
+            phoneForm={phoneForm === "side" || phoneForm === "stack"
+              ? phoneForm
+              : null}
+            twoUp={startTwoUp}
+            {activeMoveHand}
+            repositionDisabled={startPlacementUsesCenter}
+            {isRepositioning}
+            {onOrientationChange}
+            onLocationRotate={handleLocationRotate}
+            onMoveProp={handleMoveProp}
+          />
+        {:else}
+          {#if onDurationChange}
+            <div
+              class="tour-section"
+              class:tour-highlight={tourHighlight === "duration"}
+              class:tour-dim={tourHighlight !== "none" &&
+                tourHighlight !== "duration"}
+            >
+              <DurationControl
+                duration={displayedStepData?.duration ?? 1}
+                compact={narrowEditor || isShortLandscape}
+                layout={isShortLandscape || phoneForm === "column"
+                  ? "stacked"
+                  : "row"}
+                fill={phoneForm === "side" || phoneForm === "column"}
+                {onDurationChange}
+              />
+            </div>
+          {/if}
+          <!-- Blue/red turns controls now live in the shared, persistent
              StepControlsZone (rendered by the coordinator below this panel), so
              they morph across single ↔ multi instead of being rebuilt here. -->
-      {/if}
+        {/if}
+      </div>
     </div>
   </div>
 </div>
@@ -762,6 +991,16 @@
     position: relative;
     container-type: size;
     container-name: step-editor;
+  }
+
+  /* The header and content column. A wrapper rather than the panel itself,
+     because the panel is the step-editor container and a container query
+     cannot restyle its own container. */
+  .editor-layout {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .editor-content {
@@ -875,38 +1114,41 @@
     flex-shrink: 0;
   }
 
-  /* At iPhone SE width the subtitle gets its own line instead of competing
-     with four full-size header actions. */
-  @container step-editor (max-width: 360px) {
-    .panel-header {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      column-gap: 8px;
-      row-gap: 2px;
-    }
+  /* Compact header: one 44px row. The 36px actions sit in 4px of padding and
+     the "+N steps" line stays under the title in the same cell (title 18px,
+     gap 2, line 15). Admin-only extras may wrap to another line. */
+  .panel-header.compact {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 12px;
+  }
 
-    .header-info {
-      display: contents;
-    }
+  .panel-header.compact .header-info {
+    flex: 1 1 0;
+  }
 
-    .panel-header h2 {
-      grid-column: 1;
-      grid-row: 1;
-      white-space: nowrap;
-    }
+  /* The title gets the row's spare width. A stretching β⇄ box cut
+     "Editing step 5" to "Editing ste…" at 360. */
+  .panel-header.compact .beta-swap {
+    flex: 0 0 auto;
+  }
 
-    .header-actions {
-      grid-column: 2;
-      grid-row: 1;
-    }
+  .panel-header.compact h2 {
+    overflow: hidden;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-    .subtitle {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      min-width: 0;
-      flex-wrap: wrap;
-    }
+  .panel-header.compact .subtitle {
+    line-height: 1.2;
+  }
+
+  .panel-header.compact .icon-btn {
+    width: var(--alt-touch-target, 36px);
+    height: var(--alt-touch-target, 36px);
+    min-width: 0;
+    min-height: 0;
   }
 
   /* The drawer's own close-button treatment (DrawerHeader.svelte): a flat
@@ -950,14 +1192,35 @@
     color: var(--theme-accent, #60a5fa);
   }
 
-  .icon-btn.delete {
-    color: var(--semantic-warning);
+  .delete-action :global(.panel-btn) {
+    gap: 6px;
+    white-space: nowrap;
   }
 
-  .icon-btn.delete:hover {
-    background: color-mix(in srgb, var(--semantic-warning) 18%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-warning) 50%, transparent);
-    color: var(--semantic-warning);
+  /* Tall form (no form class): the title and red line wrap, two lines at
+     most and balanced, instead of being cut. The header grows by what they
+     need and the chooser takes it from the picture (tallHeaderExtraHeight in
+     editor-layout.ts). The below form wraps them too: its 150px title column
+     beside the picture is mostly empty, so a second line costs nothing. A
+     language whose words fit on one line is unchanged. */
+  .editor-layout.phone:not(.form-side, .form-column, .form-stack)
+    .panel-header.compact
+    :is(h2, .delete-scope) {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  /* The scope line reads as part of the warning, in the pill's red. */
+  .delete-scope {
+    min-width: 0;
+    color: color-mix(in srgb, var(--semantic-error) 70%, var(--theme-text));
+    font-size: var(--font-size-compact);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ============================================================================
@@ -1010,15 +1273,33 @@
   }
 
   .pictograph-container {
-    /* Size based on smaller dimension - fills the space as a square */
-    width: min(90cqw, 90cqh);
-    height: min(90cqw, 90cqh);
-    aspect-ratio: 1;
+    /* A one-count step fills the space as a square. A longer step keeps that
+       height and widens by its duration, like its cell in the grid, until it
+       meets the side; then both shrink together to keep its shape. */
+    width: min(90cqw, calc(90cqh * var(--step-duration, 1)));
+    height: min(calc(90cqw / var(--step-duration, 1)), 90cqh);
     /* Subtle container styling. The pictograph paints its own dark board and
        stroke; on the editor's themed surface it reads as a card, the way it
        does in the option picker and the sequence. */
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.02));
     border-radius: 12px;
+  }
+
+  /* Only a duration change eases the card; a resize or the panel's own
+     motion keeps the card on the panel's edge. While it moves, the strip
+     beside the narrower drawing takes the board's colour, so the board reads
+     as one piece growing or shrinking. */
+  .pictograph-container.duration-moving {
+    background: var(--dm-pictograph-bg, var(--theme-card-bg));
+    transition:
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pictograph-container.duration-moving {
+      transition: none;
+    }
   }
 
   /* The placement grid frames its own board and carries a prompt line above it.
@@ -1105,6 +1386,191 @@
         padding: 8px;
       }
     }
+  }
+
+  /* ============================================================================
+     PHONE (upright), tall arrangement: header 44 + picture + Duration 44. The
+     picture square is min(width - 16, top zone - 88 - 12).
+     ============================================================================ */
+
+  .editor-layout.phone .preview-section.mobile {
+    padding: 6px 8px;
+  }
+
+  .editor-layout.phone .pictograph-container:not(.aiming) {
+    width: min(100cqw, calc(100cqh * var(--step-duration, 1)));
+    height: min(calc(100cqw / var(--step-duration, 1)), 100cqh);
+  }
+
+  .editor-layout.phone .controls-section.mobile:not(.duration-only) {
+    padding: 6px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 6px));
+  }
+
+  /* ============================================================================
+     PHONE (upright), picture-beside arrangements. editor-layout.ts picks one
+     and its square as --phone-board; the comments there hold the sums.
+     ============================================================================ */
+
+  /* Shared by the step's side, column and below forms and the start's side
+     form: the picture at the left, the header in the column beside it. */
+  .editor-layout.phone:is(.form-side, .form-column, .form-below) {
+    display: grid;
+    grid-template-columns: var(--phone-board) minmax(0, 1fr);
+    column-gap: 6px;
+    row-gap: 4px;
+    padding: 4px;
+  }
+
+  .editor-layout.phone:is(.form-side, .form-column, .form-below)
+    .editor-content {
+    display: contents;
+  }
+
+  .editor-layout.phone:is(.form-side, .form-column, .form-below) .panel-header {
+    grid-column: 2;
+    grid-row: 1;
+    align-content: flex-start;
+    justify-content: flex-start;
+    gap: 4px 6px;
+    min-height: 0;
+    padding: 0;
+  }
+
+  /* The title block keeps its own line; the actions follow under it (a step:
+     beta swap, trash and Done; the start: Done beside the title when it
+     fits). */
+  .editor-layout.phone:is(.form-side, .form-column, .form-below)
+    .panel-header
+    .header-info {
+    flex: 1 0 auto;
+    max-width: 100%;
+  }
+
+  .editor-layout.phone:is(.form-side, .form-column, .form-below) .beta-swap {
+    flex: 0 0 auto;
+  }
+
+  .editor-layout.phone:is(.form-side, .form-column, .form-below)
+    .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .editor-layout.phone:is(.form-side, .form-column, .form-below)
+    .preview-section.mobile {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: start;
+    width: var(--phone-board);
+    height: var(--phone-board);
+    padding: 0;
+  }
+
+  .editor-layout.phone:is(.form-side, .form-column, .form-below)
+    .controls-section.mobile,
+  .editor-layout.phone:is(.form-side, .form-column, .form-below)
+    .controls-section.mobile:not(.duration-only) {
+    min-width: 0;
+    padding: 0;
+  }
+
+  /* Side (step): title, actions, then the five-across Duration, top down. */
+  .editor-layout.phone.form-side {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    padding: 6px;
+  }
+
+  .editor-layout.phone.form-side .controls-section.mobile {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* Column: Duration (fine pair over coarse pair) sits at the foot of the
+     column, level with the bottom of the picture. */
+  .editor-layout.phone.form-column {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .editor-layout.phone.form-column .controls-section.mobile {
+    grid-column: 2;
+    grid-row: 2;
+    justify-content: flex-end;
+  }
+
+  /* Below: the picture and the title share the top; Duration takes the full
+     width under both. */
+  .editor-layout.phone.form-below {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .editor-layout.phone.form-below .preview-section.mobile {
+    grid-row: 1;
+  }
+
+  .editor-layout.phone.form-below .controls-section.mobile {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  /* The start's side form: the board carries its prompt line above it, so
+     its column runs the full height and PropPlacementGrid squares the board
+     inside. The controls stand under the header in the other column. */
+  .editor-layout.phone.start.form-side {
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .editor-layout.phone.start.form-side .preview-section.mobile {
+    align-self: stretch;
+    height: auto;
+  }
+
+  /* Stack (start): title, hand picker and Done share the first row (the
+     picker comes from StartPlacementEditMode into the "pick" cell), the
+     prompt and board take what is left, and the Location and Orientation
+     card closes the column. */
+  .editor-layout.phone.form-stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "info pick act"
+      "board board board"
+      "ctrl ctrl ctrl";
+    gap: 4px 6px;
+    padding: 4px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 4px));
+  }
+
+  .editor-layout.phone.form-stack .panel-header,
+  .editor-layout.phone.form-stack .editor-content,
+  .editor-layout.phone.form-stack .controls-section.mobile {
+    display: contents;
+  }
+
+  /* The header row's outer cells sit 12px from the edges, as the step
+     editor's title does: the layout's 4px plus 8px of their own. Only the
+     first row takes it, so the board keeps its size. */
+  .editor-layout.phone.form-stack .header-info {
+    grid-area: info;
+    align-self: center;
+    padding-inline-start: 8px;
+  }
+
+  .editor-layout.phone.form-stack .header-actions {
+    grid-area: act;
+    padding-inline-end: 8px;
+  }
+
+  /* The header box is gone in this form, so the tour's dimming goes to its
+     parts. */
+  .editor-layout.phone.form-stack .panel-header.tour-dim > * {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  .editor-layout.phone.form-stack .preview-section.mobile {
+    grid-area: board;
+    padding: 0;
   }
 
   .tour-section {

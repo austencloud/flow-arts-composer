@@ -21,6 +21,7 @@ const keys: Record<string, string> = {
   Clubs: "site_prop_clubs",
   Buugeng: "site_prop_buugeng",
   Composer: "site_composer",
+  "About Composer": "site_about_composer",
   Learn: "site_learn",
   "Interactive lessons": "site_interactive_lessons",
   "Timing & Direction": "site_timing_direction",

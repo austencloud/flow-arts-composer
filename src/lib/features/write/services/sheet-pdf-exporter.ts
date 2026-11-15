@@ -51,7 +51,11 @@ import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { RenderCanvas } from "#lib/shared/render/services/types.js";
 import { Canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
-import { drawStepNumber } from "#lib/shared/render/services/step-number-renderer.js";
+import {
+  drawStepNumber,
+  stepLabelFor,
+} from "#lib/shared/render/services/step-number-renderer.js";
+import { localStepLabels } from "#lib/shared/render/services/local-step-labels.js";
 import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 import { settingsService as propSettings } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -276,7 +280,16 @@ export async function buildChoreoSheetPDF(
           | CanvasRenderingContext2D
           | OffscreenCanvasRenderingContext2D
           | null;
-        if (ctx) drawStepNumber(ctx, bakedNumber, 0, 0, rasterPx, false);
+        if (ctx)
+          drawStepNumber(
+            ctx,
+            bakedNumber,
+            0,
+            0,
+            rasterPx,
+            false,
+            stepLabelFor(bakedNumber, localStepLabels())
+          );
       }
       const bytes = await canvasToPngBytes(canvas);
       img = await pdf.embedPng(bytes);

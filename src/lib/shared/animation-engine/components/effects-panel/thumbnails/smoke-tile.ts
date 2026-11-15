@@ -16,6 +16,7 @@ import {
 } from "#lib/shared/effects/domain/smoke-palettes.js";
 import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 import { blob, css, ground, hexToRgb, lcg } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type SmokeIntent = EffectConfigMap["smoke"];
 export const SMOKE_TILE_SEED = 0x5d0c;
@@ -62,6 +63,120 @@ interface Puff {
   order: number;
   angle: number;
   stretch: number;
+}
+
+/**
+ * Small formats draw a shaped plume instead of the card's column: one stroke
+ * of smoke that rises from the lower left and curls over at the upper right,
+ * hook-shaped so it reads as smoke from its outline alone. The tail is soft
+ * and faint, the body denser, the leading edge lighter. Preset numbers still
+ * set the puff size and density (intensity) and how tightly it hooks (curl).
+ * Coordinates are in the small frame's own view, a 640x240 box in the tile and
+ * a 480x320 box in the chip, both mapped edge to edge by `frame`.
+ */
+interface SmokePlume {
+  view: Box;
+  /** The spine's control points, tail first, hooked head last. */
+  pts: readonly (readonly [number, number])[];
+  r0: number;
+  r1: number;
+  count: number;
+}
+const PLUME: Record<"tile" | "chip", SmokePlume> = {
+  tile: {
+    view: { x: 0, y: 0, w: 640, h: 240 },
+    pts: [
+      [70, 214],
+      [190, 204],
+      [275, 154],
+      [305, 100],
+      [365, 72],
+      [440, 80],
+      [490, 128],
+    ],
+    r0: 20,
+    r1: 37,
+    count: 180,
+  },
+  chip: {
+    view: { x: 0, y: 0, w: 480, h: 320 },
+    pts: [
+      [62, 288],
+      [165, 278],
+      [238, 218],
+      [258, 146],
+      [324, 98],
+      [396, 108],
+      [428, 164],
+    ],
+    r0: 25,
+    r1: 46,
+    count: 140,
+  },
+};
+
+type Pt = readonly [number, number];
+
+/** Point on a Catmull-Rom spline through `pts`, `s` from 0 to 1. */
+function splineAt(pts: readonly Pt[], s: number): { x: number; y: number } {
+  const n = pts.length - 1;
+  const f = Math.min(n - 1e-6, Math.max(0, s * n));
+  const i = Math.floor(f);
+  const t = f - i;
+  const p0 = pts[Math.max(0, i - 1)]!;
+  const p1 = pts[i]!;
+  const p2 = pts[i + 1]!;
+  const p3 = pts[Math.min(n, i + 2)]!;
+  const c = (a: number, b: number, c2: number, d: number): number =>
+    0.5 *
+    (2 * b +
+      (-a + c2) * t +
+      (2 * a - 5 * b + 4 * c2 - d) * t * t +
+      (-a + 3 * b - 3 * c2 + d) * t * t * t);
+  return { x: c(p0[0], p1[0], p2[0], p3[0]), y: c(p0[1], p1[1], p2[1], p3[1]) };
+}
+
+function smooth(a: number, b: number, v: number): number {
+  const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+/** The plume as puffs: oldest (tail) first in `order` so the head draws last. */
+function buildPlume(
+  p: SmokeIntent,
+  rand: Rand,
+  plume: SmokePlume,
+  lead: boolean[]
+): Puff[] {
+  const sizeK = 0.85 + 0.35 * p.intensity;
+  const alphaK = 0.6 + 0.5 * p.intensity;
+  // Curl tightens the hook: the spine's head points pull toward the centre.
+  const hook = 0.9 + 0.2 * p.curlStrength;
+  const cx = plume.pts[3]![0];
+  const cy = plume.pts[3]![1];
+  const pts: Pt[] = plume.pts.map((q, i) =>
+    i < 4 ? q : [cx + (q[0] - cx) * hook, cy + (q[1] - cy) * hook]
+  );
+  const puffs: Puff[] = [];
+  for (let i = 0; i < plume.count; i += 1) {
+    const s = (i + rand() * 0.8) / plume.count;
+    const o = splineAt(pts, Math.min(1, s));
+    const r = (plume.r0 + (plume.r1 - plume.r0) * Math.pow(s, 0.85)) * sizeK;
+    // Soft faint tail, dense body, a little less at the very tip.
+    const body = 0.28 + 0.72 * smooth(0, 0.35, s);
+    const tip = 1 - 0.35 * smooth(0.93, 1, s);
+    puffs.push({
+      x: o.x + gauss(rand) * r * 0.55,
+      y: o.y + gauss(rand) * r * 0.55,
+      r: r * (0.75 + rand() * 0.45),
+      alpha: Math.min(0.5, 0.26 * alphaK * body * tip),
+      order: s,
+      angle: rand() * TAU,
+      stretch: 0.9 + rand() * 0.25,
+    });
+    lead.push(s > 0.62);
+  }
+  return puffs;
 }
 
 function build(p: SmokeIntent, pal: SmokePalette, rand: Rand): Puff[] {
@@ -183,40 +298,69 @@ function build(p: SmokeIntent, pal: SmokePalette, rand: Rand): Puff[] {
 
 export function paintSmokeTile(
   ctx: CanvasRenderingContext2D,
-  intent: SmokeIntent
+  intent: SmokeIntent,
+  format: TileFormat = "card"
 ): void {
   const rand = lcg(SMOKE_TILE_SEED);
   const pal = resolveSmokePalette(intent);
-  const puffs = build(intent, pal, rand);
+  const plume = isSmall(format) ? PLUME[format as "tile" | "chip"] : null;
+  if (plume) frame(ctx, format, plume.view, 0);
+  const lead: boolean[] = [];
+  const puffs = plume
+    ? buildPlume(intent, rand, plume, lead)
+    : build(intent, pal, rand);
   const core = hexToRgb(pal.core);
   const edge = hexToRgb(pal.edge);
   const dark = 0.2126 * edge[0] + 0.7152 * edge[1] + 0.0722 * edge[2] < 0.45;
-  ground(ctx, dark ? [0.27, 0.26, 0.31] : [0.03, 0.03, 0.045]);
+  ground(
+    ctx,
+    dark
+      ? [0.27, 0.26, 0.31]
+      : plume
+        ? [0.07, 0.07, 0.095]
+        : [0.03, 0.03, 0.045]
+  );
   if (dark) {
-    blob(ctx, 390, 120, 380, 230, [0.62, 0.6, 0.68], 0.75);
+    blob(ctx, 390, 120, 380, 230, [0.62, 0.6, 0.68], plume ? 0.9 : 0.75);
+  } else if (plume) {
+    blob(
+      ctx,
+      plume.view.x + plume.view.w * 0.5,
+      plume.view.y + plume.view.h * 0.5,
+      plume.view.w * 0.5,
+      plume.view.h * 0.5,
+      edge,
+      0.05 + 0.05 * intent.intensity
+    );
   } else {
     blob(ctx, SOURCE.x, 150, 300, 200, edge, 0.05 + 0.05 * intent.intensity);
   }
-  // One unit-radius gradient, scaled per puff through the transform.
+  // One unit-radius gradient, scaled per puff through the transform. The
+  // plume's leading edge uses a core-heavy one so it reads lighter.
   const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
   grad.addColorStop(0, css(core, 0.8));
   grad.addColorStop(0.5, css(edge, 0.38));
   grad.addColorStop(1, css(edge, 0));
-  ctx.fillStyle = grad;
-  const boost = dark ? 1.7 : 0.8;
-  for (const q of puffs) {
+  const leadGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  leadGrad.addColorStop(0, css(core, 1));
+  leadGrad.addColorStop(0.55, css(core, 0.55));
+  leadGrad.addColorStop(1, css(edge, 0));
+  const boost = dark ? (plume ? 2.4 : 1.7) : plume ? 1.5 : 0.8;
+  puffs.forEach((q, idx) => {
     const alpha = q.alpha * boost;
-    if (alpha <= 0.015) continue;
+    if (alpha <= 0.015) return;
+    ctx.fillStyle = plume && lead[idx] ? leadGrad : grad;
     const cos = Math.cos(q.angle);
     const sin = Math.sin(q.angle);
     const sx = q.stretch * q.r;
     const sy = q.r / q.stretch;
-    ctx.setTransform(sx * cos, sx * sin, -sy * sin, sy * cos, q.x, q.y);
+    ctx.save();
+    ctx.transform(sx * cos, sx * sin, -sy * sin, sy * cos, q.x, q.y);
     ctx.globalAlpha = Math.min(1, alpha);
     ctx.beginPath();
     ctx.arc(0, 0, 1, 0, TAU);
     ctx.fill();
-  }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.restore();
+  });
   ctx.globalAlpha = 1;
 }

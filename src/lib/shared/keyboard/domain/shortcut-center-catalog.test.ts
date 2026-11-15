@@ -62,7 +62,7 @@ describe("shortcut center catalog", () => {
     try {
       await setLocale("de");
       const german = localizeShortcut(registered);
-      expect(german.shortcut.label).toBe("Zufällige Requisite");
+      expect(german.shortcut.label).toBe("Zufälliges Requisit");
       expect(buildShortcutCatalog([german], "all", "create", "zufällige")).toHaveLength(1);
       expect(registered.shortcut.label).toBe("Shuffle Prop");
 

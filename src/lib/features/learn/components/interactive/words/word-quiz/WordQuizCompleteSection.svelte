@@ -105,8 +105,12 @@ WordQuizCompleteSection - Score display and completion actions
       var(--theme-accent, #a855f7),
       var(--theme-accent, #ec4899)
     );
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .score-value {
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

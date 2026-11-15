@@ -36,6 +36,13 @@
   import { textAlignmentFixture } from "./text-alignment-fixture";
   import { groupMoveFixture } from "./group-move-fixture";
   import { transitionsFixture } from "./transitions-fixture";
+  import { splitFixture } from "./split-fixture";
+  import { liftFixture } from "./lift-fixture";
+  import { namePairFixture } from "./name-pair-fixture";
+  import { cardEndingFixture } from "./card-ending-fixture";
+  import { flashFixture } from "./flash-fixture";
+  import { joinFixture } from "./join-fixture";
+  import { holdFixture } from "./hold-fixture";
   import {
     autoFrameFixture,
     autoFrameFixtureQuery,
@@ -102,6 +109,20 @@
     const isolatedTextAlignment = fixture === "text-alignment";
     const isolatedGroupMove = fixture === "group-move";
     const isolatedTransitions = fixture === "transitions";
+    // An animation clip whose hands split apart at 2 s and rejoin at 6 s.
+    const isolatedSplit = fixture === "split";
+    // An animation clip on a Reel's bottom half, lifted from 1 s to 8.3 s.
+    const isolatedLift = fixture === "lift";
+    // The woods takes with a titles name pair that parks and lights letters.
+    const namePair = fixture === "name-pair";
+    const woods = mapping || namePair;
+    // The card's ending: cascade, ring on beats, QR exit and title hand-off.
+    const cardEnding = fixture === "card-ending";
+    // A card under a flash clip; an animation flying into a moves clip.
+    const isolatedFlash = fixture === "flash";
+    const isolatedJoin = fixture === "join";
+    // The footage holding its last frame for 2 s, a square over it, a card in.
+    const isolatedHold = fixture === "hold";
     // `?fixture=auto-frame&video=/word-videos/...&from=45&length=31&flip=1`
     // opens one clip of that take in a fresh post, for Auto frame.
     const isolatedAutoFrame = fixture === "auto-frame";
@@ -129,18 +150,25 @@
     try {
       const [loaded, draft] = await Promise.all([
         getBrowseLoader().loadFullSequenceData(
-          mapping
+          woods
             ? "Δ-ΛRZΔ-ΛRZΔ-ΛRZΔ-ΛRZ"
             : viewedId
               ? viewedId.repeat(4)
               : SEQUENCE_WORD,
-          mapping ? "Δ-ΛRZ" : (viewedId ?? SEQUENCE_ID)
+          woods ? "Δ-ΛRZ" : (viewedId ?? SEQUENCE_ID)
         ),
         isolatedKeyframes ||
         isolatedTextAlignment ||
         isolatedGroupMove ||
         isolatedTransitions ||
-        isolatedAutoFrame
+        isolatedSplit ||
+        isolatedLift ||
+        isolatedAutoFrame ||
+        namePair ||
+        cardEnding ||
+        isolatedFlash ||
+        isolatedJoin ||
+        isolatedHold
           ? Promise.resolve({
               project: null,
               diskAvailable: false,
@@ -149,7 +177,7 @@
           : loadPostDraft(draftSequenceId),
       ]);
       initialProject = draft.project ?? undefined;
-      diskDrafts = !mapping && !viewedId && draft.diskAvailable;
+      diskDrafts = !woods && !viewedId && draft.diskAvailable;
       draftLoadError = draft.error;
       if (!loaded)
         throw new Error("The visual fixture is no longer published.");
@@ -164,12 +192,26 @@
               ? "post-group-move-fixture"
               : isolatedTransitions
                 ? "post-transitions-fixture"
-                : isolatedAutoFrame
-                  ? "post-auto-frame-fixture"
-                  : storageFixture
-                  ? draftSequenceId
-                  : hydrated.id;
-      if (!mapping) seedPerformance(editorSequenceId);
+                : isolatedLift
+                  ? "post-lift-fixture"
+                  : isolatedSplit
+                    ? "post-split-fixture"
+                    : namePair
+                      ? "post-name-pair-fixture"
+                      : cardEnding
+                        ? "post-card-ending-fixture"
+                        : isolatedFlash
+                          ? "post-flash-fixture"
+                          : isolatedJoin
+                            ? "post-join-fixture"
+                            : isolatedHold
+                              ? "post-hold-fixture"
+                              : isolatedAutoFrame
+                                ? "post-auto-frame-fixture"
+                                : storageFixture
+                                  ? draftSequenceId
+                                  : hydrated.id;
+      if (!woods) seedPerformance(editorSequenceId);
       // Before `sequence` is set: the editor mounts on it and reads its project once.
       if (isolatedAutoFrame) {
         const clip = autoFrameFixtureQuery(
@@ -184,7 +226,7 @@
       sequence = {
         ...hydrated,
         id: editorSequenceId,
-        performanceVideoUrl: mapping ? undefined : VIDEO_URL,
+        performanceVideoUrl: woods ? undefined : VIDEO_URL,
       };
       if (isolatedKeyframes || (storageFixture && !initialProject))
         initialProject = keyframeClearFixture(editorSequenceId);
@@ -194,7 +236,22 @@
         initialProject = groupMoveFixture(editorSequenceId);
       if (isolatedTransitions)
         initialProject = transitionsFixture(editorSequenceId);
+      if (isolatedSplit) initialProject = splitFixture(editorSequenceId);
+      if (isolatedLift) initialProject = liftFixture(editorSequenceId);
       if (mapping && !initialProject) initialProject = mappingFixture();
+      if (namePair) initialProject = namePairFixture(editorSequenceId);
+      if (cardEnding) initialProject = cardEndingFixture(editorSequenceId);
+      if (isolatedFlash) initialProject = flashFixture(editorSequenceId);
+      if (isolatedJoin)
+        initialProject = joinFixture(editorSequenceId, {
+          videoId: VIDEO_ID,
+          durationSeconds: VIDEO_DURATION,
+        });
+      if (isolatedHold)
+        initialProject = holdFixture(editorSequenceId, {
+          videoId: VIDEO_ID,
+          durationSeconds: VIDEO_DURATION,
+        });
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 
       const blob = await getSharer().getCardImageBlob(sequence, {

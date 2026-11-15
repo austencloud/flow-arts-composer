@@ -178,6 +178,16 @@ type GuideBlockContent =
       /** A figure card's own small heading, when it shares a screen with
           another figure card (the opener's "Prospin" and "Antispin"). */
       figureTitle?: string;
+      /** With `figureTitle`: the title shown until a `figureChoice` under
+          the row is answered ("A"), when it crossfades to `figureTitle`. */
+      blindTitle?: string;
+      /** Teaching marks on the card's canvas and the controls under it
+          (FigureCues). Omitted: the card draws exactly as before. */
+      cues?: FigureCues;
+      /** In a row of figure cards that all set it: the cards play in turn,
+          the one waiting dimmed, and a card that starts playing stops the
+          other on its end pose. Omitted: each card plays on its own. */
+      playInTurn?: boolean;
       /**
        * Keep a card's animation playing round and round instead of stopping
        * after one pass. For a sequence that ends where it started, so the
@@ -210,6 +220,31 @@ type GuideBlockContent =
       sheet?: PtHint;
     }
   | {
+      /**
+       * A "which one?" question about the figure cards directly above it
+       * (2026-11-12, the Staff Motions opener first). The cards show their
+       * `blindTitle`s and the buttons carry the same labels. The buttons wait
+       * for the row's opening play; a wrong answer replays the row and leaves
+       * the right one open; the right answer shows `right` and `after`,
+       * crossfades the titles to the real ones and turns on what `reveals`
+       * names. The answer lasts for the visit. Flow-only: the print sheet
+       * keeps its own wording.
+       */
+      kind: "figureChoice";
+      /** Remembers the answer for the visit (one per page). */
+      id: string;
+      lead?: string;
+      question: string;
+      /** Index of the right card in the row above. */
+      answer: number;
+      right: string;
+      wrong: string;
+      /** Words that join `right` once answered (the page's tagline). */
+      after?: string;
+      /** Card cues the answer switches on. */
+      reveals?: { thumbRing?: boolean };
+    }
+  | {
       /** A grid diagram (diamond / box / combined 8-point) as a standalone figure -
        *  the canonical GridSvg on a white square, points-only. Flow-only (The Grid
        *  page); the sheet renders its own hand-authored diagram. */
@@ -239,6 +274,18 @@ type GuideBlockContent =
       flow: GuideBlock[];
       sheet: PtHint;
     };
+
+/** Teaching marks a figure card can opt into (see motion-cue-types.ts). */
+export interface FigureCues {
+  /** Faint copies of the prop at a quarter, half and three quarters. */
+  ghosts?: boolean;
+  /** The hand's path so far, with a dot at the hand. */
+  handPath?: boolean;
+  /** A ring on the thumb end. */
+  thumbRing?: boolean;
+  /** Replay and half-speed buttons between the player and the strip. */
+  controls?: boolean;
+}
 
 export type GuideBlock = GuideBlockContent & {
   /** Optional semantic placement used by a named FlowFrame composition. */

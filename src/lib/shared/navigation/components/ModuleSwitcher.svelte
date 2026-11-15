@@ -33,6 +33,7 @@
   import { supportModalState } from "../../support/state/support-modal-state.svelte";
   import { whatsNewState } from "../../settings/state/whats-new-state.svelte";
   import ReleaseUnreadDot from "../../settings/components/ReleaseUnreadDot.svelte";
+  import { installNudge } from "../../pwa/install-nudge-state.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { popIn, motionDuration } from "#lib/shared/transitions/motion.js";
@@ -369,6 +370,12 @@
     void whatsNewState.openManual();
   }
 
+  // Phones still in a browser tab only; the card itself picks the install path.
+  function handleGetTheApp() {
+    closeDrawer();
+    installNudge.openFromMenu();
+  }
+
   function handleProfileTap() {
     hapticService?.trigger("selection");
     onModuleChange?.("settings" as ModuleId);
@@ -594,6 +601,16 @@
                       {/if}
                     </div>
                     <span>{t("module_inbox")}</span>
+                  </button>
+                {/if}
+                {#if installNudge.menuVisible}
+                  <button
+                    class="drawer-action get-app"
+                    onclick={handleGetTheApp}
+                    aria-label={t("nav_get_the_app")}
+                  >
+                    <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                    <span>{t("nav_get_the_app")}</span>
                   </button>
                 {/if}
                 <button
@@ -1099,6 +1116,19 @@
 
   .drawer-action.release-notes i {
     color: var(--theme-accent);
+  }
+
+  .drawer-action.get-app {
+    color: var(--theme-text);
+    border-color: color-mix(in srgb, var(--theme-accent) 45%, transparent);
+  }
+
+  .drawer-action.get-app i {
+    color: var(--theme-accent);
+  }
+
+  .drawer-action.get-app:hover {
+    background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
   }
 
   .drawer-action.release-notes:hover {

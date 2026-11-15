@@ -59,6 +59,7 @@
     selectedPropType={hand === "right"
       ? value.rightPropType
       : value.leftPropType}
+    previewHand={hand === "both" ? undefined : hand}
     variant="inline"
     scrollMode="host"
     flat={dense}

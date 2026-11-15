@@ -20,6 +20,7 @@
   import CreateMethodPreview from "./method-previews/CreateMethodPreview.svelte";
   import {
     bootScreenCovers,
+    FIRST_VIEW_WAIT_MS,
     holdBootScreen,
     runAfterBootScreen,
   } from "#lib/shared/application/services/boot-screen.js";
@@ -29,7 +30,10 @@
     PRESS_BACKDROP_KEY,
     PRESS_BACKDROP_MS,
   } from "../services/create-entry-choreography";
-  import { METHOD_PREVIEW_SCENES } from "./method-previews/method-preview-scenes";
+  import {
+    METHOD_PREVIEW_SCENES,
+    warmMethodPreviewScenes,
+  } from "./method-previews/method-preview-scenes";
 
   const METHOD_ORDER = new Map([
     ["construct", 0],
@@ -122,6 +126,11 @@
   // tint when it leaves. The cards are prepared behind it; the turns still
   // wait for it to go. A visit that lands on a workspace never opens the
   // board behind it, so it does not hold.
+  // The hold may run to FIRST_VIEW_WAIT_MS after `ready`, the limit Browse's
+  // first view uses; the default limit timed out on a slow phone every run.
+  // The scene code is requested as the hold is taken, and the cards load it
+  // without the idle wait (loadBehindBootScreen). Opened later from inside
+  // Create, none of this applies and the board loads as before.
   // If the hold runs out first, the ready cards arrive as the screen leaves.
   let previewHoldTaken = false;
   let releasePreviewHold = (): void => {};
@@ -132,7 +141,11 @@
     if (previewHoldTaken) return;
     previewHoldTaken = true;
     if (sceneOrder().length === 0 || !bootScreenCovers()) return;
-    releasePreviewHold = holdBootScreen("create-previews");
+    warmMethodPreviewScenes(sceneOrder());
+    releasePreviewHold = holdBootScreen(
+      "create-previews",
+      FIRST_VIEW_WAIT_MS
+    );
     cancelLeavingReveal = runAfterBootScreen(() => reveal.revealNow());
   }
 
@@ -321,6 +334,7 @@
                     turn={turns.turn}
                     onready={handleReady}
                     onfailed={handleFailed}
+                    loadBehindBootScreen
                   />
                 {/if}
               {:else}
@@ -677,6 +691,76 @@
     .two-methods .method-item.default-method .method-copy {
       grid-row: 1;
       grid-column: 2;
+    }
+  }
+
+  /* A portrait phone board (three or more methods) never scrolls. The frame
+     is the container's height, the rows share what is left under the header
+     and are equal, and each card's stage gives way first (down to
+     --preview-min). Cards keep the shared stage and words rows, so stages
+     match and names line up across a pair. Type sizes never change: a short
+     board tightens its gaps, clamps the blurb to two lines, then hides it
+     (never one clipped line); the name always shows. The "Last used" badge
+     is out of flow, so it adds no height. */
+  @container create-entry (max-width: 619px) and (orientation: portrait) {
+    .front-door-inner:not(.two-methods) {
+      height: 100%;
+      min-height: 0;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .front-door-inner:not(.two-methods) .method-index {
+      min-height: 0;
+      grid-auto-rows: minmax(0, 1fr) auto;
+    }
+
+    .front-door-inner:not(.two-methods) .method-item:not(.default-method),
+    .front-door-inner:not(.two-methods)
+      .method-item:not(.default-method)
+      .method-card {
+      min-height: 0;
+    }
+
+    .front-door-inner:not(.two-methods) .method-copy {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .front-door-inner:not(.two-methods) .method-description {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      overflow: hidden;
+    }
+  }
+
+  @container create-entry (max-width: 619px) and (orientation: portrait) and (max-height: 700px) {
+    .front-door-inner:not(.two-methods) {
+      padding-block: 12px;
+      gap: 8px;
+    }
+
+    .front-door-inner:not(.two-methods) .method-index {
+      row-gap: 8px;
+    }
+
+    .front-door-inner:not(.two-methods)
+      .method-item:not(.default-method)
+      .method-card {
+      row-gap: 8px;
+      padding: 10px;
+    }
+
+    .front-door-inner:not(.two-methods) .method-description {
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+  }
+
+  @container create-entry (max-width: 619px) and (orientation: portrait) and (max-height: 600px) {
+    .front-door-inner:not(.two-methods) .method-description {
+      display: none;
     }
   }
 

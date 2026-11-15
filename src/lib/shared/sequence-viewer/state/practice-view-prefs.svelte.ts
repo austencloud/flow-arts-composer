@@ -35,10 +35,12 @@ interface PersistedPrefs {
   readAheadDepth: number;
   metronomeEnabled: boolean;
   mirrorEnabled: boolean;
+  /** The first-time coach lines have played on this device. */
+  coachSeen: boolean;
 }
 
 function load(): PersistedPrefs {
-  const fallback: PersistedPrefs = { splitPreset: "lane-heavy", readAheadDepth: 2, metronomeEnabled: false, mirrorEnabled: false };
+  const fallback: PersistedPrefs = { splitPreset: "lane-heavy", readAheadDepth: 2, metronomeEnabled: false, mirrorEnabled: false, coachSeen: false };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return fallback;
@@ -49,6 +51,7 @@ function load(): PersistedPrefs {
       readAheadDepth: depth === 1 || depth === 2 || depth === 3 ? depth : fallback.readAheadDepth,
       metronomeEnabled: parsed.metronomeEnabled ?? fallback.metronomeEnabled,
       mirrorEnabled: parsed.mirrorEnabled ?? fallback.mirrorEnabled,
+      coachSeen: parsed.coachSeen === true,
     };
   } catch {
     return fallback;
@@ -62,10 +65,11 @@ export function createPracticeViewPrefs() {
   let readAheadDepth = $state<number>(initial.readAheadDepth);
   let metronomeEnabled = $state<boolean>(initial.metronomeEnabled);
   let mirrorEnabled = $state<boolean>(initial.mirrorEnabled);
+  let coachSeen = $state<boolean>(initial.coachSeen);
 
   function persist() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ splitPreset, readAheadDepth, metronomeEnabled, mirrorEnabled }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ splitPreset, readAheadDepth, metronomeEnabled, mirrorEnabled, coachSeen }));
     } catch {
       // ignore storage errors
     }
@@ -78,10 +82,12 @@ export function createPracticeViewPrefs() {
     get cellSize() { return cellSizeForReadAhead(readAheadDepth); },
     get metronomeEnabled() { return metronomeEnabled; },
     get mirrorEnabled() { return mirrorEnabled; },
+    get coachSeen() { return coachSeen; },
     setSplitPreset(p: SplitPreset) { splitPreset = p; persist(); },
     setReadAheadDepth(d: number) { readAheadDepth = Math.min(3, Math.max(1, Math.round(d))); persist(); },
     setMetronomeEnabled(v: boolean) { metronomeEnabled = v; persist(); },
     setMirrorEnabled(v: boolean) { mirrorEnabled = v; persist(); },
+    setCoachSeen(v: boolean) { coachSeen = v; persist(); },
   };
 }
 

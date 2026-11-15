@@ -1,6 +1,7 @@
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type { PictographData } from "../../pictograph/shared/domain/models/pictograph-data";
+import type { StepLabels } from "./step-number-renderer";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { PictographVisibilityOptions } from "../utils/pictograph-to-svg";
@@ -18,7 +19,7 @@ import type { PictographKeyHasher } from "#lib/shared/render/services/pictograph
 import type { PictographMemoryCache } from "./pictograph-memory-cache";
 import type { Canvas2DDirectRenderer } from "./canvas-2d-direct-renderer";
 import type { LayerCompositor } from "./layer-compositor";
-import { drawStepNumber } from "./step-number-renderer";
+import { drawStepNumber, stepLabelFor } from "./step-number-renderer";
 import { drawHandColorKey } from "./canvas-2d-glyph-renderer";
 import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
 import type { QRCodeGenerator } from "../../qr/services/qr-code-generator";
@@ -550,7 +551,8 @@ export class ImageComposer {
           visibilitySettings,
           effectiveLeftPropType,
           effectiveRightPropType,
-          gridOffsetX
+          gridOffsetX,
+          options.stepLabels
         ),
         reportRendering
       );
@@ -586,7 +588,8 @@ export class ImageComposer {
           visibilitySettings,
           effectiveLeftPropType,
           effectiveRightPropType,
-          gridOffsetX
+          gridOffsetX,
+          options.stepLabels
         ),
         reportRendering
       );
@@ -763,7 +766,8 @@ export class ImageComposer {
     visibilitySettings?: PictographVisibilityOptions,
     leftPropType?: PropType,
     rightPropType?: PropType,
-    horizontalOffset: number = 0
+    horizontalOffset: number = 0,
+    stepLabels?: StepLabels
   ): Promise<void> {
     try {
       const finalVisibilitySettings = resolveCellVisibility(
@@ -786,7 +790,8 @@ export class ImageComposer {
           stepNumber,
           titleOffset,
           finalVisibilitySettings,
-          horizontalOffset
+          horizontalOffset,
+          stepLabels
         );
         return;
       }
@@ -862,7 +867,15 @@ export class ImageComposer {
 
       if (stepNumber !== undefined) {
         const isDarkMode = finalVisibilitySettings.darkMode ?? false;
-        drawStepNumber(ctx, stepNumber, x, y, stepSize, isDarkMode);
+        drawStepNumber(
+          ctx,
+          stepNumber,
+          x,
+          y,
+          stepSize,
+          isDarkMode,
+          stepLabelFor(stepNumber, stepLabels)
+        );
         // Custom palettes bypass the layer compositor, but Start still needs its key.
         if (
           stepNumber === 0 &&
@@ -1258,7 +1271,8 @@ export class ImageComposer {
     stepNumber: number | undefined,
     titleOffset: number,
     visibilitySettings: PictographVisibilityOptions,
-    horizontalOffset: number = 0
+    horizontalOffset: number = 0,
+    stepLabels?: StepLabels
   ): Promise<void> {
     if (!this.layerCompositor) {
       throw new Error("LayerCompositor not available");
@@ -1278,7 +1292,10 @@ export class ImageComposer {
       preparedPictograph,
       layerOptions,
       layerVisibility,
-      stepNumber
+      stepNumber,
+      stepNumber === undefined
+        ? undefined
+        : stepLabelFor(stepNumber, stepLabels)
     );
 
     if (result.cacheStats.baseFromCache) {

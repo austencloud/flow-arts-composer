@@ -138,7 +138,7 @@ real profile exists.
         disabled={saving || !name.trim() || !dirty}
         onclick={save}
       >
-        {saving ? "Saving…" : "Save"}
+        {saving ? t("nav_ui_saving") : t("browse_save")}
       </PanelButton>
     </div>
   {/snippet}

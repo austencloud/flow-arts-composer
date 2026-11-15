@@ -36,6 +36,7 @@
     primaryPropColors,
     gridJoin = null,
     vm = null,
+    bold = false,
   }: {
     sequenceData?: SequenceData | null;
     currentStep?: number;
@@ -51,7 +52,19 @@
     gridJoin?: GridJoin | null;
     /** Per-surface visibility manager; falls back to the global singleton. */
     vm?: AnimationVisibilityStateManager | null;
+    /** A heavier, more opaque line for a host that offers the paths as a
+     *  guide to follow (the sequence viewer). The default weight is about
+     *  1.2px on a phone-sized stage. Post Studio repaints these attributes
+     *  into its frames, so hosts that leave this off draw exactly as before. */
+    bold?: boolean;
   } = $props();
+
+  // viewBox units: 950 across the stage.
+  const stroke = $derived(
+    bold
+      ? { width: 8, dash: "22 16", opacity: 0.85 }
+      : { width: 3, dash: "8 6", opacity: 0.5 }
+  );
 
   function resolvePathTypeForMotion(
     motion: MotionData
@@ -169,26 +182,28 @@
   >
     {#if drawLeft}
       <path
+        data-hand="left"
         d={leftPathD}
         transform={leftTransform}
         fill="none"
         stroke={leftColor}
-        stroke-width="3"
+        stroke-width={stroke.width}
         stroke-linecap="round"
-        stroke-dasharray="8 6"
-        opacity="0.5"
+        stroke-dasharray={stroke.dash}
+        opacity={stroke.opacity}
       />
     {/if}
     {#if drawRight}
       <path
+        data-hand="right"
         d={rightPathD}
         transform={rightTransform}
         fill="none"
         stroke={rightColor}
-        stroke-width="3"
+        stroke-width={stroke.width}
         stroke-linecap="round"
-        stroke-dasharray="8 6"
-        opacity="0.5"
+        stroke-dasharray={stroke.dash}
+        opacity={stroke.opacity}
       />
     {/if}
   </svg>

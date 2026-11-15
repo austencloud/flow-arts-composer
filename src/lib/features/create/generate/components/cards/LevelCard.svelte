@@ -10,6 +10,10 @@ Uses stepper pattern for space-efficient level selection
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import { MAX_AVAILABLE_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
+  import {
+    removeToast,
+    showToast,
+  } from "#lib/shared/toast/state/toast-state.svelte.js";
   import StepperCard from "./StepperCard/StepperCard.svelte";
 
   let {
@@ -18,7 +22,7 @@ Uses stepper pattern for space-efficient level selection
     brightBackgroundOverride,
     gridColumnSpan = 2,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
     appearance = "vivid",
   } = $props<{
     currentLevel: DifficultyLevel;
@@ -165,6 +169,20 @@ Uses stepper pattern for space-efficient level selection
     onLevelChange(numberToLevel[newLevel]);
   }
 
+  // Pressing plus at the top level answers instead of staying silent: Shape
+  // Engine shows a level 4, so people expect Generate to reach it. StepperCard
+  // keeps the plus tappable when this is set and fires its own haptic. One
+  // toast at a time, so repeated presses restart it rather than stacking.
+  let capToastId: string | undefined;
+  function handleIncrementBlocked() {
+    if (capToastId) removeToast(capToastId);
+    capToastId = showToast(
+      t("generator_level_cap_toast", { level: MAX_AVAILABLE_LEVEL }),
+      "info",
+      3500
+    );
+  }
+
   function formatValue(value: number): string {
     return value.toString();
   }
@@ -202,6 +220,7 @@ Uses stepper pattern for space-efficient level selection
   maxValue={MAX_AVAILABLE_LEVEL}
   onIncrement={handleIncrement}
   onDecrement={handleDecrement}
+  onIncrementBlocked={handleIncrementBlocked}
   {formatValue}
   {description}
   {color}

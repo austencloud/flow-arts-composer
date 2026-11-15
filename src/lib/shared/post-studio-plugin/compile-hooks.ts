@@ -10,6 +10,8 @@ import {
   stripRole,
   takeRole,
   timingVideoAt,
+  videoFootageSeconds,
+  videoHoldSeconds,
   withPipHandoffBoxKeys,
   type CompileEnv,
   type CompileItemEnv,
@@ -30,6 +32,14 @@ import {
   titlesPlanOf,
   type TunnelTitlesPlan,
 } from "#lib/shared/media-composition/domain/tunnel-titles.js";
+import {
+  flashPlanOf,
+  type FlashPlan,
+} from "#lib/shared/media-composition/domain/flash.js";
+import {
+  creditPlanOf,
+  type CreditPlan,
+} from "#lib/shared/media-composition/domain/credit.js";
 // Types only: item-kinds imports this module by value for each kind's compile.
 import type {
   PostAnimationItem,
@@ -37,6 +47,7 @@ import type {
   PostCarouselItem,
   PostMandalaItem,
   PostMovesItem,
+  PostTitlesItem,
 } from "./item-kinds";
 
 // This module and everything it reaches must never import the plugin index by
@@ -65,6 +76,26 @@ export function movesAnimationRole(itemId: string): string {
 
 export function itemIdFromMovesAnimationRole(role: string): string | null {
   const prefix = "moves-animation:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
+/** A flash clip's veil and corner marks, which `flash-painter.ts` paints. */
+export function flashRole(itemId: string): string {
+  return `flash:${itemId}`;
+}
+
+export function itemIdFromFlashRole(role: string): string | null {
+  const prefix = "flash:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
+/** A credit's two lines, which `credit-painter.ts` paints. */
+export function creditRole(itemId: string): string {
+  return `credit:${itemId}`;
+}
+
+export function itemIdFromCreditRole(role: string): string | null {
+  const prefix = "credit:";
   return role.startsWith(prefix) ? role.slice(prefix.length) : null;
 }
 
@@ -115,7 +146,22 @@ export function itemIdFromStaffEffectRole(role: string): string | null {
     : null;
 }
 
+export const COMET_TRAILS_ROLE_PREFIX = "comet:";
+
+/** The painted layer that draws a video clip's comet trails. */
+export function cometTrailsRole(itemId: string): string {
+  return `${COMET_TRAILS_ROLE_PREFIX}${itemId}`;
+}
+
+export function itemIdFromCometTrailsRole(role: string): string | null {
+  return role.startsWith(COMET_TRAILS_ROLE_PREFIX)
+    ? role.slice(COMET_TRAILS_ROLE_PREFIX.length)
+    : null;
+}
+
 type SequenceItem = PostAnimationItem | PostMovesItem | PostCarouselItem;
+/** An item split at the footage under it, so each piece reads that footage's moves. */
+type ClockedItem = SequenceItem | PostTitlesItem;
 
 function sequenceRoleFor(item: SequenceItem): {
   key: string;
@@ -169,13 +215,23 @@ export interface SequencePiece {
   takeId?: string;
   /** Inside the item's tunnel intro, which owns the sequence clock. */
   intro?: boolean;
+  /**
+   * Over the held last frame of the footage under it: the piece's whole
+   * span holds the frame just before `sourceOut` (`holdOutSeconds`).
+   */
+  holdOut?: number;
+}
+
+/** Where a clip's footage ends on the post: its end, less any held last frame. */
+function footageEnd(video: PostVideoItem): number {
+  return video.start + videoFootageSeconds(video);
 }
 
 /**
  * Where an item's tunnel intro ends, in post seconds; null when it has none.
  * A hook saved as its own item, with no stated length, is all intro.
  */
-function tunnelIntroEnd(item: SequenceItem): number | null {
+function tunnelIntroEnd(item: ClockedItem): number | null {
   if (item.kind !== "animation" || !item.tunnelHook) return null;
   const seconds = item.tunnelHook.seconds;
   return seconds === undefined
@@ -191,10 +247,12 @@ function tunnelIntroEnd(item: SequenceItem): number | null {
  * back to holding its own opening pose rather than reading a move from
  * nothing. An item with a tunnel intro is also cut where the intro ends. An
  * intro played over its footage reads that footage's beats; any other intro
- * reads no footage and runs on its own speed curve.
+ * reads no footage and runs on its own speed curve. A main clip that holds
+ * its last frame is also cut where its footage ends, and a piece over the
+ * hold stays on what the footage showed last, as the clip's picture does.
  */
 function splitIntoPieces(
-  item: SequenceItem,
+  item: ClockedItem,
   mainVideos: readonly PostVideoItem[]
 ): SequencePiece[] {
   const start = item.start;
@@ -211,6 +269,9 @@ function splitIntoPieces(
     const videoEnd = itemEnd(video);
     if (videoStart > start && videoStart < end) boundaries.add(videoStart);
     if (videoEnd > start && videoEnd < end) boundaries.add(videoEnd);
+    const heldFrom = footageEnd(video);
+    if (videoHoldSeconds(video) > 0 && heldFrom > start && heldFrom < end)
+      boundaries.add(heldFrom);
   }
   const sorted = [...boundaries].sort((a, b) => a - b);
 
@@ -226,25 +287,42 @@ function splitIntoPieces(
       intro && !introOverFootage
         ? undefined
         : timingVideoAt(mainVideos, (a + b) / 2, item.anchor?.itemId);
-    const piece: SequencePiece = covering
+    const held =
+      covering &&
+      videoHoldSeconds(covering) > 0 &&
+      a >= footageEnd(covering) - POST_TIME_EPSILON;
+    const piece: SequencePiece = held
       ? {
           start: a,
           end: b,
-          sourceIn: covering.sourceIn + (a - covering.start) * covering.speed,
-          sourceOut: covering.sourceIn + (b - covering.start) * covering.speed,
+          sourceIn: covering.sourceOut - STAGE_HOLD_SOURCE_SECONDS,
+          sourceOut: covering.sourceOut,
           rate: covering.speed,
           useResolvedTimeMap: true,
           timeMapRole: takeRole(covering.takeId),
           takeId: covering.takeId,
+          holdOut: b - a,
         }
-      : {
-          start: a,
-          end: b,
-          sourceIn: 0,
-          sourceOut: b - a,
-          rate: 1,
-          useResolvedTimeMap: false,
-        };
+      : covering
+        ? {
+            start: a,
+            end: b,
+            sourceIn: covering.sourceIn + (a - covering.start) * covering.speed,
+            sourceOut:
+              covering.sourceIn + (b - covering.start) * covering.speed,
+            rate: covering.speed,
+            useResolvedTimeMap: true,
+            timeMapRole: takeRole(covering.takeId),
+            takeId: covering.takeId,
+          }
+        : {
+            start: a,
+            end: b,
+            sourceIn: 0,
+            sourceOut: b - a,
+            rate: 1,
+            useResolvedTimeMap: false,
+          };
     pieces.push(intro ? { ...piece, intro: true } : piece);
   }
   return item.kind === "animation" && item.stage3d
@@ -325,6 +403,17 @@ function pipPassOf(env: CompileEnv): PipPass {
     );
   }
   return pass;
+}
+
+/** Whether `outgoing` is set to cross-fade into `incoming`, its neighbour on one lane. */
+function crossfadesInto(outgoing: PostItem, incoming: PostItem): boolean {
+  const transition = outgoing.transitionOut;
+  return (
+    transition?.type === "crossfade" &&
+    transition.duration > 0 &&
+    (transition.incomingId === undefined ||
+      transition.incomingId === incoming.id)
+  );
 }
 
 /** The `compile` of the animation, moves and carousel kinds. */
@@ -421,9 +510,14 @@ export function compileSequenceItem(
   // stays solid so the panel never thins in the middle. On a shared
   // surface nothing dissolves: the one surface changes its look.
   const overlap = pipHandoff ? pipHandoff.end - pipHandoff.start : 0;
+  // When the animation cross-fades into the square (Fly into next clip), the
+  // cross-fade already raises the square over the overlap; fading it here
+  // too would bring it in on the square of the curve.
+  const crossfadeOwnsFade =
+    !!pipHandoff && crossfadesInto(pipHandoff.animation, pipHandoff.moves);
   const fadeIn =
     handoffRole === "to"
-      ? pipHandoff!.movesOnTop && !sharedHandoff
+      ? pipHandoff!.movesOnTop && !sharedHandoff && !crossfadeOwnsFade
         ? overlap
         : 0
       : item.fadeIn;
@@ -502,6 +596,7 @@ export function compileSequenceItem(
       transform: IDENTITY_TRANSFORM,
       useResolvedTimeMap: piece.useResolvedTimeMap,
       ...(piece.timeMapRole ? { timeMapRole: piece.timeMapRole } : {}),
+      ...(piece.holdOut ? { holdOutSeconds: piece.holdOut } : {}),
       ...(item.kind === "animation" && item.tunnelHook && piece.intro
         ? { tunnelHook: item.tunnelHook }
         : {}),
@@ -545,6 +640,84 @@ export function compileTitlesItem(
     if (regionKeyframes) env.addRegionKeyframes(regionKeyframes);
   }
   const titlesMotion = motionFor(item);
+  const shared = {
+    kind: "visual" as const,
+    sourceRole: plan.role,
+    regionId: item.id,
+    loop: false as const,
+    opacity: item.opacity,
+    transform: IDENTITY_TRANSFORM,
+    ...(titlesMotion ? { motion: titlesMotion } : {}),
+  };
+  if (!item.lit) {
+    env.addClip({
+      ...shared,
+      id: item.id,
+      start: seconds(item.start),
+      end: seconds(itemEnd(item)),
+      sourceIn: seconds(0),
+      sourceOut: seconds(item.duration),
+      playbackRate: 1,
+      ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+      ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+      useResolvedTimeMap: false,
+    });
+  } else {
+    // A lit letter follows the move being performed: the clip is cut at the
+    // footage under it, as an animation is, so each piece reads the same take
+    // clock as the beat-and-letter overlay. The fades read the whole clip.
+    const finish = itemEnd(item);
+    splitIntoPieces(item, env.mainVideos).forEach((piece, index) => {
+      if (piece.takeId) env.useTake(piece.takeId);
+      env.addClip({
+        ...shared,
+        id: index === 0 ? item.id : `${item.id}~${index}`,
+        start: seconds(piece.start),
+        end: seconds(piece.end),
+        sourceIn: seconds(piece.sourceIn),
+        sourceOut: seconds(piece.sourceOut),
+        playbackRate: piece.rate,
+        ...(item.fadeIn > 0 && piece.start < item.start + item.fadeIn
+          ? {
+              fadeInSeconds: item.fadeIn,
+              ...(piece.start !== item.start
+                ? { fadeInStartSeconds: item.start }
+                : {}),
+            }
+          : {}),
+        ...(item.fadeOut > 0 && piece.end > finish - item.fadeOut
+          ? {
+              fadeOutSeconds: item.fadeOut,
+              ...(piece.end !== finish ? { fadeOutEndSeconds: finish } : {}),
+            }
+          : {}),
+        useResolvedTimeMap: piece.useResolvedTimeMap,
+        ...(piece.timeMapRole ? { timeMapRole: piece.timeMapRole } : {}),
+        ...(piece.holdOut ? { holdOutSeconds: piece.holdOut } : {}),
+      });
+    });
+  }
+  env.addOutput("titles", plan);
+  return true;
+}
+
+/**
+ * The `compile` of the flash kind: one painted clip over the item's span, on
+ * the post's own clock (`useResolvedTimeMap: false`), so the painter reads
+ * post time and a paused frame matches the file. Its plan joins the
+ * `flashes` output.
+ */
+export function compileFlashItem(item: PostItem, env: CompileItemEnv): boolean {
+  if (item.kind !== "flash") return false;
+  const { output, box, zIndex, label } = env;
+  const { useRole, region, presetRole } = env;
+  const { regionKeyframesFor, motionFor, seconds } = env;
+  const plan = flashPlanOf(item, flashRole(item.id));
+  useRole(presetRole(plan.role, "Flash", "manual", ["image"]));
+  env.addRegion(region(item.id, label, box, "fill", zIndex));
+  const regionKeyframes = regionKeyframesFor(item, output);
+  if (regionKeyframes) env.addRegionKeyframes(regionKeyframes);
+  const motion = motionFor(item);
   env.addClip({
     id: item.id,
     kind: "visual",
@@ -561,9 +734,46 @@ export function compileTitlesItem(
     ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
     transform: IDENTITY_TRANSFORM,
     useResolvedTimeMap: false,
-    ...(titlesMotion ? { motion: titlesMotion } : {}),
+    ...(motion ? { motion } : {}),
   });
-  env.addOutput("titles", plan);
+  env.addOutput("flashes", plan);
+  return true;
+}
+
+/**
+ * The `compile` of the credit kind: one painted clip over the item's span on
+ * the post's own clock, as a flash is. Its plan joins the `credits` output.
+ */
+export function compileCreditItem(item: PostItem, env: CompileItemEnv): boolean {
+  if (item.kind !== "credit") return false;
+  const { output, box, zIndex, label } = env;
+  const { useRole, region, presetRole } = env;
+  const { regionKeyframesFor, motionFor, seconds } = env;
+  const plan = creditPlanOf(item, creditRole(item.id));
+  useRole(presetRole(plan.role, "Credit", "manual", ["image"]));
+  env.addRegion(region(item.id, label, box, "fill", zIndex));
+  const regionKeyframes = regionKeyframesFor(item, output);
+  if (regionKeyframes) env.addRegionKeyframes(regionKeyframes);
+  const motion = motionFor(item);
+  env.addClip({
+    id: item.id,
+    kind: "visual",
+    sourceRole: plan.role,
+    regionId: item.id,
+    start: seconds(item.start),
+    end: seconds(itemEnd(item)),
+    sourceIn: seconds(0),
+    sourceOut: seconds(item.duration),
+    playbackRate: 1,
+    loop: false,
+    opacity: item.opacity,
+    ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+    ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+    transform: IDENTITY_TRANSFORM,
+    useResolvedTimeMap: false,
+    ...(motion ? { motion } : {}),
+  });
+  env.addOutput("credits", plan);
   return true;
 }
 
@@ -662,6 +872,18 @@ export const TKA_COMPILE_HOOKS: ProjectCompileHooks = {
       : null,
   videoCompanions: (item, env, footage) => {
     const { useRole, presetRole } = env;
+    // Comet trails ride the footage the same way, under any staff effect.
+    if (item.cometTrails) {
+      const cometRole = cometTrailsRole(item.id);
+      useRole(presetRole(cometRole, "Comet trails", "manual", ["image"]));
+      env.addClip({
+        id: `${item.id}~comet`,
+        kind: "visual",
+        sourceRole: cometRole,
+        ...footage,
+        useResolvedTimeMap: false,
+      });
+    }
     // The staff effect rides the footage: same span, media time, framing
     // and fades, so its painter lands on the picture's own staff ends.
     if (item.staffEffect) {
@@ -678,9 +900,15 @@ export const TKA_COMPILE_HOOKS: ProjectCompileHooks = {
   },
 };
 
-/** tka's compiled outputs: each titles clip's words, for `tunnel-titles-painter.ts`. */
+/**
+ * tka's compiled outputs: each titles clip's words, for
+ * `tunnel-titles-painter.ts`, each flash clip's plan, for `flash-painter.ts`,
+ * and each credit's, for `credit-painter.ts`.
+ */
 export const TKA_COMPILE_OUTPUTS = {
   titles: () => [] as TunnelTitlesPlan[],
+  flashes: () => [] as FlashPlan[],
+  credits: () => [] as CreditPlan[],
 } satisfies {
   [K in keyof PluginCompiledOutputs]: () => PluginCompiledOutputs[K];
 };

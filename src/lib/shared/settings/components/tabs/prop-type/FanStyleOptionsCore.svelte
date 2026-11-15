@@ -9,6 +9,8 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import FanAppearancePicker from "#lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { propDrawerState } from "#lib/shared/settings/state/prop-drawer-state.svelte.js";
   import {
     normalizeFanAppearance,
     type FanAppearance,
@@ -19,6 +21,7 @@
     horizontal = false,
     room = false,
     appearance,
+    propType = PropType.FAN,
     onchange,
   }: {
     /**
@@ -34,6 +37,8 @@
      */
     room?: boolean;
     appearance: FanAppearance;
+    /** The fan the Standard / Big control has selected; the tiles draw it. */
+    propType?: PropType;
     onchange: (appearance: FanAppearance) => void;
   } = $props();
 
@@ -116,25 +121,70 @@
     onchange={change}
     frameColor={false}
     compact
+    pairPreview={!propDrawerState.watching3D}
+    pairPropType={propType}
   />
 </div>
 
 <style>
   .fan-style-options {
-    container-type: inline-size;
+    container: fan-options / inline-size;
     flex: 0 0 auto;
     min-width: 0;
     width: 100%;
   }
 
   /*
-    One card per look, as many across as the host affords: a 200px effects
-    panel stacks them, a drawer seats three, a wide sheet four. The count is
-    never fixed, so adding a build can only add a card, not shrink the rest.
+    The host's own width picks the columns: a narrow effects panel stacks
+    the looks, a phone drawer seats three across so all nine show at once,
+    and a wide sheet five (nine sit 5 + 4; four across would leave one alone).
   */
   .fan-style-options :global(.option-grid) {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.75rem), 1fr));
     gap: 10px;
+  }
+
+  @container fan-options (min-width: 15rem) {
+    .fan-style-options :global(.option-grid) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* A bounded host shares its height among the rows, so its shape picks the
+     columns that keep a tile near its own shape. A tall narrow drawer (a
+     tablet's) seats the nine two across: three across there stretches each
+     tile into a slab with a small drawing in it. Phone drawers are shorter
+     than 48rem and keep three. */
+  @container fan-options (min-width: 15rem) and (max-width: 39.99rem) and (min-height: 48rem) and (max-aspect-ratio: 11 / 20) {
+    .fan-style-options.fill :global(.option-grid) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* An odd count leaves the last tile alone; it sits centred, at a
+       column's width, rather than beside an empty cell. */
+    .fan-style-options.fill
+      :global(.option-grid > :last-child:nth-child(odd)) {
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: calc(50% - 5px);
+    }
+  }
+
+  /* Five across suits a wide host whose tiles keep their own shape: one with
+     no fixed height, or a bounded one at least 8:5 wide (the room hosts turn
+     at the same shape). A taller bounded host stays three across (3 x 3), on
+     a flat frame floor so all nine still fit: two rows of five there stretch
+     into slabs. */
+  @container fan-options (min-width: 40rem) {
+    .fan-style-options:not(.fill):not(.horizontal) :global(.option-grid) {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  @container fan-options (min-width: 40rem) and (min-aspect-ratio: 8 / 5) {
+    .fan-style-options.fill :global(.option-grid) {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
   }
 
   /*
@@ -182,8 +232,48 @@
     font-size: 13px;
   }
 
-  /* Bounded hosts give the cards all available height to share. */
+  /* Names and makers are said in full: they wrap to a second line rather
+     than trail off. The maker is 12px in its own spelling; capitals with
+     tracking would not fit a three-across tile. Tiles in a row still end
+     level, since grid items stretch to their row. */
+  .fan-style-options :global(.option-name),
+  .fan-style-options :global(.option-credit) {
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
+  .fan-style-options :global(.option-credit) {
+    font-size: var(--font-size-compact, 12px);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* A three-across tile is about 100px wide: the label keeps to the 12px
+     floor and a tighter box so a two-line name and its maker fit. */
+  @container fan-options (min-width: 15rem) and (max-width: 40rem) {
+    .fan-style-options :global(.option-label) {
+      padding: 6px 6px 7px;
+      font-size: var(--font-size-compact, 12px);
+      line-height: 1.15;
+    }
+
+    /* The drawing now reaches the tile's corners, so the selected tick is a
+       small corner mark here rather than a 22px disc over a wick. */
+    .fan-style-options :global(.option-grid .option .selected-badge) {
+      top: 4px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      font-size: var(--font-size-compact);
+    }
+  }
+
+  /* Bounded hosts give the cards all available height to share. Their
+     height is definite, so the chooser can also answer it (a short drawer
+     flattens the frame floor below). */
   .fan-style-options.fill {
+    container-type: size;
     height: 100%;
     min-height: 0;
   }
@@ -231,6 +321,33 @@
      stretches instead, and `contain` gives the fan the extra room as air. */
   .fan-style-options.fill :global(.preview-frame) {
     align-self: stretch;
+  }
+
+  /* In a bounded drawer the ratio is only the frame's floor: rows with room
+     stretch it taller. A drawer under 25rem (a 360 x 640 phone) cannot hold
+     three rows of 3:2 frames, so its floor is the flatter 7:4 (5:3 left the
+     list 2px too tall to sit still). */
+  @container fan-options (max-height: 25rem) {
+    .fan-style-options.fill:not(.room) :global(.preview-frame) {
+      aspect-ratio: 7 / 4;
+    }
+  }
+
+  /* The same idea for the wide 3 x 3: a 3:1 floor lets three rows fit the
+     shortest drawer that takes this shape (8:5), and any with more room
+     stretch the frame back up. The drawings shrink to fit; none is cropped. */
+  @container fan-options (min-width: 40rem) and (max-aspect-ratio: 8 / 5) {
+    .fan-style-options.fill:not(.room) :global(.preview-frame) {
+      aspect-ratio: 3 / 1;
+    }
+  }
+
+  /* And for the tall drawer's five rows of two (the same query as its
+     columns): a 5:2 floor fits them from 48rem tall. */
+  @container fan-options (min-width: 15rem) and (max-width: 39.99rem) and (min-height: 48rem) and (max-aspect-ratio: 11 / 20) {
+    .fan-style-options.fill:not(.room) :global(.preview-frame) {
+      aspect-ratio: 5 / 2;
+    }
   }
 
   /* A host that never scrolls: the box's shape picks the columns, the cards
@@ -348,6 +465,18 @@
     height: 100%;
     min-height: 0;
     aspect-ratio: auto;
+  }
+  /* The rail has no row to spare for the note; each waiting tile keeps its
+     clock mark and says the same words to a screen reader. */
+  .fan-style-options.horizontal :global(.waiting-note),
+  .fan-style-options.room :global(.waiting-note) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .fan-style-options.horizontal :global(.option-label) {
     font-size: var(--font-size-min, 14px);

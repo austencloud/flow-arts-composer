@@ -329,6 +329,11 @@ const keyByText = {
   "In and out already name orientations here, like thumb in and thumb out, so Inspin reads like one of them. Pro isn't an orientation. Prospin only says which way the prop spins.": "guide_prospin_why_orientation",
   "In a base dash, the thumb ends also swap orientation.": "verified_level1_staff_motions_283",
   "Halfway through the motion, the center of the staff is at the grid’s center point.": "verified_level1_staff_motions_284",
+  // PROPOSED 2026-11-12: awaiting Austen's yes (the opener's question).
+  "Same hand, same move. Watch the staff.": "guide_l1_staff_motions_choice_lead",
+  "Which staff spins the same way as the hand?": "guide_l1_staff_motions_choice_question",
+  "Yes. A spins with the hand: a prospin. B spins against it: an antispin.": "guide_l1_staff_motions_choice_right",
+  "Look again. Follow the hand, then the staff.": "guide_l1_staff_motions_choice_wrong",
   "Staff Placements": "verified_level1_staff_placements_285",
   "When writing sequences with staves, it helps to mark the thumb end with a line.<br>The performer can use it to keep track of rotations and check their position on every step.<br>It also encourages negative space/body turns instead of finger spinning.": "verified_level1_staff_placements_286",
   "In the following examples, an end is always at the center point.": "verified_level1_staff_placements_287",
@@ -535,6 +540,9 @@ export function localizeLevel1Block(block: GuideBlock): GuideBlock {
         ...(block.figureTitle
           ? { figureTitle: localizeLevel1Text(block.figureTitle) }
           : {}),
+        ...(block.blindTitle
+          ? { blindTitle: localizeLevel1Text(block.blindTitle) }
+          : {}),
         pool: block.pool && {
           ...block.pool,
           entries: block.pool.entries.map((entry) => ({
@@ -543,6 +551,15 @@ export function localizeLevel1Block(block: GuideBlock): GuideBlock {
             proseHtml: localizeLevel1Text(entry.proseHtml),
           })),
         },
+      };
+    case "figureChoice":
+      return {
+        ...block,
+        ...(block.lead ? { lead: localizeLevel1Text(block.lead) } : {}),
+        question: localizeLevel1Text(block.question),
+        right: localizeLevel1Text(block.right),
+        wrong: localizeLevel1Text(block.wrong),
+        ...(block.after ? { after: localizeLevel1Text(block.after) } : {}),
       };
     case "gridExplorer":
       return {

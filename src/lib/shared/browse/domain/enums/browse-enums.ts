@@ -11,6 +11,11 @@ export enum BrowseSortMethod {
    * names it (BrowsePanel's `curatedSortLabel`).
    */
   CURATED = "curated",
+  /**
+   * A shuffle that is the same for every visitor on a UTC day and changes the
+   * next day (browse-todays-mix.ts). The community Sequences wall opens on it.
+   */
+  TODAYS_MIX = "todays-mix",
   ALPHABETICAL = "alphabetical",
   DATE_ADDED = "date",
   DIFFICULTY_LEVEL = "level",

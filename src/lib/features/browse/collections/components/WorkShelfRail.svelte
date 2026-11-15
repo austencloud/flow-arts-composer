@@ -32,9 +32,9 @@
 
   const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
     drafts: {
-      label: "Drafts",
-      shortLabel: "Drafts",
-      description: "Unfinished sequences on this device",
+      label: t("browse_home_drafts"),
+      shortLabel: t("browse_home_drafts"),
+      description: t("browse_verified_drafts_description"),
       icon: "fa-pen-to-square",
     },
     collections: {

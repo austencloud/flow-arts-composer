@@ -210,7 +210,10 @@
     // Return null if state is not yet determined (still initializing)
     if (pickerState === null) return null;
 
-    return pickerState || isStartPlacementSelected;
+    // A selected start brings the start picker back only when no editor takes
+    // the panel. Under the step editor the option grid stays, so Done returns
+    // to it with no start tiles showing through the swap.
+    return pickerState || (isStartPlacementSelected && !wantsStepEditorView);
   });
 
   // Loading when either persistence isn't ready OR picker state is null (still determining)
@@ -436,8 +439,6 @@
                   lockStartGridMode={isEditingExistingStart}
                   startPlacementValidationMessage={constructTabState.error}
                   {onOptionSelected}
-                  onStartPlacementNavigateToAdvanced={() => {}}
-                  onStartPlacementNavigateToDefault={() => {}}
                   {isSideBySideLayout}
                   {onOpenFilters}
                   {onCloseFilters}

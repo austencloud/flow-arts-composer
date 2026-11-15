@@ -393,26 +393,28 @@
     {/if}
 
     {#if !(useFlow && content) && !TopicPage}
-      <nav class="topic-nav" aria-label="Guide navigation">
+      <nav class="topic-nav" aria-label={t("guide_nav_aria")}>
         {#if prev}
           <a
             class="nav-link prev"
             href={localHref(`/guide/level-1/${prev.id}`)}
           >
-            <span class="nav-dir">Previous</span><span class="nav-title"
+            <span class="nav-dir">{t("guide_nav_previous")}</span><span class="nav-title"
               >{prev.title}</span
             >
           </a>
         {:else}
           <span class="nav-spacer"></span>
         {/if}
-        <a class="nav-link hub" href={localHref("/guide")}>All guides</a>
+        <a class="nav-link hub" href={localHref("/guide")}
+          >{t("guide_nav_all_guides")}</a
+        >
         {#if next}
           <a
             class="nav-link next"
             href={localHref(`/guide/level-1/${next.id}`)}
           >
-            <span class="nav-dir">Next</span><span class="nav-title"
+            <span class="nav-dir">{t("guide_nav_next")}</span><span class="nav-title"
               >{next.title}</span
             >
           </a>

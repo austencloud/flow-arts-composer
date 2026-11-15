@@ -36,6 +36,10 @@ export function createOfflineCacheState(orchestrator: OfflineCacheOrchestrator):
   let errorMessage = $state<string | null>(null);
 
   async function startBackgroundCache() {
+    // Browse's first cards outrank the offline save: wait until the page has
+    // been quiet for a while. A cancel or explicit download meanwhile wins.
+    const go = await orchestrator.waitForBackgroundSlot();
+    if (!go) return;
     phase = "caching";
     errorMessage = null;
     progress = { cached: 0, total: 0, currentTask: "Gallery metadata" };

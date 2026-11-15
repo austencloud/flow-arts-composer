@@ -8,7 +8,7 @@
  */
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import type { CloseReason } from "@austencloud/drawer";
 
 import { registerBackgroundFreezeTarget } from "#lib/shared/background/shared/state/background-hold.svelte.js";
@@ -200,6 +200,82 @@ describe("Drawer close lifecycle", () => {
     );
     await settle(50);
     expect(document.activeElement).toBe(opener);
+  });
+});
+
+describe("Drawer system Back", () => {
+  // The stock drawer opens with dialog.show(), which has no close watcher, so
+  // Android's Back used to walk history past an open sheet.
+  const scope = globalThis as { CloseWatcher?: unknown };
+  const realCloseWatcher = scope.CloseWatcher;
+  let watchers: { fire: () => void; destroyed: boolean }[] = [];
+
+  beforeEach(() => {
+    watchers = [];
+    scope.CloseWatcher = class {
+      private listener: (() => void) | null = null;
+      destroyed = false;
+      constructor() {
+        watchers.push(
+          this as unknown as { fire: () => void; destroyed: boolean }
+        );
+      }
+      addEventListener(_type: string, listener: () => void) {
+        this.listener = listener;
+      }
+      destroy() {
+        this.destroyed = true;
+        this.listener = null;
+      }
+      fire() {
+        this.listener?.();
+      }
+    };
+  });
+
+  afterEach(() => {
+    scope.CloseWatcher = realCloseWatcher;
+    document.body.innerHTML = "";
+  });
+
+  it("closes the open sheet on Back", async () => {
+    const onclose =
+      vi.fn<(event: CustomEvent<{ reason: CloseReason }>) => void>();
+    render(DrawerKeyboardTestHarness, { isOpen: true, onclose });
+    await settle();
+    expect(watchers).toHaveLength(1);
+
+    watchers[0]!.fire();
+    await settle(50);
+    expect(isDismissed()).toBe(true);
+    expect(onclose).toHaveBeenCalledTimes(1);
+    expect(onclose.mock.calls[0]?.[0].detail.reason).toBe("escape");
+  });
+
+  it("keeps Back armed after a refused close", async () => {
+    const onBeforeClose = vi
+      .fn()
+      .mockReturnValueOnce(false)
+      .mockReturnValue(true);
+    render(DrawerKeyboardTestHarness, { isOpen: true, onBeforeClose });
+    await settle();
+
+    watchers[0]!.fire();
+    await settle(50);
+    expect(drawer()?.dataset.state).toBe("open");
+    expect(watchers).toHaveLength(2);
+
+    watchers[1]!.fire();
+    await settle(50);
+    expect(isDismissed()).toBe(true);
+  });
+
+  it("lets go of Back when the sheet closes another way", async () => {
+    const screen = render(DrawerKeyboardTestHarness, { isOpen: true });
+    await settle();
+    await screen.rerender({ isOpen: false });
+    await settle(50);
+    expect(watchers[0]!.destroyed).toBe(true);
   });
 });
 

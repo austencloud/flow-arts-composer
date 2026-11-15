@@ -1,7 +1,7 @@
 <script lang="ts">
   import { useTask, useThrelte } from "@threlte/core";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import { untrack } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import type { PerspectiveCamera, Scene, WebGLRenderer } from "three";
 
   import { tryGetAdaptiveQualityContext } from "../../context/adaptive-quality-context";
@@ -59,32 +59,53 @@
   }
 
   let world = $state.raw<CelestialEnvironmentWorld | null>(null);
+  // The world on screen and how to take it off. Kept outside reactive state:
+  // it is swapped only once its replacement has loaded, so a reload never
+  // shows the bare build-in haze in between.
+  let shown: { world: CelestialEnvironmentWorld; detach: () => void } | null =
+    null;
   let elapsed = 0;
   let generation = 0;
 
+  function releaseShown(): void {
+    shown?.detach();
+    shown?.world.dispose();
+    shown = null;
+  }
+
+  // Only the authored config and the world's vertical frame rebuild the place.
+  // Everything else is sampled once per load: the adaptive content tier steps
+  // down under frame pressure and back up a minute later, and the stage grows
+  // with the crew. Tracking those reloaded the 5 MB citadel each time, and the
+  // scene showed the loading haze (a flat horizon-coloured fog) until it came
+  // back. Ground height and stage bounds have live setters below.
   $effect(() => {
     const request = ++generation;
     const worldConfig = config ?? createDefaultCelestialConfig();
-    const groundY = userProportionsState.groundY;
-    const qualityTier = adaptiveQuality?.contentTier;
+    const sampled = untrack(() => ({
+      groundY: userProportionsState.groundY,
+      qualityTier: adaptiveQuality?.contentTier,
+      stageWidth,
+      stageDepth,
+      stageRadius,
+      stageRadiusGrowth,
+    }));
     const contentTier =
-      qualityTier === "low" || qualityTier === "high"
-        ? qualityTier
+      sampled.qualityTier === "low" || sampled.qualityTier === "high"
+        ? sampled.qualityTier
         : "standard";
     const motionScale = resolveMotionScale(prefersReducedMotion());
     let cancelled = false;
-    let mounted: CelestialEnvironmentWorld | null = null;
-    let detach: (() => void) | null = null;
 
     sceneFeatures?.reportProgress("environment", 0);
     void createLoadedCelestialEnvironmentWorld({
       renderer,
       config: worldConfig,
-      groundY,
-      stageWidth,
-      stageDepth,
-      stageRadius,
-      stageRadiusGrowth,
+      groundY: sampled.groundY,
+      stageWidth: sampled.stageWidth,
+      stageDepth: sampled.stageDepth,
+      stageRadius: sampled.stageRadius,
+      stageRadiusGrowth: sampled.stageRadiusGrowth,
       worldYOffset,
       contentTier,
       motionScale,
@@ -100,10 +121,15 @@
           return;
         }
         next.setActive(untrack(() => active));
-        mounted = next;
-        detach = attachCelestialEnvironmentWorld(scene, next);
+        const detach = attachCelestialEnvironmentWorld(scene, next);
+        const previous = shown;
+        shown = { world: next, detach };
         world = next;
         elapsed = 0;
+        if (previous) {
+          previous.detach();
+          previous.world.dispose();
+        }
         sceneFeatures?.reportProgress("environment", 1);
         sceneFeatures?.reportReady("environment");
       })
@@ -118,10 +144,22 @@
 
     return () => {
       cancelled = true;
-      if (world === mounted) world = null;
-      detach?.();
-      mounted?.dispose();
     };
+  });
+
+  onDestroy(() => {
+    generation += 1;
+    world = null;
+    releaseShown();
+  });
+
+  $effect(() => {
+    const groundY = userProportionsState.groundY;
+    world?.setGroundY(groundY);
+  });
+
+  $effect(() => {
+    world?.setStageBounds(stageRadius, stageRadiusGrowth);
   });
 
   $effect(() => {

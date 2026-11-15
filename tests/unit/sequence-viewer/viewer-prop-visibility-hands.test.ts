@@ -46,9 +46,14 @@ describe("viewer prop picking by hand", () => {
     ]);
   });
 
-  it("a left pick keeps the right prop and moves on to the right hand", () => {
-    const h = harness({ catDogMode: true });
-    expect(h.state.propHand).toBe("left");
+  it("opens on Both", () => {
+    const h = harness();
+    expect(h.state.propHand).toBe("both");
+  });
+
+  it("a left pick changes the left hand only and the flag follows", () => {
+    const h = harness();
+    h.state.setPropHand("left");
     h.state.handlePropTypeChange(PropType.FAN, "left");
     h.flush();
     expect(h.settings).toMatchObject({
@@ -56,7 +61,7 @@ describe("viewer prop picking by hand", () => {
       rightPropType: PropType.STAFF,
       catDogMode: true,
     });
-    expect(h.state.propHand).toBe("right");
+    expect(h.state.propHand).toBe("left");
     expect(h.urlParams).toEqual([["bp", "enc:fan"]]);
     expect(h.animationPairs.at(-1)).toEqual([PropType.FAN, PropType.STAFF]);
   });
@@ -75,37 +80,20 @@ describe("viewer prop picking by hand", () => {
     expect(h.urlParams).toEqual([["rp", "enc:club"]]);
   });
 
-  it("turning cat/dog on keeps the pair and starts from the left hand", () => {
-    const h = harness();
-    h.state.setPropHand("right");
-    h.state.handleCatDogToggle();
-    h.flush();
-    expect(h.settings).toMatchObject({
-      leftPropType: PropType.STAFF,
-      rightPropType: PropType.STAFF,
-      catDogMode: true,
-      propViewingMode: "my-props",
-    });
-    expect(h.state.activeCatDog).toBe(true);
-    expect(h.state.propHand).toBe("left");
-    expect(h.urlParams).toEqual([]);
-  });
-
-  it("turning cat/dog off folds the right hand onto the left prop", () => {
+  it("a single-hand pick that makes the hands match turns the flag off", () => {
     const h = harness({
       leftPropType: PropType.FAN,
       rightPropType: PropType.CLUB,
       catDogMode: true,
     });
-    h.state.handleCatDogToggle();
+    h.state.setPropHand("right");
+    h.state.handlePropTypeChange(PropType.FAN, "right");
     h.flush();
     expect(h.settings).toMatchObject({
       leftPropType: PropType.FAN,
       rightPropType: PropType.FAN,
       catDogMode: false,
     });
-    expect(h.state.activeCatDog).toBe(false);
-    expect(h.urlParams).toEqual([["rp", "enc:fan"]]);
     expect(h.animationPairs.at(-1)).toEqual([PropType.FAN, PropType.FAN]);
   });
 });

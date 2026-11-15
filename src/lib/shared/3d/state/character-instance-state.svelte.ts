@@ -8,6 +8,7 @@
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { GridJoin } from "@tka/tka-types";
+import { clampFanBuild } from "#lib/shared/3d/domain/fan-appearance.js";
 import { withSequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 import { gridJoinsEqual } from "#lib/shared/grid-join/grid-join-controller.js";
 import {
@@ -174,10 +175,13 @@ export function createCharacterInstanceState(
   // Effective Value Getters (cascade resolution: null → inherit from defaults)
 
   const effectiveProp = $derived(_settings.prop ?? getDefaults().prop);
-  const effectivePropBuild = $derived<PropBuild>({
-    ...propFinishState.build,
-    ...(_settings.propBuild ?? {}),
-  });
+  // A stored or inherited fan build that is not offered renders as the default.
+  const effectivePropBuild = $derived<PropBuild>(
+    clampFanBuild({
+      ...propFinishState.build,
+      ...(_settings.propBuild ?? {}),
+    })
+  );
   const effectiveEffortId = $derived(
     _settings.effortId ?? getDefaults().effortId
   );

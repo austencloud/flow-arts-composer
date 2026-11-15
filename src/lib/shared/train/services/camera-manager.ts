@@ -1,3 +1,4 @@
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 export interface CameraConfig {
   facingMode: "user" | "environment";
   width: number;
@@ -271,14 +272,14 @@ export class CameraManager {
       // Every consumer (CameraPreview, VideoRecordPanel, PerformancePreview)
       // renders this message inline with its own retry affordance — no global
       // error modal.
-      let message = "Couldn't access your camera.";
+      let message = t("train_camera_error_generic");
       if (error instanceof Error) {
         if (error.name === "NotAllowedError") {
-          message = "Camera access was denied. Check your browser permissions.";
+          message = t("train_camera_error_denied");
         } else if (error.name === "NotFoundError") {
-          message = "No camera found on this device.";
+          message = t("train_camera_error_not_found");
         } else if (error.name === "NotReadableError") {
-          message = "Camera is being used by another app.";
+          message = t("train_camera_error_busy");
         }
       }
 

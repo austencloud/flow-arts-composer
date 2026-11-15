@@ -3,6 +3,7 @@
   import { page } from "$app/state";
   import { onMount } from "svelte";
   import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     buildSequenceTitle,
@@ -100,7 +101,7 @@
       class:retired={viewerReady}
       aria-hidden={viewerReady}
     >
-      <LoadingGate variant="bar" message="Loading sequence…" />
+      <LoadingGate variant="bar" message={t("viewer_scan_loading_sequence")} />
     </div>
   {/if}
 

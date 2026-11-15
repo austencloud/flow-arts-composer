@@ -96,15 +96,24 @@ describe("a performer's build override leaves the grip on the scene default", ()
     writeFinish("day", onBuildChange);
 
     writeFanAppearance(
-      { build: "lotus", frameColor: "white", cover: "covered" },
+      { build: "sense", frameColor: "white", cover: "covered" },
       onBuildChange
     );
 
     expect(performer.settings.propBuild).toEqual({
       finish: "day",
-      fanBuild: "lotus",
+      fanBuild: "sense",
       fanFrameColor: "white",
       fanCover: "covered",
     });
+  });
+
+  it("ignores a fan look that is waiting on its maker", () => {
+    const { performer, onBuildChange } = makePerformer();
+    writeFanAppearance(
+      { build: "fire", frameColor: "black", cover: "bare" },
+      onBuildChange
+    );
+    expect(performer.settings.propBuild ?? null).toBeNull();
   });
 });

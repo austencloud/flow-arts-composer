@@ -12,6 +12,7 @@
   import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
   import {
     buildVariationMap,
+    dedupeByWord,
     variationGroupKey,
   } from "#lib/shared/browse/services/variation-grouper.js";
   import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
@@ -23,10 +24,10 @@
   import { galleryStepCount } from "#lib/shared/browse/services/gallery-render-input.js";
   import type { BrowseEngine } from "../engine/types";
   import {
-    galleryAspectForSteps,
+    FLAT_GRID_GAP,
+    FLAT_GRID_MAX_CARDS,
+    flatGridRows,
     justifiedCellFlex,
-    justifiedTargetHeight,
-    packJustifiedRows,
   } from "./justified-rows";
 
   interface Props {
@@ -100,7 +101,7 @@
   const useVirtualization = $derived(
     !disableVirtualization &&
       !(engine.sectionsEnabled && engine.sections.length > 0) &&
-      engine.sequences.length > 50
+      engine.sequences.length > FLAT_GRID_MAX_CARDS
   );
 
   const variationMap = $derived.by(() => {
@@ -113,22 +114,8 @@
     return variationMap.get(key) ?? [sequence];
   }
 
-  // One card per WORD — the variation pill + crossfade exist to cycle a word's
-  // variations inside a single card (legacy counted "number of words" and drew
-  // one thumbnail box per word). Rendering every variation as its own card
-  // filled sections with near-identical duplicates. Keyed by the SIMPLIFIED
-  // word (the label) so raw-word variants sharing a label collapse too.
-  function dedupeByWord(seqs: SequenceData[]): SequenceData[] {
-    const seen = new Set<string>();
-    const out: SequenceData[] = [];
-    for (const seq of seqs) {
-      const key = variationGroupKey(seq) ?? seq.id;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(seq);
-    }
-    return out;
-  }
+  // One card per WORD (dedupeByWord, variation-grouper.ts): the variation
+  // pill and crossfade cycle a word's variations inside a single card.
 
   // The sectioned layout (level banners, letter subsections, word-collapsed
   // rows) is virtualized in SectionedVirtualGrid — the flat/small fallback
@@ -136,27 +123,21 @@
 
   // The flat fallback lays its cards out in justified rows too, so a short
   // list of mixed lengths has no holes either (justified-rows.ts).
-  const FLAT_GAP = 8;
+  // flatGridRows is the one packing for this grid; the placeholders
+  // (BrowseThumbnailSkeleton) call it too, so they stand where the cards will.
+  const FLAT_GAP = FLAT_GRID_GAP;
   const compositionManager = getImageCompositionManager();
   let flatWidth = $state(0);
   const flatCards = $derived(dedupeByWord(engine.sequences as SequenceData[]));
   const flatRows = $derived.by(() => {
     if (!(flatWidth > 0)) return null;
-    const layoutFor = (stepCount: number) =>
-      compositionManager.getStartPlacementLayoutForStepCount(stepCount);
-    const aspects = flatCards.map((seq) =>
-      galleryAspectForSteps(galleryStepCount(seq), layoutFor)
+    const { rows, aspects } = flatGridRows(
+      flatCards.map((seq) => galleryStepCount(seq)),
+      flatWidth,
+      engine.columnCount,
+      (stepCount) =>
+        compositionManager.getStartPlacementLayoutForStepCount(stepCount)
     );
-    const rows = packJustifiedRows(aspects, {
-      width: flatWidth,
-      gap: FLAT_GAP,
-      targetHeight: justifiedTargetHeight(
-        flatWidth,
-        engine.columnCount,
-        FLAT_GAP,
-        galleryAspectForSteps(4, layoutFor)
-      ),
-    });
     return rows.map((row) => ({
       ...row,
       cards: flatCards.slice(row.start, row.start + row.count),

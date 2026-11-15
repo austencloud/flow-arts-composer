@@ -480,3 +480,49 @@ describe("getCacheStats", () => {
     expect(stats.isOfflineReady).toBe(false);
   });
 });
+
+describe("background save stays out of Browse's way", () => {
+  // A probe for an unlisted key is one Storage metadata request each; the
+  // background walk used to fire them back to back on a slow phone.
+  it("asks only for thumbnails the card index lists", async () => {
+    const galleryCache = makeGalleryCache({ sequences: [sequence("a")] });
+    const { orchestrator } = makeOrchestrator(makeNetworkMonitor(), galleryCache);
+    vi.mocked(getUrl).mockResolvedValue(null);
+
+    await orchestrator.startBackgroundCache();
+
+    expect(getUrl).toHaveBeenCalledWith("ck", Infinity, { probeUnknown: false });
+  });
+
+  it("starts only after the delay, and cancel() before then stops it", async () => {
+    vi.useFakeTimers();
+    try {
+      const { orchestrator } = makeOrchestrator();
+      let settled: boolean | undefined;
+      void orchestrator.waitForBackgroundSlot(10_000).then((go) => (settled = go));
+
+      await vi.advanceTimersByTimeAsync(9_000);
+      expect(settled).toBeUndefined();
+      orchestrator.cancel();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(settled).toBe(false);
+
+      let second: boolean | undefined;
+      void orchestrator.waitForBackgroundSlot(10_000).then((go) => (second = go));
+      await vi.advanceTimersByTimeAsync(10_000);
+      // jsdom has no requestIdleCallback, so the slot opens at the delay.
+      expect(second).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("an explicit download claims the slot from a delayed start that has not fired", async () => {
+    const { orchestrator } = makeOrchestrator();
+    const slot = orchestrator.waitForBackgroundSlot(60_000);
+
+    await orchestrator.downloadForOffline();
+
+    await expect(slot).resolves.toBe(false);
+  });
+});

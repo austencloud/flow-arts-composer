@@ -151,7 +151,7 @@ function createHarness(
         getSharePanelOpen: () => false,
         getWorkspaceElement: () => null,
         startInSplit: false,
-        startInCardThenSplit: false,
+        startAnimationAfterCard: false,
       },
       {
         getDeviceDetector: vi.fn(),
@@ -403,6 +403,28 @@ describe("sequence viewer Card playback", () => {
     expect(harness.layout.cardAutoLayoutOverride).toEqual(resolved);
     vi.advanceTimersByTime(DURATION.emphasis * 2);
     expect(harness.layout.cardAutoLayoutOverride).toEqual(resolved);
+  });
+
+  it("lets the Card pick its own grid when it opens from that 2D visit", () => {
+    // The lease above holds the Side-by-Side grid for the hidden Card. Once
+    // Card opens focused it has a different box, and a held Side-by-Side grid
+    // stays on it for the whole first visit.
+    const resolved = {
+      cols: 3,
+      rows: 4,
+      startPlacement: "column",
+      widthUnits: 3,
+      stepCount: 0,
+    } satisfies ResolvedAutoLayout;
+    const harness = createHarness(false, resolved);
+    disposals.push(harness.dispose);
+
+    harness.layout.rememberReadableCardAutoLayout(resolved, 581, 839);
+    harness.layout.selectSplitMode();
+    harness.layout.selectViewerMode("animation");
+    harness.layout.selectViewerMode("card");
+
+    expect(harness.layout.cardAutoLayoutOverride).toBeNull();
   });
 
   it("does not cancel the restored playback when the card QR opens animation", () => {

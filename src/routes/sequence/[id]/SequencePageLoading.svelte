@@ -6,6 +6,7 @@
    * the swap between them is invisible.
    */
   import LoadingCapsule from "#lib/shared/components/loading/LoadingCapsule.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { LoadingSession } from "#lib/shared/loading/loading-session.svelte.js";
 
   let { session }: { session: LoadingSession } = $props();
@@ -19,7 +20,11 @@
 </script>
 
 <div class="sequence-page-loading">
-  <LoadingCapsule {session} label="Loading sequence" {tone} />
+  <LoadingCapsule
+    {session}
+    label={t("viewer_detail_loading_sequence")}
+    {tone}
+  />
 </div>
 
 <style>

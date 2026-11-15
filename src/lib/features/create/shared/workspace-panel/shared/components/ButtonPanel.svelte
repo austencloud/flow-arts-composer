@@ -66,10 +66,13 @@
     trailingActions,
     arrivalLead = () => 0,
     animateControls,
+    stepSelected = false,
   }: {
     onClearSequence?: () => void;
     onViewSequence?: () => void;
     visible?: boolean;
+    /** A step is open in the step editor, whose own Delete removes it */
+    stepSelected?: boolean;
     /** One-row rail: Save joins the panel and Share leaves it */
     compact?: boolean;
     trailingActions?: Snippet;
@@ -191,10 +194,13 @@
       <!-- Each zone rides a PanelGroup compositor edge (data-panel-flip): when
            Play or Stop moves the workspace edge, the zones travel to their new
            place by translate instead of jumping with the layout. -->
-      <!-- LEFT ZONE: destructive document actions -->
+      <!-- LEFT ZONE: destructive document actions. While a step is selected
+           the eraser steps aside, so the loudest red control near that step
+           is the editor's Delete for it, never Clear (Austen's call
+           2026-11-13: a visitor wiped a sequence meaning to drop one step). -->
       <div class="left-zone" data-panel-flip="button-left">
         {#each leftButtons as btn (btn.id)}
-          {#if btn.id === "clear" && canClearSequence && onClearSequence}
+          {#if btn.id === "clear" && canClearSequence && onClearSequence && !stepSelected}
             <div
               in:controlArrive|global={presenceAt(2)}
               out:controlLeave|global={presenceAt(2)}
@@ -527,19 +533,27 @@
   /* Play stays at the true center while the two action groups hug their
      corners. Keeping each side at its natural width prevents spare room from
      turning into gaps between Actions and Save. The rail sets its own
-     control size here, so a layout that sizes its tier's controls (Construct
-     on phones, 40px) passes it through --workspace-rail-touch-target. */
+     control size here; a layout that sizes its tier's controls passes them
+     in: --workspace-rail-touch-target for the side controls,
+     --workspace-rail-play-size for Play (50px unless set) and
+     --workspace-rail-padding (6px unless set). Construct's phone tier sets
+     all three so every control stands 36px on one centre line, Play and
+     Viewer included, in a 44px bar (StandardWorkspaceLayout). */
   @container button-panel (max-width: 480px) {
     .button-panel {
       --min-touch-target: var(--workspace-rail-touch-target, 48px);
+      --rail-play-size: var(--workspace-rail-play-size, 50px);
+      --workspace-play-action-width: var(--rail-play-size);
+      --workspace-play-action-height: var(--rail-play-size);
+      --workspace-play-action-min-width: var(--rail-play-size);
       --settings-workspace-action-gap: 8px;
       display: grid;
       grid-template-columns:
         minmax(0, 1fr)
-        50px
+        var(--rail-play-size)
         minmax(0, 1fr);
       align-items: center;
-      padding: 6px;
+      padding: var(--workspace-rail-padding, 6px);
     }
 
     .left-zone,
@@ -559,16 +573,16 @@
     }
 
     .center-zone-wrapper {
-      width: 50px;
-      min-width: 50px;
-      min-height: 50px;
+      width: var(--rail-play-size);
+      min-width: var(--rail-play-size);
+      min-height: var(--rail-play-size);
       flex-grow: 0;
     }
 
     .center-zone {
       position: static;
-      width: 50px;
-      min-width: 50px;
+      width: var(--rail-play-size);
+      min-width: var(--rail-play-size);
       gap: 0;
       transform: none;
     }
@@ -576,7 +590,7 @@
     /* Grid cells centre Play here, so Viewer centres on it too. */
     .viewer-action {
       right: calc(100% + var(--settings-workspace-action-gap));
-      bottom: calc((50px - var(--min-touch-target)) / 2);
+      bottom: calc((var(--rail-play-size) - var(--min-touch-target)) / 2);
     }
 
     .left-zone > div,

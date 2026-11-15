@@ -1,6 +1,7 @@
 {
   "source": "docs/architecture/layout-law.md, section Device list. Change both in one commit; tests/unit/layout/device-list.test.ts proves they match.",
   "devices": [
+    { "name": "Small Android", "width": 360, "height": 640 },
     { "name": "Small phone", "width": 375, "height": 667 },
     { "name": "Fold cover, upright", "width": 412, "height": 915 },
     { "name": "Fold cover, sideways", "width": 915, "height": 412 },

@@ -127,8 +127,12 @@ Delegates ALL logic to services (SRP compliant)
     favoriteState: FavoriteState;
     /** The grown card, rendered inside the grid stage. GeneratePanel supplies
      *  ExpandedCardStage here so the panels keep their host's props. */
-    expandedCard?: Snippet;
+    expandedCard?: Snippet<[number]>;
   }>();
+
+  // The footprint's height, handed to the grown card so a short footprint can
+  // send Customize to the window instead (ExpandedCardStage).
+  let cardGridHeight = $state(0);
 
   // Get panel coordination state from context (for LOOP expanded overlay)
   const panelState = getContext<PanelCoordinationState>("panelState");
@@ -140,7 +144,7 @@ Delegates ALL logic to services (SRP compliant)
   let loopParamProvider = $state<LOOPParameterProvider | null>(null);
 
   // State
-  let headerFontSize = $state("9px");
+  let headerFontSize = $state("var(--font-size-compact, 12px)");
   let placementsResetTrigger = $state(0); // Increment to trigger reset animation
 
   // Derived values - now safe because services are reactive $state
@@ -333,11 +337,13 @@ Delegates ALL logic to services (SRP compliant)
 
   function updateFontSize() {
     // Desktop gets larger header text (11-18px) for better readability
-    // Mobile/tablet stays at (9-14px)
+    // Mobile/tablet stays at (9-14px). Either ramp is floored at the compact
+    // type role, the layout law's 12px minimum, so it only ever lifts.
     const isDesktop = window.innerWidth >= 1280;
-    headerFontSize = isDesktop
+    const ramp = isDesktop
       ? calculateResponsiveFontSize(11, 18, 1.2)
       : calculateResponsiveFontSize(9, 14, 1.2);
+    headerFontSize = `max(var(--font-size-compact, 12px), ${ramp})`;
   }
 
   function cloneStartEndOptions(options: StartEndOptions): StartEndOptions {
@@ -725,6 +731,7 @@ Delegates ALL logic to services (SRP compliant)
   <div class="card-grid-stage">
     <div
       class="card-grid"
+      bind:clientHeight={cardGridHeight}
       data-level={selectedLevel}
       data-expanded-card={panelState.openGenerateCard ?? undefined}
     >
@@ -836,7 +843,7 @@ Delegates ALL logic to services (SRP compliant)
            so this is the only box whose edges are the cards' footprint. Out of
            flow, so it takes no track and stays outside the flip above. -->
       {#if expandedCard}
-        {@render expandedCard()}
+        {@render expandedCard(cardGridHeight)}
       {/if}
     </div>
   </div>
@@ -868,6 +875,9 @@ Delegates ALL logic to services (SRP compliant)
     --card-text-weight: 700;
     --card-text-spacing: 0.3px;
     --card-text-shadow: none;
+    /* The shared stepper's supporting line ("Base Motions") ramps from 8px
+       with the card; the layout law's floor for text is 12px. */
+    --card-description-size: var(--font-size-compact, 12px);
 
     min-height: 0; /* Allow flex to shrink */
     overflow: visible; /* Allow cards to pop over neighbors and modals to escape */
@@ -946,9 +956,26 @@ Delegates ALL logic to services (SRP compliant)
       padding-block: 1px;
     }
 
-    .compact-level-card :global(.landscape-value),
-    .compact-level-card :global(.card-description) {
+    .compact-level-card :global(.landscape-value) {
       line-height: 1;
+    }
+
+    /* At 12px the three bands only just fit the 56px row (3px card padding,
+       then 16px heading, 18px numeral, 14px level name). Line height 1.2 is the
+       font's own glyph box, so nothing is clipped; the numeral hangs from the
+       heading's band and the level name sits on the bottom edge. */
+    .compact-level-card :global(.card-title),
+    .compact-level-card :global(.card-description) {
+      line-height: 1.2;
+    }
+
+    .compact-level-card :global(.landscape-value) {
+      top: calc(3px + 1px + 1.2 * var(--font-size-compact, 12px) + 1px);
+      transform: translateX(-50%);
+    }
+
+    .compact-level-card :global(.card-description) {
+      bottom: 0;
     }
 
     .card-grid {
@@ -1141,6 +1168,10 @@ Delegates ALL logic to services (SRP compliant)
     }
   }
 
+  /* On a short narrow phone the Generate row's floor matches the Level row's
+     56px, so the rows need 260px and the panel 268. The split gives the panel
+     that much (GENERATE_PHONE_PANEL_NEED in workspace-split.ts; change both
+     together). */
   @container settings-grid (width < 630px) and (height < 560px) {
     .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="1"],
@@ -1153,7 +1184,7 @@ Delegates ALL logic to services (SRP compliant)
         minmax(var(--min-touch-target), 0.8fr)
         minmax(var(--min-touch-target), 0.95fr)
         minmax(var(--min-touch-target), 0.8fr)
-        minmax(64px, 1.15fr);
+        minmax(56px, 1.15fr);
       grid-auto-rows: unset;
     }
 
@@ -1187,6 +1218,43 @@ Delegates ALL logic to services (SRP compliant)
     .card-wrapper[data-card-id="loop"] :global(.loop-body) {
       gap: 0;
     }
+
+    /* A 12px heading with normal leading and 3px padding took 24px of a 66px
+       LOOP card and left its value a 16px band; tighten the heading's own box
+       so the value keeps its full line. */
+    .card-wrapper :global(.card-header) {
+      padding-block: 1px;
+    }
+
+    .card-wrapper :global(.card-title) {
+      line-height: 1.2;
+    }
+
+    /* A stepper's plus and minus circles stay centred on the card while they
+       clear the heading, and otherwise hang 2px under the heading's line box,
+       whatever the heading's width. The heading's bottom sits at the stepper's
+       3px padding (it is 3px on any card under 90px) plus the header's 1px
+       padding plus its 1.2 line. Inside the touch zone 50cqh is half the
+       stepper's content box, so 50cqh + 3px - 14px centres a 28px circle. In a
+       row too short for 28px under the heading the circle shrinks to the room
+       left (24px or more in a 44px row) and loses its bottom padding; the tap
+       zone stays the half card. */
+    .card-wrapper :global(.touch-zone),
+    .compact-level-card :global(.touch-zone) {
+      align-items: flex-start;
+      padding-top: max(
+        calc(3px + 1px + 1.2 * var(--header-font-size, 12px) + 2px),
+        calc(50cqh + 3px - 14px)
+      );
+      padding-bottom: 0;
+    }
+
+    .card-wrapper :global(.zone-icon),
+    .compact-level-card :global(.zone-icon) {
+      width: auto;
+      height: min(28px, 100%);
+      aspect-ratio: 1;
+    }
   }
 
   /* On short phones the sequence still owns the upper half of the composer,
@@ -1198,17 +1266,64 @@ Delegates ALL logic to services (SRP compliant)
       padding-block: 0;
     }
 
+    /* 1.2 is the font's glyph box at 12px; at 1 the heading clipped its own
+       letters by a pixel top and bottom. */
     .card-wrapper :global(.card-title) {
-      line-height: 1;
+      line-height: 1.2;
     }
 
     .card-wrapper[data-card-id="customize"] :global(.customize-card),
-    .card-wrapper[data-card-id="loop"] :global(.loop-consolidated-card) {
+    .card-wrapper[data-card-id="loop"] :global(.loop-consolidated-card),
+    .card-wrapper[data-card-id="word-input"] :global(.word-input-card),
+    .card-wrapper[data-card-id="preset"] :global(.base-card) {
       padding-block: 3px;
+    }
+
+    /* Grid's one value was centred on the card and rode over its heading. */
+    .card-wrapper[data-card-id="grid-mode"] :global(.single-value) {
+      top: auto;
+      bottom: 0;
+      transform: none;
     }
 
     .card-wrapper[data-card-id="loop"] :global(.loop-icon-row) {
       display: none;
+    }
+
+    /* A 12px heading and the stepper's centred value do not stack in a 44px
+       row. Seat the value on the card's bottom edge so the heading owns the
+       top band. The circles hang under the heading as in the 90px rule, here
+       with the header's padding at 0. */
+    .card-wrapper :global(.landscape-value) {
+      top: auto;
+      bottom: 1px;
+      transform: translateX(-50%);
+    }
+
+    .card-wrapper :global(.touch-zone) {
+      padding-top: max(
+        calc(3px + 1.2 * var(--header-font-size, 12px) + 2px),
+        calc(50cqh + 3px - 14px)
+      );
+    }
+
+  }
+
+  /* Grid's two options stand side by side with the icon over the name: 4px
+     of border, an 18px icon, a 2px gap and the 12px name's 14.4px line, plus
+     2px clear top and bottom, is 42.4px. Under 55px the card's own 2px border
+     and 4px padding leave less than that (32px in a 44px row), so the pills
+     grew to their content and the name sat on the selected outline, past the
+     card's edge. Here the pills take the card's whole inside and the icon is
+     14px, which leaves the name about 3px clear in a 44px row. */
+  @container generate-card (height < 55px) {
+    .card-wrapper[data-card-id="grid-mode"] :global(.toggle-card) {
+      padding-block: 0;
+    }
+
+    .card-wrapper[data-card-id="grid-mode"]
+      :global(.toggle-option.side-by-side .option-icon) {
+      font-size: 14px;
     }
   }
 

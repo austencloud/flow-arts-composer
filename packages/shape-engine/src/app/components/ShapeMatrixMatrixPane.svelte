@@ -41,7 +41,10 @@
   use:claimedViewTransitionName={{
     name: SHAPE_MATRIX_PANE_NAME,
     enabled:
-      state.compact && state.activeView === "matrix" && state.mandalaHandoff,
+      state.compact &&
+      state.surface === "matrix" &&
+      state.activeView === "matrix" &&
+      state.mandalaHandoff,
   }}
   aria-label={t("shape_engine_matrix_aria")}
 >
@@ -67,7 +70,9 @@
         colAxis={state.colAxis}
         maxCellPx={320}
         selectedPair={state.selectedPair}
-        claimSelected={state.compact && state.activeView === "matrix"}
+        claimSelected={state.compact &&
+          state.surface === "matrix" &&
+          state.activeView === "matrix"}
         corner={cornerGuide}
         revealToken={state.revealToken}
         onselect={onselect ?? state.selectPair}

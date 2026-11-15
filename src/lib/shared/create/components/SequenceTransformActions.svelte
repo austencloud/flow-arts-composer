@@ -1276,11 +1276,15 @@
       rgb(var(--btn-color)),
       color-mix(in srgb, rgb(var(--btn-color)) 55%, white)
     );
-    -webkit-background-clip: text;
-    background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 0 6px rgba(var(--btn-color), 0.35));
     transition: filter var(--duration-normal) var(--ease-standard);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .actions-container.desktop .grid-btn .btn-icon i {
+    -webkit-background-clip: text;
+    background-clip: text;
   }
   .actions-container.desktop .grid-btn:hover:not(:disabled) .btn-icon i {
     filter: drop-shadow(0 0 10px rgba(var(--btn-color), 0.6)) brightness(1.05);

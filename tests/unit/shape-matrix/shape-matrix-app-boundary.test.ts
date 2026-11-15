@@ -57,9 +57,7 @@ describe("Shape Matrix app boundary", () => {
       "utf8"
     );
 
-    expect(pageSource).toContain(
-      "@tka/shape-engine/app/ShapeMatrixApp.svelte"
-    );
+    expect(pageSource).toContain("@tka/shape-engine/app/ShapeMatrixApp.svelte");
     expect(pageSource).toContain("mutateCurrentUrl");
     expect(pageSource).toContain("<ShapeMatrixApp {persistence} />");
   });
@@ -330,7 +328,9 @@ describe("Shape Matrix app boundary", () => {
     expect(drillSource).toMatch(
       /\{#if !appState \|\| appState\.compact\}[\s\S]*?<AnimationPanel/
     );
-    expect(drillSource).toContain('<ShapeMatrixStageActions placement="panel" />');
+    expect(drillSource).toContain(
+      '<ShapeMatrixStageActions placement="panel" />'
+    );
     // The canvas says what a click will do. It owns the four hint styles; the
     // engine must not answer this with a button of its own.
     expect(drillSource).toContain('hoverHint: "badge"');
@@ -375,9 +375,18 @@ describe("Shape Matrix app boundary", () => {
       expect(source).toContain("registerShapeMatrixPlaybackShortcut(");
       expect(source).not.toContain('window.addEventListener("keydown"');
     }
+    // Inside the Composer the bottom bar is the one prop switcher, so every
+    // engine prop handler is gated on the host owning a picker.
     expect(theoryDetailSource).toContain(
-      "onPropPickerRequest={app.togglePropPicker}"
+      "onPropPickerRequest={picksProps ? app.togglePropPicker : undefined}"
     );
+    for (const path of [
+      "packages/shape-engine/src/app/components/ShapeMatrixTheoryDetail.svelte",
+      "packages/shape-engine/src/app/components/ShapeMatrixDetailPane.svelte",
+      "packages/shape-engine/src/app/components/ShapeMatrixCustomizeWorkspace.svelte",
+    ]) {
+      expect(read(path)).toContain("engineOwnsPropPicker(");
+    }
     // Compact hosts compose the picker beside the canvas rather than covering
     // it: same focus mode the section controls use, same canonical grid.
     expect(shellSource).toMatch(

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   loadInitialSequenceMetadata: vi.fn<() => Promise<SequenceData[] | null>>(),
   loadSequenceMetadata: vi.fn<() => Promise<SequenceData[]>>(),
   refreshFromFirestore: vi.fn<() => Promise<SequenceData[]>>(),
+  getFreshCatalog: vi.fn<(maxAgeMs: number) => SequenceData[] | null>(),
   getLibrarySequences: vi.fn<() => Promise<SequenceData[]>>(),
 }));
 
@@ -26,6 +27,7 @@ vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
     loadInitialSequenceMetadata: mocks.loadInitialSequenceMetadata,
     loadSequenceMetadata: mocks.loadSequenceMetadata,
     refreshFromFirestore: mocks.refreshFromFirestore,
+    getFreshCatalog: mocks.getFreshCatalog,
     removeFromCache: vi.fn(),
   }),
 }));
@@ -63,6 +65,7 @@ vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
 }));
 
 import { createBrowseEngineForTest } from "./browse-engine-test-helpers.svelte";
+import { FRESH_CATALOG_MAX_AGE_MS } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
 import { browseEngineAuthTestState } from "./browse-engine-auth-test-state.svelte";
 
 function deferred<T>(): Deferred<T> {
@@ -96,6 +99,7 @@ beforeEach(() => {
   browseEngineAuthTestState.isFullAccount = true;
   mocks.loadSequenceMetadata.mockReset().mockResolvedValue([]);
   mocks.refreshFromFirestore.mockReset().mockResolvedValue([]);
+  mocks.getFreshCatalog.mockReset().mockReturnValue(null);
   mocks.getLibrarySequences.mockReset().mockResolvedValue([]);
 });
 
@@ -281,6 +285,55 @@ describe("BrowseEngine community load revisions", () => {
     await tick();
 
     expect(engine.allSequences).toEqual([]);
+    dispose();
+  });
+});
+
+describe("BrowseEngine fresh catalogue reuse", () => {
+  it("uses a fresh complete catalogue without reading Firestore again", async () => {
+    mocks.getFreshCatalog.mockReturnValue([sequence("fresh-a"), sequence("fresh-b")]);
+    const { engine, dispose } = createBrowseEngineForTest({ persistKey: null });
+
+    await engine.initialize();
+
+    expect(mocks.getFreshCatalog).toHaveBeenCalledWith(FRESH_CATALOG_MAX_AGE_MS);
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["fresh-a", "fresh-b"]);
+    expect(engine.sectionsReady).toBe(true);
+    expect(engine.isLoading).toBe(false);
+    expect(mocks.refreshFromFirestore).not.toHaveBeenCalled();
+    expect(mocks.loadSequenceMetadata).not.toHaveBeenCalled();
+    expect(mocks.loadCachedSequenceMetadata).not.toHaveBeenCalled();
+    engine.destroy();
+    dispose();
+  });
+
+  it("refreshes when the loader has no fresh catalogue (stale or absent)", async () => {
+    // The loader answers null for both a stale and an absent catalogue.
+    mocks.getFreshCatalog.mockReturnValue(null);
+    mocks.loadCachedSequenceMetadata.mockResolvedValueOnce([sequence("saved")]);
+    mocks.refreshFromFirestore.mockResolvedValueOnce([sequence("authoritative")]);
+    const { engine, dispose } = createBrowseEngineForTest({ persistKey: null });
+
+    await engine.initialize();
+
+    expect(mocks.refreshFromFirestore).toHaveBeenCalledOnce();
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["authoritative"]);
+    engine.destroy();
+    dispose();
+  });
+
+  it("still refreshes on an explicit refresh even when the catalogue is fresh", async () => {
+    mocks.getFreshCatalog.mockReturnValue([sequence("fresh")]);
+    const { engine, dispose } = createBrowseEngineForTest({ persistKey: null });
+    await engine.initialize();
+    expect(mocks.refreshFromFirestore).not.toHaveBeenCalled();
+
+    mocks.refreshFromFirestore.mockResolvedValueOnce([sequence("re-read")]);
+    await engine.refresh();
+
+    expect(mocks.refreshFromFirestore).toHaveBeenCalledOnce();
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["re-read"]);
+    engine.destroy();
     dispose();
   });
 });

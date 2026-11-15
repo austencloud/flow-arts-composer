@@ -1,8 +1,13 @@
 <!-- Multi-select skill choices for families where the distinction matters. -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import type { ProfilePropFamily } from "#lib/shared/community/domain/profile-prop-catalog.js";
-  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import {
+    profileFamilyLabel,
+    profileSkillLabel,
+    profileSkillShortLabel,
+    type ProfilePropFamily,
+  } from "#lib/shared/community/domain/profile-prop-catalog.js";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import PropSelectionButton from "#lib/shared/settings/components/tabs/prop-type/PropSelectionButton.svelte";
 
@@ -24,23 +29,25 @@
   aria-labelledby="active-family-title"
 >
   <header class="variant-heading">
-    <strong id="active-family-title">{family.label} size</strong>
+    <strong id="active-family-title"
+      >{t("profile_prop_family_size", { prop: profileFamilyLabel(family) })}</strong
+    >
   </header>
 
   <div class="variant-grid" role="group" aria-labelledby="active-family-title">
     {#each family.choices as choice (choice.prop)}
       {@const selected = selectedSet.has(choice.prop)}
       <PropSelectionButton
-        label={choice.label.replace(" Hoop", "")}
+        label={profileSkillShortLabel(choice)}
         {selected}
         actionLabel={t(selected ? "nav_remove_skill" : "nav_add_skill", {
-          prop: choice.label,
+          prop: profileSkillLabel(choice),
         })}
         {disabled}
         onpress={() => ontoggle(choice.prop)}
       >
         {#snippet art()}
-          <PropCompositionPreview propType={choice.prop} neutral />
+          <SelectedPropPreview propType={choice.prop} size={64} />
         {/snippet}
       </PropSelectionButton>
     {/each}

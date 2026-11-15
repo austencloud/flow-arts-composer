@@ -401,7 +401,7 @@ Pointer discipline
       class="control"
       onclick={() => (paused ? trace.resume() : trace.pause("player"))}
     >
-      {paused ? "Resume" : "Pause"}
+      {paused ? tDynamic("learn_trace_resume_short") : tDynamic("viewer_ui_pause")}
     </button>
     <button type="button" class="control" onclick={onExit}>{exitLabel}</button>
   </div>

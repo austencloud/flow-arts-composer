@@ -1,4 +1,17 @@
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
+import { isContactBallProp } from "../../pictograph/prop/domain/contact-ball-props";
+
+/**
+ * A person's own chosen contact ball is Staff: the prop can no longer be
+ * picked, so a hand that holds one lands on the standard Staff, big sizes
+ * included. Only their own settings pass through here; nothing saved in a
+ * sequence, card, shared piece or film does.
+ */
+export function landOnStaff(propType: PropType): PropType;
+export function landOnStaff(propType: PropType | undefined): PropType | undefined;
+export function landOnStaff(propType: PropType | undefined): PropType | undefined {
+  return isContactBallProp(propType) ? PropType.STAFF : propType;
+}
 
 /**
  * The settings fields that describe the performer's prop pair. Every write
@@ -51,16 +64,26 @@ export function normalizePropPatch<P extends PropPairFields>(
     left = patch.propType;
     right = patch.propType;
   }
+  const landedLeft = landOnStaff(left);
+  const landedRight = landOnStaff(right);
+  const landed = landedLeft !== left || landedRight !== right;
+  left = landedLeft;
+  right = landedRight;
   if (left !== undefined) out.leftPropType = left;
   if (right !== undefined) out.rightPropType = right;
 
-  const nextLeft =
-    left ?? current.leftPropType ?? current.propType ?? PropType.STAFF;
-  const nextRight =
-    right ?? current.rightPropType ?? current.propType ?? nextLeft;
+  const nextLeft = landOnStaff(
+    left ?? current.leftPropType ?? current.propType ?? PropType.STAFF
+  );
+  const nextRight = landOnStaff(
+    right ?? current.rightPropType ?? current.propType ?? nextLeft
+  );
 
   if (sets(patch, "catDogMode")) {
     if (patch.catDogMode === false) out.rightPropType = nextLeft;
+    // A hand that moved to Staff can leave the pair matching: then the flag
+    // follows the hands, as the picker does.
+    else if (landed && nextLeft === nextRight) out.catDogMode = false;
   } else if (nextLeft !== nextRight) {
     out.catDogMode = true;
   }
@@ -84,15 +107,20 @@ function withoutUndefinedPairKeys<P extends PropPairFields>(out: P): P {
 export function healPropPair(
   fields: PropPairFields
 ): Required<PropPairFields> {
-  const leftPropType =
-    fields.leftPropType ?? fields.propType ?? PropType.STAFF;
-  const rightPropType =
-    fields.rightPropType ?? fields.propType ?? leftPropType;
+  const storedLeft = fields.leftPropType ?? fields.propType ?? PropType.STAFF;
+  const storedRight = fields.rightPropType ?? fields.propType ?? storedLeft;
+  const leftPropType = landOnStaff(storedLeft);
+  const rightPropType = landOnStaff(storedRight);
+  const moved = leftPropType !== storedLeft || rightPropType !== storedRight;
   return {
     leftPropType,
     rightPropType,
     propType: leftPropType,
     catDogMode:
-      leftPropType !== rightPropType ? true : (fields.catDogMode ?? false),
+      leftPropType !== rightPropType
+        ? true
+        : moved
+          ? false
+          : (fields.catDogMode ?? false),
   };
 }

@@ -17,7 +17,9 @@ export type ThumbnailVariant = "gallery" | "wordcard";
  */
 // r7: wider breathing gap between the header word and the level badge / LOOP
 // strip (HEADER_WORD_BREATHING_GAP_SCALE 0.08 -> 0.25).
-export const THUMBNAIL_RENDERER_VERSION = 7;
+// r8: shared pictures leave the Start word blank; the card lays the visitor's
+// word on top (StartWordOverlay), so one picture serves every language.
+export const THUMBNAIL_RENDERER_VERSION = 8;
 
 /**
  * Joined-grid dots lean toward each hand's color (see render-core's tint), a
@@ -87,6 +89,13 @@ export interface ThumbnailRenderInput {
 
   /** Joined grids, as `sequenceGridJoinKey` names them. Absent on one grid. */
   gridJoin?: string;
+
+  /**
+   * The Start word in the visitor's language. Shared pictures ignore it (their
+   * corner stays blank for the card's overlay); a personal picture draws it, so
+   * it is part of the personal key.
+   */
+  startLabel?: string;
 }
 
 export interface ThumbnailCacheKey {
@@ -403,6 +412,8 @@ function buildFullHashInput(input: ThumbnailRenderInput): object {
     // LOOP badge
     loop: input.loopType ?? null,
     showLoopGlyph: input.showLoopGlyph,
+    // The Start word is drawn into personal pictures, one per language.
+    ...(input.startLabel !== undefined && { startLabel: input.startLabel }),
     // EXCLUDED: showTKA, showReversals - these are canonical (always ON)
   };
 }

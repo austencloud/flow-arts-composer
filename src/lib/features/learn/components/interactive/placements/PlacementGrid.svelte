@@ -5,6 +5,7 @@
   can render the user's selected props through the same interaction core.
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import {
     GridLocation,
@@ -78,8 +79,8 @@
   {gridMode}
   leftPropType={PropType.HAND}
   rightPropType={PropType.HAND}
-  leftNoun="left hand"
-  rightNoun="right hand"
+  leftNoun={t("pictograph_placement_noun_left_hand")}
+  rightNoun={t("pictograph_placement_noun_right_hand")}
   editAfterCompletion={false}
   {disabled}
   {showGuideLines}

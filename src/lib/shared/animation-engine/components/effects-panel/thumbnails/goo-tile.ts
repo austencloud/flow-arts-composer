@@ -20,6 +20,7 @@ import {
   lcg,
   mix,
 } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type GooIntent = EffectConfigMap["goo"];
 export const GOO_TILE_SEED = 0x6007;
@@ -36,25 +37,55 @@ interface Bead {
 /** The sweep: tail lower-left, head (tip now) upper-right. */
 const ARC = { x0: 110, y0: 190, cx: 330, cy: 20, x1: 600, y1: 120 };
 
-function arcAt(t: number): { x: number; y: number } {
+type Arc = typeof ARC;
+
+/** Small formats: a shorter, fatter rope with a single drip, framed to fill. */
+interface GooSmall {
+  arc: Arc;
+  view: Box;
+  /** Head radius multiplier. */
+  fat: number;
+}
+const SMALL: Record<"tile" | "chip", GooSmall> = {
+  tile: {
+    arc: { x0: 130, y0: 170, cx: 340, cy: 40, x1: 560, y1: 110 },
+    view: { x: 50, y: 18, w: 620, h: 232.5 },
+    fat: 1.5,
+  },
+  chip: {
+    arc: { x0: 230, y0: 160, cx: 350, cy: 60, x1: 480, y1: 105 },
+    view: { x: 165, y: 25, w: 375, h: 250 },
+    fat: 1.7,
+  },
+};
+
+function arcAt(
+  t: number,
+  arc: Arc = ARC
+): { x: number; y: number } {
   const u = 1 - t;
   return {
-    x: u * u * ARC.x0 + 2 * u * t * ARC.cx + t * t * ARC.x1,
-    y: u * u * ARC.y0 + 2 * u * t * ARC.cy + t * t * ARC.y1,
+    x: u * u * arc.x0 + 2 * u * t * arc.cx + t * t * arc.x1,
+    y: u * u * arc.y0 + 2 * u * t * arc.cy + t * t * arc.y1,
   };
 }
 
 /** Beads: the body rope along the path plus drips hanging below it. */
-function beads(p: GooIntent, rand: Rand): Bead[] {
+function beads(
+  p: GooIntent,
+  rand: Rand,
+  arc: Arc = ARC,
+  small: GooSmall | null = null
+): Bead[] {
   const out: Bead[] = [];
   // Head radius, and the fraction of the arc the body spans.
-  const thick = 14 + p.motionEmission * 24;
-  const tailLen = 0.55 + p.motionEmission * 0.4;
+  const thick = (14 + p.motionEmission * 24) * (small?.fat ?? 1);
+  const tailLen = small ? 0.7 + p.motionEmission * 0.28 : 0.55 + p.motionEmission * 0.4;
   const N = 70;
   for (let i = 0; i <= N; i += 1) {
     const t = 1 - (i / N) * tailLen; // 1 = head
     const age = i / N;
-    const pos = arcAt(t);
+    const pos = arcAt(t, arc);
     // Taper: fat head necking to a thin tail; surface tension keeps beads
     // rounder, which reads as lumpier.
     const r =
@@ -65,13 +96,15 @@ function beads(p: GooIntent, rand: Rand): Bead[] {
   }
   // Drips: ambient ooze lets beads leave the rope; viscosity and surface
   // tension stretch them into teardrops.
-  const drips = Math.round(p.ambientEmission * 9);
+  const drips = small ? 1 : Math.round(p.ambientEmission * 9);
   for (let d = 0; d < drips; d += 1) {
-    const t = 0.15 + rand() * 0.8;
-    const pos = arcAt(1 - (1 - t) * tailLen);
-    const fall = 20 + rand() * 70 * (1 - p.viscosity * 0.6);
+    const t = small ? 0.55 + rand() * 0.1 : 0.15 + rand() * 0.8;
+    const pos = arcAt(1 - (1 - t) * tailLen, arc);
+    const fall = small
+      ? 55 + rand() * 25
+      : 20 + rand() * 70 * (1 - p.viscosity * 0.6);
     const neck = 1 + p.surfaceTension * 2.2 + p.viscosity * 1.5;
-    const r = Math.max(9, thick * (0.3 + rand() * 0.25));
+    const r = Math.max(9, thick * (small ? 0.42 : 0.3 + rand() * 0.25));
     // A teardrop is a chain of shrinking beads from the body down to the drop.
     for (let k = 0; k <= 6; k += 1) {
       const u = k / 6;
@@ -140,8 +173,11 @@ function fieldPass(
 
 export function paintGooTile(
   ctx: CanvasRenderingContext2D,
-  intent: GooIntent
+  intent: GooIntent,
+  format: TileFormat = "card"
 ): void {
+  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  if (small) frame(ctx, format, small.view, 0);
   const rand = lcg(GOO_TILE_SEED);
   const pal = resolveWaterPalette(intent);
   const core = hexToRgb(pal.core);
@@ -150,7 +186,7 @@ export function paintGooTile(
   const hi = hexToRgb(pal.highlight);
 
   ground(ctx, [0.03, 0.03, 0.05]);
-  const bs = beads(intent, rand);
+  const bs = beads(intent, rand, small?.arc ?? ARC, small);
 
   // Glow under the body.
   ctx.save();
@@ -172,7 +208,7 @@ export function paintGooTile(
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   for (const b of bs) {
-    if (b.body && b.r > 6 && rand() < 0.12) {
+    if (b.body && b.r > 6 && rand() < (small ? 0.3 : 0.12)) {
       const k = 0.35 + rand() * 0.4;
       blob(
         ctx,

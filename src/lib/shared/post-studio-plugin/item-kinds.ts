@@ -19,6 +19,12 @@ import {
   arrangementSnapshotSchema,
   type ArrangementSnapshot,
 } from "#lib/shared/media-composition/domain/arrangement.js";
+import { PostAnimationSplitSchema } from "#lib/shared/media-composition/domain/post-animation-split.js";
+import { PostPanelLiftSchema } from "#lib/shared/media-composition/domain/post-panel-lift.js";
+import {
+  PostCometTrailsSchema,
+  type PostCometTrails,
+} from "#lib/shared/media-composition/domain/comet-trails.js";
 import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/arrangement-timing.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
@@ -29,14 +35,41 @@ import {
   type MandalaShift,
 } from "#lib/shared/mandala/domain/mandala-shift-types.js";
 import type { TunnelTitlesPlan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
+import {
+  FLASH_DEFAULT_FADE_SECONDS,
+  FLASH_DEFAULT_STRENGTH,
+  FLASH_MAX_FADE_SECONDS,
+  FLASH_MAX_STRENGTH,
+  FLASH_MIN_FADE_SECONDS,
+  FLASH_MIN_STRENGTH,
+  type FlashPlan,
+} from "#lib/shared/media-composition/domain/flash.js";
+import {
+  CREDIT_DEFAULT_BOX,
+  CREDIT_DEFAULT_LEAD,
+  CREDIT_MAX_LEAD_LENGTH,
+  type CreditPlan,
+} from "#lib/shared/media-composition/domain/credit.js";
 import type { tkaProjectShape } from "./project-extension";
 import {
   compileArrangementItem,
+  compileCreditItem,
+  compileFlashItem,
   compileMandalaItem,
   compileSequenceItem,
   compileTitlesItem,
 } from "./compile-hooks";
 import { POST_QR_URL_RULE, isPostCardQrUrl } from "./card-qr";
+import {
+  POST_CARD_HEADER_TITLES,
+  PostCardEnterSchema,
+  PostCardQrExitSchema,
+  PostCardRingSchema,
+  type PostCardEnter,
+  type PostCardHeaderTitle,
+  type PostCardQrExit,
+  type PostCardRing,
+} from "./card-ending";
 
 /**
  * TKA's item kinds and the fields TKA adds to the core kinds of
@@ -60,12 +93,16 @@ declare module "@austencloud/video-editor/core" {
     titles: PostTitlesItem;
     arrangement: PostArrangementItem;
     mandala: PostMandalaItem;
+    flash: PostFlashItem;
+    credit: PostCreditItem;
   }
   interface PluginVideoFields extends TkaVideoFields {}
   interface PluginCardFields extends TkaCardFields {}
   interface PluginProjectFields extends TkaProjectFields {}
   interface PluginCompiledOutputs {
     titles: TunnelTitlesPlan[];
+    flashes: FlashPlan[];
+    credits: CreditPlan[];
   }
   interface PluginOverlaySpec {
     mode?: PostMovesMode;
@@ -74,26 +111,66 @@ declare module "@austencloud/video-editor/core" {
     overlay?: boolean;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     cardAppearance?: PostCardItem["cardAppearance"] | null;
+    /** A flash clip's veil and marks. */
+    strength?: number;
+    fade?: number;
+    marks?: boolean;
+    /** A credit's small line over the wordmark. */
+    lead?: string;
   }
   interface PluginItemPatch {
     overlay?: boolean;
     mode?: PostMovesMode;
     /** A titles clip's "how to say it" line; blank removes it. */
     spoken?: string;
+    /** How a titles clip's words go and come; the default value removes it. */
+    leave?: PostTitlesLeave;
+    /**
+     * A titles clip's arrival (its default value removes it), or a card's
+     * cascade (null removes it).
+     */
+    enter?: PostTitlesEnter | PostCardEnter | null;
+    /** A titles clip's lit-letter span; null removes it. */
+    lit?: PostTitlesLit | null;
+    /** A titles clip's span with the spoken line hidden; null removes it. */
+    quiet?: PostTitlesLit | null;
+    /**
+     * A titles clip's spoken line against its name, at its tallest box and
+     * at its shortest; null removes each.
+     */
+    spokenSize?: number | null;
+    spokenSizeSmall?: number | null;
+    /** A card's ring on the beats, and its QR's flight out; null removes each. */
+    ring?: PostCardRing | null;
+    qrExit?: PostCardQrExit | null;
+    /** Whose title a card's header shows; "card" (the default) removes it. */
+    headerTitle?: PostCardHeaderTitle;
     /** A clip's effect on its staff ends; null removes it. */
     staffEffect?: PostStaffEffectId | null;
+    /** A clip's comet trails on its filmed LEDs; null removes them. */
+    cometTrails?: PostCometTrails | null;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     cardAppearance?: PostCardItem["cardAppearance"] | null;
     /** An animation's staggered performers; null removes them. */
     followers?: PostAnimationItem["followers"] | null;
     /** An animation drawn in 3D, and its camera; null puts it back in 2D. */
     stage3d?: PostAnimationItem["stage3d"] | null;
+    /** An animation's split hands; null removes it. */
+    split?: PostAnimationItem["split"] | null;
+    /** An animation's lifted panel; null removes it. */
+    panelLift?: PostAnimationItem["panelLift"] | null;
     /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
     qrUrl?: string | null;
     /** A mandala clip's ordered sequences, and how it shifts and looks. */
     sequences?: MandalaSequenceSnapshot[];
     shift?: MandalaShift;
     look?: MandalaLook;
+    /** A flash clip's veil strength (0 to 1), fade in seconds, and corner marks. */
+    strength?: number;
+    fade?: number;
+    marks?: boolean;
+    /** A credit's small line over the wordmark; empty draws the wordmark alone. */
+    lead?: string;
   }
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type */
@@ -103,6 +180,9 @@ const itemBase = POST_ITEM_BASE_SHAPE;
 
 /** Longest "how to say it" line a titles clip takes. */
 export const POST_MAX_SPOKEN_LENGTH = 60;
+/** Smallest and largest a titles clip's spoken line may be against its name. */
+export const POST_TITLES_SPOKEN_SIZE_MIN = 0.2;
+export const POST_TITLES_SPOKEN_SIZE_MAX = 1;
 
 /**
  * Effects that can follow a take's lit staff ends: trails, plus every effect
@@ -175,7 +255,11 @@ export const POST_STAGE_3D_MAX_ELEVATION = 60;
 export const POST_STAGE_3D_DEFAULT_ELEVATION = 36;
 
 const PostStagePointSchema = z
-  .object({ x: z.number().finite(), y: z.number().finite(), z: z.number().finite() })
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    z: z.number().finite(),
+  })
   .strict();
 
 /**
@@ -302,6 +386,20 @@ export const PostAnimationItemSchema = z
       .optional(),
     /** Draw this clip as the 3D stage; absent draws the 2D animation. */
     stage3d: PostStage3DSchema.optional(),
+    /**
+     * Partway through, the one canvas parts into two, the left hand's on the
+     * left and the right hand's on the right, and may rejoin. Its times are
+     * content time, like the keyframes'. See `post-animation-split.ts`.
+     * Ignored while `part.hand` is set.
+     */
+    split: PostAnimationSplitSchema.optional(),
+    /**
+     * The panel's lifted layout: the canvas higher and smaller in its box, the
+     * step number in the box's top-left corner and the progress bar on its
+     * top edge, coming in and going back at content times. Absent keeps the
+     * app's own layout. See `post-panel-lift.ts`.
+     */
+    panelLift: PostPanelLiftSchema.optional(),
   })
   .strict();
 
@@ -330,10 +428,34 @@ export const PostCarouselItemSchema = z
 
 export type PostCarouselItem = z.infer<typeof PostCarouselItemSchema>;
 
+/** How a titles clip's words go as it ends: lifted away, or held to its last frame. */
+export const POST_TITLES_LEAVES = ["lift", "stay"] as const;
+export type PostTitlesLeave = (typeof POST_TITLES_LEAVES)[number];
+/** How a titles clip's words come in: rising, or already there. */
+export const POST_TITLES_ENTERS = ["rise", "none"] as const;
+export type PostTitlesEnter = (typeof POST_TITLES_ENTERS)[number];
+
+/**
+ * The span, in the clip's keyframe time (seconds from its start), over which
+ * only the letter of the move being performed is lit.
+ */
+export const PostTitlesLitSchema = z
+  .object({
+    from: z.number().finite().min(0),
+    to: z.number().finite().min(0),
+  })
+  .strict()
+  .refine((lit) => lit.to > lit.from, {
+    message: "A lit span must end after it starts",
+    path: ["to"],
+  });
+export type PostTitlesLit = z.infer<typeof PostTitlesLitSchema>;
+
 /**
  * The sequence's name in its glyphs, with how to say it under the name. The
- * words come in as the clip starts and lift away as it ends; see
- * `tunnel-titles.ts`.
+ * words come in as the clip starts and lift away as it ends, unless `enter`
+ * or `leave` says otherwise; see `tunnel-titles.ts`. A clip with box
+ * keyframes draws the two as one pair that fills its box.
  */
 export const PostTitlesItemSchema = z
   .object({
@@ -341,6 +463,35 @@ export const PostTitlesItemSchema = z
     kind: z.literal("titles"),
     /** How to say the name, shown in quotes under it. */
     spoken: z.string().max(POST_MAX_SPOKEN_LENGTH).optional(),
+    /** Absent is `lift`. */
+    leave: z.enum(POST_TITLES_LEAVES).optional(),
+    /** Absent is `rise`. */
+    enter: z.enum(POST_TITLES_ENTERS).optional(),
+    lit: PostTitlesLitSchema.optional(),
+    /**
+     * A span, in the same time as `lit`, over which the spoken line is
+     * hidden: it fades out from `from` and back in after `to`.
+     */
+    quiet: PostTitlesLitSchema.optional(),
+    /**
+     * The spoken line's size against the name's letters; absent is 0.42.
+     * With box keys it is the size at the tallest box.
+     */
+    spokenSize: z
+      .number()
+      .min(POST_TITLES_SPOKEN_SIZE_MIN)
+      .max(POST_TITLES_SPOKEN_SIZE_MAX)
+      .optional(),
+    /**
+     * The spoken line's size at the clip's shortest box, the size moving
+     * between the two with the box's height; absent is `spokenSize`. A
+     * parked name reads better with a larger line than the hook's.
+     */
+    spokenSizeSmall: z
+      .number()
+      .min(POST_TITLES_SPOKEN_SIZE_MIN)
+      .max(POST_TITLES_SPOKEN_SIZE_MAX)
+      .optional(),
   })
   .strict();
 
@@ -414,6 +565,63 @@ export const PostMandalaItemSchema = z
 
 export type PostMandalaItem = z.infer<typeof PostMandalaItemSchema>;
 
+/**
+ * A camera flash on a hit: a white veil over the whole frame at `strength`
+ * on the clip's first frame, gone after `fade` seconds, and four corner
+ * marks around the clip's box from its first frame to its last. The box says
+ * where the marks sit; the veil reaches past it to the frame's edges. See
+ * `media-composition/domain/flash.ts`.
+ */
+export const PostFlashItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("flash"),
+    strength: z
+      .number()
+      .finite()
+      .min(FLASH_MIN_STRENGTH)
+      .max(FLASH_MAX_STRENGTH),
+    fade: z
+      .number()
+      .finite()
+      .min(FLASH_MIN_FADE_SECONDS)
+      .max(FLASH_MAX_FADE_SECONDS),
+    marks: z.boolean(),
+  })
+  .strict();
+
+export type PostFlashItem = z.infer<typeof PostFlashItemSchema>;
+
+/** A flash value kept inside its range; one that is not a number gives `fallback`. */
+export function clampFlashValue(
+  field: "strength" | "fade",
+  value: number,
+  fallback: number
+): number {
+  if (!Number.isFinite(value)) return fallback;
+  const [min, max] =
+    field === "strength"
+      ? [FLASH_MIN_STRENGTH, FLASH_MAX_STRENGTH]
+      : [FLASH_MIN_FADE_SECONDS, FLASH_MAX_FADE_SECONDS];
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * The ready-made credit: a small grey line ("made with") over the Flow Arts
+ * Composer wordmark in its brand serif and gradient, fitted to the box. The
+ * wordmark is fixed; only the small line is the clip's own. See
+ * `media-composition/domain/credit.ts`.
+ */
+export const PostCreditItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("credit"),
+    lead: z.string().max(CREDIT_MAX_LEAD_LENGTH),
+  })
+  .strict();
+
+export type PostCreditItem = z.infer<typeof PostCreditItemSchema>;
+
 /** Kinds drawn from the sequence, which read the move of the footage under them. */
 export const SEQUENCE_ITEM_KINDS: readonly PostItemKind[] = [
   "animation",
@@ -431,6 +639,11 @@ export const tkaVideoShape = {
    * saved with the take. Nothing draws until the take has one.
    */
   staffEffect: PostStaffEffectSchema.optional(),
+  /**
+   * Comet trails behind the take's LED bulbs, replayed from a light map
+   * read once from the take (`scripts/feature-video/comet-map.mjs`).
+   */
+  cometTrails: PostCometTrailsSchema.optional(),
 };
 
 export const tkaCardShape = {
@@ -463,6 +676,15 @@ export const tkaCardShape = {
     })
     .strict()
     .optional(),
+  /**
+   * The card's ending, all optional; see `card-ending.ts`. A card with none
+   * of them draws and exports as it always has.
+   */
+  enter: PostCardEnterSchema.optional(),
+  ring: PostCardRingSchema.optional(),
+  qrExit: PostCardQrExitSchema.optional(),
+  /** Absent is "card": the header draws its own word. */
+  headerTitle: z.enum(POST_CARD_HEADER_TITLES).optional(),
 };
 
 /** Every item's shared keys, in the order the core's item base gives them. */
@@ -501,6 +723,7 @@ export const TKA_KIND_EXTENSIONS: Partial<
       "sourceIn",
       "sourceOut",
       "speed",
+      "holdOut",
       "fit",
       "shape",
       "edge",
@@ -511,11 +734,21 @@ export const TKA_KIND_EXTENSIONS: Partial<
       "flip",
       "volume",
       "staffEffect",
+      "cometTrails",
     ],
   },
   card: {
     shape: tkaCardShape,
-    order: [...BASE_ORDER, "kind", "qrUrl", "cardAppearance"],
+    order: [
+      ...BASE_ORDER,
+      "kind",
+      "qrUrl",
+      "cardAppearance",
+      "enter",
+      "ring",
+      "qrExit",
+      "headerTitle",
+    ],
   },
 };
 
@@ -593,7 +826,20 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     compile: compileTitlesItem,
     create: (base, spec) => {
       const spoken = spec.spoken?.slice(0, POST_MAX_SPOKEN_LENGTH);
-      return { ...base, kind: "titles", ...(spoken?.trim() ? { spoken } : {}) };
+      // The new-item base is typed as a card; its ending fields are the
+      // card's alone, and a card's `enter` is not a titles clip's.
+      const {
+        enter: _enter,
+        ring: _ring,
+        qrExit: _qrExit,
+        headerTitle: _headerTitle,
+        ...shared
+      } = base;
+      return {
+        ...shared,
+        kind: "titles",
+        ...(spoken?.trim() ? { spoken } : {}),
+      };
     },
   },
   {
@@ -605,5 +851,40 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     mainTrack: true,
     sourceLength: () => MANDALA_SOURCE_SECONDS,
     compile: compileMandalaItem,
+  },
+  {
+    kind: "flash",
+    schema: PostFlashItemSchema,
+    label: "Flash",
+    // A centred square on a 9:16 frame; the Add menu fits it to the canvas.
+    defaultBox: () => ({ x: 0.2, y: 0.33125, width: 0.6, height: 0.3375 }),
+    compile: compileFlashItem,
+    create: (base, spec) => ({
+      ...base,
+      kind: "flash",
+      strength: clampFlashValue(
+        "strength",
+        spec.strength ?? FLASH_DEFAULT_STRENGTH,
+        FLASH_DEFAULT_STRENGTH
+      ),
+      fade: clampFlashValue(
+        "fade",
+        spec.fade ?? FLASH_DEFAULT_FADE_SECONDS,
+        FLASH_DEFAULT_FADE_SECONDS
+      ),
+      marks: spec.marks ?? true,
+    }),
+  },
+  {
+    kind: "credit",
+    schema: PostCreditItemSchema,
+    label: "Credit",
+    defaultBox: () => ({ ...CREDIT_DEFAULT_BOX }),
+    compile: compileCreditItem,
+    create: (base, spec) => ({
+      ...base,
+      kind: "credit",
+      lead: (spec.lead ?? CREDIT_DEFAULT_LEAD).slice(0, CREDIT_MAX_LEAD_LENGTH),
+    }),
   },
 ];

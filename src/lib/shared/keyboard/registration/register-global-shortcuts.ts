@@ -9,6 +9,7 @@
  * Domain: Keyboard Shortcuts - Registration
  */
 
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
 import type { createKeyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
 import {
@@ -44,6 +45,7 @@ import { openShortcutSettings } from "../open-shortcut-settings";
 import { propDrawerState } from "../../settings/state/prop-drawer-state.svelte";
 import {
   getAllPropTypes,
+  isPropActive,
   PROP_TYPE_DISPLAY_REGISTRY,
 } from "../../pictograph/prop/domain/prop-type-display-registry";
 import { commandPaletteState } from "../state/command-palette-state.svelte";
@@ -265,9 +267,17 @@ export function registerGlobalShortcuts(
 
       const currentProp = settingsService.settings.leftPropType;
       if (!currentProp) return;
+      // Step on to the next prop that can be picked. A current prop that is
+      // itself deactivated (a saved contact ball) still lands on a real one.
       const currentIndex = allProps.indexOf(currentProp);
-      const nextIndex = (currentIndex + 1) % allProps.length;
-      const nextProp = allProps[nextIndex];
+      let nextProp: PropType | undefined;
+      for (let step = 1; step <= allProps.length; step += 1) {
+        const candidate = allProps[(currentIndex + step) % allProps.length];
+        if (candidate && isPropActive(candidate)) {
+          nextProp = candidate;
+          break;
+        }
+      }
       if (!nextProp) return;
 
       const displayInfo = PROP_TYPE_DISPLAY_REGISTRY[nextProp];

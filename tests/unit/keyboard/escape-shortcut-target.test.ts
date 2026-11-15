@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   activateEscapeShortcutTarget,
   hasEscapeShortcutTarget,
+  isEscapeShortcutActivation,
   resolveEscapeShortcutTarget,
   shouldDeferEscapeShortcut,
 } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
@@ -45,6 +46,21 @@ describe("Escape shortcut target", () => {
 
     expect(activateEscapeShortcutTarget(testDocument)).toBe(true);
     expect(click).toHaveBeenCalledOnce();
+  });
+
+  it("marks its press so a close handler can tell it from a real click", () => {
+    const target = appendTarget(testDocument);
+    let duringPress: boolean | null = null;
+    target.addEventListener("click", () => {
+      duringPress = isEscapeShortcutActivation();
+    });
+
+    activateEscapeShortcutTarget(testDocument);
+    expect(duringPress).toBe(true);
+    expect(isEscapeShortcutActivation()).toBe(false);
+
+    target.click();
+    expect(duringPress).toBe(false);
   });
 
   it("blocks background targets when a modal owns the page", () => {

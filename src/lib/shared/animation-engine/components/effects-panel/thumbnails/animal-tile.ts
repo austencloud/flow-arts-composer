@@ -26,6 +26,7 @@ import {
   traceForward,
 } from "#lib/shared/effects/renderers/ribbon-trace.js";
 import { TILE_H, TILE_W, blob, css, ground, hexToRgb, mix } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type AnimalIntent = EffectConfigMap["animal"];
 
@@ -72,18 +73,37 @@ const KNOTS: ReadonlyArray<readonly [number, number]> = (() => {
   return k;
 })();
 
+/**
+ * Small formats lay the body out as one wide wave across the frame instead of
+ * a coil, head at the right end, newest first. The renderer's own slither
+ * rides on top of it, so the body still moves like the card's.
+ */
+const WAVE_KNOTS: ReadonlyArray<readonly [number, number]> = [
+  [676, 132],
+  [606, 104],
+  [532, 150],
+  [458, 108],
+  [384, 152],
+  [310, 110],
+  [236, 150],
+  [162, 114],
+  [90, 140],
+];
+
 function mixHex(a: string, b: string, t: number): string {
   return css(mix(hexToRgb(a), hexToRgb(b), t), 1);
 }
 
 /** Dense Catmull-Rom polyline through the knots, newest first. */
-function densePath(): Vec2[] {
+function densePath(
+  knots: ReadonlyArray<readonly [number, number]> = KNOTS
+): Vec2[] {
   const pts: Vec2[] = [];
-  for (let i = 0; i < KNOTS.length - 1; i++) {
-    const p0 = KNOTS[Math.max(0, i - 1)]!;
-    const p1 = KNOTS[i]!;
-    const p2 = KNOTS[i + 1]!;
-    const p3 = KNOTS[Math.min(KNOTS.length - 1, i + 2)]!;
+  for (let i = 0; i < knots.length - 1; i++) {
+    const p0 = knots[Math.max(0, i - 1)]!;
+    const p1 = knots[i]!;
+    const p2 = knots[i + 1]!;
+    const p3 = knots[Math.min(knots.length - 1, i + 2)]!;
     for (let k = 0; k < 24; k++) {
       const t = k / 24;
       const t2 = t * t;
@@ -104,7 +124,7 @@ function densePath(): Vec2[] {
       });
     }
   }
-  const last = KNOTS[KNOTS.length - 1]!;
+  const last = knots[knots.length - 1]!;
   pts.push({ x: last[0], y: last[1] });
   return pts;
 }
@@ -171,14 +191,20 @@ interface Geometry {
   shadeY: number[];
 }
 
-function geometry(p: AnimalIntent, chain: Vec2[], scale: number): Geometry {
+function geometry(
+  p: AnimalIntent,
+  chain: Vec2[],
+  scale: number,
+  /** Wave boost override: small formats keep the slither modest. */
+  ampBoost: number = 1 + (scale - 1) * 0.5
+): Geometry {
   const N = chain.length;
   const build =
     p.creature === "caterpillar" ? 1.55 : p.creature === "dragon" ? 1.15 : 1;
   const baseHalf = (2.5 + p.width * 13) * scale * vis(p.intensity) * build;
   // The coil is staged at renderer scale while widths are boosted, so the
   // wave amplitude takes only half the boost or the tail kinks on the loop.
-  const ampPx = p.slither * 20 * (1 + (scale - 1) * 0.5);
+  const ampPx = p.slither * 20 * ampBoost;
   const s: number[] = [0];
   for (let i = 1; i < N; i++) {
     const a = chain[i]!;
@@ -534,7 +560,8 @@ function drawHead(
   p: AnimalIntent,
   pal: AnimalPalette,
   { cx, cy, baseHalf }: Geometry,
-  scale: number
+  scale: number,
+  headK = 1
 ): void {
   const I = vis(p.intensity);
   let hx = cx[0]! - cx[1]!;
@@ -544,7 +571,7 @@ function drawHead(
   hy /= hl;
   const perpX = -hy;
   const perpY = hx;
-  const headR = baseHalf * 1.15 + 1.2 * scale;
+  const headR = (baseHalf * 1.15 + 1.2 * scale) * headK;
   const headCx = cx[0]! + hx * headR * 0.25;
   const headCy = cy[0]! + hy * headR * 0.25;
 
@@ -690,9 +717,10 @@ function drawCreature(
   pal: AnimalPalette,
   chain: Vec2[],
   path: Vec2[],
-  scale: number
+  scale: number,
+  small = false
 ): void {
-  const g = geometry(p, chain, scale);
+  const g = geometry(p, chain, scale, small ? 1.8 : undefined);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   drawBody(ctx, p, pal, g, 0, g.N - 1, scale);
@@ -720,14 +748,24 @@ function drawCreature(
 
   if (p.creature === "dragon")
     drawWhiskers(ctx, p, pal, path, g.baseHalf, scale);
-  drawHead(ctx, p, pal, g, scale);
+  drawHead(ctx, p, pal, g, scale, small ? 1.9 : 1);
   ctx.globalAlpha = 1;
 }
 
 /** Stage the creature: body resampled along the figure, then centered and fitted in the frame. */
-function stage(p: AnimalIntent): { chain: Vec2[]; path: Vec2[]; zoom: number } {
-  const path = densePath();
-  const bodyLen = (160 + p.bodyLength * 440) * LENGTH_SCALE;
+function stage(
+  p: AnimalIntent,
+  wave = false
+): { chain: Vec2[]; path: Vec2[]; zoom: number } {
+  const path = densePath(wave ? WAVE_KNOTS : KNOTS);
+  let pathLen = 0;
+  for (let i = 1; i < path.length; i++)
+    pathLen += Math.hypot(path[i]!.x - path[i - 1]!.x, path[i]!.y - path[i - 1]!.y);
+  // The wave: the body spans most of the wave whatever the preset, longer
+  // bodies reaching a little further.
+  const bodyLen = wave
+    ? pathLen * (0.72 + 0.28 * p.bodyLength)
+    : (160 + p.bodyLength * 440) * LENGTH_SCALE;
   const chain: Vec2[] = Array.from({ length: SEGMENTS }, () => ({
     x: 0,
     y: 0,
@@ -760,11 +798,13 @@ function stage(p: AnimalIntent): { chain: Vec2[]; path: Vec2[]; zoom: number } {
   const dy = TILE_H / 2 - (minY + maxY) / 2;
   // Fit: zoom the whole figure (widths included) so a short hook does not
   // sit as a small mark in a wide frame; capped so creatures still differ.
-  const zoom = Math.min(
-    1.45,
-    (TILE_H * 0.8) / (maxY - minY),
-    (TILE_W * 0.9) / (maxX - minX)
-  );
+  const zoom = wave
+    ? 1
+    : Math.min(
+        1.45,
+        (TILE_H * 0.8) / (maxY - minY),
+        (TILE_W * 0.9) / (maxX - minX)
+      );
   const fit = (q: Vec2) => {
     q.x = TILE_W / 2 + (q.x + dx - TILE_W / 2) * zoom;
     q.y = TILE_H / 2 + (q.y + dy - TILE_H / 2) * zoom;
@@ -774,10 +814,25 @@ function stage(p: AnimalIntent): { chain: Vec2[]; path: Vec2[]; zoom: number } {
   return { chain, path, zoom };
 }
 
+/**
+ * Small formats: a wide wave with the head at the right end, painted with a
+ * body about 2.5 display px thick (`body` is the half-width in card units that
+ * gives that), a head clearly larger than the body, and the layer drawn a
+ * second time additively so it is brighter. The chip crops to the head and
+ * the last stretch of body.
+ */
+const SMALL: Record<"tile" | "chip", { view: Box; body: number }> = {
+  tile: { view: { x: -14, y: -34, w: 748, h: 280.5 }, body: 12.4 },
+  chip: { view: { x: 345, y: 15, w: 360, h: 240 }, body: 15.8 },
+};
+
 export function paintAnimalTile(
   ctx: CanvasRenderingContext2D,
-  intent: AnimalIntent
+  intent: AnimalIntent,
+  format: TileFormat = "card"
 ): void {
+  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  if (small) frame(ctx, format, small.view, 0);
   const pal = resolveAnimalPalette(intent);
   const body = hexToRgb(pal.body);
   const edge = hexToRgb(pal.edge);
@@ -796,14 +851,25 @@ export function paintAnimalTile(
       pal.emissive ? 0.14 : 0.06 + 0.04 * intent.intensity
     );
 
-  const { chain, path, zoom } = stage(intent);
+  const { chain, path, zoom } = stage(intent, !!small);
   const layer = document.createElement("canvas");
   layer.width = TILE_W;
   layer.height = TILE_H;
   const lctx = layer.getContext("2d")!;
-  drawCreature(lctx, intent, pal, chain, path, SCALE * zoom);
+  // Small: the scale that gives the target body half-width, kept in step with
+  // the preset's own width (a wider look is a little thicker).
+  const scale = small
+    ? (small.body * (0.85 + 0.3 * intent.width)) /
+      ((2.5 + intent.width * 13) * vis(intent.intensity))
+    : SCALE * zoom;
+  drawCreature(lctx, intent, pal, chain, path, scale, !!small);
   ctx.globalCompositeOperation = pal.emissive ? "lighter" : "source-over";
   ctx.drawImage(layer, 0, 0);
+  if (small) {
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = dark ? 0 : 0.3;
+    ctx.drawImage(layer, 0, 0);
+  }
   ctx.globalCompositeOperation = "source-over";
   ctx.globalAlpha = 1;
 }

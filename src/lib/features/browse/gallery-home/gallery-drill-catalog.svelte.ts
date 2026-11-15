@@ -117,7 +117,7 @@ export const PLACEMENTS = [
   {
     value: "gamma",
     label: "Gamma",
-    desc: "Hands form a right angle.",
+    desc: "Hands adjacent.",
     img: "/images/position_images/gamma.png",
   },
 ];

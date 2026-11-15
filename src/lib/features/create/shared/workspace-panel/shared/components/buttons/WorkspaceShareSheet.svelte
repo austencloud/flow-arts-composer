@@ -403,7 +403,7 @@
   availableArtifacts={["card", "video"]}
   canCreateLink={hasFullAccount}
   onSendInTka={hasFullAccount ? sendSequenceToInbox : undefined}
-  needsAccountForFiles={!hasFullAccount}
+  needsAccountForUploads={!hasFullAccount}
   onRequestAccount={() =>
     authDrawerState.show("signup", "share-sequence", sequence)}
   onClose={() => {

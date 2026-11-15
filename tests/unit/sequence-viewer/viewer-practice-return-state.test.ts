@@ -4,7 +4,11 @@ import { createViewerState } from "#lib/shared/sequence-viewer/state/viewer-stat
 
 type PracticeOrigin = "animation" | "card";
 
-function createPracticeHarness(mode: PracticeOrigin) {
+function createPracticeHarness(
+  mode: PracticeOrigin,
+  options: { ready?: boolean } = {}
+) {
+  const ready = options.ready ?? true;
   const viewerState = createViewerState({
     initialMode: mode,
     initialSplit: { leftPane: "animation", rightPane: "card" },
@@ -15,9 +19,13 @@ function createPracticeHarness(mode: PracticeOrigin) {
     viewerState.exitExport();
     viewerState.setSplitConfig({ leftPane: "animation", rightPane: "card" });
     viewerState.setViewerMode("split");
-    practiceActive = true;
+    practiceActive = ready;
+    return ready;
   });
   const exitPracticeMode = vi.fn(() => {
+    practiceActive = false;
+  });
+  const handlePracticeStop = vi.fn(() => {
     practiceActive = false;
   });
   const captureScanPracticeChanged = vi.fn();
@@ -29,10 +37,14 @@ function createPracticeHarness(mode: PracticeOrigin) {
           get practiceActive() {
             return practiceActive;
           },
-          practiceRunning: false,
+          get practiceRunning() {
+            return practiceActive;
+          },
           bpmLocal: 72,
+          practiceState: { userConfig: {} },
           enterPracticeMode,
           exitPracticeMode,
+          handlePracticeStop,
         }) as never,
       getExportOverrides: () => undefined,
       getOnRemix: () => undefined,
@@ -59,7 +71,9 @@ function createPracticeHarness(mode: PracticeOrigin) {
     viewerState,
     enterPracticeMode,
     exitPracticeMode,
+    handlePracticeStop,
     captureScanPracticeChanged,
+    isActive: () => practiceActive,
   };
 }
 
@@ -105,5 +119,68 @@ describe("viewer Practice return state", () => {
 
     expect(viewerState.rawViewerMode).toBe("card");
     expect(viewerState.exportContext).toBe("image-export");
+  });
+
+  it("one tap enters and starts: entered and started fire together", () => {
+    const { state, captureScanPracticeChanged, isActive } =
+      createPracticeHarness("animation");
+
+    state.handleEnterPractice();
+
+    expect(isActive()).toBe(true);
+    expect(captureScanPracticeChanged.mock.calls.map((call) => call[0])).toEqual(
+      ["entered", "started"]
+    );
+  });
+
+  it.each([
+    ["2D", "animation", "animation-export"],
+    ["Card", "card", "image-export"],
+  ] as const)(
+    "Stop leaves practice completely and restores the %s surface",
+    (_, mode, exportContext) => {
+      const {
+        state,
+        viewerState,
+        handlePracticeStop,
+        captureScanPracticeChanged,
+        isActive,
+      } = createPracticeHarness(mode);
+
+      state.handleEnterPractice();
+      state.handlePracticeStop();
+
+      expect(handlePracticeStop).toHaveBeenCalledOnce();
+      expect(isActive()).toBe(false);
+      expect(viewerState.rawViewerMode).toBe(mode);
+      expect(viewerState.exportContext).toBe(exportContext);
+      expect(
+        captureScanPracticeChanged.mock.calls.map((call) => call[0])
+      ).toEqual(["entered", "started", "stopped", "exited"]);
+    }
+  );
+
+  it("a run that ends by itself leaves like the back button", () => {
+    const { state, viewerState, exitPracticeMode, isActive } =
+      createPracticeHarness("card");
+
+    state.handleEnterPractice();
+    state.handlePracticeRunEnded();
+
+    expect(exitPracticeMode).toHaveBeenCalledOnce();
+    expect(isActive()).toBe(false);
+    expect(viewerState.rawViewerMode).toBe("card");
+  });
+
+  it("puts the view back and reports nothing when the animation isn't ready", () => {
+    const { state, viewerState, captureScanPracticeChanged, isActive } =
+      createPracticeHarness("card", { ready: false });
+
+    state.handleEnterPractice();
+
+    expect(isActive()).toBe(false);
+    expect(viewerState.rawViewerMode).toBe("card");
+    expect(viewerState.exportContext).toBe("image-export");
+    expect(captureScanPracticeChanged).not.toHaveBeenCalled();
   });
 });

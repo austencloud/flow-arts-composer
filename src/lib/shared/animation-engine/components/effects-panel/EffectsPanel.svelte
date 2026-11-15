@@ -40,6 +40,9 @@
     type AnimationSettingsState,
   } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import EffectsPlaybackBar from "./EffectsPlaybackBar.svelte";
+  import type { EffectTuneHeading } from "./effect-tune-heading";
+  import { effectInk } from "./effect-ink";
+  import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
   import {
     LED_CUSTOMIZE_PAGE_CONTEXT,
     type LedCustomizePageState,
@@ -80,6 +83,17 @@
      * that have the room for it, so this page has no Tune button.
      */
     fitRoom?: boolean;
+    /**
+     * With the sidebar layout: a phone's bottom dock under the player, about
+     * 360 x 215-310px. The roster is sixteen one-line tiles with a single row
+     * under them (Tune, power, Reset all); the looks and sliders live only in
+     * the tune view, which is one compact row per control.
+     */
+    dock?: boolean;
+    /** With `dock`: the host's own header row carries the tune view's back
+     *  button, name and power button (see effect-tune-heading.ts). Without
+     *  it, the tune view draws that row itself. */
+    onTuneHeading?: (heading: EffectTuneHeading | null) => void;
     /** Post Studio can show the roster beside looks and tuning when its panel is wide. */
     wideWorkspace?: boolean;
     /** Post Studio opens an already chosen effect's looks and tuning first. */
@@ -113,6 +127,8 @@
     showHeading = true,
     fill = false,
     fitRoom = false,
+    dock = false,
+    onTuneHeading,
     wideWorkspace = false,
     preferSelectedDetail = false,
     pagedRichDetail = false,
@@ -184,7 +200,8 @@
   );
   // Both bounded and intrinsic sidebars use the same visual roster. Only a
   // bounded page can size the inactive catalog against the remaining height.
-  const pictureHost = $derived(!showPlayback && !children);
+  // The phone dock has no room for pictures: its tiles are one line each.
+  const pictureHost = $derived(!showPlayback && !children && !dock);
   const rosterWidth = $derived(
     Math.floor(
       wideWorkspace ? (wideRosterRect?.width ?? 0) : (panelRect?.width ?? 0)
@@ -238,6 +255,26 @@
     (fitRoom ? pickerFit?.portrait : catalogFit ? catalogFit.portrait : rosterFit)
       ? effectCatalogLooks(effectsConfigState)
       : null
+  );
+
+  /** Pictures up to this wide are painted for it (the small tile format). */
+  const SMALL_PICTURE_MAX = 130;
+  const pictureWidth = $derived(
+    (fitRoom
+      ? pickerFit?.portrait
+      : catalogFit
+        ? catalogFit.portrait
+        : rosterFit?.portrait) ?? 0
+  );
+  const pictureFormat = $derived(
+    pictureWidth > 0 && pictureWidth <= SMALL_PICTURE_MAX
+      ? ("tile" as const)
+      : ("card" as const)
+  );
+  /** The phone tray has no catalog; it shows each effect's current look as a
+   *  tile-format picture over its name (EffectSelector `trayPictures`). */
+  const trayLooks = $derived(
+    layout === "strip" && !fitRoom ? effectCatalogLooks(effectsConfigState) : null
   );
 
   const sidebarView = $derived(
@@ -556,6 +593,31 @@
     reportSetting("active_effect", previous, "none");
   }
 
+  // ── Phone dock (sidebar layout + dock) ────────────────────────────────────
+  // The tune view's heading goes to the host's header row when it listens, so
+  // the dock body spends its ~245px on the controls alone.
+  const dockTuning = $derived(dock && sidebarView.startsWith("detail-"));
+  $effect(() => {
+    if (!onTuneHeading) return;
+    const reg = registration;
+    if (!dockTuning || !reg) {
+      onTuneHeading(null);
+      return;
+    }
+    onTuneHeading({
+      label: effectUiLabel(reg.meta.label),
+      icon: reg.meta.icon,
+      accent: effectInk(reg.meta.color, getThemeMode()),
+      backLabel: t("effect_deep_all_effects"),
+      turnOffLabel: t("effect_deep_turn_off_effect", {
+        effect: effectUiLabel(reg.meta.label),
+      }),
+      back: () => (sidebarDetailOpen = false),
+      turnOff: handleSidebarDisable,
+    });
+    return () => onTuneHeading(null);
+  });
+
   // ── Mobile drill-down (layout="strip") ────────────────────────────────────
   // The Instagram-filter contract: tapping a tile applies the effect live and
   // STAYS in the picker (browsing costs zero navigation); tapping the
@@ -773,10 +835,25 @@
 {#snippet catalogPortrait(effectId: string)}
   {@const look = catalogLooks?.get(effectId)}
   {#if look}
+    <!-- A picture about 88x32 (or the phone tray's 74x27) is painted in the
+         tile format; a bigger look card keeps the card. -->
     <EffectPresetThumbnail
       effectType={effectId}
       preset={look.preset}
       legacyModel={look.model}
+      format={pictureFormat}
+    />
+  {/if}
+{/snippet}
+
+{#snippet trayPortrait(effectId: string)}
+  {@const look = trayLooks?.get(effectId)}
+  {#if look}
+    <EffectPresetThumbnail
+      effectType={effectId}
+      preset={look.preset}
+      legacyModel={look.model}
+      format="tile"
     />
   {/if}
 {/snippet}
@@ -784,7 +861,8 @@
 {#if layout === "sidebar"}
   <div
     class="effects-panel"
-    class:fill
+    class:fill={fill && !dock}
+    class:dock
     class:detail-view={sidebarView.startsWith("detail-")}
     class:wide-workspace={wideWorkspace}
     class:post-detail={preferSelectedDetail}
@@ -893,47 +971,101 @@
               enabled: !!rosterMorphName,
             }}
           >
-            <div
-              class="sb-browser-head"
-              use:claimedViewTransitionName={{
-                name: `${rosterMorphName}-head`,
-                enabled: !!rosterMorphName,
-              }}
-            >
-              {#if showHeading}
-                <span class="sb-label">{t("effect_deep_effects")}</span>
-              {/if}
-              <button
-                type="button"
-                class="sb-off-btn"
-                class:active={activeEffect === "none"}
-                aria-pressed={activeEffect === "none"}
-                onclick={handleSidebarDisable}
+            {#if !dock}<div
+                class="sb-browser-head"
+                use:claimedViewTransitionName={{
+                  name: `${rosterMorphName}-head`,
+                  enabled: !!rosterMorphName,
+                }}
               >
-                <i class="fas fa-power-off" aria-hidden="true"></i>
-                <span>
-                  {activeEffect === "none"
-                    ? t("effect_deep_effects_off")
-                    : t("effect_deep_turn_off", {
-                        effect: effectUiLabel(
-                          EFFECT_LABELS[activeEffect] ?? "effect"
-                        ),
-                      })}
-                </span>
-              </button>
-            </div>
+                {#if showHeading}
+                  <span class="sb-label">{t("effect_deep_effects")}</span>
+                {/if}
+                <button
+                  type="button"
+                  class="sb-off-btn"
+                  class:active={activeEffect === "none"}
+                  aria-pressed={activeEffect === "none"}
+                  onclick={handleSidebarDisable}
+                >
+                  <i class="fas fa-power-off" aria-hidden="true"></i>
+                  <span>
+                    {activeEffect === "none"
+                      ? t("effect_deep_effects_off")
+                      : t("effect_deep_turn_off", {
+                          effect: effectUiLabel(
+                            EFFECT_LABELS[activeEffect] ?? "effect"
+                          ),
+                        })}
+                  </span>
+                </button>
+              </div>{/if}
             <EffectSelector
               {activeEffect}
               onSelect={handleSidebarEffectSelect}
               onPrewarm={handleEffectPrewarm}
               activeAction="tune"
               {availableEffects}
+              {dock}
               catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
               portrait={catalogPortrait}
               morphName={rosterMorphName}
             />
 
-            {#if sidebarView === "browser" && !preferSelectedDetail}
+            {#if dock}
+              {@const activeLabel =
+                activeEffect === "none"
+                  ? ""
+                  : effectUiLabel(EFFECT_LABELS[activeEffect] ?? "effect")}
+              <!-- One row under the grid and nothing else: the looks and the
+                   sliders are one tap away in the tune view, where each gets
+                   a row of its own. The row keeps its height and its three
+                   places with no effect on, so the grid never moves. -->
+              <div class="dock-actions">
+                <button
+                  type="button"
+                  class="dock-tune"
+                  disabled={activeEffect === "none" || !registration}
+                  style:--effect-color={registration
+                    ? effectInk(registration.meta.color, getThemeMode())
+                    : undefined}
+                  onclick={() => (sidebarDetailOpen = true)}
+                >
+                  <i class="fas fa-sliders" aria-hidden="true"></i>
+                  <span
+                    >{activeEffect === "none"
+                      ? t("effect_deep_effects_off")
+                      : t("effect_deep_tune_effect", {
+                          effect: activeLabel,
+                        })}</span
+                  >
+                </button>
+                <button
+                  type="button"
+                  class="dock-icon-btn dock-power"
+                  aria-pressed={activeEffect === "none"}
+                  disabled={activeEffect === "none"}
+                  aria-label={activeEffect === "none"
+                    ? t("effect_deep_effects_off")
+                    : t("effect_deep_turn_off", { effect: activeLabel })}
+                  title={activeEffect === "none"
+                    ? t("effect_deep_effects_off")
+                    : t("effect_deep_turn_off", { effect: activeLabel })}
+                  onclick={handleSidebarDisable}
+                >
+                  <i class="fas fa-power-off" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="dock-icon-btn dock-reset"
+                  aria-label={t("effect_deep_reset_all_to_original")}
+                  title={t("effect_deep_reset_all_to_original")}
+                  onclick={() => (confirmResetAllOpen = true)}
+                >
+                  <i class="fas fa-rotate-left" aria-hidden="true"></i>
+                </button>
+              </div>
+            {:else if sidebarView === "browser" && !preferSelectedDetail}
               <div
                 class="sb-dock"
                 use:claimedViewTransitionName={{
@@ -966,6 +1098,8 @@
             {pagedRichDetail}
             compactPresets={preferSelectedDetail}
             boundedFine={preferSelectedDetail}
+            {dock}
+            showHeader={!dock || !onTuneHeading}
             onDisable={handleSidebarDisable}
             onSelectPreset={handlePresetSelect}
             onSettingChange={(setting, previousValue, value, coalesce) =>
@@ -982,15 +1116,17 @@
 
     {#if children}{@render children()}{/if}
 
-    <div class="sb-section sb-footer" bind:borderBoxSize={footerBox}>
-      <button
-        type="button"
-        class="reset-all-btn"
-        onclick={() => (confirmResetAllOpen = true)}
-      >
-        {t("effect_deep_reset_all_to_original")}
-      </button>
-    </div>
+    <!-- The dock carries Reset all as an icon in its roster row, and the tune
+         view resets one effect through its Original look. -->
+    {#if !dock}<div class="sb-section sb-footer" bind:borderBoxSize={footerBox}>
+        <button
+          type="button"
+          class="reset-all-btn"
+          onclick={() => (confirmResetAllOpen = true)}
+        >
+          {t("effect_deep_reset_all_to_original")}
+        </button>
+      </div>{/if}
   </div>
 {:else if layout === "strip"}
   <!-- Mobile drill-down: picker grid (all 16 + Off, no h-scroll) ⇄ per-effect
@@ -1174,6 +1310,7 @@
             fit={fill}
             activeAction="tune"
             {availableEffects}
+            portrait={trayPortrait}
           />
         </div>
       {/if}
@@ -1338,6 +1475,138 @@
   .sb-browser.catalog {
     display: flex;
     flex-direction: column;
+  }
+
+  /* ── Phone dock ──
+     Roster: 4 x 4 one-line tiles (162px) + 6px + the 36px action row, inside
+     6px of padding top and bottom = 216px, which a 215-217px body holds. From
+     a 300px body the tiles go to icon over name at 52px (EffectSelector).
+     The panel is a size container so those tiles can ask for its height. */
+  .effects-panel.dock {
+    flex: 1 1 0;
+    min-height: 0;
+    container: effects-panel / size;
+  }
+
+  .effects-panel.dock .sb-section {
+    padding: 6px 12px;
+    border-bottom: none;
+  }
+
+  .effects-panel.dock .sb-browser {
+    gap: 6px;
+  }
+
+  .dock-actions {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    height: var(--alt-touch-target, 36px);
+  }
+
+  .dock-tune,
+  .dock-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    color: var(--theme-text, rgba(255, 255, 255, 0.85));
+    font-size: var(--font-size-min, 14px);
+    font-weight: 650;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
+  }
+
+  /* The way in to the looks and sliders, so it reads as the row's main
+     action: tinted with the effect's own ink, like its tile above. */
+  .dock-tune {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 12px;
+    border-color: color-mix(
+      in srgb,
+      var(--effect-color, var(--fx-accent)) 45%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--effect-color, var(--fx-accent)) 14%,
+      transparent
+    );
+  }
+
+  .dock-tune i {
+    color: var(--effect-color, var(--fx-accent));
+  }
+
+  .dock-tune span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dock-tune:disabled {
+    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    background: transparent;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+    cursor: default;
+  }
+
+  .dock-tune:disabled i {
+    color: inherit;
+  }
+
+  .dock-icon-btn {
+    flex: 0 0 var(--alt-touch-target, 36px);
+    padding: 0;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
+
+  .dock-power[aria-pressed="true"] {
+    color: var(--fx-accent-text);
+    border-color: color-mix(in srgb, var(--fx-accent) 45%, transparent);
+    background: color-mix(in srgb, var(--fx-accent) 12%, transparent);
+    cursor: default;
+  }
+
+  /* Reset all is the quiet one: no fill until it is reached for. */
+  .dock-reset {
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .dock-icon-btn:hover:not(:disabled) {
+    color: var(--theme-text, white);
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+  }
+
+  .dock-tune:hover:not(:disabled) {
+    background: color-mix(
+      in srgb,
+      var(--effect-color, var(--fx-accent)) 22%,
+      transparent
+    );
+  }
+
+  .dock-tune:focus-visible,
+  .dock-icon-btn:focus-visible {
+    outline: 2px solid var(--fx-accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dock-tune,
+    .dock-icon-btn {
+      transition: none;
+    }
   }
 
   .sb-browser-head {

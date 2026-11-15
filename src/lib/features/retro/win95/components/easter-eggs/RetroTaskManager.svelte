@@ -149,7 +149,6 @@
   .tab {
     padding: 3px 10px 2px;
     border: 2px outset var(--retro-button-face, #c0c0c0);
-    border-bottom: none;
     background: var(--retro-button-face, #c0c0c0);
     font-family: inherit;
     font-size: inherit;
@@ -157,6 +156,11 @@
     color: var(--retro-black, #000);
     position: relative;
     bottom: -2px;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .tab {
+    border-bottom: none;
   }
 
   .tab-active {

@@ -210,3 +210,30 @@ describe("cancelling a warm-up", () => {
     expect(fetchedUrls()).toEqual([...OCEAN_URLS]);
   });
 });
+
+describe("draining", () => {
+  it("reads each body to the end before the next download starts", async () => {
+    // fetch resolves on headers; an unread body parked the download half-way
+    // with its connection held (measured 2026-11-14 on a throttled tablet).
+    const order: string[] = [];
+    fetchMock.mockImplementation((url: string) => {
+      order.push(`start ${url}`);
+      const body = new ReadableStream({
+        pull(controller) {
+          order.push(`read ${url}`);
+          controller.enqueue(new Uint8Array(4));
+          controller.close();
+        },
+      });
+      return Promise.resolve(new Response(body));
+    });
+    warmSceneAssets(BackgroundType.AUTUMN);
+    const urls = sceneAssetUrls(BackgroundType.AUTUMN);
+    await vi.waitFor(() => expect(order).toHaveLength(urls.length * 2));
+    expect(order.slice(0, 3)).toEqual([
+      `start ${urls[0]}`,
+      `read ${urls[0]}`,
+      `start ${urls[1]}`,
+    ]);
+  });
+});

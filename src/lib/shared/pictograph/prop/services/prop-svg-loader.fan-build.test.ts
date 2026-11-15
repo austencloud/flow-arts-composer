@@ -1,12 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { PropSvgLoader } from "./prop-svg-loader";
 import type { MotionData } from "../../shared/domain/models/motion-data";
 import type { PropPlacementData } from "../domain/models/prop-placement-data";
 import { HandSide } from "../../shared/domain/enums/pictograph-enums";
 import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+
+// These tests draw every fan look, and the looks stay renderable even while
+// only some are offered, so they run with the preview flag on. The hoisted
+// call runs before the modules read the flag.
+vi.hoisted(() => {
+  vi.stubEnv("VITE_MAKER_PREVIEW", "1");
+});
 
 // The pictographs draw the same fan build the animator does. Picking
 // DoodleGrip Fire in the Fan chooser used to change only the animation

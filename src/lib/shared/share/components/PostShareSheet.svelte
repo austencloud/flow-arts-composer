@@ -135,10 +135,13 @@
     metaStatusOverride?: MetaPublishStatus;
     /** Omitted by hosts without an inbox. */
     onSendInTka?: () => void;
-    /** The take-it-home gate: guests may set everything up, but a file leaves
-     * only with a free account. The host decides; the sheet says so before the
-     * click instead of starting a render that the viewer then refuses. */
+    /** Holds local files (download, share to an app) behind an account. No
+     * host sets it since 2026-11-14, when guests were let take files home. */
     needsAccountForFiles?: boolean;
+    /** Holds every path that uploads to our storage behind an account:
+     * publishing, the post link, and Send to phone. Uploads cost storage, so
+     * they stay with account holders while local files are open to guests. */
+    needsAccountForUploads?: boolean;
     /** Opens the host's sign-up path once the sheet has closed. */
     onRequestAccount?: () => void;
     /** Labels view-specific renders such as Mandala or Tunnel. */
@@ -198,6 +201,7 @@
     metaStatusOverride,
     onSendInTka,
     needsAccountForFiles = false,
+    needsAccountForUploads = false,
     onRequestAccount,
     videoLabel,
     captureAnimationPreview = () => "",
@@ -853,7 +857,10 @@
   });
 
   const destinations = $derived(
-    resolveDestinations({ artifact, blob: activeBlob, filename })
+    resolveDestinations({ artifact, blob: activeBlob, filename }).filter(
+      (destination) =>
+        !(needsAccountForUploads && destination.id === "send-to-phone")
+    )
   );
 
   /** Device-gated so desktop Chrome's API support does not imply a phone flow. */
@@ -873,7 +880,7 @@
   // state is a task for the Home shell's rail, so it keeps the preview and the
   // dialog size; only the real posting flow gets its own single column.
   const publishGate = $derived(
-    shareRoute === "publish" && (!postingAvailable || needsAccountForFiles)
+    shareRoute === "publish" && (!postingAvailable || needsAccountForUploads)
   );
   const publishFlow = $derived(shareRoute === "publish" && !publishGate);
   // Which half of the split shell the stage and rail show.
@@ -1118,7 +1125,7 @@
   const publishPreparationKey = $derived(
     !postingAvailable
       ? "unavailable"
-      : needsAccountForFiles
+      : needsAccountForUploads
         ? "account"
         : artifact === "video" && videoBusy
           ? "video-rendering"
@@ -1461,7 +1468,7 @@
   function openPublish(): void {
     shareRoute = "publish";
     publishOpen = true;
-    if (postingAvailable && !needsAccountForFiles) preparePostLink();
+    if (postingAvailable && !needsAccountForUploads) preparePostLink();
   }
 
   // The dialog takes the QR column's width between the two screens, once the
@@ -1658,7 +1665,7 @@
 
   /**
    * The viewer refuses a render for reasons the sheet cannot see from its props
-   * — the take-it-home account gate, an animation canvas that has not mounted,
+   * — an animation canvas that has not mounted,
    * an export already in flight. Until it reported that, the sheet sat on
    * "Rendering video…" forever with no error and no way back.
    */
@@ -3220,7 +3227,7 @@
                     >
                   {/if}
                 </Crossfade>
-                {#if postingAvailable && !needsAccountForFiles && !videoBusy && !videoSettingsStale}
+                {#if postingAvailable && !needsAccountForUploads && !videoBusy && !videoSettingsStale}
                   <div
                     class="publish-actions"
                     transition:growFade={{ axis: "y" }}

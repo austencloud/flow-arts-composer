@@ -17,11 +17,27 @@
   thing to look at, a meaningless thing to link to, and a second way to do what
   the grid already does. -->
 <script lang="ts">
+  import { untrack } from "svelte";
   import { s as t } from "../../strings.svelte.js";
   import { spinRatioKey } from "@vtg/domain";
   import { MANDALA_STANDARD_TIP_DX } from "#lib/shared/mandala/domain/mandala-constants.js";
   import { traceScaledPath } from "@tka/shape-domain";
-  import { propReachInHandRadii } from "../../services/theory-matrix-artwork.js";
+  import {
+    propReachInHandRadii,
+    theoryStageExtentBoxRatio,
+    theoryStagePaths,
+  } from "../../services/theory-matrix-artwork.js";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import {
+    SHAPE_MATRIX_ACTIVE_STAGE_NAME,
+    SHAPE_MATRIX_CONTROLS_NAME,
+    SHAPE_MATRIX_FIGURE_NAME,
+    SHAPE_MATRIX_MODES_NAME,
+    SHAPE_MATRIX_STAGE_HEAD_NAME,
+    SHAPE_MATRIX_STAGE_TRANSPORT_NAME,
+    SHAPE_MATRIX_STRIP_NAME,
+  } from "../../services/shape-matrix-artwork.js";
+  import MandalaHeroLayer from "../../components/MandalaHeroLayer.svelte";
   import { shapeMatrixTipPoint } from "../../services/shape-matrix-flowers.js";
   import {
     foldUntraceablePropPair,
@@ -61,8 +77,16 @@
   import ShapeMatrixLiveRatioStage, {
     type LiveHand,
   } from "./ShapeMatrixLiveRatioStage.svelte";
+  import {
+    engineOwnsPropPicker,
+    getShapeEngineHostContext,
+  } from "../context/shape-engine-host-context";
 
   const app = getShapeMatrixAppContext();
+  // Inside the Composer the bottom bar picks props; no Props pill here.
+  const picksProps = $derived(
+    engineOwnsPropPicker(getShapeEngineHostContext().variant)
+  );
   /*
    * Set once by the app shell and shared with the Matrix drill. Both surfaces
    * hold the same object, which is what makes a prop chosen on one the prop
@@ -304,6 +328,59 @@
   );
 
   /*
+   * The flight between a tile and this stage, the same one the Level Matrix
+   * flies between a tile and its drill, with the same names.
+   *
+   * The drill is mounted behind this pane, so every name here is held only
+   * while this surface is the one showing, and the stage rectangle and the
+   * flower only while the compact layout shows this pane. The frames around
+   * the stage take their names only while a flight is running, as the drill's
+   * do: arriving they settle in, leaving they sink out.
+   */
+  const stageShowing = $derived(
+    app.compact && app.surface === "theory" && app.activeView === "detail"
+  );
+  const morphingFrames = $derived(stageShowing && app.mandalaHandoff);
+  // A flight snapshots the frame the panes change in, so a frame growing in
+  // or out at that moment would be caught half size.
+  const frameMotion = () =>
+    app.mandalaHandoff
+      ? { axis: "y" as const, duration: 0 }
+      : { axis: "y" as const };
+
+  /*
+   * The still under the canvas: the picture the flight lands on and leaves
+   * from. A canvas cannot travel, so this owns the flower's name while the
+   * stage is showing.
+   *
+   * It is painted from the stage's own guides, the paired shapes with the
+   * timing offset and direction in them, not from the tile, whose shapes are
+   * unpaired; and at the stage's own fit, so the canvas blooms over exactly
+   * these lines. The tile hands over to it in the first moments of the
+   * flight, while the flower is small. A solo carries the one hand it shows.
+   */
+  const floorPaths = $derived(theoryStagePaths(hands));
+  // The tiles take their extent fit at the pair's larger reach. The still's
+  // box cancels the fit out, but painting at the same one keeps its raster
+  // the tile's picture at a larger size, which is what the swap relies on.
+  const floorTipDx = $derived(app.data?.clubTipDx ?? MANDALA_STANDARD_TIP_DX);
+  const floorBoxRatio = $derived(
+    theoryStageExtentBoxRatio(floorPaths, floorTipDx)
+  );
+  const floorKey = $derived(
+    `${alignKey}|${leftOn ? "L" : ""}${rightOn ? "R" : ""}`
+  );
+  // A flight that lands here stands the still at full strength until it has
+  // landed, then lets it fade: the snapshot shows it at full strength, so a
+  // still resting at zero vanished in one frame at the landing. A flight that
+  // leaves starts with the stage already showing, and lighting the still then
+  // would flash it over the live drawing before the flight begins.
+  let floorLanding = $state(false);
+  $effect.pre(() => {
+    floorLanding = app.mandalaHandoff && !untrack(() => stageShowing);
+  });
+
+  /*
    * The other half of the VTG reading, which the drill has always carried and
    * this pane was missing.
    *
@@ -379,7 +456,11 @@
       <div
         class="mode-picker"
         data-focus-mode-chrome
-        transition:growFade={{ axis: "y" }}
+        use:claimedViewTransitionName={{
+          name: SHAPE_MATRIX_MODES_NAME,
+          enabled: morphingFrames,
+        }}
+        transition:growFade={frameMotion()}
       >
         <ElementChipRow
           selected={app.theoryMode}
@@ -412,7 +493,14 @@
             <small>{t("shape_engine_theory_hint")}</small>
           </div>
         {:else}
-          <header class="pair-heading" data-focus-mode-chrome>
+          <header
+            class="pair-heading"
+            data-focus-mode-chrome
+            use:claimedViewTransitionName={{
+              name: SHAPE_MATRIX_STAGE_HEAD_NAME,
+              enabled: morphingFrames,
+            }}
+          >
             <div class="pair-keys">
               {#if solo === "right"}
                 <strong style={`color: ${rightInk};`}>
@@ -440,9 +528,17 @@
             {#if !app.compact}
               <ShapeMatrixStageActions />
             {/if}
+            <!-- The stage's surface is the selected tile's box, arrived: it
+                 holds the shared stage name, so the rectangle grows out of
+                 the tile with the flower riding it. The flower and the live
+                 figure carry names of their own, so the surface flies clean. -->
             <button
               type="button"
               class="stage-window"
+              use:claimedViewTransitionName={{
+                name: SHAPE_MATRIX_ACTIVE_STAGE_NAME,
+                enabled: stageShowing,
+              }}
               aria-label={animationState.playing
                 ? t("shape_engine_pause_theory_animation")
                 : t("shape_engine_play_theory_animation")}
@@ -476,22 +572,58 @@
                 style={`--atmosphere-hand: ${handAccent}; --atmosphere-prop: ${propAccent}`}
                 aria-hidden="true"
               ></div>
-              <ShapeMatrixLiveRatioStage
-                {hands}
-                {handPeriod}
-                {alignToken}
-                onCycleProgress={handleCycleProgress}
-                onSeekRef={handleSeekRef}
-                {propReach}
-                {tipAngle}
-                paused={!animationState.playing}
-                playbackMode={animationState.playbackMode}
-                leftPropType={drawnProps.left}
-                rightPropType={drawnProps.right}
-                {propColors}
+              <!-- Over the backdrop, under the canvas, in the canvas's own
+                   box: the drill's floor, sized to this stage's fit. The
+                   canvas paints its guide on its first frame, with nothing
+                   to load first (the drill's player waits on a built
+                   sequence), so the still rests at zero under it. Through a
+                   flight it stands at full strength, which is what the
+                   snapshot shows anyway, and it fades off once the flight
+                   has landed: resting at zero throughout made the landed
+                   flower vanish in one frame. -->
+              <MandalaHeroLayer
+                paths={floorPaths}
+                artKey={floorKey}
+                tipDx={floorTipDx}
+                boxRatio={floorBoxRatio}
+                opacity={floorLanding ? 1 : 0}
+                claim={stageShowing}
+                handoff={app.mandalaHandoff}
               />
+              <!-- The figure: the grid and the live drawing. It blooms in
+                   place around the landed flower and clears first on the
+                   way back, as the drill's does. -->
+              <div
+                class="stage-figure"
+                use:claimedViewTransitionName={{
+                  name: SHAPE_MATRIX_FIGURE_NAME,
+                  enabled: morphingFrames,
+                }}
+              >
+                <ShapeMatrixLiveRatioStage
+                  {hands}
+                  {handPeriod}
+                  {alignToken}
+                  onCycleProgress={handleCycleProgress}
+                  onSeekRef={handleSeekRef}
+                  {propReach}
+                  {tipAngle}
+                  paused={!animationState.playing}
+                  playbackMode={animationState.playbackMode}
+                  leftPropType={drawnProps.left}
+                  rightPropType={drawnProps.right}
+                  {propColors}
+                />
+              </div>
             </button>
-            <div class="canvas-transport" data-shape-matrix-transport>
+            <div
+              class="canvas-transport"
+              data-shape-matrix-transport
+              use:claimedViewTransitionName={{
+                name: SHAPE_MATRIX_STAGE_TRANSPORT_NAME,
+                enabled: morphingFrames,
+              }}
+            >
               <UnifiedTimeline
                 playback={playbackAdapter}
                 compact={app.compact}
@@ -503,9 +635,15 @@
         <!-- Outside the branch on purpose: it is true of the whole surface.
              The short question stays visible; the explanation waits until
              someone asks for it so this pane still feels like a toy. -->
+        <!-- It sits where the drill's carousel sits, below the stage, so in a
+             flight it takes the carousel's name and rises in after it. -->
         <div
           class="boundary-disclosure"
           data-focus-mode-chrome
+          use:claimedViewTransitionName={{
+            name: SHAPE_MATRIX_STRIP_NAME,
+            enabled: morphingFrames,
+          }}
           transition:growFade={{ axis: "y" }}
         >
           <PanelButton
@@ -543,6 +681,10 @@
         data-focus-mode-chrome
         data-focus-layout={app.surface === "theory" ? "picker" : undefined}
         data-shape-matrix-dock
+        use:claimedViewTransitionName={{
+          name: SHAPE_MATRIX_CONTROLS_NAME,
+          enabled: morphingFrames,
+        }}
       >
         <AnimationPanel
           isExporting={false}
@@ -557,10 +699,12 @@
           showTempoControls={false}
           showEffectsPlayback={false}
           selectedPropType={app.addressedPropType}
-          onPropChange={(next: PropType) => void app.setPropType(next)}
+          onPropChange={picksProps
+            ? (next: PropType) => void app.setPropType(next)
+            : undefined}
           handProps={app.handProps}
           allowedProps={shapeMatrixPickerProps()}
-          onPropPickerRequest={app.togglePropPicker}
+          onPropPickerRequest={picksProps ? app.togglePropPicker : undefined}
           propPickerActive={app.propPickerOpen}
           sequence={null}
           showPathShape={false}
@@ -733,6 +877,13 @@
       );
   }
 
+  /* The canvas's own box, so the live stage inside measures the same square
+     it did as the window's direct child, and the still beside it shares it. */
+  .stage-figure {
+    position: absolute;
+    inset: 0;
+  }
+
   /* Taken out of flow on purpose. In flow, the canvas reports its own pixel
      buffer as an intrinsic height, that height becomes the box's minimum, and
      the box the canvas was just sized from can never shrink again. */
@@ -893,6 +1044,26 @@
        correctly; a boxed row sliced through the middle reads as broken. */
     .stage-window {
       min-height: 8rem;
+    }
+  }
+
+  /* At this height ElementChipRow turns into a size container that fills the
+     height its host gives it (same query, in its own file). The drill gives
+     its modes row the column's spare height; an auto row here gave the chip
+     row none, so it collapsed to zero and all six chips drew on one spot.
+     Give the rail the same share the drill does: chips fill the column down
+     to the dock. */
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 26.01rem) {
+    .detail-body {
+      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "modes media"
+        "controls media";
+    }
+
+    .mode-picker {
+      grid-template-rows: minmax(0, 1fr) auto;
+      min-height: 0;
     }
   }
 

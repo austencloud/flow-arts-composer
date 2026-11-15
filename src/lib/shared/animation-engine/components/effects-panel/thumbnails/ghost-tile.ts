@@ -19,6 +19,7 @@ import {
 } from "#lib/shared/effects/renderers/ghost-2d-renderer.js";
 import type { EffectConfigMap } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { blob, ground, hexToRgb } from "./tile-paint";
+import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
 
 export type GhostIntent = EffectConfigMap["ghost"];
 
@@ -34,14 +35,58 @@ export interface GhostTileSprite {
 const DRAW_WIDTH = 230;
 const HEAD = { x: 410, y: 165, angle: 0.25 };
 
+/**
+ * Small formats lay the staff nearly flat, bright blue, at the right of the
+ * frame and trail its echoes to the left in clearly stepped brightness (the
+ * nearest about 70% of the staff, the last about 25%), each turned a touch
+ * more, so the fan of echoes is what the eye sees and spans about 80% of the
+ * width. The staff is the engine's own sprite, as on the card.
+ */
+const SMALL: Record<
+  "tile" | "chip",
+  {
+    view: Box;
+    width: number;
+    echoes: number;
+    /** The staff's centre; echoes step back from it. */
+    head: { x: number; y: number };
+    step: { x: number; y: number };
+  }
+> = {
+  tile: {
+    view: { x: 40, y: 0, w: 640, h: 240 },
+    width: 250,
+    echoes: 4,
+    head: { x: 530, y: 192 },
+    step: { x: 78, y: -19 },
+  },
+  chip: {
+    view: { x: 150, y: 0, w: 420, h: 280 },
+    width: 215,
+    echoes: 3,
+    head: { x: 440, y: 180 },
+    step: { x: 68, y: -26 },
+  },
+};
+/** First echo's brightness against the staff, and the last's. */
+const ECHO_NEAR = 0.7;
+const ECHO_FAR = 0.25;
+
 export function paintGhostTile(
   ctx: CanvasRenderingContext2D,
   intent: GhostIntent,
-  sprite: GhostTileSprite | null
+  sprite: GhostTileSprite | null,
+  format: TileFormat = "card"
 ): void {
+  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  if (small) frame(ctx, format, small.view, 0);
   ground(ctx, [0.03, 0.035, 0.06]);
   blob(ctx, 400, 140, 300, 170, hexToRgb(GHOST_FROST_WHITE), 0.05);
   if (!sprite) return;
+  if (small) {
+    paintGhostSmall(ctx, intent, sprite, small);
+    return;
+  }
 
   const w = DRAW_WIDTH;
   const h = (w * sprite.height) / sprite.width;
@@ -85,6 +130,82 @@ export function paintGhostTile(
     { bodyAlpha: 1, rimAlpha: 0, frostAlpha: 0 },
     treatment
   );
+}
+
+function paintGhostSmall(
+  ctx: CanvasRenderingContext2D,
+  intent: GhostIntent,
+  sprite: GhostTileSprite,
+  small: (typeof SMALL)["tile"]
+): void {
+  const w = small.width;
+  const h = (w * sprite.height) / sprite.width;
+  const treatment = buildGhostSpriteTreatment(
+    sprite.image,
+    Math.ceil(w),
+    Math.ceil(h)
+  );
+  // Quieter looks keep a shorter fan, never fewer than the contract's three.
+  const echoes = Math.max(
+    3,
+    Math.min(small.echoes, Math.round(2 + intent.interval * 3))
+  );
+  // Each echo turns a little more, as the card's fan does (decay widens it).
+  const turn = 0.045 + Math.min(1, intent.decay / 12) * 0.05;
+  const base = -0.05;
+  const lifetime = resolveGhostLifetimeSeconds(intent.decay);
+  const pose = (n: number): GhostProp => ({
+    id: 0,
+    image: sprite.image,
+    centerX: small.head.x - small.step.x * n,
+    centerY: small.head.y + small.step.y * n,
+    angle: base - turn * n,
+    width: w,
+    height: h,
+    flipped: false,
+  });
+  // Oldest first, so the nearest echo and the staff stay on top.
+  for (let n = echoes; n >= 1; n -= 1) {
+    const k = echoes > 1 ? (n - 1) / (echoes - 1) : 0;
+    const level = ECHO_NEAR + (ECHO_FAR - ECHO_NEAR) * k;
+    // The renderer's own age curve shapes frost against rim; the stepped
+    // brightness is set here so the steps are what shows.
+    const v = resolveGhost2DAgeVisual(
+      (n / echoes) * lifetime * 0.5,
+      lifetime,
+      Math.max(0.6, intent.intensity)
+    );
+    const norm = Math.max(0.001, v.rimAlpha);
+    blitGhostPose(
+      ctx,
+      pose(n),
+      {
+        bodyAlpha: level * 0.85,
+        rimAlpha: Math.min(1, level * (0.55 + 0.45 * (v.rimAlpha / norm))),
+        frostAlpha: Math.min(1, level * 0.5),
+      },
+      treatment
+    );
+  }
+  // The staff: the engine's sprite, lifted to a bright blue.
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  blob(ctx, small.head.x, small.head.y, 170, 85, hexToRgb(sprite.color), 0.35);
+  ctx.restore();
+  const head = pose(0);
+  blitGhostPose(
+    ctx,
+    head,
+    { bodyAlpha: 1, rimAlpha: 0, frostAlpha: 0 },
+    treatment
+  );
+  ctx.save();
+  ctx.translate(head.centerX, head.centerY);
+  ctx.rotate(head.angle);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = 0.5;
+  ctx.drawImage(sprite.image, -w / 2, -h / 2, w, h);
+  ctx.restore();
 }
 
 const spriteCache = new Map<string, Promise<GhostTileSprite | null>>();

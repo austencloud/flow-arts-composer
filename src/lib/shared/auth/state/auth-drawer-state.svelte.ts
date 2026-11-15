@@ -190,6 +190,14 @@ export const authDrawerState = {
   get open() {
     return _open;
   },
+  /** True while a guest's one-day "not now" is running. */
+  get quietDayRunning() {
+    return gateCoolingDown();
+  },
+  /** A card or note the guest waved away counts as a "not now" too. */
+  recordNotNow() {
+    recordGateDismissal();
+  },
   get initialMode() {
     return _initialMode;
   },

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
+import { SwipeToDismiss } from "@austencloud/drawer";
 
 describe("SwipeToDismiss nested swipe blocks", () => {
   let swipe: SwipeToDismiss | undefined;
@@ -53,8 +53,10 @@ describe("SwipeToDismiss nested swipe blocks", () => {
     }
 
     touch("#handle", "touchstart", 100);
-    expect(swipe.getIsDragging()).toBe(true);
+    // A touch is pending until it travels past the recognition slop.
+    expect(swipe.getIsDragging()).toBe(false);
     touch("#handle", "touchmove", 300);
+    expect(swipe.getIsDragging()).toBe(true);
     touch("#handle", "touchend", 300);
     expect(onDismiss).toHaveBeenCalledOnce();
   });

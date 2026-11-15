@@ -8,7 +8,7 @@
   import { getBrowseEventHandler } from "../get-browse-event-handler";
   import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
   import type { ResponsiveSettings } from "#lib/shared/device/domain/models/device-models.js";
-  import { onMount, onDestroy, setContext, untrack } from "svelte";
+  import { onMount, onDestroy, setContext, tick, untrack } from "svelte";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import ErrorBanner from "../../../create/shared/components/ErrorBanner.svelte";
 
@@ -20,6 +20,7 @@
   import type { BrowseEventHandler } from "../services/browse-event-handler";
   import MyCollectionsPanel from "../../collections/components/MyCollectionsPanel.svelte";
   import CommunityCollectionsPanel from "../../collections/components/CommunityCollectionsPanel.svelte";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
   import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import GalleryTab from "./GalleryTab.svelte";
   import BrowseHeaderBar from "./BrowseHeaderBar.svelte";
@@ -33,11 +34,13 @@
   import { createBrowseHeaderState } from "#lib/shared/browse/state/browse-header-state.svelte.js";
   import { setBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
   import SmartCollectionSaveDialog from "#lib/features/library/components/SmartCollectionSaveDialog.svelte";
-  import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
+  import GalleryAskScreen from "#lib/features/browse/gallery-home/GalleryAskScreen.svelte";
+  import GalleryAnswerBar from "#lib/features/browse/gallery-home/GalleryAnswerBar.svelte";
+  import type { AskQuestion } from "#lib/features/browse/gallery-home/gallery-ask.js";
+  import BrowseSourceMenu from "./BrowseSourceMenu.svelte";
   import GalleryMenuRow, {
     type MenuRequest,
   } from "#lib/features/browse/gallery-home/GalleryMenuRow.svelte";
-  import type { Section as DrillSection } from "#lib/features/browse/gallery-home/gallery-drill-catalog.svelte";
   import { loadCanonicalTnDSequences } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
   import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
   import {
@@ -66,6 +69,13 @@
     setPendingLibraryReveal,
   } from "../../state/pending-browse-intent.svelte";
   import { openSequenceViewer } from "../../../../shared/sequence-viewer/services/sequence-viewer-navigator";
+  import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import {
+    isModalOnScreen,
+    waitForIdle,
+  } from "#lib/shared/components/idle-wait.js";
+  import { guestNote } from "#lib/shared/guest-note/guest-note-state.svelte.js";
   import {
     getGalleryViewState,
     setGalleryViewState,
@@ -85,6 +95,7 @@
     type BrowseHomeDestination,
   } from "#lib/features/browse/home/BrowseHome.svelte";
   import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
+  import { createScreenStepTracker } from "../services/screen-step";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
   import MandalaPlace from "#lib/features/browse/mandala-place/MandalaPlace.svelte";
@@ -125,6 +136,8 @@
   const engine = createBrowseEngine({
     persistKey: "tka-browse-gallery",
     initialSource: "community",
+    // Everyone opens on the same shuffle for the day, not the A sequences.
+    initialSort: BrowseSortMethod.TODAYS_MIX,
     sections: true,
     // No defaultSectionGroupBy: the left section index follows the active sort
     // (A–Z → letters, Level → difficulty, Date → dates, Length → lengths).
@@ -241,11 +254,37 @@
               : {}),
           }
         : browseLocationForDestination(destination.kind);
-    // Push the inner route first so the address names the destination, then
-    // close the home: setActiveTab clears it and the two agree on the shelf.
-    browseNavigationState.navigateTo(location, { forceUrl: true });
-    navigationState.setActiveTab(browseDestinationForLocation(location));
+    // The applyToGrid pattern: this frame only starts the landing's leaving
+    // half (the screen key moves to the destination, whose layer is still
+    // empty), so the tile's pressed frame and the first frame of the move
+    // paint. Two frames later the route changes and the section mounts,
+    // inside the layer that is not readable yet.
+    pendingPrimary = location.primary;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        // Push the inner route first so the address names the destination,
+        // then close the home: setActiveTab clears it and the two agree on
+        // the shelf.
+        browseNavigationState.navigateTo(location, { forceUrl: true });
+        navigationState.setActiveTab(browseDestinationForLocation(location));
+        pendingPrimary = null;
+      })
+    );
   }
+
+  // The section a landing tile has asked for, for the two frames before its
+  // route is applied (see openFromHome).
+  let pendingPrimary = $state<BrowsePrimary | null>(null);
+  const screenKey = $derived(
+    pendingPrimary ?? (homeOpen ? "home" : activePrimary)
+  );
+  // Landing to a section is forward, a section back to the landing is back;
+  // Explore and Library are peers and keep the plain fade.
+  const screenSteps = createScreenStepTracker(
+    "home",
+    untrack(() => screenKey)
+  );
+  const screenMove = $derived(screenSteps.step(screenKey));
 
   // Leaving the home through a sidebar tab writes the generic
   // /browse/{primary}/sequences address. Once the home closes, restate the
@@ -301,14 +340,28 @@
     lastTrackedDestination = destination;
     trackBrowseDestinationEntered(destination);
   });
-  // Gallery opens on the drill front door (GalleryDrill); any pick or
-  // "Browse all" reveals the full GalleryTab. Stays on the chosen view
-  // while mounted, and this session's view survives reload/HMR.
+  // Sequences opens on the ask screen (how long, starts with), at every size;
+  // its main button reveals the full GalleryTab. A search, a filtered deep
+  // link, or a return with answers already applied goes straight to the
+  // cards. Stays on the chosen view while mounted, and this session's view
+  // survives reload/HMR.
+  const arrivesFiltered = untrack(
+    () =>
+      engine.searchQuery.trim() !== "" ||
+      [...engine.activeFilters.values()].some((f) => !f.locked)
+  );
   let galleryView = $state<"start-here" | "browse-all">(
-    initialGalleryLetter
+    initialGalleryLetter || arrivesFiltered
       ? "browse-all"
       : (restoredGalleryView?.view ?? "start-here")
   );
+  // Typing a search on the ask screen shows the cards it finds.
+  $effect(() => {
+    if (engine.searchQuery.trim() === "") return;
+    untrack(() => {
+      if (galleryView === "start-here") galleryView = "browse-all";
+    });
+  });
 
   let appliedGalleryLetter = $state(initialGalleryLetter);
 
@@ -364,6 +417,34 @@
     return () => window.removeEventListener("popstate", sync);
   });
 
+  // A guest who only looks at sequences also gets the returning-guest note:
+  // once the viewer opened from Browse closes, wait for a quiet moment, then
+  // offer it (the note only; the install card follows Create). The overlay
+  // state already knows the viewer's open and close, so this is the one hook.
+  const sequenceOverlay = getSequenceOverlayState();
+  let viewerOpenedFromBrowse = false;
+  let browseNoteCancel: (() => void) | null = null;
+  $effect(() => {
+    const isOpen = sequenceOverlay.isOpen;
+    const source = sequenceOverlay.analyticsSource;
+    untrack(() => {
+      if (isOpen) {
+        browseNoteCancel?.();
+        browseNoteCancel = null;
+        if (source.startsWith("browse_")) viewerOpenedFromBrowse = true;
+        return;
+      }
+      if (!viewerOpenedFromBrowse) return;
+      viewerOpenedFromBrowse = false;
+      browseNoteCancel = waitForIdle(() => {
+        if (isModalOnScreen(authDrawerState.open)) return false;
+        guestNote.offer("browse");
+        return true;
+      });
+    });
+  });
+  onDestroy(() => browseNoteCancel?.());
+
   // Record view + search whenever they change so a reload/HMR remount
   // restores this exact spot (filters restore via the engine's own persist).
   $effect(() => {
@@ -382,17 +463,45 @@
   // category's menu already open. Level and Length have their own buttons;
   // every other category opens More on it.
   let menuRequest = $state<MenuRequest | null>(null);
-  function openCategoryMenu(section: Exclude<DrillSection, "chooser">): void {
-    const request: MenuRequest =
-      section === "level" || section === "length"
-        ? { menu: section }
-        : { menu: "more", section };
-    galleryView = "browse-all";
-    menuRequest = request;
-  }
   function backToFrontDoor(): void {
     menuRequest = null;
+    askFocus = "length";
+    askSurface = "ask";
     galleryView = "start-here";
+  }
+
+  // The ask screen. An answer button above the cards reopens it at its own
+  // question, and its taps then count as answer-button taps.
+  let askFocus = $state<AskQuestion>("length");
+  let askSurface = $state<"ask" | "answer_button">("ask");
+  // Bumped to open the cards' Filters sheet (phones, tablets, sideways).
+  let filtersRequest = $state(0);
+  function reopenAsk(question: AskQuestion): void {
+    menuRequest = null;
+    askFocus = question;
+    askSurface = "answer_button";
+    galleryView = "start-here";
+  }
+  function showCards(): void {
+    menuRequest = null;
+    askSurface = "ask";
+    galleryView = "browse-all";
+  }
+  // More filters opens the existing filter surface over the cards: the
+  // Filters sheet on phones and tablets, the menu row's More menu on desktop.
+  async function openMoreFilters(): Promise<void> {
+    askSurface = "ask";
+    if (!isMobile) {
+      galleryView = "browse-all";
+      menuRequest = { menu: "more" };
+      return;
+    }
+    const mounting = galleryView !== "browse-all";
+    galleryView = "browse-all";
+    // GalleryTab reads the request number it mounts with as already seen, so
+    // the bump lands after the cards mount.
+    if (mounting) await tick();
+    filtersRequest += 1;
   }
   let smartSaveOpen = $state(false);
 
@@ -568,15 +677,28 @@
       !mandalaPlace.open &&
       galleryView === "browse-all"
   );
-  // The desktop front door keeps the scope bar's search, with the same Source
-  // menu as the grid's row in place of the sideways chip strip.
-  const desktopFrontDoor = $derived(
-    !isMobile &&
+  // Phones, tablets and sideways phones keep the two answers as buttons
+  // above the Sequences cards, in the scope strip's place.
+  const answerBarShown = $derived(
+    isMobile &&
       !homeOpen &&
       activePrimary === "explore" &&
       exploreSection === "sequences" &&
       !mandalaPlace.open &&
-      galleryView === "start-here"
+      galleryView === "browse-all"
+  );
+  // Upright phones and tablets hold the Source menu in the header bar.
+  const headerSourceMenu = $derived(
+    compactChrome && !homeOpen && !!(browseScope || onCollectionsList)
+  );
+  // The header's count line under the title on those cards: "14 of 1,578".
+  const cardsCountLine = $derived(
+    answerBarShown && compactChrome && engine.allSequences.length > 0
+      ? t("browse_ask_result_of_total", {
+          count: engine.resultCount.toLocaleString(),
+          total: engine.allSequences.length.toLocaleString(),
+        })
+      : null
   );
   // In the column the section tabs stand one per line.
   const sideColumn = $derived(sideColumnEligible && isSidewaysViewport());
@@ -857,7 +979,14 @@
   <!-- One navigation bar for every Browse screen. It sits above the
        Crossfade so the trail, back box and screen actions never fade or move
        with the content under them. -->
-  <BrowseHeaderBar compact={isMobile} />
+  <BrowseHeaderBar
+    compact={isMobile}
+    sourceMenu={headerSourceMenu ? headerSource : undefined}
+    subtitle={cardsCountLine}
+  />
+  {#snippet headerSource()}
+    <BrowseSourceMenu scope={browseScope} />
+  {/snippet}
   {#if exploreSwitcherShown && !compactChrome}
     <!-- A phone on its side: the Community sibling switcher stands in the side
          column, above the section's own search and filters. -->
@@ -897,19 +1026,38 @@
       class="scope-bar-slot"
       transition:growFade={{ duration: DURATION.normal }}
     >
-      <BrowseScopeBar scope={browseScope} sourceMenu={desktopFrontDoor} />
+      <BrowseScopeBar
+        scope={browseScope}
+        active={!!(browseScope || onCollectionsList) && !desktopMenuRow}
+      />
+      {#if answerBarShown}
+        <GalleryAnswerBar
+          {engine}
+          onOpen={reopenAsk}
+          onMore={openMoreFilters}
+        />
+      {/if}
     </div>
   {/if}
   <!-- Community and personal work replace one another without moving the
        surrounding navigation. -->
   <div class="browse-tab-content">
+    <!-- Landing to a section and back is the stepped swap: the leaving screen
+         is gone before the arriving one is readable, and the scope row grows
+         or goes inside that leaving half (same DURATION), so the arriving
+         screen comes in at its final place. -->
     <Crossfade
-      key={homeOpen ? "home" : activePrimary}
+      key={screenKey}
       duration={DURATION.normal}
+      mode={screenMove ? "swap" : "crossfade"}
+      motion={screenMove ? "step" : "fade"}
+      direction={screenMove < 0 ? -1 : 1}
       fill
     >
       <div class="tab-panel">
-        {#if homeOpen}
+        {#if pendingPrimary}
+          <!-- The section mounts here two frames after the tap. -->
+        {:else if homeOpen}
           <BrowseHome
             destinations={getAccessibleSectionsForModule("browse")}
             onSelect={openFromHome}
@@ -918,10 +1066,9 @@
           <div class="explore-shell">
             <div class="explore-body">
               {#if exploreSection === "sequences"}
-                <!-- Phones and tablets go straight to the grid; their Filters
-                     sheet is the chooser. Desktop keeps the workspace with its
-                     live results beside it. The By mandala place takes the
-                     whole area at every size while its address is open. -->
+                <!-- Every size opens on the ask screen; its main button shows
+                     the cards. The By mandala place takes the whole area at
+                     every size while its address is open. -->
                 {#if mandalaPlace.open}
                   <MandalaPlace
                     pool={engine.allSequences}
@@ -936,53 +1083,65 @@
                         sequence
                       )}
                   />
-                {:else if galleryView === "start-here" && !isMobile}
-                  <FilterWorkspace
-                    {engine}
-                    collections={collectionOptions}
-                    onSaveSmart={() => (smartSaveOpen = true)}
-                    onEject={applyToGrid}
-                    onOpenMandala={() =>
-                      mandalaPlace.openPlace(appliedMandalaLevel)}
-                    onOpenCategory={openCategoryMenu}
-                  />
                 {:else}
-                  <GalleryTab
-                    {isMobile}
-                    {drawerWidth}
-                    {engine}
-                    {error}
-                    warming={gridWarming}
-                    onSequenceAction={(action, sequence, variations) => {
-                      return (
-                        eventHandlerService?.handleSequenceAction(
-                          action,
-                          sequence,
-                          variations
-                        ) ?? Promise.resolve()
-                      );
-                    }}
-                    onBackToStart={isMobile ? undefined : backToFrontDoor}
-                    onSaveSmart={() => (smartSaveOpen = true)}
-                    onOpenMandala={() =>
-                      mandalaPlace.openPlace(appliedMandalaLevel)}
+                  <Crossfade
+                    key={galleryView}
+                    duration={DURATION.normal}
+                    mode="crossfade"
+                    fill
                   >
-                    {#snippet menuRow()}
-                      <GalleryMenuRow
+                    {#if galleryView === "start-here"}
+                      <GalleryAskScreen
                         {engine}
-                        scope={browseScope}
-                        collections={collectionOptions}
-                        {menuRequest}
-                        onBackToStart={backToFrontDoor}
+                        focusQuestion={askFocus}
+                        surface={askSurface}
+                        onShow={showCards}
+                        onMoreFilters={openMoreFilters}
+                      />
+                    {:else}
+                      <GalleryTab
+                        {filtersRequest}
+                        headerFiltersPill={!answerBarShown}
+                        {isMobile}
+                        {drawerWidth}
+                        {engine}
+                        {error}
+                        warming={gridWarming}
+                        onSequenceAction={(action, sequence, variations) => {
+                          return (
+                            eventHandlerService?.handleSequenceAction(
+                              action,
+                              sequence,
+                              variations
+                            ) ?? Promise.resolve()
+                          );
+                        }}
+                        onBackToStart={isMobile ? undefined : backToFrontDoor}
                         onSaveSmart={() => (smartSaveOpen = true)}
                         onOpenMandala={() =>
                           mandalaPlace.openPlace(appliedMandalaLevel)}
-                      />
-                    {/snippet}
-                  </GalleryTab>
+                      >
+                        {#snippet menuRow()}
+                          <GalleryMenuRow
+                            {engine}
+                            scope={browseScope}
+                            collections={collectionOptions}
+                            {menuRequest}
+                            onBackToStart={backToFrontDoor}
+                            onSaveSmart={() => (smartSaveOpen = true)}
+                            onOpenMandala={() =>
+                              mandalaPlace.openPlace(appliedMandalaLevel)}
+                          />
+                        {/snippet}
+                      </GalleryTab>
+                    {/if}
+                  </Crossfade>
                 {/if}
               {:else if exploreSection === "collections"}
-                <CommunityCollectionsPanel />
+                <CommunityCollectionsPanel
+                  active={screenKey === "explore" &&
+                    exploreSection === "collections"}
+                />
               {:else}
                 <ExploreVisualsPanel />
               {/if}

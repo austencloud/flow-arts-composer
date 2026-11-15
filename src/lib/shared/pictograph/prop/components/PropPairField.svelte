@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
-  import { getPropTypeDisplayInfo } from "../domain/prop-type-display-registry";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import PropCompositionPreview from "./PropCompositionPreview.svelte";
   import PropPairDialog from "./PropPairDialog.svelte";
@@ -9,7 +10,7 @@
 
   let {
     value = $bindable(),
-    label = "Save with props",
+    label = t("prop_pair_save_with_props"),
     hint,
     disabled = false,
     showColors = false,
@@ -47,8 +48,8 @@
   let choosing = $state(false);
   const pairLabel = $derived(
     value.leftPropType === value.rightPropType
-      ? getPropTypeDisplayInfo(value.leftPropType).label
-      : `${getPropTypeDisplayInfo(value.leftPropType).label} / ${getPropTypeDisplayInfo(value.rightPropType).label}`
+      ? localizedPropName(value.leftPropType)
+      : `${localizedPropName(value.leftPropType)} / ${localizedPropName(value.rightPropType)}`
   );
 
   function pick(next: ResolvedPropConfig): void {
@@ -66,7 +67,7 @@
   >
     <span class="lead">
       <PropCompositionPreview propType={value.leftPropType} size={32} neutral />
-      {fill ? label : `${label}:`}
+      {fill ? label : t("prop_pair_label_with_colon", { label })}
     </span>
     <span class="value">
       {pairLabel}

@@ -26,6 +26,10 @@
     seedFromPsSlice,
     type PsSlicePayload,
   } from "#lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice.js";
+  import {
+    holdBackground,
+    releaseBackground,
+  } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
   import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
   import { createPostSequenceView } from "#lib/shared/media-composition/services/post-sequence-view.svelte.js";
@@ -593,6 +597,28 @@
     return () => {
       disposed = true;
       stop?.();
+    };
+  });
+
+  // The page's animated backdrop is a window-sized canvas repainted every
+  // frame. Measured behind Studio playback: 45 to 49 fps with it running, 60
+  // with its loop stopped, and 29% of a playback profile sat in its animate
+  // loop. Every surface that mounts the editor (the Post page, the sequence
+  // viewer's Studio pane) gets the hold from here. It lasts the whole time the
+  // editor is open and showing, not only while playing: scrubbing, dragging and
+  // timeline work need the frames too, and a backdrop that froze and restarted
+  // on every Play would distract. The viewer shell's own Studio surfaces count
+  // as showing, matching the pause rule below. Each scope takes its own key,
+  // since the hold is a set and a shared key would drop another holder's hold.
+  const scopeId = $props.id();
+  const backdropHoldKey = `post-studio-editor:${scopeId}`;
+  $effect(() => {
+    const shouldHold = active || !!sharedSurfaces?.active;
+    if (shouldHold) holdBackground(backdropHoldKey);
+    else releaseBackground(backdropHoldKey);
+
+    return () => {
+      if (shouldHold) releaseBackground(backdropHoldKey);
     };
   });
 

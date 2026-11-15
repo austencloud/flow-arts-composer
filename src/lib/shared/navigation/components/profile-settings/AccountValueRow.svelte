@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import {
+    getBaseLocale,
+    getLocale,
+    t,
+  } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   interface Props {
@@ -15,7 +19,10 @@
   let {
     label,
     value,
-    editLabel = `Edit ${label.toLowerCase()}`,
+    // German writes nouns with a capital, so the field name keeps its case there.
+    editLabel = t("nav_edit_field", {
+      field: getBaseLocale(getLocale()) === "de" ? label : label.toLowerCase(),
+    }),
     optional = false,
     empty = false,
     onEdit,

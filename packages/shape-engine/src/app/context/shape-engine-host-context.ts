@@ -16,6 +16,18 @@ import type {
 export type ShapeEngineVariant = "standalone" | "embedded" | "mirror";
 
 /**
+ * Whether the engine offers its own prop picker. Inside the Composer the
+ * bottom bar's Change props switcher is the one place props are picked, so
+ * the embedded engine has no Props pill or panel. Austen, 2026-11-13, at
+ * phone size: "we shouldn't be picking the prop there. We should always pick
+ * the prop through the bottom bar and not in this location." Hosts with no
+ * bottom bar (the public route, a mirror) keep the engine's picker.
+ */
+export function engineOwnsPropPicker(variant: ShapeEngineVariant): boolean {
+  return variant !== "embedded";
+}
+
+/**
  * The selection a mirror host traces: the cell's two flowers, its hands mode,
  * and the matrix's [leftTurn, rightTurn] ("fl" on a float axis).
  */

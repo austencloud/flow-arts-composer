@@ -1152,6 +1152,10 @@
     .tunnel-workspace {
       --tunnel-gap: var(--settings-spacing-sm, 8px);
       padding: var(--settings-spacing-sm, 8px);
+    }
+
+    /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+    .tunnel-workspace {
       padding-bottom: calc(
         var(--settings-spacing-sm, 8px) + env(safe-area-inset-bottom)
       );

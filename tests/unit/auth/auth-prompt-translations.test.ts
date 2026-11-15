@@ -25,7 +25,7 @@ describe("guest prompt translations", () => {
   it("renders the guest feedback gate in German", async () => {
     await setLocale("de");
     expect(authNudgeCopy(moduleNudgeTrigger("feedback"))).toBe(
-      "Erstelle ein kostenloses Konto, um diesen Bereich der App zu öffnen."
+      "Mit einem Konto öffnest du diesen Bereich der App, und deine Arbeit bleibt auf jedem Gerät. Kostenlos, in etwa zehn Sekunden."
     );
   });
 

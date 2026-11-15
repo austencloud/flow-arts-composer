@@ -39,32 +39,32 @@ Touch-friendly interface for changing sort method and jumping to sections
     onSectionClick(sectionId);
   }
 
-  const sortOptions = [
+  const sortOptions = $derived([
     {
       id: "alphabetical",
-      label: "Alphabetical",
+      label: t("browse_audit_alphabetical"),
       icon: "fa-sort-alpha-down",
-      description: "A to Z",
+      description: t("browse_ui_collections_sort_alphabetical"),
     },
     {
       id: "difficulty",
-      label: "Difficulty",
+      label: t("browse_sort_difficulty"),
       icon: "fa-signal",
-      description: "Easy to Hard",
+      description: t("browse_sort_jump_easy_to_hard"),
     },
     {
       id: "length",
-      label: "Length",
+      label: t("browse_sort_length"),
       icon: "fa-ruler",
-      description: "Shortest to Longest",
+      description: t("browse_sort_jump_short_to_long"),
     },
     {
       id: "recent",
-      label: "Recently Added",
+      label: t("browse_sort_jump_recent"),
       icon: "fa-clock",
-      description: "Newest First",
+      description: t("browse_sort_jump_newest"),
     },
-  ];
+  ]);
 </script>
 
 <div class="sort-jump-sheet">

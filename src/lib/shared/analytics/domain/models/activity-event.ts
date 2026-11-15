@@ -123,6 +123,22 @@ export interface ActivityMetadata {
   generationType?: string;
   loopType?: string;
 
+  // Settings chosen for a generation (sequence_generate). The logger sends
+  // these through under the same snake_case names.
+  gen_level?: number;
+  gen_loop_enabled?: boolean;
+  gen_loop_type?: string;
+  gen_loop_period?: string;
+  gen_grid_mode?: string;
+  gen_turn_intensity?: number;
+  gen_prop_continuity?: string;
+  gen_start_position?: string;
+  gen_end_position?: string;
+  gen_hand_relationship?: string;
+  gen_prop_relationship?: string;
+  gen_settings_changed?: string;
+  gen_is_default_config?: boolean;
+
   // Learn context
   lessonId?: string;
   quizId?: string;

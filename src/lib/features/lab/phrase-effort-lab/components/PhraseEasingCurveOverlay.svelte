@@ -222,8 +222,12 @@
     width: 100%;
     display: block;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
-    border-top: none;
     border-radius: 0 0 8px 8px;
     background: rgba(0, 0, 0, 0.15);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .easing-curve-overlay {
+    border-top: none;
   }
 </style>

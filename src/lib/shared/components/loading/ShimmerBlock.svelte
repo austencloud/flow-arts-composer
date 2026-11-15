@@ -50,9 +50,13 @@
         50%,
       var(--theme-card-bg, rgba(255, 255, 255, 0.04)) 75%
     );
-    background-size: 200% 100%;
     animation: shimmer-sweep 1.5s infinite;
     flex-shrink: 0;
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .shimmer-block {
+    background-size: 200% 100%;
   }
 
   @keyframes shimmer-sweep {

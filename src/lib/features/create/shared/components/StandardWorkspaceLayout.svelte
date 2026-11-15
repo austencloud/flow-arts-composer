@@ -44,8 +44,14 @@
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
   import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
-  import { constructPhoneSplit } from "../../construct/services/construct-phone-split";
   import {
+    CONSTRUCT_PHONE_MIN_SEQUENCE_ROWS,
+    constructPhoneSequenceRows,
+    constructPhoneSplit,
+    constructPhoneWorkspaceFloor,
+  } from "../../construct/services/construct-phone-split";
+  import {
+    GENERATE_PHONE_PANEL_NEED,
     sequenceRowCount,
     stackedWorkspaceSplit,
     USUAL_WORKSPACE_SHARE,
@@ -310,17 +316,24 @@
   // Stacked, the workspace first gets its chrome plus two whole rows of
   // legible step pictures; each view's preferred share applies above that,
   // and the tool panel takes the rest and scrolls inside itself. Until the
-  // header first reports, a title row and its badges (72px) stand in. An
-  // empty workspace has no pictures to keep legible, so Assemble's grid keeps
-  // its usual height until the first step lands.
-  const WORKSPACE_HEADER_ESTIMATE = 72;
+  // header first reports, a title row and its badges' row (72px) stand in;
+  // a stacked workspace up to 500px wide holds the badges in the title row
+  // (WorkspaceSequenceHeader), so there one 48px row stands in. An empty
+  // workspace has no pictures to keep legible, so Assemble's grid keeps its
+  // usual height until the first step lands.
+  const WORKSPACE_HEADER_ESTIMATE = { wide: 72, phone: 48 };
+  const PHONE_HEADER_MAX_WIDTH = 500;
+  const workspaceChromeHeight = $derived(
+    (workspaceHeaderHeight ||
+      (!useSideBySidePanels && layoutWidth <= PHONE_HEADER_MAX_WIDTH
+        ? WORKSPACE_HEADER_ESTIMATE.phone
+        : WORKSPACE_HEADER_ESTIMATE.wide)) + buttonPanelHeight
+  );
   const workspaceFloor = $derived(
     hasWorkspaceContent
       ? workspaceFloorHeight({
           width: layoutWidth,
-          chromeHeight:
-            (workspaceHeaderHeight || WORKSPACE_HEADER_ESTIMATE) +
-            buttonPanelHeight,
+          chromeHeight: workspaceChromeHeight,
         })
       : 0
   );
@@ -336,9 +349,7 @@
       layoutWidth >= GENERATE_COMPACT_MIN_WIDTH
       ? workspaceFloorHeight({
           width: layoutWidth,
-          chromeHeight:
-            (workspaceHeaderHeight || WORKSPACE_HEADER_ESTIMATE) +
-            buttonPanelHeight,
+          chromeHeight: workspaceChromeHeight,
           rows: sequenceRowCount(
             CreateModuleState.sequenceState.currentSequence?.steps?.length ?? 0
           ),
@@ -346,14 +357,46 @@
       : 0
   );
   // On a phone, Construct's job is picking the next option, so the picker
-  // takes the height its grid can use above that floor.
+  // takes the height its grid can use above that floor. At phone widths the
+  // floor keeps a quarter of a third row (constructPhoneSequenceRows), which
+  // is how the height the slim bars give back reaches the sequence as well
+  // as the picker.
+  const constructPhoneRows = $derived(constructPhoneSequenceRows(layoutWidth));
+  // A sequence longer than two rows yields part of that floor, down to 1.25
+  // rows, until the picker's tiles reach their 68px floor
+  // (constructPhoneWorkspaceFloor). A shorter one keeps the full floor.
+  const constructSequenceRows = $derived(
+    sequenceRowCount(
+      CreateModuleState.sequenceState.currentSequence?.steps?.length ?? 0
+    )
+  );
+  const constructWorkspaceFloor = $derived.by(() => {
+    if (!hasWorkspaceContent || constructPhoneRows === undefined) {
+      return workspaceFloor;
+    }
+    const fullFloor = workspaceFloorHeight({
+      width: layoutWidth,
+      chromeHeight: workspaceChromeHeight,
+      rows: constructPhoneRows,
+    });
+    if (constructSequenceRows <= 2) return fullFloor;
+    return constructPhoneWorkspaceFloor({
+      height: layoutHeight,
+      fullFloor,
+      minFloor: workspaceFloorHeight({
+        width: layoutWidth,
+        chromeHeight: workspaceChromeHeight,
+        rows: CONSTRUCT_PHONE_MIN_SEQUENCE_ROWS,
+      }),
+    });
+  });
   const constructPhoneSizes = $derived(
     navigationState.activeTab === "construct" && !stepEditorStack
       ? constructPhoneSplit({
           width: layoutWidth,
           height: layoutHeight,
           stacked: !useSideBySidePanels,
-          workspaceFloor,
+          workspaceFloor: constructWorkspaceFloor,
         })
       : null
   );
@@ -374,6 +417,14 @@
       preferredWorkspace: layoutHeight * preferredShare,
       workspaceFloor,
       sequenceFloor: stepEditorStack ? 0 : sequenceFloor,
+      // On a narrow phone Generate's cards keep the rows they need; the
+      // workspace gives the difference from its usual share.
+      toolPanelNeed:
+        isGeneratorTab &&
+        !stepEditorStack &&
+        layoutWidth < GENERATE_COMPACT_MIN_WIDTH
+          ? GENERATE_PHONE_PANEL_NEED
+          : 0,
     });
   });
   // While Sequence Actions shows its root actions over the tool panel, the
@@ -739,6 +790,7 @@
             trailingActions={compactSaveAction}
             arrivalLead={landingLeft}
             animateControls={() => controlsMayAnimate}
+            stepSelected={isStepEditorView}
           />
         {/if}
       </div>
@@ -888,15 +940,21 @@
   }
 
   /* On Construct's phone tier every control around the work (Undo, Redo,
-     Save, the rail, the letter-type tabs and the picker's icon buttons) reads
-     this token, so one value here drops them from 44px to 40px. Austen chose
-     40 on 2026-10-22 so the rows give their height to the pictographs; it
-     stays above the 24px WCAG 2.2 floor and Material's 40dp dense minimum.
-     The app's mobile nav sits outside this wrapper and keeps 44px. */
+     Save, the letter-type tabs and the picker's icon buttons) reads this
+     token, so one value here drops them from 44px to 40px. Austen chose 40 on
+     2026-10-22 so the rows give their height to the pictographs; it stays
+     above the 24px WCAG 2.2 floor and Material's 40dp dense minimum. The
+     app's mobile nav sits outside this wrapper and keeps 44px.
+     The bar under the steps goes further: on a phone (ButtonPanel's narrow
+     container query reads these) every control in it, Play and Viewer
+     included, is 36px, the law's phone size, on one centre line with 4px
+     around it, so the bar is 44px where it was 62px (Austen liked the
+     tighter bars, 2026-11-13). */
   .layout-wrapper.construct-phone-tier {
     --min-touch-target: 40px;
-    /* The rail's narrow container queries set their own control size. */
-    --workspace-rail-touch-target: 40px;
+    --workspace-rail-touch-target: 36px;
+    --workspace-rail-play-size: 36px;
+    --workspace-rail-padding: 4px;
   }
 
   /* The start placement morph flies one card over a live workspace slide.
@@ -985,23 +1043,8 @@
     }
   }
 
-  .workspace-history-actions[inert],
-  .compact-history-actions[inert] {
-    opacity: 0.45;
-  }
-
-  /* Undo and Redo dim while a preview plays, and brighten again after. */
-  .workspace-history-actions,
-  .compact-history-actions {
-    transition: opacity var(--duration-normal) var(--ease-standard);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .workspace-history-actions,
-    .compact-history-actions {
-      transition: none;
-    }
-  }
+  /* While a preview plays the history pair is inert, and UndoButton shows
+     its pressed-flat off look; no extra fade here. */
 
   /* The rail's zones let taps through to the grid; this wrapper is authored
      here, so ButtonPanel's own wrapper rule doesn't reach it. */

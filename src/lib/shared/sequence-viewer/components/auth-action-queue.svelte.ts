@@ -33,17 +33,16 @@ export type SignInReason = PendingActionType | "account";
 /**
  * Reason → the shared AuthModal's contextual trigger.
  *
- * `gated-action-policy`'s FULL_ACCOUNT_ACTIONS is the gate: only download,
- * publish, and account ever open the sheet. Everything else provisions a guest
- * silently and never prompts, so those three are the only mappings that can be
- * reached — and `auth-nudge-trigger` already registers exactly those three
- * `viewer-signin-*` keys with the copy this funnel needs. Anything unmapped
+ * `gated-action-policy`'s FULL_ACCOUNT_ACTIONS is the gate: only publish and
+ * account ever open the sheet (download left it on 2026-11-14, when guests
+ * were let export). Everything else provisions a guest silently and never
+ * prompts, so those two are the only mappings that can be reached — and
+ * `auth-nudge-trigger` registers their `viewer-signin-*` keys with the copy this funnel needs. Anything unmapped
  * falls back to `null`, which renders AuthModal's default ask rather than
  * throwing; if a future caller gates one of the guest-provisioned actions, add
  * its trigger key there rather than reintroducing local copy here.
  */
 const SIGN_IN_TRIGGERS: Partial<Record<SignInReason, AuthNudgeTrigger>> = {
-  download: "viewer-signin-download",
   publish: "viewer-signin-publish",
   account: "viewer-signin-account",
 };
@@ -100,7 +99,7 @@ export function createAuthActionQueue() {
     sequence: SequenceData | null
   ) {
     if (!requiresFullAccount(type)) {
-      // save / favorite / remix / sendTo: provision a guest identity if
+      // save / favorite / remix / sendTo / download: provision a guest identity if
       // needed, then run. Never prompts.
       void ensureGuestIdentity()
         .then(learnWhoIsSignedIn)
@@ -108,7 +107,7 @@ export function createAuthActionQueue() {
       return;
     }
 
-    // download / publish: must be a permanent account.
+    // publish: must be a permanent account.
     void learnWhoIsSignedIn().then(() => {
       if (authState.isFullAccount) {
         void realHandler?.();

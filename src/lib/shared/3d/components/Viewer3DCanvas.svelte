@@ -43,6 +43,7 @@
     mayStartMotionBake,
     shouldPrepareWebMotion,
   } from "./web-motion-preparation-plan";
+  import { blockSheetSwipe } from "#lib/shared/foundation/ui/drawer/block-sheet-swipe.js";
   import { whenPageStill } from "#lib/shared/foundation/utils/background-scheduling.js";
   import type { composerCaptureRequest } from "../unreal/domain/composer-capture-request";
   import Viewer3DCamera from "./Viewer3DCamera.svelte";
@@ -65,7 +66,6 @@
   } from "../scene-features/context/scene-feature-context";
   import SceneLoadingCurtain from "../scene-features/components/SceneLoadingCurtain.svelte";
   import ScenePreparationSurface from "../scene-features/components/ScenePreparationSurface.svelte";
-  import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { createViewerCameraPlayerState } from "@austencloud/camera-3d";
   import { getInputCapabilities } from "#lib/shared/input/InputCapabilities.svelte.js";
   import {
@@ -968,6 +968,24 @@
       onSettingChange,
     });
   }
+
+  /**
+   * The wheel over the 3D view belongs to the camera alone. camera-controls
+   * handles it on the canvas but lets it bubble, and while it is disabled
+   * (or before it mounts) it does not even cancel it, so the page, the
+   * viewer drawer and the browser's own scroll and overscroll gestures all
+   * saw it: a scroll meant to zoom out could take the whole viewer away.
+   * Only the canvas itself is contained; panels over it keep their scroll.
+   */
+  function containCanvasWheel(node: HTMLElement) {
+    const onWheel = (event: WheelEvent) => {
+      if (!(event.target instanceof HTMLCanvasElement)) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    node.addEventListener("wheel", onWheel, { passive: false });
+    return { destroy: () => node.removeEventListener("wheel", onWheel) };
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -980,6 +998,8 @@
       ? "worker"
       : "legacy"}
   onpointerdown={() => (activeCopyPasteViewerId = copyPasteViewerId)}
+  use:containCanvasWheel
+  use:blockSheetSwipe
 >
   {#if canRenderScene}
     <!-- The transport is a layout sibling of the stage, not an overlay: it
@@ -1181,7 +1201,6 @@
     {#if !useUnreal && sequenceData && revealMode === "gated"}
       <SceneLoadingCurtain
         environmentId={viewer3DState.environmentId}
-        title={getSequenceDisplayName(sequenceData)}
         additionalRevealReady={performersReady}
         additionalRevealProgress={waitForPerformersOnInitialReveal
           ? performerRevealProgress

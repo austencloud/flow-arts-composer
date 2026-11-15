@@ -466,6 +466,11 @@ function cutForRoom(
     if (!isFigure(it)) {
       const b = (it as BlockItem).block;
       if (b.kind === "rule") continue;
+      // A question about the figure cards above it always stays with them.
+      if (b.kind === "figureChoice" && stop && pending.length === 0) {
+        stop.after.push(b);
+        continue;
+      }
       const note = b.kind === "prose" && !isLeadIn(b);
       if (
         stop &&
@@ -583,7 +588,11 @@ function cutForRoom(
       stop.before.includes(b) ||
       (b.kind === "prose" &&
         stop.before.some((o) => o.kind === "prose" && o.html.includes(b.html)));
-    const parts = pack([...stop.before, ...stop.after], budget);
+    // A row with its question is one screen: the figures size to the room
+    // (they read --fit) so the words, the question and its buttons fit.
+    const parts = stop.after.some((b) => b.kind === "figureChoice")
+      ? [[...stop.before, ...stop.after]]
+      : pack([...stop.before, ...stop.after], budget);
     for (const part of parts.length ? parts : [[]]) {
       for (const block of part.filter(isAbove))
         out.push({ type: "block", block, screen });

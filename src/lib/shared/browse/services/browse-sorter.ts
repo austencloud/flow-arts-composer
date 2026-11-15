@@ -11,6 +11,7 @@ import { sortSequencesByKineticAlphabet } from "#lib/shared/browse/utils/kinetic
 import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 import { resolveBrowseDate } from "#lib/shared/browse/services/browse-date.js";
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import { sortByTodaysMix } from "#lib/shared/browse/services/browse-todays-mix.js";
 import {
   mandalaSectionOf,
   resolveMandalaSignature,
@@ -40,6 +41,8 @@ export function sortSequences(
   const sorted = [...sequences];
 
   switch (sortMethod) {
+    case BrowseSortMethod.TODAYS_MIX:
+      return sortByTodaysMix(sorted);
     case BrowseSortMethod.ALPHABETICAL:
       return sortAlphabetically(sorted);
     case BrowseSortMethod.DATE_ADDED:

@@ -25,6 +25,7 @@ export const locales = [
   "de",
   "pt",
   "zh",
+  "zh-Hant",
   "ja",
   "ko",
   "ar",
@@ -40,7 +41,8 @@ export const regionalLocales = [
   "pt-BR", // Portuguese (Brazil) → pt
   "pt-PT", // Portuguese (Portugal) → pt
   "zh-CN", // Chinese (Simplified) → zh
-  "zh-TW", // Chinese (Traditional) → zh
+  "zh-TW", // Chinese (Taiwan) → zh-Hant
+  "zh-HK", // Chinese (Hong Kong) → zh-Hant
   "fr-CA", // French (Canada) → fr
 ] as const;
 
@@ -48,6 +50,49 @@ export type BaseLocale = (typeof locales)[number];
 export type RegionalLocale = (typeof regionalLocales)[number];
 export type Locale = BaseLocale | RegionalLocale;
 export const baseLocale: BaseLocale = "en";
+
+// Regions whose base catalog isn't the part before the hyphen. Taiwan and Hong
+// Kong read Traditional Chinese, a separate catalog written with Taiwan's own
+// words, not the Simplified "zh" one.
+const REGIONAL_BASE: Partial<Record<RegionalLocale, BaseLocale>> = {
+  "zh-TW": "zh-Hant",
+  "zh-HK": "zh-Hant",
+};
+
+// The lang attribute for each locale. A bare "zh" tells browsers the page is
+// Simplified, so Chrome offered Taiwan visitors a translation and rewrote our
+// text and our TKA terms. Naming the script also picks the right glyph shapes.
+const DOCUMENT_LANG: Partial<Record<Locale, string>> = {
+  zh: "zh-Hans",
+  "zh-CN": "zh-Hans-CN",
+  "zh-Hant": "zh-Hant",
+  "zh-TW": "zh-Hant-TW",
+  "zh-HK": "zh-Hant-HK",
+};
+
+/** The BCP 47 tag the document declares for a locale. */
+export function documentLang(locale: Locale): string {
+  return DOCUMENT_LANG[locale] ?? locale;
+}
+
+/**
+ * The catalog a browser language tag should get. Most use the plain language
+ * ("pt-BR" gives "pt"), but Chinese splits by script: Taiwan, Hong Kong, Macau
+ * and any "Hant" tag read Traditional.
+ */
+export function browserLocale(tag: string): BaseLocale | undefined {
+  if (/^zh-(hant|tw|hk|mo)(-|$)/i.test(tag)) return "zh-Hant";
+  const base = toLocale(tag.split("-")[0] ?? "");
+  return base && locales.includes(base as BaseLocale)
+    ? (base as BaseLocale)
+    : undefined;
+}
+
+function prefersTraditionalChinese(): boolean {
+  if (typeof navigator === "undefined" || !navigator.languages) return false;
+  const chinese = navigator.languages.find((tag) => /^zh(-|$)/i.test(tag));
+  return chinese !== undefined && browserLocale(chinese) === "zh-Hant";
+}
 
 // RTL locales that require right-to-left text direction
 export const rtlLocales: ReadonlyArray<Locale> = ["ar"] as const;
@@ -106,6 +151,11 @@ function getInitialLocale(): Locale {
       new RegExp(`(^| )${LOCALE_COOKIE_NAME}=([^;]+)`)
     );
     const cookieLocale = toLocale(match?.[2] ?? "");
+    // Before 2026-11 every Chinese reader was saved as "zh", Simplified being
+    // the only Chinese there was. A Traditional browser gets its own script.
+    if (cookieLocale === "zh" && prefersTraditionalChinese()) {
+      return "zh-Hant";
+    }
     if (cookieLocale) {
       return cookieLocale;
     }
@@ -116,7 +166,7 @@ function getInitialLocale(): Locale {
     // language because the Language settings list offers plain languages and
     // highlights the one in use. A saved regional choice comes from the cookie.
     for (const lang of navigator.languages) {
-      const baseTag = toLocale(lang.split("-")[0] ?? "");
+      const baseTag = browserLocale(lang);
       if (baseTag) {
         return baseTag;
       }
@@ -154,6 +204,9 @@ export function getBaseLocale(locale: Locale): BaseLocale {
   if (locales.includes(locale as BaseLocale)) {
     return locale as BaseLocale;
   }
+
+  const mapped = REGIONAL_BASE[locale as RegionalLocale];
+  if (mapped) return mapped;
 
   // Extract base from regional locale (es-MX → es)
   const base = locale.split("-")[0]?.toLowerCase();
@@ -224,7 +277,17 @@ let pinnedDocumentLocale: Locale | null = null;
 function updateHtmlLanguage(): void {
   if (typeof document !== "undefined") {
     const locale = pinnedDocumentLocale ?? currentLocale;
-    document.documentElement.setAttribute("lang", locale);
+    document.documentElement.setAttribute("lang", documentLang(locale));
+    // A page shown in one of our own catalogs is already in the reader's
+    // language. A browser translator on top of it only does harm: Chrome
+    // swaps text nodes for <font> wrappers, so labels Svelte updates later stay
+    // frozen, and it rewrote TKA terms (Cross-Shift became "gear shift").
+    // English stays translatable for readers of languages we don't serve.
+    if (getBaseLocale(locale) === baseLocale) {
+      document.documentElement.removeAttribute("translate");
+    } else {
+      document.documentElement.setAttribute("translate", "no");
+    }
     document.documentElement.setAttribute("dir", getLocaleDirection(locale));
   }
 }
@@ -355,6 +418,9 @@ async function loadLocaleMessages(locale: Locale): Promise<Messages> {
           .default as Messages;
       case "zh":
         return (await import("../../../../messages/zh.json"))
+          .default as Messages;
+      case "zh-Hant":
+        return (await import("../../../../messages/zh-Hant.json"))
           .default as Messages;
       case "ja":
         return (await import("../../../../messages/ja.json"))
@@ -496,9 +562,9 @@ function preloadBrowserLocales(): void {
 
   // Get browser languages (excluding current locale)
   const browserLocales = (navigator.languages || [])
-    .map((lang) => lang.split("-")[0]?.toLowerCase())
-    .filter((lang): lang is string => Boolean(lang))
-    .filter((lang) => isLocale(lang) && lang !== currentLocale)
+    .map((lang) => browserLocale(lang))
+    .filter((lang): lang is BaseLocale => Boolean(lang))
+    .filter((lang) => lang !== currentLocale)
     .slice(0, 3); // Only preload top 3
 
   if (browserLocales.length === 0) {

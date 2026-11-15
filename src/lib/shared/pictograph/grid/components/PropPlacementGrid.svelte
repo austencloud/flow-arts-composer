@@ -5,6 +5,7 @@
   add placement history, aiming, keyboard targets, announcements, and haptics.
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
   import type { Snippet } from "svelte";
   import type { GridJoin } from "@tka/tka-types";
@@ -67,6 +68,9 @@
     rightNoun?: string;
     /** A teaching surface can own the instruction beside the board. Empty hides it. */
     promptText?: string;
+    /** One 14px line for the prompt instead of a touch-target-tall row, for
+        a board with no tray beside its prompt (the phone step editor). */
+    compactPrompt?: boolean;
     showUndo?: boolean;
     allowUndoAfterComplete?: boolean;
     renderTray?: boolean;
@@ -140,9 +144,10 @@
     editAfterCompletion = false,
     dragLocations = false,
     disabled = false,
-    leftNoun = "left prop",
-    rightNoun = "right prop",
+    leftNoun = t("pictograph_placement_noun_left_prop"),
+    rightNoun = t("pictograph_placement_noun_right_prop"),
     promptText,
+    compactPrompt = false,
     showUndo = true,
     allowUndoAfterComplete = true,
     renderTray = true,
@@ -387,20 +392,21 @@
   class:complete={placement.isComplete}
   class:has-tray={renderTray}
   class:board-only={promptText === "" && !renderTray}
+  class:compact-prompt={compactPrompt}
   class:aiming={aim.dragHand !== null}
 >
   {#if promptText ?? prompt.text}
     <p class="prompt-text" data-testid="placement-prompt">
       <span class="prompt-line">
         {#if promptText === undefined && prompt.parts}
-          {prompt.parts.lead}
-          <span
-            class="prompt-noun"
-            class:blue={prompt.parts.color === HandSide.LEFT}
-            class:red={prompt.parts.color === HandSide.RIGHT}
-            >{prompt.parts.noun}</span
-          >{#if prompt.parts.aim}:
-            <span class="prompt-aim">{prompt.parts.aim}</span>{/if}
+          {#each prompt.parts.segments as segment, index (index)}{#if segment.kind === "noun"}<span
+                class="prompt-noun"
+                class:blue={prompt.parts.color === HandSide.LEFT}
+                class:red={prompt.parts.color === HandSide.RIGHT}
+                >{segment.text}</span
+              >{:else if segment.kind === "aim"}<span class="prompt-aim"
+                >{segment.text}</span
+              >{:else}{segment.text}{/if}{/each}
         {:else}
           {promptText ?? prompt.text}
         {/if}
@@ -495,27 +501,31 @@
   </div>
 
   {#if renderTray}
-    <div class="controls-tray" aria-label="Move a prop">
+    <div class="controls-tray" aria-label={t("pictograph_placement_move_a_prop")}>
       {#if placement.isComplete && editAfterCompletion && !disabled}
         <button
           class="edit-button blue"
           class:active={placement.activeHand === HandSide.LEFT}
           onclick={() => placement.edit(HandSide.LEFT)}
           aria-pressed={placement.activeHand === HandSide.LEFT}
-          aria-label={`Move ${leftNoun}`}
+          aria-label={t("pictograph_placement_move_prop", { prop: leftNoun })}
         >
-          <span class="label-full" aria-hidden="true">Move left</span>
-          <span class="label-short" aria-hidden="true">Left</span>
+          <span class="label-full" aria-hidden="true"
+            >{t("pictograph_placement_move_left")}</span
+          >
+          <span class="label-short" aria-hidden="true">{t("create_ui_left")}</span>
         </button>
         <button
           class="edit-button red"
           class:active={placement.activeHand === HandSide.RIGHT}
           onclick={() => placement.edit(HandSide.RIGHT)}
           aria-pressed={placement.activeHand === HandSide.RIGHT}
-          aria-label={`Move ${rightNoun}`}
+          aria-label={t("pictograph_placement_move_prop", { prop: rightNoun })}
         >
-          <span class="label-full" aria-hidden="true">Move right</span>
-          <span class="label-short" aria-hidden="true">Right</span>
+          <span class="label-full" aria-hidden="true"
+            >{t("pictograph_placement_move_right")}</span
+          >
+          <span class="label-short" aria-hidden="true">{t("create_ui_right")}</span>
         </button>
       {/if}
 
@@ -525,9 +535,9 @@
           data-undo-shortcut-label="Placement"
           class="undo-button"
           onclick={placement.undo}
-          aria-label="Undo placement"
+          aria-label={t("pictograph_placement_undo")}
         >
-          Undo
+          {t("mandala_undo")}
         </button>
       {/if}
     </div>
@@ -926,6 +936,18 @@
     .grid-wrapper {
       min-width: 0;
     }
+  }
+
+  /* A short container sizes the prompt row to the 48px tray beside it. With
+     no tray the row only needs its line, which goes back to the board. */
+  .placement-grid.compact-prompt {
+    row-gap: 6px;
+  }
+
+  .placement-grid.compact-prompt .prompt-text {
+    min-height: 0;
+    font-size: var(--font-size-min, 14px);
+    line-height: 1.2;
   }
 
   .placement-grid.board-only {

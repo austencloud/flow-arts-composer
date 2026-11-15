@@ -18,6 +18,7 @@ const KNOWN_DOORS = new Set([
   "/learn/guide", // Level 1 guide reader (the /guide/level-1 static page is a retired 308)
   "/endless-spinner",
   "/composer",
+  "/create", // the app itself, opened with a full page load
   "/notation/props#poi",
 ]);
 

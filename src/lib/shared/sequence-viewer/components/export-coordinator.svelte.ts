@@ -38,7 +38,6 @@ import {
   putRenderedFilm,
   pruneRenderedFilms,
 } from "#lib/shared/video-export/services/rendered-film-store.js";
-import { ensureFullAccountForExport } from "#lib/shared/auth/domain/export-gate.js";
 import {
   openerAddsHold,
   VIDEO_OPENER_HOLD_BEATS,
@@ -452,7 +451,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
    * not look like nothing happened).
    *
    * Resolves `false` when the request was refused before any render began — an
-   * export already running, the take-it-home account gate, an unready
+   * export already running or an unready
    * controller. The share sheet shows its own "Rendering tunnel…" state and has
    * to honour that, or it spins on a render that never started.
    */
@@ -468,9 +467,6 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   ): Promise<boolean> {
     if (sequenceModalExporter.state.isExporting) return false;
 
-    // Take-it-home gate: same as the 2D path — producing the file needs a
-    // free account.
-    if (!(await ensureFullAccountForExport())) return false;
 
     if (!playbackController) {
       showToast(
@@ -575,7 +571,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   /**
    * Runs an export for the current pane. Resolves `false` when the request was
    * refused before any render began — wrong pane, an export already in flight,
-   * the take-it-home account gate, an unready canvas or scene. A caller that
+   * an unready canvas or scene. A caller that
    * shows its own "rendering…" state must honour that `false`, or it spins
    * forever on a render that was never going to happen.
    */
@@ -642,9 +638,6 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
 
     if (sequenceModalExporter.state.isExporting || !exportType) return false;
 
-    // Take-it-home gate: guests play with export settings freely, but pulling
-    // the actual file down requires a free account.
-    if (!(await ensureFullAccountForExport())) return false;
 
     hapticService?.trigger("selection");
 

@@ -27,6 +27,7 @@
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { settingsService as settingsServiceSingleton } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { createGlobalChiralitySeam } from "../../settings/components/tabs/prop-type/prop-chirality-seam";
+  import { applyHandPick } from "../../settings/components/tabs/prop-type/hand-pick";
   import WhatsNewChecker from "../../settings/components/WhatsNewChecker.svelte";
   import ReleaseTourArrival from "../../settings/components/ReleaseTourArrival.svelte";
   import ErrorModal from "../../error/components/ErrorModal.svelte";
@@ -86,7 +87,6 @@
     getSettings,
     restoreApplicationState,
     updateSettings,
-    updateSetting,
   } from "../state/app-state.svelte";
   import {
     getIsInitialized,
@@ -365,45 +365,37 @@
   });
 
   // Global prop drawer (P key shortcut + PropIndicatorButton)
-  const catDogMode = $derived(settings?.catDogMode ?? false);
   const leftPropType = $derived(settings?.leftPropType ?? PropType.STAFF);
   const rightPropType = $derived(settings?.rightPropType ?? PropType.STAFF);
-  let propDrawerActiveTab = $state<"left" | "right">("left");
+  // This shell mounts the one prop switcher; views inside it (the sequence
+  // viewer's Props pill) route to it instead of a picker of their own.
+  onMount(() => propDrawerState.registerHost());
+  // Both / Left / Right: opens on Both every time, never saved.
+  let propDrawerHand = $state<"both" | "left" | "right">("both");
 
-  // Reset to the left-hand tab each time the drawer opens.
   $effect(() => {
     if (propDrawerState.isOpen) {
-      propDrawerActiveTab = "left";
+      propDrawerHand = "both";
     }
   });
 
-  // When cat/dog mode is on, show the selected prop for the active tab
+  // The tile lit follows the hand being set; under Both, the left hand's.
   const propDrawerSelectedPropType = $derived(
-    catDogMode && propDrawerActiveTab === "right" ? rightPropType : leftPropType
+    propDrawerHand === "right" ? rightPropType : leftPropType
   );
 
+  // The stored flag just follows whether the two hands differ.
   function handleGlobalPropSelect(propType: PropType) {
-    if (catDogMode) {
-      if (propDrawerActiveTab === "left") {
-        updateSetting("leftPropType", propType);
-        // Auto-switch to the right hand so the pair can be chosen in order.
-        propDrawerActiveTab = "right";
-        return;
-      } else {
-        updateSetting("rightPropType", propType);
-      }
-    } else {
-      updateSettings({ leftPropType: propType, rightPropType: propType });
-    }
-  }
-
-  function handleCatDogToggle() {
-    const newMode = !catDogMode;
-    updateSetting("catDogMode", newMode);
-    if (newMode) {
-      // Starting cat/dog mode: begin with the left hand.
-      propDrawerActiveTab = "left";
-    }
+    const next = applyHandPick(
+      { left: leftPropType, right: rightPropType },
+      propDrawerHand,
+      propType
+    );
+    updateSettings({
+      leftPropType: next.left,
+      rightPropType: next.right,
+      catDogMode: next.catDogMode,
+    });
   }
 
   // Resolve services from ITI container (synchronous - no async needed)
@@ -689,7 +681,10 @@
 </svelte:head>
 
 <!-- Application Container -->
-<div class="tka-app" data-testid="tka-application">
+<!-- data-overlay-layer: a stacking context (z-index 2 below) that holds the
+     app's drawers and modals; appOverlayLayer() in generate/modals/portal.ts
+     sends panels here so those modals can open over them. -->
+<div class="tka-app" data-testid="tka-application" data-overlay-layer>
   <!-- Background Host - Uses reactive settings, controller survives HMR -->
   {#if settings.backgroundEnabled}
     <BackgroundHost
@@ -854,20 +849,17 @@
         <mod.default
           bind:isOpen={propDrawerState.isOpen}
           selectedPropType={propDrawerSelectedPropType}
-          color={catDogMode && propDrawerActiveTab === "right" ? "red" : "blue"}
-          title={catDogMode
-            ? propDrawerActiveTab === "left"
-              ? "Left Prop"
-              : "Right Prop"
-            : "Change Prop"}
+          color={propDrawerHand === "right" ? "red" : "blue"}
+          title={t("settings_prop_sheet_title")}
           onSelect={handleGlobalPropSelect}
-          showCatDogToggle={true}
-          catDogEnabled={catDogMode}
-          onCatDogToggle={handleCatDogToggle}
-          showTabs={catDogMode}
-          bind:activeTab={propDrawerActiveTab}
+          handProps={{
+            hand: propDrawerHand,
+            leftPropType,
+            rightPropType,
+            onHandChange: (hand) => (propDrawerHand = hand),
+          }}
           chirality={createGlobalChiralitySeam(
-            catDogMode ? propDrawerActiveTab : undefined
+            propDrawerHand === "both" ? undefined : propDrawerHand
           )}
         />
       {/await}

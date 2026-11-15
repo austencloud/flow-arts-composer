@@ -32,6 +32,7 @@
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
   import {
+    getProfilePropLabel,
     normalizeProfileSkill,
     normalizeProfileSkills,
   } from "#lib/shared/community/domain/profile-prop-catalog.js";
@@ -187,11 +188,11 @@
             <div
               class="profile-prop-icon"
               class:favorite={prop === featuredProp}
-              title={getPropTypeDisplayInfo(prop).label}
+              title={getProfilePropLabel(prop)}
             >
               <img
                 src={getPropTypeDisplayInfo(prop).image}
-                alt={getPropTypeDisplayInfo(prop).label}
+                alt={getProfilePropLabel(prop)}
               />
               {#if prop === featuredProp}
                 <span
@@ -208,19 +209,19 @@
             <div
               class="catdog"
               title={t("browse_verified_catdog_props", {
-                left: getPropTypeDisplayInfo(catdog.leftPropType).label,
-                right: getPropTypeDisplayInfo(catdog.rightPropType).label,
+                left: getProfilePropLabel(catdog.leftPropType),
+                right: getProfilePropLabel(catdog.rightPropType),
               })}
             >
               <img
                 class="catdog-blue"
                 src={getPropTypeDisplayInfo(catdog.leftPropType).image}
-                alt={getPropTypeDisplayInfo(catdog.leftPropType).label}
+                alt={getProfilePropLabel(catdog.leftPropType)}
               />
               <img
                 class="catdog-red"
                 src={getPropTypeDisplayInfo(catdog.rightPropType).image}
-                alt={getPropTypeDisplayInfo(catdog.rightPropType).label}
+                alt={getProfilePropLabel(catdog.rightPropType)}
               />
             </div>
           {/if}

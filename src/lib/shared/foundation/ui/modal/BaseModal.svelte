@@ -26,6 +26,7 @@
   } from "./modal-stack";
   import { FocusTrap } from "../drawer/focus-trap";
   import { FocusRestore, focusFirstOrContainer } from "./helpers/focus-restore";
+  import { watchBackToClose } from "./helpers/back-close-watcher";
   import {
     createIntrinsicHeightMotion,
     reducedMotion,
@@ -226,10 +227,18 @@
     });
   }
 
+  // A `show()` dialog has no close watcher of its own, so Android's Back
+  // would leave the page instead of closing it. See back-close-watcher.ts.
+  let dropBackWatcher: () => void = () => {};
+
   function enterTopLayer(dialog: HTMLDialogElement) {
     if (allowExternalOverlays) {
       dialog.show();
       focusTrap?.activate(dialog);
+      dropBackWatcher();
+      if (closeOnEscape) {
+        dropBackWatcher = watchBackToClose(() => closeModal("escape"));
+      }
     } else {
       dialog.showModal();
     }
@@ -246,6 +255,8 @@
 
     // Only respond if we're the top modal (for nested modals)
     if (!isTopModal(modalId) && reason !== "programmatic") return;
+
+    dropBackWatcher();
 
     // A morphing host closes the dialog inside its own view transition.
     if (animation !== "morph") open = false;
@@ -366,6 +377,7 @@
 
       // Unregister from stack immediately (so escape key goes to next modal)
       unregisterModal(modalId);
+      dropBackWatcher();
 
       // Wait for exit animation to complete, then actually close the dialog.
       // Track the timer so a reopen within the animation window can cancel it.
@@ -405,6 +417,7 @@
         exitTimer = null;
       }
       unregisterModal(modalId);
+      dropBackWatcher();
       focusTrap?.deactivate();
       focusRestore?.restore();
     };

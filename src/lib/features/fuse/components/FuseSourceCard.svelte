@@ -1184,13 +1184,26 @@
       var(--theme-card-bg, rgba(255, 255, 255, 0.045));
   }
 
+  /* The phone toolbar form: 36px controls (layout law, Tap size) in a 40px
+     card. At 360 wide each card is 159px: 2 border + 6 + 2 padding leaves 149,
+     the two buttons and their gap take 76, the 6px column gap keeps the label
+     clear of the first button, and the label ("Right" over "16 / 16") gets
+     the remaining 67px, which holds it with room to spare. */
   .source-card.compact-hero.compact-toolbar {
+    --min-touch-target: var(--alt-touch-target, 36px);
     flex-direction: row;
     align-items: center;
-    height: var(--min-touch-target, 48px);
-    min-height: var(--min-touch-target, 48px);
-    padding: 3px 2px 3px 6px;
+    column-gap: 6px;
+    height: calc(var(--min-touch-target) + 4px);
+    min-height: calc(var(--min-touch-target) + 4px);
+    padding: 1px 2px 1px 6px;
     overflow: visible;
+  }
+
+  /* The open menu's rows keep the full-size targets the dropdown had before
+     the toolbar's buttons went to 36px. */
+  .compact-toolbar :global(.overflow-dropdown) {
+    --min-touch-target: 48px;
   }
 
   .compact-toolbar .notation-stage {

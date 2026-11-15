@@ -52,6 +52,15 @@
   />
 {/snippet}
 
+{#snippet metadataRail()}
+  <SequenceMetadataRail
+    {sequence}
+    loopType={loop?.loopType ?? null}
+    period={loop?.period ?? null}
+    presentation="corners"
+  />
+{/snippet}
+
 <!-- This header belongs to the sequence, so it survives card/player swaps.
      The title rides a PanelGroup compositor edge (data-panel-flip): when the
      workspace takes its end width at once, it travels to its new centre. -->
@@ -62,19 +71,18 @@
   class:quiet-badges={quietBadges}
 >
   {#if showTitle}
+    <!-- The badges' row sits under the title, or on a phone beside it in the
+         title row (see .title-center below). -->
     <div class="title-row">
-      <div class="word-label-slot" data-panel-flip="sequence-title">
-        {@render wordLabel()}
+      <div class="title-center">
+        <div class="word-label-slot" data-panel-flip="sequence-title">
+          {@render wordLabel()}
+        </div>
+        {@render metadataRail()}
       </div>
     </div>
-  {/if}
-  <SequenceMetadataRail
-    {sequence}
-    loopType={loop?.loopType ?? null}
-    period={loop?.period ?? null}
-    presentation="corners"
-  />
-  {#if !showTitle}
+  {:else}
+    {@render metadataRail()}
     <div class="word-label-slot strip-word" data-panel-flip="sequence-title">
       {@render wordLabel()}
     </div>
@@ -113,10 +121,76 @@
       var(--workspace-leading-actions-width, 92px)
       minmax(0, 1fr)
       var(--workspace-leading-actions-width, 92px);
+    /* The title, then the badges' 20px row 4px under it. */
+    grid-template-rows: minmax(var(--min-touch-target, 44px), auto) 20px;
     align-items: center;
-    gap: var(--settings-spacing-sm, 8px);
-    min-height: var(--min-touch-target, 44px);
-    margin-bottom: 4px;
+    column-gap: var(--settings-spacing-sm, 8px);
+    row-gap: 4px;
+  }
+
+  /* Wide: no box of its own; the word takes the middle column and the badges
+     span the row beneath, corner to corner. */
+  .title-center {
+    display: contents;
+  }
+
+  .title-center > .word-label-slot {
+    grid-row: 1;
+  }
+
+  .title-center > :global(.metadata-rail) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  /* On a phone the badges' own row cost 24px of the step pictures' height.
+     There the level badge stands left of the word and the LOOP strip right
+     of it, in the middle column between Undo/Redo and Save, and the header
+     is one 48px row (8px top padding and the 40px title row on Construct's
+     phone tier). 476px of header content is a workspace about 500px wide,
+     where Save already folds to its icon. */
+  @container (max-width: 476px) {
+    .title-row {
+      grid-template-rows: minmax(var(--min-touch-target, 44px), auto);
+      row-gap: 0;
+    }
+
+    .title-center {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    /* A definite share of the row: the word's own size queries need it. */
+    .title-center > .word-label-slot {
+      flex: 1 1 0;
+      width: auto;
+    }
+
+    /* The badges become this row's items, one each side of the word. Their
+       slots keep the room they reserve while hidden, so the level badge
+       arriving moves nothing. */
+    .title-center > :global(.metadata-rail) {
+      display: contents;
+    }
+
+    .title-center :global(.difficulty-slot) {
+      order: -1;
+    }
+
+    .title-center :global(.loop-slot) {
+      order: 1;
+    }
+
+    /* A box drawn as contents takes no filter, so quiet badges grey here. */
+    .quiet-badges .title-center :global(.difficulty-slot.visible),
+    .quiet-badges .title-center :global(.loop-slot.visible) {
+      filter: grayscale(1);
+      opacity: 0.82;
+    }
   }
 
   .word-label-slot {

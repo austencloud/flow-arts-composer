@@ -52,12 +52,24 @@ export interface LaunchpadTileDef {
    * rule and today all land inside the shell.
    */
   opensOutsideShell?: boolean;
+  /**
+   * The tile opens the app itself. The link reloads the document (the app
+   * shell boots with Firebase, which the public pages leave out) and warms the
+   * app's code on first hover, focus or touch. Implies `opensOutsideShell`.
+   */
+  opensApp?: boolean;
 }
 
 export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
+  // The Composer tile opens the app. Until 2026-11-14 it led to /composer, the
+  // page about the app, and visitors who meant to start building read a page
+  // instead. That page keeps its address for search and is reached from the
+  // tile's About Composer chip.
   {
     id: "composer",
-    href: "/composer",
+    href: "/create",
+    opensApp: true,
+    opensOutsideShell: true,
     heading: "Composer",
     descriptor: "Write and animate sequences. Save and share them.",
     span: "2x2",
@@ -65,6 +77,7 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
     icon: "fa-pen-nib",
     media: "mandala",
     magnetic: true,
+    chips: [{ label: "About Composer", href: "/composer" }],
   },
   {
     id: "choreo-cards",
@@ -162,11 +175,16 @@ export const HERO_POINTER = {
  * those two feed ONE breakdown in PostHog. Two copies of the rule is two ways
  * for that breakdown to silently split in half the first time the rule changes.
  */
-/** Pages a tile opens into, which offer the way back to the launchpad. */
+/**
+ * Pages a tile opens into, which offer the way back to the launchpad. A tile
+ * that opens the app has no page of its own here; its About chip leads to the
+ * page that used to be its destination, which keeps its way back.
+ */
 export const TILE_FLIGHT_PATHS: readonly string[] = Object.freeze(
-  LAUNCHPAD_TILES.filter((tile) => !tile.opensOutsideShell).map(
-    (tile) => tile.href
-  )
+  LAUNCHPAD_TILES.flatMap((tile) => {
+    if (!tile.opensOutsideShell) return [tile.href];
+    return tile.opensApp ? (tile.chips ?? []).map((chip) => chip.href) : [];
+  })
 );
 
 export function hrefSlug(href: string): string {

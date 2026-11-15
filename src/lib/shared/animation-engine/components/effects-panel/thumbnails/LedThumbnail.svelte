@@ -6,13 +6,16 @@
   import { renderLedThumbnail } from "#lib/shared/animation-engine/services/led/led-thumbnail-renderer.js";
   import type { EffectPreset } from "../presets/types";
   import { queueTilePaint } from "./tile-paint-queue";
+  import { TILE_FORMAT_SIZE, type TileFormat } from "./tile-format";
 
   interface Props {
     preset: EffectPreset<"led">;
     active?: boolean;
+    /** card (default), or the small tile / chip painting. */
+    format?: TileFormat;
   }
 
-  const { preset, active = false }: Props = $props();
+  const { preset, active = false, format = "card" }: Props = $props();
   let host = $state<HTMLDivElement>();
 
   /**
@@ -21,8 +24,6 @@
    * scales it down, which is why a 4%-of-strip comet head has to be a bar
    * rather than a pixel to survive the tile.
    */
-  const WIDTH = 720;
-  const HEIGHT = 270;
 
   function resolveConfig(): LedSimulatorConfig {
     const patch = preset.patch ?? {};
@@ -37,10 +38,11 @@
     const node = host;
     if (!node) return;
     const config = resolveConfig();
+    const { w, h } = TILE_FORMAT_SIZE[format];
 
     let cancelled = false;
     const cancelQueued = queueTilePaint(() =>
-      renderLedThumbnail(config, WIDTH, HEIGHT).then((canvas) => {
+      renderLedThumbnail(config, w, h, format).then((canvas) => {
         // The renderer is shared and serialized, so a tile can resolve long after
         // its preset changed or the panel closed.
         if (cancelled || !canvas || !node.isConnected) return;

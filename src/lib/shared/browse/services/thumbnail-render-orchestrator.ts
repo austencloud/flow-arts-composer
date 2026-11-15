@@ -27,7 +27,10 @@ import type { ThumbnailRenderer } from "#lib/shared/browse/services/thumbnail-re
 import * as cloudCacheModule from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
 import type { CloudThumbnailKey } from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
 import type { ThumbnailLocalCache } from "./thumbnail-local-cache";
-import type { ThumbnailMetricsCollector } from "./thumbnail-metrics-collector";
+import type {
+  CacheLayer,
+  ThumbnailMetricsCollector,
+} from "./thumbnail-metrics-collector";
 import { captureThumbnailRenderFailure } from "#lib/shared/analytics/thumbnail-analytics.js";
 
 export interface RenderProgress {
@@ -83,6 +86,9 @@ export interface ThumbnailResult {
 
   /** The cache key used (for cancellation) */
   key: ThumbnailCacheKey;
+
+  /** The tier that answered, as the metrics collector names it. */
+  source?: CacheLayer;
 
   /** Error if rendering failed (only present when url is null) */
   error?: Error;
@@ -481,7 +487,7 @@ export class ThumbnailRenderOrchestrator {
         this.completedCount++;
         this.metrics?.endRequest(requestId, "memory");
         request.onStatusChange?.({ state: "complete", url: memUrl });
-        return { url: memUrl, fromCache: true, key };
+        return { url: memUrl, fromCache: true, key, source: "memory" };
       }
     }
 
@@ -505,7 +511,7 @@ export class ThumbnailRenderOrchestrator {
         this.completedCount++;
         this.metrics?.endRequest(requestId, "static");
         request.onStatusChange?.({ state: "complete", url: staticUrl });
-        return { url: staticUrl, fromCache: true, key };
+        return { url: staticUrl, fromCache: true, key, source: "static" };
       } else if (manifest.size > 0) {
         console.debug(
           `[Static] Not in manifest: "${this.buildStaticKey(key)}" (sequence: ${key.inputs.sequenceName})`
@@ -525,7 +531,7 @@ export class ThumbnailRenderOrchestrator {
         this.completedCount++;
         this.metrics?.endRequest(requestId, "local");
         request.onStatusChange?.({ state: "complete", url });
-        return { url, fromCache: true, key };
+        return { url, fromCache: true, key, source: "local" };
       }
     }
 
@@ -539,7 +545,7 @@ export class ThumbnailRenderOrchestrator {
         this.completedCount++;
         this.metrics?.endRequest(requestId, "cloud");
         request.onStatusChange?.({ state: "complete", url: memoryCached });
-        return { url: memoryCached, fromCache: true, key };
+        return { url: memoryCached, fromCache: true, key, source: "cloud" };
       }
 
       // Step 4: Check cloud cache (network request)
@@ -563,7 +569,7 @@ export class ThumbnailRenderOrchestrator {
           this.completedCount++;
           this.metrics?.endRequest(requestId, "cloud");
           request.onStatusChange?.({ state: "complete", url: cloudUrl });
-          return { url: cloudUrl, fromCache: true, key };
+          return { url: cloudUrl, fromCache: true, key, source: "cloud" };
         }
       }
     }
@@ -695,6 +701,7 @@ export class ThumbnailRenderOrchestrator {
             url,
             fromCache: false,
             key,
+            source: "render" as const,
             cacheWriteSkippedReason: qrConsistent
               ? undefined
               : ("qr_inconsistent" as const),

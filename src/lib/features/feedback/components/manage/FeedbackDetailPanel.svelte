@@ -401,10 +401,14 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--fb-space-md);
-    padding-bottom: calc(var(--fb-space-lg) + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     gap: var(--fb-space-lg);
+  }
+
+  /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
+  .admin-feedback-body {
+    padding-bottom: calc(var(--fb-space-lg) + env(safe-area-inset-bottom, 0px));
   }
 
   /* Mobile: Tighter spacing */

@@ -156,6 +156,21 @@ Serif is not a shortcut for making an ordinary card feel premium.
 Essential text has a 14px minimum. Supplementary metadata has a 12px minimum.
 Do not shrink explanations until they fit. Edit the copy or change the layout.
 
+### Scripts without capitals
+
+Chinese, Japanese and Korean have no capital letters and their own bold
+faces. Two rules keep them from looking broken:
+
+- No forced capitals. Under `:lang(zh)`, `:lang(ja)` and `:lang(ko)` every
+  `text-transform` is off, so an eyebrow label never shouts the Latin word
+  inside it ("本 APP").
+- Traditional Chinese names its own fonts. `body:lang(zh-Hant)` keeps the
+  Latin system fonts first and then names Microsoft JhengHei, PingFang TC and
+  Noto Sans TC, so bold uses a real weight and not a faked one.
+
+Owner: the two rules after `body` in `src/app.css`. Decided with the
+translation desk, 2026-11-14.
+
 ## 5. Color
 
 ### Theme color
@@ -236,6 +251,37 @@ and look like it: every link is a `LinkChip` pill, never underlined text (see
 `.claude/rules/no-text-links.md`);
 buttons perform actions.
 
+One setting, one control. Inside the Composer, the prop is picked only from the
+bottom bar's prop switcher. No tab, panel or embedded tool (Shape Engine
+included) adds its own prop picker or Props button; an embedded tool reads the
+current prop and leaves the choosing to the bottom bar. Austen's call,
+2026-11-13: "We should always pick the prop through the bottom bar."
+
+The sequence viewer covers that bar, so its Props pill is a door to the same
+switcher, not a picker of its own: it wears the switcher button's crossed-props
+drawing and opens the full Change Prop sheet, on phones and desktop alike. Only
+a host whose prop is local to it (Post Studio, a profile photo, a page with no
+app shell) keeps an inline catalogue. Austen's pick, 2026-11-13 ("D").
+
+A delete control says what it removes. When one tap takes more than the item
+it sits on, the screen says how much before the tap, in the control's own
+colour, and the control's accessible name says the same. The step editor's
+Delete pill on a middle step shows "Delete takes steps 2–8" under the title.
+Austen's pick, 2026-11-13 ("B").
+
+A choice is named by what it does, in plain words that translate: Both, Left,
+Right. Not by a coined mode name, and where a direct choice does the job there
+is no mode switch in front of it. The prop picker opens on one always-visible
+Both / Left / Right choice, each option a small picture over its word; there is
+no "Cat Dog" switch, chip or explaining line in it, and no info modal. A pick
+under Both gives both hands one prop, under Left or Right it changes that hand
+only, and the stored flag just follows whether the hands differ. With Left
+or Right chosen, every prop tile in the grid shows one prop in that hand's
+colour; with Both, the pair (Austen 2026-11-15). Austen,
+2026-11-15: "No mode: Both / Left / Right might actually be the better
+all-language approach that directly describes it....catdog is colloquial and
+random to many people".
+
 ## 7. Information Hierarchy and Content
 
 The screen should answer these questions without a tutorial covering it:
@@ -272,6 +318,93 @@ Use real product imagery when the decision is visual:
 
 Abstract diagrams must accurately describe the actual workflow. If they do
 not, remove them.
+
+### Marks on an artifact
+
+A count, badge, or short label drawn on top of a prop, pictograph, or card
+preview stays quieter than the artifact it sits on. The artifact is the
+brightest and highest-contrast shape in its tile.
+
+- Use text in `--theme-text-tertiary` at the 12 px supplementary size, in a
+  corner. No filled disc, chip, or light background behind it: a light fill is
+  the brightest shape in the tile and pulls the eye off the artifact.
+- Never shrink the mark below 12 px to make it fit a small tile. Move it into
+  the corner padding instead.
+- The selected-state checkmark is a control cue, not a secondary mark, and keeps
+  its accent treatment.
+
+Owner example: the build count on the prop picker
+(`PropSelectionButton.svelte`). Austen, 2026-11-13, on the old white discs: the
+numbers were "kind of overpowering over the prop itself."
+
+### Props in small pictographs
+
+A prop in a small pictograph is drawn to be found, not to be accurate. Under
+180 px wide, a live pictograph switches to its small art:
+
+- The grid steps back: the grid layer draws at 70%, the outer points at r 16
+  (from 25) and the centre at r 8 (from 12). The prop is the loudest thing in
+  the picture.
+- A thin prop gets a small drawing of its own: one bold mark, whole in its
+  hand's colour. Poi is the first, with a 24-unit cord and a 34-unit head, no
+  knob, and a ring in the picture's background colour so two heads at one
+  point stay apart.
+- At 180 px and up, in the animation and in every export, the prop keeps its
+  real drawing. For poi that is the grey cord and knob with only the head in
+  colour.
+
+The cutoff is where the real poi stops reading: under 180 px its head is
+under 6 px across and its cord under 1 px. Owners:
+`SMALL_PICTOGRAPH_ART_MAX_SIZE` in `pictograph-legibility.ts` and the
+`data-poi-art="small"` group in `static/images/props/pictograph/poi.svg`.
+Austen, 2026-11-14, on the 64 px start pictures: "it's hard to tell where the
+poi are." He picked the hand-colour drawing.
+
+### Style tiles show what you will get
+
+A tile that picks a prop's look shows the prop the way the view you are in
+will draw it. In 2D that is the pair in the two hand colours; photos of the 3D
+model belong to the 3D scene. A tile never shows a picture the current view
+cannot produce.
+
+Owner: the fan look tiles in the Change Prop switcher (`FanAppearancePicker`
+with pair pictures, drawn by `PropCompositionPreview`); the 3D signal lives in
+`prop-drawer-state.svelte.ts`. Austen, 2026-11-14, after a visitor picked the
+DoodleGrip Day fan from a photo tile while watching 2D: "they chose a 3D model
+for their 3D viewer, but then ended up looking at a 2D." He picked the drawn
+pair.
+
+### TKA letters are drawn, never typed
+
+A TKA letter (α, β, γ and every other letter of the alphabet) is always its
+own letter artwork from `static/images/letters_trimmed/`: in the app, in
+mocks, and in pictures made for review. Never type it in a text font. The
+typed Greek letter is a different shape from the TKA letter, and a typed α
+beside the word "Apart" reads as "A for Apart".
+
+Austen, 2026-11-14, on a review board that typed them: "I'm disappointed that
+you didn't put the glyph in the right font."
+
+### A pictograph is not an icon
+
+A full pictograph is never shrunk to stand in as an icon or a button label.
+At 40 px its props, arrows and letter are specks. A control that names a
+family or a kind of placement uses a small drawing made for that size, with a
+plain word beside it.
+
+Austen, 2026-11-14, on the old Construct start switch: "It shows a teeny tiny
+pictograph with a teeny tiny letter."
+
+### Small grid drawings keep the grid's proportions
+
+A small drawing of the grid puts the hands on the hand points, a little under
+halfway out (143 of 300 units), with the outer points outside them. A hand
+never sits on an outer point. Blue and red are the two hands, in the colours
+the pictographs on the same surface use.
+
+Owner: `HandsStartDrawing.svelte` (the Construct start switch). Austen,
+2026-11-14, on a drawing that put the hands on the outer points: "That's not
+how our grids work exactly."
 
 ## 9. Motion
 
@@ -315,6 +448,12 @@ Mobile keeps the same capability ownership. It may stack, move controls into a
 drawer, or give a tool the full screen, but it should not hide core capability
 to make the screenshot cleaner.
 
+A smaller screen may shorten a name but never drop it. Where one panel mixes
+kinds of thing (Construct's 4-6 panel holds Dash, Dual-Dash and Static), each
+kind stays named at every size; a phone gets a one-line coloured label in place
+of the header chip. Austen's call, 2026-11-13, after a visitor on a phone could
+not tell Types 4, 5 and 6 apart.
+
 Review at every size on the device list in [layout-law.md](layout-law.md),
 plus 200 percent zoom. Check the composition at each size instead of
 only proving that nothing overflows.
@@ -341,6 +480,17 @@ Destructive color remains attached to the destructive action.
 Construct gives the pictograph and sequence artifact the canvas. Command and
 editing controls stay anchored around the work. Whole controls carry semantic
 action color where the meaning is concrete.
+
+The start switch names the three start families in plain words (Apart,
+Together, Adjacent), each with the small hands drawing. It carries no TKA
+letter and no pictograph: the tiles below show the letter in their corner,
+and change with the switch. On a wide, tall window each option adds one line
+saying what the word means. Austen picked this on 2026-11-14.
+
+On a phone the word sits under the drawing in every option. Which way an
+option is arranged follows the picker's width, never the length of its word,
+so the three options match each other in every language. Austen kept this on
+2026-11-14 over a smaller drawing beside the word.
 
 ### Application shell
 

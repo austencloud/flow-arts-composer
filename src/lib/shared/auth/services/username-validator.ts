@@ -70,6 +70,7 @@ export async function checkUsernameAvailability(
 			return {
 				isValid: false,
 				error: 'Username is already taken',
+				errorKey: 'auth_username_taken',
 				suggestions,
 			};
 		}
@@ -80,6 +81,7 @@ export async function checkUsernameAvailability(
 		return {
 			isValid: false,
 			error: 'Unable to check availability. Please try again.',
+			errorKey: 'nav_ui_unable_to_check_availability',
 		};
 	}
 }

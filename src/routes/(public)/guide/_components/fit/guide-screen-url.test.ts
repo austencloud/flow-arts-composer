@@ -60,3 +60,21 @@ describe("readScreenParam", () => {
     expect(readScreenParam("?screen=abc")).toBe(0);
   });
 });
+
+describe("screenRoom rowBeside (a pair of figure cards)", () => {
+  it("stacks the words under the pair on the Fold, where the cards come out larger", () => {
+    const fold = screenRoom(707, 772);
+    expect(fold.cardBeside).toBe(true);
+    expect(fold.rowBeside).toBe(false);
+  });
+  it("keeps the words beside the pair on a sideways phone and a laptop", () => {
+    expect(screenRoom(960, 412).rowBeside).toBe(true);
+    expect(screenRoom(1440, 900).rowBeside).toBe(true);
+  });
+  it("is never beside where a single card is not", () => {
+    for (const [w, h] of [[375, 667], [412, 915], [820, 1180]] as const) {
+      expect(screenRoom(w, h).cardBeside).toBe(false);
+      expect(screenRoom(w, h).rowBeside).toBe(false);
+    }
+  });
+});

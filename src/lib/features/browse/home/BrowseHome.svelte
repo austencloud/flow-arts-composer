@@ -32,6 +32,7 @@
   import { BROWSE_GROUPS } from "#lib/shared/navigation/config/tab-definitions.js";
   import {
     bootScreenCovers,
+    FIRST_VIEW_WAIT_MS,
     holdBootScreen,
     runAfterBootScreen,
   } from "#lib/shared/application/services/boot-screen.js";
@@ -44,7 +45,10 @@
   import { methodPreviewHold } from "#lib/features/create/shared/components/method-previews/method-preview-hold.js";
   import { createMethodPreviewReveal } from "#lib/features/create/shared/state/method-preview-reveal.svelte.js";
   import { createMethodPreviewTurns } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
-  import { BROWSE_HOME_SCENES } from "./previews/browse-home-scenes";
+  import {
+    BROWSE_HOME_SCENES,
+    warmBrowseHomeScenes,
+  } from "./previews/browse-home-scenes";
 
   let {
     destinations,
@@ -109,8 +113,11 @@
     },
   });
 
-  // When Browse's home is the visit's first view, the boot screen waits
-  // for every tile's first picture, so none is an empty tint when it leaves.
+  // When Browse's home is the visit's first view, the boot screen waits for
+  // every tile's first picture (or its failure), so none is an empty tint
+  // when it leaves. The hold may run to FIRST_VIEW_WAIT_MS after `ready`, the
+  // limit Create's own first view uses; past that the screen leaves anyway,
+  // the tiles that are ready arrive with it and the rest fade in later.
   let releasePreviewHold = (): void => {};
   let cancelLeavingReveal = (): void => {};
   const settledPreviews = new Set<string>();
@@ -141,8 +148,13 @@
   const appReducedMotion = $derived(getSettings().reducedMotion ?? false);
 
   onMount(() => {
+    // The scene code starts downloading now; the boxes mount it later.
+    warmBrowseHomeScenes(sceneOrder());
     if (bootScreenCovers()) {
-      releasePreviewHold = holdBootScreen("browse-home-previews");
+      releasePreviewHold = holdBootScreen(
+        "browse-home-previews",
+        FIRST_VIEW_WAIT_MS
+      );
       cancelLeavingReveal = runAfterBootScreen(() => reveal.revealNow());
     }
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -234,6 +246,7 @@
                   turn={turns.turn}
                   onready={handleReady}
                   onfailed={handleFailed}
+                  loadBehindBootScreen
                 />
               </span>
               <span class="tile-copy">

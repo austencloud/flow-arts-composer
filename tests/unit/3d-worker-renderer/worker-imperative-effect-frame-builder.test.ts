@@ -201,6 +201,23 @@ describe("worker imperative effect frame builder", () => {
     expect(() => structuredClone(moonFan)).not.toThrow();
   });
 
+  it("keeps a Moon fan's lights lit while playback is paused", () => {
+    const moonInput = input("led");
+    moonInput.left.propType = PropType.FAN;
+    moonInput.intent.propBuild = {
+      ...propFinishState.build,
+      fanBuild: "moon",
+    };
+    moonInput.intent.playing = false;
+
+    const moonFan = new WorkerImperativeEffectFrameBuilder()
+      .build(moonInput)
+      .imperative?.find((frame) => frame.renderer === "moon-fan");
+
+    expect(moonFan).toMatchObject({ enabled: true });
+    expect(moonFan?.ledColors).toHaveLength(78);
+  });
+
   it("publishes pooled sources with stable worker-owned ids and Choreo timing", () => {
     const sparkle = input("trails");
     sparkle.intent.tips = [{ propIndex: 0, tipIndex: 0, effect: "sparkles" }];

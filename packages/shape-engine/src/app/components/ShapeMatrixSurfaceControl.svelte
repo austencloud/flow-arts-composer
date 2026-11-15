@@ -28,13 +28,9 @@
 {#snippet optionContent(surface: ShapeMatrixSurface)}
   <span class="mode-copy">
     <strong>
-      {compact
-        ? surface === "matrix"
-          ? t("shape_engine_levels")
-          : t("shape_engine_ratios")
-        : surface === "matrix"
-          ? t("shape_engine_level_matrix")
-          : t("shape_engine_ratio_playground")}
+      {surface === "matrix"
+        ? t("shape_engine_levels")
+        : t("shape_engine_ratios")}
     </strong>
     {#if !compact}
       <small>

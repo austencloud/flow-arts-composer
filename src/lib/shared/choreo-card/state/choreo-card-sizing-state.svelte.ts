@@ -467,7 +467,18 @@ export function createChoreoCardSizingState(
     // interrupted exit can leave the Card painted at a few pixels while its
     // stored size still says otherwise, and that is the case that bursts: the
     // dimensions never change, so only killing the running transition stops it.
-    if (paintedBefore !== null) {
+    //
+    // A restore is the same case even when the painted box is readable. The
+    // pane opens from nothing, so the box the Card was last painted at (often
+    // Side by Side's) is not on screen to travel from. Flying from it showed
+    // the first visit at the stale size, then a jump to the destination.
+    if (
+      deps.containSizeMotion === "restore" &&
+      hasDestination &&
+      (widthChanged || heightChanged)
+    ) {
+      requestSizeJump();
+    } else if (paintedBefore !== null) {
       const unreadableBefore =
         paintedBefore.width < MIN_MEASURABLE_MOTION_SIZE ||
         paintedBefore.height < MIN_MEASURABLE_MOTION_SIZE;

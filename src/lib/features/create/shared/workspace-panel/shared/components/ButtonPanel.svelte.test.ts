@@ -297,6 +297,30 @@ describe("ButtonPanel narrow geometry", () => {
     }
   });
 
+  it("steps Clear aside while a step is selected, keeping Play in place", async () => {
+    const screen = render(ButtonPanel, {
+      props: {
+        onClearSequence: vi.fn(),
+        onViewSequence: vi.fn(),
+        stepSelected: true,
+      },
+      context: new Map([["createModule", createContext()]]),
+    });
+    screen.container.style.width = "392px";
+    await waitForLayout();
+
+    // A tap meant for one step must never land on the whole-sequence eraser.
+    await expect
+      .element(page.getByRole("button", { name: "Clear sequence" }))
+      .not.toBeInTheDocument();
+    const containerBounds = screen.container.getBoundingClientRect();
+    const play = rect("Play sequence");
+    expect(play.left + play.width / 2).toBeCloseTo(
+      containerBounds.left + containerBounds.width / 2,
+      0
+    );
+  });
+
   it("puts Viewer beside Construct's in-place Play and opens the full viewer", async () => {
     const context = createContext();
     render(ButtonPanel, {

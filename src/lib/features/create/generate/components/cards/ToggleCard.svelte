@@ -1,12 +1,16 @@
 <!--
-ToggleCard.svelte - Card for binary toggle options with vertical layout
-Shows BOTH options stacked vertically, with clear active/inactive states
-Perfect for narrow screens and provides immediate visual affordance
-Hides header when card height is below 65px for space optimization
+ToggleCard.svelte - Card for binary toggle options
+Shows BOTH options (stacked, or side by side when the card is wide) with clear
+active/inactive states. A card that is short and too narrow to hold the pair
+side by side (Generate's Grid card in a 115x53 cell on a 360px phone) shows
+what its stepper siblings show instead: the heading and the chosen option
+alone, centred at the sibling value size. A tap still switches the option.
 -->
 <script lang="ts" generics="T">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createToggleCardState } from "../../state/toggle-card-state.svelte";
   import CardHeader from "./shared/CardHeader.svelte";
   import ToggleOption from "./ToggleOption.svelte";
@@ -21,7 +25,7 @@ Hides header when card height is below 65px for space optimization
     shadowColor = "0deg 0% 0%",
     gridColumnSpan = 2,
     cardIndex = 0,
-    headerFontSize = "9px",
+    headerFontSize = "var(--font-size-compact, 12px)",
     appearance = "vivid",
   } = $props<{
     title: string;
@@ -52,6 +56,26 @@ Hides header when card height is below 65px for space optimization
   // Simple derived state stays in component
   const isOption1Active = $derived(activeOption === option1.value);
   const isOption2Active = $derived(activeOption === option2.value);
+
+  const activeChoice = $derived(isOption1Active ? option1 : option2);
+
+  // The single value keeps its icon only while the name fits beside it: a
+  // long name (ダイヤモンド, Quadrato) drops the icon before it loses letters.
+  function dropIconWhenCramped(node: HTMLElement, _label: string) {
+    const check = () => {
+      node.classList.remove("cramped");
+      const label = node.querySelector<HTMLElement>(".option-label");
+      if (label && label.scrollWidth > label.clientWidth + 0.5) {
+        node.classList.add("cramped");
+      }
+    };
+    const observer = new ResizeObserver(check);
+    observer.observe(node);
+    return {
+      update: check,
+      destroy: () => observer.disconnect(),
+    };
+  }
 
   onMount(() => {
     let cleanup: (() => void) | null = null;
@@ -105,6 +129,21 @@ Hides header when card height is below 65px for space optimization
       isLandscapeMobile={state.isLandscapeMobile}
       optionsAreSideBySide={state.optionsAreSideBySide}
     />
+  </div>
+
+  <!-- Short, narrow card: the chosen option alone (see the container query). -->
+  <div class="single-value">
+    <Crossfade key={activeChoice.value} duration={DURATION.normal}>
+      <span class="value-fit" use:dropIconWhenCramped={activeChoice.label}>
+        <ToggleOption
+          label={activeChoice.label}
+          icon={activeChoice.icon}
+          isActive={true}
+          isLandscapeMobile={false}
+          solo={true}
+        />
+      </span>
+    </Crossfade>
   </div>
 </button>
 
@@ -296,6 +335,53 @@ Hides header when card height is below 65px for space optimization
       justify-content: center;
       gap: clamp(6px, 2cqi, 12px);
     }
+  }
+
+  /* A short card (under 70px) no wider than 3.5:1 cannot hold both options
+     side by side: at 115x53 "Diamond" and "Box" ran 18px past the card. It
+     shows the heading and the chosen option alone, like the stepper cards
+     beside it, whose value sits centred on the card at clamp(18px, 5cqh,
+     28px). Placed after the under-65px rule so the heading stays. Wider cards
+     (over 3.5:1) keep the pair side by side; taller ones keep it stacked. */
+  .single-value {
+    display: none;
+  }
+
+  @container toggle-card (height < 70px) and (aspect-ratio <= 3.5) {
+    .card-header-wrapper {
+      display: block;
+    }
+
+    .toggle-options {
+      display: none;
+    }
+
+    .single-value {
+      position: absolute;
+      top: 50%;
+      left: 4px;
+      right: 4px;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .single-value > :global(.crossfade) {
+      max-width: 100%;
+    }
+  }
+
+  .value-fit {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .value-fit:global(.cramped) :global(.option-icon) {
+    display: none;
   }
 
   /* Accessibility: Respect user's motion preferences (WCAG AAA) */

@@ -1,5 +1,6 @@
 import { findItem, type PostItem } from "@austencloud/video-editor/core";
 import type { VideoEditorState } from "@austencloud/video-editor";
+import { canFlyIntoNext } from "#lib/shared/media-composition/domain/post-flash-join-edits.js";
 import { tkaEditorOf } from "./tka-editor-context";
 
 /** What tka's rows depend on, worked out by the workspace before 2B (PostEditorWorkspace.svelte 1142-1164). */
@@ -11,6 +12,8 @@ export interface TkaRowFacts {
   hasLayout: boolean;
   /** One cell of the selected arrangement is in hand; the row is the cell's. */
   cell: boolean;
+  /** The clip can fly into the canvas clip right after it on its lane. */
+  canFly: boolean;
 }
 
 export const NO_FACTS: TkaRowFacts = {
@@ -20,6 +23,7 @@ export const NO_FACTS: TkaRowFacts = {
   hasBackdrop: false,
   hasLayout: false,
   cell: false,
+  canFly: false,
 };
 
 export function tkaRowFacts(
@@ -45,10 +49,14 @@ export function tkaRowFacts(
       item.kind === "video" &&
       findItem(editor.project, item.id)?.trackIndex === 0,
     cell: item.kind === "arrangement" && !!tka?.wrapper.selectedCell,
+    canFly: canFlyIntoNext(editor.project, item.id),
   };
 }
 
 const TAIL = ["position", "fade", "rename", "duplicate", "delete"];
+
+/** Fly into next clip, where the clip has one to fly into. */
+const fly = (facts: TkaRowFacts) => (facts.canFly ? ["fly"] : []);
 
 function insertAfter(
   row: readonly string[],
@@ -82,7 +90,12 @@ export function tkaRow(
         ? insertAfter(core, "split", ["appearance"])
         : core;
     case "card":
-      return insertAfter(core, "split", ["appearance", "sequence"]);
+      return insertAfter(core, "split", [
+        "appearance",
+        "ending",
+        "sequence",
+        ...fly(facts),
+      ]);
     case "animation":
       if (facts.isTunnel)
         return [
@@ -98,8 +111,11 @@ export function tkaRow(
         "appearance",
         "sequence",
         "performers",
+        "hands",
+        "lift",
         ...(facts.isTunnelHook ? ["speed"] : []),
         ...(facts.hasBackdrop ? ["crop"] : []),
+        ...fly(facts),
         "timing",
         ...TAIL,
       ];
@@ -110,13 +126,26 @@ export function tkaRow(
         "appearance",
         "shows",
         "sequence",
+        ...fly(facts),
         "timing",
         ...TAIL,
       ];
     case "titles":
       return ["back", "titles", "timing", ...TAIL];
+    case "flash":
+      return ["back", "flash", "timing", ...TAIL];
+    case "credit":
+      return ["back", "credit", "timing", ...TAIL];
     case "mandala":
-      return ["back", "sequence", "split", "look", "timing", ...TAIL];
+      return [
+        "back",
+        "sequence",
+        "split",
+        "look",
+        ...fly(facts),
+        "timing",
+        ...TAIL,
+      ];
     case "arrangement":
       if (facts.cell)
         return [

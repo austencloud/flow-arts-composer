@@ -544,4 +544,27 @@ describe("OptionViewerSwipeLayout type rail", () => {
     const panel = region.element().getBoundingClientRect();
     expect(panel.top).toBeGreaterThanOrEqual(0);
   });
+
+  it("snaps back when something scrolls the carousel natively", async () => {
+    // Focus or scrollIntoView can scroll the clipped viewport itself, which
+    // embla never sees, so the page would rest between positions.
+    render(OptionViewerSwipeLayoutTestHarness, {
+      organizedPictographs: EMPTY_PANELS,
+      width: 392,
+      height: 480,
+    });
+    await expect
+      .element(page.getByRole("tab", { name: "Type 1: Dual-Shift, 0 options" }))
+      .toHaveAttribute("aria-selected", "true");
+
+    const viewport = document.querySelector<HTMLElement>(".embla__viewport")!;
+    expect(viewport.scrollWidth).toBeGreaterThan(viewport.clientWidth);
+    document
+      .querySelector<HTMLElement>('[data-panel-index="2"]')!
+      .scrollIntoView({ block: "nearest", inline: "start" });
+    await pause(50);
+
+    expect(viewport.scrollLeft).toBe(0);
+    expect(viewport.scrollTop).toBe(0);
+  });
 });

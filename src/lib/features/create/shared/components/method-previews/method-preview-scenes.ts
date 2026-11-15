@@ -47,3 +47,26 @@ export const METHOD_PREVIEW_SCENES: Readonly<
   tunnel: () => import("./TunnelScene.svelte"),
   assemble: () => import("./AssembleScene.svelte"),
 };
+
+/**
+ * Starts downloading the scene code for these ids. Fetching a chunk draws
+ * nothing, so it need not wait for idle or for account settings the way
+ * mounting does; import() caches the module, so the preview box's own load
+ * later is instant. A failed warm stays silent: the box's real load reports
+ * its failure through `onfailed`. Create's board and the Browse home share it.
+ */
+export function warmMethodPreviewScenes(
+  ids: readonly string[],
+  scenes: Readonly<
+    Record<string, () => Promise<MethodPreviewSceneModule>>
+  > = METHOD_PREVIEW_SCENES
+): void {
+  for (const id of ids) {
+    if (!Object.hasOwn(scenes, id)) continue;
+    try {
+      void scenes[id]!().catch(() => {});
+    } catch {
+      // A loader that throws at once is left to the real load as well.
+    }
+  }
+}
