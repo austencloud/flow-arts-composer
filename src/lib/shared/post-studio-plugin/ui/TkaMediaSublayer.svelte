@@ -235,8 +235,13 @@
     followerSequences={followerSequences.current}
     part={sourceItem?.kind === "animation" ? sourceItem.part : undefined}
     split={sourceItem?.kind === "animation" ? sourceItem.split : undefined}
-    panelLift={sourceItem?.kind === "animation" ? sourceItem.panelLift : undefined}
-    contentSeconds={sourceItem ? editor.previewSeconds - sourceItem.start : undefined}
+    panelLift={sourceItem?.kind === "animation"
+      ? sourceItem.panelLift
+      : undefined}
+    barFill={sourceItem?.kind === "animation" ? sourceItem.barFill : undefined}
+    contentSeconds={sourceItem
+      ? editor.previewSeconds - sourceItem.start
+      : undefined}
     {chromeOpacity}
     {mandalaIn}
     {lookBlend}

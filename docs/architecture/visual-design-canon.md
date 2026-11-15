@@ -282,6 +282,14 @@ colour; with Both, the pair (Austen 2026-11-15). Austen,
 all-language approach that directly describes it....catdog is colloquial and
 random to many people".
 
+The one prop picker is also where a saved pair is chosen. "Save with props"
+and Browse's viewing-props control open the same prop screen as Change Prop:
+the same Both / Left / Right row, the same tiles, every prop in view, no group
+headings and no scroll. A pick does not close it; it closes by its X. A saved
+pair keeps props, not colours, so that host shows no colour block. Austen's
+pick, 2026-11-15 ("A, one picker"): "choosing your prop should just be one
+consistent experience across the board ... With no scroll bars attached."
+
 ## 7. Information Hierarchy and Content
 
 The screen should answer these questions without a tutorial covering it:
@@ -491,6 +499,15 @@ On a phone the word sits under the drawing in every option. Which way an
 option is arranged follows the picker's width, never the length of its word,
 so the three options match each other in every language. Austen kept this on
 2026-11-14 over a smaller drawing beside the word.
+
+While a sequence plays on a phone, Pause rides on the picture's corner,
+opposite the X, and the row under the picture holds the scrubber and the
+effect button only. The open effects list has one head row: a single Effects
+on/off control and Done. The effect is named once, on its tile, and not again
+in the head; turning Effects back on returns the last effect used. Pause
+stays in reach with the list open and does not close it, so a person can
+freeze the picture and compare looks. Austen's pick, 2026-11-15 ("D, pause on
+picture").
 
 ### Application shell
 

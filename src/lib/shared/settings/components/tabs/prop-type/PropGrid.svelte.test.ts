@@ -130,7 +130,7 @@ describe("PropGrid fan look credit", () => {
       onFanAppearanceChange: vi.fn(),
     });
 
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page.getByRole("button", { name: "Choose Triad style" }).last().click();
     for (const name of ["Triad prop type", "Trigeng prop type"]) {
       await expect
         .element(
@@ -161,7 +161,7 @@ describe("PropGrid fan look credit", () => {
       onTriangleGripChange,
     });
 
-    await page.getByRole("button", { name: "Choose Mini Hoop style" }).click();
+    await page.getByRole("button", { name: "Choose Mini Hoop style" }).last().click();
     const styles = page.getByRole("region", { name: "Mini Hoop styles" });
     await expect.element(styles).toBeVisible();
     expect(
@@ -342,7 +342,7 @@ describe("PropGrid fan look credit", () => {
       onTriadBuildChange,
     });
 
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page.getByRole("button", { name: "Choose Triad style" }).last().click();
     const styles = page.getByRole("region", { name: "Triad styles" });
     await expect.element(styles).toBeVisible();
     expect(page.getByTestId("triad-build-row").elements()).toHaveLength(0);
@@ -398,7 +398,7 @@ describe("PropGrid one look per prop", () => {
     });
 
     await page
-      .getByRole("button", { name: "Choose Double Staff style" })
+      .getByRole("button", { name: "Choose Double Staff style" }).last()
       .click();
     for (const name of [
       "Double Staff",
@@ -454,7 +454,7 @@ describe("PropGrid one look per prop", () => {
       onFanAppearanceChange: vi.fn(),
     });
 
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page.getByRole("button", { name: "Choose Triad style" }).last().click();
     await page.getByRole("button", { name: "Big", exact: true }).click();
 
     expect(onSelect).toHaveBeenCalledTimes(1);
@@ -658,7 +658,7 @@ describe("PropGrid short last rows", () => {
       });
 
       await page
-        .getByRole("button", { name: "Choose Double Staff style" })
+        .getByRole("button", { name: "Choose Double Staff style" }).last()
         .click();
       const styles = page.getByRole("group", {
         name: "Double Staff styles choices",
@@ -705,5 +705,224 @@ describe("PropGrid previewHand", () => {
       .poll(() => document.querySelector('[data-prop-tile="staff"]'))
       .not.toBeNull();
     await expect.poll(handsDrawn).toBe(hands);
+  });
+});
+
+// The phone sheet bounds the rail to a fixed height (AnimationPanel's
+// .bottom-prop-picker); the rail's screens fill it.
+function sheetHost(): HTMLElement {
+  document.querySelectorAll("[data-sheet-host]").forEach((el) => el.remove());
+  const host = document.createElement("div");
+  host.dataset.sheetHost = "";
+  host.style.cssText =
+    "display:flex;flex-direction:column;width:100%;height:340px;overflow:hidden";
+  document.body.append(host);
+  return host;
+}
+
+// Austen, 2026-11-15, on the phone sheet with Club picked: "there's no clear
+// way to select the variations of clubs from this screen, unless I already
+// know that I have to tap the club icon itself." The Styles button is a
+// second, visible door to the same screen the family tile opens.
+describe("PropGrid Styles button", () => {
+  beforeEach(async () => {
+    await page.viewport(387, 775);
+    document.body.style.margin = "0";
+  });
+
+  const CLUB_FAMILY = [PropType.CLUB, PropType.CLASSIC_CLUB, PropType.TORCH];
+
+  it("opens a picked family's styles from the rail and returns focus to it", async () => {
+    const { rerender } = render(PropGrid, {
+      target: sheetHost(),
+      props: {
+        selectedPropType: PropType.CLUB,
+        onSelect: vi.fn(),
+        layout: "rail",
+        variant: "inline",
+        allowedProps: [...CLUB_FAMILY, PropType.BUUGENG],
+        fanAppearance: FIRE_FAN,
+        onFanAppearanceChange: vi.fn(),
+      },
+    });
+
+    const chip = page.getByTestId("prop-styles-chip");
+    await expect.element(chip).toBeVisible();
+    await expect.element(chip).toHaveAccessibleName("Choose Club style");
+    // A phone-wide rail has no room beside the toolbar's controls: the button
+    // takes its own row under the toolbar, with the room to name the family.
+    expect(chip.element().textContent?.replace(/\s+/g, " ").trim()).toBe(
+      "Club styles 3"
+    );
+    expect(chip.element().closest(".rail-toolbar")).toBeNull();
+    expect(chip.element().closest(".styles-own-row")).not.toBeNull();
+
+    await chip.click();
+    await expect
+      .element(page.getByRole("region", { name: "Club styles" }))
+      .toBeVisible();
+    await expect
+      .element(
+        page.getByRole("button", { name: "Select Torch prop type", exact: true })
+      )
+      .toBeVisible();
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect
+      .poll(() => document.activeElement?.getAttribute("data-testid"))
+      .toBe("prop-styles-chip");
+
+    // A prop with one style has nothing for the button to open.
+    await rerender({ selectedPropType: PropType.BUUGENG });
+    await expect
+      .poll(() => page.getByTestId("prop-styles-chip").elements().length)
+      .toBe(0);
+    // The family tile still opens the styles on its own.
+    expect(document.querySelector('[data-family-tile="club"]')).not.toBeNull();
+  });
+
+  it("sits in the toolbar with the short label on a Fold-wide rail", async () => {
+    await page.viewport(707, 772);
+    render(PropGrid, {
+      target: sheetHost(),
+      props: {
+        selectedPropType: PropType.CLUB,
+        onSelect: vi.fn(),
+        layout: "rail",
+        variant: "inline",
+        allowedProps: CLUB_FAMILY,
+        fanAppearance: FIRE_FAN,
+        onFanAppearanceChange: vi.fn(),
+      },
+    });
+
+    const chip = page.getByTestId("prop-styles-chip");
+    await expect.element(chip).toBeVisible();
+    expect(chip.element().textContent?.replace(/\s+/g, " ").trim()).toBe(
+      "Styles 3"
+    );
+    expect(chip.element().closest(".rail-toolbar")).not.toBeNull();
+    expect(document.querySelector(".styles-own-row")).toBeNull();
+  });
+
+  it("names the family in the grid and sits above the tiles", async () => {
+    await page.viewport(1440, 900);
+    render(PropGrid, {
+      selectedPropType: PropType.TORCH,
+      onSelect: vi.fn(),
+      allowedProps: CLUB_FAMILY,
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+    });
+
+    const chip = page.getByTestId("prop-styles-chip");
+    await expect.element(chip).toBeVisible();
+    expect(chip.element().textContent?.replace(/\s+/g, " ").trim()).toBe(
+      "Club styles 3"
+    );
+    const tile = document.querySelector('[data-family-tile="club"]');
+    expect(
+      chip.element().compareDocumentPosition(tile!) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    await chip.click();
+    await expect
+      .element(page.getByRole("region", { name: "Club styles" }))
+      .toBeVisible();
+  });
+});
+
+// On the phone and Fold sheet the buugeng details page is a short list that
+// fits: a group of tiles that would not fit is a box naming its current value.
+describe("PropGrid rail details boxes", () => {
+  beforeEach(async () => {
+    await page.viewport(387, 775);
+    document.body.style.margin = "0";
+  });
+
+  function renderBuugengRail() {
+    const onChange = vi.fn();
+    const onBuugengStyleChange = vi.fn();
+    render(PropGrid, {
+      target: sheetHost(),
+      props: {
+        selectedPropType: PropType.BUUGENG,
+        onSelect: vi.fn(),
+        layout: "rail",
+        variant: "inline",
+        allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+        fanAppearance: FIRE_FAN,
+        onFanAppearanceChange: vi.fn(),
+        buugengStyle: "crescent",
+        onBuugengStyleChange,
+        chirality: {
+          hands: [
+            { hand: "left", flipped: false },
+            { hand: "right", flipped: true },
+          ],
+          onChange,
+        },
+      },
+    });
+    return { onChange, onBuugengStyleChange };
+  }
+
+  it("shows the pair as a box with no separate What's this? button", async () => {
+    renderBuugengRail();
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+
+    const details = page.getByRole("region", { name: "Buugeng details" });
+    await expect.element(details).toBeVisible();
+    await expect
+      .element(details.getByRole("button", { name: "Big", exact: true }))
+      .toBeVisible();
+    const pairBox = page.getByTestId("buugeng-pair-box");
+    await expect.element(pairBox).toHaveTextContent("Buugeng pair");
+    await expect
+      .element(pairBox)
+      .toHaveTextContent("Mirrored, Left A, right B");
+    expect(
+      pairBox.element().querySelector(".row-media .pair-preview-stub")
+    ).not.toBeNull();
+    await expect
+      .element(page.getByTestId("buugeng-style-box"))
+      .toHaveTextContent("Crescent");
+    expect(
+      page.getByRole("button", { name: "What's this?" }).elements()
+    ).toHaveLength(0);
+    expect(page.getByTestId("buugeng-style-row").elements()).toHaveLength(0);
+
+    await pairBox.click();
+    await expect
+      .element(page.getByRole("region", { name: "Buugeng pairs" }))
+      .toBeVisible();
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect
+      .poll(() => document.activeElement?.getAttribute("data-testid"))
+      .toBe("buugeng-pair-box");
+  });
+
+  it("opens the Style screen from its box and returns to the details", async () => {
+    const { onBuugengStyleChange } = renderBuugengRail();
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    await page.getByTestId("buugeng-style-box").click();
+
+    const row = page.getByTestId("buugeng-style-row");
+    await expect.element(row).toBeVisible();
+    await row.getByRole("radio", { name: "Fire" }).click();
+    expect(onBuugengStyleChange).toHaveBeenCalledWith("fire");
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect
+      .element(page.getByRole("region", { name: "Buugeng details" }))
+      .toBeVisible();
+    await expect
+      .poll(() => document.activeElement?.getAttribute("data-testid"))
+      .toBe("buugeng-style-box");
   });
 });

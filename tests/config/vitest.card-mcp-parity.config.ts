@@ -18,6 +18,10 @@ export default defineConfig({
     // Browser tests cannot read the Node process environment at runtime. Bake
     // this single release-runner flag into the browser bundle instead.
     __MCP_PACKED_ROOT__: JSON.stringify(Boolean(process.env.MCP_PACKED_ROOT)),
+    // The Composer draws a maker's fan look only once its maker has approved
+    // it. The MCP renderers draw any look they are asked for, so parity is
+    // compared with every look drawable, as the fan unit tests do.
+    "import.meta.env.VITE_MAKER_PREVIEW": JSON.stringify("1"),
   },
   // This checkout's packages/*, not the primary's, in a task worktree.
   plugins: [svelte(svelteOptions), ...workspaceResolvePlugins(projectRoot)],

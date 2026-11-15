@@ -31,6 +31,8 @@
     onSelect,
     handProps,
     onOpenChange,
+    onclosed,
+    subtitle,
     chirality,
     showColors = true,
     fanAppearance,
@@ -45,6 +47,10 @@
     handProps?: HandPropToolbarProps;
     /** Reports drawer dismissal when the owner does not use two-way binding. */
     onOpenChange?: (open: boolean) => void;
+    /** After the sheet has closed, once focus can move back to the host. */
+    onclosed?: () => void;
+    /** The line under the title; defaults to the standard help line. */
+    subtitle?: string;
     /**
      * Buugeng chirality seam, forwarded to the grid. The sheet is opened per
      * hand, so hosts pass the hand this sheet is editing and it writes that
@@ -59,6 +65,16 @@
   }>();
 
   const displayTitle = $derived(title ?? t("settings_props_select_prop"));
+  const displaySubtitle = $derived(subtitle ?? t("settings_prop_sheet_help"));
+
+  // The close can come from the sheet (X, backdrop, Escape, drag) or from a
+  // host that turns isOpen off; either way the host hears it once.
+  let wasOpen = false;
+  $effect(() => {
+    const open = isOpen;
+    if (wasOpen && !open) onclosed?.();
+    wasOpen = open;
+  });
 
   // Desktop (side-by-side layout, i.e. nav sidebar present) opens the picker as
   // a full-height RIGHT side drawer instead of a bottom sheet — matches the
@@ -121,7 +137,7 @@
   <div class="sheet-content">
     <DrawerHeader
       title={displayTitle}
-      subtitle={t("settings_prop_sheet_help")}
+      subtitle={displaySubtitle}
       onClose={handleClose}
     />
 

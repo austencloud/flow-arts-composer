@@ -596,6 +596,57 @@ describe("fitEffectQuickPicker lifting a tall phone's player", () => {
     expect(fit.scrolls).toBe(true);
   });
 
+  describe("with the head row covering the control row", () => {
+    const controls = 44;
+
+    it("lifts less than a sheet that stood under the control row", () => {
+      const box = phones["430x932"];
+      const under = grid({ ...box, count });
+      const over = grid({ ...box, controls, count });
+      expect(over.side).toBe("dock");
+      expect(over.lift).toBeLessThan(under.lift);
+      expect(over.lift).toBeGreaterThanOrEqual(0);
+    });
+
+    it("keeps the picture larger where the player has to shrink", () => {
+      const box = phones["375x812"];
+      const under = grid({ ...box, count });
+      const over = grid({ ...box, controls, count });
+      expect(under.scale).toBeLessThan(1);
+      expect(over.scale).toBeGreaterThan(under.scale);
+    });
+
+    it.each(["375x812", "390x844", "430x932"] as const)(
+      "meets the picture with no gap under the %s player",
+      (name) => {
+        const box = phones[name];
+        const fit = grid({ ...box, controls, count });
+        expect(fit.side).toBe("dock");
+        // The sheet stands on the floor; the control row's top, after the lift
+        // and the shrink (the row shrinks with the player), is its top edge.
+        const controlsTop =
+          box.player.top -
+          fit.lift +
+          fit.scale * (box.player.height - controls);
+        const sheetTop = box.bounds.top + box.bounds.height - fit.height;
+        expect(Math.abs(sheetTop - controlsTop)).toBeLessThanOrEqual(2);
+      }
+    );
+
+    it("hangs a floating tray from the control row's top, with no gap", () => {
+      const player = { left: 13, top: 60, width: 350, height: 394 };
+      const bounds = { left: 0, top: 0, width: 375, height: 900 };
+      const whole = grid({ bounds, player, roomBelow: 420, count });
+      // A room that holds the tray only because the control row's height
+      // counts as room under it.
+      const roomBelow = whole.height - controls;
+      const fit = grid({ bounds, player, roomBelow, controls, count });
+      expect(fit.side).toBe("below");
+      expect(fit.lift).toBe(0);
+      expect(fit.height).toBeLessThanOrEqual(roomBelow + controls);
+    });
+  });
+
   it("never lifts the player for the side panel or a landscape phone", () => {
     const laptop = fitEffectQuickPicker({
       bounds: { left: 64, top: 0, width: 1366, height: 900 },

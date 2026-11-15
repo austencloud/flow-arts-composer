@@ -1,16 +1,20 @@
 <!--
   PropPairDialog.svelte
 
-  PropPairPicker in a fit-sized dialog, wide enough that a laptop shows every
-  prop with no scrollbar. Hosts: PropPairField's modal mode and the viewing
-  props control.
+  The one prop screen (PropSelectionSheet) opened for a prop pair that a host
+  keeps: a saved sequence's props, or the viewing props. Hosts: PropPairField's
+  modal mode and the viewing props control. A pick applies at once and never
+  closes the screen; the sheet's own X, backdrop, Escape and drag close it.
 -->
 <script lang="ts">
   import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
-  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import PropPairPicker from "./PropPairPicker.svelte";
+  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import type { PropHandChoice } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import {
+    appOverlayLayer,
+    portal,
+  } from "#lib/features/create/generate/components/modals/portal.js";
+  import { applyHandPick } from "#lib/shared/settings/components/tabs/prop-type/hand-pick.js";
 
   let {
     open,
@@ -30,63 +34,57 @@
     onclose: () => void;
     /** After the exit, once focus can move. */
     onclosed?: () => void;
-    /** Every pick applies at once; the dialog closes when nothing is left to choose. */
+    /** Every pick applies at once; the screen stays open. */
     onPick: (next: ResolvedPropConfig) => void;
   } = $props();
 
-  const titleId = $props.id();
+  // Opens on Both every time and is never saved.
+  let hand = $state<PropHandChoice>("both");
+  $effect(() => {
+    if (open) hand = "both";
+  });
 </script>
 
-<BaseModal
-  {open}
-  {onclose}
-  {onclosed}
-  size="fit"
-  class="prop-pair-dialog"
-  labelledBy={titleId}
->
-  {#snippet header()}<h2 id={titleId}>{title}</h2>{/snippet}
-  <div class="body">
-    <PropPairPicker {value} {hint} {showColors} {onPick} onDone={onclose} />
-  </div>
-  {#snippet footer()}
-    <!-- Picks apply as they are made, so closing keeps them: Done, not
-         Cancel. -->
-    <div class="actions">
-      <PanelButton variant="secondary" onclick={onclose}
-        >{t("shared_controls_done")}</PanelButton
-      >
-    </div>
-  {/snippet}
-</BaseModal>
+<!-- Mounted in the app's overlay layer, as Change Prop is: a host such as the
+     save panel sits inside boxes that contain fixed children, which would hang
+     the sheet from the panel's bottom edge and clip its title. -->
+<div use:portal={appOverlayLayer()} class="prop-pair-portal">
+  <PropSelectionSheet
+    isOpen={open}
+    {title}
+    subtitle={hint}
+    selectedPropType={hand === "right"
+      ? value.rightPropType
+      : value.leftPropType}
+    color={hand === "right" ? "red" : "blue"}
+    {showColors}
+    handProps={{
+      hand,
+      leftPropType: value.leftPropType,
+      rightPropType: value.rightPropType,
+      onHandChange: (next) => (hand = next),
+    }}
+    onSelect={(prop) => {
+      const next = applyHandPick(
+        { left: value.leftPropType, right: value.rightPropType },
+        hand,
+        prop
+      );
+      onPick({
+        leftPropType: next.left,
+        rightPropType: next.right,
+        catDogMode: next.catDogMode,
+      });
+    }}
+    onOpenChange={(next) => {
+      if (!next) onclose();
+    }}
+    {onclosed}
+  />
+</div>
 
 <style>
-  .body {
-    padding: 0 20px;
-  }
-
-  /* Wide enough for the prop grid's eight-column tier (850px of grid), so a
-     laptop shows every prop in three rows with no scrollbar. Narrower
-     screens take the full width less the gutters and the grid steps down. */
-  :global(dialog.base-modal.prop-pair-dialog[data-size="fit"]) {
-    width: min(calc(100vw - 32px), 920px);
-  }
-
-  /* Three short choices: the control sizes to them instead of spanning the
-     wide dialog. */
-  .body :global(.segmented-control) {
-    max-width: 26rem;
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    padding: 16px 20px 20px;
-  }
-
-  h2 {
-    margin: 0;
-    padding: 20px;
-    font-size: var(--font-size-lg, 18px);
+  .prop-pair-portal {
+    display: contents;
   }
 </style>

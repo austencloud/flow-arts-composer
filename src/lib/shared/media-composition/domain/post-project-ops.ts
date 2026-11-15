@@ -98,6 +98,7 @@ import {
 import { PostAnimationSplitSchema } from "#lib/shared/media-composition/domain/post-animation-split.js";
 import { PostCometTrailsSchema } from "./comet-trails";
 import { PostPanelLiftSchema } from "#lib/shared/media-composition/domain/post-panel-lift.js";
+import { PostBarFillSchema } from "#lib/shared/media-composition/domain/post-bar-fill.js";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is
@@ -893,6 +894,20 @@ function applyOp(
         )
       )
         throw new Error("Only an animation clip lifts its panel.");
+      const barFill = (op.patch as { barFill?: unknown } | undefined)?.barFill;
+      // As with the split: say why a fill is refused instead of passing over it.
+      if (barFill !== undefined && barFill !== null) {
+        const parsed = PostBarFillSchema.safeParse(barFill);
+        if (!parsed.success)
+          throw new Error(`barFill: ${firstIssue(parsed.error)}`);
+      }
+      if (
+        barFill !== undefined &&
+        !itemIds(project, op.item).some(
+          (id) => findItem(project, id)?.item.kind === "animation"
+        )
+      )
+        throw new Error("Only an animation clip fills its bar once.");
       // updateItem passes over a link that breaks the rule; a script should hear why.
       if (qrUrl !== undefined && qrUrl !== null && !isPostCardQrUrl(qrUrl))
         throw new Error(POST_QR_URL_RULE);

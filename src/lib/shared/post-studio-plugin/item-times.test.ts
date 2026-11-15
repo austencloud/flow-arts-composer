@@ -68,6 +68,36 @@ describe("shiftTkaItemTimes: animation split", () => {
   });
 });
 
+describe("shiftTkaItemTimes: animation bar fill", () => {
+  const filled = (barFill: object) =>
+    ({ ...animation(undefined as never), barFill }) as PostItem;
+  const fill = { emptyAt: 4.56, fullAt: 28.43 };
+
+  it("stays on the same moments after a later or earlier start", () => {
+    const later = field(shiftTkaItemTimes(filled(fill), 2), "barFill") as {
+      emptyAt: number;
+      fullAt: number;
+    };
+    expect(later.emptyAt).toBeCloseTo(2.56, 9);
+    expect(later.fullAt).toBeCloseTo(26.43, 9);
+    const earlier = field(shiftTkaItemTimes(filled(fill), -1), "barFill") as {
+      emptyAt: number;
+      fullAt: number;
+    };
+    expect(earlier.emptyAt).toBeCloseTo(5.56, 9);
+    expect(earlier.fullAt).toBeCloseTo(29.43, 9);
+  });
+
+  it("keeps a fill that was already full before the new start", () => {
+    const cut = field(shiftTkaItemTimes(filled(fill), 30), "barFill") as {
+      emptyAt: number;
+      fullAt: number;
+    };
+    expect(cut.emptyAt).toBeCloseTo(-25.44, 9);
+    expect(cut.fullAt).toBeCloseTo(-1.57, 9);
+  });
+});
+
 describe("shiftTkaItemTimes: animation lifted panel", () => {
   const lifted = (panelLift: object, split?: object) =>
     ({ ...animation(split as never), panelLift }) as PostItem;
@@ -122,9 +152,7 @@ describe("shiftTkaItemTimes: animation lifted panel", () => {
 
   it("leaves a lift without times as it was", () => {
     const whole = { canvasScale: 0.9 };
-    expect(field(shiftTkaItemTimes(lifted(whole), 3), "panelLift")).toBe(
-      whole
-    );
+    expect(field(shiftTkaItemTimes(lifted(whole), 3), "panelLift")).toBe(whole);
   });
 
   it("shifts the split and the lift together", () => {

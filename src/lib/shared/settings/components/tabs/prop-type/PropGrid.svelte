@@ -41,9 +41,18 @@
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import PropChiralityRow from "./PropChiralityRow.svelte";
   import BuugengPairsExplainer from "./BuugengPairsExplainer.svelte";
-  import BuugengStyleRow from "./BuugengStyleRow.svelte";
+  import BuugengStyleRow, {
+    BUUGENG_STYLE_LABEL_KEYS,
+  } from "./BuugengStyleRow.svelte";
+  import BuugengPairPreview from "./BuugengPairPreview.svelte";
   import PropSizeRow from "./PropSizeRow.svelte";
-  import TriadBuildRow from "./TriadBuildRow.svelte";
+  import TriadBuildRow, {
+    TRIAD_BUILD_LABEL_KEYS,
+  } from "./TriadBuildRow.svelte";
+  import SettingsDrillRow from "#lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
+  import { buugengPairFor } from "./buugeng-pair";
+  import { buugengPairWords } from "./buugeng-pair-words";
+  import { resolveViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import FanStyleOptionsCore from "./FanStyleOptionsCore.svelte";
   import {
     fanBuildPreviewOptions,
@@ -347,17 +356,28 @@
   // grid for that choice's tiles at the grid's own tile size behind a back
   // bar. `null` is the all-props grid. Picking stays one level down so the
   // styles can be compared against the live preview; Back or Escape returns.
-  type Drill =
-    | { kind: "family"; base: PropType }
+  // `fromChip` marks a screen opened from a toolbar button instead of a tile
+  // (the fan look chip, the Styles button), so Back returns focus there.
+  type RootDrill =
+    | { kind: "family"; base: PropType; fromChip?: boolean }
     | { kind: "fan-look"; prop: PropType; fromChip?: boolean }
-    | { kind: "details"; prop: PropType }
-    // The buugeng pairs explainer, one level below the screen whose chirality
-    // row opened it; Back returns to that screen, not to the grid.
-    | {
-        kind: "pairs";
-        prop: PropType;
-        from: Exclude<Drill, { kind: "pairs" }>;
-      };
+    | { kind: "details"; prop: PropType };
+  // One level below the screen that opened it: the buugeng pairs explainer,
+  // and on the rail the Style and Build screens a details box opens. Back
+  // returns to that screen, not to the grid.
+  type SubDrill = {
+    kind: "pairs" | "buugeng-style" | "triad-build";
+    prop: PropType;
+    from: RootDrill;
+  };
+  type Drill = RootDrill | SubDrill;
+  function isSubDrill(value: Drill | null): value is SubDrill {
+    return (
+      value?.kind === "pairs" ||
+      value?.kind === "buugeng-style" ||
+      value?.kind === "triad-build"
+    );
+  }
   let drill = $state<Drill | null>(null);
   // Back out of the pairs screen steps the other way, like back to the grid.
   let drillReturning = $state(false);
@@ -376,8 +396,8 @@
         ? `family:${drill.base}`
         : drill.kind === "fan-look"
           ? "fan-look"
-          : drill.kind === "pairs"
-            ? `pairs:${drill.prop}`
+          : isSubDrill(drill)
+            ? `${drill.kind}:${drill.prop}`
             : `details:${drill.prop}`
   );
   const drillTitle = $derived(
@@ -391,9 +411,13 @@
           ? t("settings_fan_look")
           : drill.kind === "pairs"
             ? t("settings_buugeng_pairs_title")
-            : t("settings_prop_details", {
-                prop: localizedPropName(drill.prop),
-              })
+            : drill.kind === "buugeng-style"
+              ? t("settings_buugeng_style")
+              : drill.kind === "triad-build"
+                ? t("settings_fan_build")
+                : t("settings_prop_details", {
+                    prop: localizedPropName(drill.prop),
+                  })
   );
 
   async function openDrill(next: Drill, returning = false): Promise<void> {
@@ -403,15 +427,24 @@
     rootEl?.querySelector<HTMLElement>(".drill-back")?.focus();
   }
 
+  function openSub(kind: SubDrill["kind"], prop: PropType): void {
+    if (drill === null || isSubDrill(drill)) return;
+    void openDrill({ kind, prop, from: drill });
+  }
+
   function openPairs(prop: PropType): void {
-    if (drill === null || drill.kind === "pairs") return;
-    void openDrill({ kind: "pairs", prop, from: drill });
+    openSub("pairs", prop);
   }
 
   async function closeDrill(): Promise<void> {
-    if (drill?.kind === "pairs") {
+    if (isSubDrill(drill)) {
+      const kind = drill.kind;
       await openDrill(drill.from, true);
-      rootEl?.querySelector<HTMLElement>(".chirality-heading button")?.focus();
+      // The box that opened it on the rail, or the pair row's chip elsewhere.
+      (
+        rootEl?.querySelector<HTMLElement>(`[data-detail-box="${kind}"]`) ??
+        rootEl?.querySelector<HTMLElement>(".chirality-heading button")
+      )?.focus();
       return;
     }
     drillReturning = true;
@@ -426,7 +459,9 @@
     };
     const selector =
       previous?.kind === "family"
-        ? `[data-family-tile="${previous.base}"]`
+        ? previous.fromChip
+          ? '[data-testid="prop-styles-chip"]'
+          : `[data-family-tile="${previous.base}"]`
         : previous?.kind === "fan-look"
           ? previous.fromChip
             ? '[data-testid="fan-look-chip"]'
@@ -434,7 +469,15 @@
           : previous
             ? rootSelector(previous.prop)
             : null;
-    if (selector) rootEl?.querySelector<HTMLElement>(selector)?.focus();
+    if (!selector) return;
+    (
+      rootEl?.querySelector<HTMLElement>(selector) ??
+      (previous?.kind === "family"
+        ? rootEl?.querySelector<HTMLElement>(
+            `[data-family-tile="${previous.base}"]`
+          )
+        : null)
+    )?.focus();
   }
 
   // How much room the drilled view may claim in a `fill` host: a zero-width
@@ -483,7 +526,9 @@
     return () => observer.disconnect();
   });
   const gridFillHeight = $derived(
-    lead && fillHeight > 0 ? Math.max(0, fillHeight - leadHeight) : fillHeight
+    (lead || layout !== "rail") && fillHeight > 0
+      ? Math.max(0, fillHeight - leadHeight)
+      : fillHeight
   );
 
   $effect(() => {
@@ -761,7 +806,7 @@
         (selectedPropType !== null && isFanPropType(selectedPropType)))
   );
   const detailProp = $derived(
-    drill?.kind === "details" || drill?.kind === "fan-look"
+    drill?.kind === "details" || drill?.kind === "fan-look" || isSubDrill(drill)
       ? drill.prop
       : selectedPropType
   );
@@ -832,11 +877,66 @@
     const next = toggleBigVariant(detailProp);
     if (drill?.kind === "details") drill = { ...drill, prop: next };
     if (drill?.kind === "fan-look") drill = { ...drill, prop: next };
-    if (drill?.kind === "pairs" && drill.from.kind === "details") {
+    if (isSubDrill(drill) && drill.from.kind === "details") {
       drill = { ...drill, from: { ...drill.from, prop: next } };
     }
     onSelect(next);
   }
+  // A second, visible door to the picked prop's styles: the family tile opens
+  // them too, but only someone who already knows to tap it finds them. Shown
+  // while the picked prop's family has more than one style.
+  const stylesDoorBase = $derived(
+    selectedBase !== null &&
+      allBases.includes(selectedBase) &&
+      familyCount(selectedBase) !== undefined
+      ? selectedBase
+      : null
+  );
+  // On a narrow rail the button has no room beside Colors and Standard / Big
+  // (it would wrap, and growing on x would snap the toolbar's height), so it
+  // takes its own row under the toolbar. Narrow is under the 34rem rail the
+  // details list goes two-column at: 35rem of picker, less the rail's 1rem of
+  // padding. A fit-room host keeps its one-line toolbar.
+  let rootWidth = $state(0);
+  const stylesOwnRow = $derived(
+    layout === "rail" && !fitRoom && rootWidth > 0 && rootWidth < remPx() * 35
+  );
+  function remPx(): number {
+    if (typeof document === "undefined") return 16;
+    return (
+      parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    );
+  }
+  function openStyles(base: PropType): void {
+    void openDrill({ kind: "family", base, fromChip: true });
+  }
+
+  // The buugeng pair the hands hold now, for the rail's pair box. A picker
+  // that sets one hand draws the other faintly, as the pair tiles do.
+  const chiralitySummary = $derived.by(() => {
+    const seam: PropChiralitySeam | undefined = chirality;
+    if (!seam) return null;
+    const flippedFor = (hand: string): boolean =>
+      (
+        seam.hands.find((state) => state.hand === hand) ??
+        (seam.partner?.hand === hand ? seam.partner : undefined)
+      )?.flipped ?? false;
+    const leftFlipped = flippedFor("left");
+    const rightFlipped = flippedFor("right");
+    const only = seam.hands.length === 1 ? seam.hands[0] : undefined;
+    return {
+      leftFlipped,
+      rightFlipped,
+      words: buugengPairWords(buugengPairFor(leftFlipped, rightFlipped)),
+      dimHand: only
+        ? only.hand === "left"
+          ? ("right" as const)
+          : ("left" as const)
+        : null,
+    };
+  });
+  const pairPalette = $derived(resolveViewerCustomColorPair(colors));
+
   const normalizedFanAppearance = $derived(
     normalizeFanAppearance(fanAppearance)
   );
@@ -932,6 +1032,7 @@
      The host's handle, header, close button and backdrop still dismiss it. -->
 <div
   bind:this={rootEl}
+  bind:clientWidth={rootWidth}
   class="prop-grid-root"
   class:panel={variant === "panel"}
   class:inline={variant === "inline"}
@@ -1009,6 +1110,29 @@
       <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
     </button>
   {/snippet}
+  <!-- The Styles button: the picked family's styles screen, the same one its
+       tile opens. The rail says "Styles", the roomier grid "Club styles". It
+       grows in and out as the pick moves between a family and a single prop. -->
+  {#snippet stylesControl(base: PropType, long: boolean)}
+    <button
+      type="button"
+      class="look-chip styles-chip"
+      class:long
+      data-testid="prop-styles-chip"
+      aria-label={t("settings_prop_choose_style", {
+        prop: localizedPropName(base),
+      })}
+      onclick={() => openStyles(base)}
+    >
+      <span class="styles-label"
+        >{long
+          ? t("settings_prop_styles", { prop: localizedPropName(base) })
+          : t("settings_prop_styles_short")}</span
+      >
+      <span class="styles-count">{familyCount(base)}</span>
+      <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
+    </button>
+  {/snippet}
   {#if layout === "rail"}
     <header class="rail-toolbar">
       {#if drill !== null}
@@ -1056,9 +1180,28 @@
         {#if showSize}{@render sizeControl()}{/if}
         {#if showGrip}{@render gripControl()}{/if}
         {#if showFanLook}{@render fanControl()}{/if}
+        {#if !stylesOwnRow}
+          {#if stylesDoorBase !== null}
+            <span class="styles-door" transition:growFade={{ axis: "x" }}
+              >{@render stylesControl(stylesDoorBase, false)}</span
+            >
+          {/if}
+        {/if}
       {/if}
       <div class="rail-actions">{@render actions?.()}</div>
     </header>
+    <!-- On a narrow rail the button has its own row under the toolbar and the
+         room to say "Club styles". It grows in and out on y, so the toolbar's
+         height and the tiles under it move with it. Moving between the inline
+         and own-row spots on a resize swaps in one frame: the outer blocks
+         toggle, so the inner local transitions do not play. -->
+    {#if stylesOwnRow && drill === null}
+      {#if stylesDoorBase !== null}
+        <div class="styles-own-row" transition:growFade={{ axis: "y" }}>
+          {@render stylesControl(stylesDoorBase, true)}
+        </div>
+      {/if}
+    {/if}
   {/if}
   {#if variant === "panel"}
     <header class="grid-header">
@@ -1207,6 +1350,102 @@
                 appearance={normalizedFanAppearance}
                 propType={drill.prop}
                 onchange={onFanAppearanceChange}
+              />
+            </div>
+          {:else if drill.kind === "details" && layout === "rail"}
+            <!-- The sheet's details page is a short list that fits its fixed
+                 height: Size and Grip keep their two-choice toggles on one
+                 line, and a group of tiles that would not fit (Style, Build,
+                 Buugeng pair) is a box naming its current value that opens
+                 its own screen. One column on a phone, two on the Fold. -->
+            {@const detailsProp = drill.prop}
+            <div
+              class="detail-options detail-list"
+              role="group"
+              aria-label={t("settings_options_for", { item: drillTitle })}
+              class:fill={fillHeight > 0}
+            >
+              {#if showSize && sizeOnlyDetails}
+                <PropSizeRow
+                  propType={detailsProp}
+                  onChange={chooseSize}
+                  {colors}
+                  fanAppearance={normalizedFanAppearance}
+                  triangleGrip={currentGrip}
+                  buugengStyle={currentBuugengStyle}
+                  triadBuild={currentTriadBuild}
+                  {recipeOverrides}
+                />
+              {:else if showSize}
+                <SettingsDrillRow label={t("settings_size")}>
+                  {#snippet control()}{@render sizeControl()}{/snippet}
+                </SettingsDrillRow>
+              {/if}
+              {#if showGrip}
+                <SettingsDrillRow label={t("settings_grip")}>
+                  {#snippet control()}{@render gripControl()}{/snippet}
+                </SettingsDrillRow>
+              {/if}
+              {#if showBuugengStyle}
+                <SettingsDrillRow
+                  label={t("settings_buugeng_style")}
+                  value={t(BUUGENG_STYLE_LABEL_KEYS[currentBuugengStyle])}
+                  data-detail-box="buugeng-style"
+                  data-testid="buugeng-style-box"
+                  onclick={() => openSub("buugeng-style", detailsProp)}
+                />
+              {/if}
+              {#if showTriadBuild}
+                <SettingsDrillRow
+                  label={t("settings_fan_build")}
+                  value={t(TRIAD_BUILD_LABEL_KEYS[currentTriadBuild])}
+                  data-detail-box="triad-build"
+                  data-testid="triad-build-box"
+                  onclick={() => openSub("triad-build", detailsProp)}
+                />
+              {/if}
+              {#if chirality && chiralitySummary && isBuugengFamilyProp(detailsProp)}
+                {@const pair = chiralitySummary}
+                <SettingsDrillRow
+                  label={t("settings_buugeng_pair")}
+                  value={pair.words}
+                  data-detail-box="pairs"
+                  data-testid="buugeng-pair-box"
+                  onclick={() => openPairs(detailsProp)}
+                >
+                  {#snippet media()}
+                    <BuugengPairPreview
+                      propType={detailsProp}
+                      leftFlipped={pair.leftFlipped}
+                      rightFlipped={pair.rightFlipped}
+                      leftColor={pairPalette.left}
+                      rightColor={pairPalette.right}
+                      dimHand={pair.dimHand}
+                    />
+                  {/snippet}
+                </SettingsDrillRow>
+              {/if}
+            </div>
+          {:else if drill.kind === "buugeng-style"}
+            {@const styleProp = drill.prop}
+            <div class="detail-options sub-screen" class:fill={fillHeight > 0}>
+              <BuugengStyleRow
+                propType={styleProp}
+                style={currentBuugengStyle}
+                onChange={chooseBuugengStyle}
+                {colors}
+                fit
+              />
+            </div>
+          {:else if drill.kind === "triad-build"}
+            {@const buildProp = drill.prop}
+            <div class="detail-options sub-screen" class:fill={fillHeight > 0}>
+              <TriadBuildRow
+                propType={buildProp}
+                build={currentTriadBuild}
+                onChange={chooseTriadBuild}
+                {colors}
+                fit
               />
             </div>
           {:else if drill.kind === "details"}
@@ -1377,8 +1616,17 @@
           {/if}
         </section>
       {:else}
-        {#if lead}
-          <div class="grid-lead" bind:this={leadEl}>{@render lead()}</div>
+        <!-- The lead and the grid's Styles row share one measured box, so a
+             bounded grid's tiles fit what is left with or without the row. -->
+        {#if lead || layout !== "rail"}
+          <div class="grid-lead" bind:this={leadEl}>
+            {#if lead}<div class="lead-body">{@render lead()}</div>{/if}
+            {#if layout !== "rail" && stylesDoorBase !== null}
+              <div class="styles-row" transition:growFade={{ axis: "y" }}>
+                {@render stylesControl(stylesDoorBase, true)}
+              </div>
+            {/if}
+          </div>
         {/if}
         {#if flat}
           <div
@@ -1571,38 +1819,49 @@
     height: 100%;
     min-height: 0;
   }
-  .rail .drill-view:not(.fan-look-drill) > .detail-options {
-    flex-direction: row;
-    align-items: stretch;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    scrollbar-width: thin;
-    touch-action: pan-x pinch-zoom;
-    cursor: grab;
-  }
-  .rail .drill-view:not(.fan-look-drill) > .detail-options.dragging,
   .rail .drill-tiles.flat-grid.dragging {
     cursor: grabbing;
     scroll-snap-type: none;
     user-select: none;
   }
-  .rail .drill-view:not(.fan-look-drill) > .detail-options > * {
-    scroll-snap-align: start;
+  /* The sheet's details page: a short list in the sheet's fixed height, one
+     column on a phone and two once the rail is Fold-wide. Nothing scrolls;
+     a group that would not fit is a box that opens its own screen. */
+  .rail .drill-view > .detail-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: min-content;
+    align-content: center;
+    gap: 0.5rem;
+    padding: 0 0.25rem;
   }
-  .rail .drill-view:not(.fan-look-drill) > .detail-options > .detail-row {
-    flex: 0 0 13rem;
-    flex-direction: column;
+  @container prop-rail (min-width: 34rem) {
+    .rail .drill-view > .detail-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 0.75rem;
+    }
+  }
+  .rail .detail-list > :global(.drill-row) {
+    min-width: 0;
+    padding-block: 0.5rem;
+    --drill-row-media-width: 3.5rem;
+    --drill-row-media-height: 2.75rem;
+  }
+  /* Size and Grip: the toggle is already a touch target, so the box sits
+     close around it and keeps the boxes' height. */
+  .rail .detail-list > :global(.drill-row.has-control) {
+    padding-block: 0.25rem;
+  }
+  .rail .detail-list :global(.row-media .pair-crop) {
+    height: 100%;
+    width: auto;
+    border-radius: 6px;
+  }
+  /* A Style or Build screen a box opened: that row's tiles, centred in the
+     sheet's height. */
+  .rail .drill-view > .detail-options.sub-screen {
     justify-content: center;
-  }
-  .rail
-    .drill-view:not(.fan-look-drill)
-    > .detail-options
-    > :global(.chirality-row) {
-    flex: 0 0 24.5rem;
-    align-self: center;
-    margin: 0;
+    padding: 0;
   }
   .rail .drill-view.fan-look-drill > .detail-options {
     overflow: hidden;
@@ -1747,27 +2006,9 @@
     width: 100%;
     max-height: 100%;
   }
-  .fit-room.rail .drill-view:not(.fan-look-drill) > .detail-options {
-    flex-flow: row wrap;
-    align-content: center;
-    justify-content: center;
-    overflow: hidden;
+  .fit-room.rail .drill-view > .detail-list {
+    gap: 4px;
     padding: 0;
-    scroll-snap-type: none;
-    touch-action: auto;
-    cursor: auto;
-  }
-  .fit-room.rail
-    .drill-view:not(.fan-look-drill)
-    > .detail-options
-    > .detail-row {
-    flex: 1 1 10rem;
-  }
-  .fit-room.rail
-    .drill-view:not(.fan-look-drill)
-    > .detail-options
-    > :global(.chirality-row) {
-    flex: 1 1 100%;
   }
   @container prop-grid (max-width: 500px) {
     .rail-toolbar .look-chip {
@@ -2054,10 +2295,10 @@
     grid-column-end: span 2;
   }
 
-  /* Spaced from the tiles by its own padding, so the measured height a
-     bounded grid gives up includes the gap. */
+  /* Its parts are spaced from the tiles by their own padding, so the
+     measured height a bounded grid gives up includes the gap. */
   .grid-lead {
-    padding-bottom: 12px;
+    flex: 0 0 auto;
   }
 
   /* Reports the scroller's bounded height to script; see fillHeight. */
@@ -2306,6 +2547,56 @@
     width: auto;
     color: var(--theme-text-dim);
     font-size: 11px;
+  }
+
+  /* The Styles button is a look chip with no picture: a label, the number of
+     styles, and the chevron that says it opens a screen. */
+  .styles-chip {
+    flex: 0 0 auto;
+    gap: 8px;
+    padding: 4px 12px 4px 14px;
+    white-space: nowrap;
+  }
+  .styles-label {
+    min-width: 0;
+  }
+  .styles-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.375rem;
+    border-radius: 999px;
+    box-sizing: border-box;
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b6cff) 22%,
+      transparent
+    );
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 14px);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .styles-door {
+    display: flex;
+    flex: 0 0 auto;
+  }
+  /* The narrow rail's own row under the toolbar: the chip content-wide on the
+     left. Its spacing is padding, which growFade collapses with it. */
+  .styles-own-row {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    padding: 0 0.75rem 0.375rem;
+  }
+  .styles-row {
+    display: flex;
+    padding-bottom: 12px;
+  }
+  .lead-body {
+    padding-bottom: 12px;
   }
 
   @media (prefers-reduced-motion: reduce) {

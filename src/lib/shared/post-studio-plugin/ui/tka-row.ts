@@ -73,12 +73,15 @@ export function tkaRow(
   core: readonly string[],
   facts: TkaRowFacts
 ): readonly string[] {
-  if (item === null) return core[0] === "videos" ? [...core, "look", "reel"] : core;
+  if (item === null)
+    return core[0] === "videos" ? [...core, "look", "reel"] : core;
   switch (item.kind) {
     case "video":
       return insertAfter(
         insertAfter(
-          core.includes("crop") ? insertAfter(core, "crop", ["autoframe", "reel"]) : core,
+          core.includes("crop")
+            ? insertAfter(core, "crop", ["autoframe", "reel"])
+            : core,
           "volume",
           facts.hasLayout ? ["layout"] : []
         ),
@@ -113,6 +116,7 @@ export function tkaRow(
         "performers",
         "hands",
         "lift",
+        "bar",
         ...(facts.isTunnelHook ? ["speed"] : []),
         ...(facts.hasBackdrop ? ["crop"] : []),
         ...fly(facts),

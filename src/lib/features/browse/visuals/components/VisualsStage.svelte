@@ -35,7 +35,7 @@
   } from "../services/visual-piece-loader.js";
   import { createReducedMotion } from "../state/reduced-motion.svelte.js";
   import LivePieceStage from "./LivePieceStage.svelte";
-  import StagePauseButton from "./StagePauseButton.svelte";
+  import StagePauseButton from "#lib/shared/animation-engine/components/controls/StagePauseButton.svelte";
 
   let {
     playlist,

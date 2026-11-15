@@ -4,8 +4,11 @@
 
   The button names the effect that is on. The picker changes it in place,
   without leaving the player: tap a look and the animation behind it switches
-  while the picker stays open for the next comparison. Its close button,
-  Escape, the effect button, or a tap anywhere else closes it.
+  while the picker stays open for the next comparison. Its Done button,
+  Escape, the effect button, or a tap anywhere else closes it. Its head is one
+  row: the Effects On / Off switch (On brings back the effect that was last
+  on) and Done, which stands directly on the picture and covers the scrubber
+  row, so the effect is named once, by the lit tile.
 
   The picker composes EffectSelector (the tiles, their selection and prewarm)
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
@@ -76,6 +79,9 @@
   import { effectCatalogLooks } from "./effect-catalog-looks";
   import { effectInk } from "./effect-ink";
   import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
+  import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { effectsToggleTarget } from "#lib/shared/animation-engine/domain/effect-quick-toggle.js";
 
   interface Props {
     effectsConfigState: EffectsConfigState;
@@ -162,6 +168,12 @@
 
   const activeEffect = $derived(effectsConfigState.activeEffect);
   const effectOn = $derived(activeEffect !== "none");
+  /** The effect that was last on in this preview, which the switch brings
+   *  back. */
+  let lastOn = $state<string | null>(null);
+  $effect(() => {
+    if (activeEffect !== "none") lastOn = activeEffect;
+  });
   const activeInk = $derived.by(() => {
     const color = effectOn ? EFFECT_COLORS[activeEffect] : undefined;
     return color ? effectInk(color, getThemeMode()) : undefined;
@@ -254,6 +266,17 @@
     effectsConfigState.setActiveEffect("none");
   }
 
+  /** The head's On / Off switch. */
+  function toggleEffects() {
+    const next = effectsToggleTarget({
+      active: activeEffect,
+      lastOn,
+      first: EFFECTS[0]?.id,
+    });
+    if (next === "none") turnOff();
+    else if (isEffectId(next)) effectsConfigState.setActiveEffect(next);
+  }
+
   $effect(() => {
     onArrange?.(
       open && fit ? (fit.arrangement === "side" ? "side" : fit.side) : null
@@ -315,7 +338,10 @@
     const target =
       contentEl?.querySelector<HTMLElement>(
         '[role="radio"][aria-checked="true"]'
-      ) ?? contentEl?.querySelector<HTMLElement>("[data-quick-off]");
+      ) ??
+      contentEl?.querySelector<HTMLElement>(
+        "[data-quick-off], [data-quick-toggle] [role='switch']"
+      );
     target?.focus({ preventScroll: true });
   }
 
@@ -347,6 +373,27 @@
     return { destroy: () => node.removeEventListener("wheel", onWheel) };
   }
 
+  /** A host marks a control on the player that must not close the picker
+   *  (a pause button, so a person can freeze the picture and compare looks)
+   *  with this attribute. */
+  function keepsOpen(target: EventTarget | null) {
+    return (
+      target instanceof Element && !!target.closest("[data-picker-passthrough]")
+    );
+  }
+  function keepOpenOnPassthrough(event: Event) {
+    if (keepsOpen(event.target)) event.preventDefault();
+  }
+
+  /** The top of the scrubber row, which the grid's head row stands on and
+   *  covers whole: the grid hangs from here with no gap above it. */
+  const rowTop = {
+    getBoundingClientRect() {
+      const box = row?.getBoundingClientRect();
+      return box ? new DOMRect(box.left, box.top, box.width, 0) : new DOMRect();
+    },
+  };
+
   /** Where the player comes to rest once it has slid over for the side
    *  panel: the panel is placed there, not beside the player mid-slide. */
   const slidPlayer = {
@@ -369,7 +416,9 @@
         : (player ?? null)
       : fit.side === "dock"
         ? boundsFloor
-        : row
+        : fit.arrangement === "grid"
+          ? rowTop
+          : row
   );
   const placement = $derived(
     fit?.arrangement === "side"
@@ -467,6 +516,7 @@
         class="fx-quick-trigger"
         class:open
         class:on={effectOn}
+        class:covered={open && fit?.arrangement === "grid"}
         style:--effect-color={activeInk}
         title={t("effect_deep_select_effect")}
       >
@@ -502,13 +552,15 @@
         align={fit?.arrangement === "side" ? "end" : "center"}
         sideOffset={fit?.arrangement === "side"
           ? QUICK_PICKER_OFFSET
-          : fit?.side === "below"
+          : fit?.arrangement === "strip" && fit.side === "below"
             ? QUICK_PICKER_STRIP_GAP
             : 0}
         collisionBoundary={bounds ?? undefined}
         collisionPadding={QUICK_PICKER_EDGE}
         avoidCollisions={fit?.arrangement === "side"}
         onOpenAutoFocus={focusSelected}
+        onInteractOutside={keepOpenOnPassthrough}
+        onFocusOutside={keepOpenOnPassthrough}
       >
         {#snippet child({ open: shown, wrapperProps, props })}
           <!-- bits-ui copies the content's z-index onto this wrapper's inline
@@ -555,26 +607,31 @@
                   {@const narrow = fit.arrangement === "side" && fit.scrolls}
                   {@const scrolls = fit.scrolls}
                   <div class="fx-quick-head">
-                    <span class="fx-quick-title"
-                      >{t("effect_deep_effects")}</span
-                    >
-                    <div class="fx-quick-head-end">
-                      <!-- A narrow panel has no room for "Turn off Bubbles":
-                         it shows Off, or only the glyph where narrower still,
-                         and keeps the full name for assistive technology. -->
-                      <button
-                        type="button"
-                        class="fx-quick-off"
-                        class:active={!effectOn}
-                        aria-pressed={!effectOn}
-                        aria-label={narrow ? offLabel : undefined}
-                        data-quick-off
-                        onclick={turnOff}
-                      >
-                        <i class="fas fa-power-off" aria-hidden="true"></i>
-                        <span>{narrow ? t("effect_deep_off") : offLabel}</span>
-                      </button>
-                      {@render closeButton()}
+                    <!-- One switch for the effect, named for what it holds. The
+                       lit tile below names which effect. -->
+                    <div class="fx-quick-toggle" data-quick-toggle>
+                      <SettingToggleButton
+                        label={t("effect_deep_effects")}
+                        checked={effectOn}
+                        onToggle={toggleEffects}
+                        surface="plain"
+                        density="compact"
+                      />
+                    </div>
+                    <div class="fx-quick-head-end" class:narrow>
+                      <!-- A side panel too narrow for both keeps the X disc in
+                         place of Done. -->
+                      {#if narrow}
+                        {@render closeButton()}
+                      {:else}
+                        <FilterChipBase
+                          mode="action"
+                          size="md"
+                          labelScale="readable"
+                          label={t("viewer_ui_done")}
+                          onclick={() => (open = false)}
+                        />
+                      {/if}
                     </div>
                   </div>
                   <div
@@ -685,6 +742,11 @@
     -webkit-tap-highlight-color: transparent;
     transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
+  /* The grid's head row stands over this row: the pill fades out under it
+     (still the popover's trigger and anchor) so it cannot show through. */
+  .fx-quick-trigger.covered {
+    opacity: 0;
+  }
   .fx-quick-trigger:active {
     opacity: 0.6;
   }
@@ -776,7 +838,6 @@
   }
 
   .fx-quick-panel.side {
-    container: fx-quick-side / inline-size;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -800,61 +861,37 @@
     min-height: var(--min-touch-target, 44px);
   }
 
-  .fx-quick-title {
-    padding-inline-start: 4px;
-    font-size: var(--font-size-min, 14px);
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-
   .fx-quick-head-end {
     display: flex;
+    flex: none;
     align-items: center;
     gap: 4px;
     min-width: 0;
-    /* The close button's 44px target pads its 32px disc: reach into the
-       panel's padding so the disc's edge lines up with the tiles'. */
+  }
+  /* The close button's 44px target pads its 32px disc: reach into the
+     panel's padding so the disc's edge lines up with the tiles'. */
+  .fx-quick-head-end.narrow {
     margin-inline-end: -6px;
   }
 
-  /* The Effects panel's Off button (EffectsPanel .sb-off-btn). */
-  .fx-quick-off {
-    min-height: var(--min-touch-target, 44px);
+  /* The On / Off switch takes the head's width, with room for Done. Tighter
+     than the settings rows it is drawn for, so the name, the mark and the word
+     keep their places in the narrow side panel. */
+  .fx-quick-toggle {
+    flex: 1 1 auto;
     min-width: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 0 12px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    max-width: 220px;
     border-radius: 10px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
-    font: inherit;
-    font-size: var(--font-size-min, 14px);
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-      color var(--duration-fast) var(--ease-standard-out),
-      border-color var(--duration-fast) var(--ease-standard-out),
-      background var(--duration-fast) var(--ease-standard-out);
+    overflow: hidden;
   }
-  .fx-quick-off span {
+  .fx-quick-toggle :global(.setting-toggle) {
+    gap: 8px;
+    padding-inline: 6px 10px;
+  }
+  .fx-quick-toggle :global(.setting-label) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  /* The narrowest side panel keeps the title and the close button whole:
-     Off shows only its glyph. */
-  @container fx-quick-side (max-width: 209px) {
-    .fx-quick-off {
-      justify-content: center;
-      min-width: var(--min-touch-target, 44px);
-      padding: 0;
-    }
-    .fx-quick-off span {
-      display: none;
-    }
   }
 
   /* ── Close and arrow buttons: a 32px disc in a 44px target ── */
@@ -1117,7 +1154,6 @@
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .fx-quick-off:hover,
     .fx-quick-off-tile:hover {
       color: var(--theme-text, #fff);
       border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
@@ -1125,14 +1161,12 @@
   }
 
   /* Off is on: the whole control fills, like a selected tile. */
-  .fx-quick-off.active,
   .fx-quick-off-tile.active {
     color: var(--theme-text, #fff);
     border-color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
     background: color-mix(in srgb, var(--theme-text, #fff) 12%, transparent);
   }
 
-  .fx-quick-off:focus-visible,
   .fx-quick-off-tile:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
@@ -1142,7 +1176,6 @@
     .fx-quick-trigger,
     .fx-quick-face,
     .fx-quick-disc,
-    .fx-quick-off,
     .fx-quick-off-tile {
       transition: none;
     }

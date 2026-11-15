@@ -11,9 +11,22 @@
   its tile, in the left hand's color: the teeth, holes and blade widths that
   tell the styles apart are lost at pair-preview size (Austen, 2026-11-07).
 -->
+<script lang="ts" module>
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+  import type { BuugengStyle as LabelId } from "#lib/shared/pictograph/prop/domain/buugeng-appearance.js";
+
+  /** Each option's name, for a summary that names the current one. */
+  export const BUUGENG_STYLE_LABEL_KEYS: Record<LabelId, TranslationKey> = {
+    classic: "settings_buugeng_style_classic",
+    crescent: "settings_buugeng_style_crescent",
+    perforated: "settings_buugeng_style_perforated",
+    fire: "settings_buugeng_style_fire",
+    filigree: "settings_buugeng_style_filigree",
+  };
+</script>
+
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { assetFetch } from "#lib/shared/net/asset-fetch.js";
   import { colorPropPreview } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
@@ -34,21 +47,20 @@
     style,
     onChange,
     colors,
+    fit = false,
   }: {
     /** Buugeng or Big Buugeng; the tiles draw this size. */
     propType: PropType;
     style: BuugengStyle | null | undefined;
     onChange: (style: BuugengStyle) => void;
     colors?: ViewerCustomColorPair | null;
+    /** The phone sheet's own Style screen: fill the given height with two
+     *  rows of three, the tiles sized from that height, the screen's title
+     *  standing in for the label. */
+    fit?: boolean;
   } = $props();
 
-  const LABEL_KEYS: Record<BuugengStyle, TranslationKey> = {
-    classic: "settings_buugeng_style_classic",
-    crescent: "settings_buugeng_style_crescent",
-    perforated: "settings_buugeng_style_perforated",
-    fire: "settings_buugeng_style_fire",
-    filigree: "settings_buugeng_style_filigree",
-  };
+  const LABEL_KEYS = BUUGENG_STYLE_LABEL_KEYS;
 
   const current = $derived(normalizeBuugengStyle(style));
   const options = $derived(
@@ -104,14 +116,19 @@
   // Two rows of three, short enough that the details page never scrolls on
   // the Fold; the phone's narrow, tall sheet takes three rows of two so each
   // blade still draws about 130px wide.
-  const columns = $derived(width > 0 && width < 380 ? 2 : 3);
+  const columns = $derived(fit ? 3 : width > 0 && width < 380 ? 2 : 3);
 
   function choose(next: BuugengStyle) {
     if (next !== current) onChange(next);
   }
 </script>
 
-<div class="style-row" bind:clientWidth={width} data-testid="buugeng-style-row">
+<div
+  class="style-row"
+  class:fit
+  bind:clientWidth={width}
+  data-testid="buugeng-style-row"
+>
   <span class="style-label">{t("settings_buugeng_style")}</span>
   <SegmentedControl
     {options}
@@ -193,5 +210,55 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 700;
     line-height: 1.2;
+  }
+
+  /* Fit: the tiles share the screen's height instead of keeping the blade's
+     proportions, so all five show whole in the phone sheet's fixed height. */
+  .style-row.fit {
+    flex: 1 1 0;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    gap: 0;
+  }
+
+  .style-row.fit .style-label {
+    display: none;
+  }
+
+  .style-row.fit :global(.ui-segments) {
+    flex: 1 1 0;
+    min-height: 0;
+    grid-auto-rows: minmax(0, 1fr);
+  }
+
+  .style-row.fit :global(.ui-segments > button) {
+    min-height: 0;
+    align-items: stretch;
+    padding: 4px;
+  }
+
+  .style-row.fit :global(.segment-label) {
+    height: 100%;
+  }
+
+  .style-row.fit .style-tile {
+    height: 100%;
+    min-height: 0;
+    gap: 4px;
+    padding: 0;
+  }
+
+  .style-row.fit .style-art {
+    flex: 1 1 0;
+    min-height: 0;
+    max-width: none;
+    aspect-ratio: auto;
+    padding: 2px 4px;
+  }
+
+  .style-row.fit .style-name {
+    flex: 0 0 auto;
+    font-size: var(--font-size-min, 14px);
   }
 </style>

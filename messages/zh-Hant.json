@@ -3506,6 +3506,7 @@
   "settings_avatar_gradient_obsidian": "黑曜石",
   "settings_avatar_gradient_celestial": "星空",
   "settings_prop_styles": "{prop} 樣式",
+  "settings_prop_styles_short": "樣式",
   "settings_fan_look": "扇子外觀",
   "settings_prop_details": "{prop} 詳細資訊",
   "settings_prop_section_staves_clubs": "棍與棒",

@@ -64,9 +64,14 @@
   } from "#lib/shared/media-composition/domain/post-animation-split.js";
   import { splitClipSettings, type SplitHandCast } from "../split-hands-paint";
   import {
+    panelLiftBar,
     panelLiftLayout,
     type PostPanelLift,
   } from "#lib/shared/media-composition/domain/post-panel-lift.js";
+  import {
+    barFillAt,
+    type PostBarFill,
+  } from "#lib/shared/media-composition/domain/post-bar-fill.js";
   import PostStudioSplitHands from "./PostStudioSplitHands.svelte";
 
   let {
@@ -90,6 +95,7 @@
     part = undefined,
     split = null,
     panelLift = null,
+    barFill = null,
     contentSeconds = undefined,
     chromeOpacity = 1,
     mandalaIn = 1,
@@ -119,6 +125,11 @@
      * clip's content time. Absent keeps the app's own layout.
      */
     panelLift?: PostPanelLift | null;
+    /**
+     * The bar fills once across these content times instead of once per
+     * sequence pass. Absent keeps the pass.
+     */
+    barFill?: PostBarFill | null;
     /** The opening hook: extra performers around the sequence, leaving as it settles. */
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
     /**
@@ -539,6 +550,16 @@
     )
   );
   const lifting = $derived(liftLayout.amount > 0);
+  // The bar never rides the lift's moves: it fades where it sits and comes
+  // back where the move lands (see `panelLiftBar`).
+  const liftBar = $derived(panelLiftBar(lift, contentSeconds ?? Number.NaN));
+  const barOpacity = $derived(chromeOpacity * liftBar.opacity);
+  // The bar: once per pass, or once across the clip's fill times.
+  const barProgress = $derived(
+    barFill && contentSeconds !== undefined
+      ? barFillAt(barFill, contentSeconds)
+      : sequenceProgress
+  );
   const splitShown = $derived(
     activeSplit && contentSeconds !== undefined
       ? splitPose(activeSplit, contentSeconds, splitFallbackScale)
@@ -1036,9 +1057,9 @@
   </div>
   <div
     class="sequence-progress"
-    style:opacity={chromeOpacity < 1 ? chromeOpacity : undefined}
-    style:transform={lifting && liftLayout.bar.rise > 0
-      ? `translateY(${liftLayout.bar.offsetY}px)`
+    style:opacity={barOpacity < 1 ? barOpacity : undefined}
+    style:transform={liftBar.rise > 0 && stageHeight > 0
+      ? `translateY(${-stageHeight}px)`
       : undefined}
     bind:clientHeight={barHeight}
   >
@@ -1046,7 +1067,7 @@
       currentStep={sequencePosition}
       totalSteps={sequence.steps.length}
       stepDurations={sequence.steps.map((step) => step.duration ?? 1)}
-      normalizedProgress={sequenceProgress}
+      normalizedProgress={barProgress}
       visible={progressVisible}
       darkMode={animationAppearance?.darkMode ?? true}
       strip
@@ -1099,7 +1120,7 @@
   }
   /* A clip with a lifted panel: the panel colour moves from the canvas to the
      whole box, so the moved canvas leaves no edge, and the strip is drawn
-     under the canvas so it slides up behind the drawing. */
+     under the canvas so the lifted drawing stays on top of it. */
   .animation-layer.lifted {
     background: #0a0a0f;
   }

@@ -1,8 +1,8 @@
 <!--
   PropPairPicker.svelte
 
-  The one place a left and right prop get chosen: Both, Left or Right, then
-  the prop grid. It holds no pair of its own. A pick hands the new pair to the
+  A left and right prop chosen inline: Both, Left or Right, then the prop grid
+  (the same hand row and flat grid as the one prop screen). It holds no pair of its own. A pick hands the new pair to the
   host, which decides what happens next (a saved field keeps it, the viewing
   props apply it at once). A prop with more to choose (Fan's build, a size, a
   grip, a blade style) opens that page and the picker stays; onDone says the
@@ -12,6 +12,7 @@
   import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import HandPropToolbar from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
@@ -42,19 +43,30 @@
   {#if hint}
     <p class="hint">{hint}</p>
   {/if}
-  <div class="prop-pair-hands">
-    <SegmentedControl
-      options={[
-        { value: "both", label: t("viewer_ui_both") },
-        { value: "left", label: t("viewer_ui_left"), tone: "blue" },
-        { value: "right", label: t("viewer_ui_right"), tone: "red" },
-      ]}
-      value={hand}
-      onchange={(next) => (hand = next)}
-      ariaLabel={t("prop_pair_which_hand")}
-      semantics="radiogroup"
+  {#if dense}
+    <div class="prop-pair-hands">
+      <SegmentedControl
+        options={[
+          { value: "both", label: t("viewer_ui_both") },
+          { value: "left", label: t("viewer_ui_left"), tone: "blue" },
+          { value: "right", label: t("viewer_ui_right"), tone: "red" },
+        ]}
+        value={hand}
+        onchange={(next) => (hand = next)}
+        ariaLabel={t("prop_pair_which_hand")}
+        semantics="radiogroup"
+      />
+    </div>
+  {:else}
+    <HandPropToolbar
+      handProps={{
+        hand,
+        leftPropType: value.leftPropType,
+        rightPropType: value.rightPropType,
+        onHandChange: (next) => (hand = next),
+      }}
     />
-  </div>
+  {/if}
   <BentoPropGrid
     selectedPropType={hand === "right"
       ? value.rightPropType
@@ -62,7 +74,7 @@
     previewHand={hand === "both" ? undefined : hand}
     variant="inline"
     scrollMode="host"
-    flat={dense}
+    flat
     {showColors}
     onSelect={(prop) => {
       const leftPropType = hand === "right" ? value.leftPropType : prop;

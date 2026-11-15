@@ -18,6 +18,8 @@ import { GLYPH_OVERLAY_BASE_SIZE } from "#lib/shared/animation-engine/domain/gly
  * Everything here is pure: the schema, the defaults and `panelLiftLayout`,
  * which says where the canvas, the step number and the bar are at one
  * moment. The preview, the export and the split hands all place from it.
+ * The bar itself never rides a move: `panelLiftBar` fades it where it sits
+ * and brings it back where the move lands.
  */
 
 /** Longest content time a lift time may name, in seconds. */
@@ -327,4 +329,59 @@ export function panelLiftLayout(
     },
     bar: { edge, rise, y: barY, offsetY: barY - stageHeight },
   };
+}
+
+/**
+ * The share of a move the bar spends fading out where it sits, and fading
+ * back in where the move lands once it is over. On a 0.7 s move out that is
+ * 0.245 s, about as long as a title takes to fade. It follows the lift's own
+ * move lengths, so a longer move fades the bar more slowly.
+ */
+export const POST_LIFT_BAR_FADE_SHARE = 0.35;
+
+/** Where the bar sits and how much of it shows, at one moment. */
+export interface PanelLiftBar {
+  /** 0 under the canvas, 1 on the box's top edge; never in between. */
+  rise: 0 | 1;
+  /** 1 fully shown, 0 hidden. */
+  opacity: number;
+}
+
+const BAR_AS_IS: PanelLiftBar = Object.freeze({ rise: 0, opacity: 1 });
+
+/** The bar's opacity around one move from `start` to `end`. */
+function barFadeAround(start: number, end: number, t: number): number {
+  const fade = (end - start) * POST_LIFT_BAR_FADE_SHARE;
+  if (!(fade > 0) || t < start) return 1;
+  if (t < start + fade) return 1 - (t - start) / fade;
+  if (t < end) return 0;
+  if (t < end + fade) return (t - end) / fade;
+  return 1;
+}
+
+/**
+ * The progress bar under a lift headed for the top edge. A full-width line
+ * sliding across the frame cuts through whatever it passes, so the bar does
+ * not travel with the moves: when one starts it fades out where it sits,
+ * over the first share of the move, stays hidden while the canvas travels,
+ * and fades back in at its new place over the same length once the move is
+ * over. So it is on the box's top edge from the end of the move in to the
+ * end of the move out, and under the canvas otherwise. A lift with the bar
+ * on the bottom edge leaves it alone: it never moves.
+ */
+export function panelLiftBar(
+  lift: PostPanelLift | null | undefined,
+  t: number
+): PanelLiftBar {
+  if (!lift || !Number.isFinite(t)) return BAR_AS_IS;
+  if ((lift.barEdge ?? POST_LIFT_DEFAULT_BAR_EDGE) !== "top") return BAR_AS_IS;
+  const span = panelLiftSpan(lift);
+  const rise = t >= span.inEnd && t < span.outEnd ? 1 : 0;
+  const coming = Number.isFinite(span.inStart)
+    ? barFadeAround(span.inStart, span.inEnd, t)
+    : 1;
+  const going = Number.isFinite(span.outStart)
+    ? barFadeAround(span.outStart, span.outEnd, t)
+    : 1;
+  return { rise, opacity: Math.min(coming, going) };
 }

@@ -153,4 +153,41 @@ describe("WorkspacePlayback scrubber row", () => {
     );
     expect(container.querySelector(".fa-expand")).toBeNull();
   });
+
+  it("puts pause on the picture's corner, not in the scrubber row", async () => {
+    const { container } = render(WorkspacePlayback, {
+      sequence,
+      active: true,
+      run: 1,
+      onready: () => {},
+      onerror: () => {},
+      onclose: () => {},
+    });
+    const find = (selector: string) =>
+      container.querySelector<HTMLElement>(selector);
+
+    await expect.poll(() => find(".stage-pause")).not.toBeNull();
+    const stage = find(".player-stage");
+    const pause = find(".stage-pause");
+    expect(stage?.contains(pause)).toBe(true);
+    // Not in the scrubber row, which holds the effect button alone.
+    const row = find("[data-progress-row]");
+    expect(row?.contains(pause)).toBe(false);
+    // The corner opposite the X: right edge in line with it, bottom of the
+    // canvas, above the animator canvas's tap layer.
+    const corner = find(".stage-pause-corner");
+    const close = find(".close-preview");
+    expect(getComputedStyle(corner!).bottom).toBe(`${SEEK + 8}px`);
+    expect(getComputedStyle(corner!).right).toBe(
+      getComputedStyle(close!).right
+    );
+    expect(Number(getComputedStyle(corner!).zIndex)).toBeGreaterThan(3);
+
+    // Playing on Play; one press pauses, the next plays.
+    expect(pause?.querySelector(".fa-pause")).not.toBeNull();
+    pause?.click();
+    await expect.poll(() => pause?.querySelector(".fa-play")).not.toBeNull();
+    pause?.click();
+    await expect.poll(() => pause?.querySelector(".fa-pause")).not.toBeNull();
+  });
 });

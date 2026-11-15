@@ -3568,6 +3568,7 @@
   "settings_avatar_gradient_obsidian": "黒曜石",
   "settings_avatar_gradient_celestial": "天空",
   "settings_prop_styles": "{prop}のスタイル",
+  "settings_prop_styles_short": "種類",
   "settings_fan_look": "扇子の見た目",
   "settings_prop_details": "{prop}の詳細",
   "settings_prop_section_staves_clubs": "スタッフとクラブ",

@@ -39,9 +39,9 @@
     buugengPair,
     buugengPairFor,
     chiralityLetter,
-    type BuugengPair,
     type BuugengPairId,
   } from "./buugeng-pair";
+  import { buugengPairLetters, buugengPairName } from "./buugeng-pair-words";
   import type {
     ChiralityHand,
     PropChiralityHandState,
@@ -85,22 +85,8 @@
   // in the narrowest hosts.
   const pairColumns = $derived(width === 0 || width >= 300 ? 4 : 2);
 
-  function pairName(pair: BuugengPair): string {
-    return pair.kind === "mirrored"
-      ? t("settings_buugeng_pair_mirrored")
-      : t("settings_buugeng_pair_matching");
-  }
-
-  function pairLetters(pair: BuugengPair): string {
-    return pair.kind === "mirrored"
-      ? t("settings_buugeng_pair_letters", {
-          left: chiralityLetter(pair.leftFlipped),
-          right: chiralityLetter(pair.rightFlipped),
-        })
-      : t("settings_buugeng_pair_both", {
-          letter: chiralityLetter(pair.leftFlipped),
-        });
-  }
+  const pairName = buugengPairName;
+  const pairLetters = buugengPairLetters;
 
   const pairOptions = $derived(
     BUUGENG_PAIRS.map((pair) => ({

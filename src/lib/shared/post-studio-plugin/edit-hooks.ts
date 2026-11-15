@@ -30,6 +30,7 @@ import {
   PostPanelLiftSchema,
   normalizePanelLift,
 } from "#lib/shared/media-composition/domain/post-panel-lift.js";
+import { PostBarFillSchema } from "#lib/shared/media-composition/domain/post-bar-fill.js";
 
 /** tka's edits inside the engine: a take's timing follows its media, and tka's item fields patch. */
 export const TKA_EDIT_HOOKS: EditHooks = {
@@ -102,6 +103,14 @@ export const TKA_EDIT_HOOKS: EditHooks = {
         : null;
       if (parsed?.success) next.panelLift = normalizePanelLift(parsed.data);
       else if (!patch.panelLift) delete next.panelLift;
+    }
+    if (item.kind === "animation" && patch.barFill !== undefined) {
+      // As with the split: a fill that breaks the schema is passed over.
+      const parsed = patch.barFill
+        ? PostBarFillSchema.safeParse(patch.barFill)
+        : null;
+      if (parsed?.success) next.barFill = parsed.data;
+      else if (!patch.barFill) delete next.barFill;
     }
     if (
       (item.kind === "animation" || item.kind === "moves") &&

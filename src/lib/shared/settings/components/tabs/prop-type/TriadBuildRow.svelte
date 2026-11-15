@@ -10,9 +10,20 @@
   BuugengStyleRow does. Each option draws one triad in the left hand's color;
   the wicks and heads keep their own materials.
 -->
+<script lang="ts" module>
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+  import type { TriadBuild as LabelId } from "#lib/shared/pictograph/prop/domain/triad-build.js";
+
+  /** Each option's name, for a summary that names the current one. */
+  export const TRIAD_BUILD_LABEL_KEYS: Record<LabelId, TranslationKey> = {
+    pictograph: "settings_triad_build_pictograph",
+    fire: "settings_triad_build_fire",
+    day: "settings_triad_build_day",
+  };
+</script>
+
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { assetFetch } from "#lib/shared/net/asset-fetch.js";
   import { colorPropPreview } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
@@ -33,19 +44,19 @@
     build,
     onChange,
     colors,
+    fit = false,
   }: {
     /** Triad or Big Triad; the tiles draw this size. */
     propType: PropType;
     build: TriadBuild | null | undefined;
     onChange: (build: TriadBuild) => void;
     colors?: ViewerCustomColorPair | null;
+    /** The phone sheet's own Build screen: fill the given height, the tiles
+     *  sized from that height, the screen's title standing in for the label. */
+    fit?: boolean;
   } = $props();
 
-  const LABEL_KEYS: Record<TriadBuild, TranslationKey> = {
-    pictograph: "settings_triad_build_pictograph",
-    fire: "settings_triad_build_fire",
-    day: "settings_triad_build_day",
-  };
+  const LABEL_KEYS = TRIAD_BUILD_LABEL_KEYS;
 
   const current = $derived(normalizeTriadBuild(build));
   const options = $derived(
@@ -102,7 +113,7 @@
   }
 </script>
 
-<div class="build-row" data-testid="triad-build-row">
+<div class="build-row" class:fit data-testid="triad-build-row">
   <span class="build-label">{t("settings_fan_build")}</span>
   <SegmentedControl
     {options}
@@ -184,5 +195,54 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 700;
     line-height: 1.2;
+  }
+
+  /* Fit: the tiles share the screen's height instead of keeping the frame's
+     proportions, so every build shows whole in the phone sheet. */
+  .build-row.fit {
+    flex: 1 1 0;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    gap: 0;
+  }
+
+  .build-row.fit .build-label {
+    display: none;
+  }
+
+  .build-row.fit :global(.ui-segments) {
+    flex: 1 1 0;
+    min-height: 0;
+    grid-auto-rows: minmax(0, 1fr);
+  }
+
+  .build-row.fit :global(.ui-segments > button) {
+    min-height: 0;
+    align-items: stretch;
+    padding: 4px;
+  }
+
+  .build-row.fit :global(.segment-label) {
+    height: 100%;
+  }
+
+  .build-row.fit .build-tile {
+    height: 100%;
+    min-height: 0;
+    gap: 4px;
+    padding: 0;
+  }
+
+  .build-row.fit .build-art {
+    flex: 1 1 0;
+    min-height: 0;
+    max-width: none;
+    aspect-ratio: auto;
+  }
+
+  .build-row.fit .build-name {
+    flex: 0 0 auto;
+    font-size: var(--font-size-min, 14px);
   }
 </style>

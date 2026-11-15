@@ -21,6 +21,7 @@ import {
 } from "#lib/shared/media-composition/domain/arrangement.js";
 import { PostAnimationSplitSchema } from "#lib/shared/media-composition/domain/post-animation-split.js";
 import { PostPanelLiftSchema } from "#lib/shared/media-composition/domain/post-panel-lift.js";
+import { PostBarFillSchema } from "#lib/shared/media-composition/domain/post-bar-fill.js";
 import {
   PostCometTrailsSchema,
   type PostCometTrails,
@@ -159,6 +160,8 @@ declare module "@austencloud/video-editor/core" {
     split?: PostAnimationItem["split"] | null;
     /** An animation's lifted panel; null removes it. */
     panelLift?: PostAnimationItem["panelLift"] | null;
+    /** An animation's one-time bar fill; null puts the bar back on the pass. */
+    barFill?: PostAnimationItem["barFill"] | null;
     /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
     qrUrl?: string | null;
     /** A mandala clip's ordered sequences, and how it shifts and looks. */
@@ -400,6 +403,12 @@ export const PostAnimationItemSchema = z
      * app's own layout. See `post-panel-lift.ts`.
      */
     panelLift: PostPanelLiftSchema.optional(),
+    /**
+     * The progress bar fills once, from empty at `emptyAt` to full at
+     * `fullAt` (content time), instead of once per sequence pass. Absent
+     * keeps the pass. See `post-bar-fill.ts`.
+     */
+    barFill: PostBarFillSchema.optional(),
   })
   .strict();
 

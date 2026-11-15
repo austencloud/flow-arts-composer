@@ -1,17 +1,17 @@
 <!--
-  StagePauseButton.svelte — the one pause / play control for a moving piece in
-  Browse > Visuals: round, 44px, icon only, with a translated name. The front
-  page stage and the piece page both use it, for tunnels and mandalas alike.
-  The host places it (bottom right of a stage, or top right) and does not draw
-  it at all under reduced motion.
+  StagePauseButton.svelte — the one pause / play control that rides on a moving
+  picture: round, 44px, icon only, with a translated name. Browse > Visuals
+  (the front page stage and the piece page, tunnels and mandalas alike) and
+  the Create preview's canvas all use it.
+  The host places it (bottom right of a stage, or top right) and decides
+  whether to draw it under reduced motion: Visuals does not, since there the
+  motion is decoration; the Create preview does, since Play is the person's own.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  let {
-    playing,
-    onToggle,
-  }: { playing: boolean; onToggle: () => void } = $props();
+  let { playing, onToggle }: { playing: boolean; onToggle: () => void } =
+    $props();
 </script>
 
 <button

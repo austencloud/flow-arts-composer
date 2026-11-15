@@ -1825,34 +1825,72 @@
   .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(n + 5)) {
     margin-top: 6px;
   }
-  /* The cap is set above the column width on purpose, so the COLUMN binds and
-     the picture takes the whole tile minus its padding. A 2.25rem cap fit the
-     tray with room to spare and rendered a 36px picture — small enough that
-     the grid read as eight smudges, which is the state this redesign replaced.
-     4rem is the largest picture whose two rows still land inside the capped
-     tray without scrolling. */
   .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
     gap: 4px;
     padding: 6px 3px;
     --tile-art: 4rem;
   }
+  /* Names are 12px everywhere the dock carries them, and a long single word
+     (a German compound) breaks inside its tile instead of running out of it. */
   .dock-dense:not(.fill) :global(.vis-grid .chip-label) {
-    font-size: 0.68rem;
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
-  /* A phone's dock tray is 229px of scroll box under a 250px cap, and the
-     two rules above lose to DisplayPanel's own picture cap and group gap,
-     which carry more classes. The picture then grew to the column (74px)
-     and the gap stayed 10px: 220px of tiles in English, and 250px once a
-     language wraps the second row's names onto two lines, so the tray
-     scrolled and cut those names off. These win on specificity and budget
-     for two-line names: 4 + 64 + 4 + 24 + 4 = 100px a row, 210px for both
-     with the 4px gap and 6px group break. Phone width only, so a tablet's
-     dock keeps the picture it has. */
+  /* An upright phone: four columns, two rows, and the picture is whatever the
+     tray has left. The tray's scroll box is its cap (--dock-tray-max) minus
+     the 21px handle and border. Every row budgets for two lines of name, so the
+     rows match in every language:
+       row = 3 + picture + 3 + 26.4 (two 13.2px lines) + 3
+             + 2.6 (the hairline border, and a pixel spare for rounding)
+       tray = 2 rows + 2 (group break over the 4px gap) + 4 (rows padding)
+              + 8 (scroll box padding)
+     so picture = (cap - 21 - 18) / 2 - 38. That is 46px under a 360x591
+     tray, 54px under 360x640, and the 64px cap from a 222px room up. The
+     floor is 40px; no phone on the device list gets near it. These carry
+     more classes than DisplayPanel's own picture cap and group gap, which
+     would otherwise win.
+
+     The landing spinner's motion grid has eleven tiles, so three rows, and
+     already scrolled at 4rem pictures. Three rows of pictures and two-line
+     names cannot fit a 229px box above the 40px floor, so it takes the same
+     room rule with three rows (two 10px row breaks) and lands on the floor:
+     less scroll than before, not none. */
   @container (width < 30rem) {
     .dock-dense:not(.fill)
-      :global(.vis-grid:not(.fitted):not(.compact):not(.host-sized) .rt-chip) {
-      padding: 4px 3px;
-      --tile-art: 4rem;
+      :global(
+        .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(
+            .host-sized
+          )
+          .rt-chip
+      ) {
+      gap: 3px;
+      padding: 3px 1px;
+      --tile-art: clamp(
+        40px,
+        (var(--dock-tray-max, 1000px) - 39px) / 2 - 38px,
+        64px
+      );
+    }
+    .dock-dense:not(.fill)
+      :global(
+        .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(
+            .host-sized
+          )
+          .chip-label
+      ) {
+      min-height: calc(2 * 1.1em);
+    }
+    .dock-dense:not(.fill)
+      :global(.vis-grid.motion-grid:not(.fitted):not(.compact) .rt-chip) {
+      gap: 3px;
+      padding: 3px;
+      --tile-art: clamp(
+        40px,
+        (var(--dock-tray-max, 1000px) - 53px) / 3 - 38px,
+        64px
+      );
     }
     .dock-dense:not(.fill)
       :global(
@@ -1861,7 +1899,7 @@
           ):not(.dock)
           > :nth-child(n + 5)
       ) {
-      margin-top: 6px;
+      margin-top: 2px;
     }
   }
   /* A tablet's dock is 776px wide with a 250px tray — 4rem is a phone's cap
@@ -1903,7 +1941,7 @@
      tray with NO scroll (the whole tab on one screen). */
   .dock-dense .display-rows {
     gap: 5px;
-    padding: 2px 12px 4px;
+    padding: 2px 12px 2px;
   }
   .dock-dense .display-rows .rt-section {
     gap: 4px;

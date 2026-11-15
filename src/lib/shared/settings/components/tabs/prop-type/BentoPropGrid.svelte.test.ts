@@ -34,7 +34,7 @@ describe("BentoPropGrid style drill-down", () => {
       showAppearance: false,
       showColors: false,
     });
-    await page.getByRole("button", { name: "Choose Club style" }).click();
+    await page.getByRole("button", { name: "Choose Club style" }).last().click();
     await expect.element(page.getByRole("button", {
       name: "Select Club prop type", exact: true,
     })).toBeVisible();
@@ -52,7 +52,7 @@ describe("BentoPropGrid style drill-down", () => {
       allowedProps: CLUB_PICKER_PROPS,
     });
 
-    const trigger = page.getByRole("button", { name: "Choose Club style" });
+    const trigger = page.getByRole("button", { name: "Choose Club style" }).last();
     await trigger.click();
 
     const back = page.getByRole("button", { name: "Back to all props" });
@@ -91,7 +91,7 @@ describe("BentoPropGrid style drill-down", () => {
       allowedProps: CLUB_PICKER_PROPS,
     });
 
-    const trigger = page.getByRole("button", { name: "Choose Club style" });
+    const trigger = page.getByRole("button", { name: "Choose Club style" }).last();
     await trigger.click();
     await expect
       .element(page.getByRole("button", { name: "Back to all props" }))
@@ -124,7 +124,7 @@ describe("BentoPropGrid style settings", () => {
       allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
     });
 
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page.getByRole("button", { name: "Choose Triad style" }).last().click();
     const styles = page.getByRole("region", { name: "Triad styles" });
     await expect
       .element(styles.getByRole("button", { name: "Big", exact: true }))
@@ -171,7 +171,7 @@ describe("BentoPropGrid style settings", () => {
       },
     });
 
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page.getByRole("button", { name: "Choose Triad style" }).last().click();
     const styles = page.getByRole("region", { name: "Triad styles" });
     await styles
       .getByRole("radio", { name: "Mirrored, Left B, right A" })

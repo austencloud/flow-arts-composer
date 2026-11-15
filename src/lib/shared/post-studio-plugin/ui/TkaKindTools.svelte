@@ -46,6 +46,7 @@
   import PostStage3DTool from "./PostStage3DTool.svelte";
   import PostSplitHandsTool from "./PostSplitHandsTool.svelte";
   import PostPanelLiftTool from "./PostPanelLiftTool.svelte";
+  import PostBarFillTool from "./PostBarFillTool.svelte";
   import {
     FLASH_MAX_FADE_SECONDS,
     FLASH_MAX_STRENGTH,
@@ -451,6 +452,8 @@
     <PostSplitHandsTool {editor} {item} {locked} />
   {:else if tool === "lift" && item.kind === "animation"}
     <PostPanelLiftTool {editor} {item} {locked} />
+  {:else if tool === "bar" && item.kind === "animation"}
+    <PostBarFillTool {editor} {item} {locked} />
   {:else if tool === "performers" && item.kind === "animation"}
     {@const follower = item.followers?.[0]}
     <SegmentedControl

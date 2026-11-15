@@ -4,6 +4,7 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
+  import StagePauseButton from "#lib/shared/animation-engine/components/controls/StagePauseButton.svelte";
   import EffectQuickSwitch from "#lib/shared/animation-engine/components/effects-panel/EffectQuickSwitch.svelte";
   import {
     createEffectsConfigState,
@@ -216,7 +217,6 @@
           fill
           scrubbable
           videoDownload
-          showScrubberPlaybackControl
           scrubberTrailing={scrubberEnd}
           hoverHint="none"
           autoPlay={active}
@@ -246,6 +246,16 @@
           }}
           onSeekRef={(callback) => (seek = callback)}
         />
+        <!-- Pause rides on the picture, in the corner opposite the X, so the
+             scrubber row holds the scrubber and the effect pill only. -->
+        <div class="stage-pause-corner" data-picker-passthrough>
+          <StagePauseButton
+            {playing}
+            onToggle={() => {
+              playing = !playing;
+            }}
+          />
+        </div>
         {#if onclose && !saving}
           <button
             type="button"
@@ -431,6 +441,16 @@
   .close-preview:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
+  }
+  /* Pause / play, bottom right of the canvas: 8px in from its right and
+     bottom edges, the mirror of the X at top right. The canvas ends where the
+     scrubber row (the seek target's height) begins. Above the animator canvas
+     (z-index 3) so a tap here is not the canvas's tap-to-pause. */
+  .stage-pause-corner {
+    position: absolute;
+    right: 8px;
+    bottom: calc(var(--sequence-seek-target-size) + 8px);
+    z-index: 4;
   }
   /* Always laid out, closed until there is height for it, so its cells are
      built with the player rather than in the middle of Play's growth. Phones

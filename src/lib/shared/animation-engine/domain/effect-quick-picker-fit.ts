@@ -19,11 +19,13 @@
  *   own empty room, only as far as the panel needs, so canvas and picker sit
  *   side by side instead of the picker squeezing under the canvas.
  * - `grid`: where the player fills the width (phone and tablet portrait),
- *   the pictures wrap four or more across under an Effects title row that
- *   holds Off and close, in the room under the player that the animation does
- *   not need: a tray floating just under the player's controls where that
- *   room holds the whole grid, otherwise a sheet docked along the bottom of
- *   its bounds over the toolbar there (idle while the picker is open). A
+ *   the pictures wrap four or more across under one head row (the Effects
+ *   on/off switch and Done), in the room under the picture that the animation
+ *   does not need. The head row stands directly on the picture and covers the
+ *   player's whole control row (`controls`), so no gap opens there: a tray
+ *   hanging from the control row's top where that room holds the whole grid,
+ *   otherwise a sheet docked along the bottom of its bounds over the toolbar
+ *   there (idle while the picker is open). A
  *   player centred in a tall area has empty room above it (`roomAbove`): the
  *   docked sheet asks the player to `lift` into it, only as far as the whole
  *   grid needs, so a tall phone shows every effect without scrolling and the
@@ -378,7 +380,15 @@ export function fitEffectQuickPicker({
   }
 
   const strip = fitStrip(bounds, player, roomBelow, count);
-  const grid = fitGrid(bounds, player, roomBelow, roomAbove, count, strip);
+  const grid = fitGrid(
+    bounds,
+    player,
+    roomBelow,
+    roomAbove,
+    controls,
+    count,
+    strip
+  );
   if (grid) return grid;
   if (strip.arrangement === "strip" && strip.side === "below") return strip;
   const narrow =
@@ -551,6 +561,49 @@ function fitGrid(
   player: QuickPickerRect,
   roomBelow: number,
   roomAbove: number,
+  controls: number,
+  count: number,
+  strip: EffectQuickPickerFit
+): EffectQuickPickerFit | null {
+  // Whether the grid wins over the strip is judged on the room under the
+  // control row, as it always was: the head row's cover of that row makes the
+  // grid taller, never turns a short phone's strip into a grid.
+  if (
+    !gridWins(
+      bounds,
+      player,
+      roomBelow,
+      roomAbove,
+      0,
+      QUICK_PICKER_STRIP_GAP,
+      count,
+      strip
+    )
+  ) {
+    return null;
+  }
+  return gridWins(
+    bounds,
+    player,
+    roomBelow,
+    roomAbove,
+    controls,
+    0,
+    count,
+    strip
+  );
+}
+
+/** The grid for `count` effects in the room under the player, with the head
+ *  row covering `controls` px of the control row and `gap` px between the
+ *  controls and a floating tray; null where the strip shows as many. */
+function gridWins(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  roomBelow: number,
+  roomAbove: number,
+  controls: number,
+  gap: number,
   count: number,
   strip: EffectQuickPickerFit
 ): EffectQuickPickerFit | null {
@@ -573,10 +626,14 @@ function fitGrid(
   // its top.
   const belowBorder = 2 * QUICK_PICKER_BORDER;
   const dockBorder = QUICK_PICKER_BORDER;
-  const roomUnder = Math.floor(roomBelow - QUICK_PICKER_STRIP_GAP);
-  const roomDocked = Math.floor(
-    bounds.top + bounds.height - (player.top + player.height)
-  );
+  // The sheet's head row stands on the picture itself and covers the whole
+  // control row (the scrubber and the effect pill), so the room it has starts
+  // at the control row's top and there is no gap above it.
+  const cover = Math.max(0, Math.floor(controls));
+  const roomUnder = Math.floor(roomBelow - gap + cover);
+  const roomDocked =
+    Math.floor(bounds.top + bounds.height - (player.top + player.height)) +
+    cover;
   const reach = Math.max(0, Math.floor(roomAbove));
 
   /** The tray floating under the controls, holding `catalog` whole. */
@@ -590,11 +647,14 @@ function fitGrid(
   /** The docked sheet holding `catalog` whole, and the lift that takes. */
   const docked = (catalog: EffectCatalogFit): GridPick => {
     const height = Math.ceil(gridPanelHeight(catalog) + dockBorder);
+    const lift = Math.max(0, height - roomDocked);
     return {
       side: "dock",
       catalog,
-      height,
-      lift: Math.max(0, height - roomDocked),
+      // A sheet that needs no lift still reaches up to the control row's top,
+      // so no gap opens between the picture and its head row.
+      height: lift > 0 ? height : Math.max(height, roomDocked),
+      lift,
       scale: 1,
     };
   };
@@ -618,12 +678,13 @@ function fitGrid(
     );
     // The player lifted all the way and shrunk from its top edge by as much
     // as the rest of the sheet needs: the bottom of its controls rises by
-    // the share of its height it gives up. Only a player that can move (room
-    // above it) shrinks; one held in place keeps its size.
+    // the share of its height it gives up, less the control row the sheet
+    // covers (which shrinks with it). Only a player that can move (room above
+    // it) shrinks; one held in place keeps its size.
     const shortfall = dockedLargest.height - roomDocked - reach;
     const scale =
-      reach > 0 && player.height > 0
-        ? Math.floor((1 - shortfall / player.height) * 1000) / 1000
+      reach > 0 && player.height > cover
+        ? Math.floor((1 - shortfall / (player.height - cover)) * 1000) / 1000
         : 0;
     if (below && (!dock || below.portrait >= dock.portrait)) {
       pick = floating(below);

@@ -80,6 +80,7 @@ describe("tka tool rows are today's rows", () => {
       "performers",
       "hands",
       "lift",
+      "bar",
       "timing",
       ...TAIL,
     ]);
@@ -90,8 +91,9 @@ describe("tka tool rows are today's rows", () => {
         "appearance",
         "sequence",
         "performers",
-      "hands",
+        "hands",
         "lift",
+        "bar",
         "speed",
         "crop",
         "timing",

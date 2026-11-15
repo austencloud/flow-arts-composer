@@ -12,6 +12,7 @@ import {
   panelLiftSpan,
   type PostPanelLift,
 } from "#lib/shared/media-composition/domain/post-panel-lift.js";
+import { shiftBarFill } from "#lib/shared/media-composition/domain/post-bar-fill.js";
 import {
   CARD_EARLIEST_AT_SECONDS,
   PostCardQrExitSchema,
@@ -34,6 +35,8 @@ import { PostTitlesLitSchema, type PostTitlesLit } from "./item-kinds";
  * - an animation's lifted panel (`inAt`, `outAt`); a lift that had gone
  *   all the way back before the new start is removed, and one whose arrival
  *   is cut away keeps an `inAt` before 0, so it is already in at the start;
+ * - an animation's bar fill (`emptyAt`, `fullAt`), which may fall before 0:
+ *   the bar is already part full, or full, when the clip starts;
  * - a titles clip's `lit` and `quiet` spans; a span cut partly away keeps
  *   its remainder from 0, one cut wholly away is removed;
  * - a card's `ring.at` and `qrExit.at`, which may fall before 0: the ring or
@@ -44,7 +47,10 @@ import { PostTitlesLitSchema, type PostTitlesLit } from "./item-kinds";
  */
 export function shiftTkaItemTimes(item: PostItem, headCut: number): PostItem {
   if (!Number.isFinite(headCut) || headCut === 0) return item;
-  if (item.kind === "animation" && (item.split || item.panelLift)) {
+  if (
+    item.kind === "animation" &&
+    (item.split || item.panelLift || item.barFill)
+  ) {
     let next: PostItem = item;
     if (item.split)
       next = withField(next, "split", shiftSplit(item.split, headCut));
@@ -54,6 +60,8 @@ export function shiftTkaItemTimes(item: PostItem, headCut: number): PostItem {
         "panelLift",
         shiftPanelLift(item.panelLift, headCut)
       );
+    if (item.barFill)
+      next = withField(next, "barFill", shiftBarFill(item.barFill, headCut));
     return next;
   }
   if (item.kind === "titles" && (item.lit || item.quiet)) {

@@ -4,6 +4,7 @@ import {
   STEP_NUMBER_ANCHOR,
   normalizePanelLift,
   panelLiftAmount,
+  panelLiftBar,
   panelLiftLayout,
   type PostPanelLift,
 } from "./post-panel-lift";
@@ -164,5 +165,76 @@ describe("the split reads the lift's centre", () => {
     const frame = splitPlacementFrame(1080, 952, null);
     expect(frame.centre).toBe(frame.rest);
     expect(frame.scale).toBe(1);
+  });
+});
+
+describe("panelLiftBar", () => {
+  /** The ΩΛ-XJ reel's lift: in at 4.557 over 0.8 s, back at 28.433 over 0.7 s. */
+  const REEL: PostPanelLift = {
+    ...POST_LIFT_DEFAULTS,
+    inAt: 4.557,
+    inSeconds: 0.8,
+    outAt: 28.433,
+    outSeconds: 0.7,
+  };
+
+  it("fades out on the top edge as the panel leaves, never riding it", () => {
+    expect(panelLiftBar(REEL, 28.4)).toEqual({ rise: 1, opacity: 1 });
+    const fading = panelLiftBar(REEL, 28.55);
+    expect(fading.rise).toBe(1);
+    expect(fading.opacity).toBeGreaterThan(0.3);
+    expect(fading.opacity).toBeLessThan(0.7);
+    for (let t = 28.7; t < 29.133; t += 1 / 30) {
+      expect(panelLiftBar(REEL, t).opacity).toBe(0);
+    }
+  });
+
+  it("only ever sits under the canvas or on the top edge", () => {
+    for (let t = 0; t < 32; t += 1 / 60) {
+      const bar = panelLiftBar(REEL, t);
+      expect([0, 1]).toContain(bar.rise);
+      // Wherever it shows at all, the layout's canvas is not moving under it
+      // from a different bar place: it is at rest, or fully lifted.
+      if (bar.opacity > 0 && bar.rise === 1) {
+        expect(t).toBeGreaterThanOrEqual(4.557);
+      }
+    }
+  });
+
+  it("fades out under the canvas as the panel comes in, then in on top", () => {
+    expect(panelLiftBar(REEL, 3.7)).toEqual({ rise: 0, opacity: 1 });
+    expect(panelLiftBar(REEL, 3.9).rise).toBe(0);
+    expect(panelLiftBar(REEL, 3.9).opacity).toBeLessThan(1);
+    expect(panelLiftBar(REEL, 4.3).opacity).toBe(0);
+    const back = panelLiftBar(REEL, 4.7);
+    expect(back.rise).toBe(1);
+    expect(back.opacity).toBeGreaterThan(0);
+    expect(back.opacity).toBeLessThan(1);
+    expect(panelLiftBar(REEL, 6)).toEqual({ rise: 1, opacity: 1 });
+  });
+
+  it("comes back under the canvas once the panel is back", () => {
+    expect(panelLiftBar(REEL, 29.2).rise).toBe(0);
+    expect(panelLiftBar(REEL, 29.2).opacity).toBeLessThan(1);
+    expect(panelLiftBar(REEL, 30)).toEqual({ rise: 0, opacity: 1 });
+  });
+
+  it("follows the move lengths, so a longer move fades more slowly", () => {
+    const slow = { ...REEL, outSeconds: 1.4 };
+    expect(panelLiftBar(slow, 28.7).opacity).toBeGreaterThan(0);
+    expect(panelLiftBar(slow, 28.95).opacity).toBe(0);
+  });
+
+  it("stays on top for a lift with no moves, and leaves a bottom bar alone", () => {
+    expect(panelLiftBar(POST_LIFT_DEFAULTS, 10)).toEqual({
+      rise: 1,
+      opacity: 1,
+    });
+    const bottom = { ...REEL, barEdge: "bottom" as const };
+    for (const t of [3.9, 4.3, 28.55, 28.9]) {
+      expect(panelLiftBar(bottom, t)).toEqual({ rise: 0, opacity: 1 });
+    }
+    expect(panelLiftBar(null, 28.9)).toEqual({ rise: 0, opacity: 1 });
+    expect(panelLiftBar(REEL, Number.NaN)).toEqual({ rise: 0, opacity: 1 });
   });
 });

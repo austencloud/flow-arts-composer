@@ -1,6 +1,7 @@
 import type { PluginTool } from "@austencloud/video-editor";
 import {
   faArrowRightToBracket,
+  faArrowsLeftRightToLine,
   faBorderTopLeft,
   faClone,
   faDiamond,
@@ -47,7 +48,9 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     id: "look",
     type: "panel",
     label: (_t, kind) =>
-      kind === "arrangement" || kind === "mandala" ? "Look" : "Animation defaults",
+      kind === "arrangement" || kind === "mandala"
+        ? "Look"
+        : "Animation defaults",
     icon: faPalette,
   },
   {
@@ -127,6 +130,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: (t) => t("post_editor_tool_panel_lift"),
     icon: faRulerCombined,
+  },
+  {
+    id: "bar",
+    type: "panel",
+    label: (t) => t("post_editor_tool_bar_fill"),
+    icon: faArrowsLeftRightToLine,
   },
   {
     id: "autoframe",
