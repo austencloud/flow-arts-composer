@@ -12,6 +12,8 @@
     pronouns?: string;
     username?: string;
     profileColor?: string;
+    /** Phone frame: one short block (photo, names, email) with Sign out beside it. */
+    compact?: boolean;
   }
 
   let {
@@ -22,10 +24,14 @@
     pronouns,
     username,
     profileColor,
+    compact = false,
   }: Props = $props();
 </script>
 
-<section class="identity-header" aria-label={t("settings_signed_in_account")}>
+<section
+  class="identity-header"
+  class:compact
+  aria-label={t("settings_signed_in_account")}>
   <p class="identity-kicker">
     <i class="fas fa-id-card" aria-hidden="true"></i>
     <span>{t("settings_account")}</span>
@@ -359,5 +365,57 @@
     .sign-out-btn:active {
       transform: none;
     }
+  }
+
+  /* Phone frame: the hero is one short block so the boxes under it fit the
+     screen. The kicker and the signed-in status step out; Sign out sits
+     beside the names; the email wraps instead of being cut. */
+  .identity-header.compact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 0.75em;
+  }
+
+  .compact .identity-kicker,
+  .compact .session-status {
+    display: none;
+  }
+
+  .identity-header.compact .profile-hero {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.85em;
+  }
+
+  .compact .avatar-wrapper {
+    width: 4em;
+    height: 4em;
+  }
+
+  .compact .avatar-edit-badge {
+    width: 1.7em;
+    height: 1.7em;
+  }
+
+  .compact .profile-name {
+    font-size: var(--font-size-xl);
+  }
+
+  .compact .profile-meta,
+  .compact .profile-email {
+    margin-top: 0.2em;
+  }
+
+  .compact .profile-email {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .compact .session-row {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
   }
 </style>

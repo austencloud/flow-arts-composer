@@ -67,10 +67,11 @@
   onMount(() => watchSmallScreen((v) => (small = v)));
   const SECTIONS_ON_FIRST_PHONE_SCREEN = 3;
   const screenLabels = $derived([
-    "Start",
+    tDynamic("guide_hub_screen_start"),
     tDynamic("guide_hub_level1_title"),
     tDynamic("guide_hub_read_by_section"),
-    ...(small ? [tDynamic("guide_hub_read_by_section")] : []),
+    // The phone's second list screen carries a number, as on the Ratios page.
+    ...(small ? [`${tDynamic("guide_hub_read_by_section")} (2)`] : []),
   ]);
   const nextPage = firstTopic
     ? { href: localHref(firstTopicHref), title: firstTopic.title }

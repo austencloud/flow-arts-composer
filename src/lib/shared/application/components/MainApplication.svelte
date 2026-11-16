@@ -317,7 +317,6 @@
 
   // Route-based sheet state
   let currentSheetType = $state<SheetType>(null);
-  let showAuthSheet = $derived(currentSheetType === "auth");
   let showTermsSheet = $derived(currentSheetType === "terms");
   let showPrivacySheet = $derived(currentSheetType === "privacy");
 
@@ -329,6 +328,23 @@
       closeSheet();
       currentSheetType = null;
       await handleModuleChange("settings" as ModuleId);
+      return true;
+    }
+
+    // `?sheet=auth` means "sign in if needed" (the QR scan funnel arrives this
+    // way). It opens the one sign-in surface for a guest; a full account has
+    // nothing to do, so the query is just dropped. Consuming it here, before
+    // the guest's anonymous identity lands, keeps it from reopening on the
+    // next navigation.
+    if (sheet === "auth") {
+      closeSheet();
+      currentSheetType = null;
+      if (!authState.isFullAccount) {
+        authDrawerState.showOnRequest("signin", undefined, undefined, {
+          surface: "auth_sheet",
+          origin: "sheet_query_or_navigation",
+        });
+      }
       return true;
     }
 
@@ -471,16 +487,10 @@
         // Initialize sheet router state (now that service is resolved)
         currentSheetType = getCurrentSheet();
 
+        // A ?sheet=auth deep link is consumed here too: a signed-in person
+        // never sees the screen. If a full account restores after it opened,
+        // the auth listener closes it (authDrawerState.accountChanged).
         await consumeRoutedAppSheet(currentSheetType);
-
-        // A ?sheet=auth deep link means "sign in if needed" (the QR scan
-        // funnel arrives this way). Drop it when the user is already signed
-        // in so the sheet doesn't flash open. If auth hasn't restored yet,
-        // AuthSheet's own auto-close-when-authenticated effect covers it.
-        if (currentSheetType === "auth" && authState.isAuthenticated) {
-          closeSheet();
-          currentSheetType = null;
-        }
 
         cleanupSheetListener = onRouteChange(async (state) => {
           if (await consumeRoutedAppSheet(state.sheet ?? null)) return;
@@ -746,13 +756,6 @@
 
     <!-- Action-driven dialogs load on first use, then stay mounted so closing
          animations and retained form state keep their existing behavior. -->
-    <LazyMount
-      loader={() => import("../../navigation/components/AuthSheet.svelte")}
-      active={showAuthSheet}
-      debugName="sign-in sheet"
-      props={{ isOpen: showAuthSheet, onClose: () => closeSheet() }}
-    />
-
     <!-- Support modal — in-app "buy me a coffee" (self-driven via supportModalState) -->
     <LazyMount
       loader={() => import("../../support/components/SupportModal.svelte")}

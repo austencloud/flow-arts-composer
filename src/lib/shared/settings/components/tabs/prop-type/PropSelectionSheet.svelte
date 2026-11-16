@@ -67,6 +67,18 @@
   const displayTitle = $derived(title ?? t("settings_props_select_prop"));
   const displaySubtitle = $derived(subtitle ?? t("settings_prop_sheet_help"));
 
+  // The props are the screen: every prop on screen with its whole name and
+  // nothing scrolling. The room comes from what surrounds the grid, so the
+  // sheet reads its own height and steps those parts aside on short phones.
+  // Under SHORT_SHEET the help line goes and the hand row turns compact;
+  // under TALL_SHEET the colours are one button beside the Styles button,
+  // and above it the full colour block sits under the grid.
+  const SHORT_SHEET = 700;
+  const TALL_SHEET = 860;
+  let sheetHeight = $state(0);
+  const shortSheet = $derived(sheetHeight > 0 && sheetHeight < SHORT_SHEET);
+  const colorsInline = $derived(sheetHeight > 0 && sheetHeight < TALL_SHEET);
+
   // The close can come from the sheet (X, backdrop, Escape, drag) or from a
   // host that turns isOpen off; either way the host hears it once.
   let wasOpen = false;
@@ -134,17 +146,21 @@
     if (!open) setOpen(false);
   }}
 >
-  <div class="sheet-content">
+  <div class="sheet-content" bind:clientHeight={sheetHeight}>
     <DrawerHeader
       title={displayTitle}
-      subtitle={displaySubtitle}
+      subtitle={shortSheet ? undefined : displaySubtitle}
       onClose={handleClose}
     />
 
     <div class="picker-body">
       {#if !isDrilled && handProps}
-        <div class="picker-toolbar" transition:growFade={{ axis: "y" }}>
-          <HandPropToolbar {handProps} />
+        <div
+          class="picker-toolbar"
+          class:compact={shortSheet}
+          transition:growFade={{ axis: "y" }}
+        >
+          <HandPropToolbar {handProps} compact={shortSheet} />
         </div>
       {/if}
 
@@ -163,6 +179,9 @@
         flat
         scrollMode="internal"
         fill
+        wholeNames
+        {colorsInline}
+        colorsBelow={!colorsInline}
         isActive={isOpen}
         onDrillChange={(drilled) => (isDrilled = drilled)}
         onSelect={handlePropSelect}
@@ -234,5 +253,9 @@
   .picker-toolbar {
     flex-shrink: 0;
     padding: 4px 2px 0;
+  }
+  /* The compact row has no inset of its own; match the grid's. */
+  .picker-toolbar.compact {
+    padding: 4px 16px 8px;
   }
 </style>

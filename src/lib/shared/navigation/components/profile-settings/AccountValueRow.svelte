@@ -4,7 +4,6 @@
     getLocale,
     t,
   } from "#lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   interface Props {
     label: string;
@@ -30,7 +29,30 @@
   }: Props = $props();
 </script>
 
-<div class="account-value-row">
+<!-- With an edit action the whole row is the control: a press on the label,
+     the value or the pen starts editing, under one name ("Edit display name").
+     The pen stays as the visible cue. -->
+{#if onEdit}
+  <button
+    bind:this={buttonRef}
+    type="button"
+    class="account-value-row editable"
+    onclick={onEdit}
+    aria-label={editLabel}
+  >
+    {@render copy()}
+    <span class="edit-action" aria-hidden="true">
+      <i class="fas fa-pen"></i>
+      <span class="edit-word">{t("tab_museum_edit")}</span>
+    </span>
+  </button>
+{:else}
+  <div class="account-value-row">
+    {@render copy()}
+  </div>
+{/if}
+
+{#snippet copy()}
   <span class="row-copy">
     <span class="row-label">
       {label}
@@ -38,21 +60,7 @@
     </span>
     <span class="row-value" class:empty>{value}</span>
   </span>
-
-  {#if onEdit}
-    <span class="edit-action">
-      <PanelButton
-        bind:ref={buttonRef}
-        variant="quiet"
-        onclick={onEdit}
-        ariaLabel={editLabel}
-      >
-        <i class="fas fa-pen" aria-hidden="true"></i>
-        <span>{t("tab_museum_edit")}</span>
-      </PanelButton>
-    </span>
-  {/if}
-</div>
+{/snippet}
 
 <style>
   .account-value-row {
@@ -103,12 +111,53 @@
     font-weight: 500;
   }
 
-  .edit-action {
-    flex: 0 0 auto;
+  .editable {
+    width: 100%;
+    margin: 0;
+    padding-inline: 0;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    background: transparent;
+    border-width: 0 0 1px;
+    border-style: solid;
+    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
-  .edit-action :global(.panel-btn) {
+  .editable:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  .edit-action {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
     min-width: 5.25em;
+    min-height: var(--min-touch-target, 44px);
+    padding-inline: 0.9rem;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
+    font-size: var(--font-size-min);
+    font-weight: 650;
+    background: color-mix(in srgb, var(--theme-text) 4%, transparent);
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: 0.65rem;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
+  }
+
+  .editable:hover .edit-action,
+  .editable:active .edit-action {
+    color: var(--theme-text, #fff);
+    background: color-mix(in srgb, var(--theme-text) 9%, transparent);
   }
 
   @container profile-tab (max-width: 28rem) {
@@ -126,13 +175,19 @@
       overflow-wrap: anywhere;
     }
 
-    .edit-action :global(.panel-btn) {
+    .edit-action {
       min-width: var(--min-touch-target, 44px);
       padding-inline: 0.75rem;
     }
 
-    .edit-action :global(.panel-btn span) {
+    .edit-word {
       display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .edit-action {
+      transition: none;
     }
   }
 </style>

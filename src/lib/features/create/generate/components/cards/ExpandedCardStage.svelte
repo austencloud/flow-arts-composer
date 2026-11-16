@@ -563,8 +563,6 @@
       rhythm={loop.rhythm}
       sequenceLength={loop.sequenceLength}
       onRhythmChange={loop.onRhythmChange}
-      guestGated={loop.guestGated}
-      onRequestSignup={loop.onRequestSignup}
       handRelationship={loop.handRelationship}
       onPickNeedsFit={loop.onPickNeedsFit}
       layout="responsive"

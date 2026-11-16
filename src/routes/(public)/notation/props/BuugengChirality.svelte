@@ -1,5 +1,5 @@
 <!--
-  The Chirality part of the Buugeng panel (2026-10-15). The Change Prop
+  The Buugeng pairs part of the Buugeng panel (2026-10-15; app words 2026-11-15). The Change Prop
   picker's "What's this?" chip lands here (#buugeng-chirality).
 
   The four tiles are the same pairs the picker offers, drawn the same way, and
@@ -8,6 +8,7 @@
   default.
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import BuugengPairPreview from "#lib/shared/settings/components/tabs/prop-type/BuugengPairPreview.svelte";
@@ -15,10 +16,13 @@
     BUUGENG_PAIRS,
     buugengPair,
     buugengPairFor,
-    chiralityLetter,
-    type BuugengPair,
     type BuugengPairId,
   } from "#lib/shared/settings/components/tabs/prop-type/buugeng-pair.js";
+  import {
+    buugengPairLetters,
+    buugengPairName,
+    buugengPairWords,
+  } from "#lib/shared/settings/components/tabs/prop-type/buugeng-pair-words.js";
 
   let {
     leftFlipped,
@@ -30,20 +34,12 @@
     onchange: (leftFlipped: boolean, rightFlipped: boolean) => void;
   } = $props();
 
-  function name(pair: BuugengPair): string {
-    return pair.kind === "mirrored" ? "Mirrored" : "Matching";
-  }
-
-  function letters(pair: BuugengPair): string {
-    return pair.kind === "mirrored"
-      ? `Left ${chiralityLetter(pair.leftFlipped)}, right ${chiralityLetter(pair.rightFlipped)}`
-      : `Both ${chiralityLetter(pair.leftFlipped)}`;
-  }
-
-  const options = BUUGENG_PAIRS.map((pair) => ({
-    value: pair.id,
-    label: `${name(pair)}, ${letters(pair)}`,
-  }));
+  const options = $derived(
+    BUUGENG_PAIRS.map((pair) => ({
+      value: pair.id,
+      label: buugengPairWords(pair),
+    })),
+  );
 
   const value = $derived(buugengPairFor(leftFlipped, rightFlipped).id);
 
@@ -54,16 +50,10 @@
 </script>
 
 <div class="chirality" id="buugeng-chirality">
-  <h3>Chirality</h3>
+  <h3>{t("settings_buugeng_pairs_title")}</h3>
   <p>
-    A buugeng is an S, and an S has a handedness: its mirror is a different
-    shape. The notation calls the drawn shape A and its mirror B, and each hand
-    holds one or the other. When both hands meet at the same point, the pair
-    decides what you see. A mirrored pair, one A and one B, stacks into a single
-    figure eight. A matching pair, both A or both B, cannot stack, so the
-    notation sets the props side by side. In Flow Arts Composer you set this
-    under Buugeng pair when you change props. Pick a pair to play it in the
-    demo.
+    {t("settings_buugeng_pairs_explain")}
+    {t("settings_buugeng_pairs_pick")}
   </p>
   <SegmentedControl
     {options}
@@ -72,7 +62,7 @@
     color="accent"
     columns={4}
     semantics="radiogroup"
-    ariaLabel="Buugeng pair"
+    ariaLabel={t("settings_buugeng_pair")}
   >
     {#snippet optionContent(id: BuugengPairId)}
       {@const pair = buugengPair(id)}
@@ -82,8 +72,8 @@
           leftFlipped={pair.leftFlipped}
           rightFlipped={pair.rightFlipped}
         />
-        <span class="pair-name">{name(pair)}</span>
-        <span class="pair-letters">{letters(pair)}</span>
+        <span class="pair-name">{buugengPairName(pair)}</span>
+        <span class="pair-letters">{buugengPairLetters(pair)}</span>
       </span>
     {/snippet}
   </SegmentedControl>

@@ -17,12 +17,15 @@
    * can highlight the in-view Level 2 section.
    */
   import type { Snippet } from "svelte";
-  import { untrack } from "svelte";
+  import { tick, untrack } from "svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { GUIDE_CANVAS } from "#lib/shared/landing/domain/page-surface.js";
   import GuideRail from "./GuideRail.svelte";
   import GuideTocList from "./GuideTocList.svelte";
-  import { setGuideChromeContext } from "./guide-chrome-context";
+  import {
+    setGuideChromeContext,
+    type GuidePageScreens,
+  } from "./guide-chrome-context";
   import "../level-1/_styles/guide.css";
 
   let {
@@ -36,13 +39,46 @@
   let drawerOpen = $state(false);
   let drawerReveal = $state(0);
 
+  // A one-screen-at-a-time page's screens, listed first in the drawer, and
+  // whether its pills gave way to the one box that opens the drawer.
+  let screens = $state<GuidePageScreens | null>(null);
+  let boxed = $state(false);
+  // The control that opened the drawer when it was the page's box: focus
+  // goes back to it on close, since this button steps aside again.
+  let opener: HTMLElement | null = null;
+
   function toggleDrawer() {
-    drawerOpen = !drawerOpen;
-    if (drawerOpen) drawerReveal += 1;
+    if (drawerOpen) closeDrawer();
+    else openDrawer(null);
+  }
+
+  function openDrawer(from: HTMLElement | null) {
+    opener = from;
+    drawerOpen = true;
+    drawerReveal += 1;
+    // From the box, focus lands on the current screen's row, in view.
+    if (from) {
+      void tick().then(() =>
+        document
+          .querySelector<HTMLElement>('#guide-drawer [aria-current="step"]')
+          ?.focus({ preventScroll: true })
+      );
+    }
   }
 
   function closeDrawer() {
+    if (!drawerOpen) return;
     drawerOpen = false;
+    const back = opener;
+    opener = null;
+    if (back?.isConnected) void tick().then(() => back.focus());
+  }
+
+  function onKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape" && drawerOpen) {
+      event.preventDefault();
+      closeDrawer();
+    }
   }
 
   // The rail's reserved width (64px collapsed, the expanded width when
@@ -94,10 +130,22 @@
         untrack(() => (pillHolds -= 1));
       };
     },
+    setScreens(next) {
+      untrack(() => (screens = next));
+    },
+    setBoxed(next) {
+      untrack(() => (boxed = next));
+    },
+    openContents(from) {
+      openDrawer(from ?? null);
+    },
+    get contentsOpen() {
+      return drawerOpen;
+    },
   });
 </script>
 
-<svelte:window onscroll={onScroll} />
+<svelte:window onscroll={onScroll} onkeydown={onKeydown} />
 
 <a href="#guide-main" class="skip-link"
   >{tDynamic("guide_runtime_skip_content")}</a
@@ -112,6 +160,8 @@
   <button
     class="mobile-menu-btn"
     class:tucked={(pillTucked || pillHolds > 0) && !drawerOpen}
+    class:boxed={boxed && !drawerOpen}
+    class:open={drawerOpen}
     onclick={toggleDrawer}
     aria-label={tDynamic(
       drawerOpen
@@ -121,14 +171,23 @@
     aria-expanded={drawerOpen}
     aria-controls="guide-drawer"
   >
-    <i class="fa-solid {drawerOpen ? 'fa-xmark' : 'fa-list'}" aria-hidden="true"
-    ></i>
+    <!-- Inline, so the icon does not wait for the icon font that public
+         pages load after first paint. -->
+    <svg class="btn-icon" viewBox="0 0 16 16" aria-hidden="true">
+      {#if drawerOpen}
+        <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+      {:else}
+        <path d="M5.5 4h8M5.5 8h8M5.5 12h8" />
+        <path class="dots" d="M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
+      {/if}
+    </svg>
     <span>{tDynamic("guide_runtime_contents")}</span>
   </button>
 
   <aside id="guide-drawer" class="guide-drawer" class:open={drawerOpen}>
     <GuideTocList
       {activeSectionId}
+      {screens}
       revealKey={drawerReveal}
       onLinkClick={closeDrawer}
     />
@@ -223,8 +282,57 @@
       visibility 0s linear var(--duration-normal);
   }
 
+  .btn-icon {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+  }
+  .btn-icon .dots {
+    stroke-width: 2.4;
+  }
+
+  /* The page's box stands for this button while the drawer is closed
+     (GuideScreens, where the screen pills do not fit their row). */
+  .mobile-menu-btn.boxed {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .guide-drawer {
     display: none;
+  }
+
+  /* A wide window with the rail: only a page's box opens the drawer (its
+     screens did not fit their row). It opens beside the rail, and this
+     button shows over it to close it. */
+  .mobile-menu-btn.open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    left: calc(var(--guide-rail-reserved, 0px) + 1rem);
+  }
+  .guide-drawer.open {
+    display: block;
+    position: fixed;
+    top: 64px;
+    left: var(--guide-rail-reserved, 0px);
+    right: 0;
+    height: calc(100dvh - 64px);
+    /* scrolls: the guide's whole contents list, inside the drawer */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(44px + 2rem) 0 2rem;
+    z-index: 50;
+    background: var(--guide-canvas);
+  }
+  /* A list, not a banner: rows keep a reading width on wide windows. */
+  .guide-drawer.open :global(.guide-toc) {
+    max-width: 36rem;
   }
 
   /* Wherever the desktop rail is hidden (narrow screens, and touch screens,
@@ -238,18 +346,11 @@
       gap: 0.5rem;
     }
 
+    .mobile-menu-btn.open {
+      left: 1rem;
+    }
     .guide-drawer.open {
-      display: block;
-      position: fixed;
-      top: 64px;
       left: 0;
-      width: 100%;
-      height: calc(100dvh - 64px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      padding: calc(44px + 2rem) 0 2rem;
-      z-index: 50;
-      background: var(--guide-canvas);
     }
   }
 
@@ -272,6 +373,11 @@
       overflow: hidden;
       clip-path: inset(50%);
       white-space: nowrap;
+    }
+    /* Sideways the button keeps its icon whatever the pills do. */
+    :global(html:has(.guide-screens)) .mobile-menu-btn.boxed:not(.tucked) {
+      visibility: visible;
+      pointer-events: auto;
     }
     :global(html:has(.guide-screens)) .mobile-menu-btn.tucked {
       transform: translateY(calc(-100% - 1rem));

@@ -107,9 +107,6 @@ Card-based architecture with integrated Generate button:
         sequenceState,
         metadata
       ),
-    // Generate-time guest LOOP lock (e.g. a locked loopType persisted from a
-    // signed-in session) opens the same auth screen as the selector gate.
-    openLoopGateAuth,
     () => generationAnimationTarget
   );
   const deviceState = createDeviceState();
@@ -167,12 +164,6 @@ Card-based architecture with integrated Generate button:
       isPremiumOrAbove(authState.role)
     )
   );
-  // Every guest gate goes straight to the auth screen — no intermediate
-  // nudge; the modal's contextual copy carries the why (Austen, 2026-08-10).
-  function openLoopGateAuth() {
-    authDrawerState.show("signup", "loop-locked-guest");
-  }
-
   // A Single LOOP pick the length can't hold (Quartered at 14 steps) still
   // lands: the pick wins and the length moves to the nearest one that fits.
   // It used to be shown but never saved, so closing the panel dropped it
@@ -428,14 +419,9 @@ Card-based architecture with integrated Generate button:
               },
               sequenceLength: configState.config.length,
               handRelationship: configState.config.handRelationship,
-              guestGated: accessTier === "guest",
               onLoopDisable: () => {
                 morphGenerateCard("loop", () => panelState.closeLOOPPanel());
                 configState.updateConfig({ loopEnabled: false });
-              },
-              onRequestSignup: () => {
-                morphGenerateCard("loop", () => panelState.closeLOOPPanel());
-                openLoopGateAuth();
               },
               onPickNeedsFit: fitLoopPick,
               onRhythmChange: (u) =>

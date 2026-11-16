@@ -5,7 +5,7 @@
    * Mirrors: Explore > Sequences. The gallery is a wall of public sequence
    * cards, and a pointer resting on a card plays it (the gallery's hover
    * preview). Here a wall of real sequences, drawn from the home hero's
-   * pool, rests on each one's opening step with its word under it. Each
+   * pool, rests on each one's opening step. Each
    * turn the finger comes to rest on the next card, which lifts and plays
    * its steps one after another, each move from the pose before it, at the
    * pace Create's previews play moves.

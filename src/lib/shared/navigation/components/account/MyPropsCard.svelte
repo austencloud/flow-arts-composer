@@ -77,9 +77,17 @@
         {#if loading}
           <span class="value-empty">{t("nav_ui_loading")}</span>
         {:else if selectedProps.length > 0}
-          <ul class="prop-list">
+          <!-- The chips look pressable, so the row of them is one button
+               that opens the prop editor, the same as Change. -->
+          <button
+            type="button"
+            class="prop-list"
+            onclick={onOpenPropEditor}
+            disabled={propState === null}
+            aria-label={t("nav_ui_change_props_you_spin_and_profile_prop")}
+          >
             {#each selectedProps.slice(0, MAX_VISIBLE_PROPS) as prop (prop)}
-              <li class="prop-chip">
+              <span class="prop-chip">
                 <span class="summary-prop-preview" aria-hidden="true">
                   <SelectedPropPreview
                     propType={prop}
@@ -87,14 +95,14 @@
                   />
                 </span>
                 <span>{getProfilePropLabel(prop)}</span>
-              </li>
+              </span>
             {/each}
             {#if hiddenPropCount > 0}
-              <li class="more-count">
+              <span class="more-count">
                 {t("nav_more_count", { count: hiddenPropCount })}
-              </li>
+              </span>
             {/if}
-          </ul>
+          </button>
         {:else}
           <span class="value-empty">{t("profile_pronouns_not_set")}</span>
         {/if}
@@ -220,13 +228,41 @@
 
   .prop-list {
     display: flex;
+    width: 100%;
     min-width: 0;
+    min-height: var(--min-touch-target, 44px);
     flex-wrap: wrap;
     align-items: center;
     gap: 0.4em;
     margin: 0;
     padding: 0;
-    list-style: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    background: transparent;
+    border: 0;
+    border-radius: 0.75em;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .prop-list:disabled {
+    cursor: default;
+  }
+
+  .prop-list:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 3px;
+  }
+
+  .prop-list:hover:not(:disabled) .prop-chip,
+  .prop-list:active:not(:disabled) .prop-chip {
+    background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+    border-color: color-mix(in srgb, var(--theme-accent) 30%, transparent);
   }
 
   .prop-chip,
@@ -250,6 +286,9 @@
     border: 1px solid color-mix(in srgb, var(--theme-accent) 16%, transparent);
     border-radius: 999px;
     white-space: nowrap;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .summary-prop-preview {
@@ -291,6 +330,12 @@
 
     .identity-action :global(.panel-btn span) {
       display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .prop-chip {
+      transition: none;
     }
   }
 </style>

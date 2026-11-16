@@ -8,6 +8,7 @@
   import {
     createUserWithEmailAndPassword,
     sendEmailVerification,
+    sendPasswordResetEmail,
     signInWithEmailAndPassword,
     updateProfile,
   } from "firebase/auth";
@@ -32,6 +33,7 @@
     showModeSwitch = true,
     onUseCode,
     onCreateAccount,
+    waysOutInError = false,
   }: {
     mode?: "signin" | "signup";
     email?: string;
@@ -42,6 +44,11 @@
     // Fired when a failed sign-in turns into "make me an account". The host
     // can keep this form on screen while the mode changes underneath it.
     onCreateAccount?: () => void;
+    // The sign-in screen keeps no standing "forgot password" link. A wrong
+    // password instead puts both ways out inside the error line itself: an
+    // emailed code, and a reset link. An account made with Google has no
+    // password at all, so the code is the one that always works.
+    waysOutInError?: boolean;
   } = $props();
 
   let password = $state("");
@@ -53,6 +60,9 @@
   // carries a way into Create account instead of ending on a dead stop.
   let offerCreateAccount = $state(false);
   let success = $state<string | null>(null);
+  // Set only by a credential miss, which is when the ways out make sense.
+  let credentialMiss = $state(false);
+  let resetState = $state<"idle" | "sending" | "sent" | "failed">("idle");
 
   // Lightweight client-side rate limiting
   const MAX_ATTEMPTS = 5;
@@ -113,6 +123,8 @@
     loading = true;
     error = null;
     offerCreateAccount = false;
+    credentialMiss = false;
+    resetState = "idle";
     success = null;
     recordAuthSubmission("password", mode);
 
@@ -238,6 +250,7 @@
                 }`
               : t("auth_error_invalid_credential");
           offerCreateAccount = true;
+          credentialMiss = true;
         }
       } else if (err?.code === "auth/too-many-requests") {
         error = t("auth_error_too_many_attempts");
@@ -249,6 +262,18 @@
       }
     } finally {
       loading = false;
+    }
+  }
+
+  async function sendReset() {
+    if (resetState === "sending") return;
+    resetState = "sending";
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      resetState = "sent";
+    } catch (err) {
+      console.error("[EmailPasswordAuth] password reset email failed", err);
+      resetState = "failed";
     }
   }
 
@@ -338,10 +363,42 @@
     </label>
 
     {#if error}
-      <p class="message error" role="alert" transition:growFade>{error}</p>
+      <div class="message error" role="alert" transition:growFade>
+        <p class="error-text">{error}</p>
+        {#if waysOutInError && credentialMiss && mode === "signin"}
+          <div class="ways-out">
+            {#if onUseCode}
+              <button
+                type="button"
+                class="way-out"
+                onclick={onUseCode}
+                disabled={loading}
+              >
+                {t("auth_use_code_instead")}
+              </button>
+            {/if}
+            <button
+              type="button"
+              class="way-out"
+              onclick={() => void sendReset()}
+              disabled={loading || resetState === "sending"}
+              aria-busy={resetState === "sending"}
+            >
+              {t("auth_reset_password")}
+            </button>
+          </div>
+          {#if resetState === "sent" || resetState === "failed"}
+            <p class="reset-note" role="status" transition:growFade>
+              {resetState === "sent"
+                ? t("auth_reset_sent", { email: email.trim() })
+                : t("auth_reset_failed")}
+            </p>
+          {/if}
+        {/if}
+      </div>
     {/if}
 
-    {#if offerCreateAccount && mode === "signin"}
+    {#if offerCreateAccount && mode === "signin" && !waysOutInError}
       <button
         class="switch"
         transition:growFade
@@ -378,7 +435,7 @@
       </Crossfade>
     </button>
 
-    {#if mode === "signin" && onUseCode}
+    {#if mode === "signin" && onUseCode && !waysOutInError}
       <button
         class="switch"
         transition:growFade
@@ -430,7 +487,7 @@
     display: flex;
     flex-direction: column;
     gap: clamp(4px, 0.8vh, 8px);
-    font-size: clamp(0.6875rem, 1.5vh, var(--font-size-compact));
+    font-size: max(0.75rem, clamp(0.6875rem, 1.5vh, var(--font-size-compact)));
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-weight: 600;
   }
@@ -506,8 +563,43 @@
     padding: clamp(6px, 1vh, 10px) clamp(8px, 1.5vw, 12px);
     border-radius: clamp(6px, 1vh, 10px);
     border: 1px solid transparent;
-    font-size: clamp(0.6875rem, 1.5vh, var(--font-size-compact));
+    font-size: max(0.75rem, clamp(0.6875rem, 1.5vh, var(--font-size-compact)));
     line-height: 1.4;
+  }
+
+  .error-text,
+  .reset-note {
+    margin: 0;
+  }
+
+  .ways-out {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .way-out {
+    min-height: 36px;
+    padding: 0.25rem 0.875rem;
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 55%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--theme-text, white);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .way-out:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .reset-note {
+    margin-top: 0.25rem;
+    color: var(--theme-text, white);
   }
 
   .message.error {

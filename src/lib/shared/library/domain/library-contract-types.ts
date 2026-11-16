@@ -103,4 +103,16 @@ export interface SaveResult {
   persisted: boolean;
   /** True when the save was made by a guest (anonymous / unauthenticated) user. */
   isGuest: boolean;
+  /**
+   * True when the save service already showed the guest a toast that confirms
+   * the save and offers an account (the first-save invitation, or the
+   * "publishing needs an account" note). A caller skips its own success toast
+   * so the guest hears about one save once.
+   */
+  accountAskShown?: boolean;
+  /**
+   * True when a guest asked for a public save and it was kept private on this
+   * device, because only a full account can post to the community gallery.
+   */
+  keptPrivateForGuest?: boolean;
 }

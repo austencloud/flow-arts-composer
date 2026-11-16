@@ -4,6 +4,7 @@ import { LOOPComponent } from "#lib/features/create/generate/shared/domain/const
 import {
   buildLoopOverlayModel,
   normalizeReflectionSelection,
+  REFLECTION_AXIS_DETAILS,
   type LoopRhythmValue,
 } from "#lib/features/create/generate/components/cards/loop-expanded-overlay-model.js";
 
@@ -66,14 +67,15 @@ describe("LOOP expanded overlay model", () => {
     expect(result.configurableComponents).toContain(LOOPComponent.ROTATED);
   });
 
-  it("keeps guest category locks ahead of the Apply action", () => {
-    const result = model(new Set([LOOPComponent.INVERTED]), {
+  it("gives a mirrored pick its normal Apply label with nothing locked", () => {
+    const result = model(new Set([LOOPComponent.MIRRORED]), {
       isMultiSelectMode: true,
-      guestGated: true,
     });
 
-    expect(result.guestLock.locked).toBe(true);
-    expect(result.buttonText).toBe("Sign Up to Unlock");
+    expect(result.isImplemented).toBe(true);
+    expect(result.buttonText).toBe(
+      REFLECTION_AXIS_DETAILS["north-south"].applyLabel
+    );
   });
 
   it("uses the selected reflection axis and inversion mode in live copy", () => {

@@ -178,12 +178,14 @@
         </button>
       </div>
     </div>
-    {#if saveError}
+    <div class="feedback-line">
+{#if saveError}
       <p id="pronouns-save-error" class="error-message" role="alert">
         <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
         {saveError}
       </p>
     {/if}
+    </div>
   {:else}
     <AccountValueRow
       label={t("profile_pronouns_label")}
@@ -197,6 +199,25 @@
 </div>
 
 <style>
+  /* The line under the input is kept even when empty, so an error or hint
+     appearing never moves Save and Cancel, and a long one wraps. */
+  .feedback-line {
+    min-height: 1.45em;
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.4;
+  }
+
+  .feedback-line :global(p) {
+    align-items: flex-start;
+    margin: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .feedback-line :global(p > i) {
+    margin-top: 0.2em;
+  }
+
   .section {
     display: flex;
     flex-direction: column;

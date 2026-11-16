@@ -1,23 +1,16 @@
+<!--
+  ContextualAuthPrompt - the centred sign-in box on wider windows.
+
+  The person's own background with a sequence playing on it, the brand and a
+  close button, and SignInContent: the same content the phone's sign-in
+  screen shows. Every provider flow stays inside SignInContent's parts.
+-->
 <script lang="ts">
   import type {
     AuthMode,
     AuthPromptContent,
   } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
-  import { getLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
-  import EmailAuthTabs from "./EmailAuthTabs.svelte";
-  import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
-  import SocialAuthCompact from "./SocialAuthCompact.svelte";
-  import { browser } from "$app/env";
-  import { page } from "$app/state";
-  import { isNative } from "#lib/shared/platform/services/platform-detector.js";
-  import { offersPhoneSignIn } from "../phone-sign-in/where.js";
-  import {
-    createPhoneSignInSession,
-    type PhoneSignInSession,
-  } from "../phone-sign-in/phone-sign-in-session.svelte.js";
-  import { growFade, popIn } from "#lib/shared/transitions/motion.js";
-  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { popIn } from "#lib/shared/transitions/motion.js";
   import ThemePreview from "#lib/shared/settings/components/tabs/background/ThemePreview.svelte";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { BackgroundType } from "@austencloud/backgrounds";
@@ -27,17 +20,16 @@
   } from "@austencloud/backgrounds/card";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { authPromptCopy } from "../domain/auth-prompt-copy";
-  import { onDestroy, tick, untrack } from "svelte";
+  import SignInContent, { type SignInView } from "./SignInContent.svelte";
 
   interface Props {
-    content: AuthPromptContent;
+    /** The gate's copy, or null for a plain Sign in. */
+    content?: AuthPromptContent | null;
     mode?: AuthMode;
     active?: boolean;
     idPrefix?: string;
     showClose?: boolean;
-    embedded?: boolean;
-    inAppBrowser?: boolean;
+    initialView?: SignInView;
     facebookError?: string | null;
     onClose?: () => void;
     onFacebookAuth?: () => void;
@@ -46,85 +38,20 @@
   }
 
   let {
-    content,
+    content = null,
     mode = $bindable("signup"),
     active = true,
     idPrefix = "contextual-auth",
     showClose = false,
-    embedded = false,
-    inAppBrowser = false,
+    initialView = "code",
     facebookError = null,
     onClose,
     onFacebookAuth,
     artifact = null,
   }: Props = $props();
 
-  let showEmailAuth = $state(false);
-  let showPhoneSignIn = $state(false);
-  let emailFlow = $state<HTMLElement>();
-  const lastMethod = $derived(getLastAuthMethod());
-  // The copy object is rebuilt on every mode switch; only opening or a new key
-  // is a new encounter, so the reset below watches these derived values, which
-  // wake it only when they actually change.
-  const isOpen = $derived(active);
-  const contentKey = $derived(content.key);
-  const lastUsedEmail = $derived(
-    lastMethod === "magic-link" || lastMethod === "password"
-  );
+  let prompt = $state<{ focusFirstField: () => void }>();
 
-  // Every opening and every action context starts as a fresh encounter. A
-  // previous email form should never leak into the next thing the user tries.
-  // Someone who signed in by email on this device last time skips the choice
-  // and lands on the form; "Other sign-in options" is one press away.
-  $effect(() => {
-    // A closed sheet stops asking the server about its code.
-    if (!isOpen) {
-      untrack(dropPhoneSession);
-      return;
-    }
-    contentKey;
-    showEmailAuth = untrack(() => lastUsedEmail);
-    showPhoneSignIn = false;
-    untrack(dropPhoneSession);
-  });
-
-  // "Use your phone" is offered only on Austen's own copies of the app.
-  const phoneOffered = $derived(
-    browser && offersPhoneSignIn(page.url, isNative())
-  );
-  // One phone sign-in per opening of the sheet. Pointing at the choice loads the
-  // panel, and only pressing it asks for a code, because a request can ring the
-  // owner's phone. The server also allows only a few codes per address in ten
-  // minutes, which is why going back keeps the code.
-  let phoneSession = $state.raw<PhoneSignInSession | null>(null);
-  let phonePanel = $state.raw<Promise<
-    typeof import("../phone-sign-in/PhoneSignInPanel.svelte")
-  > | null>(null);
-
-  function warmPhoneSignIn() {
-    phonePanel ??= import("../phone-sign-in/PhoneSignInPanel.svelte");
-  }
-
-  function openPhoneSignIn() {
-    warmPhoneSignIn();
-    phoneSession ??= createPhoneSignInSession();
-    // A code from earlier may have run out; this asks for a new one then, and
-    // does nothing while one is on its way or showing.
-    void phoneSession.start();
-    showPhoneSignIn = true;
-  }
-
-  function dropPhoneSession() {
-    phoneSession?.dispose();
-    phoneSession = null;
-  }
-
-  onDestroy(dropPhoneSession);
-
-  // The sheet sits on the person's own background, with a sequence playing
-  // beside the sign-in choices. The navigation panel stays plain: it already
-  // sits inside the app's chrome.
-  const withArt = $derived(!embedded);
   const backgroundType = $derived(
     getSettings().backgroundType || BackgroundType.COSMIC
   );
@@ -132,253 +59,68 @@
     (getCardMetadata(backgroundType) ?? BACKGROUND_CARD_REGISTRY[0])
       ?.gradient ?? "#0b0d12"
   );
-  const showcase = $derived(withArt ? import("./AuthShowcase.svelte") : null);
+  const showcase = import("./AuthShowcase.svelte");
 
-  const titleId = $derived(`${idPrefix}-title`);
-  const descriptionId = $derived(`${idPrefix}-description`);
-
-  // Switching between signing in and creating an account keeps the email form
-  // open. Sending the person back to the method choice cost two more presses.
-  function toggleMode() {
-    mode = mode === "signup" ? "signin" : "signup";
-  }
-
-  /** Puts the cursor in the email form's first empty box, if the form shows. */
+  /** Puts the cursor in the form's first empty box. */
   export function focusFirstField() {
-    if (!showEmailAuth || !emailFlow) return;
-    const inputs = [
-      ...emailFlow.querySelectorAll<HTMLInputElement>("input:not([disabled])"),
-    ];
-    (inputs.find((input) => !input.value) ?? inputs[0])?.focus();
-  }
-
-  // The pressed button leaves the page with the choice it offered, so focus
-  // moves into the form instead of falling to the page body.
-  async function openEmailAuth() {
-    showEmailAuth = true;
-    await tick();
-    focusFirstField();
+    prompt?.focusFirstField();
   }
 </script>
 
-<section
-  class="contextual-auth-prompt"
-  class:embedded
-  class:split={withArt}
-  class:phone-up={withArt && showPhoneSignIn}
-  aria-labelledby={titleId}
-  aria-describedby={descriptionId}
-  style:--art-fallback={withArt ? backgroundFallback : null}
+<div
+  class="contextual-auth-prompt split"
+  style:--art-fallback={backgroundFallback}
 >
-  {#if withArt}
-    <div class="art-canvas" aria-hidden="true">
-      <ThemePreview type={backgroundType} fallback={backgroundFallback} />
+  <div class="art-canvas" aria-hidden="true">
+    <ThemePreview type={backgroundType} fallback={backgroundFallback} />
+  </div>
+  <div class="art-stage">
+    <div class="art-sequence" aria-hidden="true">
+      {#await showcase then mod}
+        <mod.default sequence={artifact} />
+      {/await}
     </div>
-    <div class="art-stage">
-      <DualSourceCrossfade active={showPhoneSignIn ? "second" : "first"}>
-        {#snippet first()}
-          <div class="art-sequence" aria-hidden="true">
-            {#if showcase}
-              {#await showcase then mod}
-                <mod.default sequence={artifact} />
-              {/await}
-            {/if}
-          </div>
-        {/snippet}
-        {#snippet second()}
-          <div class="art-code">
-            {#if phonePanel && phoneSession}
-              {#await phonePanel then mod}
-                <div class="code-card">
-                  <mod.default session={phoneSession} part="code" />
-                </div>
-              {/await}
-            {/if}
-          </div>
-        {/snippet}
-      </DualSourceCrossfade>
-    </div>
-  {/if}
+  </div>
 
   <div class="sign-in-column">
-    {#if !embedded}
-      <header class="prompt-header">
-        <div class="brand-lockup">
-          <span class="brand-mark">
-            <img src="/branding/logo.jpg" alt="" width="56" height="56" />
-          </span>
-          <span class="brand-name">Flow Arts Composer</span>
-        </div>
-
-        {#if showClose}
-          <button
-            class="close-button"
-            type="button"
-            onclick={onClose}
-            aria-label={t("common_close")}
-            transition:popIn
-          >
-            <i class="fas fa-times" aria-hidden="true"></i>
-          </button>
-        {/if}
-      </header>
-    {/if}
-
-    <div class="prompt-copy">
-      <div id={titleId} class="prompt-heading" role="heading" aria-level="2">
-        <Crossfade key={content.title}>
-          {authPromptCopy(content.title)}
-        </Crossfade>
+    <header class="prompt-header">
+      <div class="brand-lockup">
+        <span class="brand-mark">
+          <img src="/branding/logo.jpg" alt="" width="56" height="56" />
+        </span>
+        <span class="brand-name">Flow Arts Composer</span>
       </div>
-      <div id={descriptionId} class="prompt-description">
-        <Crossfade key={content.body} animateHeight>
-          {authPromptCopy(content.body)}
-        </Crossfade>
-      </div>
-    </div>
 
-    <div class="auth-methods">
-      <Crossfade
-        key={inAppBrowser
-          ? "browser"
-          : showPhoneSignIn
-            ? "phone"
-            : showEmailAuth
-              ? "email"
-              : "providers"}
-        animateHeight
-      >
-        {#if inAppBrowser}
-          <!-- Google first: in a webview its button opens this page in the real
-               browser and carries on to Google there, so it is the one-tap
-               path, not a dead end to warn about below the fold. -->
-          <SocialAuthCompact {mode} {onFacebookAuth} />
-          <div class="email-flow in-app-email">
-            <div class="email-divider">
-              <span>{t("auth_continue_by_email")}</span>
-            </div>
-            <EmailAuthTabs bind:mode showModeSwitch={false} />
-          </div>
-        {:else if showPhoneSignIn}
-          <div class="email-flow phone-flow">
-            <button
-              class="email-back"
-              type="button"
-              onclick={() => (showPhoneSignIn = false)}
-            >
-              <i class="fas fa-arrow-left" aria-hidden="true"></i>
-              {t("auth_other_sign_in_options")}
-            </button>
-            {#if phonePanel && phoneSession}
-              {#await phonePanel then mod}
-                <mod.default
-                  session={phoneSession}
-                  part={withArt ? "words" : "both"}
-                />
-              {/await}
-            {/if}
-          </div>
-        {:else if showEmailAuth}
-          <div class="email-flow" bind:this={emailFlow}>
-            <button
-              class="email-back"
-              type="button"
-              onclick={() => (showEmailAuth = false)}
-            >
-              <i class="fas fa-arrow-left" aria-hidden="true"></i>
-              {t("auth_other_sign_in_options")}
-            </button>
-            <EmailAuthTabs bind:mode showModeSwitch={false} />
-          </div>
-        {:else}
-          <div class="method-grid">
-            <div class="google-method">
-              <SocialAuthCompact {mode} {onFacebookAuth} />
-            </div>
-
-            <div class="email-method-slot">
-              <button
-                class="email-method"
-                type="button"
-                onclick={openEmailAuth}
-                aria-label={lastUsedEmail
-                  ? t("auth_continue_email_last_used")
-                  : t("auth_continue_email")}
-              >
-                {#if lastUsedEmail}
-                  <LastUsedBadge />
-                {/if}
-                <i class="fas fa-envelope" aria-hidden="true"></i>
-                <span>{t("auth_continue_email")}</span>
-              </button>
-            </div>
-
-            {#if phoneOffered}
-              <button
-                class="phone-method"
-                type="button"
-                onpointerenter={warmPhoneSignIn}
-                onpointerdown={warmPhoneSignIn}
-                onfocus={warmPhoneSignIn}
-                onclick={openPhoneSignIn}
-              >
-                <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
-                <span>{t("auth_phone_use_your_phone")}</span>
-              </button>
-            {/if}
-          </div>
-        {/if}
-      </Crossfade>
-
-      {#if facebookError}
-        <p class="provider-error" role="alert" transition:growFade>
-          {facebookError}
-        </p>
+      {#if showClose}
+        <button
+          class="close-button"
+          type="button"
+          onclick={onClose}
+          aria-label={t("common_close")}
+          transition:popIn
+        >
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
       {/if}
-    </div>
+    </header>
 
-    <button class="mode-toggle" type="button" onclick={toggleMode}>
-      <Crossfade key={mode}>
-        {#if mode === "signup"}
-          <span>{t("auth_already_have_account")}</span>
-          <strong>{t("auth_sign_in")}</strong>
-        {:else}
-          <span>{t("auth_new_here")}</span>
-          <strong>{t("auth_create_account")}</strong>
-        {/if}
-      </Crossfade>
-    </button>
+    <div class="prompt-body">
+      <SignInContent
+        bind:this={prompt}
+        bind:mode
+        {content}
+        {active}
+        {idPrefix}
+        {initialView}
+        {facebookError}
+        {onFacebookAuth}
+        layout="box"
+      />
+    </div>
   </div>
-</section>
+</div>
 
 <style>
-  .contextual-auth-prompt.embedded {
-    width: 100%;
-    padding: 0;
-    overflow: visible;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .embedded .prompt-copy {
-    min-height: 0;
-    padding-block: 0 1.25rem;
-  }
-
-  .embedded .prompt-heading {
-    font-size: clamp(1.5rem, 1.3rem + 1cqw, 2rem);
-  }
-
-  .embedded .prompt-description {
-    min-height: 0;
-  }
-
-  .embedded .mode-toggle {
-    flex-wrap: wrap;
-  }
-
   .contextual-auth-prompt {
     --prompt-blue: var(--prop-blue, #4155d8);
     --prompt-red: var(--prop-red, #ef3340);
@@ -457,25 +199,11 @@
       padding var(--duration-normal) var(--ease-standard);
   }
 
-  /* The code needs its full square, so the band opens up for it. */
-  .phone-up .art-stage {
-    height: 18.5rem;
-  }
-
-  .art-sequence,
-  .art-code {
+  .art-sequence {
     display: grid;
     place-items: center;
     width: 100%;
     height: 100%;
-  }
-
-  .code-card {
-    padding: 1rem 1rem 0.5rem;
-    background: var(--theme-panel-bg, rgba(0, 0, 0, 0.75));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    border-radius: var(--radius-lg, 1rem);
-    box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
   }
 
   .split .sign-in-column {
@@ -492,8 +220,7 @@
       min-height: min(clamp(34rem, 55vh, 40rem), calc(100dvh - 3rem));
     }
 
-    .art-stage,
-    .phone-up .art-stage {
+    .art-stage {
       height: auto;
       padding: clamp(1rem, 2.5vw, 2.5rem);
     }
@@ -512,9 +239,6 @@
       padding-block: 0.5rem;
     }
 
-    .split .mode-toggle {
-      margin-top: 0.5rem;
-    }
   }
 
   .prompt-header {
@@ -585,240 +309,11 @@
     transform: translateY(-1px);
   }
 
-  .prompt-copy {
-    width: min(100%, 42rem);
-    min-height: clamp(5.5rem, 12cqw, 8rem);
-    margin-inline: auto;
-    padding-block: clamp(1.75rem, 4cqw, 3.5rem) clamp(1.25rem, 2.6cqw, 2.25rem);
+  .prompt-body {
+    padding-top: clamp(1rem, 3cqw, 2rem);
   }
 
-  .prompt-heading {
-    margin: 0;
-    color: var(--theme-text, #f8fafc);
-    font-size: clamp(1.75rem, 1.25rem + 2.1cqw, 3rem);
-    font-weight: 780;
-    line-height: 1.05;
-    letter-spacing: -0.035em;
-    text-wrap: balance;
-  }
-
-  .prompt-description {
-    max-width: 43rem;
-    min-height: 2.96em;
-    margin: clamp(0.65rem, 1.2cqw, 1rem) 0 0;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
-    font-size: clamp(0.9375rem, 0.82rem + 0.65cqw, 1.25rem);
-    line-height: 1.48;
-    text-wrap: pretty;
-  }
-
-  .auth-methods {
-    width: min(100%, 42rem);
-    margin-inline: auto;
-  }
-
-  .method-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(0.75rem, 1.6cqw, 1.25rem);
-  }
-
-  .google-method,
-  .email-method-slot {
-    min-width: 0;
-  }
-
-  .email-method-slot {
-    padding-top: 0.75rem;
-  }
-
-  .email-method {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    width: 100%;
-    min-height: var(--min-touch-target);
-    padding: 0.75rem 1rem;
-    color: var(--theme-text, #f8fafc);
-    font-size: var(--font-size-min);
-    font-weight: 650;
-    background:
-      linear-gradient(
-          var(--theme-panel-bg, #0b0d12),
-          var(--theme-panel-bg, #0b0d12)
-        )
-        padding-box,
-      linear-gradient(100deg, var(--prompt-blue), var(--prompt-red)) border-box;
-    border: 1px solid transparent;
-    border-radius: var(--radius-md, 0.625rem);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.24);
-    cursor: pointer;
-    transition:
-      background var(--duration-normal) var(--ease-standard),
-      box-shadow var(--duration-normal) var(--ease-standard),
-      transform var(--duration-normal) var(--ease-standard);
-  }
-
-  .email-method:hover {
-    background:
-      linear-gradient(
-          var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07)),
-          var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07))
-        )
-        padding-box,
-      linear-gradient(100deg, var(--prompt-blue), var(--prompt-red)) border-box;
-    box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.3);
-    transform: translateY(-1px);
-  }
-
-  .email-method i {
-    font-size: 1rem;
-  }
-
-  /* A quieter third choice under the two main ones, across both columns. */
-  .phone-method {
-    grid-column: 1 / -1;
-    justify-self: center;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    min-height: var(--min-touch-target);
-    padding: 0.5rem 1rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
-    font-size: var(--font-size-min);
-    background: transparent;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 999px;
-    cursor: pointer;
-    transition:
-      color var(--duration-fast) var(--ease-standard),
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard);
-  }
-
-  .phone-method:hover {
-    color: var(--theme-text, #f8fafc);
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.18));
-  }
-
-  .email-flow {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: clamp(1rem, 2.2cqw, 1.5rem);
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.035));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: var(--radius-lg, 1rem);
-  }
-
-  .email-divider {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
-    font-size: var(--font-size-compact);
-  }
-
-  .email-divider::before,
-  .email-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--theme-stroke, rgba(255, 255, 255, 0.1));
-  }
-
-  .email-back {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    gap: 0.5rem;
-    min-height: var(--min-touch-target);
-    padding: 0.5rem 0.75rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
-    background: transparent;
-    border: 0;
-    border-radius: var(--radius-sm, 0.5rem);
-    font-size: var(--font-size-min);
-    cursor: pointer;
-  }
-
-  .email-back:hover {
-    color: var(--theme-text, #f8fafc);
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-  }
-
-  .in-app-email {
-    margin-top: 1rem;
-  }
-
-  .provider-error {
-    margin: 0.75rem 0 0;
-    font-size: var(--font-size-min);
-    line-height: 1.45;
-    text-align: center;
-  }
-
-  .provider-error {
-    color: var(--semantic-error, #ef4444);
-  }
-
-  .mode-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    width: min(100%, 20rem);
-    min-height: var(--min-touch-target);
-    margin: clamp(1rem, 2.2cqw, 1.5rem) auto 0;
-    padding: 0.65rem 1rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.68));
-    background: color-mix(
-      in srgb,
-      var(--theme-card-bg, rgba(255, 255, 255, 0.04)) 72%,
-      transparent
-    );
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: var(--radius-md, 0.75rem);
-    font-size: var(--font-size-min);
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard);
-  }
-
-  .mode-toggle :global(.crossfade > .layer) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .mode-toggle:hover {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.18));
-  }
-
-  .mode-toggle strong {
-    color: color-mix(in srgb, var(--prompt-blue) 72%, white);
-    font-weight: 700;
-  }
-
-  .contextual-auth-prompt :global(.social-compact-button),
-  .contextual-auth-prompt :global(.email-auth-tabs button),
-  .email-method,
-  .mode-toggle {
-    min-height: var(--min-touch-target);
-  }
-
-  .close-button:focus-visible,
-  .email-method:focus-visible,
-  .phone-method:focus-visible,
-  .email-back:focus-visible,
-  .mode-toggle:focus-visible {
+  .close-button:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--prompt-blue) 72%, white);
     outline-offset: 3px;
   }
@@ -833,21 +328,6 @@
     .contextual-auth-prompt {
       padding: 1.25rem;
     }
-
-    .prompt-copy {
-      width: 100%;
-      min-height: 0;
-      padding-block: 1.5rem 1.25rem;
-    }
-
-    .method-grid {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.25rem;
-    }
-
-    .email-method-slot {
-      padding-top: 0;
-    }
   }
 
   @media (max-height: 35rem) and (min-width: 48rem) {
@@ -859,36 +339,19 @@
       width: 2.75rem;
     }
 
-    .prompt-copy {
-      min-height: 0;
-      padding-block: 0.8rem;
-    }
-
-    .prompt-heading {
-      font-size: 1.55rem;
-    }
-
-    .prompt-description {
-      min-height: 0;
-      margin-top: 0.4rem;
-      font-size: 0.875rem;
-    }
-
-    .mode-toggle {
-      margin-top: 0.6rem;
+    .prompt-body {
+      padding-top: 0.5rem;
     }
   }
 
+
   @media (prefers-reduced-motion: reduce) {
     .close-button,
-    .email-method,
-    .mode-toggle,
     .art-stage {
       transition: none;
     }
 
-    .close-button:hover,
-    .email-method:hover {
+    .close-button:hover {
       transform: none;
     }
   }

@@ -57,6 +57,7 @@
     colors,
     onExplain,
     bare = false,
+    fit = false,
   }: {
     /** The buugeng-family prop the tiles draw. */
     propType: PropType;
@@ -70,6 +71,9 @@
     onExplain?: () => void;
     /** Tiles only, for the pairs screen that already explains them. */
     bare?: boolean;
+    /** In the pairs screen's short sheet the tiles take the height that is
+     *  left and the pictures give way, so no word is ever cut off. */
+    fit?: boolean;
   } = $props();
 
   const palette = $derived(resolveViewerCustomColorPair(colors));
@@ -116,7 +120,7 @@
   ];
 </script>
 
-<div class="chirality-row" class:bare bind:clientWidth={width}>
+<div class="chirality-row" class:bare class:fit bind:clientWidth={width}>
   {#if !bare}
     <div class="chirality-heading">
       <span class="chirality-label">{t("settings_buugeng_pair")}</span>
@@ -290,9 +294,67 @@
     max-width: 4.5rem;
   }
 
+  /* Fit: only in the pairs screen's short sheet (its container query). The
+     four tiles share three rows (picture, name, letters) through a subgrid, so
+     the words take the room the longest of them needs and every picture gets
+     the same height and shrinks to what is left. Names stay 14px, letters 12px. */
+  @container pairs-explainer (height < 26rem) {
+    .chirality-row.fit {
+      height: 100%;
+      min-height: 0;
+    }
+    .chirality-row.fit :global(.ui-segments) {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      flex: 1 1 0;
+      min-height: var(--alt-touch-target, 36px);
+      grid-template-rows: minmax(0, 1fr) auto auto;
+      grid-auto-rows: auto;
+      row-gap: 0;
+      container-type: inline-size;
+    }
+    .chirality-row.fit :global(.ui-segments > button) {
+      display: grid;
+      grid-row: span 3;
+      grid-template-rows: subgrid;
+      row-gap: 0;
+      min-height: 0;
+      padding: 3px;
+    }
+    .chirality-row.fit :global(.segment-label),
+    .chirality-row.fit .pair-tile {
+      display: contents;
+    }
+    .chirality-row.fit .pair-tile :global(.pair-crop) {
+      grid-row: 1;
+      align-self: center;
+      justify-self: center;
+      min-height: 0;
+      /* The row's height, but never taller than the tile's width allows at
+         the picture's own 1.15 : 1 shape, so it is never squeezed or cut. */
+      height: min(100%, calc(min(25cqw - 12px, 4.5rem) / 1.15));
+      width: auto;
+      max-width: none;
+    }
+    .chirality-row.fit .pair-name {
+      grid-row: 2;
+      padding-top: 2px;
+    }
+    .chirality-row.fit .pair-letters {
+      grid-row: 3;
+    }
+  }
+
+  /* A name wider than its tile breaks inside the tile instead of running
+     into the next one (Russian "Зеркальные" at phone widths). */
   .pair-name {
+    max-width: 100%;
+    min-width: 0;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.15;
+    text-align: center;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
 
   .pair-letters {

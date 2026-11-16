@@ -40,7 +40,6 @@ import {
   periodToNumber,
 } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import { loopViabilityService } from "#lib/features/create/generate/shared/services/loop-viability-service.js";
-import { guestLoopGate } from "#lib/shared/create/services/loop-guest-gate.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   resolveAccessTier,
@@ -152,7 +151,6 @@ export function createGenerationActionsState(
   getConfig?: () => UIGenerationConfig | undefined,
   getSpellState?: () => SpellModeState | undefined,
   pushUndoSnapshot?: (type: UndoOperationType, metadata?: UndoMetadata) => void,
-  onGuestLoopLocked?: () => void,
   getAnimationTarget?: () => GenerationAnimationTarget | null | undefined
 ) {
   let isGenerating = $state(false);
@@ -200,30 +198,6 @@ export function createGenerationActionsState(
           });
           isGenerating = false;
           return;
-        }
-      }
-
-      // Guest LOOP safety net: the selector gates most configs up front, but a
-      // locked config can still reach Generate — a signed-in session's loopType
-      // persisted in localStorage outlives sign-out. Open the same contextual
-      // auth screen the selector uses instead of a button-less toast.
-      if (options.loopType && options.mode === GenerationMode.CIRCULAR) {
-        const guestTier = resolveAccessTier(
-          authState.isAuthenticated,
-          authState.isAnonymous,
-          isPremiumOrAbove(authState.role)
-        );
-        if (guestTier === "guest") {
-          const lock = guestLoopGate(options.loopType);
-          if (lock.locked) {
-            if (onGuestLoopLocked) {
-              onGuestLoopLocked();
-            } else {
-              toast.info(lock.reason, 6000);
-            }
-            isGenerating = false;
-            return;
-          }
         }
       }
 

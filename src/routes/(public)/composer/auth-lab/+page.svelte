@@ -7,6 +7,7 @@
     type AuthNudgeTrigger,
   } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { SignInView } from "#lib/shared/auth/components/SignInContent.svelte";
 
   type ScenarioKey = "share" | "library" | "save-limit";
 
@@ -48,6 +49,16 @@
       : "share"
   );
   let modalOpen = $state(page.url.searchParams.get("modal") === "1");
+  // Measuring states without the sign-in service: `?view=password` opens that
+  // view, `?kb=1` shows the keyboard-open frame, `?scenario=none` is the plain
+  // Sign in with no gate.
+  const requestedView = page.url.searchParams.get("view");
+  const initialView: SignInView =
+    requestedView === "password" || requestedView === "phone"
+      ? requestedView
+      : "code";
+  const forceKeyboardFrame = page.url.searchParams.get("kb") === "1";
+  const plain = requestedScenario === "none";
   const selected = $derived(scenarios[selectedKey]);
   const selectedContent = $derived(
     getAuthPromptContent(selected.reason, "signup")
@@ -113,8 +124,9 @@
 
       {#key selected.key}
         <ContextualAuthPrompt
-          content={selectedContent}
+          content={plain ? null : selectedContent}
           idPrefix="inline-contextual-auth"
+          {initialView}
         />
       {/key}
     </div>
@@ -124,7 +136,9 @@
 <AuthModal
   open={modalOpen}
   initialMode="signup"
-  reason={selected.reason}
+  reason={plain ? null : selected.reason}
+  {initialView}
+  {forceKeyboardFrame}
   onClose={() => (modalOpen = false)}
 />
 

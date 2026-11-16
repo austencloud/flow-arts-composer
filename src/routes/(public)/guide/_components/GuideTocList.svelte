@@ -9,11 +9,16 @@
    * toggle wins until the route changes. The prerendered HTML carries every
    * row unfolded (folds apply after hydration), so each topic stays a
    * crawlable link on every guide page.
+   *
+   * A page shown one screen at a time lists its own screens first, under
+   * its name: one row per screen, the current one filled. A row switches
+   * the screen in place.
    */
   import { onMount, tick } from "svelte";
   import type { ModuleDefinition, Section } from "@austencloud/sidebar";
   import { growFade } from "#lib/shared/transitions/motion.js";
-  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { GuidePageScreens } from "./guide-chrome-context";
   import {
     currentRoutePath,
     localHref,
@@ -26,10 +31,13 @@
 
   let {
     activeSectionId = "",
+    screens = null,
     revealKey = 0,
     onLinkClick,
   }: {
     activeSectionId?: string;
+    /** This page's screens, listed first (GuideScreens pages). */
+    screens?: GuidePageScreens | null;
     /** Bumped by the host when the drawer opens, to bring the current row
      *  into view. */
     revealKey?: number;
@@ -87,7 +95,9 @@
   }
 
   function revealCurrent(el: HTMLElement) {
-    const current = el.querySelector<HTMLElement>('[aria-current="page"]');
+    const current =
+      el.querySelector<HTMLElement>('[aria-current="step"]') ??
+      el.querySelector<HTMLElement>('[aria-current="page"]');
     if (!current) return;
     const scroller = scrollerOf(el);
     const box = scroller.getBoundingClientRect();
@@ -101,6 +111,7 @@
     const el = navEl;
     void pathname;
     void revealKey;
+    void screens?.index;
     if (!el) return;
     void tick().then(() => revealCurrent(el));
   });
@@ -111,6 +122,36 @@
   aria-label={tDynamic("guide_nav_aria")}
   bind:this={navEl}
 >
+  {#if screens && screens.labels.length > 1}
+    {@const page = screens}
+    <section class="this-page" aria-labelledby="guide-toc-this-page">
+      <h2 class="this-page-title" id="guide-toc-this-page">{page.title}</h2>
+      <ol class="screen-list">
+        {#each page.labels as label, n (n)}
+          <li>
+            <button
+              type="button"
+              class="screen-row"
+              aria-current={n === page.index ? "step" : undefined}
+              onclick={() => {
+                page.go(n);
+                onLinkClick?.();
+              }}
+            >
+              <span class="screen-n" aria-hidden="true">{n + 1}</span>
+              <span class="screen-name">{label}</span>
+              <span class="sr-only"
+                >{t("guide_screens_position", {
+                  n: n + 1,
+                  total: page.labels.length,
+                })}</span
+              >
+            </button>
+          </li>
+        {/each}
+      </ol>
+    </section>
+  {/if}
   {#each modules as m (m.id)}
     {@const hasRows = m.sections.length > 0}
     {@const open = isOpen(m)}
@@ -298,7 +339,85 @@
     border-radius: 2px;
   }
 
+  /* This page's screens: one full-width row each, the current one filled
+     orange like the screen pills. Fixed type sizes (guide words never scale
+     with the window). */
+  .this-page {
+    margin: 0 0 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid oklch(0.3 0.02 270 / 0.6);
+  }
+  .this-page-title {
+    margin: 0;
+    padding: 0.5rem 0.75rem 0.4rem;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    line-height: 1.3;
+    color: oklch(0.85 0.06 270);
+  }
+  .screen-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .screen-row {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 40px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 10px;
+    font-size: var(--font-size-sm);
+    font-weight: 550;
+    line-height: 1.25;
+    color: oklch(0.8 0.03 270);
+    cursor: pointer;
+    transition:
+      background var(--transition-micro),
+      color var(--transition-micro);
+  }
+  .screen-row:hover {
+    background: oklch(0.2 0.02 270 / 0.4);
+    color: oklch(0.92 0.03 270);
+  }
+  .screen-row:focus-visible {
+    outline: 2px solid oklch(0.74 0.11 265);
+    outline-offset: 2px;
+  }
+  .screen-row[aria-current="step"] {
+    background: #e8590c;
+    color: #fff;
+    font-weight: 650;
+  }
+  .screen-n {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, currentColor 14%, transparent);
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+  }
+  .screen-name {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .screen-row,
     .module-link,
     .module-toggle,
     .module-toggle i,

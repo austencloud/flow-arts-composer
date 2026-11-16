@@ -230,6 +230,30 @@ describe("retryPendingSyncs — account isolation", () => {
     );
   });
 
+  /**
+   * Only a full account can post to the gallery. A guest who saved with
+   * Public on before guest saves were kept private still holds a row recorded
+   * "public"; replaying it as public was refused by firestore.rules and raised
+   * the raw "Couldn't publish" box on the next boot (Lupe's visitor replay,
+   * 2026-11-15).
+   */
+  it("replays a guest's recorded PUBLIC intent as private", async () => {
+    authStateMock.isAnonymous = true;
+    rows.push(
+      makeRow({
+        id: "owned-by-b",
+        pendingSyncMetadata: { visibility: "public", notes: "" },
+      })
+    );
+    ledger.set("account-B", ["owned-by-b"]);
+
+    await retryPendingSyncs();
+
+    expect(saveSequenceWithMetadataMock.mock.calls[0]?.[1]?.visibility).toBe(
+      "private"
+    );
+  });
+
   it("replays a recorded PRIVATE intent as private", async () => {
     rows.push(
       makeRow({

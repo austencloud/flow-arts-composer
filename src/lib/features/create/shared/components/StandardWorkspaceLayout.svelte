@@ -286,6 +286,19 @@
   // Phones, stacked or sideways. This reads the screen and not the save view,
   // so the switch keeps its size while it fades out as the view closes.
   const phoneSaveTier = $derived(shortStackHeight || isTheaterViewport());
+  // On a phone (and the Fold) saving is a screen of its own: the tool panel
+  // takes the whole workspace, the save view draws the sequence it saves in
+  // its middle and puts its X in the top corner. Tablets and desktop keep the
+  // split, with the live grid beside the save panel. A stacked layout narrower
+  // than a portrait tablet is a phone however tall it is.
+  const PHONE_SAVE_SCREEN_MAX_WIDTH = 720;
+  const phoneSaveScreen = $derived(
+    isSaveView &&
+      (phoneSaveTier ||
+        (!useSideBySidePanels &&
+          layoutWidth > 0 &&
+          layoutWidth < PHONE_SAVE_SCREEN_MAX_WIDTH))
+  );
   // Those tiers leave the player so little height that its scrubber would take
   // a third of it. The word's row folds away while the animation shows there,
   // about doubling the canvas; the save view names the word.
@@ -510,6 +523,7 @@
   const showSavePreviewSwitch = $derived(
     shouldShowWorkspace &&
       isSaveView &&
+      !phoneSaveScreen &&
       playsInWorkspace(navigationState.activeTab) &&
       (currentSequence?.steps?.length ?? 0) > 0
   );
@@ -697,7 +711,8 @@
   <div
     bind:this={workspaceContainerRef}
     class="workspace-container"
-    class:workspace-collapsed={!shouldShowWorkspace}
+    class:workspace-collapsed={!shouldShowWorkspace || phoneSaveScreen}
+    inert={phoneSaveScreen}
     class:assemble-workspace={isAssembleTab}
     class:playback-dismissible={isWorkspacePlayback}
     style:--workspace-border-color={workspaceBorderColor}
@@ -880,6 +895,7 @@
         }}
         {onOpenFilters}
         {onCloseFilters}
+        saveScreen={phoneSaveScreen}
       />
     </div>
   </div>
@@ -901,7 +917,7 @@
         id: "create-workspace",
         content: workspacePanel,
         defaultSize: defaultPanelSizes[0],
-        fixedSize: !shouldShowWorkspace ? "0px" : undefined,
+        fixedSize: !shouldShowWorkspace || phoneSaveScreen ? "0px" : undefined,
         resizable: false,
         // The step grid lays out once at its final size and the opening
         // edge uncovers it, rather than resizing every pictograph per frame.

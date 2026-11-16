@@ -294,6 +294,7 @@
     onPracticeStepIndexChange,
     onOpenFilters,
     onCloseFilters,
+    saveScreen = false,
   }: {
     toolPanelRef?: IToolPanelMethods | null;
     /** The workspace word, named in the save view. */
@@ -302,6 +303,11 @@
     onPracticeStepIndexChange: (index: number | null) => void;
     onOpenFilters: () => void;
     onCloseFilters: () => void;
+    /**
+     * The layout gave this panel the whole workspace for saving (phones and
+     * the Fold), so the save view lays itself out as a screen of its own.
+     */
+    saveScreen?: boolean;
   } = $props();
 
   function handleStartPlacementSubmitted(
@@ -511,6 +517,7 @@
           <div class="sub-tab-content" data-tab="save">
             <SaveToLibraryView
               word={currentDisplayWord}
+              screen={saveScreen}
               onClose={() => panelState.closeSaveToLibraryPanel()}
             />
           </div>

@@ -926,3 +926,70 @@ describe("PropGrid rail details boxes", () => {
       .toBe("buugeng-style-box");
   });
 });
+
+// The phone prop sheet (PropSelectionSheet) asks for whole names: every prop
+// on the page, nothing scrolling, every name whole on at most two lines at
+// 12 px. At 360 wide five 58 px columns cut five names and a 52 px floor sent
+// the short sheet back to a scrolling grid.
+describe("PropGrid whole names", () => {
+  beforeEach(() => {
+    document.body.style.margin = "0";
+  });
+
+  it.each([
+    { width: 344, height: 340 },
+    { width: 360, height: 300 },
+    { width: 387, height: 420 },
+  ])(
+    "fits every prop with whole names at $width x $height",
+    async ({ width, height }) => {
+      await page.viewport(width, 800);
+      const host = sheetHost();
+      host.style.height = `${height}px`;
+      render(PropGrid, {
+        target: host,
+        props: {
+          selectedPropType: PropType.STAFF,
+          onSelect: vi.fn(),
+          variant: "inline",
+          flat: true,
+          fill: true,
+          wholeNames: true,
+          scrollMode: "internal",
+          fanAppearance: FIRE_FAN,
+          onFanAppearanceChange: vi.fn(),
+        },
+      });
+
+      await expect
+        .poll(() => document.querySelector(".flat-grid.fill.whole-names"))
+        .not.toBeNull();
+      const grid = document.querySelector<HTMLElement>(".flat-grid")!;
+      expect(grid.classList.contains("nameless")).toBe(false);
+      let scroller: HTMLElement | null = grid;
+      while (
+        scroller &&
+        !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)
+      )
+        scroller = scroller.parentElement;
+      await expect
+        .poll(() => scroller!.scrollHeight <= scroller!.clientHeight)
+        .toBe(true);
+
+      const labels = [...grid.querySelectorAll<HTMLElement>(".prop-label")];
+      expect(labels.length).toBeGreaterThan(10);
+      for (const label of labels) {
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        const lines = [...range.getClientRects()];
+        const box = label.getBoundingClientRect();
+        expect(parseFloat(getComputedStyle(label).fontSize)).toBeGreaterThanOrEqual(12);
+        expect(new Set(lines.map((r) => Math.round(r.top))).size).toBeLessThanOrEqual(2);
+        expect(Math.max(...lines.map((r) => r.width))).toBeLessThanOrEqual(box.width + 1);
+        expect(box.bottom).toBeLessThanOrEqual(
+          label.closest(".prop-button")!.getBoundingClientRect().bottom + 0.5
+        );
+      }
+    }
+  );
+});

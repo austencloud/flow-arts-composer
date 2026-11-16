@@ -7,10 +7,6 @@ import {
 } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
 import { generateExplanationText } from "#lib/features/create/generate/shared/services/loop-explanation-text-generator.js";
 import {
-  guestLoopGate,
-  type GuestLoopLock,
-} from "#lib/shared/create/services/loop-guest-gate.js";
-import {
   gateRhythm,
   type RhythmGate,
 } from "#lib/shared/create/services/loop-rhythm-gating.js";
@@ -110,8 +106,6 @@ export interface LoopOverlayModelInput {
   rhythmControlsAvailable: boolean;
   detailComponent: LOOPComponent | null;
   sequenceLength?: number;
-  /** True for guests: non-rotated LOOP types need an account. */
-  guestGated?: boolean;
   /** The hand mode from the TnD card. Absent reads as Free. */
   handRelationship?: TnDSelection;
 }
@@ -134,8 +128,6 @@ export interface LoopOverlayModel {
   detailView: string;
   specWire: LOOPSpecWire | null;
   rhythmGate: RhythmGate | null;
-  guestLock: GuestLoopLock;
-  lockedComponents: Set<LOOPComponent> | null;
   wordMathText: string | null;
   inversionCaption: string;
   buttonText: string;
@@ -202,21 +194,6 @@ function deriveConfigurableComponents(
   return configurable;
 }
 
-function deriveLockedComponents(
-  isMultiSelectMode: boolean,
-  guestGated: boolean
-): Set<LOOPComponent> | null {
-  if (!guestGated || isMultiSelectMode) return null;
-  const locked = new Set<LOOPComponent>();
-  for (const info of LOOP_COMPONENTS) {
-    const component = info.component as LOOPComponent;
-    const selection = new Set<LOOPComponent>([component]);
-    const gate = guestLoopGate(generateLOOPType(selection));
-    if (gate.locked) locked.add(component);
-  }
-  return locked;
-}
-
 function describeWordMath(
   selectedComponents: Set<LOOPComponent>,
   rhythm: LoopRhythmValue,
@@ -247,13 +224,11 @@ function describeInversion(rhythm: LoopRhythmValue): string {
 function describeApplyAction(
   selectedComponents: Set<LOOPComponent>,
   isImplemented: boolean,
-  guestLock: GuestLoopLock,
   reflectionAxis: ReflectionAxis
 ): string {
   const selectionCount = selectedComponents.size;
   if (selectionCount === 0) return "Select Components";
   if (!isImplemented) return "Combo Not Supported";
-  if (guestLock.locked) return "Sign Up to Unlock";
   if (selectionCount === 1 && selectedComponents.has(LOOPComponent.MIRRORED)) {
     return REFLECTION_AXIS_DETAILS[reflectionAxis].applyLabel;
   }
@@ -275,7 +250,6 @@ export function buildLoopOverlayModel(
     rhythmControlsAvailable,
     detailComponent,
     sequenceLength,
-    guestGated = false,
     handRelationship = "free",
   } = input;
   const generatedType = generateLOOPType(selectedComponents);
@@ -284,10 +258,6 @@ export function buildLoopOverlayModel(
     sequenceLength === undefined || !specWire
       ? null
       : gateRhythm(selectedComponents, rhythm, sequenceLength);
-  const guestLock =
-    !guestGated || selectedComponents.size === 0
-      ? ({ locked: false } as const)
-      : guestLoopGate(generatedType);
   const detailInfo = detailComponent
     ? (LOOP_COMPONENTS.find((info) => info.component === detailComponent) ??
       null)
@@ -320,8 +290,6 @@ export function buildLoopOverlayModel(
     detailView: detailInfo ? `detail-${detailInfo.component}` : "picker",
     specWire,
     rhythmGate,
-    guestLock,
-    lockedComponents: deriveLockedComponents(isMultiSelectMode, guestGated),
     wordMathText: describeWordMath(
       selectedComponents,
       rhythm,
@@ -332,7 +300,6 @@ export function buildLoopOverlayModel(
     buttonText: describeApplyAction(
       selectedComponents,
       isImplemented,
-      guestLock,
       rhythm.reflectionAxis
     ),
   };

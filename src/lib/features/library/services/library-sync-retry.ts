@@ -25,6 +25,7 @@ import { ContentModerationError } from "#lib/features/moderation/errors/content-
 import { isSequenceDeletionIntended } from "#lib/shared/library/services/sequence-persistence-coordinator.js";
 import { getOwnedSequenceIdSet } from "#lib/shared/library/services/saved-sequence-ledger.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isFullAccountUser } from "#lib/shared/auth/domain/access-tier.js";
 import {
   isPublishPermissionDenied,
   PUBLISH_PERMISSION_DENIED,
@@ -205,6 +206,16 @@ export async function retryPendingSyncs(): Promise<void> {
     if (authState.effectiveUserId !== ownerUid) return;
 
     const repo = getLibraryRepository();
+    // Only a full account can post to the community gallery; firestore.rules
+    // refuses a guest's public write. Guest saves are kept private from the
+    // start now, but a guest who saved before that (Lupe's visitor replay,
+    // 2026-11-15) still holds a row recorded "public", and replaying it as
+    // public would raise the same "Couldn't publish" box on the next boot. A
+    // guest's retry writes private; the row keeps its recorded intent.
+    const canPublish = isFullAccountUser(
+      authState.isAuthenticated,
+      authState.isAnonymous
+    );
 
     for (const sequence of stale) {
       if (isSequenceDeletionIntended(sequence.id)) continue;
@@ -222,10 +233,12 @@ export async function retryPendingSyncs(): Promise<void> {
           // Public-by-default is a rule about what a USER's save means; this is
           // an unattended background pass with no user in the loop, and
           // inventing publication intent it cannot evidence is not the same
-          // decision. A recorded "public" still syncs public, so no expressed
-          // intent is downgraded; only the unknowable case changes, and it
-          // changes to the recoverable side.
-          visibility: sequence.pendingSyncMetadata?.visibility ?? "private",
+          // decision. A recorded "public" still syncs public for a full
+          // account, so no expressed intent is downgraded; only the unknowable
+          // case changes, and it changes to the recoverable side.
+          visibility: canPublish
+            ? (sequence.pendingSyncMetadata?.visibility ?? "private")
+            : "private",
           tags: [...sequence.tags],
           notes: sequence.pendingSyncMetadata?.notes ?? "",
           thumbnailUrl: sequence.thumbnails[0],

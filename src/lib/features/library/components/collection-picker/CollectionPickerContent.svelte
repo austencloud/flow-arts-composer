@@ -60,6 +60,7 @@ Two modes:
     sequenceLabel,
     currentCollectionId = null,
     onBulkComplete,
+    noneTile = false,
   }: {
     mode?: "live" | "select" | "bulk";
     /** Required in live mode: the saved sequence to file. */
@@ -80,7 +81,19 @@ Two modes:
     currentCollectionId?: string | null;
     /** Bulk mode: called after every selected sequence has been filed. */
     onBulkComplete?: () => void;
+    /**
+     * Select mode: lead the grid with a "None" tile, pressed while nothing is
+     * chosen, that clears the choice in one tap (the phone save screen).
+     */
+    noneTile?: boolean;
   } = $props();
+
+  function clearSelection(): void {
+    if (selectedIds.length === 0) return;
+    getHapticFeedback()?.trigger("selection");
+    selectedIds = [];
+    onChange?.([]);
+  }
 
   // A repeating word always displays in its smallest form (FΨFΨFΨFΨ → FΨ).
   const displayLabel = $derived(
@@ -347,6 +360,27 @@ Two modes:
       aria-label={t("tab_library_collections")}
       bind:this={gridEl}
     >
+      {#if noneTile && mode === "select"}
+        <button
+          type="button"
+          class="collection-tile none-tile"
+          class:selected={selectedIds.length === 0}
+          data-picker-tile="none"
+          style="--tile-color: var(--theme-text-dim);"
+          aria-pressed={selectedIds.length === 0}
+          onclick={clearSelection}
+        >
+          <span class="tile-icon">
+            <i class="fas fa-ban" aria-hidden="true"></i>
+          </span>
+          <span class="tile-text">
+            <span class="tile-name">{t("library_ui_no_collection")}</span>
+          </span>
+          <span class="tile-check" aria-hidden="true">
+            <i class="fas fa-check"></i>
+          </span>
+        </button>
+      {/if}
       {#each visible as c, index (c.id)}
         {@const selected = isMember(c)}
         {@const bulkMembers = bulkMemberCount(c)}

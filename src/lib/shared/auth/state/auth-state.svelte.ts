@@ -700,10 +700,10 @@ async function doInitializeAuthListener(): Promise<void> {
         try {
           const { authDrawerState } =
             await import("../state/auth-drawer-state.svelte");
-          authDrawerState.reset();
-          // A real account no longer needs asking. An anonymous guest
-          // provisioned by a save is still a guest who said "not now".
-          if (!user.isAnonymous) authDrawerState.clearGateCooldown();
+          // A real account closes the sign-in screen and no longer needs
+          // asking. An anonymous guest provisioned by a save or a page
+          // mount is still a guest: the screen stays and "not now" holds.
+          authDrawerState.accountChanged(user);
         } catch {
           // Drawer state may not be loaded in some code paths - safe to ignore.
         }

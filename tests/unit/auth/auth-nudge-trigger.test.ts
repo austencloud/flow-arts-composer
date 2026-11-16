@@ -39,7 +39,6 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "export",
         "follow",
         "guest-first-save",
-        "loop-locked-guest",
         "module:learn",
         "module:library",
         "module:other",
@@ -111,22 +110,6 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
 
   it("the save-limit cap nudge interpolates GUEST_SAVE_CAP, not a hardcoded number", () => {
     expect(AUTH_NUDGE_TEXTS["save-limit"]).toContain(`${GUEST_SAVE_CAP}`);
-  });
-
-  it("the loop-locked-guest nudge leads with the ask, not a rotated-LOOP lesson", () => {
-    const text = AUTH_NUDGE_TEXTS["loop-locked-guest"];
-    // 2026-08-10 decision: a guest hits this after tapping a locked type
-    // (Mirrored, Inverted, ...), so opening with a definition of rotated
-    // LOOPs reads as a non sequitur. The nudge opens with the account ask;
-    // what "rotated" means belongs to the guide, not this modal.
-    expect(text.startsWith("Use every LOOP type")).toBe(true);
-    expect(text).not.toContain("sequences that");
-    // Rotated LOOPs may appear only as the what-stays-free note, degree-free.
-    expect(text).not.toContain("180°");
-    expect(text).not.toContain("90°");
-    // Domain rule: "turn" is reserved for prop/body turns, never a LOOP's
-    // rotation slice (tka-domain.md).
-    expect(text.toLowerCase()).not.toMatch(/\bturns?\b/);
   });
 });
 

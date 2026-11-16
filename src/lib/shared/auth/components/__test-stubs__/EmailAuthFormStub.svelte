@@ -1,6 +1,6 @@
 <script lang="ts">
-  // Stands in for EmailLinkAuth and EmailPasswordAuth inside EmailAuthTabs, so
-  // its tests can see the shared email and the code hand-off without Firebase.
+  // Stands in for EmailPasswordAuth inside SignInContent, so its tests can see
+  // the shared email and the code hand-off without Firebase.
   let {
     mode = $bindable("signin"),
     email = $bindable(""),

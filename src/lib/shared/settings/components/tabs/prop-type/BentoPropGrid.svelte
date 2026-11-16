@@ -24,6 +24,8 @@
     onPrimaryPropColorsChange,
     showColors = true,
     compactColors = false,
+    colorsInline = false,
+    colorsBelow = false,
     onDrillChange,
     heading: hostHeading,
     ...props
@@ -41,6 +43,7 @@
     | "triadBuild"
     | "onTriadBuildChange"
     | "onDrillChange"
+    | "leadInline"
   > & {
     fanAppearance?: FanAppearance;
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
@@ -57,6 +60,13 @@
     showColors?: boolean;
     /** Show colours as a toolbar button that opens the full editor. */
     compactColors?: boolean;
+    /**
+     * A short sheet: the colours as one button on the row of the grid's
+     * Styles button, so the props keep the page.
+     */
+    colorsInline?: boolean;
+    /** A tall sheet: the full colour block under the grid, not above it. */
+    colorsBelow?: boolean;
     onDrillChange?: (drilled: boolean) => void;
   } = $props();
   const settings = $derived(getSettings());
@@ -71,9 +81,13 @@
   // Compact hosts keep the catalogue ahead of the colour editor.
   const colorsPlace = $derived(
     props.layout !== "rail"
-      ? compactColors
-        ? "compact-before"
-        : "before"
+      ? colorsInline
+        ? "inline"
+        : colorsBelow
+          ? "after"
+          : compactColors
+            ? "compact-before"
+            : "before"
       : compactColors
         ? "toolbar"
         : "after"
@@ -94,7 +108,7 @@
      out with the tiles as one page, with nothing resizing, and Back returns
      them the same way. -->
 {#snippet colorLead()}
-  {@render colorSettings(false)}
+  {@render colorSettings(colorsPlace === "inline")}
 {/snippet}
 
 <!-- The block that drops the colours on a drill owns their transition. Svelte
@@ -132,7 +146,10 @@
   heading={colorsPlace === "toolbar" && showColors
     ? toolbarHeading
     : hostHeading}
-  lead={colorsPlace === "before" && showColors ? colorLead : undefined}
+  lead={(colorsPlace === "before" || colorsPlace === "inline") && showColors
+    ? colorLead
+    : undefined}
+  leadInline={colorsPlace === "inline"}
   onDrillChange={(next) => {
     drilled = next;
     onDrillChange?.(next);

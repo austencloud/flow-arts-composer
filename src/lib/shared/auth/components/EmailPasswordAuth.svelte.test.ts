@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   signIn: vi.fn(),
+  sendReset: vi.fn(),
   configurePersistence: vi.fn(),
   recordSubmission: vi.fn(),
   trackResult: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock("firebase/auth", () => ({
   createUserWithEmailAndPassword: vi.fn(),
   sendEmailVerification: vi.fn(),
   updateProfile: vi.fn(),
+  sendPasswordResetEmail: mocks.sendReset,
 }));
 
 vi.mock("../firebase", () => ({
@@ -56,6 +58,7 @@ import EmailPasswordAuth from "./EmailPasswordAuth.svelte";
 describe("EmailPasswordAuth transitions", () => {
   beforeEach(() => {
     mocks.signIn.mockReset();
+    mocks.sendReset.mockReset();
     mocks.configurePersistence.mockReset();
     mocks.recordSubmission.mockReset();
     mocks.trackResult.mockReset();
@@ -135,5 +138,52 @@ describe("EmailPasswordAuth transitions", () => {
     await expect
       .element(page.getByLabelText("Password", { exact: true }))
       .toHaveValue("a-fresh-password");
+  });
+
+  it("puts the two ways out of a wrong password in the error line itself", async () => {
+    mocks.signIn.mockRejectedValue({ code: "auth/invalid-credential" });
+    mocks.sendReset.mockResolvedValue(undefined);
+    const onUseCode = vi.fn();
+
+    render(EmailPasswordAuth, {
+      mode: "signin",
+      showModeSwitch: false,
+      waysOutInError: true,
+      onUseCode,
+    });
+    // No standing "forgot password" choice before a miss.
+    await expect
+      .element(page.getByRole("button", { name: "Reset password" }))
+      .not.toBeInTheDocument();
+
+    await page.getByRole("textbox", { name: "Email" }).fill("dancer@example.com");
+    await page.getByLabelText("Password", { exact: true }).fill("not-it");
+    await page.getByRole("button", { name: "Sign In" }).click();
+
+    const alert = page.getByRole("alert");
+    await expect
+      .element(alert.getByRole("button", { name: "Email me a code instead" }))
+      .toBeVisible();
+    await expect
+      .element(alert.getByRole("button", { name: "Reset password" }))
+      .toBeVisible();
+    // The create-account offer lives in the view's own pill instead.
+    await expect
+      .element(
+        page.getByRole("button", { name: "Create an account with this email" })
+      )
+      .not.toBeInTheDocument();
+
+    await alert.getByRole("button", { name: "Reset password" }).click();
+    expect(mocks.sendReset).toHaveBeenCalledWith(
+      mocks.auth,
+      "dancer@example.com"
+    );
+    await expect
+      .element(page.getByText(/We sent a reset link/))
+      .toBeVisible();
+
+    await alert.getByRole("button", { name: "Email me a code instead" }).click();
+    expect(onUseCode).toHaveBeenCalledTimes(1);
   });
 });

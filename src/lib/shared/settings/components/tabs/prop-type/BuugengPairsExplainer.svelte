@@ -84,7 +84,7 @@
     <p class="explain">{t("settings_buugeng_pairs_explain")}</p>
 
     <div class="tiles">
-      <PropChiralityRow {propType} {hands} {partner} {colors} {onChange} bare />
+      <PropChiralityRow {propType} {hands} {partner} {colors} {onChange} bare fit={fill} />
     </div>
   </div>
 </div>
@@ -123,9 +123,12 @@
      both, and the whole screen fits the sheet's fixed height. */
   @container pairs-explainer (height < 26rem) {
     .pairs-layout {
-      grid-template-columns: 7.5rem minmax(0, 1fr);
+      grid-template-columns: 5.5rem minmax(0, 1fr);
       grid-template-areas: "stage explain" "tiles tiles";
+      grid-template-rows: auto minmax(0, 1fr);
+      align-content: stretch;
       align-items: center;
+      height: 100%;
       gap: 6px 10px;
       padding: 2px 4px 2px;
     }
@@ -135,8 +138,12 @@
     .pairs-layout .explain {
       line-height: 1.32;
     }
+    .pairs-layout .tiles {
+      align-self: stretch;
+      min-height: 0;
+    }
     .pairs-layout .stage-art {
-      width: 82%;
+      width: 100%;
     }
   }
 
@@ -167,6 +174,8 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 700;
     text-align: center;
+    overflow-wrap: anywhere;
+    line-height: 1.15;
   }
 
   .explain {

@@ -2,8 +2,11 @@
   A guide page shown one screen at a time, the way /codex drills down: the
   page is exactly the window under the site header and never scrolls.
 
-  Header: the page's kicker and title, then one pill per screen (they pan
-  sideways inside their own row when there are more than fit). Body: the
+  Header: the page's kicker and title, then one pill per screen where they
+  all fit their row. Where they do not (measured, not guessed from a
+  breakpoint), one box takes the row in their place: the list icon, the
+  current screen's name and "n / N". It opens the shell's contents drawer,
+  which lists this page's screens first (2026-11-15). Body: the
   current screen, drawn at the zoom that fills the space (GuideFitBox).
   Footer: Back and Next, which step through the screens and then on to the
   previous or next page, with All guides between them. They are one-line
@@ -71,6 +74,7 @@
   import { holdPageReady } from "@austencloud/motion";
   import { tileFlight } from "#lib/shared/transitions/tile-flight.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getGuideChromeContext } from "../guide-chrome-context";
   import { Crossfade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
@@ -81,7 +85,6 @@
     readScreenParam,
     SCREEN_PARAM,
   } from "./guide-screen-url";
-  import { revealInRow } from "./reveal-in-row";
 
   type PageLink = { href: string; title: string } | null;
   /** Where Back or Next leads: another screen of this page, or a page. */
@@ -190,6 +193,7 @@
   const waiting = $derived(!handedOver && !firstShows);
   let direction = $state<1 | -1>(1);
   let pillRow = $state<HTMLElement>();
+  const chrome = getGuideChromeContext();
   const count = $derived(labels.length);
   const last = $derived(Math.max(0, count - 1));
   // The screen drawn. A recut can shorten the list before the effect below
@@ -202,9 +206,9 @@
   }
 
   /** For a screen's own list of screens. */
-  const goTo = (next: number): void => void go(next);
+  const goTo = (next: number): void => go(next);
 
-  async function go(next: number): Promise<void> {
+  function go(next: number): void {
     if (next === index || next < 0 || next > last) return;
     direction = next > index ? 1 : -1;
     index = next;
@@ -217,41 +221,64 @@
       // no history step for each one.
       { mode: bodyHead ? "replace" : "push" }
     );
-    await tick();
-    showActivePill();
   }
 
-  // The pill row pans from its first pill; it moves only as far as brings
-  // the current pill into view, and snaps to a pill's edge, so no name is
-  // cut at the row's start.
-  function showActivePill(): void {
-    const pill = pillRow?.querySelector<HTMLElement>('[aria-current="step"]');
-    if (pillRow && pill) revealInRow(pillRow, pill);
-    pillEdges();
+  // Do all the pills fit their row? The row never scrolls sideways: where
+  // they do not fit they are hidden (still laid out, so they keep being
+  // measured and the row keeps its height) and the box shows instead. The
+  // row and each pill are observed, so a resize, a recut or a late web
+  // font all measure again. Without the shell (no drawer to open) the
+  // pills always show.
+  let boxed = $state(false);
+  // Where the pills share the Contents button's line, they start just past
+  // it; its width is the label's, which changes with the language.
+  let contentsClear = $state<number | null>(null);
+  function contentsButton(): HTMLElement | null {
+    return document.querySelector<HTMLElement>(".mobile-menu-btn");
   }
-
-  // A soft fade on whichever side has more pills out of view.
-  let moreLeft = $state(false);
-  let moreRight = $state(false);
-  function pillEdges(): void {
-    if (!pillRow) return;
-    const { scrollLeft, clientWidth, scrollWidth } = pillRow;
-    moreLeft = scrollLeft > 2;
-    moreRight = scrollLeft + clientWidth < scrollWidth - 2;
+  function measureFit(): void {
+    if (!pillRow || !chrome) return;
+    const btn = contentsButton();
+    const row = pillRow.parentElement;
+    if (btn && row && btn.offsetWidth > 0) {
+      // offsetLeft ignores the tuck transform; the button is fixed.
+      const clear = Math.ceil(
+        btn.offsetLeft + btn.offsetWidth + 10 - row.getBoundingClientRect().left
+      );
+      if (clear !== contentsClear) contentsClear = Math.max(0, clear);
+    }
+    boxed = pillRow.scrollWidth > pillRow.clientWidth + 1;
   }
   $effect(() => {
     const row = pillRow;
-    if (!row) return;
-    const observer = new ResizeObserver(pillEdges);
+    void labels;
+    if (!row || !chrome) return;
+    const observer = new ResizeObserver(measureFit);
     observer.observe(row);
+    for (const pill of row.children) observer.observe(pill);
+    const btn = contentsButton();
+    if (btn) observer.observe(btn);
     return () => observer.disconnect();
+  });
+
+  // The shell lists this page's screens in its drawer, and its Contents
+  // button steps aside while the box stands for it.
+  $effect(() => {
+    if (!chrome || count < 2 || bodyHead) return;
+    chrome.setScreens({ title, labels, index: shown, go: goTo });
+    return () => chrome.setScreens(null);
+  });
+  const showsBox = $derived(boxed && live && count > 1 && !bodyHead);
+  $effect(() => {
+    if (!chrome) return;
+    chrome.setBoxed(showsBox);
+    return () => chrome.setBoxed(false);
   });
 
   function onPopState(): void {
     const before = index;
     read();
     direction = index >= before ? 1 : -1;
-    void tick().then(showActivePill);
   }
 
   onMount(() => {
@@ -259,7 +286,6 @@
     const fallback = setTimeout(release, 1000);
     read();
     live = true;
-    void tick().then(showActivePill);
     window.addEventListener("popstate", onPopState);
     return () => {
       clearTimeout(fallback);
@@ -305,7 +331,6 @@
         },
         { mode: "replace" }
       );
-      void tick().then(showActivePill);
     });
   });
 
@@ -352,25 +377,56 @@
       {#if subtitle}<p class="subtitle">{subtitle}</p>{/if}
     </div>
     {#if count > 1 && !bodyHead}
-      <nav
-        class="pills"
-        class:more-left={moreLeft}
-        class:more-right={moreRight}
-        aria-label="Parts of this page"
-        bind:this={pillRow}
-        onscroll={pillEdges}
+      <!-- The pills and the box share one cell, both always laid out, so
+           the row is the same height whichever shows. -->
+      <div
+        class="screens-row"
+        class:boxed={showsBox}
+        style:--contents-clear={contentsClear === null
+          ? undefined
+          : `${contentsClear}px`}
       >
-        {#each labels as label, n (n)}
+        <nav class="pills" aria-label="Parts of this page" bind:this={pillRow}>
+          {#each labels as label, n (n)}
+            <button
+              type="button"
+              class="pill"
+              aria-current={n === shown ? "step" : undefined}
+              onclick={() => go(n)}
+            >
+              <span class="pill-n">{n + 1}</span>{label}
+            </button>
+          {/each}
+        </nav>
+        {#if chrome}
           <button
             type="button"
-            class="pill"
-            aria-current={n === shown ? "step" : undefined}
-            onclick={() => go(n)}
+            class="screen-box"
+            aria-label={t("guide_screens_box_label", {
+              name: labels[shown] ?? "",
+              n: shown + 1,
+              total: count,
+            })}
+            aria-expanded={chrome.contentsOpen}
+            aria-controls="guide-drawer"
+            onclick={(event) => chrome.openContents(event.currentTarget)}
           >
-            <span class="pill-n">{n + 1}</span>{label}
+            <!-- Inline, so it does not wait for the icon font. -->
+            <svg class="box-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M5.5 4h8M5.5 8h8M5.5 12h8" />
+              <path class="dots" d="M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
+            </svg>
+            <span class="box-name">
+              <Crossfade key={shown} duration={DURATION.fast}>
+                {labels[shown] ?? ""}
+              </Crossfade>
+            </span>
+            <span class="box-count" aria-hidden="true"
+              >{shown + 1} / {count}</span
+            >
           </button>
-        {/each}
-      </nav>
+        {/if}
+      </div>
     {/if}
   </header>
 
@@ -416,7 +472,7 @@
         <noscript>
           <style>
             .guide-screens .first,
-            .guide-screens .pills {
+            .guide-screens .screens-row {
               opacity: 1 !important;
             }
             .guide-screens .waiting {
@@ -593,51 +649,97 @@
     text-wrap: balance;
   }
 
-  /* One pill per screen. They centre when they fit and pan sideways inside
-     this row when they do not; the page never scrolls sideways. */
+  /* The pills and the box stacked in one cell. */
+  .screens-row {
+    display: grid;
+    min-width: 0;
+  }
+  .screens-row > * {
+    grid-area: 1 / 1;
+  }
+  .screens-row.boxed .pills,
+  .screens-row:not(.boxed) .screen-box {
+    visibility: hidden;
+  }
+
+  /* One pill per screen, centred, when they all fit. They never scroll:
+     their overflow is what the fit check reads, and then the box shows. */
   .pills {
     display: flex;
     gap: 0.4rem;
     min-width: 0;
     padding: 0.15rem 0.25rem 0.35rem;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
+    overflow: hidden;
     justify-content: safe center;
-    scroll-snap-type: x proximity;
-    scroll-padding-inline: 0.25rem;
-  }
-  /* More pills out of view fade at that edge, so a cut pill reads as
-     "more this way". */
-  .pills.more-right {
-    mask-image: linear-gradient(
-      to right,
-      #000 calc(100% - 2.5rem),
-      transparent
-    );
-  }
-  .pills.more-left {
-    mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
-  }
-  .pills.more-left.more-right {
-    mask-image: linear-gradient(
-      to right,
-      transparent,
-      #000 2.5rem,
-      #000 calc(100% - 2.5rem),
-      transparent
-    );
   }
   /* The server's pill count is a guess at the window's screen split; the
      row keeps its height and shows once the page is live. */
-  .guide-screens:not(.live) .pills {
+  .guide-screens:not(.live) .screens-row {
     opacity: 0;
   }
-  .guide-screens.live .pills {
+  .guide-screens.live .screens-row {
     transition: opacity var(--duration-fast) var(--ease-standard);
   }
-  .pills::-webkit-scrollbar {
-    display: none;
+
+  /* The box: the Contents button grown across the row. The name wraps to
+     a second line rather than being cut; type is fixed, never scaled with
+     the window. */
+  .screen-box {
+    align-self: center;
+    justify-self: center;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: min(100%, 36rem);
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.35rem 1rem 0.35rem 0.9rem;
+    border: 1px solid color-mix(in oklab, var(--ink, #1a1a1a) 16%, transparent);
+    border-radius: 22px;
+    background: color-mix(in oklab, var(--ink, #1a1a1a) 5%, transparent);
+    color: var(--ink, #1a1a1a);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+    line-height: 1.25;
+    text-align: start;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-standard);
+  }
+  .screen-box:hover {
+    background: color-mix(in oklab, var(--ink, #1a1a1a) 10%, transparent);
+  }
+  .screen-box:focus-visible,
+  .pill:focus-visible {
+    outline: 2px solid oklch(0.74 0.11 265);
+    outline-offset: 2px;
+  }
+  .box-icon {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    opacity: 0.8;
+  }
+  .box-icon .dots {
+    stroke-width: 2.4;
+  }
+  .box-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .box-count {
+    flex: none;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--ink-dim, #555);
   }
   .pill {
     flex: 0 0 auto;
@@ -655,7 +757,6 @@
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
-    scroll-snap-align: start;
     transition:
       background var(--duration-fast) var(--ease-standard),
       border-color var(--duration-fast) var(--ease-standard);
@@ -837,9 +938,14 @@
     .head:not(:has(.pills)) {
       padding-top: calc(44px + 1.5rem);
     }
-    .pills {
+    /* The pills start just past the Contents button; the box stands for
+       that button and keeps its 36rem cap, so a tablet or a wide touch
+       screen gets a centred box, not a bar the width of the window. */
+    .screens-row {
       order: -1;
-      margin-left: 10rem;
+    }
+    .pills {
+      margin-left: var(--contents-clear, 10rem);
       min-height: 44px;
       justify-content: flex-start;
     }
@@ -983,9 +1089,19 @@
     .body-head .before-title {
       margin: 0;
     }
-    .pills {
+    /* Sideways the Contents button keeps its icon; where the pills do not
+       fit they are simply not shown. */
+    .screens-row {
       order: 0;
-      flex: 1 1 auto;
+      /* Only the room the title leaves: the hidden pills' natural width
+         must not squeeze the title. */
+      flex: 1 1 0;
+      align-items: center;
+    }
+    .screen-box {
+      display: none;
+    }
+    .pills {
       align-items: center;
       margin-left: 0;
       min-height: 0;
@@ -994,6 +1110,9 @@
     .pill {
       min-height: 36px;
       font-size: 0.85rem;
+    }
+    .pill-n {
+      font-size: var(--font-size-xs);
     }
     .body {
       grid-area: body;

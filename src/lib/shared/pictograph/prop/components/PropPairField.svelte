@@ -15,6 +15,7 @@
     disabled = false,
     showColors = false,
     fill = false,
+    row = false,
     picker = "inline",
   }: {
     value: ResolvedPropConfig;
@@ -39,6 +40,12 @@
      */
     fill?: boolean;
     /**
+     * A one-line row in a settings group (the phone save screen): a flat
+     * face, the current pair truncating before the chevron, and a chevron
+     * that points to the picker opening over the screen. Implies `fill`.
+     */
+    row?: boolean;
+    /**
      * Where the picker opens. `inline` grows it under the button, for a field
      * that already lives in a dialog. `modal` opens it in a fit-sized dialog
      * so a tall prop grid never pushes the surrounding form apart.
@@ -57,21 +64,28 @@
   }
 </script>
 
-<div class="prop-pair-field" class:fill>
+<div class="prop-pair-field" class:fill={fill || row} class:row>
   <PanelButton
-    variant="secondary"
+    variant={row ? "quiet" : "secondary"}
     {disabled}
-    fullWidth={fill}
+    fullWidth={fill || row}
     ariaExpanded={picker === "inline" ? choosing : undefined}
     onclick={() => (choosing = !choosing)}
   >
     <span class="lead">
       <PropCompositionPreview propType={value.leftPropType} size={32} neutral />
-      {fill ? label : t("prop_pair_label_with_colon", { label })}
+      <span class="label-text"
+        >{fill || row
+          ? label
+          : t("prop_pair_label_with_colon", { label })}</span
+      >
     </span>
     <span class="value">
-      {pairLabel}
-      <i class="fas fa-chevron-down" aria-hidden="true"></i>
+      <span class="value-text">{pairLabel}</span>
+      <i
+        class="fas {row ? 'fa-chevron-right' : 'fa-chevron-down'}"
+        aria-hidden="true"
+      ></i>
     </span>
   </PanelButton>
   {#if picker === "inline" && choosing && !disabled}
@@ -130,6 +144,29 @@
 
   .prop-pair-field.fill .value {
     flex-shrink: 0;
+  }
+
+  /* As a group row, the pair gives way before the label does: it truncates
+     ahead of the chevron instead of pushing the row wider than the screen. */
+  .prop-pair-field.row .lead {
+    flex-shrink: 0;
+  }
+
+  .prop-pair-field.row .value {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .prop-pair-field.row .value-text,
+  .prop-pair-field.row .label-text {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .prop-pair-field.row .value-text {
+    color: var(--theme-text-dim);
   }
 
   .prop-pair-field.fill .value i {

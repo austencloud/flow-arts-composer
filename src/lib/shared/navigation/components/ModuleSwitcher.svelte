@@ -8,7 +8,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import { onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import { desktopSidebarState } from "../../layout/desktop-sidebar-state.svelte";
   import type { ModuleDefinition, ModuleId } from "../domain/types";
   import ModuleList from "./ModuleList.svelte";
@@ -18,15 +18,7 @@
   import type { ResponsiveSettings } from "../../device/domain/models/device-models";
   import Drawer from "../../foundation/ui/Drawer.svelte";
   import AccountRow from "./account/AccountRow.svelte";
-  import type AuthModal from "../../auth/components/AuthModal.svelte";
-  import {
-    trackAuthModalAbandoned,
-    trackAuthSurfaceOpened,
-  } from "#lib/shared/analytics/auth-events.js";
-  import {
-    clearAuthSubmissionBridge,
-    settleAuthSubmissionCompleted,
-  } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+  import { authDrawerState } from "../../auth/state/auth-drawer-state.svelte";
   import { authState } from "../../auth/state/auth-state.svelte";
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
@@ -38,7 +30,6 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { popIn, motionDuration } from "#lib/shared/transitions/motion.js";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
-  import { whenMotionSettled } from "#lib/shared/foundation/utils/background-scheduling.js";
   import { navigationState } from "../state/navigation-state.svelte";
   import { getAccessibleSectionsForModule } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
 
@@ -68,9 +59,6 @@
   let deviceDetector: DeviceDetector | null = null;
   let isOpen = $state(false);
   let selectedModuleId = $state<ModuleId | null>(null);
-  let authView = $state(false);
-  let InlineAuthComponent = $state<typeof AuthModal | null>(null);
-  let authBackButton = $state<HTMLButtonElement | null>(null);
   let drawerContainer = $state<HTMLDivElement | null>(null);
   const headerMotion = createLayoutMotion({
     getRoot: () => drawerContainer,
@@ -82,14 +70,12 @@
   });
 
   $effect.pre(() => {
-    authView;
     selectedModuleId;
     if (isOpen) headerMotion.capture();
     else headerMotion.cancel();
   });
 
   $effect(() => {
-    authView;
     selectedModuleId;
     if (isOpen) headerMotion.play();
   });
@@ -108,53 +94,9 @@
   let listScroller = $state<HTMLElement | null>(null);
 
   function resetListScroll() {
-    // Nested auth form transitions also emit introstart. Preserve the focused
-    // field's scroll position while switching email, password, and recovery.
-    if (!authView) listScroller?.scrollTo({ top: 0 });
+    listScroller?.scrollTo({ top: 0 });
   }
 
-  function revealFocusedAuthField() {
-    const target = document.activeElement;
-    const scroller = listScroller;
-    if (
-      !authView ||
-      !(target instanceof HTMLElement) ||
-      !scroller ||
-      !scroller.querySelector(".navigation-auth-view")?.contains(target)
-    )
-      return;
-    const field = target.getBoundingClientRect();
-    const viewport = scroller.getBoundingClientRect();
-    if (field.bottom > viewport.bottom - 12) {
-      scroller.scrollTop += field.bottom - viewport.bottom + 12;
-    } else if (field.top < viewport.top + 12) {
-      scroller.scrollTop -= viewport.top + 12 - field.top;
-    }
-  }
-
-  function revealAuthFocus(event: FocusEvent) {
-    if (!(event.target instanceof HTMLElement)) return;
-    requestAnimationFrame(revealFocusedAuthField);
-    // Email, password, and recovery forms can grow after receiving focus.
-    setTimeout(revealFocusedAuthField, DURATION.normal);
-  }
-
-  $effect(() => {
-    const scroller = listScroller;
-    if (!authView || !scroller) return;
-    const observer = new ResizeObserver(() =>
-      requestAnimationFrame(revealFocusedAuthField)
-    );
-    observer.observe(scroller);
-    window.visualViewport?.addEventListener("resize", revealFocusedAuthField);
-    return () => {
-      observer.disconnect();
-      window.visualViewport?.removeEventListener(
-        "resize",
-        revealFocusedAuthField
-      );
-    };
-  });
 
   const selectedModule = $derived(
     modules.find(
@@ -166,23 +108,6 @@
   );
   const drillDirection = $derived<-1 | 1>(selectedModuleId ? 1 : -1);
 
-  $effect(() => {
-    if (authView && isFullAccount) {
-      // The account can appear before the sign-in form's provider promise
-      // resolves; settling counts the completion so the funnel keeps it.
-      settleAuthSubmissionCompleted();
-      authView = false;
-      void focusAccountRow();
-    }
-  });
-
-  $effect(() => {
-    if (!isOpen && authView) {
-      trackAuthModalAbandoned("backdrop_or_escape");
-      clearAuthSubmissionBridge();
-      authView = false;
-    }
-  });
 
   const hasUnread = $derived(inboxState.totalUnreadCount > 0);
   const unreadCount = $derived(inboxState.totalUnreadCount);
@@ -217,72 +142,19 @@
   function openDrawer() {
     hapticService?.trigger("selection");
     selectedModuleId = null;
-    authView = false;
     resetListScroll();
     isOpen = true;
   }
 
-  // Sign in opens its form in place. Fetched only on the press, the first
-  // press showed a "Loading" line for a moment: the list's box eased down to
-  // that line and then back up to the form, and the second ease ran behind
-  // the form's own and overflowed the list. Once the drawer has settled for
-  // someone signed out, fetch the form so the press goes straight to it.
-  let inlineAuthLoad: Promise<void> | null = null;
-  function loadInlineAuth(): Promise<void> {
-    inlineAuthLoad ??= import("../../auth/components/AuthModal.svelte").then(
-      (module) => {
-        InlineAuthComponent ??= module.default;
-      },
-      (error: unknown) => {
-        inlineAuthLoad = null;
-        throw error;
-      }
-    );
-    return inlineAuthLoad;
-  }
-
-  $effect(() => {
-    if (!isOpen || isFullAccount || InlineAuthComponent) return;
-    let cancelled = false;
-    void whenMotionSettled().then(() => {
-      // A failed warm-up is retried by the press, which reports its own error.
-      if (!cancelled) loadInlineAuth().catch(() => {});
-    });
-    return () => {
-      cancelled = true;
-    };
-  });
-
-  async function handleSignIn() {
+  // Sign in opens the one sign-in surface (a screen of its own on a phone)
+  // over the menu, which stays where it was underneath. Signed-in people keep
+  // their account row and its actions here.
+  function handleSignIn() {
     hapticService?.trigger("selection");
-    trackAuthSurfaceOpened({
+    authDrawerState.showOnRequest("signin", undefined, undefined, {
       surface: "auth_sheet",
       origin: "module_navigation",
-      auth_mode: "signin",
     });
-    authView = true;
-    listScroller?.scrollTo({ top: 0 });
-    await loadInlineAuth();
-    await tick();
-    if (isOpen && authView) authBackButton?.focus();
-  }
-
-  async function handleAuthBack() {
-    hapticService?.trigger("selection");
-    trackAuthModalAbandoned("close_button");
-    clearAuthSubmissionBridge();
-    authView = false;
-    await focusAccountRow();
-  }
-
-  async function focusAccountRow() {
-    await tick();
-    const rows = drawerContainer?.querySelectorAll<HTMLButtonElement>(
-      ".account-footer .account-row.drawer"
-    );
-    Array.from(rows ?? [])
-      .find((row) => !row.closest("[inert]"))
-      ?.focus();
   }
 
   function handleInboxClick() {
@@ -427,46 +299,29 @@
 >
   <div class="module-switcher-container" bind:this={drawerContainer}>
     <!-- Header -->
-    <div class="module-switcher-header" class:auth-view={authView}>
+    <div class="module-switcher-header">
       <button
         type="button"
         class="drill-back-button"
-        class:visible={selectedModule !== null || authView}
-        class:auth-back={authView}
+        class:visible={selectedModule !== null}
         data-navigation-header="back"
-        bind:this={authBackButton}
-        aria-label={authView
-          ? t("nav_ui_back_to_modules")
-          : t("nav_ui_back_to_all_modules")}
-        aria-hidden={selectedModule === null && !authView}
-        disabled={selectedModule === null && !authView}
-        tabindex={selectedModule === null && !authView ? -1 : 0}
-        onclick={authView ? handleAuthBack : handleDrillBack}
+        aria-label={t("nav_ui_back_to_all_modules")}
+        aria-hidden={selectedModule === null}
+        disabled={selectedModule === null}
+        tabindex={selectedModule === null ? -1 : 0}
+        onclick={handleDrillBack}
       >
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        {#if authView}<span transition:popIn>{t("nav_ui_navigation")}</span
-          >{/if}
       </button>
       <div class="header-content" data-navigation-header="title">
-        <Crossfade key={authView ? "auth" : selectedModuleId}>
+        <Crossfade key={selectedModuleId}>
           <h2>
-            {authView
-              ? t("settings_account")
-              : selectedModule
-                ? t(selectedModule.labelKey)
-                : t("nav_ui_navigation")}
+            {selectedModule
+              ? t(selectedModule.labelKey)
+              : t("nav_ui_navigation")}
           </h2>
         </Crossfade>
-        <!-- Comes and goes with the Sign in view on the list's clock; see the
-             account footer below. -->
-        <Crossfade
-          key={authView}
-          mode="swap"
-          duration={DURATION.normal}
-          animateHeight
-        >
-          {#if !authView}
-            <div class="current-location">
+        <div class="current-location">
               <div class="module-name">
                 <Crossfade key={selectedModuleId ?? localizedCurrentModuleName}>
                   {selectedModule
@@ -477,8 +332,6 @@
                 </Crossfade>
               </div>
             </div>
-          {/if}
-        </Crossfade>
       </div>
       <button
         class="close-button"
@@ -500,7 +353,7 @@
       onintrostartcapture={resetListScroll}
     >
       <Crossfade
-        key={authView ? "__auth__" : (selectedModuleId ?? "__modules__")}
+        key={selectedModuleId ?? "__modules__"}
         mode="swap"
         motion="step"
         direction={drillDirection}
@@ -508,24 +361,7 @@
         animateHeight={true}
       >
         <div class="navigator-body">
-          {#if authView}
-            <div class="navigation-auth-view" onfocusin={revealAuthFocus}>
-              <Crossfade key={InlineAuthComponent !== null} animateHeight>
-                {#if InlineAuthComponent}
-                  <InlineAuthComponent
-                    open
-                    inline
-                    initialMode="signin"
-                    onClose={handleAuthBack}
-                  />
-                {:else}
-                  <p class="auth-loading" role="status">
-                    {t("common_loading")}
-                  </p>
-                {/if}
-              </Crossfade>
-            </div>
-          {:else if selectedModule}
+          {#if selectedModule}
             <ModuleDestinationList
               module={selectedModule}
               sections={selectedSections}
@@ -551,24 +387,8 @@
       </Crossfade>
     </div>
 
-    <!-- Account Footer. It and the header's location line come and go with the
-         Sign in view on the list's clock: a swap Crossfade like the list's,
-         keyed in the same commit, holds its height while the old view fades
-         out and then eases on the same frames as the list's box. Moved on a
-         clock of their own, they change the room the list has while its box
-         still holds the old height: at the sheet's height cap the list
-         overflowed and flashed a scrollbar, and below it the sheet grew and
-         then shrank (or the reverse) instead of moving once. A Svelte
-         transition cannot keep this step: it starts a frame or two after the
-         commit. The leaving layer turns inert in the Crossfade. -->
+    <!-- Account Footer -->
     <div class="account-footer-slot">
-      <Crossfade
-        key={authView}
-        mode="swap"
-        duration={DURATION.normal}
-        animateHeight
-      >
-        {#if !authView}
           <div class="account-footer">
             <AccountRow
               variant="drawer"
@@ -652,8 +472,6 @@
               </div>
             </Crossfade>
           </div>
-        {/if}
-      </Crossfade>
     </div>
   </div>
 </Drawer>
@@ -732,20 +550,6 @@
     flex-shrink: 0;
     gap: 16px; /* More space between header content and close button */
     position: relative;
-  }
-
-  .module-switcher-header.auth-view {
-    grid-template-columns: auto minmax(0, 1fr) var(--min-touch-target);
-  }
-
-  .drill-back-button.auth-back {
-    display: inline-flex;
-    gap: 0.5rem;
-    width: auto;
-    padding-inline: 0.75rem;
-    color: var(--theme-text);
-    font-size: var(--font-size-min);
-    font-weight: 600;
   }
 
   /* Subtle gradient accent at top of header */
@@ -889,37 +693,10 @@
     padding: 12px 20px 16px;
   }
 
-  .navigation-auth-view {
-    width: min(100%, 35rem);
-    margin-inline: auto;
-  }
-
-  .auth-loading {
-    margin: 0;
-    padding-block: 1rem;
-    color: var(--theme-text-dim);
-  }
-
   /* Landscape mobile - optimize for left drawer */
   @media (max-height: 600px) and (orientation: landscape) {
     .module-switcher-header {
       padding: 12px 14px 10px;
-    }
-
-    .module-switcher-header.auth-view {
-      padding-inline: 6px;
-      gap: 6px;
-    }
-
-    .module-switcher-header.auth-view h2 {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .drill-back-button.auth-back {
-      padding-inline: 4px;
-      gap: 4px;
     }
 
     .module-switcher-header h2 {

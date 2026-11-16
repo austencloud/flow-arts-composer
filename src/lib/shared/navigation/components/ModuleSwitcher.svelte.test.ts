@@ -1,11 +1,10 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { tick } from "svelte";
 import { authState } from "./__test-stubs__/NavigationAuthState.svelte";
 
 const mocks = vi.hoisted(() => ({
-  globalAuthShow: vi.fn(),
+  showOnRequest: vi.fn(),
 }));
 
 vi.mock("../../auth/state/auth-state.svelte", async () => ({
@@ -14,11 +13,7 @@ vi.mock("../../auth/state/auth-state.svelte", async () => ({
 }));
 
 vi.mock("../../auth/state/auth-drawer-state.svelte", () => ({
-  authDrawerState: { show: mocks.globalAuthShow },
-}));
-
-vi.mock("../../auth/components/AuthModal.svelte", async () => ({
-  default: (await import("./__test-stubs__/InlineAuthStub.svelte")).default,
+  authDrawerState: { showOnRequest: mocks.showOnRequest },
 }));
 
 vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
@@ -57,14 +52,19 @@ function openNavigation() {
   window.dispatchEvent(new Event("module-switcher-toggle"));
 }
 
-describe("ModuleSwitcher inline sign-in lifecycle", () => {
+/**
+ * The menu used to hold its own sign-in pane, which a swipe closed and which
+ * opened on Password. A guest's Sign in row now opens the one sign-in surface
+ * (a screen of its own on a phone) over the menu, which stays put beneath.
+ */
+describe("ModuleSwitcher guest Sign in row", () => {
   beforeEach(() => {
     authState.isFullAccount = false;
     authState.user = null;
-    mocks.globalAuthShow.mockClear();
+    mocks.showOnRequest.mockClear();
   });
 
-  it("keeps sign-in in the same dialog and returns with Back", async () => {
+  it("opens the shared sign-in surface and leaves the menu as it was", async () => {
     render(ModuleSwitcher, {
       currentModule: "create",
       currentModuleName: "Create",
@@ -73,105 +73,39 @@ describe("ModuleSwitcher inline sign-in lifecycle", () => {
     openNavigation();
     const dialog = page.getByRole("dialog", { name: "Module navigation menu" });
     await expect.element(dialog).toBeInTheDocument();
-    await expect
-      .element(page.getByRole("button", { name: "Close menu" }))
-      .toHaveFocus();
+
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect.element(page.getByTestId("inline-auth")).toBeInTheDocument();
+    expect(mocks.showOnRequest).toHaveBeenCalledTimes(1);
+    expect(mocks.showOnRequest).toHaveBeenCalledWith(
+      "signin",
+      undefined,
+      undefined,
+      { surface: "auth_sheet", origin: "module_navigation" }
+    );
+    await expect.element(dialog).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Sign in" }))
+      .toBeInTheDocument();
     expect(document.querySelectorAll("dialog[open]")).toHaveLength(1);
-    expect(mocks.globalAuthShow).not.toHaveBeenCalled();
-
-    await page.getByRole("button", { name: "Back to modules" }).click();
-    await expect
-      .element(page.getByTestId("inline-auth"))
-      .not.toBeInTheDocument();
-    await expect
-      .element(page.getByRole("button", { name: "Sign in" }))
-      .toBeInTheDocument();
-    await expect
-      .element(page.getByRole("button", { name: "Sign in" }))
-      .toHaveFocus();
-
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await page.getByRole("button", { name: "Close menu" }).click();
-    openNavigation();
-    await expect
-      .element(page.getByRole("button", { name: "Close menu" }))
-      .toHaveFocus();
-    await expect
-      .element(page.getByTestId("inline-auth"))
-      .not.toBeInTheDocument();
-    await expect
-      .element(page.getByRole("button", { name: "Sign in" }))
-      .toBeInTheDocument();
   });
 
-  it("returns to account navigation on auth success and starts fresh after reopen", async () => {
+  it("shows the account row and its actions once a full account signs in", async () => {
     render(ModuleSwitcher, {
       currentModule: "create",
       currentModuleName: "Create",
       modules: [],
     });
     openNavigation();
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect.element(page.getByTestId("inline-auth")).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Sign in" }))
+      .toBeInTheDocument();
 
     authState.user = { displayName: "Member" };
     authState.isFullAccount = true;
-    await expect
-      .element(page.getByTestId("inline-auth"))
-      .not.toBeInTheDocument();
     await expect.element(page.getByText("Member")).toBeInTheDocument();
     await expect
-      .element(page.getByRole("button", { name: "Edit profile" }))
-      .toHaveFocus();
-
-    await page.getByRole("button", { name: "Close menu" }).click();
-    authState.user = null;
-    authState.isFullAccount = false;
-    openNavigation();
-    await expect
       .element(page.getByRole("button", { name: "Sign in" }))
-      .toBeInTheDocument();
-    await expect
-      .element(page.getByTestId("inline-auth"))
       .not.toBeInTheDocument();
-  });
-
-  it("keeps one interactive view and restores focus after an interrupted Back", async () => {
-    render(ModuleSwitcher, {
-      currentModule: "create",
-      currentModuleName: "Create",
-      modules: [],
-    });
-    openNavigation();
-    await expect
-      .element(page.getByRole("button", { name: "Sign in" }))
-      .toBeInTheDocument();
-
-    // Direct clicks avoid Playwright's stability wait, reversing the animation
-    // while the outgoing footer and auth layer are still mounted.
-    const accountButton = () =>
-      document.querySelector<HTMLButtonElement>(
-        ".account-footer:not([inert]) .account-row.drawer"
-      );
-    accountButton()!.click();
-    await tick();
-    document
-      .querySelector<HTMLButtonElement>('button[aria-label="Back to modules"]')!
-      .click();
-    await tick();
-    accountButton()!.click();
-    await tick();
-    await expect.element(page.getByTestId("inline-auth")).toBeInTheDocument();
-
-    await page.getByRole("button", { name: "Back to modules" }).click();
-    await expect
-      .element(page.getByRole("button", { name: "Sign in" }))
-      .toHaveFocus();
-    expect(document.activeElement?.closest("[inert]")).toBeNull();
-    expect(document.querySelectorAll("dialog[open]")).toHaveLength(1);
-    expect(mocks.globalAuthShow).not.toHaveBeenCalled();
   });
 });

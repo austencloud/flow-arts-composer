@@ -58,6 +58,12 @@
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import SettingToggleButton from "../SettingToggleButton.svelte";
   import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
+  import SettingsDrillPanel, {
+    type SettingsDrillItem,
+  } from "#lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
+  import SettingsDrillRow from "#lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
+  import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
+  import { getProfilePropLabel } from "#lib/shared/community/domain/profile-prop-catalog.js";
   import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
   import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
   import {
@@ -74,6 +80,10 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { growFade } from "#lib/shared/transitions/motion.js";
+  import { createKeyboardInset } from "#lib/shared/mobile/utils/keyboard-inset.svelte.js";
+  import { computeKeyboardOpenFrame } from "#lib/shared/mobile/utils/keyboard-open-frame.js";
+  import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
 
   import type {
     AccountManager,
@@ -85,12 +95,122 @@
   interface Props {
     currentSettings?: unknown;
     onSettingUpdate?: (event: { key: string; value: unknown }) => void;
+    /** Layout harness only: act as if an on-screen keyboard were up. */
+    forceKeyboard?: boolean;
   }
 
   let {
     currentSettings: _currentSettings,
     onSettingUpdate: _onSettingUpdate,
+    forceKeyboard = false,
   }: Props = $props();
+
+  // Keyboard-open frame (the shared rule in keyboard-open-frame.ts): while a
+  // personal-details field is being typed in and an on-screen keyboard is up,
+  // the page shows only that field's label, input, hint or error line, and
+  // Save and Cancel. Focus anywhere inside the open editor (the input or its
+  // buttons) keeps the frame, so a press on Save is not moved by the page
+  // coming back under the finger.
+  let editorFocused = $state(false);
+  let isIOSPlatform = $state(false);
+  let isTouchDevice = $state(false);
+  const keyboard = createKeyboardInset(() => editorFocused);
+  const keyboardFrame = $derived(
+    forceKeyboard
+      ? editorFocused
+      : computeKeyboardOpenFrame({
+          isInputFocused: editorFocused,
+          isSubmitting: false,
+          isIOSPlatform,
+          isTouchDevice,
+          keyboardHeight: keyboard.height,
+        })
+  );
+  // Where the keyboard overlays the page (VirtualKeyboard API), the frame
+  // keeps the editor clear of it; elsewhere the viewport already shrinks.
+  const keyboardLift = $derived(
+    keyboardFrame && keyboard.hasVirtualKeyboardAPI ? keyboard.height : 0
+  );
+
+  // Phone and Fold (under 48rem of width): one fixed frame of boxes that
+  // drill down. From 48rem the two and three column workspace stays.
+  let tabWidth = $state(0);
+  const compactFrame = $derived.by(() => {
+    if (typeof window === "undefined") return false;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const width = tabWidth > 0 ? tabWidth : window.innerWidth;
+    return width < 48 * rem;
+  });
+  let drillSelected = $state<string | null>(null);
+
+  function openDrill(id: string) {
+    hapticService?.trigger("selection");
+    drillSelected = id;
+  }
+
+  const spunProps = $derived(setupPropState?.propsISpinWith ?? []);
+  const personalSummary = $derived(
+    [
+      authState.user?.displayName,
+      userUsername ? `@${userUsername}` : "",
+      userPronouns,
+    ]
+      .filter(Boolean)
+      .join(" · ") || t("profile_pronouns_not_set")
+  );
+  const propsSummary = $derived(
+    spunProps.length > 0
+      ? spunProps.map((prop) => getProfilePropLabel(prop)).join(", ")
+      : t("profile_pronouns_not_set")
+  );
+  const PROVIDER_NAMES: Record<string, string> = {
+    "google.com": "Google",
+    "facebook.com": "Facebook",
+    "instagram.com": "Instagram",
+    "apple.com": "Apple",
+    phone: "Phone",
+  };
+  const signInSummary = $derived(
+    connectedProviderIds
+      .map((id) =>
+        id === "password" ? t("auth_email") : (PROVIDER_NAMES[id] ?? id)
+      )
+      .join(", ") || t("profile_pronouns_not_set")
+  );
+  const securitySummary = $derived(
+    authState.user && profileState.hasPasswordProvider(authState.user)
+      ? t("profile_password_enabled")
+      : t("profile_no_password")
+  );
+  const drillItems = $derived<SettingsDrillItem[]>([
+    { id: "personal", label: t("profile_personal_details"), value: personalSummary },
+    { id: "props", label: t("nav_ui_props_you_spin"), value: propsSummary },
+    { id: "sign-in", label: t("profile_sign_in_methods"), value: signInSummary },
+    { id: "security", label: t("profile_security"), value: securitySummary },
+  ]);
+
+  function isInOpenEditor(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false;
+    const editor = target.closest("[data-save-shortcut-scope]");
+    return !!editor?.querySelector("input, textarea");
+  }
+
+  function handleEditorFocusIn(event: FocusEvent) {
+    editorFocused = isInOpenEditor(event.target);
+  }
+
+  function handleEditorFocusOut(event: FocusEvent) {
+    if (!isInOpenEditor(event.relatedTarget)) editorFocused = false;
+  }
+
+  // Once the rest of the page has stepped aside, bring the open editor to the
+  // top of the screen; the scroll position from before would leave it above.
+  function revealOpenEditor() {
+    if (!keyboardFrame) return;
+    const active = document.activeElement;
+    const cell = active instanceof Element ? active.closest(".field-cell") : null;
+    cell?.scrollIntoView({ block: "start" });
+  }
 
   const profileState = createProfileSettingsState();
   setProfileSettingsContext(profileState);
@@ -231,6 +351,12 @@
   onMount(() => {
     hapticService = getHapticFeedback();
     accountManager = getAccountManager();
+    isIOSPlatform = detectPlatform() === "ios";
+    try {
+      isTouchDevice = getDeviceDetector().isTouchDevice();
+    } catch {
+      isTouchDevice = false;
+    }
   });
 
   async function loadAccountDetails(user: User) {
@@ -324,6 +450,7 @@
 
     switch (taskId) {
       case "display-name":
+        if (compactFrame) drillSelected = "personal";
         displayNameEditRequest += 1;
         break;
       case "profile-photo":
@@ -453,7 +580,13 @@
   }
 </script>
 
-<div class="profile-tab">
+<div
+  class="profile-tab"
+  class:keyboard-frame={keyboardFrame}
+  class:frame-mode={compactFrame && authState.isFullAccount && !isPreviewMode}
+  bind:clientWidth={tabWidth}
+  style:--keyboard-lift="{keyboardLift}px"
+>
   {#if isPreviewMode && userPreviewState.data.profile}
     {@const previewProfile = userPreviewState.data.profile}
     <div class="profile-content">
@@ -551,55 +684,33 @@
         </div>
       </div>
     </div>
+  {:else if authState.isFullAccount && authState.user && compactFrame}
+    <!-- Phone and Fold: one fixed frame. The hero and a box per group; each
+         box opens its group as its own screen with a back arrow
+         (SettingsDrillPanel, the shared drill-down owner). -->
+    <div class="profile-frame">
+      <SettingsDrillPanel
+        items={drillItems}
+        bind:selected={drillSelected}
+        detail={drillDetail}
+        listContent={drillLanding}
+      />
+    </div>
   {:else if authState.isFullAccount && authState.user}
     <div class="profile-content">
-      {#if showAccountSetup && accountSetupState}
-        <div class="setup-notice" transition:growFade>
-          <AccountSetupChecklist
-            state={accountSetupState}
-            onTaskAction={handleAccountSetupTask}
-            variant="prompt"
-          />
-        </div>
-      {:else if showSetupCompletion}
-        <div class="setup-notice" transition:growFade>
-          <section class="setup-complete" role="status" aria-live="polite">
-            <span class="setup-complete-icon" aria-hidden="true">
-              <i class="fas fa-check"></i>
-            </span>
-            <span class="setup-complete-copy">
-              <strong>{t("profile_setup_complete")}</strong>
-              <span>{t("profile_setup_saved")}</span>
-            </span>
-            <button
-              type="button"
-              class="dismiss-completion"
-              onclick={() => (showSetupCompletion = false)}
-              aria-label={t("profile_dismiss_setup_confirmation")}
-            >
-              <i class="fas fa-xmark" aria-hidden="true"></i>
-            </button>
-          </section>
-        </div>
-      {:else if showAccountSetupUnavailable && accountSetupState}
-        <div class="setup-notice" transition:growFade>
-          <section class="setup-unavailable" role="status">
-            <span>
-              <strong>{t("profile_setup_status_unavailable")}</strong>
-              {t("profile_account_still_available")}
-            </span>
-            <PanelButton
-              variant="secondary"
-              onclick={() => void accountSetupState.loadForCurrentUser()}
-            >
-              {t("action_retry")}
-            </PanelButton>
-          </section>
-        </div>
+      {#if keyboardFrame}
+        <!-- The keyboard frame shows only the field being typed in. -->
+      {:else}
+        {@render setupNotices()}
       {/if}
 
       <div class="account-workspace">
-        <div class="identity-pane">
+        {#if !keyboardFrame}
+        <div
+          class="identity-pane"
+          transition:growFade
+          onoutroend={revealOpenEditor}
+        >
           <ProfileHeroSection
             user={authState.user}
             username={userUsername}
@@ -615,40 +726,37 @@
             />
           </div>
         </div>
+        {/if}
 
         <section
           id="profile-account-settings"
           class="workspace-section personal-section"
         >
-          <SettingsSectionHeader
-            icon="fas fa-user"
-            title={t("profile_personal_details")}
-            description={t("profile_personal_details_desc")}
-          />
-          <div class="section-body">
-            <AccountSettingsSection
-              user={authState.user}
-              {hapticService}
-              onPronounsChanged={(pronouns) => (userPronouns = pronouns)}
-              onUsernameChanged={(username) => (userUsername = username)}
-              username={userUsername}
-              pronouns={userPronouns}
-              {instagramUsername}
-              onInstagramUsernameChanged={(username) =>
-                (instagramUsername = username)}
-              {displayNameEditRequest}
-            />
-            <SettingToggleButton
-              label={t("settings_show_in_creators")}
-              description={t("settings_show_in_creators_desc")}
-              checked={!hiddenFromCreators}
-              busy={savingCreatorVisibility}
-              onToggle={handleToggleCreatorVisibility}
-            />
+          {#if !keyboardFrame}
+            <div transition:growFade>
+              <SettingsSectionHeader
+                icon="fas fa-user"
+                title={t("profile_personal_details")}
+                description={t("profile_personal_details_desc")}
+              />
+            </div>
+          {/if}
+          <div
+            class="section-body"
+            onfocusin={handleEditorFocusIn}
+            onfocusout={handleEditorFocusOut}
+          >
+            {@render personalFields(authState.user, keyboardFrame)}
+            {#if !keyboardFrame}
+              <div class="creators-switch" transition:growFade>
+                {@render creatorsToggle()}
+              </div>
+            {/if}
           </div>
         </section>
 
-        <div class="access-pane">
+        {#if !keyboardFrame}
+        <div class="access-pane" transition:growFade>
           <section class="workspace-group sign-in-section">
             <SettingsSectionHeader
               icon="fas fa-link"
@@ -656,23 +764,7 @@
               description={t("profile_sign_in_methods_desc")}
             >
               {#snippet action()}
-                <PanelButton
-                  variant="quiet"
-                  onclick={() => (manageSignInMethods = !manageSignInMethods)}
-                  ariaLabel={manageSignInMethods
-                    ? t("profile_finish_manage_sign_in")
-                    : t("profile_manage_sign_in")}
-                >
-                  <i
-                    class={manageSignInMethods ? "fas fa-check" : "fas fa-gear"}
-                    aria-hidden="true"
-                  ></i>
-                  <span
-                    >{manageSignInMethods
-                      ? t("settings_presets_done")
-                      : t("settings_presets_manage")}</span
-                  >
-                </PanelButton>
+                {@render manageSignInButton()}
               {/snippet}
             </SettingsSectionHeader>
             <div class="section-body">
@@ -690,30 +782,224 @@
               description={t("profile_security_desc")}
             />
             <div class="section-body security-body">
-              {#if profileState.hasPasswordProvider(authState.user)}
-                <PasswordChangeForm
-                  onChangePassword={handleChangePassword}
-                  {hapticService}
-                />
-              {/if}
-              <DangerZone
-                onDeleteAccount={handleDeleteAccount}
-                {hapticService}
-                isAdmin={authState.isAdmin}
-                userIdentifier={authState.user.displayName ||
-                  authState.user.email ||
-                  ""}
-                providerIds={connectedProviderIds}
-              />
+              {@render securityBody(authState.user)}
             </div>
           </section>
         </div>
+        {/if}
       </div>
     </div>
   {:else}
     <GuestAccountCard />
   {/if}
 </div>
+
+
+{#snippet setupNotices()}
+    {#if showAccountSetup && accountSetupState}
+      <div class="setup-notice" transition:growFade>
+        <AccountSetupChecklist
+          state={accountSetupState}
+          onTaskAction={handleAccountSetupTask}
+          variant="prompt"
+        />
+      </div>
+    {:else if showSetupCompletion}
+      <div class="setup-notice" transition:growFade>
+        <section class="setup-complete" role="status" aria-live="polite">
+          <span class="setup-complete-icon" aria-hidden="true">
+            <i class="fas fa-check"></i>
+          </span>
+          <span class="setup-complete-copy">
+            <strong>{t("profile_setup_complete")}</strong>
+            <span>{t("profile_setup_saved")}</span>
+          </span>
+          <button
+            type="button"
+            class="dismiss-completion"
+            onclick={() => (showSetupCompletion = false)}
+            aria-label={t("profile_dismiss_setup_confirmation")}
+          >
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+          </button>
+        </section>
+      </div>
+    {:else if showAccountSetupUnavailable && accountSetupState}
+      <div class="setup-notice" transition:growFade>
+        <section class="setup-unavailable" role="status">
+          <span>
+            <strong>{t("profile_setup_status_unavailable")}</strong>
+            {t("profile_account_still_available")}
+          </span>
+          <PanelButton
+            variant="secondary"
+            onclick={() => void accountSetupState.loadForCurrentUser()}
+          >
+            {t("action_retry")}
+          </PanelButton>
+        </section>
+      </div>
+    {/if}
+{/snippet}
+
+{#snippet personalFields(user: User, frame: boolean)}
+    <AccountSettingsSection
+      {user}
+      {hapticService}
+      onPronounsChanged={(pronouns) => (userPronouns = pronouns)}
+      onUsernameChanged={(username) => (userUsername = username)}
+      username={userUsername}
+      pronouns={userPronouns}
+      {instagramUsername}
+      onInstagramUsernameChanged={(username) =>
+        (instagramUsername = username)}
+      {displayNameEditRequest}
+      keyboardFrame={frame}
+    />
+{/snippet}
+
+{#snippet creatorsToggle()}
+  <SettingToggleButton
+    label={t("settings_show_in_creators")}
+    description={t("settings_show_in_creators_desc")}
+    checked={!hiddenFromCreators}
+    busy={savingCreatorVisibility}
+    onToggle={handleToggleCreatorVisibility}
+  />
+{/snippet}
+
+{#snippet manageSignInButton()}
+  <PanelButton
+    variant="quiet"
+    onclick={() => (manageSignInMethods = !manageSignInMethods)}
+    ariaLabel={manageSignInMethods
+      ? t("profile_finish_manage_sign_in")
+      : t("profile_manage_sign_in")}
+  >
+    <i
+      class={manageSignInMethods ? "fas fa-check" : "fas fa-gear"}
+      aria-hidden="true"
+    ></i>
+    <span
+      >{manageSignInMethods
+        ? t("settings_presets_done")
+        : t("settings_presets_manage")}</span
+    >
+  </PanelButton>
+{/snippet}
+
+{#snippet securityBody(user: User)}
+  {#if profileState.hasPasswordProvider(user)}
+    <PasswordChangeForm
+      onChangePassword={handleChangePassword}
+      {hapticService}
+    />
+  {/if}
+  <DangerZone
+    onDeleteAccount={handleDeleteAccount}
+    {hapticService}
+    isAdmin={authState.isAdmin}
+    userIdentifier={user.displayName ||
+      user.email ||
+      ""}
+    providerIds={connectedProviderIds}
+  />
+{/snippet}
+
+{#snippet drillLanding()}
+  {#if authState.user}
+    <div class="frame-landing">
+      {#if !keyboardFrame}
+        {@render setupNotices()}
+      {/if}
+      <ProfileHeroSection
+        user={authState.user}
+        username={userUsername}
+        pronouns={userPronouns}
+        {profileColor}
+        onSignOut={handleSignOut}
+        onAvatarClick={handleOpenPhotoPicker}
+        compact
+      />
+      <div class="frame-boxes">
+        <SettingsDrillRow
+          label={t("profile_personal_details")}
+          value={personalSummary}
+          onclick={() => openDrill("personal")}
+        />
+        <SettingsDrillRow
+          label={t("nav_ui_props_you_spin")}
+          value={propsSummary}
+          onclick={() => openDrill("props")}
+        >
+          {#snippet media()}
+            {#if spunProps.length > 0}
+              <span class="box-props" aria-hidden="true">
+                {#each spunProps.slice(0, 3) as prop (prop)}
+                  <span class="box-prop">
+                    <SelectedPropPreview
+                      propType={prop}
+                      box={{ width: 24, height: 24 }}
+                    />
+                  </span>
+                {/each}
+              </span>
+            {/if}
+          {/snippet}
+        </SettingsDrillRow>
+        <div class="creators-switch">
+          {@render creatorsToggle()}
+        </div>
+        <SettingsDrillRow
+          label={t("profile_sign_in_methods")}
+          value={signInSummary}
+          onclick={() => openDrill("sign-in")}
+        />
+        <SettingsDrillRow
+          label={t("profile_security")}
+          value={securitySummary}
+          onclick={() => openDrill("security")}
+        />
+      </div>
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet drillDetail(id: string)}
+  {#if authState.user}
+    {#if id === "personal"}
+      <div
+        class="frame-detail personal-detail"
+        onfocusin={handleEditorFocusIn}
+        onfocusout={handleEditorFocusOut}
+      >
+        {@render personalFields(authState.user, keyboardFrame)}
+      </div>
+    {:else if id === "props"}
+      <div class="frame-detail">
+        <MyPropsCard
+          propState={setupPropState}
+          onOpenPropEditor={handleOpenPropEditor}
+        />
+      </div>
+    {:else if id === "sign-in"}
+      <div class="frame-detail">
+        <div class="detail-lead">
+          <p>{t("profile_sign_in_methods_desc")}</p>
+          {@render manageSignInButton()}
+        </div>
+        <ConnectedAccounts
+          managing={manageSignInMethods}
+          onInstagramChange={(linked) => (instagramLinked = linked)}
+        />
+      </div>
+    {:else if id === "security"}
+      <div class="frame-detail security-body">
+        {@render securityBody(authState.user)}
+      </div>
+    {/if}
+  {/if}
+{/snippet}
 
 <ProfilePhotoPicker
   bind:isOpen={showPhotoPicker}
@@ -931,6 +1217,130 @@
 
   .personal-section .section-body :global(.account-settings) {
     flex: 1 1 auto;
+  }
+
+  /* Phone and Fold frame: the tab takes exactly the panel's height and the
+     drill panel owns any scrolling inside it, so the page never scrolls. */
+  .profile-tab.frame-mode {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    padding: 0.25rem 0.15rem 0.5rem;
+  }
+
+  .profile-frame {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .frame-landing {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 0.35rem 0.5rem 0.25rem;
+  }
+
+  .frame-boxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .frame-boxes :global(.drill-row) {
+    min-height: var(--min-touch-target, 48px);
+  }
+
+  .frame-boxes .creators-switch :global(.setting-toggle) {
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.75rem;
+  }
+
+  .box-props {
+    display: inline-flex;
+    gap: 0.15rem;
+  }
+
+  .box-prop {
+    display: grid;
+    width: 1.6rem;
+    height: 1.6rem;
+    place-items: center;
+  }
+
+  .frame-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0 0.25rem 0.5rem;
+  }
+
+  .detail-lead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .detail-lead p {
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-min);
+    line-height: 1.4;
+  }
+
+  /* With the keyboard up the drill's own title row steps aside too. */
+  .frame-mode.keyboard-frame :global(.detail-title-row) {
+    display: none;
+  }
+
+  /* The Creators switch runs the full width under the fields: its label and
+     state word share the first line and the description uses the whole
+     width below, instead of a narrow column beside the state word. */
+  .creators-switch :global(.setting-toggle) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "mark label state"
+      ". desc desc";
+    row-gap: 0.3em;
+  }
+
+  .creators-switch :global(.setting-copy) {
+    display: contents;
+  }
+
+  .creators-switch :global(.state-mark) {
+    grid-area: mark;
+  }
+
+  .creators-switch :global(.setting-label) {
+    grid-area: label;
+  }
+
+  .creators-switch :global(.state-word) {
+    grid-area: state;
+  }
+
+  .creators-switch :global(.setting-description) {
+    grid-area: desc;
+  }
+
+  /* Keyboard-open frame: the editor sits at the top of the screen, clear of
+     an overlaying keyboard, with no card chrome around it. */
+  .profile-tab.keyboard-frame {
+    align-content: start;
+    padding-bottom: calc(var(--keyboard-lift, 0px) + 0.75em);
+  }
+
+  .keyboard-frame .account-workspace {
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .keyboard-frame .workspace-section {
+    border-top: 0;
   }
 
   .security-body {

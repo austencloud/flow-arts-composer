@@ -68,7 +68,6 @@ function props(
       sequenceLength: 8,
       onRhythmChange: vi.fn(),
       onLoopDisable: vi.fn(),
-      onRequestSignup: vi.fn(),
     },
     tnd: {
       handRelationship: "free",

@@ -245,12 +245,16 @@ export function createSavePanelState(deps: SavePanelDeps) {
   });
 
   // New eligible saves default public. Reopening an existing sequence preserves
-  // its current choice instead of silently publishing a private draft.
+  // its current choice instead of silently publishing a private draft. A guest
+  // starts private: only a full account can post to the gallery, so a public
+  // default would turn every guest save into "publishing needs an account".
+  // A guest who switches Public on still saves, privately, and hears that
+  // once (LibrarySaveService.askGuestForAccount).
   $effect(() => {
     if (_propsGetter().show) {
       publishToCommunity = savedSequence
         ? isAlreadyPublished && canPublishToCommunity
-        : canPublishToCommunity;
+        : canPublishToCommunity && authState.isFullAccount;
     }
   });
 
@@ -489,29 +493,34 @@ export function createSavePanelState(deps: SavePanelDeps) {
       // collection it was filed into, or the All shelf — with the sequence
       // itself scrolled into view and marked, so the jump shows the thing that
       // was just saved rather than a grid in whatever order was last used.
-      const landing = resolveSaveLanding({
-        sequenceId: result.sequenceId,
-        filedCollections,
-      });
-      showToast({
-        message: t(landing.messageKey, landing.messageParams),
-        type: "success",
-        duration: TOAST_DURATION_MS,
-        action: {
-          label: t(landing.actionKey, landing.actionParams),
-          onClick: () => {
-            // Browse consumes the intent reactively once it is the active
-            // module; set it first so the handoff is waiting when it lands.
-            setPendingBrowseIntent(landing.intent);
-            // Route through the coordinator, not navigationState.setCurrentModule
-            // directly: setCurrentModule only moves the nav-bar highlight, while
-            // the rendered module comes from ui-state's activeModule (set by
-            // switchModule). handleModuleChange syncs both (+ history + transition),
-            // so the content actually swaps to Browse > Library instead of stalling.
-            void handleModuleChange("browse", "library");
+      // Unless the save service already confirmed it: a guest's account offer
+      // says "Saved on this device" too, and one save gets one toast (two
+      // stacked ones were in Lupe's visitor replay, 2026-11-15).
+      if (!result.accountAskShown) {
+        const landing = resolveSaveLanding({
+          sequenceId: result.sequenceId,
+          filedCollections,
+        });
+        showToast({
+          message: t(landing.messageKey, landing.messageParams),
+          type: "success",
+          duration: TOAST_DURATION_MS,
+          action: {
+            label: t(landing.actionKey, landing.actionParams),
+            onClick: () => {
+              // Browse consumes the intent reactively once it is the active
+              // module; set it first so the handoff is waiting when it lands.
+              setPendingBrowseIntent(landing.intent);
+              // Route through the coordinator, not navigationState.setCurrentModule
+              // directly: setCurrentModule only moves the nav-bar highlight, while
+              // the rendered module comes from ui-state's activeModule (set by
+              // switchModule). handleModuleChange syncs both (+ history + transition),
+              // so the content actually swaps to Browse > Library instead of stalling.
+              void handleModuleChange("browse", "library");
+            },
           },
-        },
-      });
+        });
+      }
 
       handleClose();
 

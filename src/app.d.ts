@@ -21,6 +21,8 @@ declare global {
       sequenceOverlay?: boolean;
       /** Marks history entries created for a dismissible URL overlay. */
       urlOverlay?: "sheet" | "spotlight";
+      /** The phone sign-in screen's one history entry (AuthModal). */
+      signInScreen?: boolean;
       // SheetRouter route state
       sheet?: string | null;
       spotlight?: string;

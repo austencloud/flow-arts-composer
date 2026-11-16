@@ -1,15 +1,23 @@
 <!--
-  Account creation and sign-in modal.
+  The one sign-in surface. Every door in the app opens this.
 
-  BaseModal owns the dialog behavior. Its external-overlay mode keeps password
-  manager suggestions interactive without changing this approved visual
-  surface. ContextualAuthPrompt changes its copy to match the action that
-  opened it. The existing provider components still own every authentication
-  flow.
+  On phone tiers (the same signal that gives the app its bottom bar or, on a
+  phone on its side, its side rail) it is a screen of its own: a back arrow,
+  no swipe, nothing outside to tap. The arrow, the phone's Back and Escape
+  close it and leave the page behind exactly as it was; it is an overlay, not
+  a route, and its one history entry leaves with it. Wider windows keep the
+  centred box. Both hold SignInContent.
+
+  BaseModal owns the dialog behavior (focus in and back to the opener, the
+  focus trap, Escape and the system Back). Its external-overlay mode keeps
+  password manager suggestions interactive. The provider components still own
+  every authentication flow.
 -->
 <script lang="ts">
-  import { untrack } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { page } from "$app/state";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
   import {
     trackAuthModalAbandoned,
@@ -31,20 +39,26 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authDrawerState } from "../state/auth-drawer-state.svelte";
   import ContextualAuthPrompt from "./ContextualAuthPrompt.svelte";
+  import SignInScreen from "./SignInScreen.svelte";
+  import type { SignInView } from "./SignInContent.svelte";
 
   interface Props {
     open: boolean;
-    inline?: boolean;
     initialMode?: AuthMode;
     reason?: AuthNudgeTrigger | null;
+    /** The internal auth lab opens a given view; every door opens on the code. */
+    initialView?: SignInView;
+    /** The internal auth lab shows the keyboard-open frame without a keyboard. */
+    forceKeyboardFrame?: boolean;
     onClose: () => void;
   }
 
   let {
     open,
-    inline = false,
     initialMode = "signup",
     reason = null,
+    initialView = "code",
+    forceKeyboardFrame = false,
     onClose,
   }: Props = $props();
 
@@ -52,7 +66,87 @@
   let facebookError = $state<string | null>(null);
   let prompt = $state<{ focusFirstField: () => void }>();
 
-  const promptContent = $derived(getAuthPromptContent(reason, authMode));
+  // A gate's copy replaces the standing sentence; a plain Sign in has none.
+  const promptContent = $derived(
+    reason ? getAuthPromptContent(reason, authMode) : null
+  );
+
+  // Phone tier: the signal that picks the bottom bar (or a phone on its side's
+  // rail) over the desktop layout. Read once and on every capability change.
+  let phoneTier = $state(false);
+  onMount(() => {
+    try {
+      const detector = getDeviceDetector();
+      const read = () => {
+        const settings = detector.getResponsiveSettings();
+        phoneTier = settings.isMobile || settings.isLandscapeMobile;
+      };
+      read();
+      return detector.onCapabilitiesChanged(read);
+    } catch {
+      phoneTier = false;
+      return undefined;
+    }
+  });
+
+  // The screen's one history entry. Opening adds it, so the phone's Back (or
+  // the browser's) lands on the page behind; closing any other way takes it
+  // back off, so no stray entry is left.
+  let entryWritten = false;
+  let entrySeen = false;
+  const entryShowing = $derived(page.state.signInScreen === true);
+
+  $effect(() => {
+    if (!open || !phoneTier || entryWritten) return;
+    entryWritten = true;
+    entrySeen = false;
+    mutateCurrentUrl(() => {}, {
+      mode: "push",
+      state: { signInScreen: true },
+    });
+  });
+
+  $effect(() => {
+    const showing = entryShowing;
+    untrack(() => {
+      if (!entryWritten) return;
+      if (showing) {
+        entrySeen = true;
+        // Closed before its entry landed: take it off now.
+        if (!open) removeEntry();
+        return;
+      }
+      if (entrySeen && open) {
+        // Back took the entry off: close to match.
+        entryWritten = false;
+        entrySeen = false;
+        trackAuthModalAbandoned("backdrop_or_escape");
+        clearAuthSubmissionBridge();
+        onClose();
+      }
+    });
+  });
+
+  $effect(() => {
+    if (open) return;
+    untrack(() => {
+      if (entryWritten && entrySeen && entryShowing) removeEntry();
+    });
+  });
+
+  function removeEntry() {
+    entryWritten = false;
+    entrySeen = false;
+    history.back();
+  }
+
+  // Signing in unmounts the surface; its entry goes with it.
+  onDestroy(() => {
+    if (entryWritten && entrySeen && page.state.signInScreen === true) {
+      entryWritten = false;
+      history.back();
+    }
+  });
   const inAppBrowser = $derived(
     getInAppBrowserDetector().isInAppBrowserOrForced(page.url.searchParams)
   );
@@ -115,10 +209,14 @@
     }
   }
 
-  // Someone who pressed "Sign in" gets the cursor in the email form when it is
-  // already open. A prompt raised by an action does not grab the keyboard.
+  // In the box, someone who pressed "Sign in" and last signed in by email
+  // here gets the cursor in the email field. A prompt raised by an action does
+  // not grab the keyboard, and on a phone focus stays on the screen itself:
+  // a keyboard rising unasked would cover the choices.
   function handleOpened() {
-    if (!reason) prompt?.focusFirstField();
+    if (phoneTier || reason) return;
+    const last = untrack(getLastAuthMethod);
+    if (last === "magic-link" || last === "password") prompt?.focusFirstField();
   }
 
   function handleCloseButtonClick() {
@@ -132,34 +230,36 @@
     clearAuthSubmissionBridge();
     onClose();
   }
-
-  $effect(() => {
-    if (!inline || !open) return;
-    // The drawer already owns focus containment; only move into a form that
-    // was opened automatically for a returning email user.
-    queueMicrotask(() => prompt?.focusFirstField());
-  });
 </script>
 
-{#snippet authPrompt()}
-  <ContextualAuthPrompt
-    bind:this={prompt}
-    content={promptContent}
-    bind:mode={authMode}
-    active={open}
-    idPrefix={inline ? "navigation-auth" : "auth-modal"}
-    showClose={!inline}
-    embedded={inline}
-    {inAppBrowser}
-    artifact={authDrawerState.artifact}
-    {facebookError}
-    onClose={handleCloseButtonClick}
-    onFacebookAuth={handleFacebookAuth}
-  />
-{/snippet}
-
-{#if inline}
-  {@render authPrompt()}
+{#if phoneTier}
+  <BaseModal
+    {open}
+    size="full"
+    position="center"
+    animation="slide"
+    class="chromeless sign-in-screen-shell"
+    labelledBy="auth-screen-title"
+    describedBy="auth-screen-description"
+    closeOnBackdrop={false}
+    closeOnEscape
+    allowExternalOverlays
+    onclose={handleModalDismiss}
+    onopened={handleOpened}
+  >
+    <SignInScreen
+      bind:this={prompt}
+      bind:mode={authMode}
+      content={promptContent}
+      active={open}
+      idPrefix="auth-screen"
+      {initialView}
+      {forceKeyboardFrame}
+      {facebookError}
+      onBack={handleCloseButtonClick}
+      onFacebookAuth={handleFacebookAuth}
+    />
+  </BaseModal>
 {:else}
   <BaseModal
     {open}
@@ -175,6 +275,18 @@
     onclose={handleModalDismiss}
     onopened={handleOpened}
   >
-    {@render authPrompt()}
+    <ContextualAuthPrompt
+      bind:this={prompt}
+      content={promptContent}
+      bind:mode={authMode}
+      active={open}
+      idPrefix="auth-modal"
+      showClose
+      {initialView}
+      artifact={authDrawerState.artifact}
+      {facebookError}
+      onClose={handleCloseButtonClick}
+      onFacebookAuth={handleFacebookAuth}
+    />
   </BaseModal>
 {/if}

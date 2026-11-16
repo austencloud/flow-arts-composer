@@ -227,6 +227,7 @@
     </div>
 
     <!-- Real-time feedback -->
+    <div class="feedback-line">
     {#if isChecking}
       <p class="hint-message checking">
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -257,6 +258,7 @@
         {t("nav_ui_username_available")}
       </p>
     {/if}
+    </div>
   {:else}
     <AccountValueRow
       label={t("nav_ui_username")}
@@ -271,6 +273,25 @@
 </div>
 
 <style>
+  /* The line under the input is kept even when empty, so an error or hint
+     appearing never moves Save and Cancel, and a long one wraps. */
+  .feedback-line {
+    min-height: 1.45em;
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.4;
+  }
+
+  .feedback-line :global(p) {
+    align-items: flex-start;
+    margin: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .feedback-line :global(p > i) {
+    margin-top: 0.2em;
+  }
+
   .section {
     display: flex;
     flex-direction: column;

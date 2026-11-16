@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { page } from "$app/state";
   import type { User } from "firebase/auth";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import ProfileTab from "#lib/shared/settings/components/tabs/ProfileTab.svelte";
@@ -118,11 +119,14 @@
   ];
 
   let specimenWidth = $state(300);
+  // ?kb=1 acts as if an on-screen keyboard were up, so the keyboard-open
+  // frame can be measured in a desktop or headless browser.
+  const forceKeyboard = page.url.searchParams.get("kb") === "1";
 </script>
 
 <main class="harness">
   <section class="tab-frame">
-    <ProfileTab />
+    <ProfileTab {forceKeyboard} />
   </section>
 
   <section class="specimens" aria-label="Flow identity specimens">
@@ -151,9 +155,13 @@
     background: #10141c;
   }
 
+  /* Like the Settings panel: a frame of the window's height that scrolls
+     the wide workspace inside it, so the phone frame can be measured. */
   .tab-frame {
     display: flex;
-    min-height: 100dvh;
+    height: 100dvh;
+    flex-direction: column;
+    overflow-y: auto; /* scrolls: stands in for the Settings panel, which scrolls the wide account layout */
   }
 
   .specimens {

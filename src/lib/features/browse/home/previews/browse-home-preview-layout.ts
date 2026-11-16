@@ -108,14 +108,18 @@ export function cardBlock(width: number, height: number): PreviewCard[] {
   );
 }
 
-/** Explore sequences: a wall of public sequences. */
+/**
+ * Explore sequences: a wall of public sequences. The cards carry no typed
+ * word: a TKA letter is drawn as its glyph, never set in a text font, and
+ * the word line was under the smallest type size.
+ */
 export function sequenceWall(
   shape: MethodPreviewShape,
   width: number,
   height: number
 ): PreviewCard[] {
   if (shape === "square") return cardBlock(width, height);
-  return cardRow(width, height, 3, 5);
+  return cardRow(width, height, 3, 5, false);
 }
 
 /**

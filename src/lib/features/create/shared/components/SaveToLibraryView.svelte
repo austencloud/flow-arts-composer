@@ -34,7 +34,18 @@
   import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
-  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, growFade, popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import StepGrid from "../workspace-panel/sequence-display/components/StepGrid.svelte";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { collectionDisplayName } from "#lib/shared/library/domain/collection-display-name.js";
+  import { createKeyboardInset } from "#lib/shared/mobile/utils/keyboard-inset.svelte.js";
+  import { computeKeyboardOpenFrame } from "#lib/shared/mobile/utils/keyboard-open-frame.js";
+  import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { normalizeCardPresentation } from "#lib/shared/share/domain/models/card-presentation.js";
+  import { onMount } from "svelte";
   import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { cardPresentationFromFooterSettings } from "#lib/shared/share/domain/models/card-presentation.js";
 
@@ -47,6 +58,13 @@
     word?: string;
     /** When true, shows context that saving is needed before sharing */
     showShareContext?: boolean;
+    /**
+     * The host gave the view the whole workspace (phones and the Fold):
+     * saving is a screen of its own, with the X in the top corner, the
+     * sequence in the middle, one-line rows and a drill-down screen for each
+     * group that needs more than a line.
+     */
+    screen?: boolean;
     onClose?: () => void;
     onSaveComplete?: (sequenceId: string) => void;
   }
@@ -54,6 +72,7 @@
   let {
     word = "",
     showShareContext = false,
+    screen = false,
     onClose,
     onSaveComplete,
   }: Props = $props();
@@ -120,7 +139,7 @@
 
   // DOM-bound effects that must stay in the component
   // ResizeObserver for responsive layout detection
-  let viewEl: HTMLDivElement | null = null;
+  let viewEl = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
     if (!viewEl) return;
@@ -163,6 +182,8 @@
 
     function onKeydown(e: KeyboardEvent) {
       if (e.defaultPrevented) return;
+      // On the phone screen a drill-down owns Enter (Done, a tile).
+      if (drill !== null) return;
       if (e.key === "Enter" && !e.shiftKey && s.canSave) {
         const target = e.target as HTMLElement;
         if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
@@ -178,8 +199,516 @@
     window.addEventListener("keydown", onKeydown);
     return () => window.removeEventListener("keydown", onKeydown);
   });
+
+  // Phone save screen ────────────────────────────────────────────────
+  // One screen: rows that each say their current value in one line, and a
+  // drill-down screen for the groups that need more than a line. The rows
+  // and screens arrange the same save state; nothing here decides what is
+  // saved.
+  type SaveDrill = "collection" | "footer" | "note";
+  let drill = $state<SaveDrill | null>(null);
+
+  $effect(() => {
+    if (!screen) drill = null;
+  });
+
+  function openDrill(next: SaveDrill): void {
+    drill = next;
+  }
+
+  function closeDrill(): void {
+    drill = null;
+    fieldFocused = false;
+  }
+
+  // Escape (and the system back) leaves a drill-down screen first; it is
+  // registered after the save view's own layer, so it sits above it.
+  $effect(() => {
+    if (!screen || drill === null) return;
+    return getEscapeLayerManager().register({
+      id: "create:save-view-drill",
+      canDismiss: () => !s.isSaving,
+      dismiss: closeDrill,
+    });
+  });
+
+  const screenTitle = $derived(
+    drill === "collection"
+      ? t("create_ui_add_to_a_collection")
+      : drill === "footer"
+        ? t("share_card_footer")
+        : drill === "note"
+          ? t("create_review_notes")
+          : s.headerTitle
+  );
+
+  const previewSequence = $derived(s.sequence);
+  const previewStart = $derived(
+    previewSequence?.startingPlacement ?? previewSequence?.startPlacement ?? null
+  );
+  const hasPreview = $derived(
+    !!previewSequence &&
+      ((previewSequence.steps?.length ?? 0) > 0 || !!previewStart)
+  );
+
+  const collectionSummary = $derived.by(() => {
+    const ids = s.selectedCollectionIds;
+    if (ids.length === 0) return t("library_ui_no_collection");
+    const names = collectionsState.collections
+      .filter((c) => ids.includes(c.id))
+      .map((c) => collectionDisplayName(c));
+    return names.length === ids.length
+      ? names.join(", ")
+      : t("create_save_collection_count", { count: ids.length });
+  });
+
+  const footerSummary = $derived.by(() => {
+    const footer = normalizeCardPresentation(s.cardPresentation).footer;
+    if (footer.mode === "custom") {
+      return footer.text?.trim() || t("share_footer_custom");
+    }
+    return footer.mode === "credit"
+      ? t("share_footer_credit")
+      : t("share_footer_off");
+  });
+
+  const noteSummary = $derived(
+    s.notes.trim() ? s.notes.trim() : t("create_save_note_add")
+  );
+
+  // Keyboard open (naming a new collection, writing a note): the shared
+  // frame rule decides; only the field, its hint and its one button stay.
+  const keyboard = createKeyboardInset(() => screen && drill !== null);
+  let isIOSPlatform = $state(false);
+  let isTouchDevice = $state(false);
+  let fieldFocused = $state(false);
+  onMount(() => {
+    isIOSPlatform = detectPlatform() === "ios";
+    try {
+      isTouchDevice = getDeviceDetector().isTouchDevice();
+    } catch {
+      isTouchDevice = false;
+    }
+  });
+  const keyboardFrame = $derived(
+    screen &&
+      drill !== null &&
+      computeKeyboardOpenFrame({
+        isInputFocused: fieldFocused,
+        isSubmitting: false,
+        isIOSPlatform,
+        isTouchDevice,
+        keyboardHeight: keyboard.height,
+      })
+  );
+
+  function isTypingField(target: EventTarget | null): boolean {
+    return (
+      target instanceof HTMLElement &&
+      (target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+    );
+  }
+
+  function handleDrillFocusIn(event: FocusEvent): void {
+    if (isTypingField(event.target)) fieldFocused = true;
+  }
+
+  function handleDrillFocusOut(event: FocusEvent): void {
+    if (!isTypingField(event.relatedTarget)) fieldFocused = false;
+  }
 </script>
 
+{#snippet statusPill()}
+  {#if s.isExactDuplicate && !s.isFlagged}
+    <span class="status-pill status-pill-saved" transition:popIn>
+      <i class="fas fa-check-circle" aria-hidden="true"></i>
+      {t("create_review_already_saved")}
+    </span>
+  {:else if s.hasDuplicate && !s.isFlagged}
+    <span class="status-pill status-pill-variation" transition:popIn>
+      <i class="fas fa-layer-group" aria-hidden="true"></i>
+      {t("create_save_variation", { count: s.duplicateCount + 1 })}
+    </span>
+  {/if}
+{/snippet}
+
+{#snippet saveLabel(short: boolean)}
+  {#if s.isSaving}
+    <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+    {t("create_review_saving")}
+  {:else if s.requiresAccount}
+    <i class="fas fa-user-plus" aria-hidden="true"></i>
+    {t("create_review_create_account_to_save")}
+  {:else if s.isExactDuplicate && !s.isFlagged}
+    <i class="fas fa-check" aria-hidden="true"></i>
+    {t("create_review_saved")}
+  {:else if s.isFlagged}
+    <i class="fas fa-ban" aria-hidden="true"></i>
+    <!-- On the screen the flagged note above the rows says why; the button
+         keeps one line in every language. -->
+    {short ? t("create_workspace_save") : t("create_review_cannot_publish")}
+  {:else}
+    <i class="fas fa-bookmark" aria-hidden="true"></i>
+    {short ? t("create_workspace_save") : t("create_review_save_to_library")}
+  {/if}
+{/snippet}
+
+{#snippet summaryRow(
+  target: SaveDrill,
+  icon: string,
+  label: string,
+  value: string
+)}
+  <!-- One control, one name: the whole row opens its own screen. -->
+  <div class="screen-row">
+    <PanelButton
+      variant="quiet"
+      fullWidth
+      disabled={s.isSaving}
+      onclick={() => openDrill(target)}
+      ariaLabel={`${label}: ${value}`}
+    >
+      <span class="row-lead">
+        <i class="fas {icon} row-icon" aria-hidden="true"></i>
+        <span class="row-label">{label}</span>
+      </span>
+      <span class="row-value">
+        <span class="row-value-text">{value}</span>
+        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+      </span>
+    </PanelButton>
+  </div>
+{/snippet}
+
+{#snippet notices()}
+  {#if s.isSolo}
+    <div class="form-group">
+      <label for="solo-title">
+        {t("create_review_title")} <span class="required">*</span>
+      </label>
+      <input
+        id="solo-title"
+        type="text"
+        bind:value={s.title}
+        placeholder={t("create_ui_name_this_choreography")}
+        class="input-field"
+        maxlength="100"
+        disabled={s.isSaving}
+      />
+      <p class="field-note">
+        {t("create_save_solo_hand", {
+          hand:
+            s.authoredHand === "left"
+              ? t("create_save_hand_left")
+              : t("create_save_hand_right"),
+        })}
+      </p>
+    </div>
+  {:else if s.isMixed}
+    <div class="format-warning" role="alert">
+      <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+      <div>
+        <strong
+          >{t(
+            "create_review_this_choreography_mixes_paired_and_single_hand_beats"
+          )}</strong
+        >
+        <p>
+          {t(
+            "create_review_keep_editing_until_every_beat_uses_both_hands_or_the_same_single_hand"
+          )}
+        </p>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Content Moderation Warning -->
+  {#if s.isFlagged && s.moderationResult}
+    <div class="moderation-warning">
+      <div class="warning-header">
+        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+        <span>{t("create_review_content_flagged_by_moderation")}</span>
+      </div>
+      <p class="warning-text">
+        {t(
+          "create_review_this_sequence_contains_content_that_cannot_be_published_to_the_public_gallery_you_can_stil"
+        )}
+      </p>
+      <div class="flagged-terms">
+        {#each s.moderationResult.flaggedTerms as term}
+          <span class="flagged-term">
+            {term.category}: "{term.matchedPattern}"
+          </span>
+        {/each}
+      </div>
+      <div class="moderation-actions">
+        <button
+          type="button"
+          class="appeal-button"
+          onclick={s.handleOpenAppeal}
+        >
+          <i class="fas fa-gavel" aria-hidden="true"></i>
+          {t("create_review_appeal")}
+        </button>
+        <button
+          type="button"
+          class="shame-button"
+          onclick={s.handleSubmitToShame}
+          disabled={s.isSubmittingToShame}
+        >
+          {#if s.isSubmittingToShame}
+            <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+            {t("create_review_submitting_to_hall_of_shame")}
+          {:else}
+            <i class="fas fa-skull" aria-hidden="true"></i>
+            Hall of Shame
+          {/if}
+        </button>
+      </div>
+      {#if s.shameSubmitError}
+        <div class="shame-error" role="alert">
+          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+          <span>{s.shameSubmitError}</span>
+        </div>
+      {/if}
+    </div>
+  {/if}
+{/snippet}
+
+
+{#if screen}
+  <div
+    class="save-view save-screen"
+    class:keyboard-frame={keyboardFrame}
+    bind:this={viewEl}
+    role="region"
+    aria-label={t("create_review_add_to_gallery")}
+  >
+    {#if s.isSaving}
+      <SaveProgressOverlay currentStep={s.saveStep} steps={s.saveSteps} />
+    {/if}
+
+    <header class="screen-header">
+      {#if drill}
+        <!-- Back opens its own room beside the title, so the title slides
+             over instead of being shoved sideways in one frame. -->
+        <span
+          class="header-back"
+          transition:growFade={{ axis: "x", duration: DURATION.normal }}
+        >
+          <button
+            type="button"
+            class="close-button"
+            onclick={closeDrill}
+            aria-label={t("create_save_back")}
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          </button>
+        </span>
+      {/if}
+      <h2 class="screen-title">
+        <Crossfade key={screenTitle} duration={DURATION.normal} mode="swap">
+          {screenTitle}
+        </Crossfade>
+      </h2>
+      <button
+        type="button"
+        class="close-button"
+        onclick={s.handleClose}
+        aria-label={t("compose_close_panel")}
+        disabled={s.isSaving}
+      >
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <div class="screen-body">
+      <Crossfade
+        key={drill ?? "main"}
+        duration={DURATION.normal}
+        mode="swap"
+        motion="step"
+        fill
+      >
+        {#if drill === "collection"}
+          <div
+            class="drill-pane collection-pane"
+            onfocusin={handleDrillFocusIn}
+            onfocusout={handleDrillFocusOut}
+          >
+            <CollectionPickerContent
+              mode="select"
+              noneTile
+              selectedIds={s.selectedCollectionIds}
+              onChange={(ids) => (s.selectedCollectionIds = ids)}
+            />
+          </div>
+        {:else if drill === "footer"}
+          <div
+            class="drill-pane footer-pane"
+            onfocusin={handleDrillFocusIn}
+            onfocusout={handleDrillFocusOut}
+          >
+            <CardFooterEditor
+              value={s.cardPresentation}
+              onchange={(value) => (s.cardPresentation = value)}
+              idBase="save-screen-card-footer"
+            />
+          </div>
+        {:else if drill === "note"}
+          <div
+            class="drill-pane note-pane"
+            onfocusin={handleDrillFocusIn}
+            onfocusout={handleDrillFocusOut}
+          >
+            <label class="note-label" for="save-screen-notes"
+              >{t("create_review_notes")}</label
+            >
+            <textarea
+              id="save-screen-notes"
+              bind:value={s.notes}
+              placeholder={s.isSolo
+                ? t("create_save_notes_choreo")
+                : t("create_save_notes_sequence")}
+              class="textarea-field note-field"
+              maxlength="500"
+            ></textarea>
+          </div>
+        {:else}
+          <div class="main-pane">
+            <!-- The sequence being saved, as it stands in the workspace. It is
+                 a picture here: nothing in it takes a tap. Notes about the
+                 save (duplicate, flagged, a solo title) sit above it. -->
+            <div class="sequence-area">
+              {#if (s.isExactDuplicate || s.hasDuplicate) && !s.isFlagged}
+                <div class="screen-status">
+                  {@render statusPill()}
+                </div>
+              {/if}
+              {@render notices()}
+              {#if hasPreview && previewSequence && !s.isFlagged}
+                <div
+                  class="sequence-picture"
+                  role="img"
+                  aria-label={word || s.headerTitle}
+                >
+                  <div class="sequence-picture-content" inert>
+                    <StepGrid
+                      steps={previewSequence.steps ?? []}
+                      startPlacement={previewStart}
+                      gridJoin={sequenceGridJoin(previewSequence)}
+                      sequenceWord={word}
+                      sizingProfile="preview"
+                      fitAllSteps={true}
+                      stepIdentityPrefix="save-screen"
+                      autoFocusSelectedStep={false}
+                      observeScroll={false}
+                    />
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <div class="row-group" role="group" aria-label={s.headerTitle}>
+              {#if !s.isSolo}
+                <div class="screen-row">
+                  <PropPairField
+                    bind:value={s.saveProps}
+                    disabled={s.isSaving}
+                    label={t("create_save_row_props")}
+                    hint={t("prop_pair_saved_default_hint")}
+                    row
+                    picker="modal"
+                  />
+                </div>
+              {/if}
+
+              {#if !s.isFlagged && !s.isSolo && !s.isMixed}
+                <div class="screen-row public-row">
+                  <SettingToggleButton
+                    label={t("create_save_row_public")}
+                    description={s.canPublishToCommunity
+                      ? t("create_save_row_public_hint")
+                      : t("create_save_min_note", {
+                          count: s.communityMinSteps,
+                        })}
+                    checked={s.publishToCommunity}
+                    disabled={s.isSaving || !s.canPublishToCommunity}
+                    onToggle={() =>
+                      (s.publishToCommunity = !s.publishToCommunity)}
+                    onLabel={t("settings_on")}
+                    offLabel={t("settings_off")}
+                    ariaLabel={!s.canPublishToCommunity
+                      ? t("create_save_min_public", {
+                          count: s.communityMinSteps,
+                        })
+                      : s.publishToCommunity
+                        ? t("create_save_publish_on_save")
+                        : t("create_save_private_only")}
+                    surface="plain"
+                    density="compact"
+                  />
+                </div>
+              {/if}
+
+              {#if !s.isFlagged && !s.isSolo && !s.isMixed && s.currentUser}
+                {@render summaryRow(
+                  "collection",
+                  "fa-folder-open",
+                  t("create_save_row_collection"),
+                  collectionSummary
+                )}
+              {/if}
+
+              {#if !s.isSolo && !s.isMixed}
+                {@render summaryRow(
+                  "footer",
+                  "fa-rectangle-list",
+                  t("share_card_footer"),
+                  footerSummary
+                )}
+              {/if}
+
+              {@render summaryRow(
+                "note",
+                "fa-note-sticky",
+                t("create_review_notes"),
+                noteSummary
+              )}
+            </div>
+          </div>
+        {/if}
+      </Crossfade>
+    </div>
+
+    <footer
+      class="screen-footer"
+      class:drill-footer={drill !== null}
+      class:steps-aside={keyboardFrame && drill === "collection"}
+    >
+      {#if drill}
+        <PanelButton onclick={closeDrill} fullWidth>
+          {t("create_review_done")}
+        </PanelButton>
+      {:else}
+        <PanelButton variant="secondary" onclick={s.handleClose}>
+          {t("create_review_cancel")}
+        </PanelButton>
+        <PanelButton
+          variant="primary"
+          saveShortcut
+          accentColor={s.isExactDuplicate && !s.isFlagged
+            ? "var(--semantic-success, #22c55e)"
+            : undefined}
+          onclick={s.handleSave}
+          disabled={!s.canSave}
+        >
+          {@render saveLabel(true)}
+        </PanelButton>
+      {/if}
+    </footer>
+  </div>
+{:else}
 <div
   class="save-view"
   bind:this={viewEl}
@@ -195,17 +724,7 @@
       <h2>{s.headerTitle}</h2>
       <!-- Status pill: the slot is reserved so the title never shifts. -->
       <span class="status-slot">
-        {#if s.isExactDuplicate && !s.isFlagged}
-          <span class="status-pill status-pill-saved" transition:popIn>
-            <i class="fas fa-check-circle" aria-hidden="true"></i>
-            {t("create_review_already_saved")}
-          </span>
-        {:else if s.hasDuplicate && !s.isFlagged}
-          <span class="status-pill status-pill-variation" transition:popIn>
-            <i class="fas fa-layer-group" aria-hidden="true"></i>
-            {t("create_save_variation", { count: s.duplicateCount + 1 })}
-          </span>
-        {/if}
+        {@render statusPill()}
       </span>
     </div>
     <button
@@ -234,98 +753,7 @@
       </div>
     {/if}
 
-    {#if s.isSolo}
-      <div class="form-group">
-        <label for="solo-title">
-          {t("create_review_title")} <span class="required">*</span>
-        </label>
-        <input
-          id="solo-title"
-          type="text"
-          bind:value={s.title}
-          placeholder={t("create_ui_name_this_choreography")}
-          class="input-field"
-          maxlength="100"
-          disabled={s.isSaving}
-        />
-        <p class="field-note">
-          {t("create_save_solo_hand", {
-            hand:
-              s.authoredHand === "left"
-                ? t("create_save_hand_left")
-                : t("create_save_hand_right"),
-          })}
-        </p>
-      </div>
-    {:else if s.isMixed}
-      <div class="format-warning" role="alert">
-        <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
-        <div>
-          <strong
-            >{t(
-              "create_review_this_choreography_mixes_paired_and_single_hand_beats"
-            )}</strong
-          >
-          <p>
-            {t(
-              "create_review_keep_editing_until_every_beat_uses_both_hands_or_the_same_single_hand"
-            )}
-          </p>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Content Moderation Warning -->
-    {#if s.isFlagged && s.moderationResult}
-      <div class="moderation-warning">
-        <div class="warning-header">
-          <i class="fas fa-shield-alt" aria-hidden="true"></i>
-          <span>{t("create_review_content_flagged_by_moderation")}</span>
-        </div>
-        <p class="warning-text">
-          {t(
-            "create_review_this_sequence_contains_content_that_cannot_be_published_to_the_public_gallery_you_can_stil"
-          )}
-        </p>
-        <div class="flagged-terms">
-          {#each s.moderationResult.flaggedTerms as term}
-            <span class="flagged-term">
-              {term.category}: "{term.matchedPattern}"
-            </span>
-          {/each}
-        </div>
-        <div class="moderation-actions">
-          <button
-            type="button"
-            class="appeal-button"
-            onclick={s.handleOpenAppeal}
-          >
-            <i class="fas fa-gavel" aria-hidden="true"></i>
-            {t("create_review_appeal")}
-          </button>
-          <button
-            type="button"
-            class="shame-button"
-            onclick={s.handleSubmitToShame}
-            disabled={s.isSubmittingToShame}
-          >
-            {#if s.isSubmittingToShame}
-              <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-              {t("create_review_submitting_to_hall_of_shame")}
-            {:else}
-              <i class="fas fa-skull" aria-hidden="true"></i>
-              Hall of Shame
-            {/if}
-          </button>
-        </div>
-        {#if s.shameSubmitError}
-          <div class="shame-error" role="alert">
-            <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-            <span>{s.shameSubmitError}</span>
-          </div>
-        {/if}
-      </div>
-    {/if}
+    {@render notices()}
 
     <!-- Community visibility: one row, the whole row is the control. -->
     {#if !s.isFlagged && !s.isSolo && !s.isMixed}
@@ -418,25 +846,11 @@
       onclick={s.handleSave}
       disabled={!s.canSave}
     >
-      {#if s.isSaving}
-        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-        {t("create_review_saving")}
-      {:else if s.requiresAccount}
-        <i class="fas fa-user-plus" aria-hidden="true"></i>
-        {t("create_review_create_account_to_save")}
-      {:else if s.isExactDuplicate && !s.isFlagged}
-        <i class="fas fa-check" aria-hidden="true"></i>
-        {t("create_review_saved")}
-      {:else if s.isFlagged}
-        <i class="fas fa-ban" aria-hidden="true"></i>
-        {t("create_review_cannot_publish")}
-      {:else}
-        <i class="fas fa-bookmark" aria-hidden="true"></i>
-        {t("create_review_save_to_library")}
-      {/if}
+      {@render saveLabel(false)}
     </PanelButton>
   </footer>
 </div>
+{/if}
 
 <!-- Content Appeal Modal -->
 {#if s.showAppealModal && s.moderationResult && s.tkaName}
@@ -931,6 +1345,330 @@
 
     .view-footer > :global(.panel-btn) {
       flex: 1 1 0;
+    }
+  }
+
+  /* Phone save screen ───────────────────────────────────────────────
+     The host gives the view the whole workspace. Header with the X in the
+     top corner, the sequence taking the spare height, one bordered group of
+     one-line rows, then Cancel and Save. No control container scrolls; only
+     the collection tiles may, and they are content. */
+  .save-view.save-screen {
+    justify-content: flex-start;
+  }
+
+  .screen-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: 56px;
+    padding: 0 8px 0 16px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  .header-back {
+    display: flex;
+    flex-shrink: 0;
+    margin-inline-start: -8px;
+  }
+
+  .screen-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--font-size-lg, 18px);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--theme-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .save-screen .close-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .screen-body {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .main-pane,
+  .drill-pane {
+    width: 100%;
+    max-width: 560px;
+    height: 100%;
+    margin-inline: auto;
+    padding-inline: 16px;
+    box-sizing: border-box;
+  }
+
+  .main-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* At every phone size the rows fit. At 200% zoom on the smallest phones
+       they outgrow the screen and would slide under Cancel and Save. */
+    overflow-y: auto; /* scrolls: the rows, only when zoom makes them taller than the screen */
+  }
+
+  .sequence-area {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .screen-status {
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  .sequence-picture {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .sequence-picture-content {
+    position: absolute;
+    inset: 0;
+  }
+
+  .row-group {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    background: var(--theme-card-bg);
+    overflow: hidden;
+  }
+
+  .screen-row {
+    --row-height: 56px;
+    display: flex;
+    height: var(--row-height);
+    min-width: 0;
+  }
+
+  .screen-row + .screen-row {
+    border-top: 1px solid var(--theme-stroke);
+  }
+
+  .screen-row > :global(*) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .screen-row :global(.prop-pair-field) {
+    height: 100%;
+  }
+
+  .row-group .screen-row :global(.ui-button.panel-btn) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    gap: 12px;
+    justify-content: space-between;
+    padding-block: 0;
+    padding-inline: 14px 16px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: var(--font-size-sm, 14px);
+  }
+
+  .screen-row :global(.setting-toggle) {
+    height: 100%;
+    min-height: 0;
+    padding-block: 0;
+  }
+
+  .public-row :global(.setting-label),
+  .public-row :global(.setting-description) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .row-lead {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    /* The name wraps between words and gives way before the value does, but
+       never gets narrower than its longest word. */
+    min-width: min-content;
+    flex-shrink: 99;
+  }
+
+  .row-icon {
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+    color: var(--theme-text-dim);
+  }
+
+  /* A long name takes a second line; the value beside it is never the part
+     that gets cut. */
+  .row-label {
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: start;
+    color: var(--theme-text);
+  }
+
+  .row-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 1;
+    max-width: 55%;
+    min-width: 0;
+    color: var(--theme-text-dim);
+  }
+
+  .row-value-text {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* At 200% zoom on a phone the row is too narrow for icon, name and value.
+     The icon steps out so the words keep their room. */
+  @container save-view (max-width: 260px) {
+    .row-icon {
+      display: none;
+    }
+  }
+
+  .screen-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 560px;
+    margin-inline: auto;
+    padding: 12px 16px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  .screen-footer.drill-footer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen-footer.steps-aside {
+    display: none;
+  }
+
+  .screen-footer > :global(.panel-btn) {
+    height: 52px;
+    min-height: 52px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  /* Drill-down screens: the group's controls use the whole screen. Only the
+     collection tiles may outgrow it, and only they scroll. */
+  .drill-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-block: 4px 8px;
+    overflow: hidden;
+  }
+
+  .collection-pane {
+    overflow-y: auto; /* scrolls: a long list of the person's collections */
+    overscroll-behavior: contain;
+  }
+
+  .note-label {
+    font-size: var(--font-size-sm, 14px);
+    font-weight: 600;
+    color: var(--theme-text);
+  }
+
+  .note-field {
+    flex: 1 1 auto;
+    min-height: 96px;
+    resize: none;
+  }
+
+  /* Keyboard open while naming a collection: only the field and its button
+     stay above the keys (the shared keyboard-open frame decides when). */
+  .keyboard-frame .collection-pane :global(.collection-tile),
+  .keyboard-frame .collection-pane :global(.picker-subtitle),
+  .keyboard-frame .collection-pane :global(.find-row) {
+    display: none;
+  }
+
+  /* The shortest phones: rows and actions give up a little height so the
+     sequence keeps a readable picture. */
+  @media (max-height: 640px) {
+    .screen-header {
+      height: 52px;
+    }
+
+    .screen-row {
+      --row-height: 48px;
+    }
+
+    .screen-footer {
+      padding-block: 8px 12px;
+    }
+
+    .screen-footer > :global(.panel-btn) {
+      height: 44px;
+      min-height: 44px;
+    }
+  }
+
+  /* A phone on its side: the sequence on the left, the rows on the right. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .main-pane {
+      flex-direction: row;
+      align-items: center;
+      max-width: none;
+    }
+
+    .sequence-area {
+      align-self: stretch;
+    }
+
+    .row-group {
+      width: min(400px, 52%);
+    }
+
+    .screen-row {
+      --row-height: 44px;
+    }
+
+    .screen-header {
+      height: 48px;
+    }
+
+    .screen-footer {
+      max-width: none;
+      padding-block: 6px 8px;
+    }
+
+    .screen-footer > :global(.panel-btn) {
+      height: 44px;
+      min-height: 44px;
     }
   }
 

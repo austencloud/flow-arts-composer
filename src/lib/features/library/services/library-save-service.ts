@@ -40,6 +40,7 @@ import { isFullAccountUser } from "#lib/shared/auth/domain/access-tier.js";
 import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
 import { GUEST_SAVE_CAP } from "#lib/shared/auth/domain/guest-access-config.js";
 import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { Sharer } from "../../../shared/share/services/sharer";
 import type { R2VideoUploader } from "../../../shared/share/services/r2-video-uploader";
 import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
@@ -183,6 +184,17 @@ export class LibrarySaveService {
       authState.isAuthenticated,
       authState.isAnonymous
     );
+    // Only a full account can post to the community gallery: firestore.rules
+    // refuses a guest's public write. That refusal used to arrive after the
+    // save had already landed, as a raw "Couldn't publish" box full of
+    // technical text (Lupe's visitor replay, 2026-11-15). A guest's save is
+    // kept private on this device instead, and no public write is attempted.
+    // Decided from the same snapshot as the cap, so the tier that decides the
+    // cap also decides the visibility.
+    const keptPrivateForGuest = visibility === "public" && !isFullAccount;
+    if (keptPrivateForGuest) {
+      visibility = "private";
+    }
     const ownedIds = getOwnedSequenceIdSet(saverUid);
     const alreadySavedLocally = await db.sequences.get(resolvedSequence.id);
     if (!isFullAccount) {
@@ -513,32 +525,48 @@ export class LibrarySaveService {
       ...(copyOf && { copied: true }),
     });
 
-    // Value-moment nudge: a guest just saved successfully. Encourage account
-    // creation once per device. Members (full accounts) never see this.
-    this.maybeNudgeGuestToSignUp();
+    // Value-moment nudge: a guest just saved successfully. Members (full
+    // accounts) never see this. A guest who chose Public hears that publishing
+    // needs an account; a public that was only the default needs no note.
+    const accountAskShown = this.askGuestForAccount(
+      keptPrivateForGuest && options.visibility === "public"
+    );
 
     // Brief pause to show success state
     await new Promise((resolve) =>
       setTimeout(resolve, SUCCESS_STATE_LINGER_MS)
     );
 
-    return { sequenceId, persisted, isGuest: !isFullAccount };
+    return {
+      sequenceId,
+      persisted,
+      isGuest: !isFullAccount,
+      accountAskShown,
+      keptPrivateForGuest,
+    };
   }
 
   /**
-   * One gentle, non-blocking account nudge after a guest's first successful
-   * save. Guarded to guests (anon / unauthenticated) and once per device.
+   * One gentle, non-blocking account offer after a guest's save. A guest who
+   * asked to publish is told, every time, that the save stayed private and
+   * that publishing needs an account. Otherwise it is the first-save
+   * invitation, once per device. Returns whether a toast went up, so the
+   * caller can skip its own and the guest gets one toast, not two.
    */
-  private maybeNudgeGuestToSignUp(): void {
-    if (typeof window === "undefined") return;
+  private askGuestForAccount(askedToPublish: boolean): boolean {
+    if (typeof window === "undefined") return false;
     const isFullAccount = isFullAccountUser(
       authState.isAuthenticated,
       authState.isAnonymous
     );
-    if (isFullAccount) return;
-    authDrawerState.offerGuestSaveNudge({
-      message:
-        "Saved on this device. Create a free account to open it on other devices.",
+    if (isFullAccount) return false;
+    if (askedToPublish) {
+      return authDrawerState.offerPublishAccount(
+        t("guest_save_public_needs_account")
+      );
+    }
+    return authDrawerState.offerGuestSaveNudge({
+      message: t("guest_save_kept_on_device"),
     });
   }
 

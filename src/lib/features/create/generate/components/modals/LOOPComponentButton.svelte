@@ -18,7 +18,6 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     isMultiSelectMode = false,
     isSelected = false,
     isDisabled = false,
-    isLocked = false,
     disabledReason,
     showDescription = false,
     compactOnMobile = false,
@@ -34,8 +33,6 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     isMultiSelectMode?: boolean;
     isSelected?: boolean;
     isDisabled?: boolean;
-    /** Guest-gated: still clickable, but tapping routes to sign-up. */
-    isLocked?: boolean;
     /** Shown as the tooltip and spoken in the label while disabled. */
     disabledReason?: string;
     showDescription?: boolean;
@@ -78,7 +75,6 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     class:compact-on-mobile={compactOnMobile}
     class:compact-chooser={compactChooser}
     aria-pressed={compactChooser ? isSelected : undefined}
-    class:locked={isLocked}
     onclick={onClick}
     disabled={isDisabled}
     title={isDisabled ? disabledReason : undefined}
@@ -89,11 +85,9 @@ Shows description in Quick Apply mode, compact in Build Combo mode
       description,
       status: isDisabled
         ? (disabledReason ?? t("create_deep_not_compatible"))
-        : isLocked
-          ? t("create_deep_locked_signup")
-          : isSelected
-            ? t("create_deep_selected")
-            : t("create_deep_not_selected"),
+        : isSelected
+          ? t("create_deep_selected")
+          : t("create_deep_not_selected"),
     })}
   >
     <div class="button-content">
@@ -118,12 +112,6 @@ Shows description in Quick Apply mode, compact in Build Combo mode
         <polyline points="6,12 10,16 18,8"></polyline>
       </svg>
     </div>
-
-    {#if isLocked && !isSelected}
-      <div class="lock-badge" aria-hidden="true">
-        <FontAwesomeIcon icon="fas fa-lock" size="0.7em" />
-      </div>
-    {/if}
   </button>
 
   {#if showConfigureAction && onConfigure}
@@ -457,27 +445,6 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     line-height: 1.3;
   }
 
-  /* Guest-locked: muted like disabled, but stays interactive (tap -> sign-up). */
-  .loop-component-button.locked {
-    opacity: 0.55;
-    filter: saturate(0.55);
-  }
-
-  .lock-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 22px;
-    height: 22px;
-    background: rgba(20, 20, 35, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--theme-text, white);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  }
 
   .check-badge {
     position: absolute;

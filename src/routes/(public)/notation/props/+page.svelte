@@ -12,6 +12,7 @@
     and switching never moves the page.
   */
   import { page } from "$app/state";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { replaceState } from "$app/navigation";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import Seo from "#lib/shared/components/Seo.svelte";
@@ -65,12 +66,14 @@
     })
   ) as Record<PropKey, string | null>;
 
-  const options = PROP_KEYS.map((key) => ({
-    value: key,
-    label: PROPS[key].label,
-    id: `prop-tab-${key}`,
-    controls: `prop-panel-${key}`,
-  }));
+  const options = $derived(
+    PROP_KEYS.map((key) => ({
+      value: key,
+      label: t(PROPS[key].label),
+      id: `prop-tab-${key}`,
+      controls: `prop-panel-${key}`,
+    }))
+  );
 </script>
 
 <Seo title={TITLE} description={DESCRIPTION} canonical={URL} ogType="article">
@@ -100,8 +103,8 @@
 
 <div class="editorial">
   <header class="editorial-header">
-    <h1 class="page-title">Prop Notation</h1>
-    <p class="page-subtitle">Pick a prop to play the same sequence with it</p>
+    <h1 class="page-title">{t("site_props_page_title")}</h1>
+    <p class="page-subtitle">{t("site_props_page_subtitle")}</p>
   </header>
 
   <!-- The prop pick is the page's one decision, so it leads, directly above
@@ -117,7 +120,7 @@
         onchange={choose}
         color="accent"
         semantics="tabs"
-        ariaLabel="Prop"
+        ariaLabel={t("nav_ui_prop")}
       >
         {#snippet optionContent(key: PropKey)}
           <span class="prop-option">
@@ -128,7 +131,7 @@
                 style:mask-image={`url("${propImage[key]}")`}
               ></span>
             {/if}
-            <span class="prop-option-label">{PROPS[key].label}</span>
+            <span class="prop-option-label">{t(PROPS[key].label)}</span>
           </span>
         {/snippet}
       </SegmentedControl>
@@ -137,7 +140,7 @@
       <div class="duo-demo">
         <SequenceHeroDemo
           sequence={demoSequence}
-          note={current.note}
+          note={t(current.note)}
           leftPropType={current.propType}
           rightPropType={current.propType}
           {leftBuugengFlipped}
@@ -156,10 +159,10 @@
               inert={key !== selected}
               class:active={key === selected}
             >
-              <h2 class="section-title">{prop.label}</h2>
-              <p class="prop-kind">{prop.kind}</p>
+              <h2 class="section-title">{t(prop.label)}</h2>
+              <p class="prop-kind">{t(prop.kind)}</p>
               {#each prop.paragraphs as paragraph, i (i)}
-                <p>{paragraph}</p>
+                <p>{t(paragraph)}</p>
               {/each}
               {#if key === "buugeng"}
                 <BuugengChirality
@@ -179,40 +182,26 @@
   </section>
 
   <section class="editorial-section has-duo" style="--accent: #ec4899">
-    <h2 class="section-title">One End, Two Moves</h2>
+    <h2 class="section-title">{t("site_props_page_compare_title")}</h2>
     <div class="section-duo flip">
       <div class="duo-copy">
         <div class="prose">
-          <p>
-            The two mandalas trace the identical sequence. In the staff render,
-            both ends of each prop leave a path. In the club render, one does.
-            On a staff, the thumb end isolates while the pinky end extends. A
-            club or fan can perform either path, so their spinners learn
-            isolation and extension as separate moves with the same underlying
-            geometry.
-          </p>
-          <p>
-            When you're ready to learn the notation, the <LinkChip
-              size="inline"
-              href="/guide">guide</LinkChip
-            > introduces every concept in order.
-          </p>
+          <p>{t("site_props_page_compare_text")}</p>
+          <p>{t("site_props_page_guide_line")}</p>
+          <LinkChip href="/guide">{t("site_read_guide")}</LinkChip>
         </div>
       </div>
       <div class="duo-demo">
-        <MandalaContrast
-          sequence={demoSequence}
-          note="staves trace both ends; clubs trace one"
-        />
+        <MandalaContrast sequence={demoSequence} />
       </div>
     </div>
   </section>
 
   <div class="cta-card">
-    <h3>Write your first sequence</h3>
-    <p>Flow Arts Composer is free to use. No download required.</p>
+    <h3>{t("site_props_page_cta_title")}</h3>
+    <p>{t("site_props_page_cta_text")}</p>
     <a href="/create" class="cta-button" data-sveltekit-reload>
-      <span>Open Flow Arts Composer</span>
+      <span>{t("site_open_composer")}</span>
       <i class="fas fa-arrow-right" aria-hidden="true"></i>
     </a>
   </div>

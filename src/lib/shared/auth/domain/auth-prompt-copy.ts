@@ -88,7 +88,6 @@ const nudgeKeys = {
   "module:stage": "auth_nudge_module_stage",
   "module:other": "auth_nudge_module_other",
   "edit-community": "auth_nudge_edit_community",
-  "loop-locked-guest": "auth_nudge_loop_locked_guest",
   "community-setups": "auth_nudge_community_setups",
   "saved-setups": "auth_nudge_saved_setups",
   "save-setup": "auth_nudge_save_setup",

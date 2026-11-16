@@ -23,6 +23,8 @@
     onUsernameChanged?: (username: string) => void;
     onInstagramUsernameChanged?: (username: string) => void;
     displayNameEditRequest?: number;
+    /** Keyboard up with a field here in edit: only that field's editor shows. */
+    keyboardFrame?: boolean;
   }
 
   let {
@@ -35,10 +37,11 @@
     onUsernameChanged,
     onInstagramUsernameChanged,
     displayNameEditRequest = 0,
+    keyboardFrame = false,
   }: Props = $props();
 </script>
 
-<div class="account-settings">
+<div class="account-settings" class:keyboard-frame={keyboardFrame}>
   <div class="field-cell">
     <DisplayNameEditor
       {user}
@@ -76,6 +79,27 @@
   .field-cell {
     display: flex;
     min-width: 0;
+  }
+
+  /* Keyboard-open frame: the field being typed in keeps its label, input,
+     hint or error line and Save and Cancel; the other rows, the pronoun
+     presets and the handle suggestions step aside until the keyboard drops.
+     The rows are hidden, not removed, so a draft in another row survives. */
+  .keyboard-frame {
+    grid-template-rows: none;
+  }
+
+  .keyboard-frame .field-cell {
+    scroll-margin-top: 0.75rem;
+  }
+
+  .keyboard-frame .field-cell:not(:focus-within) {
+    display: none;
+  }
+
+  .keyboard-frame :global(.preset-chips),
+  .keyboard-frame :global(.suggestions) {
+    display: none;
   }
 
   .field-cell :global(.section) {
@@ -148,7 +172,7 @@
       gap: 0.25em;
     }
 
-    .field-cell :global(.edit-action .panel-btn) {
+    .field-cell :global(.edit-action) {
       min-width: 5.25em;
     }
   }

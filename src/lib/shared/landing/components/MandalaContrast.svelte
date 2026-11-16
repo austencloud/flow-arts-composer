@@ -13,6 +13,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
@@ -33,8 +34,8 @@
   });
 
   const CELLS = [
-    { prop: "staff", label: "Staves: both ends traced" },
-    { prop: "club", label: "Clubs: one end traced" },
+    { prop: "staff", label: () => t("site_props_page_compare_staves") },
+    { prop: "club", label: () => t("site_props_page_compare_clubs") },
   ] as const;
 </script>
 
@@ -62,7 +63,7 @@
             }}
           />
         </div>
-        <span class="label">{cell.label}</span>
+        <span class="label">{cell.label()}</span>
       </div>
     {/each}
   </div>
@@ -104,7 +105,13 @@
     align-items: center;
     justify-content: center;
   }
-  /* SequenceMandala renders at a fixed pixel size; scale it to the stage. */
+  /* SequenceMandala renders at a fixed pixel size; scale it to the stage.
+     Its wrapper carries that size inline, and in a stage narrower than it the
+     wrapper shrank in width only, so the drawing was stretched and cut. */
+  .stage :global(.mandala-container) {
+    width: 100% !important;
+    height: 100% !important;
+  }
   .stage :global(svg),
   .stage :global(canvas) {
     width: 100% !important;

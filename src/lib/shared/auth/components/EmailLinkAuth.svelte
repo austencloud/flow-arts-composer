@@ -49,11 +49,21 @@
     compact = false,
     email = $bindable(""),
     sendOnOpen = false,
+    plain = false,
+    onStageChange,
   }: {
     compact?: boolean;
     email?: string;
     /** Opened by "Email me a code": send to the address already typed. */
     sendOnOpen?: boolean;
+    /**
+     * The sign-in screen's form: before anything is sent it is only the
+     * Email field and "Email me a code", with no explanation card. The card
+     * still arrives for sending, sent and errors.
+     */
+    plain?: boolean;
+    /** Tells the host when a code is on its way, so it can clear the rest. */
+    onStageChange?: (stage: "idle" | "sending" | "sent") => void;
   } = $props();
 
   let loading = $state(false);
@@ -105,6 +115,10 @@
 
   const staysInThisApp = $derived(installedApp || inAppBrowser);
   const hint = $derived(t("auth_email_code_hint"));
+
+  $effect(() => {
+    onStageChange?.(loading ? "sending" : success ? "sent" : "idle");
+  });
 
   // The link is usually opened in a different browser than the one that
   // requested it, and localStorage does not cross that boundary — so an
@@ -331,7 +345,7 @@
   class="email-link-form"
   class:compact
 >
-  {#if error || !compact || loading || success}
+  {#if error || loading || success || !(compact || plain)}
     <div
       id="magic-link-status"
       class="delivery-card"
@@ -443,7 +457,7 @@
           : t("form_placeholder_email")}
         required
         disabled={loading || !!success}
-        aria-describedby={!compact || loading || success || error
+        aria-describedby={!(compact || plain) || loading || success || error
           ? "magic-link-status"
           : undefined}
       />
@@ -509,7 +523,7 @@
       class="submit-button"
       class:submit-button--secondary={!!success}
       aria-busy={loading}
-      aria-describedby={!compact || loading || success || error
+      aria-describedby={!(compact || plain) || loading || success || error
         ? "magic-link-status"
         : undefined}
     >
@@ -526,7 +540,7 @@
           <ProgressRing percent={-1} size={24} strokeWidth={2} />
           {t("auth_sending")}
         {:else}
-          {#if !compact}<i class="fas fa-envelope" aria-hidden="true"></i>{/if}
+          {#if !compact && !plain}<i class="fas fa-envelope" aria-hidden="true"></i>{/if}
           {success
             ? t("auth_send_another_code")
             : compact

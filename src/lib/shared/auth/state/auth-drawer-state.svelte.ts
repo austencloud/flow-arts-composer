@@ -3,7 +3,10 @@ import { AUTH_NUDGE_TEXTS } from "../domain/auth-nudge-trigger";
 import { authNudgeCopy } from "../domain/auth-prompt-copy";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-import { trackAuthSurfaceOpened } from "#lib/shared/analytics/auth-events.js";
+import {
+  trackAuthSurfaceOpened,
+  type AuthSurface,
+} from "#lib/shared/analytics/auth-events.js";
 import {
   showToast,
   removeToast,
@@ -169,7 +172,7 @@ export const authDrawerState = {
       duration: GUEST_SAVE_TOAST_DURATION_MS,
       announcement: "polite",
       action: {
-        label: "Create account",
+        label: t("auth_nudge_create_account"),
         onClick: () => this.showOnRequest("signup", "guest-first-save"),
       },
       ...options,
@@ -178,6 +181,31 @@ export const authDrawerState = {
         recordGateDismissal();
         options.onDismiss?.();
       },
+    });
+    return true;
+  },
+  /**
+   * A guest asked to publish, and the save stayed private because only a full
+   * account can post to the community gallery. Unlike the first-save
+   * invitation this answers the guest's own choice, so it is not once per
+   * device; it does stand in for that invitation, which is marked seen. It
+   * shares the invitation's toast slot, so an explicit account prompt clears
+   * it the same way.
+   */
+  offerPublishAccount(message: string): boolean {
+    if (_open) return false;
+    markGuestSaveNudgeSeen();
+    if (guestSaveToastId) removeToast(guestSaveToastId, "programmatic");
+    guestSaveToastId = showToast({
+      type: "info",
+      message,
+      duration: GUEST_SAVE_TOAST_DURATION_MS,
+      announcement: "polite",
+      action: {
+        label: t("auth_nudge_create_account"),
+        onClick: () => this.showOnRequest("signup", "viewer-signin-publish"),
+      },
+      onDismiss: () => recordGateDismissal(),
     });
     return true;
   },
@@ -259,11 +287,14 @@ export const authDrawerState = {
   /**
    * The person tapped Sign in or Create account. Always opens the sheet, with
    * the reason's copy when one is given, whatever the cooldown says.
+   * `opened` keeps the analytics names a door already reported under (the
+   * menu's Sign in row and the `?sheet=auth` link opened their own sheet once).
    */
   showOnRequest(
     mode: "signin" | "signup" = "signup",
     reason?: AuthNudgeTrigger,
-    artifact?: SequenceData | null
+    artifact?: SequenceData | null,
+    opened?: { surface: AuthSurface; origin: string }
   ) {
     this.dismissGuestSaveNudge();
     removeGateCooldownToast();
@@ -281,8 +312,8 @@ export const authDrawerState = {
     removeFeedbackToast();
     scheduleFeedback();
     trackAuthSurfaceOpened({
-      surface: "guest_nudge_modal",
-      origin: reason ?? "generic_account_action",
+      surface: opened?.surface ?? "guest_nudge_modal",
+      origin: opened?.origin ?? reason ?? "generic_account_action",
       auth_mode: mode,
     });
   },
@@ -321,5 +352,17 @@ export const authDrawerState = {
     _artifact = null;
     _initialMode = "signup";
     _reason = null;
+  },
+  /**
+   * The auth listener saw a user. A guest handed an anonymous identity (the
+   * gallery and the composer provision one on mount, a save does too) is
+   * still a guest, so a sign-in screen they have open stays open: closing it
+   * here is what dropped a cold `?sheet=auth` link a moment after it opened.
+   * A real account closes it and lets gates ask again.
+   */
+  accountChanged(user: { isAnonymous: boolean }) {
+    if (user.isAnonymous) return;
+    this.reset();
+    this.clearGateCooldown();
   },
 };

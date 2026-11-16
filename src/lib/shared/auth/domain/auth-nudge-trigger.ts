@@ -19,7 +19,6 @@ export type AuthNudgeTrigger =
   | "module:stage"
   | "module:other"
   | "edit-community"
-  | "loop-locked-guest"
   | "community-setups"
   | "saved-setups"
   | "save-setup"
@@ -84,13 +83,6 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
     "An account opens this part of the app and keeps your work on every device. Free, about ten seconds.",
   "edit-community":
     "Edit and remix community sequences with an account. Free, about ten seconds.",
-  // Lead with what the account gives, never with a definition. A guest hits
-  // this after tapping Mirrored/Inverted/etc., so opening with "Rotated LOOPs
-  // are sequences that..." reads as a non sequitur (Austen, 2026-08-10). What
-  // rotated means is the guide's job; this nudge only names what an account
-  // adds and what keeps working without one.
-  "loop-locked-guest":
-    "Use every LOOP type with an account. Free, about ten seconds. Rotated LOOPs work without one.",
   "community-setups":
     "Start from setups the community shared, with an account. Free, about ten seconds.",
   "saved-setups":
@@ -235,11 +227,6 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     key: "edit-community",
     title: "Edit this sequence",
     body: AUTH_NUDGE_TEXTS["edit-community"],
-  },
-  "loop-locked-guest": {
-    key: "loop-locked-guest",
-    title: "Try every LOOP type",
-    body: "Use every LOOP type, not only rotated ones. Free, about ten seconds.",
   },
   "community-setups": {
     key: "community-setups",

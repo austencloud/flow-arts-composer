@@ -25,7 +25,7 @@
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
-  import { computeQuickFeedbackInputMode } from "./quick-feedback-input-mode";
+  import { computeKeyboardOpenFrame } from "#lib/shared/mobile/utils/keyboard-open-frame.js";
 
   const debug = createComponentLogger("QuickFeedbackPanel");
 
@@ -51,7 +51,7 @@
 
   // Input mode gates on the on-screen keyboard actually being present
   // (keyboardHeight > 0), not just touch capability - see
-  // quick-feedback-input-mode.ts for why (fixes feedback item AmvXbY8i:
+  // keyboard-open-frame.ts for why (fixes feedback item AmvXbY8i:
   // dismissing the keyboard on a Z Fold while focus stayed on the textarea
   // used to strand the panel in full-screen input mode with no submit
   // button). iOS keeps the capability gate there since it has no
@@ -59,7 +59,7 @@
   // side-drawer + touch keyboard case for Android.
   // Stay in input mode while submitting to avoid UI flash before panel closes
   const isInputMode = $derived(
-    computeQuickFeedbackInputMode({
+    computeKeyboardOpenFrame({
       isInputFocused,
       isSubmitting: formState.isSubmitting,
       isIOSPlatform,

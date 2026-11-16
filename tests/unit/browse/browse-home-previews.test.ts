@@ -92,6 +92,8 @@ describe("browse home preview layouts", () => {
       for (let i = 1; i < cards.length; i++) {
         expect(overlaps(cards[i - 1]!, cards[i]!)).toBe(false);
       }
+      // A TKA letter is never typed: the wall's cards carry no word line.
+      for (const card of cards) expect(card.word).toBe(false);
     }
   );
 

@@ -15,7 +15,6 @@ Animates forward in z-axis and expands to fill the container space
     effectiveInversionInterval,
   } from "#lib/shared/create/services/loop-type-utils.js";
   import { gateRhythm } from "#lib/shared/create/services/loop-rhythm-gating.js";
-  import { guestLoopGate } from "#lib/shared/create/services/loop-guest-gate.js";
   import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import { LOOPType } from "../../circular/domain/models/circular-models";
   import LOOPComponentGrid from "../modals/LOOPComponentGrid.svelte";
@@ -46,8 +45,6 @@ Animates forward in z-axis and expands to fill the container space
     rhythm,
     sequenceLength,
     onRhythmChange,
-    guestGated = false,
-    onRequestSignup,
     handRelationship,
     onPickNeedsFit,
   } = $props<{
@@ -68,13 +65,6 @@ Animates forward in z-axis and expands to fill the container space
     rhythm?: LoopRhythmValue;
     sequenceLength?: number;
     onRhythmChange?: (updates: Partial<LoopRhythmValue>) => void;
-    /** True (set by guest-facing hosts) turns on guest LOOP gating: only
-        rotated LOOP types are free. Absent = no gating (deck/store/admin
-        hosts unaffected). */
-    guestGated?: boolean;
-    /** Called when a guest taps a gated LOOP. The host routes straight to
-        the auth screen with the every-LOOP-type copy. */
-    onRequestSignup?: () => void;
     /** The hand mode from the TnD card; reflection modes narrow the LOOP
         choices here. Absent reads as Free (legacy callers unaffected). */
     handRelationship?: TnDSelection;
@@ -175,7 +165,6 @@ Animates forward in z-axis and expands to fill the container space
       rhythmControlsAvailable: !!rhythm && !!onRhythmChange,
       detailComponent: null,
       sequenceLength,
-      guestGated,
       handRelationship,
     })
   );
@@ -209,8 +198,6 @@ Animates forward in z-axis and expands to fill the container space
   const configurableComponents = $derived(overlayModel.configurableComponents);
   const specWire = $derived(overlayModel.specWire);
   const rhythmGate = $derived(overlayModel.rhythmGate);
-  const guestLock = $derived(overlayModel.guestLock);
-  const lockedComponents = $derived(overlayModel.lockedComponents);
   const wordMathText = $derived.by(() => {
     if (!rhythmGate) return null;
     if (!rhythmGate.ok) {
@@ -251,7 +238,6 @@ Animates forward in z-axis and expands to fill the container space
   const buttonText = $derived.by(() => {
     if (selectionCount === 0) return t("create_deep_select_components");
     if (!isImplemented) return t("create_deep_combo_unsupported");
-    if (guestLock.locked) return t("create_deep_signup_unlock");
     if (
       selectionCount === 1 &&
       localSelectedComponents.has(LOOPComponent.MIRRORED)
@@ -290,14 +276,6 @@ Animates forward in z-axis and expands to fill the container space
 
     // Single changes apply immediately; settings stay below stable choices.
     if (!isMultiSelectMode) {
-      // Guest-gated single pick routes to sign-up instead of applying.
-      if (guestGated) {
-        const gate = guestLoopGate(generateLOOPType(new Set([component])));
-        if (gate.locked) {
-          onRequestSignup?.();
-          return;
-        }
-      }
       const nextComponents = new Set([component]);
       localSelectedComponents = nextComponents;
       const newLoopType = generateLOOPType(nextComponents);
@@ -389,16 +367,6 @@ Animates forward in z-axis and expands to fill the container space
     hapticService?.trigger("selection");
     const nextRhythm = { ...localRhythm, ...updates };
 
-    if (!isMultiSelectMode && selectionCount > 0) {
-      const newLoopType = generateLOOPType(localSelectedComponents);
-      if (newLoopType !== null && guestGated) {
-        if (guestLoopGate(newLoopType).locked) {
-          onRequestSignup?.();
-          return;
-        }
-      }
-    }
-
     localRhythm = nextRhythm;
     if (isMultiSelectMode || selectionCount === 0) return;
 
@@ -464,12 +432,6 @@ Animates forward in z-axis and expands to fill the container space
 
   function handleConfirm() {
     if (selectionCount === 0 || !isImplemented) return;
-    // Guest-gated combo routes to sign-up instead of applying.
-    if (guestLock.locked) {
-      hapticService?.trigger("selection");
-      onRequestSignup?.();
-      return;
-    }
     if (rhythmGate && !rhythmGate.ok) return;
     hapticService?.trigger("selection");
     applyAndClose();
@@ -520,7 +482,6 @@ Animates forward in z-axis and expands to fill the container space
         selectedComponents={localSelectedComponents}
         {disabledComponents}
         {disabledReasons}
-        {lockedComponents}
         {isMultiSelectMode}
         layout="grid"
         compactChooser
@@ -572,7 +533,6 @@ Animates forward in z-axis and expands to fill the container space
       {explanationText}
       {isImplemented}
       {selectionCount}
-      {guestLock}
       {rhythmGate}
       {buttonText}
       onConfirm={handleConfirm}

@@ -3,7 +3,6 @@
   import type { LOOPSpecWire } from "@tka/sequence-engine/loop";
 
   import LoopBlockTimeline from "#lib/shared/components/LoopBlockTimeline.svelte";
-  import type { GuestLoopLock } from "#lib/shared/create/services/loop-guest-gate.js";
   import type { RhythmGate } from "#lib/shared/create/services/loop-rhythm-gating.js";
   import { blockSignatures } from "#lib/shared/create/services/loop-block-signatures.js";
   import { flyFade, motionDuration } from "#lib/shared/transitions/motion.js";
@@ -15,7 +14,6 @@
     explanationText: string;
     isImplemented: boolean;
     selectionCount: number;
-    guestLock: GuestLoopLock;
     rhythmGate: RhythmGate | null;
     buttonText: string;
     onConfirm: () => void;
@@ -25,9 +23,7 @@
   const applyDisabled = $derived(
     props.selectionCount === 0 ||
       !props.isImplemented ||
-      (!props.guestLock.locked &&
-        props.rhythmGate !== null &&
-        !props.rhythmGate.ok)
+      (props.rhythmGate !== null && !props.rhythmGate.ok)
   );
 
   const rhythmReason = $derived.by(() => {
@@ -44,10 +40,6 @@
       ? t("create_deep_loop_cannot_split", { beats: match[1], parts: match[2] })
       : gate.reason;
   });
-
-  const guestReason = $derived(
-    props.guestLock.locked ? t("create_deep_loop_guest_category") : ""
-  );
 </script>
 
 <div
@@ -77,8 +69,6 @@
       <div class="coming-soon-badge">
         {t("create_deep_loop_no_match_hint")}
       </div>
-    {:else if props.guestLock.locked}
-      <div class="signup-badge">{guestReason}</div>
     {:else if props.rhythmGate && !props.rhythmGate.ok}
       <div class="coming-soon-badge">{rhythmReason}</div>
     {/if}
@@ -88,10 +78,6 @@
 {#if !props.isImplemented && props.selectionCount > 0}
   <div class="mobile-loop-status coming-soon-badge">
     {t("create_deep_loop_no_match_hint")}
-  </div>
-{:else if props.guestLock.locked}
-  <div class="mobile-loop-status signup-badge">
-    {guestReason}
   </div>
 {:else if props.rhythmGate && !props.rhythmGate.ok}
   <div class="mobile-loop-status coming-soon-badge">
@@ -109,7 +95,6 @@
 >
   <button
     class="apply-button"
-    class:locked={props.guestLock.locked}
     class:disabled={applyDisabled}
     onclick={props.onConfirm}
     disabled={applyDisabled}
@@ -143,8 +128,7 @@
     line-height: 1.4;
   }
 
-  .coming-soon-badge,
-  .signup-badge {
+  .coming-soon-badge {
     padding: 6px 10px;
     border-radius: 6px;
     font-size: var(--font-size-compact, 12px);
@@ -157,12 +141,6 @@
       color-mix(in srgb, var(--semantic-warning) 50%, transparent);
     background: color-mix(in srgb, var(--semantic-warning) 20%, transparent);
     color: var(--semantic-warning);
-  }
-
-  .signup-badge {
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 55%, transparent);
-    background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
-    color: var(--theme-text, white);
   }
 
   .word-math {
@@ -231,12 +209,6 @@
   .apply-button.disabled {
     opacity: 0.4;
     cursor: not-allowed;
-  }
-
-  .apply-button.locked {
-    opacity: 1;
-    background: color-mix(in srgb, var(--theme-accent) 55%, transparent);
-    cursor: pointer;
   }
 
   @media (max-width: 768px) {

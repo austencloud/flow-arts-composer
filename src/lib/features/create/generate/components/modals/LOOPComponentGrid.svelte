@@ -16,7 +16,6 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     selectedComponents,
     disabledComponents = null,
     disabledReasons = {},
-    lockedComponents = null,
     isMultiSelectMode = false,
     layout = "grid",
     compactChooser = false,
@@ -31,8 +30,6 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     disabledComponents?: Set<LOOPComponent> | null;
     /** Per-component reason for a hand-mode disable, shown on the button. */
     disabledReasons?: Partial<Record<LOOPComponent, string>>;
-    /** Guest-gated components — still clickable, but route to sign-up. */
-    lockedComponents?: Set<LOOPComponent> | null;
     isMultiSelectMode?: boolean;
     layout?: "grid" | "list" | "responsive";
     /** Stable five-choice picker used by the expanded LOOP surface only. */
@@ -108,7 +105,6 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
       isSelected={selectedComponents.has(componentInfo.component)}
       isDisabled={disabledComponents?.has(componentInfo.component) ?? false}
       disabledReason={disabledReasons[componentInfo.component]}
-      isLocked={lockedComponents?.has(componentInfo.component) ?? false}
       showDescription={showDescriptions}
       isExpanded={isComponentExpanded(componentInfo.component)}
       expandedContent={configurator}

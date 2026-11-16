@@ -4,6 +4,7 @@ vi.mock("#lib/shared/analytics/auth-events.js", () => ({
   trackAuthSurfaceOpened: vi.fn(),
 }));
 
+import { trackAuthSurfaceOpened } from "#lib/shared/analytics/auth-events.js";
 import {
   clearToasts,
   toastQueue,
@@ -265,5 +266,44 @@ describe("authDrawerState after a guest says not now", () => {
     expect(localStorage.getItem("tka-auth-gate-dismissed-at")).toBeNull();
     askToSaveMore();
     expect(authDrawerState.open).toBe(true);
+  });
+});
+
+/**
+ * A cold `?sheet=auth` link opens sign-in for a guest. The composer and the
+ * gallery give a guest an anonymous identity on mount, and the auth listener
+ * used to close any open sign-in whenever it saw a user, so the screen shut a
+ * moment after it opened.
+ */
+describe("authDrawerState when the auth listener sees a user", () => {
+  afterEach(() => {
+    authDrawerState.reset();
+    authDrawerState.clearGateCooldown();
+    clearToasts();
+    vi.mocked(trackAuthSurfaceOpened).mockClear();
+  });
+
+  it("keeps sign-in open when a guest is given an anonymous identity", () => {
+    authDrawerState.showOnRequest("signin");
+    authDrawerState.accountChanged({ isAnonymous: true });
+    expect(authDrawerState.open).toBe(true);
+  });
+
+  it("closes sign-in when a real account arrives", () => {
+    authDrawerState.showOnRequest("signin");
+    authDrawerState.accountChanged({ isAnonymous: false });
+    expect(authDrawerState.open).toBe(false);
+  });
+
+  it("reports a door under the analytics names it already had", () => {
+    authDrawerState.showOnRequest("signin", undefined, undefined, {
+      surface: "auth_sheet",
+      origin: "sheet_query_or_navigation",
+    });
+    expect(trackAuthSurfaceOpened).toHaveBeenLastCalledWith({
+      surface: "auth_sheet",
+      origin: "sheet_query_or_navigation",
+      auth_mode: "signin",
+    });
   });
 });

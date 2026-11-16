@@ -324,22 +324,26 @@
 </section>
 
 <style>
+  /* The home is a fitted frame at every size: the frame is the height of
+     its box, Community takes what the question and Your library leave, and
+     each tile's preview takes what is left inside its tile. */
   .browse-home {
     width: 100%;
     height: 100%;
+    /* scrolls: only in a box shorter than the frame's floor (200% zoom, a tiny window), so every door stays in reach */
     overflow: auto;
     container: browse-home / size;
   }
 
   .browse-home-inner {
+    --home-floor: 470px;
     width: calc(100% - clamp(20px, 3cqi, 80px));
-    min-height: 100%;
+    height: max(100%, var(--home-floor));
     margin: 0 auto;
     padding-block: clamp(20px, 4cqh, 52px);
     box-sizing: border-box;
     display: grid;
-    grid-template-rows: auto auto auto;
-    align-content: start;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     gap: clamp(16px, 2.5cqh, 24px);
   }
 
@@ -357,6 +361,10 @@
     display: grid;
     gap: 12px;
     min-width: 0;
+  }
+  .community-group {
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
   }
   .group-heading h2 {
     margin: 0;
@@ -424,13 +432,12 @@
     color: var(--theme-text-dim);
   }
 
-  /* One column on a phone: each tile's preview strip sits above its words,
-     the strip shape Create's preview box composes its widest scenes for. */
   .tile-index {
     --stage-height: clamp(64px, 10cqh, 88px);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
+    min-height: 0;
     padding-top: 4px;
   }
 
@@ -554,23 +561,174 @@
     );
   }
 
+  /* A phone: the three Community tiles share the group's height, each one
+     row with its preview a square beside its name; the square's side comes
+     from the tile's height. The group blurbs step aside, and Your library is
+     two columns of one-line buttons with the fifth door across both. */
+  @container browse-home (max-width: 599px) {
+    .browse-home-inner {
+      padding-block: 10px;
+      gap: 12px;
+    }
+    h1 {
+      font-size: var(--font-size-xl, 1.25rem);
+      line-height: 1.18;
+    }
+    .destination-group {
+      gap: 8px;
+    }
+    .group-heading h2 {
+      font-size: var(--font-size-lg, 1.125rem);
+    }
+    .group-heading p,
+    .has-chips .tile-description,
+    .library-copy small,
+    .library-arrow {
+      display: none;
+    }
+    .tile-index {
+      container: tiles / size;
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding-top: 0;
+    }
+    .tile {
+      --side: clamp(48px, calc((100cqh - 16px) / 3 - 18px), 128px);
+      display: block;
+      min-height: 0;
+    }
+    .tile-main {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      grid-template-columns: var(--side) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      align-items: center;
+      align-content: center;
+      column-gap: 12px;
+      padding: 8px;
+      padding-inline-end: 12px;
+    }
+    .tile-stage {
+      width: var(--side);
+      height: var(--side);
+    }
+    .tile-copy {
+      gap: 4px;
+    }
+    .tile-description {
+      line-height: 1.35;
+    }
+    /* The chips sit under the Visuals name, beside its picture. */
+    .has-chips .tile-copy {
+      padding-bottom: 44px;
+    }
+    .has-chips .tile-chips {
+      position: absolute;
+      inset-inline: calc(8px + var(--side) + 12px) 12px;
+      top: calc(50% + 2px);
+      flex-wrap: nowrap;
+      gap: 6px;
+      padding: 0;
+    }
+    .tile-chip {
+      min-height: var(--alt-touch-target, 36px);
+      padding: 0 12px;
+    }
+    .library-links {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 8px;
+    }
+    .library-link {
+      min-height: 40px;
+      gap: 8px;
+      padding: 4px 10px;
+      padding-inline-start: 6px;
+    }
+    .library-link:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+    .library-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+    }
+    .library-copy strong {
+      line-height: 1.15;
+    }
+  }
+
+  /* Under 400px the two library columns are too narrow for an icon and a
+     long name (German and Russian): the name alone, two lines at most. */
+  @container browse-home (max-width: 399px) {
+    .library-icon {
+      display: none;
+    }
+    .library-link {
+      padding-inline: 10px;
+    }
+  }
+
+  /* Tiles too short for a whole description: name and picture only. */
+  @container tiles (max-width: 599px) and (max-height: 387px) {
+    .tile-description {
+      display: none;
+    }
+  }
+
+  /* The narrowest phones: a smaller picture and name keep the longest tile
+     name whole, and the Visuals chips drop their icons to sit side by side. */
+  @container tiles (max-width: 339px) {
+    .tile {
+      --side: clamp(
+        48px,
+        min(calc((100cqh - 16px) / 3 - 18px), 22cqw),
+        128px
+      );
+    }
+    .tile-name {
+      font-size: var(--font-size-md, 1rem);
+    }
+    .tile-chip i {
+      display: none;
+    }
+  }
+
+  /* Short phones: the question steps aside for the eye and stays for screen
+     readers; the top bar already says Browse. */
+  @container browse-home (max-width: 599px) and (max-height: 559px) {
+    .browse-home-header {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .browse-home-inner {
+      --home-floor: 452px;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding-block: 8px;
+    }
+    .library-link {
+      min-height: var(--alt-touch-target, 36px);
+    }
+  }
+
   /* Two columns once a Community tile has room for its preview and copy.
-     From here the board fills the screen: Community takes the height the
-     header and Your library leave, and the tiles share one set of rows
-     (preview, words, chips) through subgrid, so every tile in a row is the
-     same size, the previews grow together and the names line up. */
+     The tiles share one set of rows (preview, words, chips) through subgrid,
+     so every tile in a row is the same size, the previews shrink and grow
+     together and the names line up. */
   @container browse-home (min-width: 600px) {
     .browse-home-inner {
+      --home-floor: 520px;
       width: calc(100% - 28px);
-      grid-template-rows: auto minmax(min-content, 1fr) auto;
-    }
-    .community-group {
-      grid-template-rows: auto minmax(0, 1fr);
     }
     .tile-index {
       --stage-height: clamp(76px, 13cqh, 128px);
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: minmax(var(--stage-height), 1fr) auto auto;
+      grid-template-rows: minmax(0, 1fr) auto auto;
       column-gap: 12px;
       row-gap: 0;
     }
@@ -591,7 +749,7 @@
     .tile-stage {
       grid-row: 1;
       height: auto;
-      min-height: var(--stage-height);
+      min-height: 0;
     }
     .tile-copy {
       grid-row: 2;
@@ -612,7 +770,7 @@
      first two, its preview beside its words. */
   @container browse-home (min-width: 600px) and (max-width: 1099px) {
     .tile-index {
-      grid-template-rows: minmax(var(--stage-height), 1fr) auto auto auto;
+      grid-template-rows: minmax(0, 1fr) auto auto auto;
     }
     .tile.has-chips {
       --visual-preview-width: clamp(120px, 22cqi, 200px);
@@ -640,6 +798,73 @@
     .has-chips .tile-chips {
       grid-row: 2;
       padding-inline-start: calc(18px + var(--visual-preview-width) + 14px);
+    }
+  }
+
+  /* Two across in a frame under 900px tall (the Fold, 1024x768): the first
+     two tiles turn on their side above Visuals, their picture a square from
+     the frame's height; the Visuals chips move up beside its picture, and
+     the library buttons keep one line. */
+  @container browse-home (min-width: 600px) and (max-width: 1099px) and (min-height: 481px) and (max-height: 899px) {
+    .tile-index {
+      --side: clamp(64px, 15cqh, 128px);
+      grid-template-rows: minmax(0, 1fr) auto;
+      row-gap: 12px;
+    }
+    .tile:not(.has-chips) {
+      grid-row: 1;
+      display: block;
+      min-height: 0;
+    }
+    .tile:not(.has-chips) .tile-main {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      grid-row: auto;
+      grid-template-columns: var(--side) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      align-items: center;
+      align-content: center;
+      column-gap: 14px;
+      padding: 12px 14px;
+    }
+    .tile:not(.has-chips) .tile-stage {
+      grid-row: auto;
+      width: var(--side);
+      height: var(--side);
+    }
+    .tile:not(.has-chips) .tile-copy {
+      grid-row: auto;
+    }
+    .tile:not(.has-chips) .tile-name {
+      font-size: var(--font-size-lg, 1.125rem);
+    }
+    .tile.has-chips {
+      grid-row: 2;
+      margin-top: 0;
+    }
+    .has-chips .tile-description,
+    .library-copy small {
+      display: none;
+    }
+    .has-chips .tile-copy {
+      padding-bottom: 52px;
+    }
+    .has-chips .tile-chips {
+      grid-row: auto;
+      position: absolute;
+      inset-inline: calc(18px + var(--visual-preview-width) + 14px) 18px;
+      top: calc(50% + 2px);
+      flex-wrap: nowrap;
+      padding: 0;
+    }
+    .library-link {
+      min-height: var(--min-touch-target, 44px);
+      padding-block: 4px;
+    }
+    .library-icon {
+      width: 32px;
+      height: 32px;
     }
   }
 
@@ -688,8 +913,12 @@
     .tile-chip {
       font-size: clamp(1rem, 0.5cqi, 1.25rem);
     }
+    .browse-home-inner {
+      --home-floor: 540px;
+    }
+    /* The tiles judge their arrangement by the height they share. */
     .tile-index {
-      --stage-height: clamp(100px, 11cqh, 128px);
+      container: tiles / size;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       column-gap: 16px;
     }
@@ -704,13 +933,77 @@
       grid-row: 1;
       width: auto;
       aspect-ratio: auto;
-      min-height: var(--stage-height);
+      min-height: 0;
     }
     .tile-copy {
       grid-row: 2;
     }
     .tile-chips {
       padding: 0 18px 18px;
+    }
+  }
+
+  /* Three across in a short frame (1280x720, 1366x650): tiles under 260px
+     tall turn on their side, the picture a square from the tile's height
+     and the Visuals chips beside it under the name. */
+  @container tiles (min-width: 600px) and (max-height: 259px) {
+    .tile {
+      --side: min(calc(100cqh - 24px), calc((100cqw - 32px) * 0.12));
+      display: block;
+    }
+    .tile-copy {
+      gap: 4px;
+    }
+    .tile-name {
+      font-size: var(--font-size-lg, 1.125rem);
+    }
+    .tile-description {
+      line-height: 1.35;
+    }
+    .tile-main {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      grid-template-columns: var(--side) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      align-items: center;
+      align-content: center;
+      column-gap: 14px;
+      padding: 12px;
+      padding-inline-end: 16px;
+    }
+    .tile-stage,
+    .tile-copy {
+      grid-row: 1;
+    }
+    .tile-stage {
+      width: var(--side);
+      height: var(--side);
+    }
+    .has-chips .tile-description,
+    .tile-chip i {
+      display: none;
+    }
+    .has-chips .tile-copy {
+      padding-bottom: 52px;
+    }
+    .has-chips .tile-chips {
+      position: absolute;
+      inset-inline: calc(12px + var(--side) + 14px) 16px;
+      top: calc(50% + 2px);
+      flex-wrap: nowrap;
+      gap: 6px;
+      padding: 0;
+    }
+    .tile-chip {
+      padding: 0 12px;
+    }
+  }
+
+  /* Tiles under 130px tall: name and picture only. */
+  @container tiles (min-width: 600px) and (max-height: 129px) {
+    .tile-description {
+      display: none;
     }
   }
 
@@ -722,6 +1015,8 @@
   @container browse-home (min-width: 700px) and (max-height: 480px) {
     .browse-home-inner {
       width: calc(100% - 24px);
+      height: auto;
+      min-height: 100%;
       grid-template-rows: auto auto;
       align-content: center;
       gap: 10px;
@@ -749,6 +1044,7 @@
     }
     .tile-index {
       --stage-side: clamp(48px, 20cqh, 88px);
+      container-type: normal;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       grid-template-rows: none;
       column-gap: 10px;

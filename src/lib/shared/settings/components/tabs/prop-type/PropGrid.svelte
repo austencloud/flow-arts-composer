@@ -103,6 +103,8 @@
     fill = false,
     minTileSize = 52,
     fitRoom = false,
+    wholeNames = false,
+    leadInline = false,
     includeBareHands = false,
     chirality,
     allowedProps,
@@ -185,6 +187,14 @@
      * `fill`.
      */
     fitRoom?: boolean;
+    /**
+     * The flat fill grid never cuts or drops a name: names wrap at their
+     * spaces onto two lines at 12 px, and the column count drops until the
+     * widest single word fits a tile. Needs `flat` and `fill`.
+     */
+    wholeNames?: boolean;
+    /** The lead and the Styles button share one row (a short sheet). */
+    leadInline?: boolean;
     /** Adds the scene-only no-prop choice using the same canonical card. */
     includeBareHands?: boolean;
     /**
@@ -619,6 +629,43 @@
   // Below this a prop's name would wrap or clip, so the picture speaks alone.
   const NAMED_TILE_WIDTH = 60;
 
+  // The widest single word among the names on the page, as drawn at 12 px:
+  // a whole-names grid never makes a tile narrower than this word.
+  let wordProbeEl = $state<HTMLDivElement | null>(null);
+  const flatWords = $derived(
+    wholeNames
+      ? [
+          ...new Set(
+            allBases.flatMap((base) =>
+              localizedPropName(base).split(/\s+/).filter(Boolean)
+            )
+          ),
+        ]
+      : []
+  );
+  let widestWord = $state(0);
+  $effect(() => {
+    void flatWords;
+    if (!wordProbeEl) {
+      widestWord = 0;
+      return;
+    }
+    let widest = 0;
+    for (const word of wordProbeEl.children) {
+      widest = Math.max(widest, word.getBoundingClientRect().width);
+    }
+    // No layout engine (unit tests): about 0.6 em a letter at 12 px bold.
+    widestWord =
+      widest > 0
+        ? Math.ceil(widest)
+        : Math.max(0, ...flatWords.map((word) => word.length)) * 7;
+  });
+  // Two 12 px name lines, the tile's padding and the picture's gap.
+  const NAME_ROOM = 40;
+  // The tile's side padding and border around its name box, with a pixel
+  // to spare for subpixel text.
+  const NAME_INSET = 10;
+
   /**
    * Tile grid for the flat picker in a bounded host: the column count that
    * makes the largest tile once the rows must share the height, so the grid
@@ -639,7 +686,34 @@
       rowHeight: number;
       size: number;
     } | null = null;
-    for (let cols = 2; cols <= Math.min(n, fitRoom ? 16 : 10); cols += 1) {
+    const maxCols = Math.min(n, fitRoom ? 16 : 10);
+    if (wholeNames) {
+      // The picture is what the row leaves above two name lines; a column
+      // too narrow for the widest word is never a choice while one fits.
+      const columnFor = (cols: number) =>
+        Math.min((width - flatGap * (cols - 1)) / cols, FILL_MAX_TILE);
+      let fewest = 2;
+      while (fewest > 1 && columnFor(fewest) - NAME_INSET < widestWord)
+        fewest -= 1;
+      for (let cols = 1; cols <= maxCols; cols += 1) {
+        const colWidth = columnFor(cols);
+        if (cols > fewest && colWidth - NAME_INSET < widestWord) break;
+        const rows = Math.ceil(n / cols);
+        const rowHeight = Math.min(
+          (height - flatGap * (rows - 1)) / rows,
+          colWidth * 0.85 + NAME_ROOM
+        );
+        const size = Math.min(colWidth, rowHeight - NAME_ROOM);
+        if (best === null || size > best.size + 0.5) {
+          best = { cols, colWidth, rowHeight, size };
+        }
+      }
+    }
+    for (
+      let cols = 2;
+      !wholeNames && cols <= maxCols;
+      cols += 1
+    ) {
       const rows = Math.ceil(n / cols);
       const colWidth = Math.min(
         (width - flatGap * (cols - 1)) / cols,
@@ -656,11 +730,12 @@
         best = { cols, colWidth, rowHeight, size };
       }
     }
-    if (best === null || (!fitRoom && best.size < minTileSize)) return null;
+    if (best === null) return null;
+    if (!fitRoom && !wholeNames && best.size < minTileSize) return null;
     const orphans = n % best.cols;
     return {
       cols: best.cols,
-      nameless: best.colWidth < NAMED_TILE_WIDTH,
+      nameless: !wholeNames && best.colWidth < NAMED_TILE_WIDTH,
       halfTrack: Math.floor((best.colWidth - flatGap) / 2),
       rowHeight: Math.floor(best.rowHeight),
       orphanIndex: orphans === 0 ? -1 : n - orphans,
@@ -1619,16 +1694,27 @@
         <!-- The lead and the grid's Styles row share one measured box, so a
              bounded grid's tiles fit what is left with or without the row. -->
         {#if lead || layout !== "rail"}
-          <div class="grid-lead" bind:this={leadEl}>
+          <div
+            class="grid-lead"
+            class:inline={leadInline}
+            bind:this={leadEl}
+          >
             {#if lead}<div class="lead-body">{@render lead()}</div>{/if}
             {#if layout !== "rail" && stylesDoorBase !== null}
               <div class="styles-row" transition:growFade={{ axis: "y" }}>
-                {@render stylesControl(stylesDoorBase, true)}
+                <!-- Beside the colours the short name keeps the row one line;
+                     the button's accessible name still names the family. -->
+                {@render stylesControl(stylesDoorBase, !leadInline)}
               </div>
             {/if}
           </div>
         {/if}
         {#if flat}
+          {#if wholeNames}
+            <div class="word-probe" aria-hidden="true" bind:this={wordProbeEl}>
+              {#each flatWords as word (word)}<span>{word}</span>{/each}
+            </div>
+          {/if}
           <div
             class="flat-grid"
             role="group"
@@ -1638,6 +1724,7 @@
             class:inspector={tileDensity === "inspector"}
             class:fill={flatLayout !== null}
             class:nameless={flatLayout?.nameless}
+            class:whole-names={wholeNames && flatLayout !== null}
             style:height={flatLayout ? `${gridFillHeight}px` : undefined}
             style:--flat-cols={flatLayout?.cols}
             style:--flat-half={flatLayout
@@ -2597,6 +2684,48 @@
   }
   .lead-body {
     padding-bottom: 12px;
+  }
+  /* A short sheet: the colours button and the Styles button on one row. */
+  .grid-lead.inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 8px;
+    padding-bottom: 8px;
+  }
+  .grid-lead.inline > .lead-body,
+  .grid-lead.inline > .styles-row {
+    padding-bottom: 0;
+  }
+  /* Whole names: every word whole, at most two lines, never an ellipsis.
+     The column rule in flatLayout keeps the widest word inside a tile. */
+  .flat-grid.whole-names :global(.prop-button) {
+    padding: 4px 3px;
+    gap: 2px;
+  }
+  .flat-grid.whole-names :global(.prop-label) {
+    flex: 0 0 auto;
+    overflow: visible;
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.1;
+    white-space: normal;
+    text-overflow: clip;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+  .word-probe {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+    height: 0;
+    overflow: hidden;
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    white-space: nowrap;
+  }
+  .word-probe > span {
+    display: inline-block;
   }
 
   @media (prefers-reduced-motion: reduce) {
