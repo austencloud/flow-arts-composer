@@ -113,12 +113,13 @@ export interface CharacterInstanceConfig {
    */
   persistent?: boolean;
   /**
-   * Let wall plane through even where the arms would pass through each other
-   * (wall-plane-arm-cross.ts). Nothing that shows a sequence to a person sets
-   * this. Contact research does, because its corpus measures those beats in
-   * wall plane on purpose.
+   * Experiment, off everywhere in the app: show wall plane as dual wheel where
+   * the arms would pass through each other (wall-plane-arm-cross.ts). The
+   * viewer can't yet tell reliably which sequences a body can do, so by
+   * default it shows the plane that was asked for. Only tests switch this on,
+   * to keep the experiment working while that is figured out.
    */
-  allowImpossibleWall?: boolean;
+  enforceWallPlaneArmCross?: boolean;
 }
 
 /**
@@ -293,13 +294,16 @@ export function createCharacterInstanceState(
     customRightPlane ?? getDefaults().customRightPlane
   );
 
-  // AAAA and its split-same kin can't be done in wall plane: the arms would
+  // Experiment, off unless config.enforceWallPlaneArmCross asks for it: AAAA
+  // and its split-same kin can't be done in wall plane, because the arms would
   // pass through each other (wall-plane-arm-cross.ts). Wall on both hands
   // shows as dual wheel for them instead. The request itself is kept, so the
   // next sequence still gets wall, and undo, saves and copies carry the
   // request rather than the stand-in.
   const wallPlaneArmCross = $derived(
-    config.allowImpossibleWall ? null : findWallPlaneArmCross(loadedSequence)
+    config.enforceWallPlaneArmCross
+      ? findWallPlaneArmCross(loadedSequence)
+      : null
   );
   const wallPlaneForced = $derived(
     wallPlaneArmCross !== null &&

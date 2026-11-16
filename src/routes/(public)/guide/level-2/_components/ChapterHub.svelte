@@ -13,6 +13,7 @@
     type ScreenTier,
   } from "../../_components/fit/guide-screen-url";
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import type { Level2TopicPage } from "../_data/level2-topic-routes";
 
@@ -37,7 +38,7 @@
   const views = $derived(
     tier !== "large"
       ? [
-          { label: "Intro", intro: true, list: false },
+          { label: tDynamic("guide_screen_intro"), intro: true, list: false },
           { label: listLabel, intro: false, list: true },
         ]
       : [{ label: listLabel, intro: true, list: true }]
@@ -47,11 +48,11 @@
 <main class="chapter-hub">
   <GuideScreens
     {title}
-    kicker="Level 2"
+    kicker={tDynamic("guide_hub_level2_title")}
     labels={views.map((v) => v.label)}
     prevPage={{
       href: localHref("/guide/level-2"),
-      title: "Level 2",
+      title: tDynamic("guide_hub_level2_title"),
     }}
     nextPage={first
       ? {

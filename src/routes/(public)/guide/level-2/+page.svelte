@@ -17,9 +17,9 @@
   onMount(() => watchScreenTier((v) => (tier = v)));
   const views = $derived(
     tier === "large"
-      ? [{ label: "Level 2", intro: true, chapters: true }]
+      ? [{ label: tDynamic("guide_hub_level2_title"), intro: true, chapters: true }]
       : [
-          { label: "Intro", intro: true, chapters: false },
+          { label: tDynamic("guide_screen_intro"), intro: true, chapters: false },
           {
             label: tDynamic("guide_level2_chapters"),
             intro: false,
@@ -44,7 +44,7 @@
 <main class="landing">
   <GuideScreens
     title="The Kinetic Alphabet"
-    kicker="Level 2"
+    kicker={tDynamic("guide_hub_level2_title")}
     subtitle={tDynamic("guide_level2_subtitle")}
     labels={views.map((v) => v.label)}
     nextPage={{

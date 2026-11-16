@@ -8,8 +8,12 @@
  * rising, or both falling, as in DJDJ), one arm can simply stay in front. But
  * if one hand rises while the other falls through that crossed spot, as in
  * AAAA, the arms have to swap which one is on top while lying across each
- * other, and no body can do that: they pass through each other. The viewer
- * refuses wall plane for these sequences and shows them in dual wheel.
+ * other, and no body can do that: they pass through each other.
+ *
+ * Acting on this in the viewer is an experiment that is switched off: with
+ * enforceWallPlaneArmCross (character-instance-state) the viewer refuses wall
+ * plane for these sequences and shows them in dual wheel. Without it, the
+ * viewer shows whatever plane was asked for.
  *
  * The broad collision scanner (wall-feasibility-scanner.ts) flags these too,
  * but it also flags prop sweeps a performer can dodge, so it can't be

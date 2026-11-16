@@ -280,7 +280,7 @@
     const letters = t("guide_caps_letters_title");
     const vtg = t("guide_caps_vtg_title");
     const pickerLabel = t("guide_caps_picker_label");
-    const sharedLabel = "One word, many CAPs";
+    const sharedLabel = t("guide_threelevels_screen_one_word");
     // The note sits with the picker when both fit, and takes the next screen
     // when they do not.
     const pushPicker = () => {
@@ -293,17 +293,17 @@
     };
     if (tier === "small") {
       out.push({ label: names, parts: ["lede", "namesText"] });
-      out.push({ label: `Watch: ${names}`, parts: ["names"] });
-      out.push({ label: "What a name leaves out", parts: ["namesLimit"] });
+      out.push({ label: t("guide_threelevels_screen_watch", { name: names }), parts: ["names"] });
+      out.push({ label: t("guide_threelevels_screen_leaves_out"), parts: ["namesLimit"] });
       out.push({ label: capTitle, parts: ["capBody", "capLimit"] });
-      out.push({ label: "Gage's CAPs", parts: ["capRules", "capCredit"] });
-      out.push({ label: `Watch: ${capTitle}`, parts: ["cap"] });
+      out.push({ label: t("guide_threelevels_screen_gage_caps"), parts: ["capRules", "capCredit"] });
+      out.push({ label: t("guide_threelevels_screen_watch", { name: capTitle }), parts: ["cap"] });
       out.push({ label: letters, parts: ["lettersText"] });
-      out.push({ label: `Watch: ${letters}`, parts: ["letters"] });
+      out.push({ label: t("guide_threelevels_screen_watch", { name: letters }), parts: ["letters"] });
       pushPicker();
       out.push({ label: vtg, parts: ["vtgBody"] });
-      out.push({ label: "Three spins", parts: ["vtgCap", "vtgCheck"] });
-      out.push({ label: `Watch: ${vtg}`, parts: ["vtg"] });
+      out.push({ label: t("guide_threelevels_screen_three_spins"), parts: ["vtgCap", "vtgCheck"] });
+      out.push({ label: t("guide_threelevels_screen_watch", { name: vtg }), parts: ["vtg"] });
     } else {
       if (tier === "large")
         out.push({
@@ -312,15 +312,15 @@
         });
       else {
         out.push({ label: names, parts: ["lede", "namesText", "names"] });
-        out.push({ label: "What a name leaves out", parts: ["namesLimit"] });
+        out.push({ label: t("guide_threelevels_screen_leaves_out"), parts: ["namesLimit"] });
       }
       out.push({ label: capTitle, parts: ["capBody", "capRules"] });
-      out.push({ label: `Watch: ${capTitle}`, parts: ["cap", "capCredit"] });
+      out.push({ label: t("guide_threelevels_screen_watch", { name: capTitle }), parts: ["cap", "capCredit"] });
       out.push({ label: letters, parts: ["lettersText"] });
-      out.push({ label: `Watch: ${letters}`, parts: ["letters"] });
+      out.push({ label: t("guide_threelevels_screen_watch", { name: letters }), parts: ["letters"] });
       pushPicker();
       out.push({ label: vtg, parts: ["vtgBody", "vtgCap"] });
-      out.push({ label: `Watch: ${vtg}`, parts: ["vtg"] });
+      out.push({ label: t("guide_threelevels_screen_watch", { name: vtg }), parts: ["vtg"] });
     }
     out.push({ label: t("guide_caps_close_title"), parts: ["close"] });
     return out;
@@ -372,11 +372,11 @@
 {#if !dev}
   <UnderConstruction
     title="Being written"
-    eyebrow="The Guide"
+    eyebrow={t("guide_screen_the_guide")}
     icon="fa-pen-nib"
     note="This page is still being written. The rest of the Guide is here."
     destinations={[
-      { label: "The Guide", href: "/guide", icon: "fa-book-open" },
+      { label: t("guide_screen_the_guide"), href: "/guide", icon: "fa-book-open" },
     ]}
   />
 {:else}

@@ -115,7 +115,7 @@
           flowRenderItems(content, seo.tagline ?? "", localizeLevel1Block, {
             room,
           }),
-          "Intro"
+          t("guide_screen_intro")
         )
       : []
   );

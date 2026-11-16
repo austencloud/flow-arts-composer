@@ -559,6 +559,10 @@
   let tier = $state<ScreenTier>("large");
   onMount(() => watchScreenTier((v) => (tier = v)));
   const small = $derived(tier === "small");
+  // A phone's foot pills hold two short lines, so its screens are named
+  // "Level 3" and the card on the screen carries the full heading.
+  const shortLevel = (level: number) =>
+    tDynamic("guide_ratios_screen_level", { level });
   const levelLabel = (level: number) =>
     tDynamic("guide_ratios_level_heading", {
       level,
@@ -573,69 +577,73 @@
     const pairings = tDynamic("guide_ratios_pairings_title");
     if (tier === "small") {
       return [
-        { label: "Two counts", parts: ["intro:0-2"] },
-        { label: "Turns", parts: ["intro:2-"] },
-        { label: "Three ratios", parts: ["origins"] },
+        { label: tDynamic("guide_ratios_screen_two_counts"), parts: ["intro:0-2"] },
+        { label: tDynamic("guide_ratios_screen_turns"), parts: ["intro:2-"] },
+        { label: tDynamic("guide_ratios_screen_three_ratios"), parts: ["origins"] },
         { label: reading, parts: ["h:reading", "terms"] },
-        { label: "Converting", parts: ["formula"] },
-        { label: "Petals", parts: ["petals"] },
+        { label: tDynamic("guide_ratios_screen_converting"), parts: ["formula"] },
+        { label: tDynamic("guide_ratios_screen_petals"), parts: ["petals"] },
         { label: tDynamic("guide_ratios_float_name"), parts: ["float"] },
         { label: tDynamic("guide_ratios_example_caption"), parts: ["worked"] },
-        { label: "Common names", parts: ["names"] },
+        { label: tDynamic("guide_ratios_screen_common_names"), parts: ["names"] },
         { label: ladderTitle, parts: ["h:ladder", "ladderIntro"] },
-        { label: "Four flowers", parts: ["ladderOri:0-2"] },
-        { label: "How a flower sits", parts: ["ladderOri:2-3"] },
-        { label: "Quarter turn flowers", parts: ["ladderOri:3-"] },
-        { label: levelLabel(1), parts: ["tinted", "base"] },
+        { label: tDynamic("guide_ratios_screen_four_flowers"), parts: ["ladderOri:0-2"] },
+        { label: tDynamic("guide_ratios_screen_flower_sits"), parts: ["ladderOri:2-3"] },
+        { label: tDynamic("guide_ratios_screen_quarter_flowers"), parts: ["ladderOri:3-"] },
+        { label: shortLevel(1), parts: ["tinted", "base"] },
         // Two cards a screen: a phone draws each card's flowers large
         // enough to read.
         ...levelGroups.flatMap((group) =>
           Array.from({ length: Math.ceil(group.cells / 2) }, (_, k) => ({
             label:
               k === 0
-                ? levelLabel(group.level)
-                : `${levelLabel(group.level)} (${k + 1})`,
+                ? shortLevel(group.level)
+                : `${shortLevel(group.level)} (${k + 1})`,
             parts: [`level-${group.level}:${k * 2}-${k * 2 + 2}`],
           }))
         ),
-        { label: swap, parts: ["h:swap", "swapIntro"] },
-        { label: "Laps", parts: ["swapLaps"] },
-        { label: "Watch: 1:2 and 2:1", parts: ["swapMotion"] },
-        { label: "Counting petals", parts: ["swapFormula"] },
-        { label: "Quarter turns lap twice", parts: ["swapQuarter"] },
-        { label: twelve, parts: ["h:twelve", "twelveIntro:0-2"] },
-        { label: "In or out", parts: ["twelveIntro:2-"] },
-        { label: "1:1 prospin", parts: ["twelveExample"] },
+        { label: tDynamic("guide_ratios_screen_swap"), parts: ["h:swap", "swapIntro"] },
+        { label: tDynamic("guide_ratios_screen_laps"), parts: ["swapLaps"] },
+        { label: tDynamic("guide_ratios_screen_watch_swap"), parts: ["swapMotion"] },
+        { label: tDynamic("guide_ratios_screen_counting_petals"), parts: ["swapFormula"] },
+        { label: tDynamic("guide_ratios_screen_quarter_laps"), parts: ["swapQuarter"] },
+        { label: tDynamic("guide_ratios_screen_twelve"), parts: ["h:twelve", "twelveIntro:0-2"] },
+        { label: tDynamic("guide_ratios_screen_in_or_out"), parts: ["twelveIntro:2-"] },
+        { label: tDynamic("guide_ratios_screen_prospin_11"), parts: ["twelveExample"] },
         ...families.map((family, i) => ({
           label: tDynamic("guide_ratios_family", { ratio: family.ratio }),
           parts: [`family-${i}`],
         })),
         { label: ends, parts: ["h:ends", "endsIntro"] },
-        { label: "A staff draws both", parts: ["endsOpposite"] },
-        { label: "Ends at Level 1", parts: ["endsL1"] },
-        { label: "Ends past Level 1", parts: ["endsL4:0-2"] },
-        { label: "Ends at Level 4", parts: ["endsL4:2-"] },
+        { label: tDynamic("guide_ratios_screen_staff_both"), parts: ["endsOpposite"] },
+        { label: tDynamic("guide_ratios_screen_ends_l1"), parts: ["endsL1"] },
+        { label: tDynamic("guide_ratios_screen_ends_past_l1"), parts: ["endsL4:0-2"] },
+        { label: tDynamic("guide_ratios_screen_ends_l4"), parts: ["endsL4:2-"] },
         // A phone shows one ends card at a time: its words don't shrink.
         ...endsLevels.flatMap((tray) =>
           tray.cases.map((_, k) => ({
             label:
               k === 0
-                ? `Both ends: Level ${tray.level}`
-                : `Both ends: Level ${tray.level} (${k + 1})`,
+                ? tDynamic("guide_ratios_screen_both_ends_level", {
+                    level: tray.level,
+                  })
+                : `${tDynamic("guide_ratios_screen_both_ends_level", {
+                    level: tray.level,
+                  })} (${k + 1})`,
             parts: [`ends-${tray.level}:${k}`],
           }))
         ),
         { label: pairings, parts: ["h:pairings", "pairingsIntro"] },
-        { label: "Opening a cell", parts: ["pairingsChoose"] },
+        { label: tDynamic("guide_ratios_screen_opening_cell"), parts: ["pairingsChoose"] },
         { label: tDynamic("guide_ratios_cell"), parts: ["anatomy"] },
-        { label: "The matrix", parts: ["matrix"] },
-        { label: tDynamic("guide_ratios_beyond_title"), parts: ["beyond"] },
+        { label: tDynamic("guide_ratios_screen_matrix"), parts: ["matrix"] },
+        { label: tDynamic("guide_ratios_screen_beyond"), parts: ["beyond"] },
         { label: tDynamic("guide_ratios_sources"), parts: ["sources"] },
       ];
     }
     const medium = tier === "medium";
     return [
-      { label: "Two counts", parts: ["intro", "origins"] },
+      { label: tDynamic("guide_ratios_screen_two_counts"), parts: ["intro", "origins"] },
       ...(medium
         ? [
             {
@@ -643,7 +651,7 @@
               parts: ["h:reading", "terms", "formula", "worked"],
               duo: true,
             },
-            { label: "Petals", parts: ["petals", "float"] },
+            { label: tDynamic("guide_ratios_screen_petals"), parts: ["petals", "float"] },
           ]
         : [
             {
@@ -659,7 +667,7 @@
               duo: true,
             },
           ]),
-      { label: "Common names", parts: ["names"] },
+      { label: tDynamic("guide_ratios_screen_common_names"), parts: ["names"] },
       { label: ladderTitle, parts: ["h:ladder", "ladderIntro", "ladderOri"] },
       { label: levelLabel(1), parts: ["tinted", "base"] },
       ...(medium
@@ -667,7 +675,7 @@
             { label: levelLabel(2), parts: ["level-2"] },
             { label: levelLabel(3), parts: ["level-3"] },
           ]
-        : [{ label: "Levels 2 and 3", parts: ["level-2", "level-3"] }]),
+        : [{ label: tDynamic("guide_ratios_screen_levels_2_3"), parts: ["level-2", "level-3"] }]),
       { label: levelLabel(4), parts: ["level-4"] },
       ...(medium
         ? [
@@ -676,7 +684,7 @@
               parts: ["h:swap", "swapIntro", "swapLaps", "swapMotion"],
               duo: true,
             },
-            { label: "Counting petals", parts: ["swapFormula", "swapQuarter"] },
+            { label: tDynamic("guide_ratios_screen_counting_petals"), parts: ["swapFormula", "swapQuarter"] },
           ]
         : [
             {
@@ -693,17 +701,17 @@
             },
           ]),
       { label: twelve, parts: ["h:twelve", "twelveIntro", "twelveExample"] },
-      { label: "Three families", parts: ["families"] },
+      { label: tDynamic("guide_ratios_screen_three_families"), parts: ["families"] },
       { label: ends, parts: ["h:ends", "endsIntro", "endsOpposite"] },
-      { label: "Ends level by level", parts: ["endsL1", "endsL4"] },
-      { label: "Both ends: Levels 1 and 2", parts: ["ends-1", "ends-2"] },
-      { label: "Both ends: Levels 3 and 4", parts: ["ends-3", "ends-4"] },
+      { label: tDynamic("guide_ratios_screen_ends_by_level"), parts: ["endsL1", "endsL4"] },
+      { label: tDynamic("guide_ratios_screen_both_ends_levels", { a: 1, b: 2 }), parts: ["ends-1", "ends-2"] },
+      { label: tDynamic("guide_ratios_screen_both_ends_levels", { a: 3, b: 4 }), parts: ["ends-3", "ends-4"] },
       {
         label: pairings,
         parts: ["h:pairings", "pairingsIntro", "pairingsChoose", "anatomy"],
         duo: true,
       },
-      { label: "The matrix", parts: ["matrix"] },
+      { label: tDynamic("guide_ratios_screen_matrix"), parts: ["matrix"] },
       {
         label: tDynamic("guide_ratios_beyond_title"),
         parts: ["beyond", "sources"],

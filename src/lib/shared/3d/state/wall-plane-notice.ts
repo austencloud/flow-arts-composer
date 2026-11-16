@@ -1,7 +1,8 @@
 /**
  * What the viewer says when a sequence can't be done in wall plane (see
  * wall-plane-arm-cross.ts). Two moments: a wall request shown as dual wheel
- * when the sequence loads, and a refused tap on a Wall chip.
+ * when the sequence loads, and a refused tap on a Wall chip. Both happen only
+ * while the wall arm-cross experiment is switched on, which the app never does.
  */
 import { showToast, toastQueue } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";

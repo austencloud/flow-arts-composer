@@ -57,7 +57,7 @@
         ]
       : [
           {
-            label: "Alpha, Beta, Gamma",
+            label: PLACEMENT_FAMILIES.map((f) => t(f.name)).join(", "),
             intro: true,
             kinds: PLACEMENT_FAMILIES.map((f) => f.kind as string),
           },

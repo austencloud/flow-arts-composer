@@ -49,8 +49,8 @@
   const views = $derived<View[]>(
     tier !== "small"
       ? [
-          { label: "Alpha, Beta, Gamma", intro: [0, 1, 2], kinds: ALL, notes: [] },
-          { label: "Notes", intro: [], kinds: ALL, notes: [0, 1] },
+          { label: PLACEMENT_FAMILIES.map((f) => t(f.name)).join(", "), intro: [0, 1, 2], kinds: ALL, notes: [] },
+          { label: t("guide_screen_notes"), intro: [], kinds: ALL, notes: [0, 1] },
         ]
       : (
           [

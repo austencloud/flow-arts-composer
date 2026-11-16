@@ -565,11 +565,11 @@
 {#if !dev}
   <UnderConstruction
     title="Being written"
-    eyebrow="The Guide"
+    eyebrow={t("guide_screen_the_guide")}
     icon="fa-pen-nib"
     note="This page is still being written. The rest of the Guide is here."
     destinations={[
-      { label: "The Guide", href: "/guide", icon: "fa-book-open" },
+      { label: t("guide_screen_the_guide"), href: "/guide", icon: "fa-book-open" },
     ]}
   />
 {:else}

@@ -11,6 +11,7 @@
    * touching nav or companion (see docs/superpowers/specs/2026-07-07-guide-reader-design.md).
    */
   import { onMount, flushSync, tick } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
   import "../_styles/guide.css";
   import "../_styles/guide-print.css";
@@ -549,8 +550,8 @@
       <div class="frame-toggle">
         <SegmentedControl
           options={[
-            { value: "sheet", label: "Page" },
-            { value: "flow", label: "Reflow" },
+            { value: "sheet", label: t("guide_reader_view_page") },
+            { value: "flow", label: t("guide_reader_view_reflow") },
           ]}
           value={guideFramePrefs.frame}
           onchange={(v: GuideFrame) => {

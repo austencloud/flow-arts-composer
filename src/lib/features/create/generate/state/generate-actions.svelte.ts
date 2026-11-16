@@ -35,10 +35,16 @@ import * as spellServiceLoaderModule from "#lib/features/create/spell/services/s
 import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { sequenceExtender } from "#lib/features/create/shared/services/sequence-extender.js";
 import {
+  LOOP_TYPE_LABELS,
   LOOPType,
   Period,
   periodToNumber,
 } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import {
+  planSpellRelaxations,
+  spellSettingsConstrain,
+  type SpellRelaxation,
+} from "./spell-constraint-relaxation";
 import { loopViabilityService } from "#lib/features/create/generate/shared/services/loop-viability-service.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
@@ -92,6 +98,35 @@ const DASH_LETTERS: Set<string> = new Set([
 
 export const PROP_CONSTRAINT_SHORTFALL_TEXT =
   "Props timing could not hold on every beat. A pinned start position is the usual cause.";
+
+/** Shown when a typed word could not keep a setting, so the word won. */
+export const SPELL_RELAXED_HANDS_TEXT =
+  "This word can't keep your Hands setting, so this one was made with Hands free.";
+export const SPELL_RELAXED_PROPS_TEXT =
+  "This word can't keep your Props setting, so this one was made with Props free.";
+export const SPELL_RELAXED_HANDS_AND_PROPS_TEXT =
+  "This word can't keep your Hands and Props settings, so this one was made with both free.";
+export const SPELL_RELAXED_MATCH_TURNS_TEXT =
+  "This word can't keep your match-hand-turns setting, so this one was made without it.";
+export const SPELL_LOOP_NOT_APPLIED_TEXT =
+  "This word can't close with the LOOP you picked, so it was made without it.";
+
+const SPELL_RELAXED_TEXT: Record<SpellRelaxation, string> = {
+  hands: SPELL_RELAXED_HANDS_TEXT,
+  props: SPELL_RELAXED_PROPS_TEXT,
+  handsAndProps: SPELL_RELAXED_HANDS_AND_PROPS_TEXT,
+  matchHandTurns: SPELL_RELAXED_MATCH_TURNS_TEXT,
+};
+
+/** One LOOP-not-applied notice, named after the LOOP the person picked. */
+export function spellLoopNotAppliedText(loopType: LOOPType): string {
+  const name = LOOP_TYPE_LABELS[loopType];
+  return name
+    ? `This word can't close as a ${name} LOOP, so it was made without the LOOP.`
+    : SPELL_LOOP_NOT_APPLIED_TEXT;
+}
+
+const SPELL_NOTICE_MS = 8000;
 
 /**
  * The engine always returns its best sequence. When the requested prop timing
@@ -433,58 +468,107 @@ export function createGenerationActionsState(
       // The legacy post-hoc extender can add unconstrained bridge motions.
       // Keep constrained spells in the engine for the entire LOOP so their
       // bridges and extensions obey the same relationship and turn settings.
-      const constrainHands =
-        !!config &&
-        ((config.handRelationship != null &&
-          config.handRelationship !== "free") ||
-          (config.propRelationship != null &&
-            config.propRelationship !== "free") ||
-          config.matchHandTurns === true);
-      const generationOptions: GenerationOptions = config
-        ? {
-            ...uiConfigToGenerationOptions(
-              {
-                ...config,
-                loopEnabled: isLoop && constrainHands,
-              },
-              PropType.STAFF
-            ),
-            length: finalLetters.length,
-            word: expandedWord,
-          }
-        : {
-            mode: GenerationMode.FREEFORM,
-            length: finalLetters.length, // Ignored when word is set, but required by the type
-            word: expandedWord,
-            gridMode: "diamond" as GridMode,
-            propType: PropType.STAFF,
-            difficulty: levelToDifficulty(2),
-            turnIntensity: 1.0,
-            constraintPreset: "smooth",
-            handPathMode: "mixed",
-            motionTypeFilter: null,
-          };
-      errorContext = {
-        ...captureGenerationErrorContext(generationOptions),
-        inputWord: errorContext.word,
-        uiConfig: errorContext.uiConfig,
+      // One attempt with the settings as chosen, then the word-wins retries
+      // from planSpellRelaxations. The saved config is never changed.
+      type SpellAttempt = {
+        attemptConfig: typeof config;
+        relaxed: SpellRelaxation | null;
       };
+      const attempts: SpellAttempt[] = [
+        { attemptConfig: config, relaxed: null },
+        ...planSpellRelaxations(config).map((step) => ({
+          attemptConfig: { ...config!, ...step.overrides },
+          relaxed: step.relaxed,
+        })),
+      ];
 
-      let generatedSequence = await generationOrchestrator.generateSequence(
-        generationOptions,
-        { onConstraintReport: reportPropShortfall }
-      );
+      let generatedSequence!: SequenceData;
+      let relaxedNotice: string | null = null;
+      let loopApplied = true;
 
-      // If LOOP is requested, apply it post-hoc via the bridge-aware extender.
-      // This path can add a single bridge letter to make the sequence land at
-      // a LOOP-compatible end placement when the word itself doesn't.
-      if (isLoop && !constrainHands) {
-        generatedSequence = await applySpellLoopExtension(
-          generatedSequence,
-          loopType,
-          period,
-          finalLetterSources
-        );
+      for (let i = 0; i < attempts.length; i++) {
+        const { attemptConfig, relaxed } = attempts[i]!;
+        // The legacy post-hoc extender can add unconstrained bridge motions.
+        // Keep constrained spells in the engine for the entire LOOP so their
+        // bridges and extensions obey the same relationship and turn settings.
+        const constrainHands = spellSettingsConstrain(attemptConfig);
+        const generationOptions: GenerationOptions = attemptConfig
+          ? {
+              ...uiConfigToGenerationOptions(
+                {
+                  ...attemptConfig,
+                  loopEnabled: isLoop && constrainHands,
+                },
+                PropType.STAFF
+              ),
+              length: finalLetters.length,
+              word: expandedWord,
+            }
+          : {
+              mode: GenerationMode.FREEFORM,
+              length: finalLetters.length, // Ignored when word is set, but required by the type
+              word: expandedWord,
+              gridMode: "diamond" as GridMode,
+              propType: PropType.STAFF,
+              difficulty: levelToDifficulty(2),
+              turnIntensity: 1.0,
+              constraintPreset: "smooth",
+              handPathMode: "mixed",
+              motionTypeFilter: null,
+            };
+        if (i === 0) {
+          errorContext = {
+            ...captureGenerationErrorContext(generationOptions),
+            inputWord: errorContext.word,
+            uiConfig: errorContext.uiConfig,
+          };
+        }
+
+        try {
+          generatedSequence = await generationOrchestrator.generateSequence(
+            generationOptions,
+            { onConstraintReport: reportPropShortfall }
+          );
+        } catch (attemptError) {
+          // A plain failure may just mean this word cannot hold the pinned
+          // settings; try the next relaxation. Impossible-request notices and
+          // the last failure keep their existing path.
+          if (
+            attemptError instanceof GenerationRequestError ||
+            i === attempts.length - 1
+          ) {
+            throw attemptError;
+          }
+          console.warn(
+            "[SpellGenerate] Retrying with relaxed settings:",
+            attemptError
+          );
+          continue;
+        }
+
+        if (relaxed) relaxedNotice = SPELL_RELAXED_TEXT[relaxed];
+
+        // If LOOP is requested, apply it post-hoc via the bridge-aware extender.
+        // This path can add a single bridge letter to make the sequence land at
+        // a LOOP-compatible end placement when the word itself doesn't.
+        if (isLoop && !constrainHands) {
+          const looped = await applySpellLoopExtension(
+            generatedSequence,
+            loopType,
+            period,
+            finalLetterSources
+          );
+          generatedSequence = looped.sequence;
+          loopApplied = looped.applied;
+        }
+        break;
+      }
+
+      // One notice per generate: a relaxed setting outranks a missing LOOP.
+      if (relaxedNotice) {
+        toast.info(relaxedNotice, SPELL_NOTICE_MS);
+      } else if (isLoop && !loopApplied) {
+        toast.info(spellLoopNotAppliedText(loopType), SPELL_NOTICE_MS);
       }
 
       // Attach spell metadata so the UI can highlight bridge letters and
@@ -609,7 +693,7 @@ export function createGenerationActionsState(
       isOriginal: boolean;
       stepIndex: number;
     }>
-  ): Promise<SequenceData> {
+  ): Promise<{ sequence: SequenceData; applied: boolean }> {
     try {
       // Path A: Try direct extension (sequence already ends at LOOP-compatible placement)
       const analysis = sequenceExtender.analyzeSequence(sequence);
@@ -620,7 +704,10 @@ export function createGenerationActionsState(
             period,
           });
           if (extended) {
-            return updateLoopMetadata(extended, sequence, letterSources);
+            return {
+              sequence: updateLoopMetadata(extended, sequence, letterSources),
+              applied: true,
+            };
           }
         } catch {
           // Direct extension failed - fall through to bridge-finding
@@ -638,7 +725,7 @@ export function createGenerationActionsState(
         console.warn(
           "[SpellGenerate] No bridge options found for LOOP extension"
         );
-        return sequence;
+        return { sequence, applied: false };
       }
 
       const expectedRotation = period === Period.QUARTERED ? "quarter" : "half";
@@ -659,12 +746,12 @@ export function createGenerationActionsState(
           loopType,
           period
         );
-        return sequence;
+        return { sequence, applied: false };
       }
 
       const bestBridge = compatibleBridges[0]!;
       const bridgeLetter = bestBridge.bridgeLetters[0];
-      if (!bridgeLetter) return sequence;
+      if (!bridgeLetter) return { sequence, applied: false };
 
       const extended = await sequenceExtender.extendWithBridge(
         sequence,
@@ -674,7 +761,7 @@ export function createGenerationActionsState(
         period
       );
 
-      if (!extended) return sequence;
+      if (!extended) return { sequence, applied: false };
 
       const updatedSources = [
         ...(letterSources ?? []),
@@ -685,10 +772,13 @@ export function createGenerationActionsState(
         },
       ];
 
-      return updateLoopMetadata(extended, sequence, updatedSources);
+      return {
+        sequence: updateLoopMetadata(extended, sequence, updatedSources),
+        applied: true,
+      };
     } catch (error) {
       console.warn("[SpellGenerate] LOOP extension failed:", error);
-      return sequence;
+      return { sequence, applied: false };
     }
   }
 

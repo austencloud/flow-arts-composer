@@ -40,22 +40,22 @@
     ...(tier === "large"
       ? [
           {
-            label: tDynamic("guide_paths_what_changes"),
+            label: tDynamic("guide_paths_screen_what_changes"),
             parts: ["what", "whatDefs", "whatNotes"] as Part[],
           },
           {
-            label: tDynamic("guide_paths_scope"),
+            label: tDynamic("guide_paths_screen_scope"),
             parts: ["scope", "scopeDefs", "scopeNotes"] as Part[],
           },
           {
-            label: tDynamic("guide_paths_third_order"),
+            label: tDynamic("guide_paths_screen_third_order"),
             parts: ["third", "thirdLinks"] as Part[],
           },
         ]
       : tier === "medium"
         ? [
             {
-              label: tDynamic("guide_paths_what_changes"),
+              label: tDynamic("guide_paths_screen_what_changes"),
               parts: ["what", "whatDefs"] as Part[],
             },
             {
@@ -63,7 +63,7 @@
               parts: ["whatNotes"] as Part[],
             },
             {
-              label: tDynamic("guide_paths_scope"),
+              label: tDynamic("guide_paths_screen_scope"),
               parts: ["scope", "scopeDefs"] as Part[],
             },
             {
@@ -71,7 +71,7 @@
               parts: ["scopeNotes"] as Part[],
             },
             {
-              label: tDynamic("guide_paths_third_order"),
+              label: tDynamic("guide_paths_screen_third_order"),
               parts: ["third"] as Part[],
             },
             {
@@ -81,7 +81,7 @@
           ]
         : [
             {
-              label: tDynamic("guide_paths_what_changes"),
+              label: tDynamic("guide_paths_screen_what_changes"),
               parts: ["what"] as Part[],
             },
             {
@@ -93,7 +93,7 @@
               parts: ["whatNotes"] as Part[],
             },
             {
-              label: tDynamic("guide_paths_scope"),
+              label: tDynamic("guide_paths_screen_scope"),
               parts: ["scope"] as Part[],
             },
             {
@@ -105,7 +105,7 @@
               parts: ["scopeNotes"] as Part[],
             },
             {
-              label: tDynamic("guide_paths_third_order"),
+              label: tDynamic("guide_paths_screen_third_order"),
               parts: ["third"] as Part[],
             },
             {
@@ -113,7 +113,7 @@
               parts: ["thirdLinks"] as Part[],
             },
           ]),
-    { label: tDynamic("guide_paths_awkward"), parts: ["awkward"] },
+    { label: tDynamic("guide_paths_screen_awkward"), parts: ["awkward"] },
   ]);
   const has = (n: number, part: Part) => views[n]?.parts.includes(part);
 

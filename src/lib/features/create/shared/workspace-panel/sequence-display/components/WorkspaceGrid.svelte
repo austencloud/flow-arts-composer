@@ -491,6 +491,20 @@
     }));
   });
 
+  // Step and identity travel as item data, like standardStepCells. A per-cell
+  // {@const} would re-read `steps` from a destroyed effect while the cell fades
+  // out after a replace (Svelte derived_inert).
+  const timelineCells = $derived.by(() => {
+    if (!isTimelineMode) return [];
+    return timelineRows.map((row) => ({
+      ...row,
+      steps: row.steps.map((s) => {
+        const step = steps[s.stepIndex]!;
+        return { ...s, step, identity: getStepKey(step, s.stepIndex) };
+      }),
+    }));
+  });
+
   let gridSurfaceRef: HTMLDivElement | null = null;
   let gridHistoryAnimation: Animation | null = null;
 
@@ -1013,11 +1027,9 @@
       {/if}
 
       <div class="timeline-rows">
-        {#each timelineRows as row, rowIndex (rowIndex)}
+        {#each timelineCells as row, rowIndex (rowIndex)}
           <div class="timeline-row">
-            {#each row.steps as { stepIndex, duration }, columnIndex (getStepKey(steps[stepIndex]!, stepIndex))}
-              {@const step = steps[stepIndex]!}
-              {@const identity = getStepKey(step, stepIndex)}
+            {#each row.steps as { stepIndex, duration, step, identity }, columnIndex (identity)}
               <!-- Row plus column, offset past the start tile's band 0. -->
               {@const waveBand = waveBandAt(rowIndex, columnIndex + 1)}
               {@const isDeleting = isStepLeaving(stepIndex)}
