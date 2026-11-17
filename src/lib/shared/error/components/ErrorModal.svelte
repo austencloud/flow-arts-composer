@@ -20,6 +20,8 @@
   } from "../domain/error-report-text";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 
   let userComment = $state("");
   let isReporting = $state(false);
@@ -108,8 +110,20 @@
     dismissError();
   }
 
+  // A report is feedback, and the database takes feedback only from a full
+  // account. A guest's press asks them to sign in. This box steps aside while
+  // the prompt is open (it sits above every other layer) and comes back with
+  // the error and their comment once the prompt closes.
+  const needsAccount = $derived(!authState.isFullAccount);
+  const stepAside = $derived(authDrawerState.open);
+
   async function handleReportBug() {
     if (!error) return;
+
+    if (needsAccount) {
+      authDrawerState.showOnRequest("signup", "feedback");
+      return;
+    }
 
     isReporting = true;
     try {
@@ -139,7 +153,7 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape" && error) {
+    if (event.key === "Escape" && error && !stepAside) {
       handleDismiss();
     }
   }
@@ -147,7 +161,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if error}
+{#if error && !stepAside}
   {@const config = getConfig(error.severity)}
   <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
   <div class="error-overlay" onclick={handleDismiss} role="presentation">
@@ -264,6 +278,9 @@
             {#if isReporting}
               <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
               {t("shared_error_reporting")}
+            {:else if needsAccount}
+              <i class="fas fa-right-to-bracket" aria-hidden="true"></i>
+              {t("shared_error_sign_in_to_report")}
             {:else}
               <i class="fas fa-bug" aria-hidden="true"></i>
               {t("shared_error_report_bug")}

@@ -101,7 +101,7 @@
 
         <label class="field" for={notesId}>
           <span class="field-label"
-            >Anything we should know <span>(optional)</span></span
+            >Anything to add <span>(optional)</span></span
           >
           <textarea
             id={notesId}

@@ -59,13 +59,13 @@ export function createEdgeCitySuggestion(
       if (result.status === "not-found") {
         throw new CityResolutionError(
           "not-found",
-          `We couldn't place ${nameable.city} on the map. Search for your city instead.`,
+          `${nameable.city} couldn't be placed on the map. Search for your city instead.`,
         );
       }
 
       throw new CityResolutionError(
         "failed",
-        "We couldn't reach the map service. Try again.",
+        "The map service couldn't be reached. Try again.",
       );
     },
   };

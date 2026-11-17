@@ -95,7 +95,7 @@
            coordinates, not city versus coordinates: a lat/lng IS stored. This
            sentence has to survive someone opening the Firestore document. -->
       <p class="privacy">
-        We store your city and its map point, never your device location.
+        Only your city and its map point are stored, never your device location.
       </p>
     </div>
   </div>

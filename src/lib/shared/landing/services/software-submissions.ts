@@ -16,7 +16,7 @@ export async function submitSoftware(
 
   if (response.ok) return;
 
-  let message = "We couldn't send that submission. Please try again.";
+  let message = "That submission couldn't be sent. Please try again.";
 
   try {
     const body = (await response.json()) as SubmissionError;

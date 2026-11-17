@@ -37,6 +37,7 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "edit-community",
         "extend-sequence",
         "export",
+        "feedback",
         "follow",
         "guest-first-save",
         "module:learn",

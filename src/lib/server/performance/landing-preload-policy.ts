@@ -37,6 +37,7 @@ const DEFERRED_HOME_STYLES = [
   "PanelSpinner.",
   "PanelState.",
   "PictographFadeCard.",
+  "PrivacyPolicyContent.",
   "ProgressRing.",
   "RobustAvatar.",
   "StepNumber.",

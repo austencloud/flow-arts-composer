@@ -67,4 +67,14 @@ describe("LegalSheet (focus trap)", () => {
     await userEvent.keyboard("{Escape}");
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it("shows the same privacy text as the privacy page", async () => {
+    render(LegalSheet, { isOpen: true, type: "privacy", onClose: vi.fn() });
+
+    const text = page.getByRole("dialog").element().textContent ?? "";
+    expect(text).toContain("only to respond to abuse reports");
+    expect(text).toContain("PostHog");
+    expect(text).not.toContain("Google Analytics");
+    expect(text).not.toContain("improve the service");
+  });
 });

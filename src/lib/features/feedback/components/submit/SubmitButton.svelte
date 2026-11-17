@@ -6,10 +6,13 @@
     isSubmitting,
     disabled,
     uploadProgress = null,
+    needsAccount = false,
   } = $props<{
     isSubmitting: boolean;
     disabled: boolean;
     uploadProgress?: FeedbackUploadProgress | null;
+    /** A guest's press opens the sign-in prompt, so the label says so. */
+    needsAccount?: boolean;
   }>();
 
   const isUploading = $derived(
@@ -22,7 +25,10 @@
   });
 
   const submitLabel = $derived.by(() => {
-    if (!isSubmitting) return t("feedback_submit_button");
+    if (!isSubmitting)
+      return needsAccount
+        ? t("feedback_sign_in_to_send")
+        : t("feedback_submit_button");
     if (isUploading)
       return t("feedback_uploading_images_pct", { pct: percentText });
     return t("feedback_submitting");
@@ -52,7 +58,10 @@
         <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
         <span>{submitLabel}</span>
       {:else}
-        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+        <i
+          class="fas {needsAccount ? 'fa-right-to-bracket' : 'fa-paper-plane'}"
+          aria-hidden="true"
+        ></i>
         <span>{submitLabel}</span>
       {/if}
     </span>

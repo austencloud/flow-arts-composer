@@ -325,7 +325,7 @@ export async function createModerationWarning(
     type: "moderation-warning",
     reportId,
     category,
-    message: `You have received a warning for ${category}. Please review our community guidelines.`,
+    message: `You have received a warning for ${category}. Please review the community guidelines.`,
     createdAt: new Date(),
     read: false,
     ...(adminMessage && { adminMessage }),

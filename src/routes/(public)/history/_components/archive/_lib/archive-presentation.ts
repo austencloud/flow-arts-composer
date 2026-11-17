@@ -20,12 +20,12 @@ const ARTIFACTS: Record<string, ArchiveArtifactPresentation> = {
   caps: {
     kind: "demonstration",
     label: "Interactive explanation",
-    note: "Our animation of how smaller movements join into a Continuous Assembly Pattern.",
+    note: "This site's animation of how smaller movements join into a Continuous Assembly Pattern.",
   },
   trochoid: {
     kind: "demonstration",
     label: "Interactive explanation",
-    note: "Our diagrams of the trochoid model.",
+    note: "This site's diagrams of the trochoid model.",
   },
   "nine-square": {
     kind: "original",
@@ -35,7 +35,7 @@ const ARTIFACTS: Record<string, ArchiveArtifactPresentation> = {
   qft: {
     kind: "demonstration",
     label: "Interactive explanation",
-    note: "Our animation of QFT notation. Read the original primer under Sources.",
+    note: "This site's animation of QFT notation. Read the original primer under Sources.",
   },
   poinotation: {
     kind: "demonstration",

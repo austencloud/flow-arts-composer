@@ -399,7 +399,7 @@ export async function seedV010Changelog(): Promise<void> {
     await updateDoc(versionRef, {
       changelogEntries,
       releaseNotes:
-        "The first official beta release! This version introduces the feedback system so you can help us make the app better.",
+        "The first official beta release! This version introduces the feedback system so you can help make the app better.",
     });
   } catch (error) {
     console.error("[version-service] Failed to seed changelog:", error);

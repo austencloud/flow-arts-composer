@@ -195,7 +195,10 @@
   );
 
   const toolbarSubmitLabel = $derived.by(() => {
-    if (!formState.isSubmitting) return t("feedback_submit");
+    if (!formState.isSubmitting)
+      return formState.needsAccount
+        ? t("feedback_sign_in_to_send")
+        : t("feedback_submit");
     const progress = formState.uploadProgress;
     if (progress?.phase === "uploading") {
       const pct = Math.round(progress.fraction * 100);
@@ -326,6 +329,7 @@
         isSubmitting={formState.isSubmitting}
         disabled={formState.isSubmitting || !formState.isFormValid}
         uploadProgress={formState.uploadProgress}
+        needsAccount={formState.needsAccount}
       />
     {/if}
 
@@ -387,7 +391,7 @@
             formState.submit();
           }}
           disabled={formState.isSubmitting || !formState.isFormValid}
-          aria-label={t("feedback_submit")}
+          aria-label={toolbarSubmitLabel}
           style:--progress="{toolbarProgressPercent}%"
         >
           {#if isToolbarUploading}
@@ -397,7 +401,12 @@
             {#if formState.isSubmitting}
               <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
             {:else}
-              <i class="fas fa-paper-plane" aria-hidden="true"></i>
+              <i
+                class="fas {formState.needsAccount
+                  ? 'fa-right-to-bracket'
+                  : 'fa-paper-plane'}"
+                aria-hidden="true"
+              ></i>
             {/if}
             <span>{toolbarSubmitLabel}</span>
           </span>

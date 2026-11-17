@@ -56,7 +56,7 @@
     // else is a Firestore or network object whose message is a diagnostic, not
     // a sentence to show someone.
     if (error instanceof CityResolutionError) return error.message;
-    return "We couldn't save your city. Try again.";
+    return "Your city couldn't be saved. Try again.";
   });
 
   function signIn(): void {
@@ -120,7 +120,7 @@
         {:else if slot.canAdd && slot.suggestion}
           Practicing in {slot.suggestion.city}? Add yourself to the map.
         {:else}
-          We couldn't check whether you're already on the map.
+          Couldn't check whether you're already on the map.
         {/if}
       </p>
 

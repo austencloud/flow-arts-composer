@@ -180,7 +180,7 @@ describe("EmailPasswordAuth transitions", () => {
       "dancer@example.com"
     );
     await expect
-      .element(page.getByText(/We sent a reset link/))
+      .element(page.getByText(/A reset link was sent/))
       .toBeVisible();
 
     await alert.getByRole("button", { name: "Email me a code instead" }).click();

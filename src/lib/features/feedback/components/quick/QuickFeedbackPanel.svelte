@@ -26,6 +26,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
   import { computeKeyboardOpenFrame } from "#lib/shared/mobile/utils/keyboard-open-frame.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 
   const debug = createComponentLogger("QuickFeedbackPanel");
 
@@ -67,6 +68,9 @@
       keyboardHeight,
     })
   );
+
+  // A guest's send opens the sign-in prompt over this panel. Escape belongs to
+  // the prompt then: it closes the prompt and leaves the panel and the words.
 
   // Show keyboard hints only on non-touch devices (true desktop with physical keyboard)
   const showKeyboardHints = $derived(!isTouchDevice);
@@ -181,7 +185,7 @@
     return true;
   }}
   closeOnBackdrop={true}
-  closeOnEscape={true}
+  closeOnEscape={!authDrawerState.open}
   ariaLabel={t("feedback_quick_title")}
   showHandle={isBottomSheet}
   dismissible={!isInputFocused}

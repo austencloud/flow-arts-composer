@@ -82,7 +82,7 @@ export function createPlacesCitySearch(
           endSession();
           throw new CityResolutionError(
             "failed",
-            "We couldn't reach the map service. Try again.",
+            "The map service couldn't be reached. Try again.",
           );
         }
         endSession();

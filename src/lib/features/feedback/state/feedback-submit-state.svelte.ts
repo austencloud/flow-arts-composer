@@ -17,6 +17,7 @@ import { feedbackService } from "#lib/shared/feedback/services/feedback-reposito
 import * as imageStager from "../services/image-stager";
 import type { StagedUploadHandle } from "#lib/shared/feedback/domain/feedback-contract-types.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 import {
   getCapturedModule,
   getCapturedTab,
@@ -155,8 +156,24 @@ export function createFeedbackSubmitState() {
     return Object.keys(errors).length === 0;
   }
 
+  // The database takes feedback only from a full account: feedback starts a
+  // message thread, and the reply needs somewhere to go. A guest (anonymous
+  // or no user yet) can still type; send opens the sign-in prompt instead of
+  // a write that would be refused. The words stay in this shared state and
+  // the saved draft, so after signing in the same panel sends them.
+  function needsAccount(): boolean {
+    return !authState.isFullAccount;
+  }
+
   async function submit(): Promise<boolean> {
     if (!validate()) {
+      return false;
+    }
+
+    if (needsAccount()) {
+      // The button the guest pressed says "Sign in to send", so this is a
+      // request, not a gate: it always opens the prompt, cooldown or not.
+      authDrawerState.showOnRequest("signup", "feedback");
       return false;
     }
 
@@ -201,9 +218,13 @@ export function createFeedbackSubmitState() {
       // trigger copies them from feedback-staging/ to the permanent feedback/
       // path and writes imageUrls, so submit is just the doc write (instant) and
       // the images survive the 30-minute staging cleanup.
+      // A picture staged while this person was a guest sits under the guest's
+      // id; after signing in to another account the promote trigger would
+      // skip it, so those go up again with the send instead.
+      const ownStaging = `feedback-staging/${authState.user?.uid ?? ""}/`;
       const collectedPaths = images
         .map((f) => stagedImages.get(f)?.storagePath)
-        .filter((p): p is string => p != null);
+        .filter((p): p is string => p != null && p.startsWith(ownStaging));
       const allStaged =
         images.length > 0 && collectedPaths.length === images.length;
 
@@ -282,6 +303,10 @@ export function createFeedbackSubmitState() {
     },
     get stagedImages() {
       return stagedImages;
+    },
+    /** A guest's send asks them to sign in first. */
+    get needsAccount() {
+      return needsAccount();
     },
     get isFormValid() {
       // Compute directly to survive HMR - don't use $derived

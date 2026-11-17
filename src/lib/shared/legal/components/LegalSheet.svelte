@@ -1,5 +1,7 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import PrivacyPolicyContent from "./PrivacyPolicyContent.svelte";
+  import { PRIVACY_LAST_UPDATED, TERMS_LAST_UPDATED } from "./legal-dates.js";
   import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
   type SheetType = "terms" | "privacy";
@@ -39,6 +41,11 @@
     }
   }
 
+  const lastUpdated: Record<SheetType, string> = {
+    terms: TERMS_LAST_UPDATED,
+    privacy: PRIVACY_LAST_UPDATED,
+  };
+
   const titles: Record<SheetType, string> = {
     terms: "Terms of Service",
     privacy: "Privacy Policy",
@@ -76,7 +83,7 @@
 
       <div class="sheet-content">
         <p class="last-updated">
-          Last Updated: {new Date().toLocaleDateString()}
+          Last Updated: {lastUpdated[type]}
         </p>
 
         {#if type === "terms"}
@@ -229,150 +236,7 @@
             </p>
           </section>
         {:else}
-          <section>
-            <h3>1. Information We Collect</h3>
-            <p>
-              When you use Flow Arts Composer, we may collect the following
-              types of information:
-            </p>
-            <ul>
-              <li>
-                <strong>Account Information:</strong> Email address and display name
-                when you create an account
-              </li>
-              <li>
-                <strong>Usage Data:</strong> How you interact with the application,
-                including sequences you create and features you use
-              </li>
-              <li>
-                <strong>User-Uploaded Content:</strong> Sequences, videos, images,
-                and other content you upload or share, along with associated metadata
-                (upload time, file size, format)
-              </li>
-              <li>
-                <strong>Device Information:</strong> Browser type, device type, and
-                operating system for optimization purposes
-              </li>
-              <li>
-                <strong>Messages:</strong> Content of messages you send to other users
-                through our in-app messaging feature
-              </li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>2. How We Use Your Information</h3>
-            <p>We use the information we collect to:</p>
-            <ul>
-              <li>Provide and maintain the Flow Arts Composer service</li>
-              <li>Personalize your experience and save your preferences</li>
-              <li>Enable community features like sharing sequences</li>
-              <li>Improve and optimize the application</li>
-              <li>Communicate important updates about the service</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>3. Data Storage and Security</h3>
-            <p>
-              Your data is stored securely using Firebase services. We implement
-              appropriate technical and organizational measures to protect your
-              personal information against unauthorized access, alteration,
-              disclosure, or destruction.
-            </p>
-          </section>
-
-          <section>
-            <h3>4. Messages and Communications</h3>
-            <p>
-              When you use our messaging feature to communicate with other
-              users, we store your messages to deliver them and maintain your
-              conversation history. Messages may be reviewed by our team to
-              provide support, investigate abuse reports, or improve the
-              service. We do not sell or share your private messages with third
-              parties.
-            </p>
-          </section>
-
-          <section>
-            <h3>5. Data Sharing</h3>
-            <p>
-              We do not sell your personal information. We may share data only
-              in the following circumstances:
-            </p>
-            <ul>
-              <li>
-                With your consent when you choose to share sequences publicly
-              </li>
-              <li>
-                With service providers who assist in operating the application
-              </li>
-              <li>When required by law or to protect our rights</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>6. Your Rights</h3>
-            <p>You have the right to:</p>
-            <ul>
-              <li>Access the personal information we hold about you</li>
-              <li>Request correction of inaccurate information</li>
-              <li>Request deletion of your account and associated data</li>
-              <li>Export your sequences and content</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>7. Cookies and Local Storage</h3>
-            <p>
-              Flow Arts Composer uses local storage and cookies to maintain your
-              session and remember your preferences. These are essential for the
-              application to function properly.
-            </p>
-          </section>
-
-          <section>
-            <h3>8. Third-Party Services</h3>
-            <p>We use the following third-party services:</p>
-            <ul>
-              <li>
-                <strong>Firebase:</strong> Authentication and data storage
-              </li>
-              <li>
-                <strong>Google Analytics:</strong> Anonymous usage statistics (optional)
-              </li>
-            </ul>
-            <p>
-              Each of these services has their own privacy policies governing
-              the use of your information.
-            </p>
-          </section>
-
-          <section>
-            <h3>9. Children's Privacy</h3>
-            <p>
-              Flow Arts Composer is not intended for children under 13 years of
-              age. We do not knowingly collect personal information from
-              children under 13.
-            </p>
-          </section>
-
-          <section>
-            <h3>10. Changes to This Policy</h3>
-            <p>
-              We may update this Privacy Policy from time to time. We will
-              notify you of any changes by posting the new Privacy Policy on
-              this page and updating the "Last Updated" date.
-            </p>
-          </section>
-
-          <section>
-            <h3>11. Contact Us</h3>
-            <p>
-              If you have questions about this Privacy Policy or your data,
-              please contact us through the application's support channels.
-            </p>
-          </section>
+          <PrivacyPolicyContent inSheet />
         {/if}
       </div>
     </div>
@@ -473,7 +337,9 @@
     background-color: #0a0a0f;
   }
 
-  .last-updated {
+  /* These two carry .sheet-content so they outrank the :global(p) rule below,
+     which has to reach the privacy component's markup. */
+  .sheet-content .last-updated {
     color: rgba(255, 255, 255, 0.5);
     font-size: 0.875rem;
     margin: 0 0 24px 0;
@@ -487,32 +353,32 @@
     margin: 0 0 24px 0;
   }
 
-  .summary-banner p {
+  .sheet-content .summary-banner p {
     margin: 0;
     color: rgba(255, 255, 255, 0.85);
     font-size: 0.875rem;
     line-height: 1.5;
   }
 
-  section {
+  .sheet-content :global(section) {
     margin-bottom: 24px;
   }
 
-  h3 {
+  .sheet-content :global(h3) {
     font-size: 1rem;
     font-weight: 600;
     color: #fff;
     margin: 0 0 12px 0;
   }
 
-  p {
+  .sheet-content :global(p) {
     color: rgba(255, 255, 255, 0.75);
     line-height: 1.6;
     margin: 0 0 12px 0;
     font-size: 0.9375rem;
   }
 
-  ul {
+  .sheet-content :global(ul) {
     color: rgba(255, 255, 255, 0.75);
     line-height: 1.6;
     margin: 0 0 12px 0;
@@ -520,11 +386,11 @@
     font-size: 0.9375rem;
   }
 
-  li {
+  .sheet-content :global(li) {
     margin-bottom: 8px;
   }
 
-  strong {
+  .sheet-content :global(strong) {
     color: #fff;
   }
 

@@ -31,6 +31,7 @@ export type AuthNudgeTrigger =
   | "prop-collection"
   | "follow"
   | "share-image-signin"
+  | "feedback"
   | "returning-guest";
 
 export type AuthMode = "signin" | "signup";
@@ -126,6 +127,11 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   // and the send resumes by itself once they are in.
   "share-image-signin":
     "Send the image you shared once you have an account. It stays saved until then. Free, about ten seconds.",
+  // A guest pressed send in the feedback panel. Feedback starts a message
+  // thread, and a reply needs an account to reach (Firestore rules refuse a
+  // guest's feedback write). The draft stays in the panel through sign-in.
+  feedback:
+    "Your feedback goes straight to Austen, who builds this app. With an account, his reply can reach you. Free, about ten seconds.",
   // The one-time note a guest gets on a later day (guest-note-state). Named
   // so finished sign-ups from it show up under its own origin.
   // Same line as sync-library: the note that opens this sheet already said
@@ -287,6 +293,11 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     key: "share-image-signin",
     title: "Send this image",
     body: AUTH_NUDGE_TEXTS["share-image-signin"],
+  },
+  feedback: {
+    key: "feedback",
+    title: "Send your feedback",
+    body: AUTH_NUDGE_TEXTS.feedback,
   },
   "returning-guest": {
     key: "returning-guest",

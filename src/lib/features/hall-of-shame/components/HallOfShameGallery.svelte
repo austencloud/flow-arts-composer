@@ -234,7 +234,7 @@
       <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
       <h2>{t("hall_of_shame_age_required")}</h2>
       <p>
-        We couldn't verify your age right now. Access is blocked until age
+        Your age couldn't be verified right now. Access is blocked until age
         verification is available. Please try again later.
       </p>
       <button

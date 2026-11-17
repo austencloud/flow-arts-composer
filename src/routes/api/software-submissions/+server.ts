@@ -68,7 +68,7 @@ export const POST: RequestHandler = async (event) => {
     return Response.json(
       {
         ok: false,
-        error: "We couldn't send that submission. Please try again.",
+        error: "That submission couldn't be sent. Please try again.",
       },
       { status: 500 }
     );

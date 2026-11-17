@@ -1,6 +1,7 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import LegalPageShell from "#lib/shared/legal/components/LegalPageShell.svelte";
+  import { TERMS_LAST_UPDATED } from "#lib/shared/legal/components/legal-dates.js";
   import Seo from "#lib/shared/components/Seo.svelte";
 </script>
 
@@ -13,7 +14,7 @@
 <LegalPageShell>
   <div class="header-content">
     <h1>Terms of Service</h1>
-    <p class="last-updated">Last Updated: July 22, 2026</p>
+    <p class="last-updated">Last Updated: {TERMS_LAST_UPDATED}</p>
   </div>
 
   <div class="legal-card">
