@@ -63,6 +63,16 @@ export interface NativeFileShareOptions {
   text?: string;
 }
 
+/**
+ * Report a delivered file that carries its sequence inside it. Loaded lazily
+ * and never awaited: analytics observes delivery and can never fail it.
+ */
+function observeDelivery(blob: Blob, delivery: "download" | "share"): void {
+  void import("#lib/shared/analytics/sequence-file-events.js")
+    .then((events) => events.observeSequenceFileDelivery(blob, delivery))
+    .catch(() => {});
+}
+
 /** Anchor (<a download>) to disk. The terminal fallback for every path here. */
 function anchorDownload(blob: Blob, filename: string): Promise<DownloadResult> {
   return new Promise((resolve) => {
@@ -76,6 +86,7 @@ function anchorDownload(blob: Blob, filename: string): Promise<DownloadResult> {
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
+      observeDelivery(blob, "download");
       resolve({ success: true, filename, method: "download" });
     } catch (error) {
       resolve({
@@ -161,6 +172,18 @@ export async function shareBlobNatively(
   blob: Blob,
   filename: string,
   options: NativeFileShareOptions = {}
+): Promise<NativeFileShareResult> {
+  // Called without an await in front, so navigator.share() still runs inside
+  // the initiating click.
+  const result = await openNativeShare(blob, filename, options);
+  if (result.status === "shared") observeDelivery(blob, "share");
+  return result;
+}
+
+async function openNativeShare(
+  blob: Blob,
+  filename: string,
+  options: NativeFileShareOptions
 ): Promise<NativeFileShareResult> {
   if (!supportsBrowserFileShare()) {
     return supportsAppFileShare()

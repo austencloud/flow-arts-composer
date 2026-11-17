@@ -99,6 +99,8 @@
     onPlaybackModeChange = () => {},
     onPlaybackToggle = () => {},
     onPropChange,
+    onPropPickerRequest,
+    propPickerActive = false,
     fanAppearance,
     onFanAppearanceChange,
     onArtExport,
@@ -142,6 +144,10 @@
     /** Change the art view's prop type (routes through the viewer's shared
      *  handlePropTypeChange). Surfaces the Props rail section in the tunnel. */
     onPropChange?: (propType: PropType) => void;
+    /** Phone dock: Props opens the shell's one prop screen instead of a tray. */
+    onPropPickerRequest?: () => void;
+    /** True while that screen is open, so the Props tab shows pressed. */
+    propPickerActive?: boolean;
     fanAppearance?: FanAppearance;
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
     /**
@@ -888,7 +894,7 @@
       {mandalaController}
       {artType}
       {layout}
-      onExport={handleExport}
+      onExport={() => handleExport()}
       onSaveTunnel={() => void handleSaveTunnel("settings_panel")}
       {saveTunnelLabel}
       {bpm}
@@ -910,6 +916,8 @@
       leftPropType={leftPropType ?? null}
       rightPropType={rightPropType ?? null}
       {onPropChange}
+      {onPropPickerRequest}
+      {propPickerActive}
       {fanAppearance}
       {onFanAppearanceChange}
       {onArtSettingChange}

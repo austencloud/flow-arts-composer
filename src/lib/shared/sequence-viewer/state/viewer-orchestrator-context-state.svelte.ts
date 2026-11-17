@@ -304,6 +304,7 @@ export function createViewerOrchestratorContextState(
         inputs.exportCoordinator.saveExportedVideo(
           inputs.getEffectiveSequence()
         ),
+      setExportDeliveryListener: inputs.exportCoordinator.setDeliveryListener,
       saveRetainedFilm: (filmId: string) =>
         inputs.exportCoordinator.saveRetainedFilm(
           filmId,

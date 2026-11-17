@@ -10,7 +10,7 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import { CompositionDispatcher } from "./composition-dispatcher";
 import { getCompositionDispatcher } from "../get-composition-dispatcher";
 import { getCardAssetBundle } from "./get-card-asset-bundle";
-import { buildOverridePlacementBundle } from "./override-placement-bundle";
+import { loadOverridePlacementBundle } from "./override-placement-bundle";
 import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
 
 export interface PrewarmOptions {
@@ -97,14 +97,19 @@ export async function seedCardPool(opts: PrewarmOptions): Promise<void> {
   try {
     const ok = await CompositionDispatcher.probeWorkerSupport();
     if (!ok) throw new Error("Composition worker probe failed");
-    const bundle = await getCardAssetBundle(opts.sequences, {
-      leftPropType: propTypes.leftPropType,
-      rightPropType: propTypes.rightPropType,
-      theme: opts.theme,
-      iconPaths: opts.iconPaths,
-    });
+    // The placement snapshot waits for the stores' first load; taken earlier
+    // it is empty and every worker card draws default arrow positions.
+    const [bundle, overrideBundle] = await Promise.all([
+      getCardAssetBundle(opts.sequences, {
+        leftPropType: propTypes.leftPropType,
+        rightPropType: propTypes.rightPropType,
+        theme: opts.theme,
+        iconPaths: opts.iconPaths,
+      }),
+      loadOverridePlacementBundle(),
+    ]);
     dispatcher.setAssetBundle(bundle);
-    dispatcher.setOverrideBundle(buildOverridePlacementBundle());
+    dispatcher.setOverrideBundle(overrideBundle);
   } finally {
     // Open the gate after the bundle has been installed, or after a failure so
     // callers never hang behind a failed pre-warm.

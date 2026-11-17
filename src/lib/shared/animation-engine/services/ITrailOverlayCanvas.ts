@@ -82,6 +82,12 @@ export interface TrailOverlayRenderParams {
 }
 
 export interface ITrailOverlayCanvas {
+  /**
+   * Optional: the overlay reports an unrecoverable failure that happens outside
+   * a call from the owner (a lost GPU context). The owner swaps renderers.
+   */
+  setFailureHandler?(handler: (error: unknown) => void): void;
+
   initialize(
     container: HTMLElement,
     width: number,

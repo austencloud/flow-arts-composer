@@ -187,6 +187,18 @@ export class ConversationManager {
   // DIRECT CONVERSATIONS (1:1)
   // ============================================================================
 
+  /**
+   * The id the signed-in user's direct thread with `otherUserId` has, or will
+   * have once created. Lets a caller file a message for a thread that does not
+   * exist yet without reading Firestore.
+   */
+  directConversationIdWith(otherUserId: string): string {
+    return this.generateDirectConversationId(
+      this.getCurrentUserId(),
+      otherUserId
+    );
+  }
+
   async getOrCreateConversation(
     otherUserId: string,
     options?: { silent?: boolean }

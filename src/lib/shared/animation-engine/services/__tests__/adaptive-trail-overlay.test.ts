@@ -128,4 +128,124 @@ describe("AdaptiveTrailOverlay", () => {
     expect(onPrimaryFailure).not.toHaveBeenCalled();
     expect(primary.dispose).toHaveBeenCalledOnce();
   });
+
+  describe("failure after the primary started", () => {
+    function started(opts: {
+      primary?: ITrailOverlayCanvas;
+      fallback?: ITrailOverlayCanvas;
+    } = {}) {
+      const primary = opts.primary ?? makeOverlay();
+      const fallback = opts.fallback ?? makeOverlay();
+      const onPrimaryFailure = vi.fn();
+      const onFallbackFailure = vi.fn();
+      const createFallback = vi.fn(() => fallback);
+      const overlay = new AdaptiveTrailOverlay({
+        createPrimary: () => primary,
+        createFallback,
+        onPrimaryFailure,
+        onFallbackFailure,
+      });
+      // A plain object: the overlays here are fakes, and the earlier test that
+      // spies on document.createElement leaves it unreliable under the project
+      // config.
+      const container = {} as HTMLElement;
+      overlay.initialize(container, 320, 240);
+      return {
+        overlay,
+        primary,
+        fallback,
+        container,
+        onPrimaryFailure,
+        onFallbackFailure,
+        createFallback,
+      };
+    }
+
+    it("swaps to the fallback at the new size when resize throws", () => {
+      const boom = new Error("framebuffer incomplete");
+      const primary = makeOverlay();
+      primary.resize = vi.fn(() => {
+        throw boom;
+      });
+      const t = started({ primary });
+
+      expect(() => t.overlay.resize(640, 480)).not.toThrow();
+
+      expect(t.onPrimaryFailure).toHaveBeenCalledOnce();
+      expect(t.onPrimaryFailure).toHaveBeenCalledWith(boom);
+      expect(primary.dispose).toHaveBeenCalledOnce();
+      expect(t.fallback.initialize).toHaveBeenCalledWith(t.container, 640, 480);
+    });
+
+    it("swaps to the fallback when renderFrame throws", () => {
+      const primary = makeOverlay();
+      primary.renderFrame = vi.fn(() => {
+        throw new Error("lost");
+      });
+      const t = started({ primary });
+      const frame = {} as TrailOverlayRenderParams;
+
+      expect(() => t.overlay.renderFrame(frame)).not.toThrow();
+      expect(t.onPrimaryFailure).toHaveBeenCalledOnce();
+      expect(t.fallback.initialize).toHaveBeenCalledWith(t.container, 320, 240);
+
+      t.overlay.renderFrame(frame);
+      expect(t.fallback.renderFrame).toHaveBeenCalledWith(frame);
+      expect(primary.renderFrame).toHaveBeenCalledOnce();
+    });
+
+    it("swaps at once when the primary reports a lost context", () => {
+      const primary = makeOverlay();
+      let report: (error: unknown) => void = () => {};
+      primary.setFailureHandler = vi.fn((handler) => {
+        report = handler;
+      });
+      const t = started({ primary });
+
+      report(new Error("context lost"));
+
+      expect(t.onPrimaryFailure).toHaveBeenCalledOnce();
+      expect(primary.dispose).toHaveBeenCalledOnce();
+      expect(t.fallback.initialize).toHaveBeenCalledOnce();
+    });
+
+    it("ignores a late failure from a disposed or re-initialized owner", () => {
+      const primary = makeOverlay();
+      let report: (error: unknown) => void = () => {};
+      primary.setFailureHandler = vi.fn((handler) => {
+        report = handler;
+      });
+      const t = started({ primary });
+      const staleReport = report;
+      t.overlay.dispose();
+      staleReport(new Error("late"));
+      expect(t.createFallback).not.toHaveBeenCalled();
+      expect(t.onPrimaryFailure).not.toHaveBeenCalled();
+
+      t.overlay.initialize({} as HTMLElement, 100, 100);
+      staleReport(new Error("late again, previous generation"));
+      expect(t.createFallback).not.toHaveBeenCalled();
+    });
+
+    it("does not loop when the fallback itself throws", () => {
+      const primary = makeOverlay();
+      primary.resize = vi.fn(() => {
+        throw new Error("primary");
+      });
+      const fallback = makeOverlay();
+      fallback.resize = vi.fn(() => {
+        throw new Error("fallback");
+      });
+      const t = started({ primary, fallback });
+
+      t.overlay.resize(640, 480);
+      expect(() => t.overlay.resize(800, 600)).not.toThrow();
+
+      expect(t.onFallbackFailure).toHaveBeenCalledOnce();
+      expect(fallback.dispose).toHaveBeenCalledOnce();
+      expect(t.createFallback).toHaveBeenCalledOnce();
+      expect(() => t.overlay.resize(900, 700)).not.toThrow();
+      expect(fallback.resize).toHaveBeenCalledOnce();
+    });
+  });
 });

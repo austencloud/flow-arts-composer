@@ -59,6 +59,8 @@ export type ActivityEventType =
   | "arena_vote_completed"
   | "arena_matchup_skipped"
   | "feedback_submitted"
+  | "feedback_thread_failed"
+  | "feedback_thread_recovered"
   | "festival_submitted"
   | "festival_tracker_changed"
   | "festival_tracker_removed"

@@ -54,6 +54,7 @@ import {
   sanitizeFilename,
   shareOrDownloadBlob,
 } from "#lib/shared/foundation/services/file-downloader.js";
+import type { DownloadResult } from "#lib/shared/foundation/services/types.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { videoOverlayExport } from "#lib/shared/video-export/domain/video-overlays.js";
 import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
@@ -69,8 +70,27 @@ type ExportType = "animation" | "image" | "both";
  */
 export interface ExportRequestOptions {
   autoDeliver?: boolean;
+  /**
+   * Called once, when the render itself begins: after the account gate, the
+   * 3D handle wait and the opener decode, and before the first frame. Never
+   * called for a request that is refused.
+   */
+  onRenderStart?: () => void;
   /** The image the clip opens with; the share sheet's choice. */
   opener?: VideoOpenerRequest;
+}
+
+/**
+ * How a finished file reached the person, or failed to. `method` is null when
+ * the hand-over threw before a path was chosen.
+ */
+export interface ExportDeliveryReport {
+  kind: "video" | "card";
+  result: {
+    success: boolean;
+    canceled?: boolean;
+    method: "share" | "download" | null;
+  };
 }
 
 type Viewer3DState = ReturnType<typeof createViewer3DState>;
@@ -93,6 +113,17 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   const READY_TOAST_DURATION_MS = 12_000;
   const { getViewer3DState, accessibilityHelper, getMotionVisibility } = deps;
   const measuredVideoUrls = new Set<string>();
+  let deliveryListener: ((report: ExportDeliveryReport) => void) | null = null;
+
+  /** One listener: the viewer's interaction state, which owns the analytics. */
+  function setDeliveryListener(
+    listener: ((report: ExportDeliveryReport) => void) | null
+  ): () => void {
+    deliveryListener = listener;
+    return () => {
+      if (deliveryListener === listener) deliveryListener = null;
+    };
+  }
 
   const exportOptions = getExportOptionsState();
 
@@ -313,8 +344,17 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   async function saveExportedVideo(effectiveSequence: SequenceData | null) {
     const url = sequenceModalExporter.state.previewBlobUrl;
     if (!url) return;
-    const blob = await (await fetch(url)).blob();
-    await deliverVideoBlob(blob, url, effectiveSequence);
+    try {
+      const blob = await (await fetch(url)).blob();
+      const result = await deliverVideoBlob(blob, url, effectiveSequence);
+      deliveryListener?.({ kind: "video", result });
+    } catch (error) {
+      deliveryListener?.({
+        kind: "video",
+        result: { success: false, method: null },
+      });
+      throw error;
+    }
   }
 
   /**
@@ -335,7 +375,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     blob: Blob,
     measureKey: string,
     effectiveSequence: SequenceData | null
-  ) {
+  ): Promise<DownloadResult> {
     const rawName =
       effectiveSequence?.displayName ||
       effectiveSequence?.intendedWord ||
@@ -368,6 +408,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         }
       );
     }
+    return result;
   }
 
   /**
@@ -867,6 +908,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       }
 
       let exported3DOk = false;
+      options?.onRenderStart?.();
       try {
         await sequenceModalExporter.export3DAnimation(
           {
@@ -951,6 +993,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         openerAddsHold(openerRequest.kind) && openerRequest.imageUrl
           ? await loadOpenerImage(openerRequest.imageUrl)
           : null;
+      options?.onRenderStart?.();
       await sequenceModalExporter.exportAnimation(
         {
           fps: opts.fps,
@@ -1002,10 +1045,18 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         isHandPath,
         resolvedAutoLayout,
       });
+      options?.onRenderStart?.();
       await sequenceModalExporter.exportImage(
         renderOptions,
         { sequence: cardSequence },
-        callbacks
+        {
+          ...callbacks,
+          onDelivered: ({ method, canceled }) =>
+            deliveryListener?.({
+              kind: "card",
+              result: { success: true, canceled, method },
+            }),
+        }
       );
     }
 
@@ -1071,6 +1122,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     dismissPreview,
     saveExportedVideo,
     saveRetainedFilm,
+    setDeliveryListener,
     dispose,
   };
 }

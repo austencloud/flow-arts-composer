@@ -20,6 +20,7 @@
   column of gaps, which is a worse empty state than the one being replaced.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -250,12 +251,12 @@
     <dl class="stats">
       <div class="stat">
         <dt>{t("tab_library_sequences")}</dt>
-        <dd>{userProfile.sequenceCount.toLocaleString()}</dd>
+        <dd>{formatNumber(userProfile.sequenceCount)}</dd>
       </div>
       {#if collectionsCount !== undefined}
         <div class="stat">
           <dt>{t("tab_library_collections")}</dt>
-          <dd>{collectionsCount.toLocaleString()}</dd>
+          <dd>{formatNumber(collectionsCount)}</dd>
         </div>
       {/if}
       <div class="stat">
@@ -268,7 +269,7 @@
             onclick={() => onFollowersClick?.()}
           />
         </dt>
-        <dd>{userProfile.followerCount.toLocaleString()}</dd>
+        <dd>{formatNumber(userProfile.followerCount)}</dd>
       </div>
       <div class="stat">
         <dt>
@@ -280,7 +281,7 @@
             onclick={() => onFollowingClick?.()}
           />
         </dt>
-        <dd>{userProfile.followingCount.toLocaleString()}</dd>
+        <dd>{formatNumber(userProfile.followingCount)}</dd>
       </div>
     </dl>
 

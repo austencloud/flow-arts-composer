@@ -18,6 +18,17 @@ export function formatTakeClock(seconds: number): string {
   return `${minutes}:${rest.toFixed(2).padStart(5, "0")}`;
 }
 
+/** +0.387 s: how far a grid sits off its taps, to the millisecond. */
+export function formatGridOffset(seconds: number): string {
+  const ms = Number.isFinite(seconds) ? Math.round(seconds * 1000) : 0;
+  return `${ms > 0 ? "+" : ""}${(ms / 1000).toFixed(3)} s`;
+}
+
+/** The stored grid offset as typed, with no rounding beyond its own. */
+export function gridOffsetDraft(seconds: number): string {
+  return Number.isFinite(seconds) ? String(Number(seconds.toFixed(6))) : "0";
+}
+
 /** 0.98×, 1.5×, 2×: a clip's speed in its tool and on the timeline badge. */
 export function formatPostSpeed(speed: number): string {
   return `${Number(speed.toFixed(2))}×`;

@@ -34,6 +34,8 @@ import type { VariationExplorationOrchestrator } from "../../spell/services/vari
 import * as spellServiceLoaderModule from "#lib/features/create/spell/services/spell-service-loader.js";
 import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { sequenceExtender } from "#lib/features/create/shared/services/sequence-extender.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
 import {
   LOOP_TYPE_LABELS,
   LOOPType,
@@ -100,30 +102,24 @@ export const PROP_CONSTRAINT_SHORTFALL_TEXT =
   "Props timing could not hold on every beat. A pinned start position is the usual cause.";
 
 /** Shown when a typed word could not keep a setting, so the word won. */
-export const SPELL_RELAXED_HANDS_TEXT =
-  "This word can't keep your Hands setting, so this one was made with Hands free.";
-export const SPELL_RELAXED_PROPS_TEXT =
-  "This word can't keep your Props setting, so this one was made with Props free.";
-export const SPELL_RELAXED_HANDS_AND_PROPS_TEXT =
-  "This word can't keep your Hands and Props settings, so this one was made with both free.";
-export const SPELL_RELAXED_MATCH_TURNS_TEXT =
-  "This word can't keep your match-hand-turns setting, so this one was made without it.";
-export const SPELL_LOOP_NOT_APPLIED_TEXT =
-  "This word can't close with the LOOP you picked, so it was made without it.";
+const SPELL_RELAXED_KEY = {
+  hands: "generator_spell_relaxed_hands",
+  props: "generator_spell_relaxed_props",
+  handsAndProps: "generator_spell_relaxed_hands_and_props",
+  matchHandTurns: "generator_spell_relaxed_match_turns",
+} as const satisfies Record<SpellRelaxation, string>;
 
-const SPELL_RELAXED_TEXT: Record<SpellRelaxation, string> = {
-  hands: SPELL_RELAXED_HANDS_TEXT,
-  props: SPELL_RELAXED_PROPS_TEXT,
-  handsAndProps: SPELL_RELAXED_HANDS_AND_PROPS_TEXT,
-  matchHandTurns: SPELL_RELAXED_MATCH_TURNS_TEXT,
-};
+export function spellRelaxedText(relaxed: SpellRelaxation): string {
+  return t(SPELL_RELAXED_KEY[relaxed]);
+}
 
 /** One LOOP-not-applied notice, named after the LOOP the person picked. */
 export function spellLoopNotAppliedText(loopType: LOOPType): string {
-  const name = LOOP_TYPE_LABELS[loopType];
-  return name
-    ? `This word can't close as a ${name} LOOP, so it was made without the LOOP.`
-    : SPELL_LOOP_NOT_APPLIED_TEXT;
+  return LOOP_TYPE_LABELS[loopType]
+    ? t("generator_spell_loop_not_applied_named", {
+        name: loopTypeLabel(loopType),
+      })
+    : t("generator_spell_loop_not_applied");
 }
 
 const SPELL_NOTICE_MS = 8000;
@@ -546,7 +542,7 @@ export function createGenerationActionsState(
           continue;
         }
 
-        if (relaxed) relaxedNotice = SPELL_RELAXED_TEXT[relaxed];
+        if (relaxed) relaxedNotice = spellRelaxedText(relaxed);
 
         // If LOOP is requested, apply it post-hoc via the bridge-aware extender.
         // This path can add a single bridge letter to make the sequence land at

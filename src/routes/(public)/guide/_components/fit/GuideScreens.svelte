@@ -112,6 +112,7 @@
     navLabel,
     onoverflow,
     cutKey,
+    floors,
   }: {
     title: string;
     /** Draws the title in place of the plain `title` string (a page whose
@@ -154,6 +155,10 @@
     /** Changes when the page recuts its screens, so a screen that panned gets
         measured again even if the number of screens stayed the same. */
     cutKey?: unknown;
+    /** The smallest scale each screen's figures may draw at (default: the fit
+        box's own floor). A screen that will not fit at its floor counts as
+        not fitting, so the page hears onoverflow. */
+    floors?: (number | undefined)[];
   } = $props();
 
   // A body-head page opened by a link within the visit starts live on the
@@ -286,6 +291,9 @@
     const fallback = setTimeout(release, 1000);
     read();
     live = true;
+    // The page's own onMount runs after this one and may recut for the
+    // window; that recut lands before the tick resolves.
+    void tick().then(() => (ownCut = true));
     window.addEventListener("popstate", onPopState);
     return () => {
       clearTimeout(fallback);
@@ -306,7 +314,13 @@
   // otherwise reread the URL against the new count. Only a screen the URL
   // named is followed: the first read, against the server's cut, can clamp
   // a phone's ?screen=50, and that clamp is not where the reader is.
+  //
+  // The first recut after mount swaps the server's guess at the window for
+  // the window's own cut. The URL's number was written under the window's
+  // cut, so it is read again there: following the topic from the server's
+  // cut sent a phone's reloaded ?screen=5 to screen 14 (2026-11-15).
   let cutBefore: string[][] | undefined;
+  let ownCut = false;
   $effect.pre(() => {
     void count;
     const cut = topics;
@@ -320,7 +334,8 @@
       // The same cut drawn again (a new list, the same screens) stays put:
       // a topic split over two phone screens would land on the first.
       if (was && cut?.[index]?.join() === was.join()) return;
-      const next = onUrl && was && cut ? followScreen(was, cut) : -1;
+      const next =
+        ownCut && onUrl && was && cut ? followScreen(was, cut) : -1;
       if (next < 0) return read();
       if (next === index) return;
       index = next;
@@ -386,7 +401,7 @@
           ? undefined
           : `${contentsClear}px`}
       >
-        <nav class="pills" aria-label="Parts of this page" bind:this={pillRow}>
+        <nav class="pills" aria-label={t("guide_screens_parts")} bind:this={pillRow}>
           {#each labels as label, n (n)}
             <button
               type="button"
@@ -457,6 +472,7 @@
           top={steadyHead}
           onready={ready}
           {onoverflow}
+          min={floors?.[shown]}
         >
           {#if shown === 0 && lead}<div class="lead">{@render lead()}</div>{/if}
           {@render screen(shown, goTo)}
@@ -503,13 +519,13 @@
     {/if}
   </div>
 
-  <nav class="controls" aria-label="Guide navigation">
+  <nav class="controls" aria-label={t("guide_nav_aria")}>
     <!-- One line each: the chevron says which way, the name says where. -->
     {#if prevTarget?.kind === "screen"}
       <button
         type="button"
         class="step prev"
-        aria-label="Back: {prevTarget.text}"
+        aria-label={t("guide_screens_back_to", { name: prevTarget.text })}
         onclick={() => go(index - 1)}
       >
         <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
@@ -519,7 +535,7 @@
       <a
         class="step prev"
         href={prevTarget.href}
-        aria-label="Previous page: {prevTarget.text}"
+        aria-label={t("guide_screens_previous_page", { name: prevTarget.text })}
       >
         <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
         {@render stepName(prevTarget)}
@@ -528,7 +544,12 @@
       <span class="step-spacer"></span>
     {/if}
     {#if hubHref}<a class="hub" href={hubHref}
-        >{hubLabel ?? t("guide_nav_all_guides")}</a
+        ><!-- The Contents list icon, inline so it does not wait for the icon
+             font. On a narrow row it stands alone; the words stay its name. -->
+        <svg class="hub-icon" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M5.5 4h8M5.5 8h8M5.5 12h8" />
+          <path class="dots" d="M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
+        </svg><span class="hub-words">{hubLabel ?? t("guide_nav_all_guides")}</span></a
       >{:else}<span
         class="step-spacer"
       ></span>{/if}
@@ -536,7 +557,7 @@
       <button
         type="button"
         class="step next"
-        aria-label="Next: {nextTarget.text}"
+        aria-label={t("guide_screens_next_to", { name: nextTarget.text })}
         onclick={() => go(index + 1)}
       >
         {@render stepName(nextTarget)}
@@ -546,7 +567,7 @@
       <a
         class="step next"
         href={nextTarget.href}
-        aria-label="Next page: {nextTarget.text}"
+        aria-label={t("guide_screens_next_page", { name: nextTarget.text })}
       >
         {@render stepName(nextTarget)}
         <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
@@ -850,8 +871,12 @@
   }
 
   /* Back at the left edge, Next at the right, All guides centred between
-     them whatever the lengths of the two names. */
+     them whatever the lengths of the two names. Back and Next always get
+     equal halves of what All guides leaves; on a narrow row (the query
+     below reads this row's own width) All guides gives way first, down to
+     its icon. */
   .controls {
+    container: guide-foot / inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
@@ -872,7 +897,8 @@
     gap: 0.5em;
     box-sizing: border-box;
     min-height: 44px;
-    padding: 0.35em 1.1em;
+    /* Thin top and bottom, so a two-line name fits the one-line height. */
+    padding: 0.15em 1.1em;
     border: 1px solid color-mix(in oklab, var(--ink, #1a1a1a) 25%, transparent);
     border-radius: 999px;
     background: transparent;
@@ -894,23 +920,34 @@
     font-size: 0.8em;
     color: var(--ink-dim, #555);
   }
-  /* A name that does not fit keeps its first words whole: it wraps, and
-     only its first line shows. */
+  /* A name stays on one line when it fits and takes a second line inside
+     the same pill when it does not ("Staff Placements", "Break it down");
+     it is never cut mid-word or shrunk. */
   .step-title {
-    display: block;
+    display: -webkit-box;
     min-width: 0;
-    height: 1.3em;
+    max-height: 2.4em;
     overflow: hidden;
     font-weight: 650;
-    line-height: 1.3;
-    text-overflow: ellipsis;
+    line-height: 1.2;
     overflow-wrap: normal;
+    /* A single word longer than the half ("Verhältnisse") breaks at a
+       syllable rather than running past the pill. */
+    hyphens: auto;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
+  /* All guides is one line always: its words, or on a narrow row its icon
+     alone in a 44px square. */
   .hub {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 0.5em;
+    box-sizing: border-box;
     min-height: 44px;
+    white-space: nowrap;
     padding: 0.4em 1.1em;
     border-radius: 999px;
     background: #e8590c;
@@ -922,8 +959,49 @@
   .hub:hover {
     background: #d24e08;
   }
+  .hub-icon {
+    display: none;
+    flex: none;
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+  }
+  .hub-icon .dots {
+    stroke-width: 2.4;
+  }
   .step-spacer {
     min-width: 0;
+  }
+  @container guide-foot (max-width: 480px) {
+    .hub {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+    }
+    .hub-icon {
+      display: block;
+    }
+    .hub-words {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    /* Each name fills its half, so both get the same room. */
+    .step {
+      width: 100%;
+      gap: 0.3em;
+      padding-inline: 0.55em;
+    }
+    .step.next {
+      justify-content: flex-end;
+      text-align: right;
+    }
   }
 
   /* The floating Contents pill sits over the top-left of the frame on
@@ -1004,37 +1082,13 @@
       white-space: nowrap;
     }
   }
-  /* A phone: the footer's three pills tighten, All guides most, so Back and
-     Next keep room for a whole name. */
+  /* A phone: the footer row tightens so Back and Next keep room for a whole
+     name (All guides is already its icon here, the container query above). */
   @media (max-width: 520px) {
     .controls {
-      /* Back and Next may take more than their half when a name needs it,
-         All guides moving off centre rather than a name being cut. */
-      grid-template-columns: minmax(min-content, 1fr) auto minmax(
-          min-content,
-          1fr
-        );
-      gap: 0.35rem;
+      gap: 0.25rem;
       font-size: 0.875rem;
-      padding-inline: 0.6rem;
-    }
-    .step {
-      gap: 0.4em;
-      padding-inline: 0.75em;
-    }
-    .hub {
-      padding-inline: 0.7em;
-    }
-    /* Back and Next take a second line rather than lose a word
-       ("Staff Placements", "Break it down"). */
-    .step-title {
-      display: -webkit-box;
-      height: auto;
-      max-height: 2.4em;
-      line-height: 1.2;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
+      padding-inline: 0.5rem;
     }
     .pills {
       justify-content: flex-start;
@@ -1120,6 +1174,8 @@
     }
     .controls {
       grid-area: controls;
+      /* Sized by its buttons here, so it cannot be a size container. */
+      container-type: normal;
       display: flex;
       align-items: center;
       gap: 0.4rem;

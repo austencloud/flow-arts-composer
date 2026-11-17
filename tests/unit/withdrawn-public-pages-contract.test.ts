@@ -9,6 +9,7 @@ const readSource = (path: string): string =>
 const withdrawnHrefs = {
   "staff choreography": "/learn/staff-spinning-choreography",
   "the LOOP algebra": "/notation/loops",
+  "the LOOP words draft": "/lab/loop-words",
 } as const;
 
 const publicLinkSources = [
@@ -25,6 +26,7 @@ const publicLinkSources = [
 const gatedRoutes = [
   "src/routes/(public)/learn/staff-spinning-choreography/+page.server.ts",
   "src/routes/(public)/notation/loops/+page.server.ts",
+  "src/routes/(public)/lab/loop-words/+page.server.ts",
 ];
 
 describe("withdrawn public pages", () => {

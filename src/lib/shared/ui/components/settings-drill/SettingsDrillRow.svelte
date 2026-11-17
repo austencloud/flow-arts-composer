@@ -35,6 +35,7 @@ it so they read as one set with the boxes beside them.
     onclick,
     media,
     control,
+    valueLines = 1,
     ...rest
   }: {
     label: string;
@@ -46,6 +47,8 @@ it so they read as one set with the boxes beside them.
     media?: Snippet;
     /** A choice made in place at the row's right end, instead of drilling. */
     control?: Snippet;
+    /** Lines the value may wrap onto. One (the default) clips it to a line. */
+    valueLines?: number;
   } & Omit<
     HTMLButtonAttributes,
     "onclick" | "disabled" | "type" | "class" | "children"
@@ -67,6 +70,8 @@ it so they read as one set with the boxes beside them.
     {...rest}
     class="drill-row"
     class:is-disabled={disabled}
+    class:multi-line={valueLines > 1}
+    style:--row-value-lines={valueLines}
     type="button"
     onclick={() => onclick?.()}
   >
@@ -112,8 +117,8 @@ it so they read as one set with the boxes beside them.
     align-items: center;
     gap: 0.75rem;
     width: 100%;
-    min-height: var(--min-touch-target);
-    padding: 0.875rem 1rem;
+    min-height: var(--drill-row-min-height, var(--min-touch-target));
+    padding: var(--drill-row-padding, 0.875rem 1rem);
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 0.75rem;
@@ -176,6 +181,24 @@ it so they read as one set with the boxes beside them.
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* A host with narrow boxes (the dock tray's two columns) passes valueLines:
+     the value may wrap onto that many lines, and the box always reserves all
+     of them, so a longer value never changes its height. */
+  .multi-line .row-value {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--row-value-lines);
+    line-clamp: var(--row-value-lines);
+    min-height: calc(var(--row-value-lines) * 1.25em);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .multi-line .row-label {
+    line-height: 1.2;
   }
 
   .row-reason {

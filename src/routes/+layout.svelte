@@ -15,6 +15,7 @@
   import type { Snippet, Component } from "svelte";
   import { onMount } from "svelte";
   import { afterNavigate, beforeNavigate, onNavigate, goto } from "$app/navigation";
+  import { noteClientNavigation } from "#lib/shared/navigation/services/client-navigation.js";
   import {
     isInModuleHistoryStep,
     isShallowGoto,
@@ -144,6 +145,12 @@
         ).attach(transition);
       }
     },
+  });
+
+  // Pages that ask "was I reached from inside the app?" read this while they
+  // initialize; onNavigate reports a client navigation before the new page mounts.
+  onNavigate((navigation) => {
+    noteClientNavigation(navigation.from?.url.pathname, navigation.to?.url.pathname);
   });
 
   beforeNavigate((navigation) => {

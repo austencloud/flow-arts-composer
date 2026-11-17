@@ -587,6 +587,45 @@ describe("Download card with real live pictographs", () => {
     await screen.unmount();
   });
 
+  it("downloads again after returning to Download on a phone", async () => {
+    renderCard.mockImplementation(
+      async () => new Blob(["phone card"], { type: "image/png" })
+    );
+    const screen = await openCard(realSequence(9), null, {
+      initialEntry: "chooser",
+    });
+    await page.viewport(375, 667);
+    const pressDownload = async () => {
+      await page.getByRole("button", { name: /Download a file/ }).click();
+      await expect
+        .poll(
+          () =>
+            document.querySelectorAll(
+              ".live-export-card .live-pictograph svg[role='img']"
+            ).length
+        )
+        .toBe(10);
+      await page
+        .getByRole("button", { name: "Download card", exact: true })
+        .click();
+    };
+    try {
+      // On a phone the stage already has its size when the card mounts, so
+      // the card reports its Auto layout in the same flush that brings the
+      // file request in. That layout belongs to this request and must survive,
+      // or the PNG gate waits for a report that never repeats.
+      await pressDownload();
+      await expect.poll(() => deliverCard.mock.calls.length).toBe(1);
+      await page.getByRole("button", { name: "Back to sharing" }).click();
+      await pressDownload();
+      await expect
+        .poll(() => deliverCard.mock.calls.length, { timeout: 4000 })
+        .toBe(2);
+    } finally {
+      await screen.unmount();
+    }
+  });
+
   it.each([
     [375, 667],
     [820, 1180],

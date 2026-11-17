@@ -51,8 +51,9 @@ export interface SequenceRouteHandoff {
 		isPlaying: boolean;
 	};
 
-	/** Path to return to (e.g., "/browse/gallery") */
-	returnPath: string;
+	/** Path to return to (e.g., "/browse/gallery"). Absent for a card scan,
+	 *  whose Back opens the Composer. */
+	returnPath?: string;
 
 	/** Label for back button (e.g., "Browse", "My Library") */
 	returnLabel?: string;

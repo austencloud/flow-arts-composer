@@ -149,6 +149,17 @@ export class ImageComposer {
     this.qrCodeGenerator = generator;
   }
 
+  // Resolves once the arrow placement stores (special, default, global and
+  // prop-geometry overrides) have loaded. The main-thread composer is given one
+  // so no cell is positioned, and then cached, with half the placement tiers
+  // missing. The worker composer has none: its stores arrive pre-loaded in the
+  // seed snapshot.
+  private placementReady: (() => Promise<void>) | null = null;
+
+  setPlacementReadiness(ready: () => Promise<void>): void {
+    this.placementReady = ready;
+  }
+
   // composeCardFrontParallel runs cell rasterization on a worker pool but reuses
   // this composer for glyph preload, visibility resolution, chrome deps, the
   // duration badge, and the per-cell main-thread fallback. These thin accessors
@@ -1154,6 +1165,7 @@ export class ImageComposer {
     pictographData: StepData | PictographData,
     visibilitySettings: PictographVisibilityOptions
   ): Promise<PreparedPictographData> {
+    if (this.placementReady) await this.placementReady();
     const themeMode = visibilitySettings.darkMode ? "dark" : "light";
     const { pictographPreparer: preparer } =
       await import("../../pictograph/shared/services/pictograph-preparer");

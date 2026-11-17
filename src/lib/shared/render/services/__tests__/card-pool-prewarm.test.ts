@@ -4,7 +4,7 @@ const mocked = vi.hoisted(() => ({
   probeWorkerSupport: vi.fn(),
   getDispatcher: vi.fn(),
   getCardAssetBundle: vi.fn(),
-  buildOverridePlacementBundle: vi.fn(),
+  loadOverridePlacementBundle: vi.fn(),
 }));
 
 vi.mock("../composition-dispatcher", () => ({
@@ -19,7 +19,7 @@ vi.mock("../get-card-asset-bundle", () => ({
   getCardAssetBundle: mocked.getCardAssetBundle,
 }));
 vi.mock("../override-placement-bundle", () => ({
-  buildOverridePlacementBundle: mocked.buildOverridePlacementBundle,
+  loadOverridePlacementBundle: mocked.loadOverridePlacementBundle,
 }));
 
 import {
@@ -64,7 +64,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocked.probeWorkerSupport.mockResolvedValue(true);
   mocked.getCardAssetBundle.mockResolvedValue({ keys: [], bitmaps: [] });
-  mocked.buildOverridePlacementBundle.mockReturnValue({});
+  mocked.loadOverridePlacementBundle.mockResolvedValue({});
 });
 
 describe("computeBundleSignature", () => {

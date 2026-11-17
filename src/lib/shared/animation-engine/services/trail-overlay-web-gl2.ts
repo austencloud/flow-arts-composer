@@ -114,6 +114,8 @@ function hexToRgb(hex: string): [number, number, number] {
 
 export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
   private canvas: HTMLCanvasElement | null = null;
+  private failureHandler: ((error: unknown) => void) | null = null;
+  private contextLostListener: (() => void) | null = null;
   private backend: RenderBackend | null = null;
   private width = 0;
   private height = 0;
@@ -242,6 +244,13 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     container.appendChild(canvas);
 
     this.canvas = canvas;
+    // No preventDefault: this pass does not restore the context, so the browser
+    // should treat it as permanently lost. The owner swaps to Canvas2D.
+    const onLost = () => {
+      this.failureHandler?.(new Error("WebGL2 context lost"));
+    };
+    canvas.addEventListener("webglcontextlost", onLost);
+    this.contextLostListener = onLost;
     this.width = width;
     this.height = height;
     this.warmupFramesRemaining = TrailOverlayWebGL2.WARMUP_FRAMES;
@@ -1095,7 +1104,18 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     if (this.canvas) this.canvas.style.zIndex = String(z);
   }
 
+  setFailureHandler(handler: (error: unknown) => void): void {
+    this.failureHandler = handler;
+  }
+
   dispose(): void {
+    if (this.canvas && this.contextLostListener) {
+      this.canvas.removeEventListener(
+        "webglcontextlost",
+        this.contextLostListener
+      );
+    }
+    this.contextLostListener = null;
     this.backend?.dispose();
     this.backend = null;
     if (this.canvas?.parentElement) {

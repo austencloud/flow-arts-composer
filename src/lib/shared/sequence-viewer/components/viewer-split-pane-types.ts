@@ -95,6 +95,10 @@ export interface ViewerSplitPaneProps {
    * offering a second delivery of a file the sheet already handled.
    */
   artShareActive?: boolean;
+  /** Tunnel phone dock: Props opens the shell's one prop screen. */
+  onArtPropPickerRequest?: () => void;
+  /** True while that screen is open, so the Props tab shows pressed. */
+  artPropPickerActive?: boolean;
   onArtExportEvent?: ArtExportEventSink;
   onArtSettingChange?: (
     group: string,
@@ -202,6 +206,8 @@ export interface ViewerCompanionSurfaceProps {
   onArtExport?: ViewerSplitPaneProps["onArtExport"];
   onArtShare?: ViewerSplitPaneProps["onArtShare"];
   artShareActive?: boolean;
+  onArtPropPickerRequest?: ViewerSplitPaneProps["onArtPropPickerRequest"];
+  artPropPickerActive?: boolean;
   onArtExportEvent?: ArtExportEventSink;
   onArtSettingChange?: ViewerSplitPaneProps["onArtSettingChange"];
   onArtAction?: ViewerActionSink;

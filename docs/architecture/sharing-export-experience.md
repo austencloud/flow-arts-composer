@@ -1174,3 +1174,114 @@ and the earlier owed items: 1440×900 with the dock showing an account note, a
 custom footer and Save to card, the Card to Video crossfade (both keys,
 interrupted, reduced motion), focus order, and the video rows with a 3D export
 (Quality row).
+
+### November 16: the sequence inside exported files
+
+Austen's request, 2026-11-16: "Is there any way to put metadata in those video
+and images so that if they get shared around, the sequence itself stored within
+can be decoded by future software... Something invisible, harmless, and we can
+be upfront about it, and we can make it an entire feature. Where if somebody
+sends you the card." His go: "As for the idea, yes, by all means."
+
+**The rule.** The file says in data only what the picture already shows: the
+sequence, its display word, and a link only when the card visibly carries one.
+It never holds an account or document id, an email, a device, a locale, a
+time, a place, or anything else about a person. Nothing from the private prop
+bridges goes into it. The builder writes a fixed key set; a test fails if a
+key is added.
+
+**The payload.** Readable JSON, so software other than this app can read it:
+`format: "flow-arts-sequence"`, `version: 1`, `app`, `notation`, `word`,
+`encoding: "flow-arts-flat"`, `sequence`, and optional `letters` and `link`.
+`sequence` is the text `encodeSequence` already produces for printed QR cards,
+uncompressed. No second encoding exists. `letters` holds each step's letter in
+step order (`""` for a step without one) and is left out when no step has a
+letter. A reader accepts a higher version with a known
+encoding, ignores unknown fields, and drops a bad optional field. One builder
+and one parser: `src/lib/shared/share/domain/sequence-file-payload.ts`.
+
+**Where it is written.**
+
+- Card PNG: three `iTXt` chunks directly after `IHDR`: `flow-arts-sequence`
+  (the payload), `Description` (one plain sentence) and `Software`. The pixels
+  are not re-encoded. Owner: `share/services/png-text-chunks.ts`. It is our own
+  module because no maintained package writes `iTXt`.
+- 2D video MP4: container tags `title` (the word), `description` (the plain
+  sentence) and `comment` (the payload). The worker encoder takes no tags, so
+  the orchestrator adds them after encoding with a packet-copy remux
+  (`embedSequenceTagsInMp4`); nothing is re-encoded.
+- Embedding rides on export and never fails it. On any error the plain file is
+  delivered and a warning is logged (`share/services/sequence-file-embedder.ts`).
+- `Sharer.getCardImageBlob` embeds before caching, so every consumer of that
+  one source gets the same file. The legacy `getImageBlob` and
+  `sequence-image-sharer` embed too.
+
+**Not covered yet.** A 3D video, a WebM, the mandala and QR video workers, the
+promo exporter, card pictures rendered outside the Sharer (the choreo card
+print export and the viewer's own exporter), and a picture copied to the
+clipboard (the browser re-encodes it). Wording in the app must not claim more
+than this list allows.
+
+**Reading it back.** One reader, `share/services/sequence-file-reader.ts`
+(`readSequenceFromFile`), which sniffs the container from its first bytes, not
+its name. The Android share intake asks it before it looks for a QR in the
+pixels.
+
+**The way in.** Austen's pick, 2026-11-16: "A, the menu". One row in the
+Navigation menu, "Open a picture or video", opens the device's own file
+chooser. On a computer a file dropped anywhere on the window opens too; a
+screen's own drop zone keeps its drop (the window acts only on a drop nobody
+took). Both call one function, `share/services/open-sent-file.ts`: the
+sequence inside the file, else for a picture the card's QR in its pixels, else
+one plain note that no sequence was found. Opening shows the sequence in the
+viewer and saves nothing. A found sequence that fails to open says so.
+
+**Said at export.** The share sheet's Download screen says "The sequence is
+saved inside this file." for the card and the 2D MP4 only. One line: two lines
+left a small phone's video preview 17 px tall.
+
+**What the encoding keeps.** The flat encoding keeps each hand's motions,
+locations, turns, orientations and prop. It does not keep letters, reversals,
+the sequence name or the card's settings. A file opens the sequence, not the
+sender's card design.
+
+**Why the file carries letters.** The flat text has no letter column, and its
+encoder writes clockwise for a float whose prefloat direction is missing, so a
+reader can derive a different letter (the card KΘY-E read back as LΘY-F,
+2026-11-16). Short codes solve this from the stored record
+(`qr/services/prefloat-graft.ts`). A file has no record, so it carries the
+letters its picture shows. The parser applies them only when the list lines up
+one-to-one with the steps and an entry is a real letter; the hydrator keeps a
+letter that is already set. The Android intake puts the same letters back when
+it opens the filed card (`share-intake/services/embedded-letters.ts`). Known
+limit: the decoded float still holds the made-up clockwise pair, and a printed
+card with an inline code has no letters to fall back on.
+
+**What survives where.** Tested 2026-11-16: a reader we did not write (Pillow
+11.3) reads the chunk back, Greek letters included; a byte copy keeps it; any
+re-encode removes it (a PNG re-save, a conversion to JPEG). Read, not tested:
+email attachments, cloud drives, AirDrop and "send as file" keep the data;
+Instagram, Facebook, TikTok, X and photos sent the normal way in chat apps
+re-encode and remove it. For those the visible QR on the card remains the way
+back. Feedback must therefore never promise that a posted picture still opens.
+
+**Events.** `sequence_file_written` (`file_kind`, `delivery`) fires after a
+file that carries a sequence was really delivered, never at render.
+`sequence_file_opened` (`file_kind`, `entry`, `had_link`, `step_count`) fires
+when such a file is opened. `sequence_file_not_found` (`file_kind`, `entry`)
+fires when a file chosen from the menu or dropped held nothing to open. None
+sends a route, an id or anything that names a sequence or a person. All are
+observers and cannot fail a delivery.
+
+**Verification.** Focused unit tests cover the payload key set, the chunk
+writer and reader against a Pillow-written fixture, the MP4 tag round trip
+without a browser, the cache keeping the embedded file, and the intake reading
+a file before trying the QR, the open function's three outcomes, the drop
+rules, the letters round trip on the real KΘY-E sequence, and the delivery
+observer finding a tagged MP4. Tested in a headless browser 2026-11-16: a 2D
+video written by the app carries the payload at byte 5,408 (ffprobe reads it),
+its frames match an untagged copy exactly, and it reopens from the menu row as
+KΘY-E with 16 steps. The card reopened the same way, but its file came from
+calling `Sharer.getCardImageBlob` directly, not from the sheet's Download card
+button, which stayed on "Preparing download…" in that browser on this branch
+and on main. That button is owed its own check.

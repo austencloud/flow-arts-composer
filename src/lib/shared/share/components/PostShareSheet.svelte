@@ -683,13 +683,18 @@
     const sourceRevision = cardPreview.request?.sourceRevision ?? null;
     if (sourceRevision === observedLiveCardSourceRevision) return;
     observedLiveCardSourceRevision = sourceRevision;
-    // A newly mounted card can finish its cached-content readiness in the same
-    // flush as this observer. Keep that valid signal instead of clearing the
-    // PNG gate after the card is already visibly settled.
+    // A newly mounted card can report its Auto layout and finish its
+    // cached-content readiness in the same flush as this observer. Keep each
+    // signal that already belongs to this source: on a phone the stage has its
+    // size before the card mounts, so the layout arrives first, and the card
+    // never reports that same layout again. Clearing it left the PNG gate
+    // waiting forever.
+    if (liveCardLayoutSourceRevision !== sourceRevision) {
+      liveCardAutoLayout = null;
+      liveCardAutoLayoutKey = "";
+      liveCardLayoutSourceRevision = null;
+    }
     if (liveCardContentReadySourceRevision === sourceRevision) return;
-    liveCardAutoLayout = null;
-    liveCardAutoLayoutKey = "";
-    liveCardLayoutSourceRevision = null;
     liveCardReadyRevision = null;
     liveCardContentReadySourceRevision = null;
     pendingCardDownloadRevision = null;
@@ -820,6 +825,16 @@
 
   const activeBlob = $derived(
     artifact === "video" ? videoBlob : cardPreview.blob
+  );
+
+  // What the downloaded file carries (sharing contract, "the sequence inside
+  // exported files"): the card PNG and the 2D video MP4. A 3D video and a
+  // WebM carry nothing, so the line is never shown for them.
+  const fileCarriesSequence = $derived(
+    artifact === "card" ||
+      (artifact === "video" &&
+        !is3DExport &&
+        (!videoBlob || !videoBlob.type || videoBlob.type.includes("mp4")))
   );
 
   const filename = $derived(buildArtifactFilename(word, artifact));
@@ -3063,6 +3078,16 @@
                       transition:growFade={{ axis: "y" }}
                     >
                       {#if !qrDataUrl}
+                        <!-- Said once, beside the action that writes the file.
+                             Hidden, not removed, where the file carries
+                             nothing, so switching artifact moves nothing. -->
+                        <p
+                          class="file-carries-note"
+                          class:is-reserved={!fileCarriesSequence}
+                          aria-hidden={!fileCarriesSequence}
+                        >
+                          {t("share_file_carries_sequence")}
+                        </p>
                         {#if needsAccountForFiles}
                           <p class="account-note">
                             {artifact === "card"
@@ -4418,6 +4443,17 @@
     flex: 0 0 auto;
     padding: 0.75rem 1.25rem max(0.375rem, env(safe-area-inset-bottom));
     border-top: 1px solid var(--theme-stroke);
+  }
+  .file-carries-note {
+    margin: 0 0 0.5rem;
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.35;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .file-carries-note.is-reserved {
+    visibility: hidden;
   }
   .share-dock :global(.panel-btn) {
     min-height: 48px;

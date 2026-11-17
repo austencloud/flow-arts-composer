@@ -9,6 +9,7 @@
   4. Result count (right-aligned, tabular-nums)
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizeFilterChip, showsMandalaStill } from "./localize-filter-chip";
   import type { Snippet } from "svelte";
@@ -415,12 +416,12 @@
     <span class="result-count" aria-live="polite" aria-atomic="true">
       {#if resultTotal !== undefined && resultTotal !== engine.resultCount}
         {t("browse_verified_results_shown", {
-          count: engine.resultCount,
-          total: resultTotal,
+          count: formatNumber(engine.resultCount),
+          total: formatNumber(resultTotal),
         })}
       {:else}
         <span class="count-number"
-          >{countPending ? "…" : engine.resultCount}</span
+          >{countPending ? "…" : formatNumber(engine.resultCount)}</span
         >{engine.isLibraryComplete || countPending ? "" : "+"}<span
           class="result-count-word"
           >&nbsp;{t(

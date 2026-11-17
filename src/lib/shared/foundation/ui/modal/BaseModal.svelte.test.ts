@@ -20,6 +20,50 @@ function nextLayout(): Promise<void> {
   });
 }
 
+/** Every animation or transition running on the dialog itself, by kind. */
+function motionOn(dialog: HTMLElement): string[] {
+  return dialog
+    .getAnimations()
+    .filter(
+      (motion) => (motion.effect as KeyframeEffect | null)?.target === dialog
+    )
+    .map((motion) =>
+      motion instanceof CSSTransition
+        ? `transition:${motion.transitionProperty}`
+        : motion instanceof CSSAnimation
+          ? `animation:${motion.animationName}`
+          : "script"
+    );
+}
+
+/** The motion on the dialog in each frame of its entrance. */
+async function watchEntrance(frames = 5): Promise<string[][]> {
+  const seen: string[][] = [];
+  for (let frame = 0; frame < frames; frame += 1) {
+    const dialog = document.querySelector<HTMLElement>("dialog.base-modal");
+    seen.push(dialog ? motionOn(dialog) : []);
+    await nextLayout();
+  }
+  return seen;
+}
+
+describe("BaseModal entrance", () => {
+  it("enters a pop dialog once, by @starting-style transition alone", async () => {
+    render(BaseModalTestHarness, { animation: "pop" });
+    const frames = await watchEntrance();
+
+    // The old keyframe fallback matched every dialog, so a pop dialog ran a
+    // second `modalFallbackIn` entrance on top of the transition.
+    expect(
+      document.querySelector<HTMLElement>("dialog.base-modal")?.dataset.entered
+    ).toBe("true");
+    expect(new Set(frames.flat())).toEqual(
+      new Set(["transition:opacity", "transition:transform"])
+    );
+    expect(Math.max(...frames.map((names) => names.length))).toBe(2);
+  });
+});
+
 describe("BaseModal fit sizing", () => {
   afterEach(async () => {
     document.querySelector('[data-testid="external-overlay"]')?.remove();
@@ -422,5 +466,19 @@ describe("BaseModal morph mode", () => {
       )
       .toBe("1");
     expect(nativeDialog()).toBeNull();
+  });
+
+  it("gives the dialog no entrance of its own", async () => {
+    const { component } = render(BaseModalMorphTestHarness);
+    expect(component.setOpenNow(true)).toBe(true);
+    const frames = await watchEntrance();
+
+    // The host drives the motion, so the frame must sit at rest from its first
+    // frame: no keyframe or transition entrance, and no scale-up or rise.
+    const dialog = document.querySelector<HTMLElement>("dialog.base-modal")!;
+    expect(dialog.dataset.entered).toBe("true");
+    expect(frames.flat()).toEqual([]);
+    expect(getComputedStyle(dialog).opacity).toBe("1");
+    expect(getComputedStyle(dialog).transform).toBe("matrix(1, 0, 0, 1, 0, 0)");
   });
 });

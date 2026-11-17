@@ -8,7 +8,6 @@
  */
 
 :root {
-  --modal-duration-in: 350ms;
   --modal-duration-out: 200ms;
   --modal-duration-content: 350ms;
 
@@ -429,20 +428,11 @@ dialog.base-modal.chromeless {
   }
 }
 
-/* ===== Fallback for browsers without @starting-style ===== */
-@supports not (selector(@starting-style {})) {
-  dialog.base-modal[data-entered="true"]:not([data-animation="none"]) {
-    animation: modalFallbackIn var(--modal-duration-in) var(--modal-ease-spring);
-  }
-
-  @keyframes modalFallbackIn {
-    from {
-      opacity: 0;
-      transform: scale(0.92) translateY(24px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-  }
-}
+/* ===== No keyframe fallback for @starting-style =====
+   A dialog enters through the @starting-style rules above and nothing else.
+   An earlier `@supports not (selector(@starting-style {}))` block replayed a
+   keyframe entrance on top of them. `selector()` can only test selectors, so
+   that test was always true: every dialog ran both entrances, and its rule
+   outranked the morph block's `animation: none`, so a morph host's own motion
+   fought a scale-up it never asked for. A browser without @starting-style
+   (before Chrome 117, Safari 17.5 or Firefox 129) shows the dialog at once. */

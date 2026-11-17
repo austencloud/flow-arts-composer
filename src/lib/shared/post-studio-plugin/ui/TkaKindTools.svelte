@@ -47,6 +47,7 @@
   import PostSplitHandsTool from "./PostSplitHandsTool.svelte";
   import PostPanelLiftTool from "./PostPanelLiftTool.svelte";
   import PostBarFillTool from "./PostBarFillTool.svelte";
+  import PostBeatNudgeTool from "./PostBeatNudgeTool.svelte";
   import {
     FLASH_MAX_FADE_SECONDS,
     FLASH_MAX_STRENGTH,
@@ -454,6 +455,8 @@
     <PostPanelLiftTool {editor} {item} {locked} />
   {:else if tool === "bar" && item.kind === "animation"}
     <PostBarFillTool {editor} {item} {locked} />
+  {:else if tool === "nudge" && (item.kind === "animation" || item.kind === "moves")}
+    <PostBeatNudgeTool {editor} {item} {locked} />
   {:else if tool === "performers" && item.kind === "animation"}
     {@const follower = item.followers?.[0]}
     <SegmentedControl

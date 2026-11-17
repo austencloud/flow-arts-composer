@@ -18,6 +18,7 @@
   The pictures change with a crossfade.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t, type TranslationKey } from "#lib/shared/i18n/i18n.svelte.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -203,7 +204,7 @@
   function countText(n: number): string {
     return n === 1
       ? t("browse_ui_mandala_one_sequence")
-      : t("browse_ui_mandala_sequences", { count: n.toLocaleString() });
+      : t("browse_ui_mandala_sequences", { count: formatNumber(n) });
   }
   function spoken(at: number): string {
     const stop = Math.round(at);
@@ -214,7 +215,7 @@
   const showLabel = $derived(
     count === 1
       ? t("browse_mandala_show_one")
-      : t("browse_mandala_show_many", { count: count.toLocaleString() })
+      : t("browse_mandala_show_many", { count: formatNumber(count) })
   );
 
   /** The word a picture's sequence goes by, plain letters for a small label. */

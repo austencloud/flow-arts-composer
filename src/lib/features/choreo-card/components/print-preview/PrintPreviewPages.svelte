@@ -32,7 +32,7 @@
   import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
   import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
   import { getCompositionDispatcher } from "#lib/shared/render/get-composition-dispatcher.js";
-  import { buildOverridePlacementBundle } from "#lib/shared/render/services/override-placement-bundle.js";
+  import { loadOverridePlacementBundle } from "#lib/shared/render/services/override-placement-bundle.js";
   import { prewarmCardPool } from "#lib/shared/render/services/card-pool-prewarm.js";
   import { warmCardBackCachesAsync } from "../../services/card-back/warm-card-back-caches";
   import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
@@ -315,10 +315,12 @@
   // reach the worker — the re-rendered card would show the OLD arrow position.
   // Cheap (re-seeds resolver state only, not the asset/SVG caches); call once per
   // render run, not per card.
-  function refreshOverrideBundle(): void {
+  // Waits for the placement stores' first load, so a preview opened cold
+  // never pushes an empty set over the pool's seeded one.
+  async function refreshOverrideBundle(): Promise<void> {
     try {
       getCompositionDispatcher().updateOverrideBundle(
-        buildOverridePlacementBundle()
+        await loadOverridePlacementBundle()
       );
     } catch (err) {
       console.warn("[PrintPreview] override bundle refresh failed:", err);
@@ -647,7 +649,8 @@
     }
     // Sync the worker pool with any arrow overrides saved since it was seeded, so
     // freshly-edited placements render (not the stale init-time bundle).
-    refreshOverrideBundle();
+    await refreshOverrideBundle();
+    if (generation !== renderGeneration) return;
     // Per-card piece budgets (one piece per beat). Cached/fast cards count as
     // instantly placed; live renders fill in via per-beat progress callbacks.
     const perCardPieces = seqs.map((s) => Math.max(1, s.steps?.length ?? 1));
@@ -911,7 +914,7 @@
 
     // A single-card refresh is the explicit "I just fixed this card's arrows"
     // path — push the saved overrides to the worker before recomposing.
-    refreshOverrideBundle();
+    await refreshOverrideBundle();
 
     const frontCanvas = await renderer.renderFront(seq, options);
     const backCanvas = await renderer.renderBack(seq, options);

@@ -28,6 +28,12 @@ Compact bottom sheets, the Save Scene backdrop/Escape/button dismissal paths,
 and the single shared `scene-prop-catalog.ts` consumed by both the picker and
 Prop Studio are all present.
 
+**Amended 2026-11-16:** the dock no longer waits for a 105rem workspace.
+`DOCK_MIN_WIDTH` and `MIN_DOCKED_STAGE_WIDTH` are gone. On a half-width
+desktop window the floating Performer editor covered the performer it edits,
+so a Performer or Developer editor now takes its own column at every
+non-compact width (see Presentation resolution). 15 tests pass.
+
 **UNRESOLVED acceptance items (2026-09-13).** Three stated constraints are not
 met by the shipped code. Partial supersession evidence exists for one of them
 and none for the other two, so all three stay open and discoverable.
@@ -120,10 +126,15 @@ Presentation is resolved from the measured 3D workspace, not the browser
 viewport or a device label.
 
 - `compact`: width below 48rem, or height below 34rem
-- `docked`: width at least 105rem, the calculated panel still leaves the
-  minimum viable stage width, and the active editor benefits from a persistent
-  work column
-- `overlay`: every intermediate workspace
+- `docked`: every wider workspace, when the active editor benefits from a
+  persistent work column. The column gives up width, from the calculated
+  inspector width down to a 360px floor, so the stage keeps at least 480px
+- `overlay`: shallow editors at every width, and any editor when a column at
+  its floor would leave the stage under 300px
+
+When a dock opens or closes the camera refits the cast to the stage that is
+left, but never frames it as narrower than an upright phone (9:16). Below that
+shape the cast keeps its size and gives up the empty margin at its sides.
 
 The inspector width is fluid and capped. It grows horizontally on 4K instead
 of making controls taller or stretching buttons to fill arbitrary tracks.
@@ -140,8 +151,9 @@ contains the live focused-avatar preview, description, explicit apply action,
 and keyboard-aware avatar grid. Opening a second modal from the dock or compact
 sheet is not part of this flow.
 
-Performer and Developer tools may reserve a dock on wide workspaces because
-their editors use that column. Camera, Formation, and Scene remain compact
+Performer and Developer tools reserve a dock whenever the workspace is not
+compact, because their editors use that column and must not cover the
+performer. Camera, Formation, and Scene remain compact
 overlays even when a dock would technically fit. A shallow editor must not
 create a full-height empty reservation beside the stage.
 

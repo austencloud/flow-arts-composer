@@ -10,13 +10,18 @@
    * row unfolded (folds apply after hydration), so each topic stays a
    * crawlable link on every guide page.
    *
-   * A page shown one screen at a time lists its own screens first, under
-   * its name: one row per screen, the current one filled. A row switches
-   * the screen in place.
+   * A page shown one screen at a time lists its own screens, under its
+   * name: one row per screen, the current one filled. A row switches the
+   * screen in place. Once hydrated, the list of all guides moves behind one
+   * "All guides" row pinned under the screens; pressing it swaps the
+   * drawer to the guides (a drill-down through the shared Crossfade), and a
+   * back row at their top returns. The prerendered HTML still carries the
+   * screens and every guide link, unfolded.
    */
   import { onMount, tick } from "svelte";
   import type { ModuleDefinition, Section } from "@austencloud/sidebar";
-  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import type { GuidePageScreens } from "./guide-chrome-context";
   import {
@@ -81,6 +86,32 @@
   const isCurrent = (m: ModuleDefinition, s: Section) =>
     m.id === currentModule && s.id === currentSection;
 
+  // ── This page's screens, or all guides ───────────────────────────────────
+  // A page with screens shows them first and keeps the guides one row away.
+  // Before hydration both are in the HTML, one after the other. The guide's
+  // front page is the guides' own door: its drawer stays one list, as before.
+  const drill = $derived(
+    hydrated && !onHub && !!screens && screens.labels.length > 1
+  );
+  let view = $state<"screens" | "guides">("screens");
+  // Every opening of the drawer, and every new page, starts on the screens.
+  $effect(() => {
+    void pathname;
+    void revealKey;
+    view = "screens";
+  });
+
+  async function showGuides() {
+    view = "guides";
+    await tick();
+    navEl?.querySelector<HTMLElement>(".back-row")?.focus();
+  }
+  async function showScreens() {
+    view = "screens";
+    await tick();
+    navEl?.querySelector<HTMLElement>(".all-guides-row")?.focus();
+  }
+
   // ── Keep the current row in view ─────────────────────────────────────────
   let navEl: HTMLElement | undefined = $state();
 
@@ -99,7 +130,9 @@
       el.querySelector<HTMLElement>('[aria-current="step"]') ??
       el.querySelector<HTMLElement>('[aria-current="page"]');
     if (!current) return;
-    const scroller = scrollerOf(el);
+    // The nearest scroller above the row: the screen list in the
+    // drill-down, the drawer itself otherwise.
+    const scroller = scrollerOf(current.parentElement ?? el);
     const box = scroller.getBoundingClientRect();
     const link = current.getBoundingClientRect();
     if (link.top >= box.top && link.bottom <= box.bottom) return;
@@ -112,46 +145,40 @@
     void pathname;
     void revealKey;
     void screens?.index;
+    void view;
     if (!el) return;
     void tick().then(() => revealCurrent(el));
   });
 </script>
 
-<nav
-  class="guide-toc"
-  aria-label={tDynamic("guide_nav_aria")}
-  bind:this={navEl}
->
-  {#if screens && screens.labels.length > 1}
-    {@const page = screens}
-    <section class="this-page" aria-labelledby="guide-toc-this-page">
-      <h2 class="this-page-title" id="guide-toc-this-page">{page.title}</h2>
-      <ol class="screen-list">
-        {#each page.labels as label, n (n)}
-          <li>
-            <button
-              type="button"
-              class="screen-row"
-              aria-current={n === page.index ? "step" : undefined}
-              onclick={() => {
-                page.go(n);
-                onLinkClick?.();
-              }}
-            >
-              <span class="screen-n" aria-hidden="true">{n + 1}</span>
-              <span class="screen-name">{label}</span>
-              <span class="sr-only"
-                >{t("guide_screens_position", {
-                  n: n + 1,
-                  total: page.labels.length,
-                })}</span
-              >
-            </button>
-          </li>
-        {/each}
-      </ol>
-    </section>
-  {/if}
+{#snippet screenList(page: GuidePageScreens)}
+  <ol class="screen-list">
+    {#each page.labels as label, n (n)}
+      <li>
+        <button
+          type="button"
+          class="screen-row"
+          aria-current={n === page.index ? "step" : undefined}
+          onclick={() => {
+            page.go(n);
+            onLinkClick?.();
+          }}
+        >
+          <span class="screen-n" aria-hidden="true">{n + 1}</span>
+          <span class="screen-name">{label}</span>
+          <span class="sr-only"
+            >{t("guide_screens_position", {
+              n: n + 1,
+              total: page.labels.length,
+            })}</span
+          >
+        </button>
+      </li>
+    {/each}
+  </ol>
+{/snippet}
+
+{#snippet guideModules()}
   {#each modules as m (m.id)}
     {@const hasRows = m.sections.length > 0}
     {@const open = isOpen(m)}
@@ -212,6 +239,58 @@
       {/if}
     </div>
   {/each}
+{/snippet}
+
+<nav
+  class="guide-toc"
+  class:drill
+  aria-label={tDynamic("guide_nav_aria")}
+  bind:this={navEl}
+>
+  {#if drill && screens}
+    {@const page = screens}
+    <Crossfade
+      key={view}
+      fill
+      mode="swap"
+      motion="step"
+      direction={view === "guides" ? 1 : -1}
+      duration={DURATION.normal}
+    >
+      {#if view === "screens"}
+        <section class="pane" aria-labelledby="guide-toc-this-page">
+          <h2 class="this-page-title" id="guide-toc-this-page">
+            {page.title}
+          </h2>
+          {@render screenList(page)}
+          <button type="button" class="all-guides-row" onclick={showGuides}>
+            <span>{t("guide_nav_all_guides")}</span>
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </button>
+        </section>
+      {:else}
+        <div class="pane">
+          <button type="button" class="back-row" onclick={showScreens}>
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            <span>{page.title}</span>
+          </button>
+          <div class="guides-scroll">
+            {@render guideModules()}
+          </div>
+        </div>
+      {/if}
+    </Crossfade>
+  {:else}
+    {#if screens && screens.labels.length > 1}
+      <section class="this-page" aria-labelledby="guide-toc-this-page">
+        <h2 class="this-page-title" id="guide-toc-this-page">
+          {screens.title}
+        </h2>
+        {@render screenList(screens)}
+      </section>
+    {/if}
+    {@render guideModules()}
+  {/if}
 </nav>
 
 <style>
@@ -407,6 +486,101 @@
     min-width: 0;
     overflow-wrap: break-word;
   }
+  /* Drill-down (a page with screens, once hydrated): the list fills the
+     drawer (GuideShell) and the drawer itself does not scroll. One pane at
+     a time: the screens with the pinned All guides row under them, or the
+     guides under a back row. */
+  .guide-toc.drill {
+    height: 100%;
+    padding: 0;
+  }
+  .pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 0 0.75rem;
+    box-sizing: border-box;
+  }
+  .drill .this-page-title {
+    flex: none;
+    padding: 0.1rem 0.75rem 0.25rem;
+    line-height: 1.2;
+  }
+  .drill .screen-list {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    /* scrolls: this page's screens, only when a long page (Ratios) has more than the drawer holds */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  /* Rows are 40px and give way to 36px on a short drawer before the list
+     scrolls. */
+  .drill .screen-list > li {
+    flex: 0 1 40px;
+    min-height: 36px;
+    display: flex;
+  }
+  .drill .screen-row {
+    min-height: 0;
+  }
+  .all-guides-row,
+  .back-row {
+    all: unset;
+    box-sizing: border-box;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    line-height: 1.25;
+    color: oklch(0.7 0.1 270);
+    cursor: pointer;
+    transition:
+      background var(--transition-micro),
+      color var(--transition-micro);
+  }
+  .all-guides-row {
+    justify-content: space-between;
+    margin-top: auto;
+    border-top: 1px solid oklch(0.3 0.02 270 / 0.6);
+    border-radius: 0 0 10px 10px;
+  }
+  .back-row {
+    color: oklch(0.85 0.06 270);
+    margin-bottom: 0.25rem;
+  }
+  .all-guides-row:hover,
+  .back-row:hover {
+    background: oklch(0.2 0.02 270 / 0.4);
+    color: oklch(0.92 0.03 270);
+  }
+  .all-guides-row:focus-visible,
+  .back-row:focus-visible {
+    outline: 2px solid oklch(0.74 0.11 265);
+    outline-offset: -2px;
+  }
+  .all-guides-row i,
+  .back-row i {
+    flex: none;
+    font-size: var(--font-size-xs);
+  }
+  .guides-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    /* scrolls: the list of all guides, under its back row */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
   .sr-only {
     position: absolute;
     width: 1px;
@@ -421,7 +595,9 @@
     .module-link,
     .module-toggle,
     .module-toggle i,
-    .row-link {
+    .row-link,
+    .all-guides-row,
+    .back-row {
       transition: none;
     }
   }

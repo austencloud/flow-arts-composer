@@ -21,6 +21,7 @@
   - disabled letters: `valueDisabled`.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { onDestroy, onMount, tick } from "svelte";
   import {
     FIRST_VIEW_WAIT_MS,
@@ -163,7 +164,7 @@
 
   const answered = $derived(chosenLength !== null || chosenLetter !== null);
   const button = $derived(askButtonLabel(engine.resultCount, answered));
-  const formatCount = (n: number) => n.toLocaleString();
+  const formatCount = (n: number) => formatNumber(n);
   const buttonText = $derived(
     loading
       ? t("browse_audit_counting_matches")

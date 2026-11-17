@@ -72,6 +72,7 @@ import {
   selectWorkerSceneAssets,
 } from "../services/worker-scene-assets";
 import { guardEveryWebGLRenderer } from "../../scene-boot/guarded-compile-async";
+import { resolveWorkerResizeTiming } from "../services/worker-resize-timing";
 
 // The worker is its own module world, so the page's guard never reaches it.
 // Install it here, before any renderer is built: an unguarded compileAsync
@@ -162,6 +163,8 @@ let disposed = false;
 let qualityTier: WorkerEffectQualityTier = "medium";
 let preparingFirstFrame = true;
 let requestedViewport: WorkerViewport = WORKER_PREPARATION_VIEWPORT;
+/** The requested size has not reached the canvas yet; the next frame applies it. */
+let viewportPending = false;
 let renderCanvas: OffscreenCanvas | null = null;
 let desiredRequest: SceneRequest | null = null;
 let transitionRunning = false;
@@ -200,6 +203,7 @@ function errorMessage(error: unknown): string {
 
 function applyViewport(viewportInput: WorkerViewport): void {
   if (!renderer || !camera) return;
+  viewportPending = false;
   const viewport = clampWorkerViewport(viewportInput);
   requestedViewport = viewport;
   const renderViewport = preparingFirstFrame
@@ -422,6 +426,8 @@ function renderFrame(now: number): void {
   const deltaMs = previousFrameAt === 0 ? 0 : now - previousFrameAt;
   previousFrameAt = now;
   if (visible) {
+    // Resize and redraw in the same task, so the cleared canvas is never shown.
+    if (viewportPending) applyViewport(requestedViewport);
     world.update(Math.min(deltaMs / 1000, 0.1), now / 1000);
     performerStage?.update(Math.min(deltaMs / 1000, 0.1));
     applyCurrentEffects();
@@ -1099,7 +1105,18 @@ scope.onmessage = (event: MessageEvent<WorkerRendererInMessage>) => {
       if (message.requestId === requestId) posterInstalled = false;
       break;
     case "resize":
-      applyViewport(message.viewport);
+      if (
+        resolveWorkerResizeTiming({
+          visible,
+          disposed,
+          preparingFirstFrame,
+          frameQueued: animationFrame !== 0,
+          hasScene: world !== null,
+        }) === "with-next-frame"
+      ) {
+        requestedViewport = clampWorkerViewport(message.viewport);
+        viewportPending = true;
+      } else applyViewport(message.viewport);
       break;
     case "camera":
       applyCamera(message.camera);

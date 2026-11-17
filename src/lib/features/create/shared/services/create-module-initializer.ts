@@ -38,6 +38,7 @@ import type { SequenceStatsCalculator } from "#lib/features/create/shared/servic
 import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
 import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import { getCreateModuleEventHandler } from "./create-module-event-handler";
+import { reportComposerHandoffReceived } from "#lib/shared/create/analytics/composer-handoff-door.js";
 import type { DeepLinker } from "#lib/shared/navigation/services/deep-linker.js";
 import type { ICreateModuleState } from "../types/create-module-types";
 import type { PanelPersister } from "./panel-persister.svelte";
@@ -238,6 +239,7 @@ export class CreateModuleInitializer {
       await this.deepLinkService.loadFromAnySource(receiveSequence);
 
     if (loadResult.loaded) {
+      reportComposerHandoffReceived(loadResult.source);
       const mode = draftMode(loadResult.targetTab ?? navigationState.activeTab);
       loadedMode = mode;
       await this.SequencePersister.beginNewSession(mode);

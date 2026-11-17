@@ -41,7 +41,8 @@ import { tkaEditorOf } from "./tka-editor-context";
  * clip's strength, fade and corner marks; Fly flies a
  * canvas clip into the next clip on its lane.
  * Lift panel moves an animation clip's canvas, step number and strip
- * clear of a Reel's own buttons.
+ * clear of a Reel's own buttons. Nudge beats slides a camera clip's whole
+ * beat grid 10 ms a press while the post plays.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
@@ -157,6 +158,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     icon: faDrum,
     enabled: (editor) => canTapBeats(editor),
     run: (editor, context) => tkaEditorOf(editor)?.openBeats?.(context?.takeId),
+  },
+  {
+    id: "nudge",
+    type: "panel",
+    label: () => "Nudge beats",
+    icon: faStopwatch,
   },
   {
     id: "grid",

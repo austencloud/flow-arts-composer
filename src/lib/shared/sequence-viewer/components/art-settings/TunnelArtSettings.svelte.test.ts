@@ -74,4 +74,28 @@ describe("TunnelArtSettings prop pick", () => {
       expect.objectContaining({ propArtwork: expect.anything() })
     );
   });
+
+  // A tunnel page on a phone: the dock's Props tab goes to the host's one prop
+  // screen. No prop tray opens under it, and the tab reads pressed while the
+  // host says the screen is open.
+  it("sends the phone dock's Props tab to the host's prop screen", async () => {
+    const onPropPickerRequest = vi.fn();
+    await page.viewport(387, 775);
+    renderPanel({
+      layout: "bottom",
+      onPropChange: vi.fn(),
+      onPropPickerRequest,
+      propPickerActive: true,
+    });
+
+    const propsTab = page.getByRole("button", { name: "Props", exact: true });
+    await expect.element(propsTab).toHaveAttribute("aria-pressed", "true");
+    await propsTab.click();
+
+    expect(onPropPickerRequest).toHaveBeenCalledTimes(1);
+    await expect.element(propsTab).toHaveAttribute("aria-expanded", "false");
+    await expect
+      .element(page.getByRole("button", { name: "Choose Triad style" }))
+      .not.toBeInTheDocument();
+  });
 });

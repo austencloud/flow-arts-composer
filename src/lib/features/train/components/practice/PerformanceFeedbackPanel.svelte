@@ -6,6 +6,7 @@
   Hidden on mobile (shown in camera overlay), visible on desktop in top bar.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
@@ -30,7 +31,7 @@
     <!-- Score Display -->
     <div class="metric">
       <span class="metric-label">{t("train_score_label")}</span>
-      <span class="metric-value score">{currentScore.toLocaleString()}</span>
+      <span class="metric-value score">{formatNumber(currentScore)}</span>
     </div>
 
     <!-- Combo Display (only when active) -->

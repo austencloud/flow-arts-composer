@@ -3,6 +3,9 @@ import {
   createTkaQrDetector,
   type TkaQrDetector,
 } from "#lib/shared/qr/services/tka-qr-detector.js";
+import { encodeSequenceForQR } from "#lib/shared/navigation/services/sequence-encoder.js";
+import { rememberEmbeddedLetters } from "./embedded-letters";
+import type { SequenceFileReadResult } from "#lib/shared/share/services/sequence-file-reader.js";
 import type {
   IntakeClassification,
   IntakeItem,
@@ -11,6 +14,57 @@ import type {
 
 /** Decodes every QR payload found in an image. Injected so tests need no WASM. */
 export type QrDecoder = (file: File) => Promise<string[]>;
+
+/** Reads a sequence carried inside the file itself. Injected for tests. */
+export type EmbeddedSequenceReader = (
+  file: File
+) => Promise<SequenceFileReadResult | null>;
+
+/**
+ * Default embedded-sequence reader, loaded on first use so a share of plain
+ * photos never pays for mediabunny.
+ */
+export const fileEmbeddedSequenceReader: EmbeddedSequenceReader = async (
+  file
+) => {
+  const { readSequenceFromFile } = await import(
+    "#lib/shared/share/services/sequence-file-reader.js"
+  );
+  return readSequenceFromFile(file);
+};
+
+/**
+ * A card code for a file that carries its sequence: the same self-contained
+ * `s~` payload a printed QR holds, so resolveForImport opens it with no lookup.
+ */
+async function codeFromEmbeddedSequence(
+  file: File,
+  read: EmbeddedSequenceReader
+): Promise<{ code: string; found: SequenceFileReadResult } | null> {
+  try {
+    const found = await read(file);
+    if (!found) return null;
+    return { code: await encodeSequenceForQR(found.sequence), found };
+  } catch (caught) {
+    // A payload we cannot re-wrap is not fatal: the QR decoder still gets a turn.
+    console.warn("[ShareIntake] Embedded sequence unreadable:", caught);
+    return null;
+  }
+}
+
+/** Observer only: never awaited, never able to fail the intake. */
+function reportEmbeddedOpen(found: SequenceFileReadResult): void {
+  void import("#lib/shared/analytics/sequence-file-events.js")
+    .then((events) =>
+      events.trackSequenceFileOpened({
+        fileKind: found.fileKind,
+        entry: "share_target",
+        hadLink: !!found.payload.link,
+        stepCount: found.sequence.steps.length,
+      })
+    )
+    .catch(() => {});
+}
 
 let sharedDetector: TkaQrDetector | null = null;
 
@@ -86,7 +140,8 @@ export function extractCodeFromText(text: string): {
  */
 export async function classifyIntake(
   input: { files: File[]; text?: string },
-  decode: QrDecoder = fileQrDecoder
+  decode: QrDecoder = fileQrDecoder,
+  readEmbedded: EmbeddedSequenceReader = fileEmbeddedSequenceReader
 ): Promise<IntakeClassification> {
   const items: IntakeItem[] = [];
   const problems: IntakeProblem[] = [];
@@ -96,9 +151,11 @@ export async function classifyIntake(
   let anyDecodeSucceeded = false;
 
   for (const file of input.files) {
-    let code: string | null = null;
+    // The sequence inside the file is exact and cheap; pixels are the fallback.
+    const embedded = await codeFromEmbeddedSequence(file, readEmbedded);
+    let code: string | null = embedded?.code ?? null;
 
-    if (!decoderBroken) {
+    if (!code && !decoderBroken) {
       try {
         const payloads = await decode(file);
         anyDecodeSucceeded = true;
@@ -138,6 +195,10 @@ export async function classifyIntake(
     }
     seen.add(code);
     items.push({ kind: "card", code, file });
+    if (embedded) {
+      if (embedded.code === code) rememberEmbeddedLetters(code, embedded.found.sequence);
+      reportEmbeddedOpen(embedded.found);
+    }
   }
 
   const text = input.text

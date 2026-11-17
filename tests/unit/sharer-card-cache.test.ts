@@ -191,3 +191,40 @@ describe("Sharer card blob cache", () => {
     expect(renderSequenceToBlob).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("Sharer card PNG carries its sequence", () => {
+  it("embeds the sequence once, before caching, and serves the same file", async () => {
+    const [
+      { PNG },
+      { decodeSequenceFromQR, encodeSequence },
+      { readSequenceFromFile },
+    ] = await Promise.all([
+      import("pngjs"),
+      import("../../src/lib/shared/navigation/services/sequence-encoder"),
+      import("../../src/lib/shared/share/services/sequence-file-reader"),
+    ]);
+    const records = (
+      await import("../fixtures/shortcode-payloads/real-records.json")
+    ).default as unknown as Record<string, { encoded: string }>;
+    const sequence = await decodeSequenceFromQR(records.HFWmmG!.encoded);
+
+    cardRenderState.options = { marker: "embedded" };
+    const png = new PNG({ width: 2, height: 2 });
+    const rendered = new Blob([PNG.sync.write(png)], { type: "image/png" });
+    const renderSequenceToBlob = vi.fn(async () => rendered);
+    const sharer = new Sharer({
+      renderSequenceToBlob,
+    } as unknown as SequenceRenderer);
+
+    const first = await sharer.getCardImageBlob(sequence, { darkMode: false });
+    const second = await sharer.getCardImageBlob(sequence, { darkMode: false });
+
+    expect(second).toBe(first);
+    expect(renderSequenceToBlob).toHaveBeenCalledTimes(1);
+    const read = await readSequenceFromFile(first);
+    expect(read?.fileKind).toBe("png");
+    expect(read && encodeSequence(read.sequence)).toBe(
+      encodeSequence(sequence)
+    );
+  });
+});

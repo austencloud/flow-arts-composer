@@ -3,9 +3,10 @@ import type { PictographBlobCacheStats } from "./types";
 
 const DB_NAME = "pictograph-blob-cache";
 const STORE_NAME = "blobs";
-// v10 adds lsp12 only for invisible-placeholder cells. Fully-visible cells
-// deliberately keep their lsp11 keys, so upgrading from v9 must preserve them.
-const DB_VERSION = 10;
+// v11 empties the store once: until then a cell could be drawn before the
+// arrow placement stores had loaded, and the key does not carry placement
+// data, so a cell with default arrow spots would be served forever.
+const DB_VERSION = 11;
 
 interface CachedBlobEntry {
   /** Hash key for the pictograph configuration (includes size) */
@@ -40,13 +41,26 @@ export class PictographBlobCache {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: "key" });
           store.createIndex("timestamp", "timestamp", { unique: false });
-        } else if (oldVersion < 9) {
+        } else if (oldVersion < 11) {
           const tx = (event.target as IDBOpenDBRequest).transaction!;
           tx.objectStore(STORE_NAME).clear();
         }
       };
 
-      request.onsuccess = () => resolve(request.result);
+      // Another tab still on the old version holds the store open. Without
+      // this the open never settles and every card waits on it; rejecting
+      // lets get/set fall back to "no local cell" for this tab.
+      request.onblocked = () =>
+        reject(
+          new Error("pictograph-blob-cache upgrade blocked by another tab")
+        );
+
+      request.onsuccess = () => {
+        const db = request.result;
+        // Step aside for a newer tab's upgrade instead of blocking it.
+        db.onversionchange = () => db.close();
+        resolve(db);
+      };
     });
 
     return this.dbPromise;

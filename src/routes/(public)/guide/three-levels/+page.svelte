@@ -24,9 +24,14 @@
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideScreens from "../_components/fit/GuideScreens.svelte";
   import {
+    readScreenParam,
     watchScreenTier,
     type ScreenTier,
   } from "../_components/fit/guide-screen-url";
+  import {
+    createScreenSplits,
+    JOINED_MIN_FIT,
+  } from "../_components/fit/screen-splits.svelte.js";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
@@ -177,7 +182,20 @@
     | "vtg"
     | "close";
   let tier = $state<ScreenTier>("large");
-  onMount(() => watchScreenTier((v) => (tier = v)));
+  // A joined screen that will not fit at its smallest scale falls back, in
+  // place, to its words and then its player (GuideScreens onoverflow). Before
+  // the window is measured the page draws the most split cut.
+  const splits = createScreenSplits();
+  let measured = $state(false);
+  onMount(() =>
+    watchScreenTier((v) => {
+      tier = v;
+      splits.restore();
+      measured = true;
+    })
+  );
+  const at = (group: string, max: number) =>
+    measured ? splits.step(group, max) : max;
 
   // The picker's words and controls keep one size, so its screen is composed
   // from the room the frame really has, and the player takes what is left.
@@ -273,8 +291,15 @@
     return { destroy: () => observer.disconnect() };
   };
 
-  const views = $derived.by(() => {
-    const out: { label: string; parts: Part[] }[] = [];
+  type View = {
+    label: string;
+    parts: Part[];
+    /** A joined screen: the group that splits in place when it will not fit
+     * (every group has one further step). */
+    group?: string;
+  };
+  const views = $derived.by((): View[] => {
+    const out: View[] = [];
     const names = t("guide_caps_names_title");
     const capTitle = t("guide_caps_cap_title");
     const letters = t("guide_caps_letters_title");
@@ -291,19 +316,51 @@
         out.push({ label: sharedLabel, parts: ["lettersShared"] });
       }
     };
+    const watch = (name: string) =>
+      t("guide_threelevels_screen_watch", { name });
+    // A group's screens: the joined ones, or the split ones, in one place.
+    const pick = (
+      group: string,
+      joined: [string, Part[]][],
+      split: [string, Part[]][]
+    ) => {
+      const apart = at(group, 1) === 1;
+      for (const [label, parts] of apart ? split : joined) {
+        out.push(apart ? { label, parts } : { label, parts, group });
+      }
+    };
     if (tier === "small") {
-      out.push({ label: names, parts: ["lede", "namesText"] });
-      out.push({ label: t("guide_threelevels_screen_watch", { name: names }), parts: ["names"] });
-      out.push({ label: t("guide_threelevels_screen_leaves_out"), parts: ["namesLimit"] });
-      out.push({ label: capTitle, parts: ["capBody", "capLimit"] });
+      pick(
+        "names",
+        [
+          [names, ["lede", "names"]],
+          [watch(names), ["namesText", "names"]],
+          [t("guide_threelevels_screen_leaves_out"), ["namesLimit", "names"]],
+        ],
+        [
+          [names, ["lede", "namesText"]],
+          [watch(names), ["names"]],
+          [t("guide_threelevels_screen_leaves_out"), ["namesLimit"]],
+        ]
+      );
+      pick(
+        "cap",
+        [
+          [capTitle, ["capBody", "cap"]],
+          [watch(capTitle), ["capLimit", "cap"]],
+        ],
+        [
+          [capTitle, ["capBody", "capLimit"]],
+          [watch(capTitle), ["cap"]],
+        ]
+      );
       out.push({ label: t("guide_threelevels_screen_gage_caps"), parts: ["capRules", "capCredit"] });
-      out.push({ label: t("guide_threelevels_screen_watch", { name: capTitle }), parts: ["cap"] });
       out.push({ label: letters, parts: ["lettersText"] });
-      out.push({ label: t("guide_threelevels_screen_watch", { name: letters }), parts: ["letters"] });
+      out.push({ label: watch(letters), parts: ["letters"] });
       pushPicker();
       out.push({ label: vtg, parts: ["vtgBody"] });
       out.push({ label: t("guide_threelevels_screen_three_spins"), parts: ["vtgCap", "vtgCheck"] });
-      out.push({ label: t("guide_threelevels_screen_watch", { name: vtg }), parts: ["vtg"] });
+      out.push({ label: watch(vtg), parts: ["vtg"] });
     } else {
       if (tier === "large")
         out.push({
@@ -312,15 +369,39 @@
         });
       else {
         out.push({ label: names, parts: ["lede", "namesText", "names"] });
-        out.push({ label: t("guide_threelevels_screen_leaves_out"), parts: ["namesLimit"] });
+        out.push({ label: t("guide_threelevels_screen_leaves_out"), parts: ["namesLimit", "names"] });
       }
-      out.push({ label: capTitle, parts: ["capBody", "capRules"] });
-      out.push({ label: t("guide_threelevels_screen_watch", { name: capTitle }), parts: ["cap", "capCredit"] });
-      out.push({ label: letters, parts: ["lettersText"] });
-      out.push({ label: t("guide_threelevels_screen_watch", { name: letters }), parts: ["letters"] });
+      pick(
+        "cap",
+        [
+          [capTitle, ["capBody", "cap"]],
+          [t("guide_threelevels_screen_gage_caps"), ["capRules", "cap", "capCredit"]],
+        ],
+        [
+          [capTitle, ["capBody", "capRules"]],
+          [watch(capTitle), ["cap", "capCredit"]],
+        ]
+      );
+      pick(
+        "letters",
+        [[letters, ["lettersText", "letters"]]],
+        [
+          [letters, ["lettersText"]],
+          [watch(letters), ["letters"]],
+        ]
+      );
       pushPicker();
-      out.push({ label: vtg, parts: ["vtgBody", "vtgCap"] });
-      out.push({ label: t("guide_threelevels_screen_watch", { name: vtg }), parts: ["vtg"] });
+      pick(
+        "vtg",
+        [
+          [vtg, ["vtgBody", "vtg"]],
+          [t("guide_threelevels_screen_three_spins"), ["vtgCap", "vtg"]],
+        ],
+        [
+          [vtg, ["vtgBody", "vtgCap"]],
+          [watch(vtg), ["vtg"]],
+        ]
+      );
     }
     out.push({ label: t("guide_caps_close_title"), parts: ["close"] });
     return out;
@@ -399,6 +480,15 @@
         title={t("guide_caps_title")}
         kicker={t("guide_caps_eyebrow")}
         labels={views.map((v) => v.label)}
+        cutKey={`${measured}${splits.key}`}
+        floors={views.map((v) => (v.group ? JOINED_MIN_FIT : undefined))}
+        onoverflow={() => {
+          const v =
+            views[
+              Math.min(readScreenParam(window.location.search), views.length - 1)
+            ];
+          if (v?.group) splits.bump(v.group, 1);
+        }}
         hubHref={localHref("/guide")}
       >
         {#snippet screen(n)}
@@ -443,7 +533,7 @@
               </div>
             {/if}
 
-            {#if has(n, "capBody") || has(n, "capRules")}
+            {#if has(n, "capBody") || has(n, "capRules") || has(n, "capLimit")}
               <div class="centered">
                 {#if has(n, "capBody")}
                   <h2>{t("guide_caps_cap_title")}</h2>

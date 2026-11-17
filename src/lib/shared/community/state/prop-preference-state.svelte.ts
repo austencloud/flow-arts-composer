@@ -4,6 +4,7 @@ import {
   savePropPreferences,
 } from "../services/prop-preference-persister";
 import type { CatdogCombo, PropPreferences } from "../services/types";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 function clonePreferences(prefs: PropPreferences): PropPreferences {
   return {
@@ -57,7 +58,8 @@ export function createPropPreferenceState(userId: string) {
   );
   let loading = $state(!known);
   let saving = $state(false);
-  let error = $state<string | null>(null);
+  // A message key, not words: the screen showing it translates it.
+  let error = $state<TranslationKey | null>(null);
 
   let confirmedPreferences: PropPreferences = known
     ? clonePreferences(known)
@@ -98,7 +100,7 @@ export function createPropPreferenceState(userId: string) {
         "[propPreferenceState] Preferences could not be loaded",
         loadError
       );
-      error = "Your prop preferences couldn't be loaded. Try again.";
+      error = "prop_preferences_load_failed";
     } finally {
       loading = false;
     }
@@ -111,7 +113,7 @@ export function createPropPreferenceState(userId: string) {
    */
   async function persistSnapshot(
     nextPreferences: PropPreferences,
-    failureMessage: string
+    failureMessage: TranslationKey
   ): Promise<void> {
     const optimistic = clonePreferences(nextPreferences);
     const writeId = ++latestWriteId;
@@ -154,7 +156,7 @@ export function createPropPreferenceState(userId: string) {
         favoriteProp: nextFavorite,
         favoriteCatdog: catdogStillSelected(favoriteCatdog, nextProps),
       },
-      "Your changes weren't saved. The editor kept your choices so you can retry."
+      "prop_preferences_save_failed"
     );
   }
 
@@ -177,7 +179,7 @@ export function createPropPreferenceState(userId: string) {
         propsISpinWith: nextProps,
         favoriteProp: prop,
       },
-      "Your Profile prop couldn't be saved. Try again."
+      "prop_preferences_profile_prop_save_failed"
     );
   }
 
@@ -197,7 +199,7 @@ export function createPropPreferenceState(userId: string) {
         propsISpinWith: nextProps,
         favoriteCatdog: combo,
       },
-      "That prop pairing couldn't be saved. Try again."
+      "prop_preferences_pairing_save_failed"
     );
   }
 

@@ -10,6 +10,8 @@ import type { SequenceRenderer } from "#lib/shared/render/services/sequence-rend
 import type { ShareResult } from "./types";
 import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
 import { buildCardRenderOptions } from "./card-render-options";
+import { embedSequenceInCardPng } from "./sequence-file-embedder";
+import { downloadBlobToDisk } from "#lib/shared/foundation/services/file-downloader.js";
 
 export class SequenceImageSharer {
   constructor(private readonly renderer: SequenceRenderer) {}
@@ -33,14 +35,11 @@ export class SequenceImageSharer {
     try {
       const blob = await this.renderImage(sequence);
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${sequence.word || sequence.name || "sequence"}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const result = await downloadBlobToDisk(
+        blob,
+        `${sequence.word || sequence.name || "sequence"}.png`
+      );
+      if (!result.success && result.error) throw result.error;
 
       return { success: true };
     } catch (error) {
@@ -92,7 +91,7 @@ export class SequenceImageSharer {
     // LOOP/mandala/QR/grid/columns/start-layout toggles as the export panel and
     // the live preview, instead of the word/difficulty/footer subset this path
     // used to thread.
-    return this.renderer.renderSequenceToBlob(sequence, {
+    const blob = await this.renderer.renderSequenceToBlob(sequence, {
       stepSize: 240,
       format: "PNG",
       quality: 1.0,
@@ -101,5 +100,7 @@ export class SequenceImageSharer {
         isHandPath: !!sequence.metadata?.isHandPathVisualization,
       }),
     });
+    // Same file as Sharer.getCardImageBlob: the sequence rides inside the PNG.
+    return embedSequenceInCardPng(blob, sequence);
   }
 }

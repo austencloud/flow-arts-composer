@@ -17,6 +17,7 @@ escape to a full-page grid. A host that has no such grid omits `onEject` and
 the below-seam actions mutate the engine in place.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import GalleryDrill from "#lib/features/browse/gallery-home/GalleryDrill.svelte";
@@ -117,7 +118,7 @@ the below-seam actions mutate the engine in place.
           engine.resultCount === 1
             ? "browse_audit_match_count_singular"
             : "browse_audit_match_count_plural",
-          { count: engine.resultCount }
+          { count: formatNumber(engine.resultCount) }
         )
   );
 
@@ -270,7 +271,7 @@ the below-seam actions mutate the engine in place.
               else eject(() => {});
             }}
           >
-            {t("browse_audit_view_results", { count: engine.resultCount })}
+            {t("browse_audit_view_results", { count: formatNumber(engine.resultCount) })}
           </PanelButton>
         {/if}
         {#if onSaveSmart}

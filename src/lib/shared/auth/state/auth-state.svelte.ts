@@ -682,6 +682,22 @@ async function doInitializeAuthListener(): Promise<void> {
         linkDeviceToUser(user.uid).catch((err: unknown) => {
           console.warn("⚠️ [authState] Failed to link device to user", err);
         });
+
+        // A feedback message that could not reach the admin's inbox in an
+        // earlier session waits in this device's outbox. Guests cannot hold a
+        // thread, so only full accounts look.
+        if (!user.isAnonymous) {
+          void import("#lib/shared/feedback/services/feedback-submission-service.js")
+            .then(({ retryUnsentFeedbackMessages }) =>
+              retryUnsentFeedbackMessages(user.uid)
+            )
+            .catch((err: unknown) => {
+              console.warn(
+                "⚠️ [authState] Feedback message retry failed to start",
+                err
+              );
+            });
+        }
       } else {
         featureFlagService.initialize(null).catch((_error) => {
           console.warn(

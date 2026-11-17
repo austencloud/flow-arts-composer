@@ -2,6 +2,7 @@ import type {
   PlaybackMode,
   StepPlaybackStepSize,
 } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { EffectCatalogLook } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
@@ -19,6 +20,29 @@ export type ArtSettingChangeHandler = (
   coalesce?: boolean,
   source?: string
 ) => void;
+
+export type TunnelRailId =
+  | "tunnel"
+  | "props"
+  | "speed"
+  | "effects"
+  | "motion"
+  | "display"
+  | "effort"
+  | "playback";
+
+/** One destination on the tunnel rail (sidebar) and phone dock. */
+export interface TunnelRailEntry {
+  id: TunnelRailId;
+  icon?: string;
+  propType?: PropType;
+  fanAppearance?: FanAppearance;
+  propPairGlyph?: boolean;
+  effectChip?: { effectId: string; look: EffectCatalogLook | undefined };
+  label: string;
+  summary?: string;
+  accentColor?: string;
+}
 
 export interface ArtSettingsPanelProps {
   /**
@@ -60,6 +84,10 @@ export interface ArtSettingsPanelProps {
   leftPropType?: string | null;
   rightPropType?: string | null;
   onPropChange?: (propType: PropType) => void;
+  /** Phone dock: Props opens the one prop screen instead of a tray. */
+  onPropPickerRequest?: () => void;
+  /** True while that screen is open, so the Props tab shows pressed. */
+  propPickerActive?: boolean;
   fanAppearance?: FanAppearance;
   onFanAppearanceChange?: (appearance: FanAppearance) => void;
   onArtSettingChange?: ArtSettingChangeHandler;

@@ -4,7 +4,11 @@ import type { SequenceExportOptions } from "#lib/shared/render/domain/models/seq
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { ShareOptions } from "../domain/models/share-options";
 import { PreviewCache } from "./preview-cache";
-import { sanitizeFilename } from "#lib/shared/foundation/services/file-downloader.js";
+import {
+  downloadBlobToDisk,
+  sanitizeFilename,
+} from "#lib/shared/foundation/services/file-downloader.js";
+import { embedSequenceInCardPng } from "./sequence-file-embedder";
 import { buildCardRenderOptions } from "./card-render-options";
 import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
@@ -74,11 +78,14 @@ export class Sharer {
   ): Promise<Blob> {
     const renderOptions = this.convertToRenderOptions(options);
 
-    return await this.renderService.renderSequenceToBlob(
+    const blob = await this.renderService.renderSequenceToBlob(
       sequence,
       renderOptions,
       onProgress
     );
+    // Legacy path, still behind the export panel's download and the card menu.
+    // Only a PNG gets the sequence; other formats pass through untouched.
+    return embedSequenceInCardPng(blob, sequence);
   }
 
   /**
@@ -164,6 +171,10 @@ export class Sharer {
           undefined,
           trace
         )
+        // The sequence rides inside the PNG, embedded before caching so every
+        // consumer of this one source gets the same file. Never fails the
+        // export: on any error the plain render comes back.
+        .then((blob) => embedSequenceInCardPng(blob, sequence))
         .then((blob) => {
           // A single pathological render must not pin more memory than the
           // entire workspace cache budget. Callers still receive the blob; it is
@@ -329,14 +340,9 @@ export class Sharer {
   }
 
   private triggerDownload(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // The shared anchor download, which also reports a file that carries its
+    // sequence.
+    void downloadBlobToDisk(blob, filename);
   }
 
   private dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {

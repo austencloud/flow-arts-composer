@@ -18,6 +18,7 @@ breakpoint: display:none removes the inactive one from the accessibility
 tree, so exactly one heading is ever announced.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import type {
     GameDefinition,
     GameProgress,
@@ -178,7 +179,7 @@ tree, so exactly one heading is ever announced.
           <span class="best-stat-label">{t("learn_ui_best")}</span>
           <span class="best-stat-value">
             {progress.totalPlays > 0
-              ? progress.bestScore.toLocaleString()
+              ? formatNumber(progress.bestScore)
               : "—"}
           </span>
           {#if progress.bestGrade}

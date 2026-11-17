@@ -36,6 +36,7 @@
   import { computeViewerAlignedCamera } from "../camera/viewer-camera-framing";
   import { resolveGridJoin3D } from "../services/grid-join-3d";
   import WorkerEnvironmentRenderer from "../worker-renderer/components/WorkerEnvironmentRenderer.svelte";
+  import { selectWorkerCast } from "../worker-renderer/services/worker-cast";
   import type {
     WorkerPerformerInteractionFailure,
     WorkerPerformerInteractionStateSnapshot,
@@ -196,10 +197,6 @@
         rightPropType as PropType | null
       )
     );
-    const present =
-      viewer.performerManager.renderablePerformers.find(
-        (entry) => entry.castIndex === index
-      )?.presencePhase !== "exiting";
     const selected = viewer.selectedPerformerIndices.includes(index);
     const perfEffect =
       performer.rawEffect ?? globalTipEffectMap["*"]?.effect ?? "none";
@@ -233,20 +230,21 @@
         index,
         selected,
         allMode: viewer.isAllPerformersSelected,
-        visible: present && !hideSceneMarkers && !hidePerformerBadges,
+        visible: !hideSceneMarkers && !hidePerformerBadges,
       },
       selectionMarker: {
         color: Number.parseInt(getPerformerColor(index).slice(1), 16),
         selected,
         allPerformersSelected: viewer.isAllPerformersSelected,
-        present,
+        // A leaving performer is never drawn here (selectWorkerCast).
+        present: true,
         pulsePhase: ringPulsePhase,
         hovered: interactionState.hoveredIndex === index,
         dragging: interactionState.draggingIndex === index,
       },
       effectIntent: enableEffects
         ? createWorkerPerformerEffectIntent({
-            playing: present && isPlaying,
+            playing: isPlaying,
             sampledAtMs,
             currentStep: resolvedStep,
             totalSteps: sequenceData.steps.length,
@@ -288,17 +286,18 @@
     viewer.performerManager.updateFormationTransition();
 
     const currentEffects = effectsConfig.snapshot();
-    const resolvedPerformers = viewer.performerManager.renderablePerformers
-      .filter(({ castIndex }) => castIndex < visibleCount)
-      .map(({ performer, castIndex }) => ({
+    const resolvedPerformers = selectWorkerCast(
+      viewer.performerManager.renderablePerformers,
+      visibleCount
+    ).map(({ performer, castIndex }) => ({
+      performer,
+      options: buildPerformerOptions(
         performer,
-        options: buildPerformerOptions(
-          performer,
-          castIndex,
-          sampledAtMs,
-          currentEffects
-        ),
-      }));
+        castIndex,
+        sampledAtMs,
+        currentEffects
+      ),
+    }));
     if (
       resolvedPerformers.some(
         ({ options }) =>

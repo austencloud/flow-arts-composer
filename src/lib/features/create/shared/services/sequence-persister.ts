@@ -693,6 +693,21 @@ export class SequencePersister {
       throw new Error(status.error ?? "Could not clear draft");
     }
   }
+  /**
+   * Whether this mode's editor holds work, read without touching the draft
+   * session: a host about to hand a sequence over asks it first, so it never
+   * replaces work the visitor already has.
+   */
+  async modeHoldsWork(mode: ActiveCreateModule): Promise<boolean> {
+    try {
+      const head = await getDraftHead(mode);
+      if (head?.version && holdsWork(head.version.workspace)) return true;
+    } catch {
+      // A damaged head falls through to the local copy.
+    }
+    const local = await this.readLocal(mode);
+    return local.workspace !== null && holdsWork(local.workspace);
+  }
   async hasSavedState(mode?: string): Promise<boolean> {
     return (await this.loadCurrentState(mode)) !== null;
   }

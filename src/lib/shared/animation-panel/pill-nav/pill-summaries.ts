@@ -79,6 +79,20 @@ export interface ExportSummaryInput {
 
 const CANONICAL_RESOLUTIONS = new Set<number>([720, 1080, 2160, 4320]);
 
+/** One resolution as the Export chips name it: 1080p / 4K / 8K, or a square in 3D. */
+export function exportResolutionLabel(
+  resolution: number,
+  renderMode: "2d" | "3d"
+): string {
+  return renderMode === "3d"
+    ? `${resolution}×${resolution}`
+    : resolution >= 4320
+      ? "8K"
+      : resolution >= 2160
+        ? "4K"
+        : `${resolution}p`;
+}
+
 export function computeExportSummary(input: ExportSummaryInput): string {
   const { resolution: r, fps, loopCount, renderMode } = input;
   if (!CANONICAL_RESOLUTIONS.has(r) || !Number.isFinite(fps) || fps <= 0) {
@@ -88,14 +102,7 @@ export function computeExportSummary(input: ExportSummaryInput): string {
     });
     return "- • - fps";
   }
-  const resLabel =
-    renderMode === "3d"
-      ? `${r}×${r}`
-      : r >= 4320
-        ? "8K"
-        : r >= 2160
-          ? "4K"
-          : `${r}p`;
+  const resLabel = exportResolutionLabel(r, renderMode);
   const loopLabel =
     Number.isFinite(loopCount) && loopCount > 1 ? ` • ${loopCount}×` : "";
   return `${resLabel} • ${fps} fps${loopLabel}`;
@@ -123,4 +130,61 @@ export function tunnelRegionLabel(showTitle: boolean): string {
   return showTitle
     ? t("viewer_ui_tunnel_settings")
     : t("viewer_ui_animation_controls");
+}
+
+export interface ExportBoxInput {
+  renderMode: "2d" | "3d";
+  opener: "first-beat" | "this-frame" | "mandala";
+  fps: number;
+  resolution: number;
+  quality: "standard" | "cinema";
+  startHold: boolean;
+  endHold: boolean;
+  loopCount: number;
+  carousel: "off" | "above" | "below" | "left" | "right";
+}
+
+/**
+ * What each Export box shows under its name in the dock tray, so a closed box
+ * still says what it holds. Pure: the same option state always gives the same
+ * words. Quality carries the render quality only in 3D, where it exists, and
+ * Timing lists the holds that are on (as Start and End, which is all a box
+ * two columns wide has room for) before the loop count.
+ */
+export function computeExportBoxValues(input: ExportBoxInput): {
+  opens: string;
+  quality: string;
+  timing: string;
+  carousel: string;
+} {
+  const opens =
+    input.opener === "mandala"
+      ? t("share_mandala")
+      : input.opener === "this-frame"
+        ? t("share_current_frame")
+        : t("share_first_beat");
+  const quality = [
+    `${input.fps} fps`,
+    exportResolutionLabel(input.resolution, input.renderMode),
+    ...(input.renderMode === "3d"
+      ? [
+          input.quality === "cinema"
+            ? t("share_quality_cinema")
+            : t("share_quality_standard"),
+        ]
+      : []),
+  ].join(" · ");
+  const timing = [
+    ...(input.startHold ? [t("viewer_ui_start")] : []),
+    ...(input.endHold ? [t("create_ui_end")] : []),
+    `${input.loopCount}×`,
+  ].join(" · ");
+  const carousel = {
+    off: t("share_video_carousel_off"),
+    above: t("share_video_carousel_above"),
+    below: t("share_video_carousel_below"),
+    left: t("share_video_carousel_left"),
+    right: t("share_video_carousel_right"),
+  }[input.carousel];
+  return { opens, quality, timing, carousel };
 }

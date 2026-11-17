@@ -24,6 +24,7 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
   private readonly onFallbackFailure: (error: unknown) => void;
 
   private active: ITrailOverlayCanvas | null = null;
+  private primary: ITrailOverlayCanvas | null = null;
   private container: HTMLElement | null = null;
   private width = 0;
   private height = 0;
@@ -58,6 +59,12 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
     const generation = this.generation;
     const primary = this.createPrimary();
     this.active = primary;
+    this.primary = primary;
+    // A context lost after start-up reaches us here at once, so trails move to
+    // Canvas2D without waiting for the next resize or frame to throw.
+    primary.setFailureHandler?.((error) =>
+      this.activateFallback(primary, generation, error)
+    );
 
     let initialization: void | Promise<void>;
     try {
@@ -82,23 +89,23 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
   resize(width: number, height: number): void {
     this.width = width;
     this.height = height;
-    this.active?.resize(width, height);
+    this.guard((overlay) => overlay.resize(width, height));
   }
 
   renderFrame(params: TrailOverlayRenderParams): void {
-    this.active?.renderFrame(params);
+    this.guard((overlay) => overlay.renderFrame(params));
   }
 
   clear(): void {
-    this.active?.clear();
+    this.guard((overlay) => overlay.clear());
   }
 
   clearBuffers(): void {
-    this.active?.clearBuffers();
+    this.guard((overlay) => overlay.clearBuffers());
   }
 
   refreshStyle(): void {
-    this.active?.refreshStyle();
+    this.guard((overlay) => overlay.refreshStyle());
   }
 
   setVisible(visible: boolean): void {
@@ -115,6 +122,7 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
     this.generation += 1;
     this.active?.dispose();
     this.active = null;
+    this.primary = null;
     this.container = null;
     this.width = 0;
     this.height = 0;
@@ -134,7 +142,12 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
     }
 
     this.onPrimaryFailure(primaryError);
-    failedPrimary.dispose();
+    this.primary = null;
+    try {
+      failedPrimary.dispose();
+    } catch {
+      // The dead renderer is already unusable; the fallback replaces it.
+    }
 
     let fallback: ITrailOverlayCanvas;
     try {
@@ -167,6 +180,21 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
       });
   }
 
+  /** Runs a call on the active overlay; a throw swaps or disables, never escapes. */
+  private guard(call: (overlay: ITrailOverlayCanvas) => void): void {
+    const overlay = this.active;
+    if (!overlay) return;
+    try {
+      call(overlay);
+    } catch (error) {
+      if (overlay === this.primary) {
+        this.activateFallback(overlay, this.generation, error);
+      } else {
+        this.disableFallback(overlay, this.generation, error);
+      }
+    }
+  }
+
   private disableFallback(
     fallback: ITrailOverlayCanvas,
     generation: number,
@@ -174,8 +202,12 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
   ): void {
     if (generation !== this.generation || this.active !== fallback) return;
     this.onFallbackFailure(error);
-    fallback.dispose();
     this.active = null;
+    try {
+      fallback.dispose();
+    } catch {
+      // Nothing left to recover; trails stay off.
+    }
   }
 
   private applyPresentation(overlay: ITrailOverlayCanvas): void {

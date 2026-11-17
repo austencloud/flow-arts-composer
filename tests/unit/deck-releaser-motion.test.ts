@@ -110,6 +110,10 @@ describe("deck releaser motion", () => {
     expect(loopBoard).not.toContain('role="presentation"');
     expect(loopModal).toContain('animation="none"');
     expect(loopModal).toContain("<LOOPExpandedOverlay");
-    expect(modalTokens).toContain(':not([data-animation="none"])');
+    // The picker opts out of the entrance, so the shared rule for it must turn
+    // off both the transition and any keyframe animation.
+    expect(modalTokens).toMatch(
+      /dialog\.base-modal\[data-animation="none"\]\s*\{[^}]*transition:\s*none;[^}]*animation:\s*none;/
+    );
   });
 });

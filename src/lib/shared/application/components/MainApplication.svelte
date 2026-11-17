@@ -793,6 +793,13 @@
       <mod.default />
     {/await}
 
+    <!-- A picture or video dropped on the window opens like a shared one.
+         Beside ShareIntakeHost for the same reason: the viewer it opens
+         into is mounted under this shell. -->
+    {#await import("../../share/components/SentFileDropHost.svelte") then mod}
+      <mod.default />
+    {/await}
+
     <!-- Sharing Shortcuts host: republishes Android Direct Share targets
          (share-intake/components/SharingShortcutsHost.svelte) whenever the
          inbox conversation list changes. Mounted here for the same reason as

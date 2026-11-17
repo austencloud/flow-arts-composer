@@ -19,7 +19,9 @@ export type ThumbnailVariant = "gallery" | "wordcard";
 // strip (HEADER_WORD_BREATHING_GAP_SCALE 0.08 -> 0.25).
 // r8: shared pictures leave the Start word blank; the card lays the visitor's
 // word on top (StartWordOverlay), so one picture serves every language.
-export const THUMBNAIL_RENDERER_VERSION = 8;
+// r9: card pictures drawn before the arrow placement stores loaded put arrows
+// at their default spots; redraw every stored picture with the stores loaded.
+export const THUMBNAIL_RENDERER_VERSION = 9;
 
 /**
  * Joined-grid dots lean toward each hand's color (see render-core's tint), a

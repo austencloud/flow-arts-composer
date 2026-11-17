@@ -81,8 +81,13 @@
     computeEffectsSummary,
     computePlaybackSummary,
     computeExportSummary,
+    computeExportBoxValues,
     computePropsSummary,
   } from "../pill-nav/pill-summaries";
+  import SettingsDrillPanel, {
+    type SettingsDrillItem,
+  } from "#lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
+  import SettingsDrillRow from "#lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
   import { onDestroy, untrack } from "svelte";
   import {
     VIDEO_OPENER_OPTIONS,
@@ -499,6 +504,56 @@
   const openerRowEnabled = $derived(
     !!captureVideoOpener && renderMode !== "3d" && !!exportOptions
   );
+  // The dock's Export page is a root of boxes and one screen per group. It
+  // always opens on the root: leaving the page, or closing the tray, resets it.
+  let exportDrillSelected = $state<string | null>(null);
+  const exportDrillItems = $derived.by((): SettingsDrillItem[] => {
+    if (!exportOptions) return [];
+    const values = computeExportBoxValues({
+      renderMode: renderMode === "3d" ? "3d" : "2d",
+      opener: exportOptions.videoOpener,
+      fps: exportOptions.videoFps,
+      resolution: exportOptions.videoResolution,
+      quality: exportOptions.videoQuality,
+      startHold: exportOptions.videoIncludeStartPlacement,
+      endHold: exportOptions.videoIncludeEndHold,
+      loopCount: exportOptions.videoLoopCount,
+      carousel: exportOptions.videoCarousel,
+    });
+    return [
+      ...(openerRowEnabled
+        ? [
+            {
+              id: "opens",
+              label: t("animation_export_opens"),
+              value: values.opens,
+            },
+          ]
+        : []),
+      { id: "quality", label: t("viewer_ui_quality"), value: values.quality },
+      { id: "timing", label: t("share_studio_timing"), value: values.timing },
+      ...(renderMode !== "3d"
+        ? [
+            {
+              id: "carousel",
+              label: t("share_video_carousel"),
+              value: values.carousel,
+            },
+          ]
+        : []),
+    ];
+  });
+  $effect(() => {
+    if (resolvedPill !== "export") exportDrillSelected = null;
+  });
+  $effect(() => {
+    if (
+      exportDrillSelected !== null &&
+      !exportDrillItems.some((item) => item.id === exportDrillSelected)
+    ) {
+      exportDrillSelected = null;
+    }
+  });
   /**
    * The mandala is the one choice the live stage cannot show, so it gets a
    * thumbnail. The current frame IS the stage, and the first beat is one
@@ -1191,220 +1246,308 @@
   </div>
 {/snippet}
 
-{#snippet exportBody()}
+{#snippet exportOpenerField(labelled: boolean)}
+  <div class="field" class:unlabelled={!labelled}>
+    {#if labelled}<span class="field-label">{t("animation_export_opens")}</span
+      >{/if}
+    <div class="rt-chip-row opener-row">
+      {#each VIDEO_OPENER_OPTIONS as option (option.value)}
+        <button
+          type="button"
+          class="rt-chip"
+          aria-pressed={exportOptions?.videoOpener === option.value}
+          onclick={() => setVideoOpener(option.value)}
+          >{option.value === "first-beat"
+            ? t("share_first_beat")
+            : option.value === "this-frame"
+              ? t("share_current_frame")
+              : t("share_mandala")}</button
+        >
+      {/each}
+    </div>
+  </div>
+  <div class="opener-note" class:unlabelled={!labelled}>
+    {#if exportOptions?.videoOpener === "mandala"}
+      {#if mandalaOpenerUrl}
+        <img
+          class="opener-thumb"
+          src={mandalaOpenerUrl}
+          alt={t("animation_export_mandala_alt")}
+        />
+      {/if}
+      <span>{t("animation_export_mandala_hold")}</span>
+    {:else if exportOptions?.videoOpener === "this-frame"}
+      <span>{t("animation_export_frame_hold")}</span>
+    {:else}
+      <span>{t("animation_export_start_opener")}</span>
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet exportFpsField(labelled: boolean)}
+  <div class="field" class:unlabelled={!labelled}>
+    {#if labelled}<span class="field-label">FPS</span>{/if}
+    <div class="rt-chip-row">
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoFps === 30}
+        onclick={() => setExportFps(30)}>30 fps</button
+      >
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoFps === 60}
+        onclick={() => setExportFps(60)}>60 fps</button
+      >
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoFps === 120}
+        onclick={() => setExportFps(120)}>120 fps</button
+      >
+    </div>
+  </div>
+{/snippet}
+
+{#snippet exportResolutionField(labelled: boolean)}
+  <div class="field" class:unlabelled={!labelled}>
+    {#if labelled}<span class="field-label">Res</span>{/if}
+    <div class="rt-chip-row res-row">
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoResolution === 720}
+        onclick={() => setExportResolution(720)}
+        >{renderMode === "3d" ? "720×720" : "720p"}</button
+      >
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoResolution === 1080}
+        onclick={() => setExportResolution(1080)}
+        >{renderMode === "3d" ? "1080×1080" : "1080p"}</button
+      >
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoResolution === 2160}
+        onclick={() => setExportResolution(2160)}
+        >{renderMode === "3d" ? "2160×2160" : "4K"}</button
+      >
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoResolution === 4320}
+        onclick={() => setExportResolution(4320)}
+        >{renderMode === "3d" ? "4320×4320" : "8K"}</button
+      >
+    </div>
+  </div>
+{/snippet}
+
+{#snippet exportQualityField(labelled: boolean)}
+  <div class="field" class:unlabelled={!labelled}>
+    {#if labelled}<span class="field-label">{t("viewer_ui_quality")}</span
+      >{/if}
+    <div class="rt-chip-row">
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoQuality === "standard"}
+        onclick={() => setExportQuality("standard")}
+        >{t("share_quality_standard")}</button
+      >
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoQuality === "cinema"}
+        onclick={() => setExportQuality("cinema")}
+        ><i class="fas fa-film" aria-hidden="true"></i>
+        {t("share_quality_cinema")}</button
+      >
+    </div>
+  </div>
+{/snippet}
+
+{#snippet exportHoldsField(labelled: boolean)}
+  <div class="field" class:unlabelled={!labelled}>
+    {#if labelled}<span class="field-label">{t("share_studio_timing")}</span
+      >{/if}
+    <div class="rt-chip-row">
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoIncludeStartPlacement}
+        onclick={() =>
+          setStartHold(!exportOptions?.videoIncludeStartPlacement)}
+      >
+        <i class="fas fa-step-backward" aria-hidden="true"></i>
+        {t("animation_export_start_hold")}
+      </button>
+      <button
+        type="button"
+        class="rt-chip"
+        aria-pressed={exportOptions?.videoIncludeEndHold}
+        onclick={() => setEndHold(!exportOptions?.videoIncludeEndHold)}
+      >
+        <i class="fas fa-step-forward" aria-hidden="true"></i>
+        {t("animation_export_end_hold")}
+      </button>
+    </div>
+  </div>
+{/snippet}
+
+{#snippet exportLoopsField()}
   {#if exportOptions}
+    <div class="field">
+      <span class="field-label">{t("viewer_ui_loops")}</span>
+      <div class="rt-stepper">
+        <button
+          type="button"
+          class="rt-step-btn"
+          onclick={() => setLoopCount(exportOptions.videoLoopCount - 1)}
+          disabled={exportOptions.videoLoopCount <= 1}
+          aria-label={t("viewer_ui_decrease_loop_count")}
+          ><i class="fas fa-minus" aria-hidden="true"></i></button
+        >
+        <span class="rt-val">{exportOptions.videoLoopCount}×</span>
+        <button
+          type="button"
+          class="rt-step-btn"
+          onclick={() => setLoopCount(exportOptions.videoLoopCount + 1)}
+          disabled={exportOptions.videoLoopCount >= 10}
+          aria-label={t("viewer_ui_increase_loop_count")}
+          ><i class="fas fa-plus" aria-hidden="true"></i></button
+        >
+      </div>
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet exportCarouselField(labelled: boolean)}
+  <div class="field" class:unlabelled={!labelled}>
+    {#if labelled}<span class="field-label">{t("share_video_carousel")}</span
+      >{/if}
+    <div class="rt-chip-row">
+      {#each VIDEO_CAROUSEL_PLACEMENTS as placement (placement)}
+        <button
+          type="button"
+          class="rt-chip"
+          aria-pressed={exportOptions?.videoCarousel === placement}
+          onclick={() => setVideoCarousel(placement)}
+          >{carouselLabels[placement]}</button
+        >
+      {/each}
+    </div>
+  </div>
+{/snippet}
+
+{#snippet exportMeta()}
+  {#if timeEstimateLabel || totalVideoDuration}
+    <div class="export-meta">
+      {#if totalVideoDuration}<span
+          ><i class="fas fa-film" aria-hidden="true"></i>
+          {totalVideoDuration}</span
+        >{/if}
+      {#if timeEstimateLabel}<span
+          ><i class="fas fa-clock" aria-hidden="true"></i>
+          {timeEstimateLabel}</span
+        >{/if}
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet exportConfirm()}
+  {#if layout === "bottom" && onExport && showExportAction}
+    <!-- The dock's download icon opened this tray, so the confirm sits on
+         the same surface as the options it applies. The sidebar keeps its
+         footer button instead. -->
+    <div class="export-confirm">
+      <AnimatorInspectorFooter
+        onAction={onExport}
+        label={exportButtonLabel}
+        icon={renderMode === "3d" ? "fa-circle" : "fa-download"}
+        busy={isExporting}
+        disabled={exportDisabled}
+        ready={canvasReady}
+      />
+    </div>
+  {/if}
+{/snippet}
+
+<!-- The dock's Export page: a root of boxes, each showing what it holds, and
+     one screen per group, so nothing here ever scrolls. The sidebar has the
+     room for the flat list and keeps it. -->
+{#snippet exportDrillDetail(id: string)}
+  <div class="export-fields export-detail">
+    {#if id === "opens"}
+      {@render exportOpenerField(false)}
+    {:else if id === "quality"}
+      {@render exportFpsField(false)}
+      {@render exportResolutionField(false)}
+      {#if renderMode === "3d"}
+        {@render exportQualityField(false)}
+      {/if}
+    {:else if id === "timing"}
+      {@render exportHoldsField(false)}
+      {@render exportLoopsField()}
+    {:else if id === "carousel"}
+      {@render exportCarouselField(false)}
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet exportDrillRoot()}
+  <div class="export-root">
+    <div class="export-boxes">
+      {#each exportDrillItems as item (item.id)}
+        <SettingsDrillRow
+          label={item.label}
+          value={item.value}
+          valueLines={2}
+          onclick={() => (exportDrillSelected = item.id)}
+        />
+      {/each}
+    </div>
+    {@render exportMeta()}
+    {@render exportConfirm()}
+  </div>
+{/snippet}
+
+{#snippet exportBody()}
+  {#if exportOptions && layout === "bottom"}
+    <div
+      class="export-drill"
+      class:in-tray={presentation === "full"}
+      style:--export-tray-max={dockTrayMaxHeight ?? pillTrayMaxHeight}
+    >
+      <SettingsDrillPanel
+        compact
+        items={exportDrillItems}
+        bind:selected={exportDrillSelected}
+        detail={exportDrillDetail}
+        listContent={exportDrillRoot}
+        detailHeaderEnd={exportMeta}
+      />
+    </div>
+  {:else if exportOptions}
     <div class="section-pad export-fields">
       {#if openerRowEnabled}
-        <div class="field">
-          <span class="field-label">{t("animation_export_opens")}</span>
-          <div class="rt-chip-row opener-row">
-            {#each VIDEO_OPENER_OPTIONS as option (option.value)}
-              <button
-                type="button"
-                class="rt-chip"
-                aria-pressed={exportOptions.videoOpener === option.value}
-                onclick={() => setVideoOpener(option.value)}
-                >{option.value === "first-beat"
-                  ? t("share_first_beat")
-                  : option.value === "this-frame"
-                    ? t("share_current_frame")
-                    : t("share_mandala")}</button
-              >
-            {/each}
-          </div>
-        </div>
-        <div class="opener-note">
-          {#if exportOptions.videoOpener === "mandala"}
-            {#if mandalaOpenerUrl}
-              <img
-                class="opener-thumb"
-                src={mandalaOpenerUrl}
-                alt={t("animation_export_mandala_alt")}
-              />
-            {/if}
-            <span>{t("animation_export_mandala_hold")}</span>
-          {:else if exportOptions.videoOpener === "this-frame"}
-            <span>{t("animation_export_frame_hold")}</span>
-          {:else}
-            <span>{t("animation_export_start_opener")}</span>
-          {/if}
-        </div>
+        {@render exportOpenerField(true)}
       {/if}
-
-      <div class="field">
-        <span class="field-label">FPS</span>
-        <div class="rt-chip-row">
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoFps === 30}
-            onclick={() => setExportFps(30)}>30 fps</button
-          >
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoFps === 60}
-            onclick={() => setExportFps(60)}>60 fps</button
-          >
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoFps === 120}
-            onclick={() => setExportFps(120)}>120 fps</button
-          >
-        </div>
-      </div>
-
-      <div class="field">
-        <span class="field-label">Res</span>
-        <div class="rt-chip-row res-row">
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoResolution === 720}
-            onclick={() => setExportResolution(720)}
-            >{renderMode === "3d" ? "720×720" : "720p"}</button
-          >
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoResolution === 1080}
-            onclick={() => setExportResolution(1080)}
-            >{renderMode === "3d" ? "1080×1080" : "1080p"}</button
-          >
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoResolution === 2160}
-            onclick={() => setExportResolution(2160)}
-            >{renderMode === "3d" ? "2160×2160" : "4K"}</button
-          >
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoResolution === 4320}
-            onclick={() => setExportResolution(4320)}
-            >{renderMode === "3d" ? "4320×4320" : "8K"}</button
-          >
-        </div>
-      </div>
-
+      {@render exportFpsField(true)}
+      {@render exportResolutionField(true)}
       {#if renderMode === "3d"}
-        <div class="field">
-          <span class="field-label">{t("viewer_ui_quality")}</span>
-          <div class="rt-chip-row">
-            <button
-              type="button"
-              class="rt-chip"
-              aria-pressed={exportOptions.videoQuality === "standard"}
-              onclick={() => setExportQuality("standard")}
-              >{t("share_quality_standard")}</button
-            >
-            <button
-              type="button"
-              class="rt-chip"
-              aria-pressed={exportOptions.videoQuality === "cinema"}
-              onclick={() => setExportQuality("cinema")}
-              ><i class="fas fa-film" aria-hidden="true"></i>
-              {t("share_quality_cinema")}</button
-            >
-          </div>
-        </div>
+        {@render exportQualityField(true)}
       {/if}
-
-      <div class="field">
-        <span class="field-label">{t("share_studio_timing")}</span>
-        <div class="rt-chip-row">
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoIncludeStartPlacement}
-            onclick={() =>
-              setStartHold(!exportOptions.videoIncludeStartPlacement)}
-          >
-            <i class="fas fa-step-backward" aria-hidden="true"></i>
-            {t("animation_export_start_hold")}
-          </button>
-          <button
-            type="button"
-            class="rt-chip"
-            aria-pressed={exportOptions.videoIncludeEndHold}
-            onclick={() => setEndHold(!exportOptions.videoIncludeEndHold)}
-          >
-            <i class="fas fa-step-forward" aria-hidden="true"></i>
-            {t("animation_export_end_hold")}
-          </button>
-        </div>
-      </div>
-
-      <div class="field">
-        <span class="field-label">{t("viewer_ui_loops")}</span>
-        <div class="rt-stepper">
-          <button
-            type="button"
-            class="rt-step-btn"
-            onclick={() => setLoopCount(exportOptions.videoLoopCount - 1)}
-            disabled={exportOptions.videoLoopCount <= 1}
-            aria-label={t("viewer_ui_decrease_loop_count")}
-            ><i class="fas fa-minus" aria-hidden="true"></i></button
-          >
-          <span class="rt-val">{exportOptions.videoLoopCount}×</span>
-          <button
-            type="button"
-            class="rt-step-btn"
-            onclick={() => setLoopCount(exportOptions.videoLoopCount + 1)}
-            disabled={exportOptions.videoLoopCount >= 10}
-            aria-label={t("viewer_ui_increase_loop_count")}
-            ><i class="fas fa-plus" aria-hidden="true"></i></button
-          >
-        </div>
-      </div>
-
+      {@render exportHoldsField(true)}
+      {@render exportLoopsField()}
       {#if renderMode !== "3d"}
-        <div class="field">
-          <span class="field-label">{t("share_video_carousel")}</span>
-          <div class="rt-chip-row">
-            {#each VIDEO_CAROUSEL_PLACEMENTS as placement (placement)}
-              <button
-                type="button"
-                class="rt-chip"
-                aria-pressed={exportOptions.videoCarousel === placement}
-                onclick={() => setVideoCarousel(placement)}
-                >{carouselLabels[placement]}</button
-              >
-            {/each}
-          </div>
-        </div>
+        {@render exportCarouselField(true)}
       {/if}
-
-      {#if timeEstimateLabel || totalVideoDuration}
-        <div class="export-meta">
-          {#if totalVideoDuration}<span
-              ><i class="fas fa-film" aria-hidden="true"></i>
-              {totalVideoDuration}</span
-            >{/if}
-          {#if timeEstimateLabel}<span
-              ><i class="fas fa-clock" aria-hidden="true"></i>
-              {timeEstimateLabel}</span
-            >{/if}
-        </div>
-      {/if}
-
-      {#if layout === "bottom" && onExport && showExportAction}
-        <!-- The dock's download icon opened this tray, so the confirm sits on
-             the same surface as the options it applies. The sidebar keeps its
-             footer button instead. -->
-        <div class="export-confirm">
-          <AnimatorInspectorFooter
-            onAction={onExport}
-            label={exportButtonLabel}
-            icon={renderMode === "3d" ? "fa-circle" : "fa-download"}
-            busy={isExporting}
-            disabled={exportDisabled}
-            ready={canvasReady}
-          />
-        </div>
-      {/if}
+      {@render exportMeta()}
+      {@render exportConfirm()}
     </div>
   {/if}
 {/snippet}
@@ -1802,6 +1945,81 @@
   .export-fields .export-meta i {
     opacity: 0.6;
     margin-right: 2px;
+  }
+
+  /* The dock's Export page. In the tray it is exactly as tall as the tray's
+     scroll box (the tray's cap, less its handle and bottom padding), so the
+     root and every group screen share one height and the stage above never
+     resizes between them. */
+  .export-drill {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    --drill-row-padding: 0.3125rem 0.75rem;
+    --drill-row-min-height: var(--alt-touch-target, 36px);
+  }
+  .export-drill.in-tray {
+    height: calc(var(--export-tray-max) - 29px);
+  }
+  .export-root {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .export-boxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .export-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .export-drill .export-meta {
+    padding-left: 0;
+    gap: 10px;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+  /* In a group screen's header the figures share the line with the title, so
+     they drop their icons, read as a small aside, and stack rather than run
+     past the edge when a long title and a long estimate meet (Russian at 344). */
+  .export-drill :global(.detail-header-end .export-meta) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0 8px;
+    font-size: var(--font-size-compact, 12px);
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
+  .export-drill :global(.detail-header-end .export-meta i) {
+    display: none;
+  }
+  .export-drill .export-root .export-meta {
+    padding-left: 2px;
+  }
+  /* The one labelled row left (Loops) sizes its label column to the word, so a
+     longer translation is never cut off by the flat list's 64px column. */
+  .export-drill .field {
+    grid-template-columns: max-content 1fr;
+  }
+  /* A group screen already names itself in its header, so a row whose chips
+     say what they are drops its label and the chips take the full width. */
+  .export-drill .field.unlabelled {
+    grid-template-columns: 1fr;
+  }
+  .export-drill .opener-note.unlabelled {
+    padding-left: 0;
+  }
+  .export-drill .rt-chip {
+    min-height: var(--alt-touch-target, 36px);
+    padding: 4px 8px;
+  }
+  .export-drill .rt-step-btn {
+    min-width: var(--alt-touch-target, 36px);
+    min-height: var(--alt-touch-target, 36px);
   }
 
   /* ============================================================

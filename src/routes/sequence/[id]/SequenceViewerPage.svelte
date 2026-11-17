@@ -10,7 +10,26 @@
   import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
   import { loadSequencesByIds } from "#lib/features/choreo-card/services/catalog-loader.js";
   import type { SequenceRouteMeta } from "./sequence-seo";
-  import { resolveSequenceCloseTarget } from "./sequence-close-target";
+  import {
+    arrivalProperties,
+    resolveSequenceArrival,
+    resolveSequenceCloseLanding,
+    resolveSequenceCloseTarget,
+    type SequenceDoor,
+  } from "./sequence-close-target";
+  import ComposerDoorLine, {
+    COMPOSER_DOOR_LINE_HEIGHT,
+  } from "./ComposerDoorLine.svelte";
+  import { hasNavigatedBetweenPages } from "#lib/shared/navigation/services/client-navigation.js";
+  import { isSidewaysViewport } from "#lib/shared/ui/sideways-viewport.js";
+  import { isViewerSideways } from "#lib/shared/sequence-viewer/services/viewer-shell-model.js";
+  import { isEscapeShortcutActivation } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
+  import {
+    trackSequenceRemixStarted,
+    trackViewerClosed,
+    type SequenceViewerSource,
+  } from "#lib/shared/sequence-viewer/analytics/viewer-events.js";
+  import { markComposerHandoffDoor } from "#lib/shared/create/analytics/composer-handoff-door.js";
   import { page } from "$app/state";
   import { beforeNavigate, goto } from "$app/navigation";
   import { browser } from "$app/env";
@@ -71,6 +90,7 @@
   import { registerLibraryRepository } from "#lib/shared/composition-root/register-library-repository.js";
   import {
     beginScanVisit,
+    captureScanAction,
     captureScanEvent,
     captureScanExport,
     endScanViewerSession,
@@ -136,6 +156,16 @@
   );
   const isEmbedded = $derived(isDemo || isEmbedRoute);
   const scanAnalyticsCode = isDemo ? null : scanOriginCode;
+  const analyticsSource: SequenceViewerSource = scanOriginCode
+    ? "qr"
+    : fromShapeEngine
+      ? "shape_engine"
+      : "external_link";
+
+  // Whether this page was reached by moving between pages inside the app.
+  // Read once, now: the root layout records a client navigation before the
+  // page it leads to mounts. A shared link, a scan or a reload reads false.
+  const reachedInApp = browser && hasNavigatedBetweenPages();
 
   // Scan-origin cards keep the cloud pictograph path after /q hands off. This
   // context must exist before the descendant orchestrator mounts.
@@ -247,14 +277,52 @@
   });
   let handoffData = $state<SequenceRouteHandoff | null>(null);
 
+  // Mobile detection
+  let isMobile = $state(false);
+
+  /**
+   * A cold arrival: someone who came from outside the app (a scan, or a link
+   * opened as the first page of the visit) with no return path. They get the
+   * line that names the Composer, "Edit this" on the header button, and a
+   * Back that opens the Composer. Everyone else sees today's page.
+   */
+  const arrival = $derived(
+    isEmbedded
+      ? null
+      : resolveSequenceArrival({
+          returnPath: handoffData?.returnPath,
+          scanOrigin: !!scanOriginCode,
+          reachedInApp,
+        })
+  );
+  // A phone held sideways has no row to spare under the header; the renamed
+  // header button is its door.
+  const showComposerLine = $derived(
+    !!arrival &&
+      !isViewerSideways({
+        sidewaysViewport: isSidewaysViewport(),
+        phoneHost: isMobile,
+      })
+  );
+  // The loading frame holds the line's room before the handoff is read, so
+  // the stage does not move when the viewer arrives. No room sideways, where
+  // the line is not shown.
+  const holdComposerLineRoom = $derived(
+    !isEmbedded &&
+      (!!scanOriginCode || !reachedInApp) &&
+      !isViewerSideways({
+        sidewaysViewport: isSidewaysViewport(),
+        phoneHost: isMobile,
+      })
+  );
+  let viewerOpenedAt = 0;
+
   // IAB banner padding. The measured height is what the banner actually
   // occupies — its second copy line wraps to two or three lines on a phone, so
   // the 56px constant undershoots. It stays as the pre-measurement fallback.
   const iabBannerShowing = $derived(getIabBannerVisible());
   const iabBannerHeight = $derived(getIabBannerHeight());
 
-  // Mobile detection
-  let isMobile = $state(false);
   let scanInitialBpm = $state(60);
   let scanResolutionReported = false;
 
@@ -284,6 +352,7 @@
   const routeLoad = createRouteLoadFence();
 
   onMount(async () => {
+    viewerOpenedAt = performance.now();
     markScan("viewer-page-mounted");
     loadingSession?.reach("viewer");
     // The root layout only imports composition-root in app mode, so this
@@ -483,9 +552,10 @@
    * the way Create reads it on arrival, then load the Create route. Create
    * needs no account to open, so a guest goes straight in.
    */
-  function remixInCreate(): void {
+  function remixInCreate(door: SequenceDoor): void {
     const current = sequence;
     if (!current) return;
+    markComposerHandoffDoor({ door, ...arrivalProperties(arrival) });
     deepLinker.setData("create", current, "construct");
     try {
       localStorage.setItem(
@@ -496,6 +566,38 @@
       // Storage blocked: the in-memory hand-over above still reaches Create.
     }
     void goto("/create/construct");
+  }
+
+  function analyticsContext() {
+    return { sequenceId: sequence?.id ?? "", source: analyticsSource };
+  }
+
+  /** The "Made with Flow Arts Composer" line: Remix under another name. */
+  function openComposerFromLine(): void {
+    if (!sequence) return;
+    trackSequenceRemixStarted(analyticsContext(), {
+      source: "composer_line",
+      ...arrivalProperties(arrival),
+    });
+    captureScanAction("remix", { source: "composer_line" });
+    if (scanAnalyticsCode) endScanViewerSession("remix");
+    remixInCreate("composer_line");
+  }
+
+  /**
+   * Whether Construct already holds the visitor's own work. Read only when
+   * Back is pressed, never at load. A store that cannot be read counts as
+   * holding work: then Back opens their Composer and hands nothing over.
+   */
+  async function constructHoldsWork(): Promise<boolean> {
+    try {
+      const { sequencePersister } = await import(
+        "#lib/features/create/shared/services/sequence-persister.js"
+      );
+      return await sequencePersister.modeHoldsWork("construct");
+    } catch {
+      return true;
+    }
   }
 
   // Opens the public Codex on the sequence's first letter. It used to open
@@ -759,20 +861,44 @@
   // NAVIGATION
   // ============================================================================
 
-  function handleClose(reason?: "navigate" | "escape") {
-    if (isEmbedded || reason === "navigate") return;
+  let closing = false;
+  async function handleClose(reason?: "navigate" | "escape") {
+    if (isEmbedded || reason === "navigate" || closing) return;
+    const escape = reason === "escape" || isEscapeShortcutActivation();
     if (reason === "escape" && scanAnalyticsCode)
       endScanViewerSession("escape");
     const target = resolveSequenceCloseTarget({
       returnPath: handoffData?.returnPath,
-      scanOrigin: !!scanOriginCode,
-      historyLength: browser ? window.history.length : 0,
+      arrival,
     });
+    closing = true;
+    const holdsWork =
+      target.kind === "composer" ? await constructHoldsWork() : false;
+    const landing = resolveSequenceCloseLanding(target, holdsWork);
+    trackViewerClosed(
+      analyticsContext(),
+      escape ? "escape" : "back",
+      Math.max(0, Math.round(performance.now() - viewerOpenedAt)),
+      { close_landing: landing, ...arrivalProperties(arrival) }
+    );
     if (target.kind === "history-back") {
+      closing = false;
       window.history.back();
       return;
     }
-    void goto(target.path);
+    if (target.kind === "path") {
+      void goto(target.path);
+      return;
+    }
+    if (landing === "composer_this_sequence") {
+      trackSequenceRemixStarted(analyticsContext(), {
+        source: "close",
+        ...arrivalProperties(arrival),
+      });
+      remixInCreate("close");
+      return;
+    }
+    void goto("/create/construct");
   }
 
   /**
@@ -810,7 +936,11 @@
 </script>
 
 {#if isLoading}
-  <div class="sequence-route-page">
+  <div
+    class="sequence-route-page"
+    class:hold-door-room={holdComposerLineRoom}
+    style:--composer-door-room="{COMPOSER_DOOR_LINE_HEIGHT}px"
+  >
     <div class="loading-container">
       {#if loadingSession}
         <SequencePageLoading session={loadingSession} />
@@ -880,14 +1010,16 @@
           ? `${iabBannerHeight || IAB_BANNER_HEIGHT}px`
           : undefined}
       >
+        {#snippet composerLine()}
+          {#if !ctx.practiceActive}
+            <ComposerDoorLine onOpen={openComposerFromLine} />
+          {/if}
+        {/snippet}
         <SequenceViewerShell
           {ctx}
           sequence={resolvedSequence}
-          analyticsSource={scanOriginCode
-            ? "qr"
-            : fromShapeEngine
-              ? "shape_engine"
-              : "external_link"}
+          {analyticsSource}
+          contextContent={showComposerLine ? composerLine : undefined}
           shareOnOpen={shareFromShapeEngine}
           saveOnOpen={saveFromShapeEngine}
           {isMobile}
@@ -903,7 +1035,14 @@
               : t("common_back"),
           }}
           promoteRemix
-          onRemix={remixInCreate}
+          onRemix={(source) => remixInCreate(source)}
+          remixWording={arrival
+            ? {
+                label: t("viewer_header_edit_this"),
+                ariaLabel: t("viewer_header_edit_this_aria"),
+              }
+            : null}
+          remixAnalytics={arrivalProperties(arrival)}
           openAppHref={scanOpenAppHref}
           onAccountSignIn={scanOriginCode ? ctx.openSignInPrompt : undefined}
           guideAction={scanOriginCode
@@ -981,6 +1120,12 @@
   .loading-container {
     flex: 1;
     position: relative;
+  }
+
+  /* A cold arrival's viewer opens with the Composer line under its header;
+     the loading frame keeps that room so the stage does not move. */
+  .hold-door-room .loading-container {
+    margin-top: var(--composer-door-room);
   }
 
   /* Error state */

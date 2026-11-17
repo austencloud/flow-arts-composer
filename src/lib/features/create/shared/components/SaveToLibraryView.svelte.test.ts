@@ -47,11 +47,14 @@ const mocks = vi.hoisted(() => {
     handleOpenAppeal: vi.fn(),
     handleSubmitToShame: vi.fn(),
   };
-  return { state, initial: { ...state } };
+  return { state, initial: { ...state }, stateArgs: [] as unknown[] };
 });
 
 vi.mock("../state/save-panel-state.svelte", () => ({
-  createSavePanelState: () => mocks.state,
+  createSavePanelState: (deps: unknown) => {
+    mocks.stateArgs.push(deps);
+    return mocks.state;
+  },
 }));
 
 vi.mock("../context/create-module-context", () => ({
@@ -126,13 +129,22 @@ describe("SaveToLibraryView phone screen", () => {
       .element(page.getByRole("switch", { name: /personal library/i }))
       .toBeInTheDocument();
     await expect
-      .element(page.getByRole("button", { name: "Card footer: Off" }))
-      .toBeInTheDocument();
-    await expect
       .element(page.getByRole("button", { name: "Notes: Add" }))
       .toBeInTheDocument();
-    expect(document.querySelectorAll(".screen-row")).toHaveLength(4);
+    // Saving asks about props, public and notes; the card footer is an
+    // export choice and lives in the share sheet.
+    expect(document.body.textContent).not.toMatch(/card footer/i);
+    expect(document.querySelectorAll(".screen-row")).toHaveLength(3);
     expect(document.body.textContent).not.toContain("Collection");
+  });
+
+  it("still hands the save state the default card footer from the card settings", () => {
+    renderScreen();
+
+    const deps = mocks.stateArgs.at(-1) as {
+      getDefaultCardPresentation: () => { schemaVersion: number };
+    };
+    expect(deps.getDefaultCardPresentation().schemaVersion).toBe(1);
   });
 
   it("opens a drill-down, and Escape leaves it before the save screen", async () => {
@@ -198,7 +210,7 @@ describe("SaveToLibraryView phone screen", () => {
 
   it("keeps Enter from saving while a drill-down is open", async () => {
     renderScreen();
-    await page.getByRole("button", { name: "Card footer: Off" }).click();
+    await page.getByRole("button", { name: "Notes: Add" }).click();
     await userEvent.keyboard("{Enter}");
     expect(mocks.state.handleSave).not.toHaveBeenCalled();
   });

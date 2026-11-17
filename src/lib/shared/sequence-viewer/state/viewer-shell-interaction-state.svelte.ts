@@ -20,6 +20,8 @@ import {
   buildPracticeConfigProperties,
   buildVideoExportAnalyticsConfig,
 } from "../services/viewer-shell-model";
+import type { ExportRequestOptions } from "../components/export-coordinator.svelte";
+import { createFileExportLifecycle } from "./viewer-file-export-lifecycle";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import type { VideoPlayheadBridge } from "../context/video-playhead-context";
 import type {
@@ -63,7 +65,7 @@ interface ViewerShellInteractionInputs {
    */
   getVideoPlayhead?: () => VideoPlayheadBridge | null;
   getExportOverrides: () => ViewerShellExportOverrides | undefined;
-  getOnRemix: () => (() => void) | undefined;
+  getOnRemix: () => ((source: RemixSource) => void) | undefined;
   getOpenAppHref: () => string | undefined;
   getOnAccountSignIn: () => (() => void) | undefined;
   /** Which actions the header offers; a cast page offers none that act on
@@ -93,6 +95,18 @@ export function createViewerShellInteractionState(
     "mandala" | "tunnel",
     Record<string, ScanAnalyticsValue>
   >();
+  const fileExports = {
+    video: createFileExportLifecycle({
+      config: () => videoExportAnalyticsConfig(),
+      emit: (stage, properties) =>
+        dependencies.captureScanExport("video", stage, properties),
+    }),
+    card: createFileExportLifecycle({
+      config: () => cardExportAnalyticsConfig(),
+      emit: (stage, properties) =>
+        dependencies.captureScanExport("card", stage, properties),
+    }),
+  };
   let deleteConfirmOpen = $state(false);
   let isDeleting = $state(false);
   let practiceReturnState: PracticeReturnState | null = null;
@@ -117,16 +131,29 @@ export function createViewerShellInteractionState(
   );
 
   function mount(): () => void {
-    return dependencies.registerScanSessionCleanup((reason) => {
-      for (const [artType, properties] of activeArtExports) {
-        dependencies.captureScanExport(artType, "canceled", {
-          ...properties,
-          reason,
-          user_initiated: false,
-        });
+    const stopDeliveryReports = inputs
+      .getContext()
+      .setExportDeliveryListener(({ kind, result }) =>
+        fileExports[kind].delivered(result)
+      );
+    const stopSessionCleanup = dependencies.registerScanSessionCleanup(
+      (reason) => {
+        for (const [artType, properties] of activeArtExports) {
+          dependencies.captureScanExport(artType, "canceled", {
+            ...properties,
+            reason,
+            user_initiated: false,
+          });
+        }
+        activeArtExports.clear();
+        fileExports.video.sessionEnded(reason);
+        fileExports.card.sessionEnded(reason);
       }
-      activeArtExports.clear();
-    });
+    );
+    return () => {
+      stopDeliveryReports();
+      stopSessionCleanup();
+    };
   }
 
   function videoExportAnalyticsConfig(): Record<string, ScanAnalyticsValue> {
@@ -157,33 +184,95 @@ export function createViewerShellInteractionState(
     });
   }
 
+  /**
+   * Runs one video or card export and reports its stages: requested (or
+   * retry), started when the render really begins, then exactly one ending.
+   * The ending is the file reaching the person, so a finished render waits
+   * for its hand-over; the coordinator reports that through the delivery
+   * listener registered in `mount`.
+   */
+  async function runFileExport(
+    kind: "video" | "card",
+    stage: "requested" | "retry",
+    start: (options: ExportRequestOptions) => Promise<boolean>
+  ): Promise<boolean> {
+    const lifecycle = fileExports[kind];
+    if (lifecycle.active) {
+      // A render still running refuses a second request; leave its attempt be.
+      if (lifecycle.phase !== "delivering") return false;
+      lifecycle.finishActive("canceled", {
+        reason: "superseded",
+        user_initiated: false,
+      });
+    }
+    const token = lifecycle.begin(stage);
+    if (token === null) return false;
+    let started: boolean;
+    try {
+      started = await start({ onRenderStart: () => lifecycle.renderStarted(token) });
+    } catch {
+      lifecycle.finish(token, "failed", { reason: "export_error" });
+      return false;
+    }
+    if (!lifecycle.isActive(token)) return started;
+    if (!started) {
+      // Refused (a guest gets the account ask instead) or never began.
+      lifecycle.finish(token, "canceled", {
+        reason: "not_started",
+        user_initiated: false,
+      });
+      return false;
+    }
+    const ctx = inputs.getContext();
+    if (ctx.exportError) {
+      lifecycle.finish(token, "failed", { reason: "export_error" });
+    } else if (kind === "video" && ctx.previewBlobUrl) {
+      lifecycle.renderFinished(token);
+    } else {
+      // No file and no error: the render was interrupted, or (for a card,
+      // which is handed over inside its render) nothing was delivered.
+      lifecycle.finish(token, "canceled", {
+        reason: "render_interrupted",
+        user_initiated: false,
+      });
+    }
+    return true;
+  }
+
   /** Resolves when the render settles: false when it was refused or failed
    *  to start, true otherwise. A host override owns its own lifecycle. */
   function handleVideoExport(
     stage: "requested" | "retry" = "requested"
   ): Promise<boolean> {
-    dependencies.captureScanExport(
-      "video",
-      stage,
-      videoExportAnalyticsConfig()
-    );
     const overrides = inputs.getExportOverrides();
     if (overrides) {
+      dependencies.captureScanExport(
+        "video",
+        stage,
+        videoExportAnalyticsConfig()
+      );
       overrides.onVideoExport();
       return Promise.resolve(true);
     }
-    return inputs.getContext().handleExport();
+    return runFileExport("video", stage, (options) =>
+      inputs.getContext().handleExport(options)
+    );
   }
 
   function handleCardExport(): void {
-    dependencies.captureScanExport(
-      "card",
-      "requested",
-      cardExportAnalyticsConfig()
-    );
     const overrides = inputs.getExportOverrides();
-    if (overrides) overrides.onCardExport();
-    else void inputs.getContext().handleExport();
+    if (overrides) {
+      dependencies.captureScanExport(
+        "card",
+        "requested",
+        cardExportAnalyticsConfig()
+      );
+      overrides.onCardExport();
+      return;
+    }
+    void runFileExport("card", "requested", (options) =>
+      inputs.getContext().handleExport(options)
+    );
   }
 
   function handleRemix(source: RemixSource): void {
@@ -191,7 +280,7 @@ export function createViewerShellInteractionState(
     dependencies.endScanViewerSession("remix");
     const onRemix = inputs.getOnRemix();
     const ctx = inputs.getContext();
-    if (onRemix) onRemix();
+    if (onRemix) onRemix(source);
     else ctx.invokeGatedAction("remix", ctx.handleEdit);
   }
 
@@ -719,10 +808,20 @@ export function createViewerShellInteractionState(
   }
 
   function handleCancelVideoExport(): void {
-    dependencies.captureScanExport("video", "canceled", {
-      ...videoExportAnalyticsConfig(),
-      user_initiated: true,
-    });
+    // The attempt in flight ends here, so a render that settles afterwards
+    // reports nothing. With none open (a host's own render, the share sheet's)
+    // the cancel is reported as it always was.
+    const attempt = fileExports.card.active
+      ? fileExports.card
+      : fileExports.video;
+    if (attempt.active) {
+      attempt.finishActive("canceled", { user_initiated: true });
+    } else {
+      dependencies.captureScanExport("video", "canceled", {
+        ...videoExportAnalyticsConfig(),
+        user_initiated: true,
+      });
+    }
     inputs.getContext().handleCancelExport();
   }
 

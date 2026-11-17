@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const persister = vi.hoisted(() => ({
@@ -11,6 +11,7 @@ vi.mock(
   () => persister
 );
 
+import { getLocale, setLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
 import {
   createPropPreferenceState,
   loadAndRememberPropPreferences,
@@ -27,6 +28,27 @@ function deferred() {
 }
 
 describe("prop preference state", () => {
+  const startLocale = getLocale();
+  afterEach(async () => {
+    await setLocale(startLocale);
+  });
+
+  it("names a failed load by a message key that Italian can show as words", async () => {
+    persister.loadPropPreferences.mockRejectedValueOnce(new Error("offline"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const state = createPropPreferenceState("user-load-fails");
+    await vi.waitFor(() => expect(state.loading).toBe(false));
+    warn.mockRestore();
+
+    expect(state.error).toBe("prop_preferences_load_failed");
+    // Words either way: Italian's own once translated, English until then.
+    // A mistyped key would come back as the key itself.
+    await setLocale("it");
+    const shown = t(state.error!);
+    expect(shown).not.toBe(state.error);
+    expect(shown.trim().length).toBeGreaterThan(0);
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     persister.loadPropPreferences.mockResolvedValue({
@@ -58,7 +80,7 @@ describe("prop preference state", () => {
     expect(state.propsISpinWith).toEqual([PropType.STAFF]);
     expect(state.favoriteProp).toBe(PropType.STAFF);
     expect(state.saving).toBe(false);
-    expect(state.error).toContain("editor kept your choices");
+    expect(state.error).toBe("prop_preferences_save_failed");
   });
 
   it("serializes rapid snapshots while keeping the newest choice visible", async () => {

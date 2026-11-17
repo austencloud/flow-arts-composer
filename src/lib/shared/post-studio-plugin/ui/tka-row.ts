@@ -86,7 +86,7 @@ export function tkaRow(
           facts.hasLayout ? ["layout"] : []
         ),
         "effects",
-        ["beats"]
+        ["beats", "nudge"]
       );
     case "image":
       return facts.isQrImage
@@ -119,6 +119,7 @@ export function tkaRow(
         "bar",
         ...(facts.isTunnelHook ? ["speed"] : []),
         ...(facts.hasBackdrop ? ["crop"] : []),
+        "nudge",
         ...fly(facts),
         "timing",
         ...TAIL,
@@ -130,6 +131,7 @@ export function tkaRow(
         "appearance",
         "shows",
         "sequence",
+        "nudge",
         ...fly(facts),
         "timing",
         ...TAIL,

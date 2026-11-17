@@ -5,6 +5,7 @@
   import {
     RAIL_SECOND_COLUMN_WIDTH,
     resolveSceneControlLayout,
+    sceneStageFramingAspect,
     type SceneControlHostTool,
     type SceneControlLayout,
     type SceneControlTool,
@@ -384,7 +385,10 @@
         1,
         workspaceWidth - (dockIsOpen ? layout.reservedWidth : 0)
       );
-      viewer.frameAllPerformers(stageWidth / workspaceHeight, true);
+      viewer.frameAllPerformers(
+        sceneStageFramingAspect(stageWidth, workspaceHeight),
+        true
+      );
     }
     dockWasOpen = dockIsOpen;
   });

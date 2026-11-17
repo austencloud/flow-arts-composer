@@ -20,10 +20,16 @@ export interface VideoExportOptions {
   filename?: string;
   /** Auto-download when complete. Default: true */
   autoDownload?: boolean;
+  /**
+   * MP4 tags such as the sequence the video carries. Written by the WebCodecs
+   * encoder; the WASM fallback (Firefox) has no tag support and drops them.
+   */
+  metadataTags?: MetadataTags;
 }
 import { VIDEO_EXPORT_FPS } from "#lib/shared/animation-engine/domain/constants/timing.js";
 import type { WebCodecsVideoEncoder } from "#lib/shared/animation-engine/services/web-codecs-video-encoder.js";
 import type { WasmVideoEncoder } from "#lib/shared/animation-engine/services/wasm-video-encoder.js";
+import type { MetadataTags } from "mediabunny";
 
 export class VideoExporter {
   private isCurrentlyExporting = false;
@@ -63,7 +69,7 @@ export class VideoExporter {
       throw new Error("Export already in progress");
     }
 
-    const { bitrate = 5_000_000, fps = VIDEO_EXPORT_FPS } = options;
+    const { bitrate = 5_000_000, fps = VIDEO_EXPORT_FPS, metadataTags } = options;
 
     this.isCurrentlyExporting = true;
     this.shouldCancel = false;
@@ -78,6 +84,7 @@ export class VideoExporter {
           height,
           fps,
           bitrate,
+          metadataTags,
         });
       } else {
         const { WasmVideoEncoder } = await import(

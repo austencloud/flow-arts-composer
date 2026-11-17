@@ -473,16 +473,6 @@ export function createPostTimingSession(
     }));
   }
 
-  function nudgeGrid(direction: -1 | 1): void {
-    editCurrent((current) => ({
-      ...current,
-      offsetSeconds:
-        Math.round(
-          (current.offsetSeconds + direction * MIN_MOVE_SECONDS) * 1e6
-        ) / 1e6,
-    }));
-  }
-
   /** Puts the whole grid a typed number of seconds off the taps. */
   function setGridOffset(seconds: number): void {
     if (!Number.isFinite(seconds)) return;
@@ -892,7 +882,6 @@ export function createPostTimingSession(
     firstTapWasMoveOne,
     setFirstTapPosition,
     dropLeadingTaps,
-    nudgeGrid,
     setGridOffset,
     clearEnd,
     clearTaps,

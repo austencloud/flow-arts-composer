@@ -54,6 +54,7 @@
   import DangerZone from "#lib/shared/navigation/components/profile-settings/DangerZone.svelte";
   import ProfileHeroSection from "./profile/ProfileHeroSection.svelte";
   import GuestAccountCard from "./profile/GuestAccountCard.svelte";
+  import SignOutButton from "./profile/SignOutButton.svelte";
   import ProfilePhotoPicker from "../ProfilePhotoPicker.svelte";
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import SettingToggleButton from "../SettingToggleButton.svelte";
@@ -908,7 +909,9 @@
 
 {#snippet drillLanding()}
   {#if authState.user}
-    <div class="frame-landing">
+    <!-- `drill-grow`: the landing takes the frame's whole height, so the rows
+         can share the spare height and Sign out sits on the bottom edge. -->
+    <div class="frame-landing drill-grow">
       {#if !keyboardFrame}
         {@render setupNotices()}
       {/if}
@@ -961,6 +964,11 @@
           onclick={() => openDrill("security")}
         />
       </div>
+      {#if !keyboardFrame}
+        <div class="frame-sign-out" transition:growFade>
+          <SignOutButton onSignOut={handleSignOut} block />
+        </div>
+      {/if}
     </div>
   {/if}
 {/snippet}
@@ -1236,21 +1244,40 @@
     flex-direction: column;
   }
 
+  /* The frame's own height decides the spacing: the rows grow from their
+     minimum to a ceiling, and whatever height is still left goes evenly into
+     the gaps between the header, each row and Sign out (space-between), never
+     into one blank band. On a short phone there is nothing left and the rows
+     sit at their minimum. The boxes wrapper is `display: contents` so its
+     rows take part in that one distribution. */
   .frame-landing {
     display: flex;
     flex-direction: column;
-    gap: 0.9rem;
+    justify-content: space-between;
+    gap: 0.5rem;
     padding: 0.35rem 0.5rem 0.25rem;
   }
 
+  .frame-landing > :global(.identity-header) {
+    margin-bottom: 0.25rem;
+  }
+
   .frame-boxes {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    display: contents;
   }
 
   .frame-boxes :global(.drill-row) {
+    flex: 1 0 auto;
     min-height: var(--min-touch-target, 48px);
+    max-height: 84px;
+  }
+
+  .frame-boxes .creators-switch {
+    flex: 0 0 auto;
+  }
+
+  .frame-sign-out {
+    flex: 0 0 auto;
   }
 
   .frame-boxes .creators-switch :global(.setting-toggle) {

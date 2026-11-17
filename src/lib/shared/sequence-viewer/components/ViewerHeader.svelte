@@ -97,6 +97,9 @@
      * own without opening a menu. The standalone sequence page turns it on.
      */
     promoteRemix?: boolean;
+    /** The host's words for the Remix button, such as the sequence page's
+     *  "Edit this"; absent keeps "Remix". */
+    remixWording?: { label: string; ariaLabel: string } | null;
     onPracticeToggle?: () => void;
     /**
      * The share panel is open; Share closes it again. Escape then belongs to
@@ -142,6 +145,7 @@
     onAddToCollection,
     onRemix,
     promoteRemix = false,
+    remixWording = null,
     onPracticeToggle,
     sharePanelOpen = false,
     canToggleMotionVisibility = false,
@@ -173,6 +177,10 @@
     !compactChrome &&
       viewerWidth >=
         (navigation ? GENEROUS_CHROME_MIN_WIDTH : LABELLED_CHROME_MIN_WIDTH)
+  );
+  const remixLabel = $derived(remixWording?.label ?? t("viewer_ui_remix"));
+  const remixAriaLabel = $derived(
+    remixWording?.ariaLabel ?? t("viewer_header_remix_sequence")
   );
   const showCompactRemix = $derived(
     compactChrome && promoteRemix && !!onRemix && !ctx.practiceActive
@@ -450,8 +458,8 @@
             onclick={() => pressRemix("header")}
             use:composerIntent
             aria-busy={remixOpening}
-            aria-label={t("viewer_header_remix_sequence")}
-            title={t("viewer_ui_remix")}
+            aria-label={remixAriaLabel}
+            title={remixLabel}
           >
             <i
               class="fas {remixOpening
@@ -459,7 +467,7 @@
                 : 'fa-pen-to-square'}"
               aria-hidden="true"
             ></i>
-            <span class="action-label">{t("viewer_ui_remix")}</span>
+            <span class="action-label">{remixLabel}</span>
           </button>
         {/if}
       {/if}
@@ -751,8 +759,8 @@
         onclick={() => pressRemix("compact_header")}
         use:composerIntent
         aria-busy={remixOpening}
-        aria-label={t("viewer_header_remix_sequence")}
-        title={t("viewer_header_remix_sequence")}
+        aria-label={remixAriaLabel}
+        title={remixAriaLabel}
         transition:growFade={{ axis: "x", duration: DURATION.emphasis }}
       >
         <i
@@ -762,7 +770,7 @@
           aria-hidden="true"
         ></i>
         {#if remixLabelled}
-          <span class="remix-label">{t("viewer_ui_remix")}</span>
+          <span class="remix-label">{remixLabel}</span>
         {/if}
         <span
           class="remix-sizer"
@@ -770,7 +778,7 @@
           bind:offsetWidth={remixLabelledWidth}
         >
           <i class="fas fa-pen-to-square"></i>
-          <span class="remix-label">{t("viewer_ui_remix")}</span>
+          <span class="remix-label">{remixLabel}</span>
         </span>
       </button>
     {/if}

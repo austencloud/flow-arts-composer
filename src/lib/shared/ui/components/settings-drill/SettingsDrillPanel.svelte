@@ -55,6 +55,8 @@ named in .claude/rules/crossfade-primitive.md.
     detail,
     listHeader,
     listContent,
+    detailHeaderEnd,
+    compact = false,
     onSelect,
   }: {
     items: SettingsDrillItem[];
@@ -66,6 +68,11 @@ named in .claude/rules/crossfade-primitive.md.
     listHeader?: Snippet;
     /** Optional custom landing content. The drill still owns navigation. */
     listContent?: Snippet;
+    /** Sits at the right end of a detail screen's back header, for a figure
+     * the user needs while changing the setting (the video's length). */
+    detailHeaderEnd?: Snippet;
+    /** A short host (the dock tray) tightens the detail header and the gaps. */
+    compact?: boolean;
     onSelect?: (id: string | null) => void;
   } = $props();
 
@@ -118,7 +125,7 @@ named in .claude/rules/crossfade-primitive.md.
   }
 </script>
 
-<div class="drill-panel">
+<div class="drill-panel" class:compact>
   {#key selected ?? "__root__"}
     <div class="stage">
       <div class="layer" in:flyFade={{ x: enterX, duration: motionMs }}>
@@ -162,6 +169,9 @@ named in .claude/rules/crossfade-primitive.md.
               </svg>
             </button>
             <h4 class="detail-title">{activeItem.label}</h4>
+            {#if detailHeaderEnd}
+              <div class="detail-header-end">{@render detailHeaderEnd()}</div>
+            {/if}
           </div>
           <div class="layer-body themed-scrollbar">
             {@render detail(activeItem.id)}
@@ -254,6 +264,27 @@ named in .claude/rules/crossfade-primitive.md.
     padding-bottom: 0.625rem;
     margin-bottom: 0.25rem;
     border-bottom: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+  }
+
+  .detail-header-end {
+    margin-inline-start: auto;
+    min-width: 0;
+  }
+
+  /* The dock tray: the header costs the back button's height and a hairline,
+     and the groups below sit closer, so a group of three rows still fits. */
+  .compact .detail-title-row {
+    padding-bottom: 0.25rem;
+    margin-bottom: 0;
+  }
+
+  .compact .layer-body {
+    gap: 0.375rem;
+  }
+
+  .compact .back-button {
+    width: var(--alt-touch-target, 36px);
+    height: var(--alt-touch-target, 36px);
   }
 
   .detail-title {

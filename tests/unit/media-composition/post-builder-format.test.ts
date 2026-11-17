@@ -1,9 +1,45 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatGridOffset,
   formatPostSpeed,
   formatTakeClock,
+  gridOffsetDraft,
   parseClock,
 } from "#lib/shared/share/components/post-studio/builder/post-builder-format.js";
+import {
+  GRID_FINE_STEP_SECONDS,
+  MIN_MOVE_SECONDS,
+  steppedGridOffset,
+} from "#lib/shared/media-composition/domain/take-timing.js";
+
+describe("Whole grid's reading and steps", () => {
+  it("reads to the millisecond, so 0.387 no longer shows as 0.39", () => {
+    expect(formatGridOffset(0.387)).toBe("+0.387 s");
+    expect(formatGridOffset(-0.05)).toBe("-0.050 s");
+    expect(formatGridOffset(1.2)).toBe("+1.200 s");
+  });
+
+  it("opens the typed box on the stored value", () => {
+    expect(gridOffsetDraft(0.387)).toBe("0.387");
+    expect(gridOffsetDraft(0.420333)).toBe("0.420333");
+    expect(gridOffsetDraft(-0.01)).toBe("-0.01");
+    expect(gridOffsetDraft(0)).toBe("0");
+  });
+
+  it("a 10 ms press lands on the exact next value, again and again", () => {
+    expect(steppedGridOffset(0.387, GRID_FINE_STEP_SECONDS)).toBe(0.397);
+    let offset = 0.387;
+    for (let press = 0; press < 30; press += 1) {
+      offset = steppedGridOffset(offset, -GRID_FINE_STEP_SECONDS);
+    }
+    expect(offset).toBe(0.087);
+    expect(formatGridOffset(offset)).toBe("+0.087 s");
+  });
+
+  it("a frame step still moves one frame", () => {
+    expect(steppedGridOffset(0, MIN_MOVE_SECONDS)).toBe(0.033333);
+  });
+});
 
 describe("formatPostSpeed", () => {
   it("rounds a clip speed to two decimals", () => {

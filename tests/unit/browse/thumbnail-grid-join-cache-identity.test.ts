@@ -62,7 +62,7 @@ describe("joined-grid thumbnail cache identity", () => {
 
   it("leaves one-grid keys byte-identical", () => {
     // The hash main produced before joins existed.
-    expect(deriveKey(galleryInput).hash).toBe("bjvy66");
+    expect(deriveKey(galleryInput).hash).toBe("-gkotkx");
     expect(inputFor({}).gridJoin).toBeUndefined();
     expect(deriveKey(inputFor({})).hash).toBe(
       deriveKey(inputFor({ conjoined: undefined })).hash

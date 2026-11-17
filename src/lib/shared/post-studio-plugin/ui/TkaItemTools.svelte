@@ -28,6 +28,7 @@
   import PostSequenceActionsTool from "#lib/shared/post-studio-plugin/ui/PostSequenceActionsTool.svelte";
   import PostFlyIntoNextTool from "#lib/shared/post-studio-plugin/ui/PostFlyIntoNextTool.svelte";
   import PostAutoFrameTool from "#lib/shared/post-studio-plugin/ui/PostAutoFrameTool.svelte";
+  import PostBeatNudgeTool from "#lib/shared/post-studio-plugin/ui/PostBeatNudgeTool.svelte";
   import { shownLandings } from "#lib/shared/share/components/post-studio/builder/timing-lane-landings.js";
   import { tkaEditorOf, useTkaEditor } from "./tka-editor-context";
 
@@ -247,6 +248,8 @@
     {locked}
     busy={tka.sequenceBusy}
   />
+{:else if tool === "nudge" && item?.kind === "video"}
+  <PostBeatNudgeTool {editor} {item} {locked} />
 {:else if tool === "fly" && item}
   <PostFlyIntoNextTool {editor} {item} {locked} />
 {/if}

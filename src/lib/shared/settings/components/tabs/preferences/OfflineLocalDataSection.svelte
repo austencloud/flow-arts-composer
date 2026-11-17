@@ -1,5 +1,6 @@
 <!-- Offline downloads and local app data controls for Preferences > Advanced. -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { onMount } from "svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
@@ -99,8 +100,8 @@
       return t("settings_offline_no_thumbnails", { note: artNote });
     }
     return t("settings_offline_downloaded_count", {
-      done: result.warmed.toLocaleString(),
-      total: result.total.toLocaleString(),
+      done: formatNumber(result.warmed),
+      total: formatNumber(result.total),
       note: artNote,
     });
   });
@@ -152,12 +153,12 @@
       <dl class="cache-stats">
         <div class="stat-row">
           <dt>{t("settings_offline_gallery_sequences")}</dt>
-          <dd>{offlineStats.gallerySequenceCount.toLocaleString()}</dd>
+          <dd>{formatNumber(offlineStats.gallerySequenceCount)}</dd>
         </div>
         <div class="stat-row">
           <dt>{t("settings_offline_thumbnails")}</dt>
           <dd>
-            {offlineStats.thumbnailsCached.toLocaleString()}
+            {formatNumber(offlineStats.thumbnailsCached)}
             {#if offlineStats.thumbnailsSizeBytes > 0}
               <span>({formatBytes(offlineStats.thumbnailsSizeBytes)})</span>
             {/if}

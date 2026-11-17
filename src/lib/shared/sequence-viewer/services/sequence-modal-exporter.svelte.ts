@@ -101,6 +101,11 @@ export interface ExportCallbacks {
   onHaptic: (type: "success" | "error" | "selection") => void;
   /** Native share sheet was dismissed. Optional for existing callers. */
   onCanceled?: () => void;
+  /** The finished card reached the person, by share sheet or download. */
+  onDelivered?: (delivery: {
+    method: "share" | "download";
+    canceled: boolean;
+  }) => void;
 }
 
 /**
@@ -491,6 +496,10 @@ export class SequenceModalExporter {
       }
 
       reportImageExportDelivery(callbacks, shared, shareCanceled);
+      callbacks.onDelivered?.({
+        method: shared ? "share" : "download",
+        canceled: shareCanceled,
+      });
     } catch (error) {
       console.error("[SequenceModalExporter] Image export failed:", error);
       callbacks.onHaptic("error");

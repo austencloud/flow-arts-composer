@@ -9,6 +9,7 @@
   phone too narrow for the word.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { BrowseEngine } from "../engine/types";
 
@@ -56,8 +57,8 @@
     countPending
       ? t("browse_audit_counting_matches")
       : resultCount === 1
-        ? t("browse_audit_one_sequence", { count: resultCount })
-        : t("browse_audit_many_sequences", { count: resultCount })
+        ? t("browse_audit_one_sequence", { count: formatNumber(resultCount) })
+        : t("browse_audit_many_sequences", { count: formatNumber(resultCount) })
   );
 </script>
 

@@ -228,6 +228,7 @@ export class WebGL2Backend implements RenderBackend {
 
   resize(width: number, height: number): void {
     if (!this.gl || !this.fbos || !this.canvas) return;
+    if (this.gl.isContextLost()) return;
     this.canvas.width = Math.max(1, width);
     this.canvas.height = Math.max(1, height);
     this.fbos.resize(width, height);

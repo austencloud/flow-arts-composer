@@ -13,6 +13,7 @@
   CategoryTile.svelte.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import SequencePeek from "#lib/shared/browse/components/SequencePeek.svelte";
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
@@ -281,7 +282,7 @@
           <span class="choice-title"
             >{loading || loadFailed
               ? t("browse_ui_show_all_sequences")
-              : t("browse_ui_show_all_count", { count: poolSize })}</span
+              : t("browse_ui_show_all_count", { count: formatNumber(poolSize) })}</span
           >
           <span class="choice-sub"
             >{t("browse_ui_the_whole_gallery_one_grid")}</span

@@ -14,6 +14,7 @@
   transform/box-shadow only (compositor).
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import type {
     GameDefinition,
     GameProgress,
@@ -91,7 +92,7 @@
       {#if played}
         <span class="best">
           <span class="best-label">{t("learn_ui_best")}</span>
-          <span class="best-score">{progress.bestScore.toLocaleString()}</span>
+          <span class="best-score">{formatNumber(progress.bestScore)}</span>
           {#if progress.bestGrade}
             <span
               class="grade-badge"

@@ -12,6 +12,7 @@
   GalleryFilterMenu (the gallery drill in a popover) or BrowseSourceMenu.
 -->
 <script module lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import type { Section as DrillSection } from "./gallery-drill-catalog.svelte";
 
   export type MenuRequest = {
@@ -95,7 +96,7 @@
   const countNumber = $derived(
     countPending
       ? "…"
-      : `${engine.resultCount.toLocaleString()}${
+      : `${formatNumber(engine.resultCount)}${
           engine.isLibraryComplete ? "" : "+"
         }`
   );

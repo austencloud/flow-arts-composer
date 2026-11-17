@@ -27,6 +27,8 @@
     onPlaybackToggle = () => {},
     leftPropType = null,
     onPropChange,
+    onPropPickerRequest,
+    propPickerActive = false,
     fanAppearance,
     onFanAppearanceChange,
     onArtSettingChange,
@@ -62,6 +64,8 @@
     {onPlaybackToggle}
     {leftPropType}
     {onPropChange}
+    {onPropPickerRequest}
+    {propPickerActive}
     {fanAppearance}
     {onFanAppearanceChange}
     {onArtSettingChange}

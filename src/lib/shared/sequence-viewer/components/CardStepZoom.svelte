@@ -591,14 +591,6 @@
     overflow: hidden;
   }
 
-  /* The picture grows out of its cell, so the frame itself must not move.
-     The shared fallback entrance (a scale-up and rise) also matches morph
-     dialogs in Chrome; without this the first frame lands off the cell. */
-  :global(dialog.base-modal.card-step-zoom[data-animation="morph"][open]) {
-    animation: none;
-    transform: none;
-  }
-
   :global(dialog.base-modal.card-step-zoom::backdrop) {
     background: transparent;
     backdrop-filter: none;

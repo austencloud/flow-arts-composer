@@ -43,6 +43,7 @@ describe("tka tool rows are today's rows", () => {
       "fade",
       "effects",
       "beats",
+      "nudge",
       "rename",
       "duplicate",
       "delete",
@@ -81,6 +82,7 @@ describe("tka tool rows are today's rows", () => {
       "hands",
       "lift",
       "bar",
+      "nudge",
       "timing",
       ...TAIL,
     ]);
@@ -96,6 +98,7 @@ describe("tka tool rows are today's rows", () => {
         "bar",
         "speed",
         "crop",
+        "nudge",
         "timing",
         ...TAIL,
       ]
@@ -121,6 +124,7 @@ describe("tka tool rows are today's rows", () => {
       "appearance",
       "shows",
       "sequence",
+      "nudge",
       "timing",
       ...TAIL,
     ]);
@@ -215,6 +219,7 @@ describe("tka tool rows are today's rows", () => {
   // Moved from post-editor-tools.test.ts: the panel helpers on rows that hold tka's tools.
   it("opens tka's panels as before, and Beats still acts at once", () => {
     expect(isPanelTool("beats", TKA_TOOLS)).toBe(false);
+    expect(isPanelTool("nudge", TKA_TOOLS)).toBe(true);
     expect(defaultPanel(row("card"), TKA_TOOLS)).toBe("appearance");
     expect(defaultPanel(row("moves"), TKA_TOOLS)).toBe("appearance");
     expect(

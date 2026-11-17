@@ -28,7 +28,6 @@
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
   import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import TunnelEffectsSettings from "./TunnelEffectsSettings.svelte";
-  import type { EffectCatalogLook } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
   import { EFFECT_GLYPH_WIDTH } from "#lib/shared/sequence-viewer/components/control-dock-tab-form.js";
   import { effectCatalogLooks } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
@@ -42,6 +41,8 @@
   import type {
     ArtSettingChangeHandler,
     ArtSettingValue,
+    TunnelRailEntry,
+    TunnelRailId,
   } from "./art-settings-types";
   import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import {
@@ -50,16 +51,6 @@
   } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import { getOptionalViewerAnimatorInspectorContext } from "../../context/viewer-animator-inspector-context";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-
-  type TunnelRailId =
-    | "tunnel"
-    | "props"
-    | "speed"
-    | "effects"
-    | "motion"
-    | "display"
-    | "effort"
-    | "playback";
 
   interface Props {
     controller: TunnelViewController;
@@ -78,6 +69,9 @@
     onPlaybackToggle: () => void;
     leftPropType: string | null;
     onPropChange?: (propType: PropType) => void;
+    /** Phone dock: Props opens the shell's one prop screen; pressed while open. */
+    onPropPickerRequest?: () => void;
+    propPickerActive?: boolean;
     /** Per-hand picking for hosts that keep a local pair (Tunnel creator). */
     handProps?: HandPropToolbarProps;
     fanAppearance?: FanAppearance;
@@ -110,6 +104,8 @@
     onPlaybackToggle,
     leftPropType,
     onPropChange,
+    onPropPickerRequest,
+    propPickerActive = false,
     handProps,
     fanAppearance,
     propChirality = createGlobalChiralitySeam(),
@@ -192,19 +188,7 @@
         }
       : undefined
   );
-  const tunnelRail = $derived<
-    {
-      id: TunnelRailId;
-      icon?: string;
-      propType?: PropType;
-      fanAppearance?: FanAppearance;
-      propPairGlyph?: boolean;
-      effectChip?: { effectId: string; look: EffectCatalogLook | undefined };
-      label: string;
-      summary?: string;
-      accentColor?: string;
-    }[]
-  >([
+  const tunnelRail = $derived<TunnelRailEntry[]>([
     // Shared pages lead in the same order as 2D Animation. Their component,
     // selection state, and section bodies now survive the mode switch; the
     // two Tunnel-only destinations follow them instead of reshuffling the rail.
@@ -333,8 +317,12 @@
     if (exporting) return;
     const tid = id as TunnelRailId;
     const previous = openTunnelTab;
-    openTunnelTab = previous === tid ? null : tid;
+    // Props opens the one prop screen over the stage; no tray stays behind it.
+    const toPropScreen = tid === "props" ? onPropPickerRequest : undefined;
+    openTunnelTab = toPropScreen || previous === tid ? null : tid;
     if (openTunnelTab) rememberTunnelSection(openTunnelTab);
+    toPropScreen?.();
+    if (toPropScreen && previous === null) return;
     reportSetting(
       "art_navigation",
       "mobile_tunnel_section",
@@ -353,6 +341,7 @@
       effectChip: p.effectChip,
       glyphWidth: p.id === "effects" ? EFFECT_GLYPH_WIDTH : undefined,
       accentColor: p.accentColor,
+      pressed: p.id === "props" && propPickerActive,
     }))
   );
   const tunnelDockExport = $derived<ControlDockAction>({

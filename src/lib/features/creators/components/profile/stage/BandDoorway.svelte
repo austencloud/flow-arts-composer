@@ -10,6 +10,7 @@
   items, and one callback.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import ArtifactTile from "./ArtifactTile.svelte";
   import { sampleCount } from "./doorway-policy";
   import type { LiveSlots, Medium } from "./live-slots.svelte";
@@ -75,7 +76,7 @@
   {#if label}
     <header class="shelf-head">
       <h3>{label}</h3>
-      <span class="shelf-count">{total.toLocaleString()}</span>
+      <span class="shelf-count">{formatNumber(total)}</span>
       <span class="shelf-rule" aria-hidden="true"></span>
       <button class="enter shelf-enter" type="button" onclick={onenter}>
         {actionLabel}
@@ -113,7 +114,7 @@
          (clickables-look-like-buttons.md). -->
     <button class="enter" type="button" onclick={onenter}>
       <span class="enter-label">{actionLabel}</span>
-      <span class="enter-count">{total.toLocaleString()}</span>
+      <span class="enter-count">{formatNumber(total)}</span>
     </button>
   {/if}
 </div>

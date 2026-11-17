@@ -3,6 +3,7 @@ import {
   RAIL_SECOND_COLUMN_WIDTH,
   resolveSceneControlLayout,
   sceneInspectorPanelWidth,
+  sceneStageFramingAspect,
 } from "#lib/shared/3d/domain/scene-control-layout.js";
 
 describe("scene control workspace layout", () => {
@@ -16,8 +17,8 @@ describe("scene control workspace layout", () => {
   });
 
   it("does not change a wide desktop into mobile controls when its timeline grows", () => {
-    expect(resolveSceneControlLayout(1440, 509, true).presentation).toBe(
-      "overlay"
+    expect(resolveSceneControlLayout(1440, 509, true).presentation).not.toBe(
+      "compact"
     );
   });
 
@@ -30,15 +31,49 @@ describe("scene control workspace layout", () => {
     );
   });
 
-  it("uses an overlay for intermediate and split-view workspaces", () => {
+  it("gives performer tools their own column on a mid-size window", () => {
+    expect(resolveSceneControlLayout(1280, 900, true)).toEqual({
+      presentation: "docked",
+      panelWidth: 520,
+      reservedWidth: 612,
+    });
+  });
+
+  it("narrows that column so the performer keeps a stage to stand in", () => {
+    // A half-width desktop window: the full column would leave a 331px stage.
+    expect(resolveSceneControlLayout(943, 1000, true)).toEqual({
+      presentation: "docked",
+      panelWidth: 371,
+      reservedWidth: 463,
+    });
+    // An upright tablet: the column stops shrinking at its floor.
     expect(resolveSceneControlLayout(820, 1180, true)).toEqual({
+      presentation: "docked",
+      panelWidth: 360,
+      reservedWidth: 452,
+    });
+  });
+
+  it("reserves nothing on a mid-size window until a panel opens", () => {
+    expect(resolveSceneControlLayout(943, 1000, false).reservedWidth).toBe(0);
+  });
+
+  it("keeps short editors floating on a mid-size window", () => {
+    expect(resolveSceneControlLayout(1280, 900, true, false)).toEqual({
       presentation: "overlay",
       panelWidth: 520,
       reservedWidth: 0,
     });
-    expect(resolveSceneControlLayout(1280, 900, true).presentation).toBe(
-      "overlay"
-    );
+  });
+
+  it("floats the panel when its own column would leave no usable stage", () => {
+    expect(
+      resolveSceneControlLayout(768, 1000, true, true, RAIL_SECOND_COLUMN_WIDTH)
+    ).toEqual({
+      presentation: "overlay",
+      panelWidth: 520,
+      reservedWidth: 0,
+    });
   });
 
   it("reserves real canvas width only while a wide dock is open", () => {
@@ -79,5 +114,20 @@ describe("scene control workspace layout", () => {
   it("caps the inspector instead of stretching it across a 4K stage", () => {
     expect(sceneInspectorPanelWidth(1440)).toBe(520);
     expect(sceneInspectorPanelWidth(3840)).toBe(1100);
+  });
+
+  it("frames a stage narrowed by a panel no tighter than an upright phone", () => {
+    expect(sceneStageFramingAspect(480, 1073)).toBeCloseTo(9 / 16, 5);
+    expect(sceneStageFramingAspect(360, 1100)).toBeCloseTo(9 / 16, 5);
+  });
+
+  it("frames a roomy stage by its real shape", () => {
+    expect(sceneStageFramingAspect(941, 1073)).toBeCloseTo(941 / 1073, 5);
+    expect(sceneStageFramingAspect(1728, 1080)).toBeCloseTo(1.6, 5);
+  });
+
+  it("falls back to a square frame before the stage has a size", () => {
+    expect(sceneStageFramingAspect(0, 0)).toBe(1);
+    expect(sceneStageFramingAspect(480, Number.NaN)).toBe(1);
   });
 });

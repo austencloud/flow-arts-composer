@@ -528,10 +528,7 @@
       !stageExtent &&
       !performerPropColors &&
       !onPerformanceSample &&
-      !gaitProbeState.enabled &&
-      viewer3DState.performerManager.renderablePerformers.every(
-        ({ presencePhase }) => presencePhase === "present"
-      )
+      !gaitProbeState.enabled
   );
 
   // A `build` opening is decided once, when the scene can first render: the

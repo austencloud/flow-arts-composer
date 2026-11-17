@@ -19,6 +19,7 @@ import {
   MotionType,
 } from "../domain/enums/pictograph-enums";
 import { getPictographGeometryRevision } from "#lib/shared/render/services/pictograph-key-hasher.js";
+import { globalAdjustmentVersion } from "../../arrow/positioning/global/state/global-adjustment-version.svelte";
 import {
   fanAppearanceSignature,
   isFanPropType,
@@ -414,6 +415,10 @@ export class PictographPreparer {
       // share a cache entry with a visible static twin.
       left?.isVisible === false ? "bInvis" : "",
       right?.isVisible === false ? "rInvis" : "",
+      // Arrow positions come from the placement stores. When they load or an
+      // adjustment is saved the version moves, so an entry prepared before
+      // that (default arrow positions) is never handed to a later render.
+      `pv${globalAdjustmentVersion.version}`,
     ];
     // Appended only when joined, so every single-grid key stays as it was.
     if (isGridJoin(pictograph.conjoined)) {

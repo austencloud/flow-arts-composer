@@ -44,6 +44,18 @@ export type { TakeSample, TakeSampleOptions };
  */
 export const MIN_MOVE_SECONDS = 1 / 30;
 
+/**
+ * The fine step for sliding a whole grid against the song: 10 ms, a third
+ * of a frame. A change this small shows in an export only where it carries
+ * a landing across a frame boundary.
+ */
+export const GRID_FINE_STEP_SECONDS = 0.01;
+
+/** A grid offset moved by `step` seconds, kept to the microsecond. */
+export function steppedGridOffset(offsetSeconds: number, step: number): number {
+  return Math.round((offsetSeconds + step) * 1e6) / 1e6;
+}
+
 const IdSchema = z.string().trim().min(1);
 const MediaSecondsSchema = z.number().finite().nonnegative();
 

@@ -67,6 +67,10 @@ import type { Period } from "#lib/shared/foundation/domain/models/generation/cir
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
 import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import {
+  buildSequenceVideoTags,
+  embedSequenceTagsInMp4,
+} from "#lib/shared/share/services/sequence-file-embedder.js";
 
 export class VideoExportOrchestrator implements IVideoExportOrchestrator {
   private _isExporting = false;
@@ -101,6 +105,12 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       panelState,
       exportFormat
     );
+    // The sequence travels inside the MP4 so the file can be opened back into
+    // the app. Built once from the sequence this export already holds; null
+    // (and the video ships without it) when there is none or it cannot encode.
+    const sequenceTags = panelState.sequenceData
+      ? buildSequenceVideoTags(panelState.sequenceData)
+      : null;
 
     // Check visibility settings early to calculate output dimensions. Per-export
     // overlayOverrides merge OVER the global visibility manager so the exported
@@ -351,6 +361,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           fps,
           filename,
           autoDownload: false,
+          ...(sequenceTags && { metadataTags: sequenceTags }),
         }
       );
     }
@@ -1135,6 +1146,13 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
 
       if (useBackgroundEncoder) {
         outputBlob = await this.backgroundEncoder.finish();
+        // The worker encoder (vendored video-editor package) takes no tags, so
+        // they go in with a packet-copy remux. Falls back to the plain file.
+        if (sequenceTags) {
+          outputBlob = await embedSequenceTagsInMp4(outputBlob, sequenceTags, {
+            fragmented: options.fragmented,
+          });
+        }
       } else if (inlineExporter) {
         outputBlob = await inlineExporter.finish();
       } else {

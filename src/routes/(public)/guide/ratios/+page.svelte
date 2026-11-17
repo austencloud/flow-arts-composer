@@ -23,9 +23,14 @@
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideScreens from "../_components/fit/GuideScreens.svelte";
   import {
+    readScreenParam,
     watchScreenTier,
     type ScreenTier,
   } from "../_components/fit/guide-screen-url";
+  import {
+    createScreenSplits,
+    JOINED_MIN_FIT,
+  } from "../_components/fit/screen-splits.svelte.js";
   import Sentences from "../_components/Sentences.svelte";
   import { sentences } from "../_components/sentences";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
@@ -555,9 +560,30 @@
   // ratio, the ladder level by level, the swap, the original twelve, one
   // end or two, then the 144 pairings. A phone keeps each screen to a few
   // sentences and shows one tray at a time.
-  type RatioView = { label: string; parts: string[]; duo?: boolean };
+  type RatioView = {
+    label: string;
+    parts: string[];
+    duo?: boolean;
+    /** A joined screen: the group that splits in place when it will not fit,
+     * and the last step it can take. */
+    group?: string;
+    max?: number;
+  };
   let tier = $state<ScreenTier>("large");
-  onMount(() => watchScreenTier((v) => (tier = v)));
+  // A joined screen that will not fit at its smallest scale falls back, in
+  // place, to its words and then its picture (GuideScreens onoverflow). Before
+  // the window is measured the page draws the most split cut.
+  const splits = createScreenSplits();
+  let measured = $state(false);
+  onMount(() =>
+    watchScreenTier((v) => {
+      tier = v;
+      splits.restore();
+      measured = true;
+    })
+  );
+  const at = (group: string, max: number) =>
+    measured ? splits.step(group, max) : max;
   const small = $derived(tier === "small");
   // A phone's foot pills hold two short lines, so its screens are named
   // "Level 3" and the card on the screen carries the full heading.
@@ -568,6 +594,70 @@
       level,
       name: tDynamic(`guide_ratios_level_${level}_name`),
     });
+  // One both-ends card: "ends-2:1" is Level 2's second.
+  const card = (level: number, k: number) => `ends-${level}:${k}`;
+  const bothEnds = (level: number, part = 1) =>
+    part === 1
+      ? tDynamic("guide_ratios_screen_both_ends_level", { level })
+      : tDynamic("guide_ratios_screen_both_ends_level_part", { level, part });
+  /** One level's ends on a phone: its words and first card on one screen
+   * (step 0), or the words and then the card (step 1). The second card
+   * follows either way. */
+  const phoneEnds = (
+    group: string,
+    level: number,
+    words: string,
+    label: string
+  ): RatioView[] => {
+    const split = at(group, 1) === 1;
+    return [
+      ...(split
+        ? [
+            { label, parts: [words] },
+            { label: bothEnds(level), parts: [card(level, 0)] },
+          ]
+        : [{ label, parts: [words, card(level, 0)], group, max: 1 }]),
+      {
+        label: split ? bothEnds(level, 2) : bothEnds(level),
+        parts: [card(level, 1)],
+      },
+    ];
+  };
+  /** The both-ends trays of two levels on a laptop: one screen (step 0),
+   * a screen per level with its half of the words beside its tray (step 1),
+   * then the words alone and the two trays (step 2). */
+  const wideEnds = (
+    group: string,
+    a: number,
+    b: number,
+    all: string,
+    firstWords: string,
+    trayA: string,
+    trayB: string,
+    secondWords?: string
+  ): RatioView[] => {
+    const both = tDynamic("guide_ratios_screen_both_ends_levels", { a, b });
+    const step = at(group, 2);
+    if (step === 0)
+      return [{ label: both, parts: [all, trayA, trayB], group, max: 2 }];
+    if (step === 1)
+      return [
+        { label: bothEnds(a), parts: [firstWords, trayA], duo: true, group, max: 2 },
+        secondWords === undefined
+          ? { label: bothEnds(b), parts: [trayB] }
+          : { label: bothEnds(b), parts: [secondWords, trayB], duo: true, group, max: 2 },
+      ];
+    return [
+      {
+        label:
+          secondWords === undefined
+            ? tDynamic("guide_ratios_screen_ends_l1")
+            : tDynamic("guide_ratios_screen_ends_past_l1"),
+        parts: [all],
+      },
+      { label: both, parts: [trayA, trayB] },
+    ];
+  };
   const views = $derived.by((): RatioView[] => {
     const reading = tDynamic("guide_ratios_reading");
     const ladderTitle = tDynamic("guide_ratios_ladder");
@@ -580,13 +670,13 @@
         { label: tDynamic("guide_ratios_screen_two_counts"), parts: ["intro:0-2"] },
         { label: tDynamic("guide_ratios_screen_turns"), parts: ["intro:2-"] },
         { label: tDynamic("guide_ratios_screen_three_ratios"), parts: ["origins"] },
-        { label: reading, parts: ["h:reading", "terms"] },
+        { label: tDynamic("guide_ratios_screen_reading"), parts: ["h:reading", "terms"] },
         { label: tDynamic("guide_ratios_screen_converting"), parts: ["formula"] },
         { label: tDynamic("guide_ratios_screen_petals"), parts: ["petals"] },
         { label: tDynamic("guide_ratios_float_name"), parts: ["float"] },
-        { label: tDynamic("guide_ratios_example_caption"), parts: ["worked"] },
+        { label: tDynamic("guide_ratios_screen_example"), parts: ["worked"] },
         { label: tDynamic("guide_ratios_screen_common_names"), parts: ["names"] },
-        { label: ladderTitle, parts: ["h:ladder", "ladderIntro"] },
+        { label: tDynamic("guide_ratios_screen_ladder"), parts: ["h:ladder", "ladderIntro"] },
         { label: tDynamic("guide_ratios_screen_four_flowers"), parts: ["ladderOri:0-2"] },
         { label: tDynamic("guide_ratios_screen_flower_sits"), parts: ["ladderOri:2-3"] },
         { label: tDynamic("guide_ratios_screen_quarter_flowers"), parts: ["ladderOri:3-"] },
@@ -614,29 +704,27 @@
           label: tDynamic("guide_ratios_family", { ratio: family.ratio }),
           parts: [`family-${i}`],
         })),
-        { label: ends, parts: ["h:ends", "endsIntro"] },
+        { label: tDynamic("guide_ratios_screen_one_or_two"), parts: ["h:ends", "endsIntro"] },
         { label: tDynamic("guide_ratios_screen_staff_both"), parts: ["endsOpposite"] },
-        { label: tDynamic("guide_ratios_screen_ends_l1"), parts: ["endsL1"] },
-        { label: tDynamic("guide_ratios_screen_ends_past_l1"), parts: ["endsL4:0-2"] },
-        { label: tDynamic("guide_ratios_screen_ends_l4"), parts: ["endsL4:2-"] },
         // A phone shows one ends card at a time: its words don't shrink.
-        ...endsLevels.flatMap((tray) =>
-          tray.cases.map((_, k) => ({
-            label:
-              k === 0
-                ? tDynamic("guide_ratios_screen_both_ends_level", {
-                    level: tray.level,
-                  })
-                : `${tDynamic("guide_ratios_screen_both_ends_level", {
-                    level: tray.level,
-                  })} (${k + 1})`,
-            parts: [`ends-${tray.level}:${k}`],
-          }))
-        ),
-        { label: pairings, parts: ["h:pairings", "pairingsIntro"] },
-        { label: tDynamic("guide_ratios_screen_opening_cell"), parts: ["pairingsChoose"] },
-        { label: tDynamic("guide_ratios_cell"), parts: ["anatomy"] },
-        { label: tDynamic("guide_ratios_screen_matrix"), parts: ["matrix"] },
+        // The words ride with the card they describe, or step ahead of it.
+        ...phoneEnds("endsL1", 1, "endsL1", tDynamic("guide_ratios_screen_ends_l1")),
+        ...phoneEnds("endsL2", 2, "endsL4:0-2", tDynamic("guide_ratios_screen_ends_past_l1")),
+        { label: bothEnds(3), parts: [card(3, 0)] },
+        { label: bothEnds(3, 2), parts: [card(3, 1)] },
+        ...phoneEnds("endsL4", 4, "endsL4:2-", tDynamic("guide_ratios_screen_ends_l4")),
+        ...(at("pairings", 1) === 0
+          ? [{ label: pairings, parts: ["h:pairings", "pairingsIntro", "anatomy"], group: "pairings", max: 1 }]
+          : [
+              { label: pairings, parts: ["h:pairings", "pairingsIntro"] },
+              { label: tDynamic("guide_ratios_cell"), parts: ["anatomy"] },
+            ]),
+        ...(at("cell", 1) === 0
+          ? [{ label: tDynamic("guide_ratios_screen_opening_cell"), parts: ["pairingsChoose", "matrix"], group: "cell", max: 1 }]
+          : [
+              { label: tDynamic("guide_ratios_screen_opening_cell"), parts: ["pairingsChoose"] },
+              { label: tDynamic("guide_ratios_screen_matrix"), parts: ["matrix"] },
+            ]),
         { label: tDynamic("guide_ratios_screen_beyond"), parts: ["beyond"] },
         { label: tDynamic("guide_ratios_sources"), parts: ["sources"] },
       ];
@@ -703,9 +791,8 @@
       { label: twelve, parts: ["h:twelve", "twelveIntro", "twelveExample"] },
       { label: tDynamic("guide_ratios_screen_three_families"), parts: ["families"] },
       { label: ends, parts: ["h:ends", "endsIntro", "endsOpposite"] },
-      { label: tDynamic("guide_ratios_screen_ends_by_level"), parts: ["endsL1", "endsL4"] },
-      { label: tDynamic("guide_ratios_screen_both_ends_levels", { a: 1, b: 2 }), parts: ["ends-1", "ends-2"] },
-      { label: tDynamic("guide_ratios_screen_both_ends_levels", { a: 3, b: 4 }), parts: ["ends-3", "ends-4"] },
+      ...wideEnds("endsA", 1, 2, "endsL1", "endsL1", "ends-1", "ends-2"),
+      ...wideEnds("endsB", 3, 4, "endsL4", "endsL4:0-2", "ends-3", "ends-4", "endsL4:2-"),
       {
         label: pairings,
         parts: ["h:pairings", "pairingsIntro", "pairingsChoose", "anatomy"],
@@ -719,7 +806,7 @@
     ];
   });
 
-  /** The one ends card a part names ("ends-2:1" is Level 2's second), or
+  /** The one ends card a part names (card(2, 1) is Level 2's second), or
    * undefined for the whole tray. */
   function shownEndsCase(
     visuals: string[],
@@ -770,7 +857,17 @@
   const topic = (part: string) =>
     part.startsWith("h:")
       ? part
-      : partName(part).replace(/^family-\d+$/, "families");
+      : ENDS_WORDS_TOPIC[part] ??
+        partName(part).replace(/^family-\d+$/, "families");
+  // The ends words belong to the level they describe, so a joined screen
+  // that splits in place keeps the reader on its own words, not on another
+  // level's ("endsL4" is read on both Level 2's and Level 4's screens).
+  const ENDS_WORDS_TOPIC: Record<string, string> = {
+    endsL1: "ends-1",
+    endsL4: "ends-3",
+    "endsL4:0-2": "ends-2-words",
+    "endsL4:2-": "ends-4-words",
+  };
   const topics = $derived(views.map((v) => v.parts.map(topic)));
 </script>
 
@@ -796,6 +893,15 @@
     <GuideScreens
       title={tDynamic("guide_ratios_title")}
       labels={views.map((v) => v.label)}
+      cutKey={`${measured}${splits.key}`}
+      floors={views.map((v) => (v.group ? JOINED_MIN_FIT : undefined))}
+      onoverflow={() => {
+        const v =
+          views[
+            Math.min(readScreenParam(window.location.search), views.length - 1)
+          ];
+        if (v?.group) splits.bump(v.group, v.max ?? 1);
+      }}
       {topics}
       prevPage={{
         href: localHref("/guide/level-2"),
@@ -822,6 +928,7 @@
         <div
           class="screen"
           class:duo={view.duo && texts.length && visuals.length}
+          class:beside-tray={trays.length > 0}
         >
           {#if texts.length}
             <div class="copy">
@@ -1475,6 +1582,11 @@
     .screen.duo .copy {
       text-align: left;
       --sentence-display: inline;
+    }
+
+    /* An ends tray needs the wider column to keep its captions on one line. */
+    .screen.duo.beside-tray {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
     }
   }
 

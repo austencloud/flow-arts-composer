@@ -115,11 +115,13 @@ export function trackViewerOpenTiming(
 export function trackViewerClosed(
   context: ViewerAnalyticsContext,
   method: ViewerCloseMethod,
-  openMs: number
+  openMs: number,
+  properties: ViewerAnalyticsProperties = {}
 ): void {
   captureViewerEvent("viewer_closed", context, {
     close_method: method,
     open_ms: openMs,
+    ...properties,
   });
 }
 

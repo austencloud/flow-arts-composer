@@ -267,11 +267,9 @@
         });
       }
 
-      saveSequenceRouteHandoff({
-        sequence,
-        returnPath: `/browse/gallery?from=scan&code=${encodeURIComponent(shortCode)}`,
-        returnLabel: "Browse",
-      });
+      // No return path: a scan is a cold arrival, and its Back opens the
+      // Composer rather than the gallery (sequence-close-target.ts).
+      saveSequenceRouteHandoff({ sequence });
 
       const destination = buildScanSequenceDestination(
         shortCode,

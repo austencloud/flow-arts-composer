@@ -4,6 +4,7 @@ import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifi
 import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
 import { openSequenceOverlay } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { applyEmbeddedLetters } from "./embedded-letters";
 
 /**
  * Trace 1's terminal state: the user looking at the sequence they shared.
@@ -30,7 +31,9 @@ export async function openFiledCard(input: {
   /** Display word for the copy. Defaults to the sequence's own word. */
   word?: string;
 }): Promise<void> {
-  const hydrated = await hydrateSequence(input.sequence, {
+  // A card filed from a file that carried its sequence gets back the letters
+  // the file carried; its code has no letter column.
+  const hydrated = await hydrateSequence(applyEmbeddedLetters(input.code, input.sequence), {
     loopDetector: getLoopDetector(),
   });
 

@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import PostTimingDisclosure from "./PostTimingDisclosure.svelte";
   import PostTimingTap from "./PostTimingTap.svelte";
+  import PostGridOffsetControl from "./PostGridOffsetControl.svelte";
   import {
     MIN_MOVE_SECONDS,
     TAKE_MAX_BPM,
@@ -266,32 +267,10 @@
       {#if fitted && section}
         <div class="group">
           <h4>{t("share_studio_deep_whole_grid")}</h4>
-          <div class="paired">
-            <PanelButton
-              onclick={() => session.nudgeGrid(-1)}
-              ariaLabel={t("share_studio_deep_grid_frame_earlier")}
-            >
-              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-              {t("share_studio_deep_one_frame")}
-            </PanelButton>
-            <TypeableValue
-              label={t("share_studio_deep_whole_grid")}
-              text={section.offsetSeconds !== 0
-                ? `${section.offsetSeconds > 0 ? "+" : ""}${section.offsetSeconds.toFixed(2)} s`
-                : t("share_studio_deep_on_taps")}
-              draft={section.offsetSeconds.toFixed(2)}
-              unit="s"
-              signed
-              oncommit={session.setGridOffset}
-            />
-            <PanelButton
-              onclick={() => session.nudgeGrid(1)}
-              ariaLabel={t("share_studio_deep_grid_frame_later")}
-            >
-              {t("share_studio_deep_one_frame")}
-              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-            </PanelButton>
-          </div>
+          <PostGridOffsetControl
+            offsetSeconds={section.offsetSeconds}
+            onchange={session.setGridOffset}
+          />
           <SegmentedControl
             options={[
               { value: "grid", label: t("share_studio_deep_land_on_grid") },

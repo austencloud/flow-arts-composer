@@ -31,7 +31,6 @@
   import { createSavePanelState } from "../state/save-panel-state.svelte";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { getSoloPropSaveOrchestrator } from "#lib/features/library/get-solo-prop-save-orchestrator.js";
-  import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
   import { Crossfade, growFade, popIn } from "#lib/shared/transitions/motion.js";
@@ -44,7 +43,6 @@
   import { computeKeyboardOpenFrame } from "#lib/shared/mobile/utils/keyboard-open-frame.js";
   import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
-  import { normalizeCardPresentation } from "#lib/shared/share/domain/models/card-presentation.js";
   import { onMount } from "svelte";
   import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { cardPresentationFromFooterSettings } from "#lib/shared/share/domain/models/card-presentation.js";
@@ -205,7 +203,7 @@
   // drill-down screen for the groups that need more than a line. The rows
   // and screens arrange the same save state; nothing here decides what is
   // saved.
-  type SaveDrill = "collection" | "footer" | "note";
+  type SaveDrill = "collection" | "note";
   let drill = $state<SaveDrill | null>(null);
 
   $effect(() => {
@@ -235,11 +233,9 @@
   const screenTitle = $derived(
     drill === "collection"
       ? t("create_ui_add_to_a_collection")
-      : drill === "footer"
-        ? t("share_card_footer")
-        : drill === "note"
-          ? t("create_review_notes")
-          : s.headerTitle
+      : drill === "note"
+        ? t("create_review_notes")
+        : s.headerTitle
   );
 
   const previewSequence = $derived(s.sequence);
@@ -260,16 +256,6 @@
     return names.length === ids.length
       ? names.join(", ")
       : t("create_save_collection_count", { count: ids.length });
-  });
-
-  const footerSummary = $derived.by(() => {
-    const footer = normalizeCardPresentation(s.cardPresentation).footer;
-    if (footer.mode === "custom") {
-      return footer.text?.trim() || t("share_footer_custom");
-    }
-    return footer.mode === "credit"
-      ? t("share_footer_credit")
-      : t("share_footer_off");
   });
 
   const noteSummary = $derived(
@@ -543,18 +529,6 @@
               onChange={(ids) => (s.selectedCollectionIds = ids)}
             />
           </div>
-        {:else if drill === "footer"}
-          <div
-            class="drill-pane footer-pane"
-            onfocusin={handleDrillFocusIn}
-            onfocusout={handleDrillFocusOut}
-          >
-            <CardFooterEditor
-              value={s.cardPresentation}
-              onchange={(value) => (s.cardPresentation = value)}
-              idBase="save-screen-card-footer"
-            />
-          </div>
         {:else if drill === "note"}
           <div
             class="drill-pane note-pane"
@@ -624,7 +598,10 @@
               {/if}
 
               {#if !s.isFlagged && !s.isSolo && !s.isMixed}
-                <div class="screen-row public-row">
+                <div
+                  class="screen-row public-row"
+                  class:has-note={!s.canPublishToCommunity}
+                >
                   <SettingToggleButton
                     label={t("create_save_row_public")}
                     description={s.canPublishToCommunity
@@ -657,15 +634,6 @@
                   "fa-folder-open",
                   t("create_save_row_collection"),
                   collectionSummary
-                )}
-              {/if}
-
-              {#if !s.isSolo && !s.isMixed}
-                {@render summaryRow(
-                  "footer",
-                  "fa-rectangle-list",
-                  t("share_card_footer"),
-                  footerSummary
                 )}
               {/if}
 
@@ -793,18 +761,6 @@
           mode="select"
           selectedIds={s.selectedCollectionIds}
           onChange={(ids) => (s.selectedCollectionIds = ids)}
-        />
-      </div>
-    {/if}
-
-    <!-- Card footer: a one-row setting, not a section of its own. -->
-    {#if !s.isSolo && !s.isMixed}
-      <div class="card-footer-row">
-        <CardFooterEditor
-          layout="inline"
-          value={s.cardPresentation}
-          onchange={(value) => (s.cardPresentation = value)}
-          idBase="save-card-footer"
         />
       </div>
     {/if}
@@ -1271,13 +1227,6 @@
     color: var(--theme-text-dim);
   }
 
-  .card-footer-row {
-    padding: 10px 16px;
-    background: var(--theme-card-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: 12px;
-  }
-
   .optional-section {
     display: flex;
     flex-wrap: wrap;
@@ -1500,6 +1449,27 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* A sequence too short to post: the line under Public is a full sentence
+     saying why. It wraps and the row grows to hold it, and the picture above
+     gives up the height. The step count cannot change while this screen is
+     open, so the row is this tall from the first paint and nothing moves. */
+  .screen-row.public-row.has-note {
+    height: auto;
+    min-height: var(--row-height);
+  }
+
+  .public-row.has-note :global(.setting-toggle) {
+    height: auto;
+    min-height: var(--row-height);
+    padding-block: 8px;
+  }
+
+  .public-row.has-note :global(.setting-description) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .row-lead {

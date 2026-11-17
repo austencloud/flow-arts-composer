@@ -8,6 +8,7 @@
   import { provideSequencePageLoading } from "./sequence-page-loading.svelte.js";
   import { markScan } from "#lib/shared/analytics/scan-perf.js";
   import { loadSequenceViewerPage } from "./load-sequence-viewer-page.js";
+  import { hasNavigatedBetweenPages } from "#lib/shared/navigation/services/client-navigation.js";
   import { pageBootsInto3D } from "#lib/shared/sequence-viewer/services/viewer-boot-3d.js";
   import { preloadViewer3DCode } from "#lib/shared/3d/scene-boot/viewer-3d-code-prefetch.js";
   import {
@@ -36,6 +37,16 @@
   const loadingSession = browser ? loading.open() : null;
 
   const seo = $derived(data.seo);
+
+  // A visitor from outside the app (a scan, or a link that is the first page
+  // of the visit) gets a line under the viewer header that names the
+  // Composer. The loading frames hold its room so the stage does not move
+  // when the viewer arrives. The server render is always a first page.
+  // A `?demo=1` page is shown inside another page and never gets the line.
+  const holdComposerLineRoom =
+    page.url.searchParams.get("demo") !== "1" &&
+    (page.url.searchParams.get("from") === "scan" ||
+      !(browser && hasNavigatedBetweenPages()));
 
   /**
    * Prototype behind `?frame=1`: the word, facts and stored thumbnail the
@@ -104,8 +115,13 @@
 </Seo>
 
 {#if firstFrame && !viewerReady}
-  <div class="sequence-route-loading">
-    <SequenceFirstFrame meta={data.meta} session={loadingSession} />
+  <div
+    class="sequence-route-loading"
+    class:hold-door-room={holdComposerLineRoom}
+  >
+    <div class="door-room">
+      <SequenceFirstFrame meta={data.meta} session={loadingSession} />
+    </div>
   </div>
 {/if}
 
@@ -118,10 +134,15 @@
   -->
   {#await viewerModule!}
     {#if !firstFrame}
-      <div class="sequence-route-loading">
-        {#if loadingSession}
-          <SequencePageLoading session={loadingSession} />
-        {/if}
+      <div
+        class="sequence-route-loading"
+        class:hold-door-room={holdComposerLineRoom}
+      >
+        <div class="door-room">
+          {#if loadingSession}
+            <SequencePageLoading session={loadingSession} />
+          {/if}
+        </div>
       </div>
     {/if}
   {:then { default: SequenceViewerPage }}
@@ -194,6 +215,30 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
+  }
+
+  /* The frame measures itself, so the sideways test below needs no window
+     query. */
+  .sequence-route-loading.hold-door-room {
+    container-type: size;
+  }
+
+  .door-room {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ComposerDoorLine's height (COMPOSER_DOOR_LINE_HEIGHT), written out so the
+     first paint imports nothing for it. */
+  .hold-door-room .door-room {
+    top: 38px;
+  }
+
+  /* A phone held sideways (SIDEWAYS_VIEWPORT_QUERY's size) shows no line. */
+  @container (max-height: 480px) and (min-width: 700px) {
+    .hold-door-room .door-room {
+      top: 0;
+    }
   }
 
   .sequence-card-details {

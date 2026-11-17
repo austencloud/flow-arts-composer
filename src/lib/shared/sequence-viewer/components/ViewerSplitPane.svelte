@@ -102,6 +102,8 @@
     onArtExport,
     onArtShare,
     artShareActive = false,
+    onArtPropPickerRequest,
+    artPropPickerActive = false,
     onArtExportEvent,
     onArtSettingChange,
     onArtAction,
@@ -648,6 +650,8 @@
       {onArtExport}
       {onArtShare}
       {artShareActive}
+      {onArtPropPickerRequest}
+      {artPropPickerActive}
       {onArtExportEvent}
       {onArtSettingChange}
       {onArtAction}
@@ -739,6 +743,8 @@
         {onArtExport}
         {onArtShare}
         {artShareActive}
+        {onArtPropPickerRequest}
+        {artPropPickerActive}
         {onArtExportEvent}
         {onArtSettingChange}
         {onArtAction}

@@ -79,10 +79,10 @@ describe("QR scan cloud-render contract", () => {
       /const viewerModule = browser \? loadSequenceViewerPage\(\) : null;/
     );
     expect(route).toMatch(
-      /\{#await viewerModule!\}\s*\{#if !firstFrame\}\s*<div class="sequence-route-loading">\s*\{#if loadingSession\}\s*<SequencePageLoading/
+      /\{#await viewerModule!\}\s*\{#if !firstFrame\}\s*<div\s+class="sequence-route-loading"[^>]*>\s*<div class="door-room">\s*\{#if loadingSession\}\s*<SequencePageLoading/
     );
     expect(route).toMatch(
-      /\{#if firstFrame && !viewerReady\}\s*<div class="sequence-route-loading">\s*<SequenceFirstFrame/
+      /\{#if firstFrame && !viewerReady\}\s*<div\s+class="sequence-route-loading"[^>]*>\s*<div class="door-room">\s*<SequenceFirstFrame/
     );
   });
 

@@ -6,7 +6,10 @@ import type {
   PlaybackMode,
 } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
-import type { ExportRequestOptions } from "#lib/shared/sequence-viewer/components/export-coordinator.svelte.js";
+import type {
+  ExportDeliveryReport,
+  ExportRequestOptions,
+} from "#lib/shared/sequence-viewer/components/export-coordinator.svelte.js";
 import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
@@ -199,6 +202,10 @@ export interface OrchestratorContext {
   handleRetryExport: () => void;
   dismissPreview: () => void;
   saveExportedVideo: () => Promise<void>;
+  /** Reports how a finished video or card reached the person. Returns its undo. */
+  setExportDeliveryListener: (
+    listener: ((report: ExportDeliveryReport) => void) | null
+  ) => () => void;
   /** Saves a film kept on the device; false when it is no longer there. */
   saveRetainedFilm: (filmId: string) => Promise<boolean>;
 

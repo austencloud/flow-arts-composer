@@ -8,12 +8,14 @@ import { getPictographMemoryCache } from './get-pictograph-memory-cache';
 import { getCanvas2DRenderer } from './get-canvas-2d-renderer';
 import { getLayerCompositor } from './get-layer-compositor';
 import type { Canvas2DDirectRenderer } from './services/canvas-2d-direct-renderer';
+import { whenArrowPlacementDataReady } from '#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js';
 
 let instance: ImageComposer | null = null;
 
 export function getImageComposer(): ImageComposer {
 	if (!browser) throw new Error('getImageComposer() is browser-only');
-	return instance ??= new ImageComposer(
+	if (instance) return instance;
+	instance = new ImageComposer(
 		getTextRenderer(),
 		getPictographBlobCache(),
 		getPictographKeyHasher(),
@@ -21,4 +23,8 @@ export function getImageComposer(): ImageComposer {
 		getCanvas2DRenderer() as Canvas2DDirectRenderer,
 		getLayerCompositor()
 	);
+	// Every picture this composer draws (Browse cards, exports, print, share)
+	// waits for the arrow placement stores before positioning a cell.
+	instance.setPlacementReadiness(whenArrowPlacementDataReady);
+	return instance;
 }

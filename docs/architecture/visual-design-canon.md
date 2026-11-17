@@ -290,6 +290,11 @@ pair keeps props, not colours, so that host shows no colour block. Austen's
 pick, 2026-11-15 ("A, one picker"): "choosing your prop should just be one
 consistent experience across the board ... With no scroll bars attached."
 
+On a phone, the viewer's Props button opens that same prop screen at full
+height, on a shared link as well as inside the app. The viewer has no smaller
+prop tray of its own on a phone, however tall the phone is. Austen's pick,
+2026-11-16 ("Keep full screen").
+
 ## 7. Information Hierarchy and Content
 
 The screen should answer these questions without a tutorial covering it:

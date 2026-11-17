@@ -13,7 +13,10 @@
 -->
 <script lang="ts">
   interface Props {
-    /** Renders the file and saves it. */
+    /**
+     * Renders the file and saves it. Called with no arguments: a click event
+     * handed through would be read by the owner as its export stage.
+     */
     onExport: () => void;
     /** "Export MP4" / "Export Video" — the two products name their file. */
     exportLabel: string;
@@ -28,7 +31,7 @@
   <button
     type="button"
     class="export-btn"
-    onclick={onExport}
+    onclick={() => onExport()}
     disabled={busy}
     data-testid="art-export-button"
   >

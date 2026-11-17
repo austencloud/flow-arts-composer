@@ -219,3 +219,47 @@ describe("buugeng chirality is owned by the prop picker", () => {
     expect(tab).toContain("rightFlipped={pair.rightFlipped}");
   });
 });
+
+describe("a page with no app shell opens the one prop screen from the viewer", () => {
+  const SHELL =
+    "src/lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
+
+  it("its prop screen and the dock's tray change the same thing", () => {
+    // A shared link has no global switcher host. The viewer's own sheet must
+    // write the viewer's props through the tray's handler, never the global
+    // settings that the app's host writes.
+    const shell = read(SHELL);
+    const sheet = shell.slice(
+      shell.indexOf("{#if propScreenMounted}"),
+      shell.indexOf('<div class="shared-inspector-parking">')
+    );
+    expect(sheet).toContain("PropSelectionSheet.svelte");
+    expect(sheet).toContain("onSelect={handleViewerPropChange}");
+    expect(sheet).toContain("onHandChange: ctx.setPropHand");
+    expect(sheet).not.toContain("updateSettings");
+    expect(shell).toMatch(
+      /onPropChange=\{ctx\.effectiveSequence\?\.sequenceKind === "hand-path"\s*\? undefined\s*: handleViewerPropChange\}/
+    );
+    const handler = shell.slice(
+      shell.indexOf("function handleViewerPropChange"),
+      shell.indexOf("</script>")
+    );
+    expect(handler).toContain('"video_export"');
+  });
+
+  it("only the phone dock routes Props to it, and an app shell's host wins", () => {
+    const shell = read(SHELL);
+    const owns = shell.slice(
+      shell.indexOf("const ownsPropScreen"),
+      shell.indexOf("let propScreenOpen")
+    );
+    expect(owns).toContain("!propDrawerState.available");
+    expect(owns).toContain('controlsLayout === "bottom"');
+    expect(owns).toContain("ownPropScreen");
+    // A tunnel's own phone dock goes through the same door.
+    expect(owns).toContain("tunnelDockIsBottom");
+    expect(shell).toContain("onArtPropPickerRequest={tunnelPropPickerRequest}");
+    // A mock phone or a third-party iframe keeps the dock's tray.
+    expect(shell).toContain("ownPropScreen = !embedded,");
+  });
+});

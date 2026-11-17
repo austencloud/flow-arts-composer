@@ -83,6 +83,7 @@
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { toExportTakeoverPhase } from "#lib/shared/video-export/services/export-takeover-phase.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import RecordSceneChrome from "./record-scene/RecordSceneChrome.svelte";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -141,6 +142,7 @@
   } from "../state/viewer-shell-share-state.svelte";
   import {
     createViewerShellInteractionState,
+    type RemixSource,
     type ViewerShellExportOverrides,
     type ViewerShellGuideAction,
   } from "../state/viewer-shell-interaction-state.svelte";
@@ -171,6 +173,7 @@
     trackViewerSettingChanged,
     trackViewerViewChanged,
     type SequenceViewerSource,
+    type ViewerAnalyticsProperties,
   } from "#lib/shared/sequence-viewer/analytics/viewer-events.js";
 
   /** Host-owned export pipeline (such as the scan-origin account gate).
@@ -183,8 +186,14 @@
     analyticsSource: SequenceViewerSource;
     isMobile: boolean;
     onClose: () => void;
-    /** Override the header/menu Remix action when a host needs custom routing. */
-    onRemix?: () => void;
+    /** Override the header/menu Remix action when a host needs custom routing.
+     *  It is told which control was pressed. */
+    onRemix?: (source: RemixSource) => void;
+    /** Host wording for the header Remix button (the sequence page's
+     *  "Edit this" for a visitor who arrived from outside the app). */
+    remixWording?: { label: string; ariaLabel: string } | null;
+    /** Extra properties on `sequence_remix_started` from this viewer. */
+    remixAnalytics?: ViewerAnalyticsProperties;
     /**
      * Show Remix as its own labelled button beside Share on a compact header
      * (phones, narrow windows) instead of only in the dots menu.
@@ -254,6 +263,13 @@
     shareOnOpen?: boolean;
     /** Host intent: start the canonical library save flow once. */
     saveOnOpen?: boolean;
+    /**
+     * With no app shell to host the prop switcher, the phone dock's Props
+     * pill opens the one full-height prop screen, mounted here. A host whose
+     * page is not the visitor's whole screen (a mock phone, a third-party
+     * iframe) keeps the dock's own prop tray: off by default when embedded.
+     */
+    ownPropScreen?: boolean;
   }
 
   let {
@@ -263,6 +279,8 @@
     isMobile,
     onClose,
     onRemix,
+    remixWording = null,
+    remixAnalytics,
     promoteRemix = false,
     openAppHref,
     onAccountSignIn,
@@ -279,6 +297,7 @@
     showFullscreenControls = false,
     shareOnOpen = false,
     saveOnOpen = false,
+    ownPropScreen = !embedded,
     tunnelComposition = null,
     tunnelSaveTarget = null,
     onTunnelSaved,
@@ -397,7 +416,10 @@
     if (!embedded) {
       trackViewerAction(analyticsContext(), action, properties);
       if (action === "remix") {
-        trackSequenceRemixStarted(analyticsContext(), properties);
+        trackSequenceRemixStarted(analyticsContext(), {
+          ...properties,
+          ...remixAnalytics,
+        });
       }
     }
     captureScanAction(action, properties, options);
@@ -1261,7 +1283,91 @@
       }
     });
   });
+
+  // The controls panel's layout, as the panel below is given it: the
+  // phone's bottom dock or the side panel.
+  const controlsLayout = $derived<"bottom" | "sidebar">(
+    studioSurfaces.active || !layout.isVideoExportActive
+      ? "sidebar"
+      : layout.effectiveMobile
+        ? "bottom"
+        : "sidebar"
+  );
+  const propPickerAllowed = $derived(
+    !studioSurfaces.active &&
+      ctx.effectiveSequence?.sequenceKind !== "hand-path"
+  );
+  // No app shell hosts the switcher (a shared link): on the phone dock the
+  // viewer mounts the one prop screen itself, wired to the viewer's own
+  // props exactly as the dock's prop tray is. The side panel keeps its grid.
+  // A tunnel has its own phone dock (ArtPane's settings), on the same door.
+  const tunnelDockIsBottom = $derived(
+    !studioSurfaces.active &&
+      ctx.viewerState.viewerMode === "tunnel" &&
+      layout.effectiveMobile
+  );
+  const ownsPropScreen = $derived(
+    ownPropScreen &&
+      propPickerAllowed &&
+      !propDrawerState.available &&
+      (controlsLayout === "bottom" || tunnelDockIsBottom)
+  );
+  let propScreenOpen = $state(false);
+  // Loaded on the first press, then kept so the sheet's close can play out.
+  let propScreenMounted = $state(false);
+  $effect(() => {
+    if (propScreenOpen) propScreenMounted = true;
+    if (!ownsPropScreen) propScreenOpen = false;
+  });
+  function propDoor(dockIsBottom: boolean): (() => void) | undefined {
+    if (!propPickerAllowed) return undefined;
+    if (propDrawerState.available) return () => propDrawerState.open();
+    return ownsPropScreen && dockIsBottom
+      ? () => (propScreenOpen = true)
+      : undefined;
+  }
+  const propPickerRequest = $derived(propDoor(controlsLayout === "bottom"));
+  const tunnelPropPickerRequest = $derived(propDoor(tunnelDockIsBottom));
+  const propPickerActive = $derived(
+    propDrawerState.available ? propDrawerState.isOpen : propScreenOpen
+  );
+  function handleViewerPropChange(prop: PropType) {
+    studioSurfaces.controls?.setProp(prop);
+    interactions.handlePropChange(
+      prop,
+      "video_export",
+      studioSurfaces.active ? "both" : ctx.propHand
+    );
+  }
 </script>
+
+{#if propScreenMounted}
+  <!-- The one prop screen, with what the dock's prop tray would have had:
+       the same handler, hand choice, lit tile and chirality seam. -->
+  {#await import("#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte") then mod}
+    <mod.default
+      bind:isOpen={propScreenOpen}
+      selectedPropType={ctx.propHand === "right"
+        ? ctx.rightPropType
+        : ctx.leftPropType}
+      color={ctx.propHand === "right" ? "red" : "blue"}
+      title={t("settings_prop_sheet_title")}
+      onSelect={handleViewerPropChange}
+      handProps={ctx.leftPropType === undefined ||
+      ctx.rightPropType === undefined
+        ? undefined
+        : {
+            hand: ctx.propHand,
+            leftPropType: ctx.leftPropType,
+            rightPropType: ctx.rightPropType,
+            onHandChange: ctx.setPropHand,
+          }}
+      chirality={createGlobalChiralitySeam(
+        ctx.propHand === "both" ? undefined : ctx.propHand
+      )}
+    />
+  {/await}
+{/if}
 
 <div class="shared-inspector-parking">
   <div
@@ -1290,11 +1396,7 @@
       isExporting={interactions.videoBusy}
       exportProgress={interactions.videoProgress}
       canvasReady={ctx.canvasReady}
-      layout={studioSurfaces.active || !layout.isVideoExportActive
-        ? "sidebar"
-        : layout.effectiveMobile
-          ? "bottom"
-          : "sidebar"}
+      layout={controlsLayout}
       singlePlayDuration={ctx.singlePlayDuration}
       isPlaying={studioSurfaces.controls?.playing ?? ctx.isPlayingLocal}
       bpm={studioSurfaces.controls?.bpm ?? ctx.bpmLocal}
@@ -1327,20 +1429,9 @@
       showPathShape={!studioSurfaces.active}
       onPropChange={ctx.effectiveSequence?.sequenceKind === "hand-path"
         ? undefined
-        : (prop) => {
-            studioSurfaces.controls?.setProp(prop);
-            interactions.handlePropChange(
-              prop,
-              "video_export",
-              studioSurfaces.active ? "both" : ctx.propHand
-            );
-          }}
-      onPropPickerRequest={studioSurfaces.active ||
-      !propDrawerState.available ||
-      ctx.effectiveSequence?.sequenceKind === "hand-path"
-        ? undefined
-        : () => propDrawerState.open()}
-      propPickerActive={propDrawerState.isOpen}
+        : handleViewerPropChange}
+      onPropPickerRequest={propPickerRequest}
+      {propPickerActive}
       onPlaybackToggle={() => {
         if (studioSurfaces.controls) studioSurfaces.controls.toggle();
         else interactions.handlePlaybackToggle("video_export");
@@ -1415,6 +1506,7 @@
         ? interactions.handleRemix
         : undefined}
       {promoteRemix}
+      {remixWording}
       onPracticeToggle={interactions.headerActions.showPractice
         ? ctx.practiceActive
           ? interactions.handleExitPractice
@@ -1772,6 +1864,8 @@
                           ? undefined
                           : share.setArtShareTarget}
                         artShareActive={!!share.artShare}
+                        onArtPropPickerRequest={tunnelPropPickerRequest}
+                        artPropPickerActive={propPickerActive}
                         onArtExportEvent={interactions.handleArtExportEvent}
                         onArtSettingChange={interactions.handleArtSettingChange}
                         onArtAction={introPreview

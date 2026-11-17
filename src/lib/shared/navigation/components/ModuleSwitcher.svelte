@@ -237,6 +237,28 @@
     closeDrawer();
   }
 
+  // A picture or video someone sent: the device's own chooser, then the one
+  // open path (the sequence inside the file, else the card's QR).
+  let sentFileInput = $state<HTMLInputElement | null>(null);
+
+  function handleOpenSentFile() {
+    hapticService?.trigger("selection");
+    sentFileInput?.click();
+  }
+
+  async function handleSentFileChosen(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    // Cleared so choosing the same file again still reports a change.
+    input.value = "";
+    if (!file) return;
+    closeDrawer();
+    const { openSentFile } = await import(
+      "#lib/shared/share/services/open-sent-file.js"
+    );
+    await openSentFile(file, "picker");
+  }
+
   function handleWhatsNew() {
     closeDrawer();
     void whatsNewState.openManual();
@@ -385,6 +407,27 @@
           {/if}
         </div>
       </Crossfade>
+    </div>
+
+    <!-- Open a sent file: one row between the modules and the account. -->
+    <div class="open-file-slot">
+      <button
+        type="button"
+        class="open-file-row"
+        onclick={handleOpenSentFile}
+      >
+        <i class="fas fa-folder-open" aria-hidden="true"></i>
+        <span>{t("nav_open_sent_file")}</span>
+      </button>
+      <input
+        bind:this={sentFileInput}
+        class="open-file-input"
+        type="file"
+        accept="image/*,video/mp4"
+        tabindex="-1"
+        aria-hidden="true"
+        onchange={handleSentFileChosen}
+      />
     </div>
 
     <!-- Account Footer -->
@@ -769,6 +812,87 @@
       background: rgba(255, 255, 255, 0.95);
       border: 2px solid white;
       color: black;
+    }
+  }
+
+  /* Same surface, radius and states as the account row below it. */
+  .open-file-slot {
+    flex-shrink: 0;
+    padding: 0 20px 10px;
+  }
+
+  .open-file-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--min-touch-target);
+    padding: 8px 16px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 14px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font-size: var(--font-size-sm, 14px);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .open-file-row i {
+    flex-shrink: 0;
+    width: 20px;
+    color: var(--theme-accent);
+    font-size: var(--font-size-base, 16px);
+    text-align: center;
+  }
+
+  .open-file-row span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .open-file-row:hover {
+    background: var(--theme-card-hover-bg);
+    border-color: var(--theme-stroke-strong);
+  }
+
+  .open-file-row:active {
+    transform: scale(0.98);
+  }
+
+  .open-file-row:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--theme-accent) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  .open-file-input {
+    display: none;
+  }
+
+  @media (max-width: 480px) and (orientation: portrait) {
+    .open-file-slot {
+      padding-inline: 16px;
+    }
+  }
+
+  @media (max-height: 600px) and (orientation: landscape) {
+    .open-file-slot {
+      padding: 0 6px 6px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .open-file-row {
+      transition: none;
+    }
+
+    .open-file-row:active {
+      transform: none;
     }
   }
 

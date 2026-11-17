@@ -220,7 +220,7 @@
   <div class="prop-editor-content" bind:this={editorContentElement}>
     {#if propState.error}
       <div class="prop-error" role="alert">
-        <span>{propState.error}</span>
+        <span>{t(propState.error)}</span>
         <button
           type="button"
           onclick={saveFailed

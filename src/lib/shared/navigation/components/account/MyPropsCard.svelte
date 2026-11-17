@@ -142,7 +142,7 @@
   </dl>
 
   {#if propState?.error}
-    <p class="identity-error" role="status">{propState.error}</p>
+    <p class="identity-error" role="status">{t(propState.error)}</p>
   {/if}
 </section>
 

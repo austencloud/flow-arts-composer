@@ -1,6 +1,7 @@
 <!-- The signed-in identity column inside Account settings. -->
 <script lang="ts">
   import RobustAvatar from "../../../../components/avatar/RobustAvatar.svelte";
+  import SignOutButton from "./SignOutButton.svelte";
   import type { User } from "firebase/auth";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
@@ -12,7 +13,8 @@
     pronouns?: string;
     username?: string;
     profileColor?: string;
-    /** Phone frame: one short block (photo, names, email) with Sign out beside it. */
+    /** Phone frame: one short block (photo, names, email). Sign out is the
+     *  frame's own bottom row there, so the hero leaves it out. */
     compact?: boolean;
   }
 
@@ -26,6 +28,19 @@
     profileColor,
     compact = false,
   }: Props = $props();
+
+  // Break opportunities only after "@" and before each dot of the domain, so a
+  // long address wraps at its seams and never mid-word.
+  const emailParts = $derived.by(() => {
+    const email = user.email ?? "";
+    const at = email.lastIndexOf("@");
+    if (at < 0) return [email];
+    const domain = email.slice(at + 1).split(".");
+    return [
+      email.slice(0, at + 1),
+      ...domain.map((part, index) => (index === 0 ? part : `.${part}`)),
+    ];
+  });
 </script>
 
 <section
@@ -77,21 +92,21 @@
         </p>
       {/if}
       {#if user.email}
-        <p class="profile-email ph-no-capture">{user.email}</p>
+        <p class="profile-email ph-no-capture">
+          {#each emailParts as part, index (index)}{#if index > 0}<wbr
+              />{/if}{part}{/each}
+        </p>
       {/if}
     </div>
   </div>
 
-  {#if !disabled}
+  {#if !disabled && !compact}
     <div class="session-row">
       <span class="session-status">
         <span class="session-dot" aria-hidden="true"></span>
         <span>{t("settings_signed_in")}</span>
       </span>
-      <button type="button" class="sign-out-btn" onclick={onSignOut}>
-        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-        <span>{t("settings_sign_out")}</span>
-      </button>
+      <SignOutButton {onSignOut} />
     </div>
   {/if}
 </section>
@@ -276,42 +291,6 @@
       color-mix(in srgb, var(--semantic-success) 12%, transparent);
   }
 
-  .sign-out-btn {
-    display: inline-flex;
-    min-height: var(--min-touch-target, 44px);
-    align-items: center;
-    justify-content: center;
-    gap: 0.55em;
-    padding: 0.7em 1em;
-    border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
-    border-radius: 0.7em;
-    color: var(--theme-text-dim);
-    background: color-mix(in srgb, var(--theme-text) 5%, transparent);
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 700;
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard);
-  }
-
-  .sign-out-btn:hover {
-    border-color: color-mix(in srgb, var(--semantic-error) 45%, transparent);
-    color: color-mix(in srgb, var(--semantic-error) 85%, var(--theme-text));
-    background: color-mix(in srgb, var(--semantic-error) 10%, transparent);
-    transform: translateY(-1px);
-  }
-
-  .sign-out-btn:active {
-    transform: scale(0.98);
-  }
-
-  .sign-out-btn:focus-visible {
-    outline: 3px solid var(--theme-accent-text, var(--theme-accent));
-    outline-offset: 2px;
-  }
 
   @container profile-tab (max-width: 32rem) {
     .identity-kicker {
@@ -355,31 +334,29 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .avatar-wrapper.clickable,
-    .sign-out-btn {
+    .avatar-wrapper.clickable {
       transition: none;
     }
 
-    .avatar-wrapper.clickable:hover,
-    .sign-out-btn:hover,
-    .sign-out-btn:active {
+    .avatar-wrapper.clickable:hover {
       transform: none;
     }
   }
 
   /* Phone frame: the hero is one short block so the boxes under it fit the
-     screen. The kicker and the signed-in status step out; Sign out sits
-     beside the names; the email wraps instead of being cut. */
+     screen. The kicker steps out and Sign out moves to the frame's bottom row,
+     so photo, name and email take the whole width; the email wraps only at
+     its seams (the <wbr>s after "@" and before each dot). */
   .identity-header.compact {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    column-gap: 0.75em;
+    width: 100%;
   }
 
-  .compact .identity-kicker,
-  .compact .session-status {
+  .compact .identity-kicker {
     display: none;
+  }
+
+  .compact .profile-info {
+    flex: 1 1 auto;
   }
 
   .identity-header.compact .profile-hero {
@@ -407,15 +384,12 @@
     margin-top: 0.2em;
   }
 
+  /* `break-word` only for a single segment wider than the line; it never
+     changes the min-content size, so the seams win first. */
   .compact .profile-email {
-    overflow-wrap: anywhere;
+    max-width: 100%;
+    overflow: visible;
+    overflow-wrap: break-word;
     white-space: normal;
-  }
-
-  .compact .session-row {
-    width: auto;
-    margin: 0;
-    padding: 0;
-    border-top: 0;
   }
 </style>

@@ -330,6 +330,18 @@
     z-index: 50;
     background: var(--guide-canvas);
   }
+  /* A page with screens (GuideTocList's drill-down): the list fills the
+     drawer and only its own areas scroll, so the pinned All guides row stays
+     on screen. The top only clears the close button; the bottom only the
+     home bar. */
+  .guide-drawer.open:has(:global(.guide-toc.drill)) {
+    overflow: hidden;
+    padding: calc(44px + 0.5rem + 2px) 0 max(4px, env(safe-area-inset-bottom));
+  }
+  /* Its close button rises half a step to give the screens that room. */
+  :global(.guide-layout:has(.guide-toc.drill)) .mobile-menu-btn.open {
+    transform: translateY(-0.5rem);
+  }
   /* A list, not a banner: rows keep a reading width on wide windows. */
   .guide-drawer.open :global(.guide-toc) {
     max-width: 36rem;
@@ -386,6 +398,16 @@
       top: 44px;
       height: calc(100dvh - 44px);
       padding-top: 0.75rem;
+    }
+    /* Sideways the drawer opens under the top row and the button sits in
+       that row: nothing to clear above the list, and no room to rise. */
+    :global(html:has(.guide-screens))
+      .guide-drawer.open:has(:global(.guide-toc.drill)) {
+      padding-top: 0.75rem;
+    }
+    :global(html:has(.guide-screens) .guide-layout:has(.guide-toc.drill))
+      .mobile-menu-btn.open {
+      transform: none;
     }
   }
 

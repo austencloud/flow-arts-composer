@@ -9,13 +9,25 @@
  * specify exact timestamps for each frame, just like gif.js does for GIFs.
  */
 
-import { Output, Mp4OutputFormat, BufferTarget, EncodedVideoPacketSource, EncodedPacket } from "mediabunny";
+import {
+  Output,
+  Mp4OutputFormat,
+  BufferTarget,
+  EncodedVideoPacketSource,
+  EncodedPacket,
+  type MetadataTags,
+} from "mediabunny";
 
 export interface WebCodecsEncoderOptions {
   width: number;
   height: number;
   fps: number;
   bitrate?: number;
+  /**
+   * Descriptive tags written into the MP4 (the sequence a video carries, for
+   * one). mediabunny only accepts them before the output starts.
+   */
+  metadataTags?: MetadataTags;
 }
 
 export class WebCodecsVideoEncoder {
@@ -63,6 +75,9 @@ export class WebCodecsVideoEncoder {
     this.output.addVideoTrack(this.videoSource, {
       frameRate: this.options.fps,
     });
+    if (this.options.metadataTags) {
+      this.output.setMetadataTags(this.options.metadataTags);
+    }
     await this.output.start();
 
     this.encoder = new VideoEncoder({

@@ -4,6 +4,7 @@
   Shows performance statistics, accuracy, combo stats, and final score.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
@@ -107,7 +108,7 @@
               />
             </svg>
           </div>
-          <div class="stat-value">{finalScore.toLocaleString()}</div>
+          <div class="stat-value">{formatNumber(finalScore)}</div>
           <div class="stat-label">{t("train_score")}</div>
         </div>
 

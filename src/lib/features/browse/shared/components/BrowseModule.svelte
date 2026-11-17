@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getOfflineCacheOrchestrator } from "#lib/shared/offline/get-offline-cache-orchestrator.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
@@ -695,8 +696,8 @@
   const cardsCountLine = $derived(
     answerBarShown && compactChrome && engine.allSequences.length > 0
       ? t("browse_ask_result_of_total", {
-          count: engine.resultCount.toLocaleString(),
-          total: engine.allSequences.length.toLocaleString(),
+          count: formatNumber(engine.resultCount),
+          total: formatNumber(engine.allSequences.length),
         })
       : null
   );

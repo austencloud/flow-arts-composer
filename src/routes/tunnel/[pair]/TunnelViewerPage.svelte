@@ -8,7 +8,6 @@
 <script lang="ts">
   import { browser } from "$app/env";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  $T;
   import { goto } from "$app/navigation";
   import { onDestroy, onMount } from "svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";

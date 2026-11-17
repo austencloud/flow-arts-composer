@@ -4,6 +4,7 @@
   Shows combo counter, score feedback, and animations for successful hits.
 -->
 <script lang="ts">
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
@@ -43,7 +44,7 @@
   <!-- Total Score Display -->
   <div class="score-display">
     <span class="score-label">{t("train_score_label")}</span>
-    <span class="score-value">{totalScore.toLocaleString()}</span>
+    <span class="score-value">{formatNumber(totalScore)}</span>
   </div>
 
   <!-- Combo Display -->
