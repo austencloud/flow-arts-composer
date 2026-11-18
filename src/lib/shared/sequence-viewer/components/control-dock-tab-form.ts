@@ -112,6 +112,25 @@ function fitsTwoRows(input: DockTabFormInput): boolean {
   return topWidth <= input.barWidth && bottomWidth <= input.barWidth;
 }
 
+/**
+ * Below this window height a second tab row costs the picture too much (in
+ * German at 360 x 591 the open Effects tray left the stage 83 px tall), so
+ * names that need two rows give way to pictures only. Taller phones keep
+ * the names.
+ */
+export const TWO_ROWS_MIN_WINDOW_HEIGHT = 700;
+
+/**
+ * Whether the dock may use the two-row form: never when it stacks its own
+ * actions row, and only on a window tall enough to give up the extra row.
+ */
+export function dockAllowsTwoRows(
+  windowHeight: number,
+  hasSecondaryActions: boolean
+): boolean {
+  return !hasSecondaryActions && windowHeight >= TWO_ROWS_MIN_WINDOW_HEIGHT;
+}
+
 export function chooseDockTabForm(input: DockTabFormInput): DockTabForm {
   if (fitsOneRow(input)) return "row";
   if (input.allowTwoRows && fitsTwoRows(input)) return "two-rows";

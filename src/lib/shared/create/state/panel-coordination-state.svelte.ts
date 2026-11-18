@@ -406,6 +406,10 @@ export interface PanelCoordinationState {
   /** The preview is playing or loading, rather than the card showing or a
    *  failed load waiting on Retry. */
   get isWorkspacePreviewChosen(): boolean;
+  /** The preview's effect list is open as a sheet docked over the workspace's
+   *  button row (a phone held upright), so the row steps aside for it. */
+  get isWorkspaceEffectSheetOpen(): boolean;
+  setWorkspaceEffectSheetOpen(open: boolean): void;
   startWorkspacePlayback(
     sequence: SequenceData,
     sourceSequenceRevision: number,
@@ -569,6 +573,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     sourceTab: string;
   } | null>(null);
   let workspacePlaybackPreparationError = $state<string | null>(null);
+  let workspaceEffectSheetOpen = $state(false);
   let workspacePlaybackStep = 0;
   let workspacePlaybackPlaying = true;
   let workspacePlaybackHandoff = $state.raw<{
@@ -1329,6 +1334,14 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         (!!workspacePlayback || !!workspacePlaybackPreparation) &&
         !workspacePlaybackPreparationError
       );
+    },
+
+    get isWorkspaceEffectSheetOpen() {
+      return workspaceEffectSheetOpen;
+    },
+
+    setWorkspaceEffectSheetOpen(open) {
+      workspaceEffectSheetOpen = open;
     },
 
     startWorkspacePlayback(

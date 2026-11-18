@@ -10,7 +10,8 @@
   - responsive: full-width sheet on phones, centered floating rounded bar at
     >=700px (matching the mandala dock),
   - the tab row picks its form from whether the names fit, measured: one row
-    with names, else two rows with names (picture beside name), else pictures
+    with names, else two rows with names (picture beside name) on a window
+    at least 700 px tall, else pictures
     only (control-dock-tab-form.ts). No name is ever cut; the row scrolls
     only as a safety net before any tab can shrink below the touch floor.
 
@@ -99,7 +100,11 @@
   import { SwipeToDismiss } from "@austencloud/drawer";
   import SelectedPropPreview from "#lib/shared/navigation/components/buttons/SelectedPropPreview.svelte";
   import ActiveEffectChip from "#lib/shared/animation-engine/components/effects-panel/ActiveEffectChip.svelte";
-  import { chooseDockTabForm, topRowCount } from "./control-dock-tab-form.js";
+  import {
+    chooseDockTabForm,
+    dockAllowsTwoRows,
+    topRowCount,
+  } from "./control-dock-tab-form.js";
 
   interface Props {
     tabs: ControlDockTab[];
@@ -375,6 +380,9 @@
     settledWidth > 0 && labelWidths.length === tabs.length
   );
   const BAR_SIDE_PADDING = 12;
+  // Window height, bound below; before mount (and outside a browser) it
+  // counts as tall, so the measured form decides.
+  let windowHeight = $state(Infinity);
   const tabForm = $derived(
     !formReady
       ? "row"
@@ -384,7 +392,10 @@
           barWidth: settledWidth - BAR_SIDE_PADDING,
           rowActionsWidth: stacked ? 0 : actionsWidth,
           hasTrailing: !!trailingAction,
-          allowTwoRows: secondaryActions.length === 0,
+          allowTwoRows: dockAllowsTwoRows(
+            windowHeight,
+            secondaryActions.length > 0
+          ),
         })
   );
   const twoRows = $derived(tabForm === "two-rows");
@@ -435,6 +446,8 @@
     };
   });
 </script>
+
+<svelte:window bind:innerHeight={windowHeight} />
 
 <div
   class="dock"

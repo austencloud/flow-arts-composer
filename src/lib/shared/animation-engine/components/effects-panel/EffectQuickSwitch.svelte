@@ -42,6 +42,7 @@
   past it.
 -->
 <script lang="ts">
+  import { untrack } from "svelte";
   import { Popover } from "bits-ui";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
@@ -135,6 +136,12 @@
     onArrange?: (
       arrangement: "side" | "below" | "dock" | "above" | null
     ) => void;
+    /** Reports whether a phone's docked sheet is up, so the host can move
+     *  what the sheet covers (the workspace's button row) aside. True when the
+     *  sheet is in the page, not when the picker flips open. False once the
+     *  sheet has sunk, DURATION.fast after its outro starts, so the host's
+     *  arrival begins as the sheet's edge clears. */
+    onSheet?: (open: boolean) => void;
   }
 
   const {
@@ -147,6 +154,7 @@
     onLift,
     onShift,
     onArrange,
+    onSheet,
   }: Props = $props();
 
   let open = $state(false);
@@ -254,6 +262,11 @@
       : null
   );
   const tightRows = $derived(fit?.arrangement === "grid" && fit.tight);
+  /** A phone's grid sheet, docked along the floor of the bounds over the
+   *  workspace's button row. */
+  const sheetDocked = $derived(
+    fit?.arrangement === "grid" && fit.phone && fit.side === "dock"
+  );
 
   function nameOf(effectId: string): string {
     return effectId === "none"
@@ -360,24 +373,55 @@
   }
 
   /**
-   * How the sheet arrives. A phone's docked sheet rises out of the floor of
-   * its bounds on the player's own clock (the same duration and the standard
-   * curve the player's lift and shrink ride), clipped at that floor, so as the
-   * player lifts the sheet's top edge stays under the player's bottom edge in
-   * every frame: they finish together, with no frame of the sheet over the
-   * picture and no gap opening between them. Every other arrangement fades in
-   * from its anchor as before.
+   * How the sheet arrives and leaves. A phone's docked sheet rises out of the
+   * floor of its bounds on the player's own clock (the same duration and the
+   * standard curve the player's lift and shrink ride), so as the player lifts
+   * the sheet's top edge stays under the player's bottom edge in every frame:
+   * they finish together, with no frame of the sheet over the picture and no
+   * gap opening between them. It leaves the same way in reverse, sinking into
+   * the floor as the player comes back down, so what it covered returns only
+   * where it has already gone. One bidirectional transition, so a close during
+   * the rise (or an open during the sink) reverses from where the sheet is.
+   *
+   * It animates `transform` and nothing else. The floor cut is a fixed
+   * clip-path on the wrapper (`DOCK_FLOOR_CUT`), not part of this motion: a
+   * clip-path animated beside a transform trails it by a frame in real
+   * compositor frames (transform runs on the compositor, clip-path on the main
+   * thread), 40 to 50 px at peak speed, which left a strip of the page showing
+   * above the floor on the way up and the sheet drawn over the bottom bar on
+   * the way down. Every other arrangement fades in from its anchor, and out
+   * quicker, as before.
    */
-  function sheetIn(
+  /** The docked sheet's floor: the wrapper's bottom edge, which is the bottom
+   *  of the bounds and the sheet's final box. Only that edge is cut; the other
+   *  three insets are negative so the sheet's top edge, its corners and
+   *  anything past the sides are never trimmed. `clip-path` rather than
+   *  `overflow: clip`, whose clip margin is one value for all four sides and
+   *  would trim the top. */
+  const DOCK_FLOOR_CUT = "inset(-48px -48px 0 -48px)";
+
+  function sheetMotion(
     node: Element,
-    params: { x: number; y: number; duration: number; rise: number }
+    params: {
+      x: number;
+      y: number;
+      inDuration: number;
+      outDuration: number;
+      rise: number;
+      closing: () => boolean;
+    }
   ) {
-    if (!params.rise) return flyFade(node, params);
+    if (!params.rise) {
+      return flyFade(node, {
+        x: params.x,
+        y: params.y,
+        duration: params.closing() ? params.outDuration : params.inDuration,
+      });
+    }
     return {
-      duration: motionDuration(params.duration),
+      duration: motionDuration(params.inDuration),
       easing: standardEasing,
-      css: (t: number) =>
-        `transform: translateY(${(1 - t) * params.rise}px); clip-path: inset(0 0 ${(1 - t) * params.rise}px 0);`,
+      css: (t: number) => `transform: translateY(${(1 - t) * params.rise}px);`,
     };
   }
 
@@ -391,11 +435,79 @@
     effectsConfigState.toggleEffectFor(target, EFFECTS[0]?.id);
   }
 
+  /** The docked sheet has been told to leave and is still sinking. What it
+   *  covered (the step strip, the effect button) keeps its covered look until
+   *  the sheet has gone, so nothing shows through or beside it while it
+   *  leaves. The hold is timed from the sheet's real outro start and lasts
+   *  DURATION.fast: by the standard curve the sheet's top edge is within a few
+   *  pixels of the floor by then, and a hold counted from the tap (or a full
+   *  DURATION.normal) left the floor empty for a beat. When it ends, the
+   *  covered look ends, the dock arrangement the host was holding is released
+   *  and the host is told the sheet is closed, all together, so nothing jumps
+   *  and the host's bottom bar arrives straight away. */
+  let sinking = $state(false);
+  let sinkTimer: ReturnType<typeof setTimeout> | undefined;
+  let sheetWasOpen = false;
+  /** The docked sheet is in the page (its intro has started and it has not
+   *  finished leaving). */
+  let sheetUp = false;
+  /** What the host was last told, so it hears each change once. */
+  let toldOpen = false;
+  let arrangementNow: "side" | "below" | "dock" | "above" | null = null;
+
+  function tellHost(next: boolean) {
+    if (next === toldOpen) return;
+    toldOpen = next;
+    onSheet?.(next);
+  }
+
+  /** The sheet is leaving: hold what it covered, and release it all once the
+   *  sheet has sunk. Starting again (the outro start follows the close by a
+   *  microtask) restarts the count from the later, real start. */
+  function holdThroughSink() {
+    clearTimeout(sinkTimer);
+    sinking = true;
+    sinkTimer = setTimeout(() => {
+      sinking = false;
+      sheetUp = false;
+      onArrange?.(arrangementNow);
+      tellHost(false);
+    }, motionDuration(DURATION.fast));
+  }
+
   $effect(() => {
-    onArrange?.(
-      open && fit ? (fit.arrangement === "side" ? "side" : fit.side) : null
-    );
+    const arrangement =
+      open && fit ? (fit.arrangement === "side" ? "side" : fit.side) : null;
+    const sheet = open && sheetDocked;
+    untrack(() => {
+      arrangementNow = arrangement;
+      const leaving = !sheet && sheetWasOpen && sheetUp;
+      sheetWasOpen = sheet;
+      if (sheet) {
+        // Open, or reopened while still sinking: the hold is cancelled, and a
+        // sheet already in the page is already there for the host.
+        clearTimeout(sinkTimer);
+        sinking = false;
+        onArrange?.(arrangement);
+        if (sheetUp) tellHost(true);
+      } else if (leaving && motionDuration(DURATION.fast) > 0) {
+        onArrange?.("dock");
+        if (!sinking) holdThroughSink();
+      } else {
+        clearTimeout(sinkTimer);
+        sinking = false;
+        sheetUp = false;
+        onArrange?.(arrangement);
+        tellHost(false);
+      }
+    });
   });
+  $effect(
+    () => () => {
+      clearTimeout(sinkTimer);
+      tellHost(false);
+    }
+  );
 
   $effect(() => {
     onLift?.(open && fit ? fit.lift : 0, open && fit ? fit.scale : 1);
@@ -633,7 +745,7 @@
         class="fx-quick-trigger"
         class:open
         class:on={effectOn}
-        class:covered={open && fit?.arrangement === "grid"}
+        class:covered={(open && fit?.arrangement === "grid") || sinking}
         style:--effect-color={activeInk}
         title={t("effect_deep_select_effect")}
       >
@@ -709,7 +821,11 @@
           <!-- bits-ui copies the content's z-index onto this wrapper's inline
              style; the directive overrides it so the picker paints above the
              workspace. -->
-          <div {...wrapperProps} style:z-index="var(--z-dropdown, 1000)">
+          <div
+            {...wrapperProps}
+            style:z-index="var(--z-dropdown, 1000)"
+            style:clip-path={sheetDocked ? DOCK_FLOOR_CUT : undefined}
+          >
             {#if shown && fit}
               <div
                 {...props}
@@ -745,15 +861,24 @@
                 fit.side === "dock"
                   ? `${dockInset.right}px`
                   : undefined}
-                in:sheetIn|global={{
+                transition:sheetMotion|global={{
                   ...motion,
-                  duration: DURATION.normal,
-                  rise:
-                    fit.arrangement === "grid" && fit.phone && fit.side === "dock"
-                      ? fit.height
-                      : 0,
+                  inDuration: DURATION.normal,
+                  outDuration: DURATION.fast,
+                  rise: sheetDocked ? fit.height : 0,
+                  closing: () => !open,
                 }}
-                out:flyFade={{ ...motion, duration: DURATION.fast }}
+                onintrostart={() => {
+                  // The sheet is in the page now: only now does the host move
+                  // its button row aside, so the row never leaves before the
+                  // sheet exists (reduced motion lands it in one frame).
+                  if (!sheetDocked || !open) return;
+                  sheetUp = true;
+                  tellHost(true);
+                }}
+                onoutrostart={() => {
+                  if (sheetDocked && !open && sheetUp) holdThroughSink();
+                }}
                 onoutroend={() => {
                   if (!open) layerMounted = false;
                 }}

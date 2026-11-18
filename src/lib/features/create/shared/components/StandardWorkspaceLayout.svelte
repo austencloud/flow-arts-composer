@@ -485,6 +485,15 @@
   // work itself, so the controls step aside the same way for each, and for a
   // workspace closing altogether.
   const controlsStepAside = $derived(isWorkspaceTheater || isSaveView);
+  // The preview's effect list, docked over the bottom bar on an upright phone,
+  // takes only the bar's room: the controls up top stay. The bar leaves as the
+  // sheet is in the page and comes back as its edge clears the row: the sheet
+  // reports closed only once it has sunk, so this arrival has no landing to
+  // wait for (see panelsLandAt).
+  const bottomBarStepsAside = $derived(
+    controlsStepAside ||
+      (isWorkspacePlayback && panelState.isWorkspaceEffectSheetOpen)
+  );
   // A surface painting for the first time isn't a mode change: its controls are
   // simply there.
   let controlsMayAnimate = false;
@@ -500,11 +509,17 @@
   // A plain yes or no: shouldShowWorkspace carries the sequence itself, which
   // changes with every step.
   const workspaceIsShown = $derived(Boolean(shouldShowWorkspace));
+  // Only the effect sheet opening or closing changes nothing else here, and the
+  // sheet has already landed (or gone) when it reports, so that change waits
+  // for no panel. Anything else waits as before.
+  let landingKey = "";
   $effect.pre(() => {
-    void navigationState.activeTab;
-    void workspaceIsShown;
-    void controlsStepAside;
-    panelsLandAt = performance.now() + CONTROL_LANDING_MS;
+    const key = `${navigationState.activeTab}|${workspaceIsShown}|${controlsStepAside}`;
+    void bottomBarStepsAside;
+    const onlyTheSheet = key === landingKey;
+    landingKey = key;
+    panelsLandAt =
+      performance.now() + (onlyTheSheet ? 0 : CONTROL_LANDING_MS);
   });
   const landingLeft = () => Math.max(0, panelsLandAt - performance.now());
   const topControlPresence = {
@@ -679,7 +694,7 @@
     // when the bar returns instead of growing from nothing.
     const resizeObserver = new ResizeObserver((entries) => {
       const box = entries.at(-1)?.borderBoxSize?.[0];
-      if (box && !controlsStepAside)
+      if (box && !bottomBarStepsAside)
         buttonPanelHeight = Math.round(box.blockSize);
     });
     resizeObserver.observe(buttonPanelElement, { box: "border-box" });
@@ -797,7 +812,7 @@
          Each control carries its own presence, in ButtonPanel. -->
     {#if shouldShowWorkspace}
       <div class="button-panel-wrapper" bind:this={buttonPanelElement}>
-        {#if !controlsStepAside}
+        {#if !bottomBarStepsAside}
           <ButtonPanel
             {onClearSequence}
             {onViewSequence}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   EFFECT_GLYPH_WIDTH,
   chooseDockTabForm,
+  dockAllowsTwoRows,
   topRowCount,
   type DockTabFormInput,
 } from "../../../src/lib/shared/sequence-viewer/components/control-dock-tab-form";
@@ -115,5 +116,31 @@ describe("chooseDockTabForm", () => {
     expect(chooseDockTabForm(tunnel(322, { glyphWidths: wide }))).toBe(
       "icons"
     );
+  });
+});
+
+describe("dockAllowsTwoRows", () => {
+  it("gives a short phone pictures only, so names that need two rows cannot take the picture's height", () => {
+    expect(dockAllowsTwoRows(591, false)).toBe(false);
+    expect(dockAllowsTwoRows(412, false)).toBe(false);
+    expect(
+      chooseDockTabForm(
+        tunnel(348, { allowTwoRows: dockAllowsTwoRows(591, false) })
+      )
+    ).toBe("icons");
+  });
+
+  it("keeps two rows of names on taller phones", () => {
+    expect(dockAllowsTwoRows(760, false)).toBe(true);
+    expect(dockAllowsTwoRows(775, false)).toBe(true);
+    expect(
+      chooseDockTabForm(
+        tunnel(348, { allowTwoRows: dockAllowsTwoRows(775, false) })
+      )
+    ).toBe("two-rows");
+  });
+
+  it("never allows two rows on a dock that stacks its own actions row", () => {
+    expect(dockAllowsTwoRows(1000, true)).toBe(false);
   });
 });

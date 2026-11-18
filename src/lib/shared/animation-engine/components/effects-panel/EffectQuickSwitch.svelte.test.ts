@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import EffectQuickSwitch from "./EffectQuickSwitch.svelte";
@@ -181,6 +181,16 @@ describe("EffectQuickSwitch one effect per prop", () => {
   });
 
   it("dims the row on the fast clock while Effects is off", async () => {
+    // This page loads no app stylesheet, and the row reads its timing from the
+    // shared tokens with no literal fallback: unset, its whole transition is
+    // invalid and reads back as the default.
+    const root = document.documentElement.style;
+    root.setProperty("--duration-fast", "150ms");
+    root.setProperty("--ease-standard", "ease");
+    onTestFinished(() => {
+      root.removeProperty("--duration-fast");
+      root.removeProperty("--ease-standard");
+    });
     const list = await openList();
     const left = () =>
       list.handRadio("left") as HTMLButtonElement;
@@ -239,5 +249,91 @@ describe("EffectQuickSwitch one effect per prop", () => {
         .trim()
     ).toBe(names().join(" "));
     list.cleanup();
+  });
+});
+
+describe("EffectQuickSwitch phone sheet", () => {
+  it("tells the host once the sheet is up, and holds what it covered until it has sunk", async () => {
+    const bounds = document.createElement("div");
+    bounds.style.cssText =
+      "position:fixed;left:0;top:0;width:360px;height:591px";
+    const stage = document.createElement("div");
+    stage.style.cssText =
+      "position:fixed;left:12px;top:60px;width:336px;height:336px";
+    document.body.append(bounds, stage);
+    const sheet: boolean[] = [];
+    const arranged: (string | null)[] = [];
+    const { container } = render(EffectQuickSwitch, {
+      effectsConfigState: createEffectsConfigState(),
+      player: stage,
+      bounds,
+      onSheet: (open: boolean) => sheet.push(open),
+      onArrange: (arrangement: string | null) => arranged.push(arrangement),
+    });
+    const trigger = () =>
+      container.querySelector<HTMLElement>(".fx-quick-trigger")!;
+    const panel = () => document.querySelector(".fx-quick-panel");
+
+    trigger().click();
+    await expect.poll(panel).not.toBeNull();
+    // Told when the sheet is in the page, not when the picker flips open.
+    await expect.poll(() => sheet.at(-1)).toBe(true);
+    expect(arranged.at(-1)).toBe("dock");
+
+    document
+      .querySelector<HTMLElement>(".fx-quick-head-end button")!
+      .click();
+    // The sheet is still sinking: the strip and the effect button stay
+    // covered, the dock stays held, and the host is not yet told it is closed.
+    expect(sheet.at(-1)).toBe(true);
+    expect(arranged.at(-1)).toBe("dock");
+    expect(trigger().classList.contains("covered")).toBe(true);
+
+    // When the hold ends, the host hears the close and they all return.
+    await expect.poll(() => arranged.at(-1)).toBeNull();
+    expect(sheet.at(-1)).toBe(false);
+    expect(trigger().classList.contains("covered")).toBe(false);
+    stage.remove();
+    bounds.remove();
+  });
+
+  it("cancels the return cleanly when the sheet is reopened during the sink", async () => {
+    const bounds = document.createElement("div");
+    bounds.style.cssText =
+      "position:fixed;left:0;top:0;width:360px;height:591px";
+    const stage = document.createElement("div");
+    stage.style.cssText =
+      "position:fixed;left:12px;top:60px;width:336px;height:336px";
+    document.body.append(bounds, stage);
+    const sheet: boolean[] = [];
+    const arranged: (string | null)[] = [];
+    const { container } = render(EffectQuickSwitch, {
+      effectsConfigState: createEffectsConfigState(),
+      player: stage,
+      bounds,
+      onSheet: (open: boolean) => sheet.push(open),
+      onArrange: (arrangement: string | null) => arranged.push(arrangement),
+    });
+    const trigger = () =>
+      container.querySelector<HTMLElement>(".fx-quick-trigger")!;
+
+    trigger().click();
+    await expect
+      .poll(() => document.querySelector(".fx-quick-panel"))
+      .not.toBeNull();
+    await expect.poll(() => sheet.at(-1)).toBe(true);
+
+    document
+      .querySelector<HTMLElement>(".fx-quick-head-end button")!
+      .click();
+    // Back before the hold ends: the host is never told the sheet closed and
+    // the dock is never released.
+    trigger().click();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(sheet).toEqual([true]);
+    expect(arranged.at(-1)).toBe("dock");
+    expect(document.querySelector(".fx-quick-panel")).not.toBeNull();
+    stage.remove();
+    bounds.remove();
   });
 });

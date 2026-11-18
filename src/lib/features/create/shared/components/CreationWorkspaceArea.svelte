@@ -406,6 +406,8 @@
             panelState.failWorkspacePlaybackPreparation(playbackCandidate);
         },
         onclose: () => panelState.stopWorkspacePlayback(),
+        onEffectSheetChange: (open: boolean) =>
+          panelState.setWorkspaceEffectSheetOpen(open),
         theaterActions,
         saving: panelState.isSaveToLibraryPanelOpen,
         onStepChange: (step: number) => (playbackStep = Math.floor(step)),

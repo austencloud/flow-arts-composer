@@ -22,6 +22,7 @@
     onStepChange,
     onPlaybackChange,
     onclose,
+    onEffectSheetChange,
     theaterActions,
     saving = false,
   }: {
@@ -39,6 +40,10 @@
      *  the preview carries its own exit instead of relying on Stop or Escape.
      *  Not while saving: the switch's Card option sits right under the player. */
     onclose?: () => void;
+    /** The effect list is open as a sheet docked over the workspace's button
+     *  row (a phone held upright), or closed again. The row steps aside for it
+     *  and returns once the sheet has sunk. */
+    onEffectSheetChange?: (open: boolean) => void;
     /** Viewer, Share and Stop for theater mode, where the workspace's bottom
      *  bar steps aside and they sit in a column beside the rail. */
     theaterActions?: Snippet;
@@ -189,6 +194,7 @@
     }}
     onShift={(px) => (effectPickerShift = px)}
     onArrange={(arrangement) => (effectPickerArrangement = arrangement)}
+    onSheet={(open) => onEffectSheetChange?.(open)}
   />
 {/snippet}
 
