@@ -121,6 +121,7 @@
   .scan-route,
   .loading-layer,
   .viewer-layer {
+    /* behind the status bar: the viewer inside pads its header below it with --safe-top */
     position: fixed;
     inset: 0;
     min-width: 0;

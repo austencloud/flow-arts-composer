@@ -61,6 +61,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding-top: var(--safe-top);
     background: var(--theme-panel-bg, rgba(0, 0, 0, 0.4));
     z-index: var(--z-priority);
     overflow-y: auto;

@@ -319,6 +319,7 @@
      that gates every press, and must never eat a visitor's click. The parked
      resume button re-enables pointer events on itself only. */
   .presenter-overlay {
+    /* behind the status bar: an inert pointer layer that holds no words of its own */
     position: fixed;
     inset: 0;
     /* Above EVERYTHING, including drawers, sheets and the fullscreen sequence

@@ -635,7 +635,7 @@
   "feedback_sign_in_to_send": "登入後傳送",
   "feedback_submit_subtitle": "提供你的意見，幫助改進 Flow Arts Composer",
   "feedback_submit_title": "提交意見回饋",
-  "feedback_submitted_message": "感謝你幫助改進 Flow Arts Composer。我們已收到你的意見回饋，會進行審閱。",
+  "feedback_submitted_message": "感謝你幫助改進 Flow Arts Composer。你的意見回饋已收到，會進行審閱。",
   "feedback_submitted_title": "意見回饋已提交！",
   "feedback_submitted_toast": "意見回饋已提交！感謝你幫助改進 Flow Arts Composer。",
   "feedback_submitting": "正在提交…",
@@ -10270,5 +10270,10 @@
   "create_save_row_collection": "合輯",
   "create_save_collection_count": "{count} 個合輯",
   "create_save_note_add": "新增",
-  "library_ui_no_collection": "無"
+  "library_ui_no_collection": "無",
+  "effect_deep_which_prop": "特效作用於哪個道具",
+  "effect_deep_tile_left_prop": "{effect}，左側道具",
+  "effect_deep_tile_right_prop": "{effect}，右側道具",
+  "effect_deep_tile_both_props": "{effect}，兩個道具",
+  "effect_deep_left_and_right": "左側道具：{left}，右側道具：{right}"
 }

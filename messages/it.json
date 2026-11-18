@@ -688,7 +688,7 @@
   "feedback_submit_another": "Invia un altro",
   "feedback_submit_button": "Invia feedback",
   "feedback_sign_in_to_send": "Accedi per inviare",
-  "feedback_submit_subtitle": "Aiutaci a migliorare Flow Arts Composer con il tuo contributo",
+  "feedback_submit_subtitle": "Aiuta a migliorare Flow Arts Composer con il tuo contributo",
   "feedback_submit_title": "Invia feedback",
   "feedback_submitted_message": "Grazie per aver contribuito a migliorare Flow Arts Composer. Il tuo feedback è stato ricevuto e verrà esaminato.",
   "feedback_submitted_title": "Feedback inviato!",
@@ -2176,7 +2176,7 @@
   "auth_prompt_send_image": "Invia questa immagine",
   "auth_prompt_create_account": "Crea il tuo account",
   "auth_prompt_save_any_device": "Salva le tue sequenze e aprile su qualsiasi dispositivo.",
-  "auth_prompt_welcome_back": "Ti diamo il bentornato",
+  "auth_prompt_welcome_back": "Ciao di nuovo",
   "auth_prompt_open_saved_work": "Accedi per aprire i tuoi lavori salvati.",
   "auth_continue_by_email": "Continua via email",
   "auth_social_blocked_browser": "L'accesso tramite social è bloccato in questo browser.",
@@ -5466,7 +5466,7 @@
   "feedback_type_general": "Feedback generale",
   "feedback_placeholder_bug": "Cos'è successo? Cosa ti aspettavi invece?",
   "feedback_placeholder_feature": "Cosa vorresti trovare nell'app?",
-  "feedback_placeholder_general": "Cosa vorresti dirci?",
+  "feedback_placeholder_general": "Cosa ti passa per la testa?",
   "feedback_status_new": "Nuovo",
   "feedback_status_in_progress": "In corso",
   "feedback_status_in_review": "In revisione",
@@ -10331,5 +10331,10 @@
   "create_save_row_collection": "Raccolta",
   "create_save_collection_count": "{count} raccolte",
   "create_save_note_add": "Aggiungi",
-  "library_ui_no_collection": "Nessuna"
+  "library_ui_no_collection": "Nessuna",
+  "effect_deep_which_prop": "Quale attrezzo riceve l'effetto",
+  "effect_deep_tile_left_prop": "{effect}, attrezzo sinistro",
+  "effect_deep_tile_right_prop": "{effect}, attrezzo destro",
+  "effect_deep_tile_both_props": "{effect}, entrambi gli attrezzi",
+  "effect_deep_left_and_right": "{left} sull'attrezzo sinistro, {right} sull'attrezzo destro"
 }

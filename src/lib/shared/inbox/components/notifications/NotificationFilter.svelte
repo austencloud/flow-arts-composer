@@ -381,6 +381,7 @@
 
   /* Sheet overlay */
   .sheet-overlay {
+    /* behind the status bar: a dim; the sheet inside is a bottom sheet capped at 70% of the window */
     position: fixed;
     top: 0;
     left: 0;

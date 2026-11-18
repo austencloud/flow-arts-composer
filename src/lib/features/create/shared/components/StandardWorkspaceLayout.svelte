@@ -1021,6 +1021,9 @@
     --workspace-leading-actions-width: calc(
       var(--min-touch-target, 44px) * 2 + var(--settings-spacing-sm, 8px)
     );
+    /* Save alone, as the icon it folds to at 500px and under; the header's
+       phone tier gives the word everything left of it. */
+    --workspace-trailing-actions-width: var(--min-touch-target, 44px);
   }
 
   .workspace-history-actions {

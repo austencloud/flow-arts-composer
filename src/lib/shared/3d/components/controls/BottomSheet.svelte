@@ -190,6 +190,17 @@
     padding-block: 0;
   }
 
+  /* The character picker sizes its tiles to the box it is given, so the sheet
+     takes the full height it is allowed instead of the height of its content
+     (which is nothing until the tiles have a box). */
+  .sheet-panel:has(:global(.character-picker.bounded)) {
+    height: 100%;
+  }
+
+  .sheet-panel:has(:global(.character-picker.bounded)) .sheet-body {
+    flex: 1 1 auto;
+  }
+
   @media (max-height: 34rem) {
     .sheet-layer {
       bottom: 0;
@@ -242,7 +253,7 @@
   @media (min-width: 48rem) and (min-height: 34rem) {
     .sheet-layer {
       align-items: flex-end;
-      padding: max(1rem, env(safe-area-inset-top))
+      padding: max(1rem, var(--safe-top))
         max(1rem, env(safe-area-inset-right))
         max(5.5rem, calc(env(safe-area-inset-bottom) + 5.5rem))
         max(1rem, env(safe-area-inset-left));

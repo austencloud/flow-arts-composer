@@ -7,6 +7,7 @@ import type {
   EffectType,
   TipEffectMap,
 } from "../domain/types/tip-effect-types";
+import { resolveEffect } from "../domain/types/tip-effect-types";
 import type { RenderFrameParams } from "./IAnimationRenderLoop";
 import { buildArrayTips, buildEmitterTips } from "./effect-tip-builders";
 
@@ -112,7 +113,12 @@ export const EFFECT_DISPATCH_REGISTRY: readonly EffectDispatchEntry[] = [
         height: number;
         flipped: boolean;
       }> = [];
-      if (rt?.left && imgs?.left && p.props.leftProp) {
+      // Only a prop that wears Ghost is echoed; the other prop may wear
+      // something else or nothing.
+      const wearsGhost = (propIndex: number) =>
+        resolveEffect(propIndex, 0, ctx.tipMap, {}) === "ghost" ||
+        resolveEffect(propIndex, 1, ctx.tipMap, {}) === "ghost";
+      if (wearsGhost(0) && rt?.left && imgs?.left && p.props.leftProp) {
         props.push({
           id: 0,
           image: imgs.left,
@@ -124,7 +130,7 @@ export const EFFECT_DISPATCH_REGISTRY: readonly EffectDispatchEntry[] = [
           flipped: p.leftPropFlipped ?? false,
         });
       }
-      if (rt?.right && imgs?.right && p.props.rightProp) {
+      if (wearsGhost(1) && rt?.right && imgs?.right && p.props.rightProp) {
         props.push({
           id: 1,
           image: imgs.right,

@@ -695,14 +695,14 @@ one rail while the live matching grid gets the rest of the canvas.
     height: min(
       92dvh,
       calc(
-        var(--viewport-height, 100dvh) - 2rem - env(safe-area-inset-top, 0px) -
+        var(--viewport-height, 100dvh) - 2rem - var(--safe-top) -
           env(safe-area-inset-bottom, 0px)
       )
     );
     max-height: min(
       92dvh,
       calc(
-        var(--viewport-height, 100dvh) - 2rem - env(safe-area-inset-top, 0px) -
+        var(--viewport-height, 100dvh) - 2rem - var(--safe-top) -
           env(safe-area-inset-bottom, 0px)
       )
     );

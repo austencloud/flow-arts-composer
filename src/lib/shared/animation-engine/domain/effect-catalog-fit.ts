@@ -45,6 +45,9 @@ export interface EffectCatalogFit {
   fill: boolean;
   /** Icon size in px for `dense` and `icons`, which grow with their tiles. */
   icon?: number;
+  /** The tile's own height in px where the host fixes it (the phone's dense
+   *  tile), rather than the height its content takes. */
+  tile?: number;
 }
 
 export const CATALOG_GAP = 6;
@@ -173,10 +176,18 @@ export function fitEffectCatalog(
   return best;
 }
 
-/** The smallest tile that holds an icon over the longest name on one line. */
+/** The smallest tile `fitEffectPicker` shrinks to: an icon over a name set at
+ *  the label size. 46px holds the longest name on one line in English only;
+ *  other languages have longer names ("Pulsazione", "Blütenblätter"). The
+ *  quick list on a phone does not shrink to it: its dense form is always four
+ *  columns, at whatever width four across leaves (about 75px and up), so its
+ *  names are not held to this constant. */
 export const DENSE_TILE_WIDTH = 46;
 export const DENSE_TILE_HEIGHT = 34;
 export const DENSE_GAP = 4;
+/** The dense tile's icon where the host fixes its height at 34px: 3px of
+ *  border, 4px of padding, the icon, a 3px gap and the 12px name come to 34. */
+export const DENSE_PHONE_ICON = 12;
 const DENSE_ICON_MIN = 14;
 const DENSE_ICON_MAX = 28;
 

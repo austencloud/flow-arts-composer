@@ -8,7 +8,11 @@
   Escape, the effect button, or a tap anywhere else closes it. Its head is one
   row: the Effects On / Off switch (On brings back the effect that was last
   on) and Done, which stands directly on the picture and covers the scrubber
-  row, so the effect is named once, by the lit tile.
+  row, so the effect is named once, by the lit tile. Under it, one row of
+  Both / Left / Right says which prop the tiles set: the list opens on Both
+  every time, Left or Right changes that prop only, and the On / Off switch
+  follows the choice. While the two props wear different effects each tile
+  carries a small dot per hand, and the button names both.
 
   The picker composes EffectSelector (the tiles, their selection and prewarm)
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
@@ -43,8 +47,10 @@
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import {
     flyFade,
+    motionDuration,
     popIn,
     reducedMotion,
+    standardEasing,
   } from "#lib/shared/transitions/motion.js";
   import {
     scrollEdges,
@@ -55,12 +61,24 @@
     isEffectId,
     type EffectsConfigState,
   } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { PropEffectTarget } from "#lib/shared/effects/domain/per-prop-effects.js";
+  import HandPropToolbar, {
+    type PropHandChoice,
+  } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     fitEffectQuickPicker,
     pictureTileHeight,
     QUICK_PICKER_CLOSE_DISC,
     QUICK_PICKER_EDGE,
+    QUICK_PICKER_HEAD,
+    QUICK_PICKER_HEAD_GAP,
     QUICK_PICKER_OFFSET,
+    QUICK_PICKER_PAD,
+    QUICK_PICKER_TIGHT_GAP,
+    QUICK_PICKER_TIGHT_HEAD,
+    QUICK_PICKER_TIGHT_PAD,
     QUICK_PICKER_STRIP_EDGE_CLEAR,
     QUICK_PICKER_STRIP_END_CLEAR,
     QUICK_PICKER_STRIP_GAP,
@@ -68,6 +86,7 @@
     type EffectQuickPickerFit,
   } from "#lib/shared/animation-engine/domain/effect-quick-picker-fit.js";
   import EffectSelector from "./EffectSelector.svelte";
+  import EffectHandDot from "./EffectHandDot.svelte";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
   import {
     EFFECTS,
@@ -81,7 +100,6 @@
   import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
   import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { effectsToggleTarget } from "#lib/shared/animation-engine/domain/effect-quick-toggle.js";
 
   interface Props {
     effectsConfigState: EffectsConfigState;
@@ -167,13 +185,92 @@
   let edges = $state<ScrollEdges>({ start: false, end: false });
 
   const activeEffect = $derived(effectsConfigState.activeEffect);
+  /** Either prop wears an effect. */
   const effectOn = $derived(activeEffect !== "none");
-  /** The effect that was last on in this preview, which the switch brings
-   *  back. */
-  let lastOn = $state<string | null>(null);
-  $effect(() => {
-    if (activeEffect !== "none") lastOn = activeEffect;
+  const leftEffect = $derived(effectsConfigState.effectForHand(0));
+  const rightEffect = $derived(effectsConfigState.effectForHand(1));
+  const differ = $derived(effectsConfigState.effectsDiffer());
+
+  /** Which prop the tiles set. The list's own choice: it opens on Both every
+   *  time and never changes the prop screen's hand. A strip has no row, so it
+   *  is always Both there. */
+  let hand = $state<PropHandChoice>("both");
+  const handNow = $derived<PropHandChoice>(
+    fit?.arrangement === "strip" ? "both" : hand
+  );
+  const target = $derived<PropEffectTarget>(
+    handNow === "both" ? "both" : handNow === "left" ? 0 : 1
+  );
+  /** The effect the chosen hand wears, which the lit tile shows. Both with
+   *  the props apart lights no tile: the dots say where each one is. */
+  const shownEffect = $derived<string>(
+    handNow === "both"
+      ? differ
+        ? ""
+        : activeEffect
+      : handNow === "left"
+        ? leftEffect
+        : rightEffect
+  );
+  /** The chosen hand is wearing an effect: what the On / Off switch shows. */
+  const handOn = $derived(
+    handNow === "both"
+      ? effectOn
+      : (handNow === "left" ? leftEffect : rightEffect) !== "none"
+  );
+  const tilePair = $derived(
+    differ ? { left: leftEffect, right: rightEffect } : null
+  );
+
+  const settings = $derived(getSettings());
+  const leftPropType = $derived(
+    settings.leftPropType || settings.propType || PropType.STAFF
+  );
+  const rightPropType = $derived(
+    settings.rightPropType || settings.propType || PropType.STAFF
+  );
+  const handProps = $derived({
+    hand,
+    leftPropType,
+    rightPropType,
+    onHandChange: (next: PropHandChoice) => (hand = next),
   });
+
+  /** A phone's sheet takes the fit's row sizes (the rows go tight where the
+   *  phone is short); every other grid keeps its own. */
+  const sheetRows = $derived(
+    fit?.arrangement === "grid" && fit.phone
+      ? fit.tight
+        ? {
+            pad: QUICK_PICKER_TIGHT_PAD,
+            gap: QUICK_PICKER_TIGHT_GAP,
+            head: QUICK_PICKER_TIGHT_HEAD,
+          }
+        : {
+            pad: QUICK_PICKER_PAD,
+            gap: QUICK_PICKER_HEAD_GAP,
+            head: QUICK_PICKER_HEAD,
+          }
+      : null
+  );
+  const tightRows = $derived(fit?.arrangement === "grid" && fit.tight);
+
+  function nameOf(effectId: string): string {
+    return effectId === "none"
+      ? t("effect_deep_off")
+      : effectUiLabel(EFFECT_LABELS[effectId] ?? effectId);
+  }
+  const leftName = $derived(nameOf(leftEffect));
+  const rightName = $derived(nameOf(rightEffect));
+  /** The button's accessible name: both props named while they differ. */
+  const triggerLabel = $derived(
+    differ
+      ? t("effect_deep_left_and_right", { left: leftName, right: rightName })
+      : t("effect_deep_select_effect")
+  );
+  /** The width the button's names take, measured, so its box can ease from
+   *  one name to two instead of jumping its neighbours in the dock. */
+  let stackWidth = $state(0);
   const activeInk = $derived.by(() => {
     const color = effectOn ? EFFECT_COLORS[activeEffect] : undefined;
     return color ? effectInk(color, getThemeMode()) : undefined;
@@ -254,27 +351,44 @@
   });
 
   function select(effectId: string) {
-    if (effectId === activeEffect) {
+    if (effectId === shownEffect) {
       // EffectSelector names the selected tile "Click to disable".
-      effectsConfigState.setActiveEffect("none");
+      effectsConfigState.setEffectFor(target, "none");
       return;
     }
-    if (isEffectId(effectId)) effectsConfigState.setActiveEffect(effectId);
+    if (isEffectId(effectId)) effectsConfigState.setEffectFor(target, effectId);
+  }
+
+  /**
+   * How the sheet arrives. A phone's docked sheet rises out of the floor of
+   * its bounds on the player's own clock (the same duration and the standard
+   * curve the player's lift and shrink ride), clipped at that floor, so as the
+   * player lifts the sheet's top edge stays under the player's bottom edge in
+   * every frame: they finish together, with no frame of the sheet over the
+   * picture and no gap opening between them. Every other arrangement fades in
+   * from its anchor as before.
+   */
+  function sheetIn(
+    node: Element,
+    params: { x: number; y: number; duration: number; rise: number }
+  ) {
+    if (!params.rise) return flyFade(node, params);
+    return {
+      duration: motionDuration(params.duration),
+      easing: standardEasing,
+      css: (t: number) =>
+        `transform: translateY(${(1 - t) * params.rise}px); clip-path: inset(0 0 ${(1 - t) * params.rise}px 0);`,
+    };
   }
 
   function turnOff() {
-    effectsConfigState.setActiveEffect("none");
+    effectsConfigState.setEffectFor(target, "none");
   }
 
-  /** The head's On / Off switch. */
+  /** The head's On / Off switch, for the chosen prop or both. The state keeps
+   *  what each was last wearing, so On brings that back. */
   function toggleEffects() {
-    const next = effectsToggleTarget({
-      active: activeEffect,
-      lastOn,
-      first: EFFECTS[0]?.id,
-    });
-    if (next === "none") turnOff();
-    else if (isEffectId(next)) effectsConfigState.setActiveEffect(next);
+    effectsConfigState.toggleEffectFor(target, EFFECTS[0]?.id);
   }
 
   $effect(() => {
@@ -505,7 +619,10 @@
 <Popover.Root
   bind:open
   onOpenChange={(next) => {
-    if (next) measure();
+    if (next) {
+      hand = "both";
+      measure();
+    }
   }}
 >
   <Popover.Trigger bind:ref={triggerEl}>
@@ -520,23 +637,49 @@
         style:--effect-color={activeInk}
         title={t("effect_deep_select_effect")}
       >
-        <span class="sr-only">{t("effect_deep_select_effect")}</span>
-        <span class="fx-quick-face">
-          {#each nameChoices as name, index (index)}
-            <span class="fx-quick-ghost" aria-hidden="true">
-              <i class="fas fa-fw {effectNavIcon('none')}"></i>
-              <span class="fx-quick-name">{name}</span>
-            </span>
-          {/each}
-          <Crossfade key={activeEffect} duration={DURATION.fast}>
-            <span class="fx-quick-current">
-              <i
-                class="fas fa-fw fx-quick-icon {effectNavIcon(activeEffect)}"
-                aria-hidden="true"
-              ></i>
-              <span class="fx-quick-name">{activeName}</span>
-            </span>
-          </Crossfade>
+        <span class="sr-only">{triggerLabel}</span>
+        <span
+          class="fx-quick-face"
+          style:--face-w={stackWidth ? `${stackWidth + 22}px` : undefined}
+        >
+          <span class="fx-quick-stack" bind:offsetWidth={stackWidth}>
+            {#each nameChoices as name, index (index)}
+              <span class="fx-quick-ghost" aria-hidden="true">
+                <i class="fas fa-fw {effectNavIcon('none')}"></i>
+                <span class="fx-quick-name">{name}</span>
+              </span>
+            {/each}
+            {#if differ}
+              <!-- Holds the box the two names need, unseen. -->
+              <span class="fx-quick-ghost" aria-hidden="true">
+                <span class="fx-quick-dot-slot"></span>
+                <span class="fx-quick-name">{leftName}</span>
+                <span class="fx-quick-dot-slot"></span>
+                <span class="fx-quick-name">{rightName}</span>
+              </span>
+            {/if}
+            <Crossfade
+              key={differ ? `${leftEffect}|${rightEffect}` : activeEffect}
+              duration={DURATION.fast}
+            >
+              {#if differ}
+                <span class="fx-quick-current fx-quick-pair" aria-hidden="true">
+                  <EffectHandDot hand="left" />
+                  <span class="fx-quick-name">{leftName}</span>
+                  <EffectHandDot hand="right" />
+                  <span class="fx-quick-name">{rightName}</span>
+                </span>
+              {:else}
+                <span class="fx-quick-current">
+                  <i
+                    class="fas fa-fw fx-quick-icon {effectNavIcon(activeEffect)}"
+                    aria-hidden="true"
+                  ></i>
+                  <span class="fx-quick-name">{activeName}</span>
+                </span>
+              {/if}
+            </Crossfade>
+          </span>
         </span>
       </button>
     {/snippet}
@@ -577,6 +720,8 @@
                 class:above={fit.arrangement !== "side" && fit.side === "above"}
                 class:below={fit.arrangement !== "side" && fit.side === "below"}
                 class:dock={fit.arrangement !== "side" && fit.side === "dock"}
+                class:phone={fit.arrangement === "grid" && fit.phone}
+                class:tight={tightRows}
                 role="dialog"
                 aria-label={t("effect_deep_effects")}
                 style:width={fit.arrangement === "side"
@@ -589,6 +734,9 @@
                 style:min-height={fit.arrangement === "strip"
                   ? `${fit.height}px`
                   : undefined}
+                style:--qp-pad={sheetRows ? `${sheetRows.pad}px` : undefined}
+                style:--qp-gap={sheetRows ? `${sheetRows.gap}px` : undefined}
+                style:--qp-head={sheetRows ? `${sheetRows.head}px` : undefined}
                 style:--dock-left={fit.arrangement !== "side" &&
                 fit.side === "dock"
                   ? `${dockInset.left}px`
@@ -597,7 +745,14 @@
                 fit.side === "dock"
                   ? `${dockInset.right}px`
                   : undefined}
-                in:flyFade|global={{ ...motion, duration: DURATION.normal }}
+                in:sheetIn|global={{
+                  ...motion,
+                  duration: DURATION.normal,
+                  rise:
+                    fit.arrangement === "grid" && fit.phone && fit.side === "dock"
+                      ? fit.height
+                      : 0,
+                }}
                 out:flyFade={{ ...motion, duration: DURATION.fast }}
                 onoutroend={() => {
                   if (!open) layerMounted = false;
@@ -606,13 +761,13 @@
                 {#if fit.arrangement !== "strip"}
                   {@const narrow = fit.arrangement === "side" && fit.scrolls}
                   {@const scrolls = fit.scrolls}
-                  <div class="fx-quick-head">
+                  <div class="fx-quick-head" class:tight={tightRows}>
                     <!-- One switch for the effect, named for what it holds. The
                        lit tile below names which effect. -->
                     <div class="fx-quick-toggle" data-quick-toggle>
                       <SettingToggleButton
                         label={t("effect_deep_effects")}
-                        checked={effectOn}
+                        checked={handOn}
                         onToggle={toggleEffects}
                         surface="plain"
                         density="compact"
@@ -634,6 +789,16 @@
                       {/if}
                     </div>
                   </div>
+                  <!-- Which prop the tiles set. Present from the moment the sheet
+                     opens; with every effect off it stays in place, dimmed. -->
+                  <div class="fx-quick-hand">
+                    <HandPropToolbar
+                      {handProps}
+                      line={tightRows ? "tight" : "regular"}
+                      disabled={!effectOn}
+                      ariaLabel={t("effect_deep_which_prop")}
+                    />
+                  </div>
                   <div
                     class="fx-quick-grid"
                     class:scrolls
@@ -647,7 +812,8 @@
                     }}
                   >
                     <EffectSelector
-                      {activeEffect}
+                      activeEffect={shownEffect}
+                      pair={tilePair}
                       onSelect={select}
                       onPrewarm={prewarm}
                       catalog={fit.catalog}
@@ -695,7 +861,8 @@
                           fit.catalog.gap}px"
                       >
                         <EffectSelector
-                          {activeEffect}
+                          activeEffect={shownEffect}
+                          pair={tilePair}
                           onSelect={select}
                           onPrewarm={prewarm}
                           catalog={fit.catalog}
@@ -764,10 +931,15 @@
     align-items: center;
     justify-items: start;
     height: 32px;
+    /* The measured width of the names (--face-w), so going from one name to
+       two eases the pill's width instead of jumping its neighbours. */
+    width: var(--face-w, auto);
     padding: 0 12px 0 10px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
-    transition: background var(--duration-fast) var(--ease-standard-out);
+    transition:
+      background var(--duration-fast) var(--ease-standard-out),
+      width var(--duration-fast) var(--ease-standard-out);
   }
   @media (hover: hover) and (pointer: fine) {
     .fx-quick-trigger:hover .fx-quick-face {
@@ -783,8 +955,30 @@
       transparent
     );
   }
-  .fx-quick-face > :global(*) {
+  .fx-quick-stack {
+    display: grid;
+    align-items: center;
+    justify-items: start;
+    min-width: 0;
+  }
+  .fx-quick-stack > :global(*) {
     grid-area: 1 / 1;
+  }
+  /* The two-name state: left hand's dot and name, then right's. Nothing joins
+     them on screen. */
+  .fx-quick-pair {
+    gap: 5px;
+  }
+  .fx-quick-pair > :global(.hand-dot) {
+    opacity: 1;
+  }
+  .fx-quick-pair .fx-quick-name + :global(.hand-dot) {
+    margin-inline-start: 4px;
+  }
+  .fx-quick-dot-slot {
+    flex: none;
+    width: 6px;
+    height: 6px;
   }
   .fx-quick-ghost {
     visibility: hidden;
@@ -814,6 +1008,12 @@
       width: 32px;
       padding: 0;
       justify-items: center;
+    }
+    .fx-quick-stack {
+      justify-items: center;
+    }
+    .fx-quick-pair {
+      gap: 3px;
     }
     .fx-quick-name {
       display: none;
@@ -858,7 +1058,17 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--qp-head, var(--min-touch-target, 44px));
+  }
+  /* A short phone: the head row is 36px, so its two controls come down to it. */
+  .fx-quick-head.tight {
+    --min-touch-target: 36px;
+    --alt-touch-target: 36px;
+  }
+
+  .fx-quick-hand {
+    flex: none;
+    min-width: 0;
   }
 
   .fx-quick-head-end {
@@ -990,8 +1200,9 @@
   .fx-quick-panel.grid {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--qp-gap, 8px);
     padding: 8px;
+    padding-block: var(--qp-pad, 8px);
   }
 
   /* ── Strip: one row resting on the scrubber, or two docked ── */

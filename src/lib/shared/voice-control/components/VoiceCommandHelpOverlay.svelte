@@ -329,7 +329,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: calc(24px + var(--safe-top)) 24px 24px;
     animation: backdrop-in var(--duration-normal) var(--ease-standard-out);
   }
 
@@ -520,7 +520,7 @@
 
   @media (max-width: 768px) {
     .help-backdrop {
-      padding: 12px;
+      padding: calc(12px + var(--safe-top)) 12px 12px;
       align-items: flex-end;
     }
 

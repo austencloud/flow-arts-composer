@@ -225,12 +225,12 @@
     align-items: center;
     justify-content: center;
     z-index: var(--z-modal, 600);
-    padding: 20px;
+    padding: calc(20px + var(--safe-top)) 20px 20px;
   }
 
   :global(.dialog-container) {
     position: fixed;
-    top: 50%;
+    top: calc(50% + var(--safe-top) / 2);
     left: 50%;
     transform: translate(-50%, -50%);
     background: var(--theme-panel-bg);

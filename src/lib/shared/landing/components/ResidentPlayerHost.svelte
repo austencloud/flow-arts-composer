@@ -171,6 +171,7 @@
   /* Out of sight and out of the page's layout. Visibility, not display: the
      player keeps its measured box, so nothing rebuilds when it comes back. */
   .resident-parking {
+    /* behind the status bar: a hidden parking spot for the player, never seen */
     position: fixed;
     top: 0;
     left: 0;

@@ -392,12 +392,12 @@ Navigation via bottom tabs (mobile-first UX pattern)
   }
 
   .learn-tab.public-course:not(.course-index) {
-    height: calc(100dvh - 64px);
+    height: calc(100dvh - 64px - var(--safe-top));
   }
 
   .learn-tab.course-index {
     height: auto;
-    min-height: calc(100dvh - 64px);
+    min-height: calc(100dvh - 64px - var(--safe-top));
     overflow: visible;
     container-type: inline-size;
   }

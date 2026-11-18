@@ -16,6 +16,7 @@ import {
   type GridJoinSpec,
 } from "@tka/render-core";
 import type { SequenceStep } from "./sequence-builder.js";
+import { defaultFanBuild } from "../../../packages/tka-pictograph/src/fan-builds.js";
 import { applyCanonicalReversals } from "./card-reversals.js";
 import { renderCardQrCode } from "./qr-code-renderer.js";
 import {
@@ -169,7 +170,7 @@ export async function renderSequenceToImage(
     leftPropType: opts.leftPropType,
     rightPropType: opts.rightPropType,
     fanAppearance: opts.fanAppearance ?? {
-      build: "fire",
+      build: defaultFanBuild(),
       frameColor: "black",
       cover: "bare",
     },

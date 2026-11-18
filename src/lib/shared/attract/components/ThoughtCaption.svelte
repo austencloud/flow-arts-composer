@@ -114,6 +114,7 @@
 
 <style>
   .caption {
+    /* behind the status bar: placed by script beside the pointer ghost, not pinned to the top */
     position: fixed;
     top: 0;
     left: 0;

@@ -361,7 +361,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: calc(24px + var(--safe-top)) 24px 24px;
     animation: fadeIn var(--duration-fast) var(--ease-standard-out);
   }
 

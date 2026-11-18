@@ -154,6 +154,7 @@
 
 <style>
   .guide-backdrop {
+    /* behind the status bar: a dim; the sheet inside is a bottom sheet capped at 90% of the window */
     position: fixed;
     inset: 0;
     background: rgb(0 0 0 / 0.6);

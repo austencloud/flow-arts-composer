@@ -143,6 +143,7 @@
 
 <style>
   .deep-link-overlay {
+    /* behind the status bar: a dim with a spinner centred in the window */
     position: fixed;
     inset: 0;
     z-index: var(--z-priority);

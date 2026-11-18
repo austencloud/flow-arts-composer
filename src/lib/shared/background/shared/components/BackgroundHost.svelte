@@ -322,6 +322,7 @@
 
 <style>
 	.background-canvas-container {
+		/* behind the status bar: a decorative canvas behind everything, with no words or buttons */
 		position: fixed;
 		inset: 0;
 		z-index: -1;

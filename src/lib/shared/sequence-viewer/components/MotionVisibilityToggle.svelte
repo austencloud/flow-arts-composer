@@ -211,6 +211,7 @@
   }
 
   .motion-vis-backdrop {
+    /* behind the status bar: an invisible click-away layer with no content */
     position: fixed;
     inset: 0;
     z-index: 19;

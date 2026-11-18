@@ -867,6 +867,7 @@
   }
 
   .touch-look-hint {
+    /* behind the status bar: a hint centred at half the window height, far below the top */
     position: fixed;
     top: 50%;
     right: 20%;

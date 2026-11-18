@@ -173,6 +173,7 @@
 <style>
   /* Modal Backdrop */
   :global(.email-modal-backdrop) {
+    /* behind the status bar: a dim with no content of its own */
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.7);
@@ -184,6 +185,7 @@
 
   /* Modal Container */
   :global(.email-modal-container) {
+    /* behind the status bar: a card centred in the window, not reaching the top */
     position: fixed;
     top: 50%;
     left: 50%;

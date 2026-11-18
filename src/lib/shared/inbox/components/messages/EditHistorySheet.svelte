@@ -81,6 +81,7 @@
 
 <style>
   :global(.history-backdrop) {
+    /* behind the status bar: a dim; the sheet is a bottom sheet capped at 70% of the window */
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);

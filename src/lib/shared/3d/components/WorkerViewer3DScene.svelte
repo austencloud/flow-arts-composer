@@ -6,6 +6,7 @@
 
   import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { performerTipEffectMap } from "../effects/performer-tip-effect-map.js";
   import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -198,14 +199,10 @@
       )
     );
     const selected = viewer.selectedPerformerIndices.includes(index);
-    const perfEffect =
-      performer.rawEffect ?? globalTipEffectMap["*"]?.effect ?? "none";
-    const tipEffectMap: TipEffectMap = performer.rawHandEffects
-      ? {
-          "0": { effect: performer.rawHandEffects.left },
-          "1": { effect: performer.rawHandEffects.right },
-        }
-      : { "*": { effect: perfEffect } };
+    const tipEffectMap: TipEffectMap = performerTipEffectMap(
+      performer,
+      globalTipEffectMap
+    );
     const resolvedStep = resolvePerformerStepSource(
       performerSteps?.[index],
       currentStep,

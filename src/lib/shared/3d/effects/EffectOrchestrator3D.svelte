@@ -94,6 +94,7 @@
   import { getPixel } from "#lib/shared/poi/domain/strip-pattern.js";
   import { ledBrightnessToFloat } from "#lib/shared/animation-engine/domain/types/led-types.js";
   import { getSceneEffectsContext } from "./scene-effects/scene-effects-context";
+  import { effectsOnProp } from "./performer-tip-effect-map";
   import type { SceneEffectsManager3D } from "./scene-effects/scene-effects-manager-3d";
   import type {
     SceneEffectRigFrame3D,
@@ -237,6 +238,12 @@
       ),
     ]),
   ]);
+  const leftLayerEffects = $derived(
+    effectsOnProp(0, leftTipEffectKeys, tipEffectMap, globalTipEffectMap ?? {})
+  );
+  const rightLayerEffects = $derived(
+    effectsOnProp(1, rightTipEffectKeys, tipEffectMap, globalTipEffectMap ?? {})
+  );
 
   // Effects drawn by Svelte children fed from the frame update's props:
   // trails here and the seven in EffectsLayer. Only they need that data
@@ -1493,6 +1500,8 @@
   staffLength={staffHalfLength * 2}
   {propScale}
   activeEffects={layerActiveEffects}
+  leftActiveEffects={leftLayerEffects}
+  rightActiveEffects={rightLayerEffects}
   {leftHandPos}
   {rightHandPos}
   leftTipData={leftEffectTips}

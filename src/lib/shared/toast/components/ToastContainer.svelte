@@ -107,7 +107,7 @@
 <style>
   .toast-container {
     position: fixed;
-    top: max(24px, env(safe-area-inset-top, 0px));
+    top: max(24px, var(--safe-top));
     right: 24px;
     z-index: var(--z-toast);
     display: flex;
@@ -255,7 +255,7 @@
     .toast-container {
       left: 12px;
       right: 12px;
-      top: max(12px, env(safe-area-inset-top, 0px));
+      top: max(12px, var(--safe-top));
       max-width: none;
     }
 

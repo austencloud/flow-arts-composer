@@ -237,6 +237,7 @@
   /* Portaling the veil with the panel lets it cover the workspace above the
      picker instead of being clipped to the option grid's own bounds. */
   :global(.option-settings-overlay) {
+    /* behind the status bar: a dim with no content of its own */
     position: fixed;
     inset: 0;
     z-index: calc(var(--z-dropdown, 1000) - 1);

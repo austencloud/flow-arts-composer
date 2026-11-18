@@ -266,7 +266,7 @@
     align-items: center;
     justify-content: center;
     z-index: var(--z-modal);
-    padding: 20px;
+    padding: calc(20px + var(--safe-top)) 20px 20px;
   }
 
   .modal-container {

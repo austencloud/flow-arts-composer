@@ -4,7 +4,7 @@
  * on what the branch changed.
  *
  * Reads `.svelte` `<style>` blocks, `.svelte` markup and `.css` files under
- * `src/` and counts breaks of six rules on docs/architecture/layout-law.md.
+ * `src/` and counts breaks of seven rules on docs/architecture/layout-law.md.
  *
  *   npm run layout:scan                      compare this branch with main
  *   npm run layout:scan -- --totals          every break in src/, by rule
@@ -55,6 +55,10 @@ export const RULES = {
   "shared-owners": {
     name: "Shared owners",
     fix: "Use `BaseModal` or `Drawer` instead of a hand-made dialog.",
+  },
+  "status-bar-clear": {
+    name: "Clear of the status bar",
+    fix: "Add `var(--safe-top)` to the layer's top edge, or say why it may sit behind the status bar: `/* behind the status bar: ... */`.",
   },
 };
 export const RULE_IDS = Object.keys(RULES);
@@ -194,6 +198,17 @@ export function scanCss(
       .replace(/!important/i, "")
       .trim();
     if (!/^(--)?[a-z-]+$/.test(prop)) return;
+    const block = stack[stack.length - 1];
+    if (block) {
+      if (prop === "position" && /^fixed$/i.test(value)) block.fixedAt = at;
+      if (
+        (prop === "top" && !/^auto$/i.test(value)) ||
+        ((prop === "inset" || prop === "inset-block-start") &&
+          !/^auto(?![\w-])/i.test(value))
+      )
+        block.reachesTop = true;
+      if (text.includes("--safe-top")) block.usesSafeTop = true;
+    }
     const inWide = stack.some((s) => s.wide);
     const isFontSize = prop === "font-size";
     const definesRole = prop.startsWith("--font-size-");
@@ -242,10 +257,28 @@ export function scanCss(
           }
         }
       }
-      stack.push({ prelude, wide: isMedia && isWideQuery(prelude) });
+      stack.push({
+        prelude,
+        wide: isMedia && isWideQuery(prelude),
+        fixedAt: 0,
+        reachesTop: false,
+        usesSafeTop: false,
+      });
     } else if (ch === "}") {
       declaration();
-      stack.pop();
+      const block = stack.pop();
+      if (
+        block &&
+        block.fixedAt &&
+        block.reachesTop &&
+        !block.usesSafeTop &&
+        statusBarMarker(rawLines, block.fixedAt - lineOffset) === null
+      )
+        add(
+          "status-bar-clear",
+          block.fixedAt,
+          "position: fixed reaching the top without --safe-top"
+        );
     } else if (ch === ";") {
       declaration();
     } else {
@@ -263,12 +296,20 @@ export function scanCss(
  * Returns the reason, or null when there is no marker of 10 characters or more.
  */
 const SCROLL_MARKER = /\/\*\s*scrolls:\s*([\s\S]*?)\s*\*\//i;
-export function scrollMarker(rawLines, index) {
+const STATUS_BAR_MARKER = /\/\*\s*behind the status bar:\s*([\s\S]*?)\s*\*\//i;
+function markerReason(pattern, rawLines, index) {
   for (const i of [index, index - 1]) {
-    const reason = SCROLL_MARKER.exec(rawLines[i] ?? "")?.[1]?.trim();
+    const reason = pattern.exec(rawLines[i] ?? "")?.[1]?.trim();
     if (reason && reason.length >= 10) return reason;
   }
   return null;
+}
+export function scrollMarker(rawLines, index) {
+  return markerReason(SCROLL_MARKER, rawLines, index);
+}
+/** A fixed layer that may sit behind the status bar says why, same placement. */
+export function statusBarMarker(rawLines, index) {
+  return markerReason(STATUS_BAR_MARKER, rawLines, index);
 }
 
 /** A font-size value that is a literal px, rem or em length. */

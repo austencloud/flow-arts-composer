@@ -150,7 +150,7 @@
 .guide-layout {
   display: flex;
   min-height: 100vh;
-  padding-top: 64px;
+  padding-top: calc(64px + var(--safe-top));
   background: var(--guide-canvas, oklch(0.13 0.015 270));
   color: oklch(0.9 0.01 270);
   font-family: "Inter", system-ui, sans-serif;

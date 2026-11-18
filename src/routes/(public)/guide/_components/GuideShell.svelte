@@ -221,7 +221,7 @@
   }
   .skip-link:focus {
     position: fixed;
-    top: 1rem;
+    top: calc(1rem + var(--safe-top));
     left: 1rem;
     width: auto;
     height: auto;
@@ -244,7 +244,7 @@
   .mobile-menu-btn {
     display: none;
     position: fixed;
-    top: calc(64px + 1rem);
+    top: calc(64px + var(--safe-top) + 1rem);
     left: 1rem;
     z-index: 60;
     background: oklch(0.18 0.02 270 / 0.8);
@@ -270,7 +270,7 @@
   /* Tucked: slides up behind the header and leaves the tab order, with
      visibility flipping only once the slide has finished. */
   .mobile-menu-btn.tucked {
-    transform: translateY(calc(-100% - 64px - 1.5rem));
+    transform: translateY(calc(-100% - 64px - var(--safe-top) - 1.5rem));
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -319,10 +319,10 @@
   .guide-drawer.open {
     display: block;
     position: fixed;
-    top: 64px;
+    top: calc(64px + var(--safe-top));
     left: var(--guide-rail-reserved, 0px);
     right: 0;
-    height: calc(100dvh - 64px);
+    height: calc(100dvh - 64px - var(--safe-top));
     /* scrolls: the guide's whole contents list, inside the drawer */
     overflow-y: auto;
     overscroll-behavior: contain;

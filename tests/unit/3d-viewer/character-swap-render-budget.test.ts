@@ -52,15 +52,11 @@ describe("character swap render budget", () => {
     // ...and the picker binds them to the pointer and focus pair, so an intent
     // that never becomes a selection is always withdrawn.
     expect(pickerSource).toContain(
-      "onpointerenter={() => startPointerPreview("
+      "onpointerenter={() => onIntent(characterId)}"
     );
-    expect(pickerSource).toContain("onpointerleave={() => stopPointerPreview(");
-    expect(pickerSource).toContain("onfocus={() => startFocusPreview(");
-    expect(pickerSource).toContain("onblur={() => stopFocusPreview(");
-    expect(pickerSource).toContain("function startPointerPreview");
-    expect(pickerSource).toContain("function startFocusPreview");
-    expect(pickerSource).toContain("onIntent(id)");
-    expect(pickerSource).toContain("onCancelIntent()");
+    expect(pickerSource).toContain("onpointerleave={onCancelIntent}");
+    expect(pickerSource).toContain("onfocus={() => onIntent(characterId)}");
+    expect(pickerSource).toContain("onblur={onCancelIntent}");
   });
 
   it("keeps the current character visible until its replacement is prepared", () => {

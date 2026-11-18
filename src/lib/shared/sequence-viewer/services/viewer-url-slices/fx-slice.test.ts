@@ -3,6 +3,8 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { captureFxSlice, seedFromFxSlice } from "./fx-slice";
 import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { resolveEffect } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import { encodeViewerStateParams } from "../viewer-url-state-codec";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -111,6 +113,84 @@ describe("fx slice", () => {
       expect(captureFxSlice(seeded, { full: true })).toEqual(full);
       // A full payload seeds the same state a diff payload would.
       expect(captureFxSlice(seeded)).toBeNull();
+    });
+  });
+
+  describe("two effects, one per prop", () => {
+    function mixed() {
+      const a = createEffectsConfigState(undefined, { persist: false });
+      a.setEffectFor(0, "fire");
+      a.setEffectFor(1, "trails");
+      return a;
+    }
+
+    it("round-trips a three-key map and keeps '*' so older apps show one effect", () => {
+      const a = mixed();
+      const slice = captureFxSlice(a);
+      expect(slice?.active).toBe("fire");
+      const map = slice?.tuning?.tipEffectMap as Record<string, { effect: string }>;
+      expect(map).toEqual({
+        "*": { effect: "fire" },
+        "0": { effect: "fire" },
+        "1": { effect: "trails" },
+      });
+      // Older apps read only "*" (and `active`): one effect, never none.
+      expect(map["*"]?.effect).toBe("fire");
+
+      const b = createEffectsConfigState(seedFromFxSlice(slice!), { persist: false });
+      expect(b.snapshot().tipEffectMap).toEqual(map);
+      expect(captureFxSlice(b)).toEqual(slice);
+    });
+
+    it("a one-effect link still opens to the same effect on both props", () => {
+      const b = createEffectsConfigState(seedFromFxSlice({ active: "fire" }), {
+        persist: false,
+      });
+      expect(b.snapshot().tipEffectMap).toEqual({ "*": { effect: "fire" } });
+      expect(b.effectsDiffer()).toBe(false);
+    });
+
+    it("one prop off while the other is lit keeps '*' lit", () => {
+      const a = createEffectsConfigState(undefined, { persist: false });
+      a.setEffectFor("both", "none");
+      a.setEffectFor(1, "led");
+      const map = captureFxSlice(a)?.tuning?.tipEffectMap as Record<string, { effect: string }>;
+      expect(map["*"]?.effect).toBe("led");
+    });
+
+    // Observed behaviour of the unchanged slice on a hand-edited link: the
+    // blob is merged as-is, so an unknown name in "0" is NOT replaced by "*".
+    it("a hand-edited unknown effect in a hand key is kept as written (no fall-back)", () => {
+      const seed = seedFromFxSlice({
+        active: "fire",
+        tuning: {
+          tipEffectMap: {
+            "*": { effect: "fire" },
+            "0": { effect: "nonsense" },
+            "1": { effect: "trails", stray: 1 },
+          },
+        },
+      });
+      const map = seed.tipEffectMap;
+      expect(resolveEffect(0, 0, undefined, map)).toBe("nonsense");
+      expect(resolveEffect(1, 0, undefined, map)).toBe("trails");
+      expect(map["1"]).toEqual({ effect: "trails", stray: 1 });
+    });
+
+    it("link size: characters a two-effect full link adds over a one-effect link", () => {
+      const plain = createEffectsConfigState(undefined, { persist: false });
+      plain.setActiveEffect("fire");
+      const size = (state: typeof plain) => {
+        const { set } = encodeViewerStateParams({
+          fx: captureFxSlice(state, { full: true }),
+        });
+        return Object.entries(set).reduce(
+          (n, [k, v]) => n + k.length + v.length + 2,
+          0
+        );
+      };
+      const extra = size(mixed()) - size(plain);
+      expect(extra).toBeGreaterThan(0);
     });
   });
 });

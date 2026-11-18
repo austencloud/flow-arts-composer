@@ -4,6 +4,8 @@ import {
   resolveSceneControlLayout,
   sceneInspectorPanelWidth,
   sceneStageFramingAspect,
+  sceneStageSubject,
+  stageBarShares,
 } from "#lib/shared/3d/domain/scene-control-layout.js";
 
 describe("scene control workspace layout", () => {
@@ -129,5 +131,39 @@ describe("scene control workspace layout", () => {
   it("falls back to a square frame before the stage has a size", () => {
     expect(sceneStageFramingAspect(0, 0)).toBe(1);
     expect(sceneStageFramingAspect(480, Number.NaN)).toBe(1);
+  });
+
+  it("frames the bodies while the docked panel is choosing a character", () => {
+    expect(sceneStageSubject(true, "performer", "character")).toBe("bodies");
+  });
+
+  it("frames the whole cast, props included, everywhere else", () => {
+    expect(sceneStageSubject(true, "performer", "prop")).toBe("cast");
+    expect(sceneStageSubject(true, "camera", "character")).toBe("cast");
+    expect(sceneStageSubject(true, null, "character")).toBe("cast");
+    // A phone sheet or a floating panel covers the stage; the view stays put.
+    expect(sceneStageSubject(false, "performer", "character")).toBe("cast");
+  });
+
+  it("reports the bars over the stage as shares of its height", () => {
+    // His window: the performer bar and its hint end 113px down a 1146px
+    // stage, and the host keeps 88px clear for the transport.
+    const bars = stageBarShares(1146, 113, 88);
+    expect(bars.top).toBeCloseTo(113 / 1146, 5);
+    expect(bars.bottom).toBeCloseTo(88 / 1146, 5);
+  });
+
+  it("never lets the bars squeeze the clear band to nothing", () => {
+    const bars = stageBarShares(400, 260, 240);
+    expect(bars.top).toBeLessThanOrEqual(0.3);
+    expect(bars.bottom).toBeLessThanOrEqual(0.3);
+  });
+
+  it("reads an unmeasured stage as having no bars", () => {
+    expect(stageBarShares(0, 113, 88)).toEqual({ top: 0, bottom: 0 });
+    expect(stageBarShares(1146, Number.NaN, -20)).toEqual({
+      top: 0,
+      bottom: 0,
+    });
   });
 });

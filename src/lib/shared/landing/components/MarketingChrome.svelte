@@ -214,7 +214,7 @@
      gap below the header on every marketing page, including a deep link the
      browser scrolls to before hydration. App routes never match. */
   :global(html):has(.mkt-shell) {
-    --marketing-header-h: 64px;
+    --marketing-header-h: calc(64px + var(--safe-top));
     scroll-padding-top: calc(var(--marketing-header-h) + 1rem);
   }
 
@@ -290,6 +290,7 @@
   }
 
   .mkt-bg {
+    /* behind the status bar: a decorative background with no words or buttons */
     position: fixed;
     inset: 0;
     z-index: 1;
@@ -315,6 +316,7 @@
      It used to carry a CSS dot grid, which read as a fake star field next to
      the real one. */
   .mkt-fallback {
+    /* behind the status bar: a gradient fallback background with no words or buttons */
     position: fixed;
     inset: 0;
     z-index: 0;

@@ -691,7 +691,7 @@
   "feedback_sign_in_to_send": "Inicia sesión para enviar",
   "feedback_submit_subtitle": "Ayuda a mejorar Flow Arts Composer con tus comentarios",
   "feedback_submit_title": "Enviar comentarios",
-  "feedback_submitted_message": "Gracias por ayudarnos a mejorar Flow Arts Composer. Hemos recibido tus comentarios y los revisaremos.",
+  "feedback_submitted_message": "Gracias por ayudar a mejorar Flow Arts Composer. Tus comentarios llegaron y se revisarán.",
   "feedback_submitted_title": "¡Comentarios enviados!",
   "feedback_submitted_toast": "¡Comentario enviado! Gracias por ayudar a mejorar Flow Arts Composer.",
   "feedback_submitting": "Enviando...",
@@ -2177,7 +2177,7 @@
   "auth_prompt_send_image": "Enviar esta imagen",
   "auth_prompt_create_account": "Crear tu cuenta",
   "auth_prompt_save_any_device": "Guarda tus secuencias y ábrelas en cualquier dispositivo.",
-  "auth_prompt_welcome_back": "Te damos la bienvenida de nuevo",
+  "auth_prompt_welcome_back": "Hola de nuevo",
   "auth_prompt_open_saved_work": "Inicia sesión para abrir tu trabajo guardado.",
   "auth_continue_by_email": "Continuar por correo",
   "auth_social_blocked_browser": "El inicio de sesión con redes sociales está bloqueado en este navegador.",
@@ -5467,7 +5467,7 @@
   "feedback_type_general": "Comentario general",
   "feedback_placeholder_bug": "¿Qué pasó? ¿Qué esperabas que ocurriera?",
   "feedback_placeholder_feature": "¿Qué te gustaría ver en la app?",
-  "feedback_placeholder_general": "¿Qué quieres contarnos?",
+  "feedback_placeholder_general": "¿Qué tienes en mente?",
   "feedback_status_new": "Nuevo",
   "feedback_status_in_progress": "En curso",
   "feedback_status_in_review": "En revisión",
@@ -10332,5 +10332,10 @@
   "create_save_row_collection": "Colección",
   "create_save_collection_count": "{count} colecciones",
   "create_save_note_add": "Agregar",
-  "library_ui_no_collection": "Ninguna"
+  "library_ui_no_collection": "Ninguna",
+  "effect_deep_which_prop": "Qué prop recibe el efecto",
+  "effect_deep_tile_left_prop": "{effect}, prop izquierdo",
+  "effect_deep_tile_right_prop": "{effect}, prop derecho",
+  "effect_deep_tile_both_props": "{effect}, ambos props",
+  "effect_deep_left_and_right": "{left} en el prop izquierdo, {right} en el prop derecho"
 }

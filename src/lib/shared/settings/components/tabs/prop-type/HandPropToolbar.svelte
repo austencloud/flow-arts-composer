@@ -32,24 +32,63 @@
   let {
     handProps,
     compact = false,
-  }: { handProps: HandPropToolbarProps; compact?: boolean } = $props();
+    line,
+    disabled = false,
+    ariaLabel,
+  }: {
+    handProps: HandPropToolbarProps;
+    compact?: boolean;
+    /**
+     * One-line size for lists that carry the choice among other rows: 36px
+     * tall, a 20px prop picture, a 6px gap and the word beside it. "tight" is
+     * the 32px height for the smallest phone. The prop sheets leave it unset.
+     */
+    line?: "regular" | "tight";
+    /** Not pressable, still in place: the segments dim as every disabled
+     *  segment does (Effects off in the list). */
+    disabled?: boolean;
+    /** The group's name, when the host's question is not the prop sheet's. */
+    ariaLabel?: string;
+  } = $props();
 
   const settings = $derived(getSettings());
 
   const options = $derived([
-    { value: "both" as const, label: t("viewer_ui_both"), tone: "both" as const },
-    { value: "left" as const, label: t("viewer_ui_left"), tone: "blue" as const },
-    { value: "right" as const, label: t("viewer_ui_right"), tone: "red" as const },
+    {
+      value: "both" as const,
+      label: t("viewer_ui_both"),
+      tone: "both" as const,
+      disabled,
+    },
+    {
+      value: "left" as const,
+      label: t("viewer_ui_left"),
+      tone: "blue" as const,
+      disabled,
+    },
+    {
+      value: "right" as const,
+      label: t("viewer_ui_right"),
+      tone: "red" as const,
+      disabled,
+    },
   ]);
+
+  const artSize = $derived(line ? 20 : 56);
 </script>
 
 <!-- One choice, always there: which hand the grid below sets. -->
-<div class="hand-toolbar" class:compact>
+<div
+  class="hand-toolbar"
+  class:compact
+  class:line={!!line}
+  class:tight={line === "tight"}
+>
   <SegmentedControl
     {options}
     value={handProps.hand}
     onchange={handProps.onHandChange}
-    ariaLabel={t("prop_pair_which_hand")}
+    ariaLabel={ariaLabel ?? t("prop_pair_which_hand")}
     semantics="radiogroup"
     columns={3}
   >
@@ -60,7 +99,7 @@
             <PropCompositionPreview
               propType={handProps.leftPropType}
               rightPropType={handProps.rightPropType}
-              size={56}
+              size={artSize}
               pairedGlyph
               darkBackground
               colors={settings.primaryPropColors}
@@ -68,6 +107,7 @@
             />
           {:else}
             <PropGridPreview
+              size={artSize}
               propType={choice === "left"
                 ? handProps.leftPropType
                 : handProps.rightPropType}
@@ -147,5 +187,59 @@
 
   .hand-toolbar.compact .hand-art {
     max-width: 52px;
+  }
+
+  /* One-line size: the whole row is 36px (32px tight), picture and word side
+     by side. The segment track is the row, so its own padding and border sit
+     inside that height. If a word needs the room, the picture gives way
+     before the word is cut. */
+  .hand-toolbar.line {
+    --hand-line-height: 36px;
+    padding: 0;
+    height: var(--hand-line-height);
+  }
+  .hand-toolbar.line.tight {
+    --hand-line-height: 32px;
+  }
+  .hand-toolbar.line :global(.ui-segments) {
+    height: var(--hand-line-height);
+    align-items: stretch;
+  }
+  .hand-toolbar.line :global(.ui-segments button) {
+    min-width: 0;
+    min-height: 0;
+    padding: 0 4px;
+    /* The lit segment and the dimmed (Effects off) state change on the same
+       fast transition the effect tiles use. */
+    --ui-motion-duration: var(--duration-fast, 150ms);
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hand-toolbar.line :global(.ui-segments button) {
+      transition: none;
+    }
+  }
+  .hand-toolbar.line .hand-card {
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+    padding: 0;
+    min-width: 0;
+  }
+  .hand-toolbar.line .hand-art {
+    flex: 0 1 20px;
+    width: 20px;
+    min-width: 0;
+    max-width: 20px;
+    overflow: hidden;
+  }
+  .hand-toolbar.line .hand-word {
+    flex: 0 0 auto;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
   }
 </style>

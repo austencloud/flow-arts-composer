@@ -6,6 +6,10 @@
   import { T, useTask, useThrelte, useScheduler } from "@threlte/core";
   import { HTML, layers } from "@threlte/extras";
   import PerformerLayerGroup from "./PerformerLayerGroup.svelte";
+  import {
+    performerHandEffects,
+    performerTipEffectMap,
+  } from "../effects/performer-tip-effect-map.js";
   import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
   import {
     PerformerRig,
@@ -309,15 +313,9 @@
   const { scheduler, resetFrameInvalidation } = useScheduler();
 
   function resolvePerformerTipMap(
-    performer: CharacterInstanceState,
-    fallbackEffect: TipEffectMap[string]["effect"]
+    performer: CharacterInstanceState
   ): TipEffectMap {
-    return performer.rawHandEffects
-      ? {
-          "0": { effect: performer.rawHandEffects.left },
-          "1": { effect: performer.rawHandEffects.right },
-        }
-      : { "*": { effect: fallbackEffect } };
+    return performerTipEffectMap(performer, globalTipEffectMap);
   }
 
   function markPerformerCharacterReady(
@@ -611,10 +609,10 @@
         rightPropType,
         rightPropTypeOverride as PropType | null
       );
-      const perfEffect =
-        performer.rawEffect ?? globalTipEffectMap["*"]?.effect ?? "none";
-      const leftEffect = performer.rawHandEffects?.left ?? perfEffect;
-      const rightEffect = performer.rawHandEffects?.right ?? perfEffect;
+      const { left: leftEffect, right: rightEffect } = performerHandEffects(
+        performer,
+        globalTipEffectMap
+      );
       const compatible =
         presencePhase !== "exiting" &&
         resolvedLeftProp === resolvedRightProp &&
@@ -636,7 +634,6 @@
         castIndex,
         resolvedLeftProp,
         resolvedRightProp,
-        perfEffect,
         supported,
         request,
       };
@@ -946,11 +943,10 @@
       <!-- Per-performer effect cascade: this performer's override, else the
          global default (effects-config wildcard). This is what makes the
          Performer Hub effect selection actually reach the renderer. -->
-      {@const perfEffect = captureEntry!.perfEffect}
       <!-- When the two hands run different effects, key the map per prop
          instead of the wildcard. resolveEffect already reads propIndex, so
          prop 0 (blue, left) and prop 1 (red, right) each take their own. -->
-      {@const perfTipMap = resolvePerformerTipMap(performer, perfEffect)}
+      {@const perfTipMap = resolvePerformerTipMap(performer)}
       {@const captureRequest = captureEntry!.request}
       {@const capturedPose = (() => {
         void motionCacheRevision;

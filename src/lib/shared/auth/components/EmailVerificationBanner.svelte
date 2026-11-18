@@ -132,7 +132,7 @@
       #d97706 100%
     );
     color: var(--theme-text, white);
-    padding: 12px 16px;
+    padding: calc(12px + var(--safe-top)) 16px 12px;
   }
 
   .banner-content {

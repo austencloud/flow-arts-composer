@@ -45,7 +45,7 @@
 
   --spotlight-chrome-padding: 16px;
   --spotlight-chrome-padding-mobile: 12px;
-  --spotlight-safe-area-top: env(safe-area-inset-top, 0px);
+  --spotlight-safe-area-top: var(--safe-top);
   --spotlight-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --spotlight-safe-area-left: env(safe-area-inset-left, 0px);
   --spotlight-safe-area-right: env(safe-area-inset-right, 0px);
@@ -60,6 +60,7 @@ dialog.media-spotlight {
   max-height: none;
 
   /* Fill viewport */
+  /* behind the status bar: the dialog fills the window; its chrome pads by --spotlight-safe-area-top */
   position: fixed;
   inset: 0;
   width: 100vw;

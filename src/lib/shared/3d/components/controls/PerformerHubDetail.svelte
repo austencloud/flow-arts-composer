@@ -13,7 +13,6 @@
   import PerformerPropSizeSlider from "./PerformerPropSizeSlider.svelte";
   import PerformerGridPanel from "./PerformerGridPanel.svelte";
   import CharacterSelectWorkspace from "./character-select/CharacterSelectWorkspace.svelte";
-  import { resolveCharacterPreviewPerformer } from "./character-select/character-preview-source";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import {
     shouldConfirm,
@@ -73,17 +72,6 @@
     viewer.primaryPerformerIndex !== null
       ? (allPerformers[viewer.primaryPerformerIndex] ?? null)
       : null
-  );
-  const previewPerformer = $derived(
-    resolveCharacterPreviewPerformer(
-      allPerformers,
-      viewer.primaryPerformerIndex
-    )
-  );
-  const previewPerformerNumber = $derived(
-    previewPerformer
-      ? Math.max(1, allPerformers.indexOf(previewPerformer) + 1)
-      : 1
   );
 
   const performerColor = $derived(
@@ -431,8 +419,6 @@
   style:--performer-color={performerColor}
   style:--pop-accent={performerColor}
 >
-  <div class="accent-strip" aria-hidden="true"></div>
-
   <PerformerIdentityHeader
     {performer}
     performerCount={allPerformers.length}
@@ -448,7 +434,9 @@
     {onSettingChange}
   />
 
-  {#if selectedIndices.length > 0}
+  <!-- Placing belongs to the tabs about where a performer stands. On the
+       Character tab the pane is all bodies, so the button stays out of it. -->
+  {#if selectedIndices.length > 0 && activeTab !== "character"}
     <button class="place-action" type="button" onclick={startFloorPlacement}>
       <i class="fas fa-location-dot" aria-hidden="true"></i>
       Tap floor to place
@@ -460,6 +448,7 @@
   <div
     class="tab-content"
     class:fill-grid={activeTab === "grid"}
+    class:fill-pane={activeTab === "character"}
     bind:this={tabContentElement}
     bind:contentRect={tabContentRect}
   >
@@ -480,8 +469,6 @@
               {currentCharacterId}
               {pendingCharacterId}
               {performerColor}
-              {previewPerformer}
-              {previewPerformerNumber}
               onIntent={queueCharacterSelectionIntent}
               onCancelIntent={cancelCharacterSelectionIntent}
               onSelect={(id) => void pickCharacter(id)}
@@ -703,15 +690,6 @@
     min-height: 0;
   }
 
-  .accent-strip {
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      var(--performer-color),
-      color-mix(in srgb, var(--performer-color) 20%, transparent)
-    );
-  }
-
   .header-divider {
     height: 1px;
     margin: 0 14px;
@@ -809,7 +787,6 @@
     overscroll-behavior: contain;
   }
 
-  .accent-strip,
   .header-divider,
   .tab-divider,
   .tab-bar,
@@ -842,6 +819,24 @@
   .fill-grid .scoped-panes,
   .fill-grid .tab-pane {
     flex: 1;
+    min-height: 0;
+  }
+
+  /* The Character pane is the grid of bodies and nothing else, so it takes
+     the whole pane: the picker measures that box and sizes its tiles to fill
+     it. The pane keeps its scroller for a sheet too short to hold them. */
+  .tab-content.fill-pane,
+  .fill-pane .scoped-panes,
+  .fill-pane .tab-pane,
+  .fill-pane .character-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fill-pane .scoped-panes,
+  .fill-pane .tab-pane,
+  .fill-pane .character-section {
+    flex: 1 1 0;
     min-height: 0;
   }
 

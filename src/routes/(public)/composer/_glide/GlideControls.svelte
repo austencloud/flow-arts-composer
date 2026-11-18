@@ -69,6 +69,7 @@
 
 <style>
   .glide-rail {
+    /* behind the status bar: a side rail centred at half the window height, far below the top */
     position: fixed;
     top: 50%;
     right: max(0.5rem, env(safe-area-inset-right));

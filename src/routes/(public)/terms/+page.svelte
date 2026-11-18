@@ -394,8 +394,8 @@
       <h2>16. Contact</h2>
       <p>
         For questions about these Terms of Service, email
-        <LinkChip size="inline" href="mailto:austencloud@gmail.com"
-          >austencloud@gmail.com</LinkChip
+        <LinkChip size="inline" href="mailto:tkaflowarts@gmail.com"
+          >tkaflowarts@gmail.com</LinkChip
         >.
       </p>
       <p>For DMCA notices and takedown requests, see Section 9 above.</p>

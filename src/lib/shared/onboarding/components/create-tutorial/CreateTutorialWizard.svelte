@@ -324,6 +324,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding-top: var(--safe-top);
     background: rgba(0, 0, 0, 0.4);
     z-index: var(--z-priority);
     overflow-y: auto;
@@ -351,7 +352,7 @@
   /* Progress bar */
   .progress-bar {
     position: fixed;
-    top: 0;
+    top: var(--safe-top);
     left: 0;
     right: 0;
     height: 3px;
@@ -367,7 +368,7 @@
   /* Back button */
   .back-button {
     position: fixed;
-    top: 16px;
+    top: calc(16px + var(--safe-top));
     left: 16px;
     min-height: var(--min-touch-target, 44px);
     padding: 8px 16px;
@@ -395,7 +396,7 @@
   /* Skip button */
   .skip-button {
     position: fixed;
-    top: 16px;
+    top: calc(16px + var(--safe-top));
     right: 16px;
     min-height: var(--min-touch-target, 44px);
     padding: 8px 16px;

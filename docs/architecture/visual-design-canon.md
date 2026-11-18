@@ -514,6 +514,24 @@ stays in reach with the list open and does not close it, so a person can
 freeze the picture and compare looks. Austen's pick, 2026-11-15 ("D, pause on
 picture").
 
+Each prop can wear its own effect, and the hand is chosen with the prop
+screen's own Both / Left / Right row (section 6), in a one-line size, directly
+under the head row. There is no second way to pick a hand in the list: not
+words in the head row, not a tap on the prop in the picture. The list opens on
+Both, and under Both a pick gives both props that effect, as before. While the
+two props wear different effects, each tile in use carries a 6 px dot in its
+hand's colour with a thin dark outline: the left hand's in the tile's top left
+corner, the right hand's in the top right, so place tells the hand as well as
+colour. The dot is never a number, a ring or a filled disc, and there are no
+dots while both props wear the same effect. Austen's pick, 2026-11-16 ("A, the
+row").
+
+On every portrait phone the list is that one structure: head row, hand row,
+then all the effects four across, with nothing scrolling in either direction.
+The tiles give way before anything scrolls: smaller first, then an icon over
+the name. A name may be shortened by its translator but is never cut
+(section 10).
+
 ### Application shell
 
 The persistent navigation rail is narrow and stable. The active background can

@@ -21,7 +21,8 @@
   - Just composition and prop passing
 -->
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { untrack, type Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
   import {
     controlArrive,
     controlLeave,
@@ -41,6 +42,7 @@
   import { logConstructFullPlay } from "#lib/features/create/construct/services/construct-analytics.js";
   import OptionInteractionBanner from "#lib/features/create/construct/option-picker/components/OptionInteractionBanner.svelte";
   import { logSequenceActionSurfaceShown } from "#lib/shared/create/analytics/sequence-action-events.js";
+  import { fitRowLabels, type RowLabelFit } from "./row-label-fit";
 
   // Get context - ButtonPanel is ONLY used inside CreateModule, so context is always available
   const {
@@ -149,6 +151,25 @@
   );
   let sequenceActionsSurfaceLogged = false;
 
+  // Words show only while a hidden worded copy of this row fits. While a step
+  // is selected Clear steps aside, and that must never make words appear.
+  let rowLabelFit: RowLabelFit | null = null;
+  const fitLabels: Attachment<HTMLElement> = (row) => {
+    const fit = untrack(() =>
+      fitRowLabels(row, { holdWords: () => stepSelected })
+    );
+    rowLabelFit = fit;
+    return () => {
+      fit.stop();
+      if (rowLabelFit === fit) rowLabelFit = null;
+    };
+  };
+
+  $effect(() => {
+    void stepSelected;
+    untrack(() => rowLabelFit?.refresh());
+  });
+
   $effect(() => {
     if (showSequenceActions && visible && !sequenceActionsSurfaceLogged) {
       sequenceActionsSurfaceLogged = true;
@@ -190,6 +211,7 @@
       class:assemble-layout={isAssembleTab}
       class:compact-rail={compact}
       transition:opaqueFade={{ duration: DURATION.normal }}
+      {@attach fitLabels}
     >
       <!-- Each zone rides a PanelGroup compositor edge (data-panel-flip): when
            Play or Stop moves the workspace edge, the zones travel to their new
@@ -213,7 +235,7 @@
 
       <!-- CENTER ZONE: Primary Play action -->
       <div class="center-zone-wrapper">
-        <!-- Where Play runs in place, Viewer hangs off Play's left side, so it
+        <!-- Where Play runs in place, Viewer hangs off Play on Clear's side, so it
              never moves Play off center and is one tap from the full viewer
              (and its 3D view). Play's Stop, Retry and Cancel states swap
              inside the button. -->
@@ -311,6 +333,22 @@
     container-name: button-panel;
     width: 100%;
     pointer-events: none;
+    /* Holds the hidden worded copy (row-label-fit.ts) across the row. */
+    position: relative;
+  }
+
+  :global(.button-row-measure) {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    pointer-events: none;
+  }
+
+  :global(.button-row-measure),
+  :global(.button-row-measure *) {
+    visibility: hidden !important;
+    transition: none !important;
+    animation: none !important;
   }
 
   .button-panel {
@@ -391,11 +429,12 @@
     position: relative;
   }
 
-  /* Viewer sits left of Play, bottom-aligned with the rail's other
-     controls rather than with Play's taller box. */
+  /* Viewer sits on Clear's side of Play (its left, or its right in a
+     right-to-left language), bottom-aligned with the rail's other controls
+     rather than with Play's taller box. */
   .viewer-action {
     position: absolute;
-    right: calc(100% + 10px);
+    inset-inline-end: calc(100% + 10px);
     bottom: 0;
   }
 
@@ -414,20 +453,12 @@
     user-select: none;
   }
 
-  /* Labels join the controls once the labelled row fits. Play is centred
-     absolutely, so each half of the rail must hold its own zone plus half of
-     Play. Labelled pills measured at 1920x1080: Clear 97px, Play 107px,
-     Actions 113px, Share 96px. Between 640px and 768px the rail pads 18px at
-     most per side and the zones gap 10px (the max-width: 768px rule below).
-       right half: 18 + Share 96 + 10 + Actions 113 + Play 107 / 2 = 290.5px
-     Construct and Generate also hang Viewer (about 100px) 10px left of Play:
-       left half:  18 + Clear 97 + Viewer 100 + 10 + Play 107 / 2  = 278.5px
-     The right half decides: 2 x 290.5 = 581px with Actions touching Play.
-     640px leaves 29.5px between them for longer translations. That keeps
-     labels on a 1440x900 laptop (682px rail) and off on phones; the short
-     landscape override below still turns them off. */
-  @container button-panel (min-width: 640px) {
-    .button-panel {
+  /* Words show only when they fit: row-label-fit.ts lays out a hidden worded
+     copy of this row and sets labels-fit while no two of its controls come
+     closer than 10px and none leaves the row. Never in the 480px grid tier,
+     and the short landscape block below still wins (:where keeps it level). */
+  @container button-panel (min-width: 481px) {
+    .button-panel:global(:where(.labels-fit)) {
       --workspace-action-label-display: inline;
       --workspace-action-label-opacity: 1;
       --workspace-action-width: auto;
@@ -443,6 +474,12 @@
       --share-trigger-padding-inline: 16px;
       --share-trigger-radius: 999px;
     }
+  }
+
+  /* A decision made on the first measure or as a control arrives lands
+     without animating, so the control is drawn once in its final shape. */
+  .button-panel:global(.labels-instant) :global(*) {
+    transition: none !important;
   }
 
   /* Tighter spacing on smaller containers to accommodate 48px buttons */
@@ -589,7 +626,7 @@
 
     /* Grid cells centre Play here, so Viewer centres on it too. */
     .viewer-action {
-      right: calc(100% + var(--settings-workspace-action-gap));
+      inset-inline-end: calc(100% + var(--settings-workspace-action-gap));
       bottom: calc((var(--rail-play-size) - var(--min-touch-target)) / 2);
     }
 

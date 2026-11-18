@@ -6,9 +6,13 @@
     RAIL_SECOND_COLUMN_WIDTH,
     resolveSceneControlLayout,
     sceneStageFramingAspect,
+    sceneStageSubject,
+    stageBarShares,
     type SceneControlHostTool,
     type SceneControlLayout,
     type SceneControlTool,
+    type SceneStageSubject,
+    type StageBars,
   } from "../../domain/scene-control-layout";
   import type {
     ViewerActionSink,
@@ -138,6 +142,8 @@
   let railColumns = $state<1 | 2>(1);
   const railWidth = $derived(railColumns === 2 ? "8.25rem" : "4.75rem");
   let panelEl = $state<HTMLElement | null>(null);
+  let performerBarEl = $state<HTMLElement | null>(null);
+  let interactionHintEl = $state<HTMLElement | null>(null);
   let saveSceneOpen = $state(false);
   let showInteractionHint = $state(false);
   let interactionAnnouncement = $state("");
@@ -376,21 +382,46 @@
     performerCloseRequest += 1;
   });
 
+  // What is drawn over the stage's top and bottom edges, read where it is
+  // drawn: the performer bar (and its first-visit hint) from the top, the
+  // room the host keeps for its transport from the bottom.
+  function measureStageBars(): StageBars {
+    if (!workspaceEl) return { top: 0, bottom: 0 };
+    const stageTop = workspaceEl.getBoundingClientRect().top;
+    const topBar = interactionHintEl ?? performerBarEl;
+    return stageBarShares(
+      workspaceHeight,
+      topBar ? topBar.getBoundingClientRect().bottom - stageTop : 0,
+      panelEl ? Number.parseFloat(getComputedStyle(panelEl).bottom) : 0
+    );
+  }
+
+  // The stage refits when a dock gives it a new width, and again when the
+  // docked panel starts or stops choosing a character: the body is then the
+  // subject and stands as large as the stage allows between those bars.
   let dockWasOpen = false;
+  let stageSubjectWas: SceneStageSubject = "cast";
   $effect(() => {
     const dockIsOpen =
       layout.presentation === "docked" && layout.reservedWidth > 0;
-    if (dockIsOpen !== dockWasOpen && workspaceHeight > 0) {
+    const stageSubject = sceneStageSubject(dockIsOpen, activeTool, performerTab);
+    if (
+      (dockIsOpen !== dockWasOpen || stageSubject !== stageSubjectWas) &&
+      workspaceHeight > 0
+    ) {
       const stageWidth = Math.max(
         1,
         workspaceWidth - (dockIsOpen ? layout.reservedWidth : 0)
       );
       viewer.frameAllPerformers(
         sceneStageFramingAspect(stageWidth, workspaceHeight),
-        true
+        true,
+        stageSubject,
+        stageSubject === "bodies" ? measureStageBars() : undefined
       );
     }
     dockWasOpen = dockIsOpen;
+    stageSubjectWas = stageSubject;
   });
 </script>
 
@@ -474,7 +505,7 @@
          canvas already selects performers on click
          (Viewer3DScene's onPointerDown); this is the same act, reachable
          without hunting for a performer in the frame. -->
-    <div class="performer-bar-anchor">
+    <div class="performer-bar-anchor" bind:this={performerBarEl}>
       <PerformerSpine
         {onSettingChange}
         onScopeSelect={() =>
@@ -483,7 +514,11 @@
           )}
       />
       {#if showInteractionHint}
-        <p class="interaction-hint" transition:flyFade>
+        <p
+          class="interaction-hint"
+          bind:this={interactionHintEl}
+          transition:flyFade
+        >
           Click to edit · Ctrl/Cmd-click to select several · drag to move
         </p>
       {/if}

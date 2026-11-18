@@ -143,6 +143,7 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
 
 <style>
   :global(.camera-dialog-backdrop) {
+    /* behind the status bar: a dim with no content of its own */
     position: fixed;
     top: 0;
     left: 0;
@@ -156,7 +157,7 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
 
   :global(.camera-dialog-container) {
     position: fixed;
-    top: 50%;
+    top: calc(50% + var(--safe-top) / 2);
     left: 50%;
     transform: translate(-50%, -50%);
     background: var(--surface-glass, rgba(20, 20, 20, 0.95));

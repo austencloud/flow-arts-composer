@@ -398,7 +398,7 @@
     );
     max-width: none;
     max-height: calc(
-      var(--viewport-height, 100dvh) - 2rem - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 2rem - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     );
     height: fit-content;
@@ -1102,7 +1102,7 @@
           env(safe-area-inset-right, 0px)
       );
       max-height: calc(
-        var(--viewport-height, 100dvh) - 1rem - env(safe-area-inset-top, 0px) -
+        var(--viewport-height, 100dvh) - 1rem - var(--safe-top) -
           env(safe-area-inset-bottom, 0px)
       );
       border-radius: 16px;
@@ -1151,7 +1151,7 @@
       );
       max-height: calc(
         var(--viewport-height, 100dvh) - 0.75rem -
-          env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+          var(--safe-top) - env(safe-area-inset-bottom, 0px)
       );
       border-radius: 14px;
     }

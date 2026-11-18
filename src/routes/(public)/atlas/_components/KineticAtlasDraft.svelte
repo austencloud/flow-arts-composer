@@ -1313,7 +1313,7 @@
     background: oklch(0.13 0.015 270 / 0.96);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    padding: 0.75rem 1.1rem calc(1rem + env(safe-area-inset-bottom));
+    padding: calc(0.75rem + var(--safe-top)) 1.1rem calc(1rem + env(safe-area-inset-bottom));
   }
   .drawer-head {
     display: flex;

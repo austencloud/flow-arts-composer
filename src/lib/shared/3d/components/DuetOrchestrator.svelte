@@ -160,6 +160,7 @@
 <style>
   .browser-overlay,
   .duet-creator-overlay {
+    /* behind the status bar: a dim; its centred panel is shorter than the window */
     position: fixed;
     inset: 0;
     z-index: 100;

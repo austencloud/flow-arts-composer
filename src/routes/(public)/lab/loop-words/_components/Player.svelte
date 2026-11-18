@@ -1,7 +1,7 @@
 <!--
   One real animator, driven by the page clock (externalStep), with its caption
-  under it. Every player on a screen reads the same clock, so they move
-  together. Until the browser has the player, the square holds its place.
+  under it. Both players read the same clock, so they move together. Until the
+  browser has the player, the square holds its place.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -9,7 +9,7 @@
   import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
-  import type { ReflectionLine } from "../_data/loop-words-examples";
+  import type { ReflectionLine } from "../_data/loop-kinds";
 
   // Ends of each reflection line across the square, north at the top.
   const LINE_ENDS: Record<ReflectionLine, [number, number, number, number]> = {
@@ -26,6 +26,7 @@
     label,
     caption,
     line,
+    transitionKey = null,
   }: {
     sequence: SequenceData | null;
     step: number;
@@ -34,6 +35,8 @@
     caption?: Snippet;
     /** A reflection line drawn over the player. */
     line?: ReflectionLine;
+    /** Same key across a sequence change: the props glide to the new pose. */
+    transitionKey?: string | null;
   } = $props();
 </script>
 
@@ -48,6 +51,7 @@
         interactive={false}
         externalStep={step}
         externalPlaying={moving}
+        {transitionKey}
       />
     {/if}
     {#if line}

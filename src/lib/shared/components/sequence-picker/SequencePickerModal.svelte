@@ -257,7 +257,7 @@
         90dvh,
         calc(
           var(--viewport-height, 100dvh) - 32px -
-            env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+            var(--safe-top) - env(safe-area-inset-bottom, 0px)
         )
       );
     }

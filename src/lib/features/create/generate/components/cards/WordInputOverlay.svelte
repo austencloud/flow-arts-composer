@@ -171,7 +171,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 15vh;
+    padding-top: calc(15vh + var(--safe-top));
     animation: fadeIn var(--duration-fast) var(--ease-standard-out);
   }
 

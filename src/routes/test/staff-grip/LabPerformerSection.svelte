@@ -243,7 +243,6 @@
     <PerformerCharacterPicker
       selectedCharacterId={lab.character}
       pendingCharacterId={null}
-      previewPerformer={null}
       groupLabel="Lab character"
       onSelect={chooseCharacter}
       onIntent={() => {}}

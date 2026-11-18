@@ -1,5 +1,6 @@
 /* Overlay (backdrop) */
 .drawer-overlay {
+  /* behind the status bar: the dim covers the whole screen, the sheet keeps clear */
   position: fixed;
   inset: 0;
   z-index: calc(var(--sheet-z-index, var(--sheet-z-base, 50)) - 1);
@@ -199,9 +200,15 @@ dialog.drawer-content {
   max-width: var(--sheet-max-width, 100%);
   /* Consumers can cap sheet height via --sheet-max-height (replaces
      per-consumer `max-height: …vh !important` skins). */
-  max-height: var(--sheet-max-height, 100vh);
-  /* Modern: iPhone browser chrome */
-  max-height: var(--sheet-max-height, 100dvh);
+  max-height: min(
+    var(--sheet-max-height, 100vh),
+    calc(100vh - var(--safe-top))
+  );
+  /* Modern: iPhone browser chrome. A tall sheet stops below the status bar. */
+  max-height: min(
+    var(--sheet-max-height, 100dvh),
+    calc(100dvh - var(--safe-top))
+  );
   /* Prevent bottom sheets from appearing as tiny slivers on mobile.
      A sheet that sizes to its own content sets --sheet-min-height. */
   min-height: var(--sheet-min-height, 50vh);
@@ -263,7 +270,8 @@ dialog.drawer-content {
   margin: 0 auto;
   border-bottom-left-radius: var(--sheet-radius-large, 20px);
   border-bottom-right-radius: var(--sheet-radius-large, 20px);
-  border-top: none;
+  /* The sheet's own background runs under the status bar; its content starts below. */
+  padding-top: var(--safe-top);
 }
 
 .drawer-content[data-placement="top"][data-state="closed"] {
@@ -287,6 +295,8 @@ dialog.drawer-content {
   width: var(--sheet-width, min(600px, 90vw));
   border-left: var(--sheet-border-strong, 2px solid var(--theme-stroke-strong));
   border-right: none;
+  /* The panel's background runs under the status bar; its content starts below. */
+  padding-top: var(--safe-top);
   border-top-left-radius: var(--sheet-radius-large, 20px);
   border-bottom-left-radius: var(--sheet-radius-large, 20px);
 }
@@ -309,6 +319,7 @@ dialog.drawer-content {
   bottom: var(--create-panel-bottom, 0);
   height: auto;
   max-height: none;
+  padding-top: 0; /* the main frame already clears the status bar */
   width: var(--create-panel-width, clamp(360px, 32vw, 520px));
   max-width: 100%;
 }
@@ -329,6 +340,8 @@ dialog.drawer-content {
     2px solid var(--theme-stroke-strong)
   );
   border-left: none;
+  /* The panel's background runs under the status bar; its content starts below. */
+  padding-top: var(--safe-top);
   border-top-right-radius: var(--sheet-radius-large, 20px);
   border-bottom-right-radius: var(--sheet-radius-large, 20px);
 }

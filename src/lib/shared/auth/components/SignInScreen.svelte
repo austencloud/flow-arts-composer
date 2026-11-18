@@ -136,7 +136,7 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
-    padding: max(0.5rem, env(safe-area-inset-top, 0px))
+    padding: max(0.5rem, var(--safe-top))
       max(1rem, env(safe-area-inset-right, 0px))
       calc(
         max(0.75rem, env(safe-area-inset-bottom, 0px)) +
@@ -233,6 +233,7 @@
   /* The dialog is the whole visible viewport on every phone tier, including
      a phone on its side, where the stock full-size rule (520px) misses. */
   :global(dialog.base-modal.chromeless.sign-in-screen-shell[data-size="full"]) {
+    /* behind the status bar: the dialog shell fills the window; the screen body pads below it */
     position: fixed;
     inset: var(--viewport-offset-top, 0px) 0 auto 0;
     width: 100vw;

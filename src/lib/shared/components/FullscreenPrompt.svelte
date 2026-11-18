@@ -153,6 +153,7 @@ the actual fullscreen state rather than inferring from viewport size.
 <style>
   .fullscreen-prompt-overlay {
     /* Full screen overlay */
+    /* behind the status bar: a dim whose prompt is centred in the window */
     position: fixed;
     top: 0;
     left: 0;

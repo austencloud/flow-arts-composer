@@ -353,6 +353,7 @@
 
 <style>
   .error-state {
+    /* behind the status bar: its message card is centred in the window */
     position: fixed;
     inset: 0;
     display: grid;

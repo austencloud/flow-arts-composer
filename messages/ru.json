@@ -691,7 +691,7 @@
   "feedback_sign_in_to_send": "Войдите, чтобы отправить",
   "feedback_submit_subtitle": "Помогите улучшить Flow Arts Composer, поделившись своими предложениями.",
   "feedback_submit_title": "Отправить отзыв",
-  "feedback_submitted_message": "Благодарим вас за помощь в улучшении Flow Arts Composer. Ваш отзыв получен и будет рассмотрен.",
+  "feedback_submitted_message": "Спасибо за помощь в улучшении Flow Arts Composer. Ваш отзыв получен и будет рассмотрен.",
   "feedback_submitted_title": "Отзыв отправлен!",
   "feedback_submitted_toast": "Отзыв отправлен! Спасибо, что помогаете улучшать Flow Arts Composer.",
   "feedback_submitting": "Отправка...",
@@ -10332,5 +10332,10 @@
   "create_save_row_collection": "Коллекция",
   "create_save_collection_count": "Коллекций: {count}",
   "create_save_note_add": "Добавить",
-  "library_ui_no_collection": "Нет"
+  "library_ui_no_collection": "Нет",
+  "effect_deep_which_prop": "Какой реквизит получает эффект",
+  "effect_deep_tile_left_prop": "{effect}, левый реквизит",
+  "effect_deep_tile_right_prop": "{effect}, правый реквизит",
+  "effect_deep_tile_both_props": "{effect}, оба реквизита",
+  "effect_deep_left_and_right": "{left} на левом реквизите, {right} на правом реквизите"
 }

@@ -6,6 +6,11 @@
  */
 
 import { ArtCache, MISSING } from "./art-source.js";
+import {
+  APPROVED_FAN_BUILDS,
+  resolveFanBuild,
+  type FanBuild,
+} from "./fan-builds.js";
 import type {
   FanAppearanceInput,
   HandColorPair,
@@ -270,37 +275,22 @@ const VTG_TO_ELEMENTAL: Record<VTGMode, ElementalType> = {
   QO: "moon", // Quarter Opp
 };
 
-const FAN_BUILDS = [
-  "pictograph",
-  "fire",
-  "flat-grip",
-  "lotus",
-  "day",
-  "moon",
-  "star",
-  "sense",
-] as const;
-type FanBuild = (typeof FAN_BUILDS)[number];
-
 interface ResolvedFanAppearance {
   build: FanBuild;
   frameColor: "black" | "white";
   cover: "bare" | "covered";
 }
 
-const DEFAULT_FAN_APPEARANCE: ResolvedFanAppearance = {
-  build: "fire",
-  frameColor: "black",
-  cover: "bare",
-};
-
-function resolveFanAppearance(
-  value: FanAppearanceInput | null | undefined
+/**
+ * A look that is not approved yet resolves to the default build here, so
+ * every entry point (cards, single pictographs, stored preferences) agrees.
+ */
+export function resolveFanAppearance(
+  value: FanAppearanceInput | null | undefined,
+  approved: readonly FanBuild[] = APPROVED_FAN_BUILDS
 ): ResolvedFanAppearance {
   return {
-    build: FAN_BUILDS.includes(value?.build as FanBuild)
-      ? (value?.build as FanBuild)
-      : DEFAULT_FAN_APPEARANCE.build,
+    build: resolveFanBuild(value?.build, approved),
     frameColor: value?.frameColor === "white" ? "white" : "black",
     cover: value?.cover === "covered" ? "covered" : "bare",
   };

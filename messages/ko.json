@@ -10332,5 +10332,10 @@
   "create_save_row_collection": "컬렉션",
   "create_save_collection_count": "컬렉션 {count}개",
   "create_save_note_add": "추가",
-  "library_ui_no_collection": "없음"
+  "library_ui_no_collection": "없음",
+  "effect_deep_which_prop": "효과를 적용할 프롭",
+  "effect_deep_tile_left_prop": "{effect}, 왼쪽 프롭",
+  "effect_deep_tile_right_prop": "{effect}, 오른쪽 프롭",
+  "effect_deep_tile_both_props": "{effect}, 두 프롭 모두",
+  "effect_deep_left_and_right": "왼쪽 프롭에 {left}, 오른쪽 프롭에 {right}"
 }

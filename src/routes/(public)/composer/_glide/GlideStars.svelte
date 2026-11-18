@@ -117,6 +117,7 @@
 
 <style>
   .glide-stars {
+    /* behind the status bar: a decorative star field with no words or buttons */
     position: fixed;
     inset: 0;
     width: 100%;

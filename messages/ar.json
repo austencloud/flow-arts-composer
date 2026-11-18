@@ -677,7 +677,7 @@
   "feedback_sign_in_to_send": "سجّل الدخول للإرسال",
   "feedback_submit_subtitle": "ساهم في تحسين تطبيق Flow Arts Composer من خلال ملاحظاتك.",
   "feedback_submit_title": "أرسل ملاحظاتك",
-  "feedback_submitted_message": "نشكرك على مساعدتك في تحسين برنامج Flow Arts Composer. لقد تم استلام ملاحظاتك وسيتم مراجعتها.",
+  "feedback_submitted_message": "شكرًا لمساعدتك في تحسين Flow Arts Composer. تم استلام ملاحظاتك وستتم مراجعتها.",
   "feedback_submitted_title": "تم إرسال التعليقات!",
   "feedback_submitted_toast": "تم إرسال الملاحظات! شكرًا لمساعدتك في تحسين Flow Arts Composer.",
   "feedback_submitting": "جارٍ الإرسال...",
@@ -10332,5 +10332,10 @@
   "create_save_row_collection": "المجموعة",
   "create_save_collection_count": "المجموعات: {count}",
   "create_save_note_add": "إضافة",
-  "library_ui_no_collection": "لا شيء"
+  "library_ui_no_collection": "لا شيء",
+  "effect_deep_which_prop": "أي أداة تحصل على التأثير",
+  "effect_deep_tile_left_prop": "{effect}، الأداة اليسرى",
+  "effect_deep_tile_right_prop": "{effect}، الأداة اليمنى",
+  "effect_deep_tile_both_props": "{effect}، كلتا الأداتين",
+  "effect_deep_left_and_right": "{left} على الأداة اليسرى، {right} على الأداة اليمنى"
 }

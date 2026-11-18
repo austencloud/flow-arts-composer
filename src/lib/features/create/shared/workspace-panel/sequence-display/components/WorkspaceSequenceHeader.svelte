@@ -150,7 +150,14 @@
      phone tier). 476px of header content is a workspace about 500px wide,
      where Save already folds to its icon. */
   @container (max-width: 476px) {
+    /* The right column is Save's own width here, not a mirror of Undo/Redo:
+       at this size Save is one icon, and the 48px the mirror kept beside it
+       was most of the word's room. */
     .title-row {
+      grid-template-columns:
+        var(--workspace-leading-actions-width, 92px)
+        minmax(0, 1fr)
+        var(--workspace-trailing-actions-width, var(--min-touch-target, 44px));
       grid-template-rows: minmax(var(--min-touch-target, 44px), auto);
       row-gap: 0;
     }

@@ -435,7 +435,7 @@
 <style>
   .store-page {
     min-height: 100vh;
-    padding-top: 64px; /* clear the fixed SiteHeader */
+    padding-top: calc(64px + var(--safe-top)); /* clear the fixed SiteHeader */
     /* Transparent so the /shop cosmic BackgroundHost shows through. */
     background: transparent;
     color: var(--theme-text, #ffffff);

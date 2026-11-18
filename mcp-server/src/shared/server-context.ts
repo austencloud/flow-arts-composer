@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 import { exec, spawn } from "child_process";
 import { homedir, tmpdir } from "os";
 import { calculateOrientations } from "../core/orientation-calculator.js";
+import { defaultFanBuild } from "../core/fan-builds.js";
 import type {
   MotionData,
   PictographData,
@@ -41,7 +42,15 @@ export interface UserPreferences {
   leftPropType: string | null;
   rightPropType: string | null;
   fanAppearance: {
-    build: "pictograph" | "fire" | "flat-grip" | "lotus" | "day" | "moon";
+    build:
+      | "pictograph"
+      | "fire"
+      | "flat-grip"
+      | "lotus"
+      | "day"
+      | "moon"
+      | "star"
+      | "sense";
     frameColor: "black" | "white";
     cover: "bare" | "covered";
   };
@@ -62,7 +71,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showRightMotion: true,
   leftPropType: null,
   rightPropType: null,
-  fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+  fanAppearance: { build: defaultFanBuild(), frameColor: "black", cover: "bare" },
 };
 
 // Current session preferences (starts with defaults)

@@ -491,6 +491,7 @@
 
   /* Placement popover */
   .placement-backdrop {
+    /* behind the status bar: a dim that holds only a popover inside it */
     position: fixed;
     inset: 0;
     z-index: 99;

@@ -132,7 +132,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.75rem 1rem;
+    padding: calc(0.75rem + var(--safe-top)) 1rem 0.75rem;
     background: linear-gradient(
       135deg,
       color-mix(in srgb, var(--semantic-error, #ef4444) 88%, black) 0%,

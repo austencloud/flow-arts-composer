@@ -5,6 +5,7 @@
  * delete_user_preset, get_user_preset, generate_with_preset, seed_default_presets
  */
 
+import { FAN_WAITING_NOTE } from "../../../packages/tka-pictograph/src/fan-builds.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
@@ -330,7 +331,8 @@ export function registerPresetTools(server: McpServer): void {
           cover: z.enum(["bare", "covered"]).optional(),
         })
         .nullable()
-        .optional(),
+        .optional()
+        .describe(FAN_WAITING_NOTE),
       primaryPropColors: primaryPropColorsSchema
         .optional()
         .describe(

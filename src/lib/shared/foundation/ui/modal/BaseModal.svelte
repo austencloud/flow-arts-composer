@@ -488,6 +488,7 @@
 
 <style>
   .base-modal-managed-backdrop {
+    /* behind the status bar: the dim covers the whole screen, the dialog keeps clear */
     position: fixed;
     inset-inline: 0;
     inset-block-start: var(--viewport-offset-top, 0px);

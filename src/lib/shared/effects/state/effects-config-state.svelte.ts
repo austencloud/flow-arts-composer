@@ -55,6 +55,15 @@ export interface EffectConfigMap {
 import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 import { DEFAULT_EFFECTS_CONFIG } from "../domain/defaults";
 import {
+  effectForProp,
+  propEffectsDiffer,
+  withPropEffect,
+  withPropPair,
+  type PropEffectTarget,
+  type PropHand,
+} from "../domain/per-prop-effects";
+import { effectsToggleTarget } from "#lib/shared/animation-engine/domain/effect-quick-toggle.js";
+import {
   migrateEffectsConfig,
   normalizeLegacyEffectIntentColors,
 } from "../domain/migrations";
@@ -626,6 +635,7 @@ export function createEffectsConfigState(
   }
 
   function setActiveEffect(effect: EffectType) {
+    rememberEffectsOn();
     if (persist)
       sceneUndo.captureState("set-active-effect", "Set active effect");
     if (effect === "none") {
@@ -637,6 +647,84 @@ export function createEffectsConfigState(
     }
     scheduleSave();
     if (persist) sceneUndo.commitState();
+  }
+
+  // Transient, never persisted: the effect each target last wore, so "On"
+  // brings back that prop's own effect. Mirrors the picker's single memory.
+  const lastOn: Record<PropEffectTarget, EffectType | null> = {
+    both: null,
+    0: null,
+    1: null,
+  };
+  // Both's memory is the pair as it stood the last time either prop was lit,
+  // so Off then On brings back a mix exactly.
+  let lastPair: { left: EffectType; right: EffectType } | null = null;
+  function rememberEffectsOn() {
+    if (config.activeEffect !== "none") lastOn.both = config.activeEffect;
+    const left = effectForProp(config.tipEffectMap, 0);
+    const right = effectForProp(config.tipEffectMap, 1);
+    if (left !== "none") lastOn[0] = left;
+    if (right !== "none") lastOn[1] = right;
+    if (left !== "none" || right !== "none") lastPair = { left, right };
+  }
+  rememberEffectsOn();
+
+  /** The effect one prop wears (0 left, 1 right). */
+  function effectForHand(hand: PropHand): EffectType {
+    return effectForProp(config.tipEffectMap, hand);
+  }
+
+  /** True when the two props wear different effects. */
+  function effectsDiffer(): boolean {
+    return propEffectsDiffer(config.tipEffectMap);
+  }
+
+  /**
+   * Set the effect for both props or one. Matching props store the same map
+   * setActiveEffect writes; differing props store the three-key shape.
+   */
+  function setEffectFor(target: PropEffectTarget, effect: EffectType) {
+    rememberEffectsOn();
+    if (target === "both") {
+      setActiveEffect(effect);
+    } else {
+      if (persist)
+        sceneUndo.captureState("set-active-effect", "Set active effect");
+      const next = withPropEffect(config.tipEffectMap, target, effect);
+      config.tipEffectMap = next.tipEffectMap;
+      config.activeEffect = next.activeEffect;
+      scheduleSave();
+      if (persist) sceneUndo.commitState();
+    }
+    rememberEffectsOn();
+  }
+
+  /**
+   * The On / Off switch for both props or one: off when it is on, otherwise
+   * back to the effect that target last wore, or `first`.
+   */
+  function toggleEffectFor(target: PropEffectTarget, first?: string) {
+    rememberEffectsOn();
+    if (target === "both" && config.activeEffect === "none" && lastPair) {
+      // Back to the pair that was last on, mix included, in one write.
+      if (persist)
+        sceneUndo.captureState("set-active-effect", "Set active effect");
+      const next = withPropPair(
+        config.tipEffectMap,
+        lastPair.left,
+        lastPair.right
+      );
+      config.tipEffectMap = next.tipEffectMap;
+      config.activeEffect = next.activeEffect;
+      scheduleSave();
+      if (persist) sceneUndo.commitState();
+      rememberEffectsOn();
+      return;
+    }
+    const active =
+      target === "both" ? config.activeEffect : effectForHand(target);
+    const next = effectsToggleTarget({ active, lastOn: lastOn[target], first });
+    setEffectFor(target, next as EffectType);
   }
 
   /** Hover-intent: ask the canvas layer to warm this effect's renderer ahead of
@@ -843,6 +931,10 @@ export function createEffectsConfigState(
 
     updateEffect,
     setActiveEffect,
+    effectForHand,
+    effectsDiffer,
+    setEffectFor,
+    toggleEffectFor,
     requestPrewarm,
     getEffectLayer,
     setEffectLayer,

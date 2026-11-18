@@ -18,8 +18,13 @@
   import { browser } from "$app/env";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { untrack } from "svelte";
+  import { fitWordLabel, type WordLabelFit } from "./word-label-fit";
 
   const cache = browser ? getGlyphCache() : null;
+
+  // A long word shrinks until its letters are this tall, then shortens.
+  const MIN_LETTER_PX = 12;
 
   // Props
 
@@ -52,9 +57,18 @@
   );
 
   // State
-  // Overflow detection state
   let labelElement: HTMLButtonElement | null = $state(null);
-  let scaleFactor = $state(1);
+  // A hidden copy of the whole row at normal size. The visible row can't be
+  // measured for this: once it is squeezed into its slot it reports the
+  // squeezed width, never the word's own.
+  let rulerElement: HTMLSpanElement | null = $state(null);
+
+  // The fit the ruler last decided. `fitCount` null shows every unit.
+  let fitScale = $state(1);
+  let fitCount = $state<number | null>(null);
+  let fitTruncated = $state(false);
+  let fitMayAnimate = $state(false);
+  let hasFitted = false;
 
   $effect(() => {
     const epoch = historyTransitionEpoch;
@@ -92,80 +106,137 @@
     return contextualPhrases.some((phrase) => word.includes(phrase));
   });
 
-  /**
-   * Check if text overflows its container and calculate scale factor.
-   * Only shrinks when the text actually overflows - never preemptively.
-   */
-  function checkOverflow() {
-    if (!labelElement) return;
-
-    // Measure the word's actual center slot so a long label never borrows space
-    // reserved for workspace actions or the adjacent metadata tile.
-    const labelHost =
-      (labelElement.closest(".word-label-slot") as HTMLElement | null) ??
-      (labelElement.closest(".word-label-area") as HTMLElement | null) ??
-      labelElement.parentElement;
-    if (!labelHost) return;
-
-    const availableWidth = labelHost.clientWidth;
-    if (availableWidth <= 0) return;
-
-    // Temporarily remove scale to measure true content width
-    const prevTransform = labelElement.style.transform;
-    labelElement.style.transform = "none";
-
-    // Force reflow to get accurate measurement
-    const contentWidth = labelElement.scrollWidth;
-
-    // Restore transform
-    labelElement.style.transform = prevTransform;
-
-    // Only scale down if content actually overflows available space
-    // Use a small buffer (95% of available) to prevent edge-case jitter
-    if (contentWidth > availableWidth * 0.95) {
-      // Allow more aggressive scaling (down to 0.45) for very long words
-      const newScale = Math.max(0.45, (availableWidth * 0.95) / contentWidth);
-      scaleFactor = newScale;
-    } else {
-      scaleFactor = 1;
-    }
+  // The word's own slot, so a long label never borrows room reserved for the
+  // workspace actions or the badges beside it.
+  function findLabelHost(label: HTMLElement): HTMLElement | null {
+    return (
+      (label.closest(".word-label-slot") as HTMLElement | null) ??
+      (label.closest(".word-label-area") as HTMLElement | null) ??
+      label.parentElement
+    );
   }
 
-  // Re-check overflow when word changes
+  function px(value: string): number {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  /**
+   * Measure the ruler and the slot, then let fitWordLabel decide. Runs after
+   * the DOM updates and from ResizeObserver, both before the next paint, so a
+   * row that does not fit is never drawn.
+   */
+  function measureFit() {
+    const label = labelElement;
+    const ruler = rulerElement;
+    if (!label || !ruler) return;
+    const host = findLabelHost(label);
+    if (!host) return;
+
+    // The button's hover and press scale reach getBoundingClientRect; divide
+    // it back out so the widths are layout widths.
+    const rulerBox = ruler.getBoundingClientRect().width;
+    const zoom =
+      ruler.offsetWidth > 0 && rulerBox > 0 ? rulerBox / ruler.offsetWidth : 1;
+    const widthOf = (element: Element | null) =>
+      element ? element.getBoundingClientRect().width / zoom : 0;
+
+    const unitWidths = Array.from(
+      ruler.querySelectorAll("[data-fit-unit]"),
+      widthOf
+    );
+    const chevron = ruler.querySelector(".menu-indicator");
+    const trailingWidth =
+      widthOf(chevron) +
+      (chevron ? px(getComputedStyle(chevron).marginLeft) : 0);
+
+    const labelStyle = getComputedStyle(label);
+    const fixedWidth =
+      px(labelStyle.paddingLeft) +
+      px(labelStyle.paddingRight) +
+      px(labelStyle.borderLeftWidth) +
+      px(labelStyle.borderRightWidth);
+    const fontSize = px(labelStyle.fontSize);
+
+    const hostStyle = getComputedStyle(host);
+    const available =
+      host.clientWidth - px(hostStyle.paddingLeft) - px(hostStyle.paddingRight);
+
+    applyFit(
+      fitWordLabel({
+        unitWidths,
+        gap: px(getComputedStyle(ruler).columnGap),
+        ellipsisWidth: widthOf(ruler.querySelector(".ellipsis")),
+        trailingWidth,
+        fixedWidth,
+        available,
+        minScale: fontSize > 0 ? Math.min(1, MIN_LETTER_PX / fontSize) : 1,
+        endsInEllipsis,
+        separators: displayUnits.map((unit) => unit.kind === "dot"),
+      })
+    );
+  }
+
+  function applyFit(next: WordLabelFit) {
+    const count = next.truncated ? next.visibleCount : null;
+    if (
+      next.scale === fitScale &&
+      count === fitCount &&
+      next.truncated === fitTruncated
+    )
+      return;
+    // Only growing eases. A shrink that eased would spend its whole duration
+    // wider than the slot, and the first fit after mount just lands.
+    fitMayAnimate = hasFitted && next.scale > fitScale;
+    hasFitted = true;
+    fitScale = next.scale;
+    fitCount = count;
+    fitTruncated = next.truncated;
+  }
+
+  // Decide again whenever the units change. Glyphs landing later change the
+  // ruler's width, which the ResizeObserver below catches.
   $effect(() => {
-    // Track word to trigger re-check
-    const _ = word;
-    // Reset and recheck after DOM updates
-    scaleFactor = 1;
-    // Wait for DOM to update with new word before measuring
-    requestAnimationFrame(() => {
-      checkOverflow();
-    });
+    void displayUnits;
+    void endsInEllipsis;
+    if (!labelElement || !rulerElement) return;
+    untrack(measureFit);
   });
 
-  // Set up ResizeObserver to detect container size changes
+  // And whenever the slot or the ruler resizes.
   $effect(() => {
-    if (!labelElement) return;
+    const label = labelElement;
+    const ruler = rulerElement;
+    if (!label || !ruler) return;
 
-    const labelHost =
-      (labelElement.closest(".word-label-slot") as HTMLElement | null) ??
-      (labelElement.closest(".word-label-area") as HTMLElement | null) ??
-      labelElement.parentElement;
-
+    // A callback already queued can still arrive after teardown.
+    let live = true;
     const resizeObserver = new ResizeObserver(() => {
-      checkOverflow();
+      if (live) untrack(measureFit);
     });
+    const host = findLabelHost(label);
+    if (host) resizeObserver.observe(host);
+    resizeObserver.observe(ruler);
 
-    if (labelHost) {
-      resizeObserver.observe(labelHost);
-    }
-
-    return () => resizeObserver.disconnect();
+    return () => {
+      live = false;
+      resizeObserver.disconnect();
+    };
   });
 
   // Derived simplified word (only truncate actual words, not contextual messages)
   const displayWord = $derived(
     isContextualMessage ? word : simplifyAndTruncate(word, 12)
+  );
+
+  // A word longer than 12 letters comes back as its first 12 and "...". The
+  // dots are drawn as the label's ellipsis, not as letters, so a word cut
+  // again to fit its slot still shows one ellipsis.
+  const WORD_ELLIPSIS = "...";
+  const displayLetters = $derived(
+    !isContextualMessage && displayWord.endsWith(WORD_ELLIPSIS)
+      ? displayWord.slice(0, -WORD_ELLIPSIS.length)
+      : displayWord
   );
 
   // LOOP transformations can produce adjacent repeated runs rather than one
@@ -190,11 +261,11 @@
    * Parse display word into TKA letter units (handles dash-letters like "Λ-")
    */
   const parsedLetters = $derived.by(() => {
-    if (!displayWord || isContextualMessage) return [];
+    if (!displayLetters || isContextualMessage) return [];
     const letters: string[] = [];
-    for (let i = 0; i < displayWord.length; i++) {
-      const char = displayWord[i]!;
-      const nextChar = displayWord[i + 1];
+    for (let i = 0; i < displayLetters.length; i++) {
+      const char = displayLetters[i]!;
+      const nextChar = displayLetters[i + 1];
       // Check if this is a dash-letter (e.g., "Λ-", "X-")
       if (nextChar === "-") {
         letters.push(char + "-");
@@ -255,6 +326,21 @@
       source: null,
     }));
   });
+
+  // Only the plain-letters path above reads the cut 12-letter word.
+  const endsInEllipsis = $derived(
+    !isContextualMessage &&
+      !compressedSegments &&
+      !hasLetterSources &&
+      displayLetters !== displayWord
+  );
+
+  // What the visible row draws: every unit, or the first N the fit allows.
+  // A letter cut off here never highlights, since nothing draws it.
+  const visibleUnits = $derived(
+    fitCount === null ? displayUnits : displayUnits.slice(0, fitCount)
+  );
+  const showsEllipsis = $derived(endsInEllipsis || fitTruncated);
 
   /**
    * Active letter index with wrapping for circular sequences (0-indexed).
@@ -343,6 +429,21 @@
   });
 </script>
 
+<!-- One letter's artwork, shared by the visible row and the ruler so the two
+     always measure alike. The ruler passes an empty alt. -->
+{#snippet letterArt(letter: string, url: string | null, alt: string)}
+  {#if url}
+    <img
+      src={url}
+      {alt}
+      class="glyph-img"
+      class:alpha-baseline={isAlphaGlyph(letter)}
+      draggable="false"
+    />
+    {#if isDashLetter(letter)}<span class="dash-bar"></span>{/if}
+  {:else}{letter}{/if}
+{/snippet}
+
 {#if shouldShowWordLabel}
   <div class="word-label-container" class:scroll-mode={scrollMode}>
     {#snippet wordTrigger(actions: WordActionTrigger)}
@@ -352,8 +453,6 @@
         class:has-word={!!word && !isContextualMessage}
         class:contextual-message={isContextualMessage}
         class:has-letter-sources={hasLetterSources}
-        class:is-scaled={scaleFactor < 1}
-        style:--scale-factor={scaleFactor}
         disabled={isContextualMessage}
         onclick={actions.onclick}
         oncontextmenu={actions.oncontextmenu}
@@ -374,53 +473,81 @@
             })}
       >
         {#if !isContextualMessage && displayUnits.length > 0}
-          {#each displayUnits as unit, index (index)}
-            {#if unit.kind === "dot"}
-              <span class="group-dot" aria-hidden="true"></span>
-            {:else}
-              {@const url = getGlyphUrl(unit.letter)}
-              <span
-                class="letter"
-                class:original={unit.source?.isOriginal === true}
-                class:bridge={unit.source?.isOriginal === false}
-                class:playback={hasActiveHighlighting && unit.source === null}
-                class:active={hasActiveHighlighting &&
-                  activeLetterIndex === unit.letterIdx}
-                class:active-intense={hasActiveHighlighting &&
-                  activeLetterIndex === unit.letterIdx &&
-                  practiceAnimationStyle.current === "intense"}
-                class:active-subtle={hasActiveHighlighting &&
-                  activeLetterIndex === unit.letterIdx &&
-                  practiceAnimationStyle.current === "subtle"}
-                class:active-glow-only={hasActiveHighlighting &&
-                  activeLetterIndex === unit.letterIdx &&
-                  practiceAnimationStyle.current === "glow-only"}
-                class:active-minimal={hasActiveHighlighting &&
-                  activeLetterIndex === unit.letterIdx &&
-                  practiceAnimationStyle.current === "minimal"}
-                class:active-wave={hasActiveHighlighting &&
-                  activeLetterIndex === unit.letterIdx &&
-                  practiceAnimationStyle.current === "wave"}
-              >
-                {#if url}
-                  <img
-                    src={url}
-                    alt={unit.letter}
-                    class="glyph-img"
-                    class:alpha-baseline={isAlphaGlyph(unit.letter)}
-                    draggable="false"
-                  />
-                  {#if isDashLetter(unit.letter)}<span class="dash-bar"
-                    ></span>{/if}
-                {:else}{unit.letter}{/if}
-              </span>
-            {/if}
-          {/each}
+          <!-- The fit lands as a font size, not a transform: every piece of
+               the row is sized in em, so the row really is the size it looks
+               and nothing past the slot's edge is left to crop. -->
+          <span
+            class="word-fit-row"
+            class:fit-eases={fitMayAnimate}
+            style:--word-fit-size="calc(1em * {fitScale})"
+          >
+            {#each visibleUnits as unit, index (index)}
+              {#if unit.kind === "dot"}
+                <span class="group-dot" aria-hidden="true"></span>
+              {:else}
+                {@const url = getGlyphUrl(unit.letter)}
+                <span
+                  class="letter"
+                  class:original={unit.source?.isOriginal === true}
+                  class:bridge={unit.source?.isOriginal === false}
+                  class:playback={hasActiveHighlighting && unit.source === null}
+                  class:active={hasActiveHighlighting &&
+                    activeLetterIndex === unit.letterIdx}
+                  class:active-intense={hasActiveHighlighting &&
+                    activeLetterIndex === unit.letterIdx &&
+                    practiceAnimationStyle.current === "intense"}
+                  class:active-subtle={hasActiveHighlighting &&
+                    activeLetterIndex === unit.letterIdx &&
+                    practiceAnimationStyle.current === "subtle"}
+                  class:active-glow-only={hasActiveHighlighting &&
+                    activeLetterIndex === unit.letterIdx &&
+                    practiceAnimationStyle.current === "glow-only"}
+                  class:active-minimal={hasActiveHighlighting &&
+                    activeLetterIndex === unit.letterIdx &&
+                    practiceAnimationStyle.current === "minimal"}
+                  class:active-wave={hasActiveHighlighting &&
+                    activeLetterIndex === unit.letterIdx &&
+                    practiceAnimationStyle.current === "wave"}
+                >
+                  {@render letterArt(unit.letter, url, unit.letter)}
+                </span>
+              {/if}
+            {/each}
+            {#if showsEllipsis}<span class="ellipsis" aria-hidden="true"
+                >{WORD_ELLIPSIS}</span
+              >{/if}
+            <i class="fas fa-chevron-down menu-indicator" aria-hidden="true"
+            ></i>
+          </span>
+
+          <!-- The ruler: the whole row at the button's own font size, never
+               scaled and never cut, so the fit always knows the word's true
+               width. Hidden from sight, pointer and screen reader alike. -->
+          <span class="word-ruler-frame" aria-hidden="true" inert>
+            <span class="word-ruler" bind:this={rulerElement}>
+              {#each displayUnits as unit, index (index)}
+                {#if unit.kind === "dot"}
+                  <span class="group-dot" data-fit-unit></span>
+                {:else}
+                  <span class="letter" data-fit-unit>
+                    {@render letterArt(
+                      unit.letter,
+                      getGlyphUrl(unit.letter),
+                      ""
+                    )}
+                  </span>
+                {/if}
+              {/each}
+              <span class="ellipsis">{WORD_ELLIPSIS}</span>
+              <i class="fas fa-chevron-down menu-indicator"></i>
+            </span>
+          </span>
         {:else}
           {displayWord}
-        {/if}
-        {#if !isContextualMessage}
-          <i class="fas fa-chevron-down menu-indicator" aria-hidden="true"></i>
+          {#if !isContextualMessage}
+            <i class="fas fa-chevron-down menu-indicator" aria-hidden="true"
+            ></i>
+          {/if}
         {/if}
       </button>
 
@@ -501,12 +628,18 @@
     transform: scale(0.95);
   }
 
+  /* A word never clips: the fit sizes and cuts the row to the slot, so the
+     button only ever holds whole letters. Clipping here is what used to hide
+     the letters a flex squeeze had already flattened. */
   .word-label.has-word {
     font-size: clamp(1.25rem, 6cqi, 2rem);
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.12em;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
     min-height: var(--min-touch-target, 44px);
     padding: 0.25rem 0.75rem;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
@@ -523,10 +656,50 @@
     outline-offset: 2px;
   }
 
-  /* Apply dynamic scale factor when overflow is detected */
-  .word-label.is-scaled {
-    transform: scale(var(--scale-factor, 1));
-    transform-origin: center;
+  /* The row the fit sizes. Its font size is the button's times the fit
+     scale; every piece inside is in em, so all of it follows. */
+  .word-fit-row {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.12em;
+    /* The size is set on the element as the button's em times the scale. */
+    font-size: var(--word-fit-size, 1em);
+    white-space: nowrap;
+  }
+
+  .word-fit-row.fit-eases {
+    transition: font-size var(--duration-normal) var(--ease-standard);
+  }
+
+  /* Sized like the button, clipping the ruler so its full width never adds
+     scrollable room to anything around the label. */
+  .word-ruler-frame {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .word-ruler {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.12em;
+    width: max-content;
+    white-space: nowrap;
+  }
+
+  .word-ruler > * {
+    flex: none;
+  }
+
+  .ellipsis {
+    flex: none;
+    line-height: 1;
   }
 
   /* Contextual messages (hand path status, etc.) - Container-aware sizing */
@@ -569,7 +742,7 @@
     margin-left: 0.25em;
     font-size: 0.4em;
     opacity: 0.55;
-    flex-shrink: 0;
+    flex: none;
     transition: transform var(--duration-fast) var(--ease-standard);
   }
 
@@ -635,8 +808,11 @@
 
   /* A letter still waiting for its glyph renders as text in the same 1em box
      the glyph image takes, so the swap never changes the label's height. */
+  /* Letters, dots and bars never give up width: a squeezed glyph image has
+     no minimum and flattens to nothing. The fit makes the room instead. */
   .letter {
     display: inline-flex;
+    flex: none;
     align-items: center;
     gap: 0.08em;
     height: 1em;
@@ -650,6 +826,7 @@
   .glyph-img {
     height: 1em;
     width: auto;
+    flex: none;
     display: block;
     filter: invert(0.9);
   }
@@ -664,7 +841,7 @@
     width: 0.7em;
     background: currentColor;
     border-radius: 9999px;
-    flex-shrink: 0;
+    flex: none;
   }
 
   /* Segment separator for compressed words (HΨ- · GΨ-). */
@@ -676,7 +853,7 @@
     border-radius: 50%;
     background: currentColor;
     opacity: 0.4;
-    flex-shrink: 0;
+    flex: none;
   }
 
   .letter.original {
@@ -795,7 +972,8 @@
     .active-wave {
       animation: none;
     }
-    .menu-indicator {
+    .menu-indicator,
+    .word-fit-row.fit-eases {
       transition: none;
     }
   }

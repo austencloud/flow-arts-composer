@@ -5,6 +5,7 @@
   import type { Snippet } from "svelte";
   import { EFFECTS, type EffectMeta } from "./effect-registry";
   import { effectInk } from "./effect-ink";
+  import EffectHandDot from "./EffectHandDot.svelte";
   import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
   import {
     CATALOG_CAPTION_HEIGHT,
@@ -50,6 +51,11 @@
     /** A phone dock under the player: four one-line tiles across, icon beside
      *  name, 36px tall. Ignores `catalog`. */
     dock?: boolean;
+    /** Which effect each prop wears, for a host that sets them apart. `null`
+     *  while the two wear the same one (the lit tile is named "both props");
+     *  an object while they differ, which puts one dot per hand on the tile it
+     *  wears. Omit for a host with one effect for everything. */
+    pair?: { left: string; right: string } | null;
   }
 
   const {
@@ -66,7 +72,31 @@
     morphName = null,
     onOff,
     dock = false,
+    pair,
   }: Props = $props();
+
+  // With two props every tile keeps both dot slots mounted, so a dot fades
+  // in and out on the fast transition instead of mounting already visible.
+  const hasPair = $derived(pair !== undefined);
+  const dotPair = $derived(pair ?? null);
+  const dotsOn = $derived(!!pair);
+
+  function tileHandLabel(effect: EffectMeta): string | null {
+    if (pair === undefined) return null;
+    const effectName = effectUiLabel(effect.label);
+    if (pair === null) {
+      return activeEffect === effect.id
+        ? t("effect_deep_tile_both_props", { effect: effectName })
+        : null;
+    }
+    if (pair.left === effect.id) {
+      return t("effect_deep_tile_left_prop", { effect: effectName });
+    }
+    if (pair.right === effect.id) {
+      return t("effect_deep_tile_right_prop", { effect: effectName });
+    }
+    return null;
+  }
 
   function morphPart(part: string, effectId: string) {
     return {
@@ -117,6 +147,7 @@
     class:catalog={showCatalog}
     class:fill={catalog?.fill}
     class:dock
+    class:fixed-tile={!!catalog?.tile}
     data-orientation={catalog?.orientation}
     style:--fx-cols={catalog?.cols}
     style:--fx-rows={catalog?.rows}
@@ -131,6 +162,7 @@
       ? `${CATALOG_CAPTION_HEIGHT}px`
       : undefined}
     style:--fx-icon={catalog?.icon ? `${catalog.icon}px` : undefined}
+    style:--fx-tile-h={catalog?.tile ? `${catalog.tile}px` : undefined}
     role="radiogroup"
     aria-label={t("effect_deep_select_effect")}
   >
@@ -164,9 +196,10 @@
         role="radio"
         aria-checked={isActive}
         {disabled}
-        aria-label={isActive && activeAction === "tune"
-          ? getActiveLabel(effect)
-          : effectUiLabel(effect.label)}
+        aria-label={tileHandLabel(effect) ??
+          (isActive && activeAction === "tune"
+            ? getActiveLabel(effect)
+            : effectUiLabel(effect.label))}
         title={isActive ? getActiveLabel(effect) : effectUiLabel(effect.label)}
         style:--effect-color={effectInk(effect.color, getThemeMode())}
         data-ghost="safe"
@@ -226,6 +259,20 @@
             >{effectUiLabel(effect.label)}</span
           >
         {/if}
+        {#if hasPair}
+          <span class="hand-dot-slot left"
+            ><EffectHandDot
+              hand="left"
+              visible={dotsOn && dotPair?.left === effect.id}
+            /></span
+          >
+          <span class="hand-dot-slot right"
+            ><EffectHandDot
+              hand="right"
+              visible={dotsOn && dotPair?.right === effect.id}
+            /></span
+          >
+        {/if}
         {#if isActive && activeAction === "tune" && !dock}
           <span
             class="tune-badge"
@@ -269,6 +316,18 @@
   .effect-selector.tray.pictures .effect-btn {
     padding: 2px 4px;
     gap: 3px;
+  }
+  /* The name takes the tile's whole inner width less 1px each side: the tile
+     less its 1.5px borders, less 2px (75px tile: 75 - 3 - 2 = 70px). The 4px
+     button padding is taken back with a negative margin, so the picture keeps
+     its size. Font size and tile size are unchanged. */
+  .effect-selector.tray.pictures .effect-btn .effect-label {
+    align-self: stretch;
+    box-sizing: border-box;
+    max-width: none;
+    margin-inline: -4px;
+    padding-inline: 1px;
+    text-align: center;
   }
   .tray-portrait {
     flex: none;
@@ -390,6 +449,24 @@
     view-transition-class: fx-roster-swap;
   }
 
+  /* The hand dots: 4px in from the tile's own edge (inside its 1.5px border),
+     the left hand's top left and the right hand's top right, the same on every
+     tile size. They sit out of flow, so they never move the name or picture. */
+  .hand-dot-slot {
+    position: absolute;
+    top: calc(4px - 1.5px);
+    display: block;
+    width: 6px;
+    height: 6px;
+    pointer-events: none;
+  }
+  .hand-dot-slot.left {
+    left: calc(4px - 1.5px);
+  }
+  .hand-dot-slot.right {
+    right: calc(4px - 1.5px);
+  }
+
   .effect-btn.active {
     border-color: var(--effect-color);
     background: color-mix(in srgb, var(--effect-color) 14%, transparent);
@@ -436,6 +513,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+  }
+
+  /* The name clips sideways only. Its line box is as tall as the type (12px),
+     so a full clip cut the tails of p, g and y about 2px short. A browser
+     without `clip` keeps the full clip. */
+  @supports (overflow: clip) {
+    .effect-label {
+      overflow-x: clip;
+      overflow-y: visible;
+    }
   }
 
   /* ── Catalog and roster: pictures of each effect's look ── */
@@ -516,10 +603,13 @@
   }
 
   /* A picker that holds every effect in a small box: the tile gives up its
-     padding, and the icon sits over the name so the name keeps the width. */
+     padding, and the icon sits over the name so the name keeps the width.
+     No side padding: on a 344px phone the tile is 72.67px, 70px inside its
+     borders, and the longest names ("Blütenblätter" 68.4px, "Scintillement"
+     68.2px) need all of it to stay whole. */
   .catalog:is([data-orientation="dense"], [data-orientation="icons"])
     .effect-btn {
-    padding: 2px;
+    padding: 2px 0;
     gap: 0;
     border-radius: 8px;
     overflow: hidden;
@@ -538,6 +628,12 @@
     .effect-btn
     i.effect-icon {
     font-size: var(--fx-icon, 14px);
+  }
+
+  /* The phone's dense tile has a fixed height (34px: border, padding, a 12px
+     icon, a 3px gap and the name), so four rows come to what the fit counted. */
+  .effect-selector.catalog.fixed-tile {
+    grid-auto-rows: var(--fx-tile-h);
   }
 
   /* Off carries no picture, so it centres its icon and name in a picture grid. */

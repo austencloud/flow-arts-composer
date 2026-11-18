@@ -1120,6 +1120,7 @@
     align-items: center;
     justify-content: center;
     padding: clamp(16px, 4vh, 48px);
+    padding-top: calc(clamp(16px, 4vh, 48px) + var(--safe-top));
     background: rgba(4, 7, 14, 0.62);
     backdrop-filter: blur(5px);
   }

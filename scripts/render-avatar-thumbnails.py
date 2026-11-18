@@ -10,7 +10,7 @@ Renders are square (default 512), figure framed head-near-top so the card's
 portrait. Mixamo characters import in T-pose facing -Y in Blender space, so the
 camera sits on -Y looking toward +Y (overridable with --front-axis).
 
-Usage (invoked by scripts/build-avatar-thumbnails.mjs):
+Usage (invoked by scripts/characters/character-tools.mjs):
   blender --background --python scripts/render-avatar-thumbnails.py -- \
     --input <glb_dir> --output <png_dir> [--size 512] [--front-axis -y|+y|-x|+x]
 """

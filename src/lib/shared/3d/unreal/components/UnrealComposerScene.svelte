@@ -3,6 +3,7 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
   import { resolvePerformerProp } from "../../state/performer-prop-resolution";
+  import { performerHandEffects } from "../../effects/performer-tip-effect-map.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
@@ -117,10 +118,8 @@
             throw new Error(
               "Unreal needs the same prop in both hands. Use Web for mixed props."
             );
-          const fallbackEffect =
-            p.rawEffect ?? globalTipEffectMap["*"]?.effect ?? "none";
-          const leftEffect = p.rawHandEffects?.left ?? fallbackEffect;
-          const rightEffect = p.rawHandEffects?.right ?? fallbackEffect;
+          const { left: leftEffect, right: rightEffect } =
+            performerHandEffects(p, globalTipEffectMap);
           if (leftEffect !== rightEffect)
             throw new Error(
               "Unreal needs the same effect in both hands. Use Web for mixed effects."
@@ -550,7 +549,7 @@
     position: absolute;
     left: 1rem;
     /* The desktop performer spine can start below host chrome at 76px. */
-    top: calc(max(1rem, env(safe-area-inset-top)) + 9rem);
+    top: calc(max(1rem, var(--safe-top)) + 9rem);
     max-width: min(28rem, calc(100% - 7rem));
     max-height: calc(100% - 11rem);
     overflow-y: auto;
@@ -591,7 +590,7 @@
     (max-height: 500px),
     (max-width: 1099px) and (max-height: 543px) {
     .native-status {
-      top: calc(max(1rem, env(safe-area-inset-top)) + 4rem);
+      top: calc(max(1rem, var(--safe-top)) + 4rem);
       max-height: calc(100% - 6rem);
     }
   }

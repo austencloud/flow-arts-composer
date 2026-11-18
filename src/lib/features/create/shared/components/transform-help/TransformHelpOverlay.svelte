@@ -51,6 +51,7 @@
 
 <style>
   .help-backdrop {
+    /* behind the status bar: a dim with no content of its own */
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.7);
@@ -77,7 +78,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 14px 16px;
+    padding: calc(14px + var(--safe-top)) 16px 14px;
     min-height: 44px; /* AAA touch target if tappable */
     background: linear-gradient(
       180deg,

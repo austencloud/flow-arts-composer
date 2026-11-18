@@ -279,7 +279,7 @@
   .shop-product-shell {
     min-height: 100vh;
     /* px, not rem: this clears the fixed-height SiteHeader, which does not ramp. */
-    padding-top: 64px;
+    padding-top: calc(64px + var(--safe-top));
     background: transparent; /* the cosmic BackgroundHost shows through */
     color: var(--theme-text, #ffffff);
   }

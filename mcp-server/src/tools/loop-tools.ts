@@ -5,6 +5,7 @@
  * generate_loop_sequence, generate_loop_image
  */
 
+import { FAN_WAITING_NOTE } from "../core/fan-builds.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
@@ -580,13 +581,14 @@ export function registerLoopTools(server: McpServer): void {
       fanAppearance: z
         .object({
           build: z
-            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon", "star", "sense"])
             .optional(),
           frameColor: z.enum(["black", "white"]).optional(),
           cover: z.enum(["bare", "covered"]).optional(),
         })
         .nullable()
-        .optional(),
+        .optional()
+        .describe(FAN_WAITING_NOTE),
       conjoined: gridJoinSchema.optional(),
       maxAttempts: z
         .number()
@@ -981,13 +983,14 @@ export function registerLoopTools(server: McpServer): void {
       fanAppearance: z
         .object({
           build: z
-            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon", "star", "sense"])
             .optional(),
           frameColor: z.enum(["black", "white"]).optional(),
           cover: z.enum(["bare", "covered"]).optional(),
         })
         .nullable()
-        .optional(),
+        .optional()
+        .describe(FAN_WAITING_NOTE),
       conjoined: gridJoinSchema.optional(),
       maxAttempts: z
         .number()

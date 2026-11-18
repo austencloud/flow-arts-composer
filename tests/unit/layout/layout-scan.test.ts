@@ -206,6 +206,53 @@ describe("layout scan: .svelte files", () => {
   });
 });
 
+describe("layout scan: Clear of the status bar", () => {
+  it("catches a fixed layer that reaches the top without the token", () => {
+    expect(rules(".a { position: fixed; top: 0; left: 0; }")).toEqual([
+      "status-bar-clear",
+    ]);
+    expect(rules(".a { position: fixed; inset: 0; }")).toEqual([
+      "status-bar-clear",
+    ]);
+    expect(rules(".a { position: fixed; top: 12px; }")).toEqual([
+      "status-bar-clear",
+    ]);
+  });
+  it("reports at the position: fixed line", () => {
+    const found = scanCss(".a {\n  top: 0;\n  position: fixed;\n}", {
+      file: "src/x.css",
+    });
+    expect(found.map((f: { line: number }) => f.line)).toEqual([3]);
+  });
+  it("passes when the block mentions the token", () => {
+    expect(
+      rules(".a { position: fixed; top: calc(8px + var(--safe-top)); }")
+    ).toEqual([]);
+    expect(
+      rules(".a { position: fixed; inset: 0; padding-top: var(--safe-top); }")
+    ).toEqual([]);
+  });
+  it("passes with a mark of ten characters or more, on the line or the one above", () => {
+    const above =
+      ".a {\n  /* behind the status bar: a dim with no content */\n  position: fixed;\n  inset: 0;\n}";
+    const same =
+      ".a {\n  position: fixed; /* behind the status bar: a dim with no content */\n  inset: 0;\n}";
+    const short =
+      ".a {\n  /* behind the status bar: dim */\n  position: fixed;\n  inset: 0;\n}";
+    expect(rules(above)).toEqual([]);
+    expect(rules(same)).toEqual([]);
+    expect(rules(short)).toEqual(["status-bar-clear"]);
+  });
+  it("leaves a bottom sheet and top: auto alone", () => {
+    expect(rules(".a { position: fixed; inset: auto 0 0; }")).toEqual([]);
+    expect(rules(".a { position: fixed; top: auto; bottom: 0; }")).toEqual([]);
+    expect(rules(".a { position: fixed; bottom: 0; left: 0; }")).toEqual([]);
+  });
+  it("ignores layers that are not fixed", () => {
+    expect(rules(".a { position: absolute; top: 0; }")).toEqual([]);
+  });
+});
+
 type Finding = { file: string; rule: string; line: number; text: string };
 const at = (
   file: string,

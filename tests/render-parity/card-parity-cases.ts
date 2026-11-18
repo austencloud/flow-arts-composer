@@ -97,6 +97,17 @@ export function cardParityCases(): CardParityCase[] {
       options: {
         leftPropType: "fan",
         rightPropType: "staff",
+        fanAppearance: { build: "sense", frameColor: "white", cover: "bare" },
+        showDifficulty: true,
+      },
+    },
+    {
+      // A look still waiting on its maker: both sides draw the pictograph fan.
+      name: "waiting-fan-look",
+      sequence,
+      options: {
+        leftPropType: "fan",
+        rightPropType: "staff",
         fanAppearance: { build: "lotus", frameColor: "white", cover: "bare" },
         showDifficulty: true,
       },

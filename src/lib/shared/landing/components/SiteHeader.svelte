@@ -679,6 +679,8 @@
     top: 0;
     left: 0;
     right: 0;
+    /* The bar's own background runs under the status bar; its row sits below. */
+    padding-top: var(--safe-top);
     z-index: 200;
     background: rgba(15, 15, 34, 0.72);
     backdrop-filter: blur(16px) saturate(160%);
@@ -702,7 +704,9 @@
     max-width: var(--shell-w, min(1720px, 92vw));
     margin: 0 auto;
     padding: 0 1.4rem;
-    height: var(--marketing-header-h, 64px);
+    height: calc(
+      var(--marketing-header-h, calc(64px + var(--safe-top))) - var(--safe-top)
+    );
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1031,7 +1035,7 @@
     z-index: 195; /* below the header bar (200) so the logo + X stay on top */
     flex-direction: column;
     overflow-y: auto;
-    padding: calc(64px + env(safe-area-inset-top)) 24px
+    padding: calc(64px + var(--safe-top)) 24px
       calc(28px + env(safe-area-inset-bottom));
     background: radial-gradient(
       120% 90% at 50% 0%,

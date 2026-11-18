@@ -552,7 +552,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    padding: calc(1rem + var(--safe-top)) 1rem 1rem;
   }
 
   .video-player-backdrop {

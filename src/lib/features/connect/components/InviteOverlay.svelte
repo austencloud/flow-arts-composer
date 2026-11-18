@@ -119,7 +119,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
+    padding: calc(16px + var(--safe-top)) 16px 16px;
   }
 
   .overlay-backdrop {

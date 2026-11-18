@@ -843,7 +843,7 @@
     align-items: center;
     gap: 8px;
     min-height: var(--min-touch-target, 44px);
-    padding: calc(env(safe-area-inset-top, 0px) + 4px) 12px 4px;
+    padding: calc(var(--safe-top) + 4px) 12px 4px;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     background: var(--theme-panel-bg, rgba(8, 10, 16, 0.96));
     flex: 0 0 auto;

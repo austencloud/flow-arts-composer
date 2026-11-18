@@ -78,7 +78,7 @@
   .shelf-filter {
     position: sticky;
     /* px: this clears the fixed-height SiteHeader, which does not ramp. */
-    top: calc(64px + env(safe-area-inset-top, 0px));
+    top: calc(64px + var(--safe-top));
     z-index: 20;
     display: flex;
     justify-content: center;

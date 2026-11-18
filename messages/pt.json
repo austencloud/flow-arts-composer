@@ -693,7 +693,7 @@
   "feedback_submit_title": "Enviar feedback",
   "feedback_submitted_message": "Obrigado por ajudar a melhorar o Flow Arts Composer. Seu feedback foi recebido e será analisado.",
   "feedback_submitted_title": "Feedback enviado!",
-  "feedback_submitted_toast": "Feedback enviado! Agradecemos por ajudar a melhorar o Flow Arts Composer.",
+  "feedback_submitted_toast": "Feedback enviado! Obrigado por ajudar a melhorar o Flow Arts Composer.",
   "feedback_submitting": "Enviando...",
   "feedback_swipe_reopen": "Reabrir",
   "feedback_swipe_resolve": "Resolver",
@@ -10332,5 +10332,10 @@
   "create_save_row_collection": "Coleção",
   "create_save_collection_count": "{count} coleções",
   "create_save_note_add": "Adicionar",
-  "library_ui_no_collection": "Nenhuma"
+  "library_ui_no_collection": "Nenhuma",
+  "effect_deep_which_prop": "Qual prop recebe o efeito",
+  "effect_deep_tile_left_prop": "{effect}, prop esquerdo",
+  "effect_deep_tile_right_prop": "{effect}, prop direito",
+  "effect_deep_tile_both_props": "{effect}, os dois props",
+  "effect_deep_left_and_right": "{left} no prop esquerdo, {right} no prop direito"
 }

@@ -61,6 +61,10 @@ import {
   getViewerFrontStageFacingAngle,
   resolveViewerFormationFacingAngle,
 } from "../domain/viewer-formation-facing";
+import type {
+  SceneStageSubject,
+  StageBars,
+} from "../domain/scene-control-layout";
 import { isWebGL2Available } from "../capabilities/webgl-capabilities";
 import { loadPersistedMode, STORAGE_KEY_MODE } from "./viewer-3d-render-mode-storage";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
@@ -69,6 +73,7 @@ import {
   castFrameBox,
   castStanding,
   castFrameCenter,
+  fitBodiesShot,
   fitCastDistance,
   isViewerCameraNearCast,
   joinedPerformerExtent,
@@ -1077,12 +1082,16 @@ function buildViewer3DState(
    */
   function frameAllPerformers(
     viewportAspect = currentViewportAspect(),
-    preserveViewingDirection = true
+    preserveViewingDirection = true,
+    subject: SceneStageSubject = "cast",
+    bars: StageBars = { top: 0, bottom: 0 }
   ): void {
     framePerformers(
       performerManager.performers,
       viewportAspect,
-      preserveViewingDirection
+      preserveViewingDirection,
+      subject,
+      bars
     );
   }
 
@@ -1098,7 +1107,9 @@ function buildViewer3DState(
   function framePerformers(
     performers: readonly CharacterInstanceState[],
     viewportAspect: number,
-    preserveViewingDirection: boolean
+    preserveViewingDirection: boolean,
+    subject: SceneStageSubject = "cast",
+    bars: StageBars = { top: 0, bottom: 0 }
   ): void {
     if (renderMode !== "3d" || !_snapToFn || performers.length === 0) return;
 
@@ -1135,8 +1146,55 @@ function buildViewer3DState(
       eye: { x: position.x, y: position.y, z: position.z },
       target: { x: target.x, y: target.y, z: target.z },
     };
-    fitShotToCast(framed, performers, viewportAspect);
+    if (subject === "bodies") {
+      fitShotToBodies(framed, performers, viewportAspect, bars);
+    } else {
+      fitShotToCast(framed, performers, viewportAspect);
+    }
     snapCameraTo(framed.eye, framed.target, undefined, !reducedMotion());
+  }
+
+  /**
+   * Keep the shot's viewing direction and stand the bodies as large as the
+   * view allows, head to feet, between the bars drawn over the stage. Prop
+   * reach is left out: this is the framing for choosing a character, where a
+   * staff tip crossing the edge costs nothing and a small body costs the
+   * whole point of the panel.
+   */
+  function fitShotToBodies(
+    shot: {
+      eye: { x: number; y: number; z: number };
+      target: { x: number; y: number; z: number };
+    },
+    performers: readonly CharacterInstanceState[],
+    viewportAspect: number,
+    bars: StageBars
+  ): void {
+    const direction = {
+      x: shot.eye.x - shot.target.x,
+      y: shot.eye.y - shot.target.y,
+      z: shot.eye.z - shot.target.z,
+    };
+    const fit = fitBodiesShot(
+      performers.map((performer) => performer.position),
+      stageGroundOffset + userProportionsState.groundY,
+      direction,
+      {
+        fovDeg: VIEWER_CAMERA_FOV_DEG,
+        aspect: viewportAspect,
+        maxDistance: VIEWER_FIT_MAX_DISTANCE,
+        topInset: bars.top,
+        bottomInset: bars.bottom,
+      }
+    );
+    if (!fit) return;
+    const length = Math.hypot(direction.x, direction.y, direction.z) || 1;
+    shot.target.x = fit.target.x;
+    shot.target.y = fit.target.y;
+    shot.target.z = fit.target.z;
+    shot.eye.x = fit.target.x + (direction.x / length) * fit.distance;
+    shot.eye.y = fit.target.y + (direction.y / length) * fit.distance;
+    shot.eye.z = fit.target.z + (direction.z / length) * fit.distance;
   }
 
   function setPerformerSelection(

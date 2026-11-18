@@ -84,7 +84,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    padding-top: calc(var(--safe-top) + 16px);
     pointer-events: none;
     z-index: var(--z-toast);
     gap: 8px;

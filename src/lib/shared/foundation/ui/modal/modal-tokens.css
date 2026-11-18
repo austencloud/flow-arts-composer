@@ -48,7 +48,7 @@ dialog.base-modal {
   inset: 0;
   /* Keep fixed dialogs inside the visual viewport while a software keyboard
      is open. Browsers that resize the layout viewport publish zero offsets. */
-  inset-block-start: var(--viewport-offset-top, 0px);
+  inset-block-start: calc(var(--viewport-offset-top, 0px) + var(--safe-top));
   inset-block-end: var(--viewport-offset-bottom, 0px);
 
   /* Appearance */
@@ -111,7 +111,7 @@ dialog.base-modal[data-size="sm"] {
     85dvh,
     500px,
     calc(
-      var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -124,7 +124,7 @@ dialog.base-modal[data-size="md"] {
     85dvh,
     650px,
     calc(
-      var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -137,7 +137,7 @@ dialog.base-modal[data-size="lg"] {
     85dvh,
     800px,
     calc(
-      var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -149,7 +149,7 @@ dialog.base-modal[data-size="xl"] {
   max-height: min(
     90dvh,
     calc(
-      var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -161,7 +161,7 @@ dialog.base-modal[data-size="full"] {
   max-height: min(
     90dvh,
     calc(
-      var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -174,7 +174,7 @@ dialog.base-modal[data-size="fit"] {
   max-height: min(
     90dvh,
     calc(
-      var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -189,7 +189,7 @@ dialog.base-modal[data-size="module-grid"] {
     90dvh,
     700px,
     calc(
-      var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+      var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -337,12 +337,12 @@ dialog.base-modal[data-entered="true"] [data-animate-icon] {
     /* Full-screen on mobile */
     width: 100%;
     max-width: none;
-    max-height: 100vh;
-    max-height: 100dvh;
-    max-height: var(--viewport-height, 100dvh);
-    height: 100vh;
-    height: 100dvh;
-    height: var(--viewport-height, 100dvh);
+    max-height: calc(100vh - var(--safe-top));
+    max-height: calc(100dvh - var(--safe-top));
+    max-height: calc(var(--viewport-height, 100dvh) - var(--safe-top));
+    height: calc(100vh - var(--safe-top));
+    height: calc(100dvh - var(--safe-top));
+    height: calc(var(--viewport-height, 100dvh) - var(--safe-top));
     border-radius: 0;
     margin: 0;
   }
@@ -361,7 +361,7 @@ dialog.base-modal[data-entered="true"] [data-animate-icon] {
     max-height: min(
       90dvh,
       calc(
-        var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+        var(--viewport-height, 100dvh) - 32px - var(--safe-top) -
           env(safe-area-inset-bottom, 0px)
       )
     );

@@ -617,7 +617,7 @@
     display: grid;
     grid-template-rows: var(--zoom-control) minmax(0, 1fr) var(--zoom-control);
     gap: 12px;
-    padding: max(12px, env(safe-area-inset-top)) 0
+    padding: max(12px, var(--safe-top)) 0
       max(16px, env(safe-area-inset-bottom));
     color: #fff;
     touch-action: none;
@@ -748,7 +748,7 @@
 
   .zoom-close {
     position: absolute;
-    top: max(12px, env(safe-area-inset-top));
+    top: max(12px, var(--safe-top));
     right: 16px;
   }
 </style>

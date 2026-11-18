@@ -10,6 +10,7 @@
  * - analyze_word_feasibility: Check if constraints are achievable for a word
  */
 
+import { FAN_WAITING_NOTE } from "../../../packages/tka-pictograph/src/fan-builds.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
@@ -800,7 +801,7 @@ export function registerSequenceTools(server: McpServer): void {
           cover: z.enum(["bare", "covered"]),
         })
         .optional()
-        .describe("Physical build for either fan or bigfan hand"),
+        .describe(`Physical build for either fan or bigfan hand. ${FAN_WAITING_NOTE}`),
       conjoined: gridJoinSchema.optional(),
       maxAttempts: z
         .number()

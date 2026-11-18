@@ -414,6 +414,7 @@
   /* Full-size positioned box for the inspector to fill. Sits above this host's
      own backdrop so it covers the card editor while it's open. */
   .inspect-host {
+    /* behind the status bar: a holder for the backdrop below, which keeps its content clear */
     position: fixed;
     inset: 0;
     z-index: calc(var(--z-modal) + 1);
@@ -424,6 +425,7 @@
     inset: 0;
     z-index: var(--z-modal);
     background: var(--theme-overlay-bg, rgba(0, 0, 0, 0.88));
+    padding-top: var(--safe-top);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -489,7 +491,7 @@
 
   .close-btn {
     position: fixed;
-    top: 20px;
+    top: calc(20px + var(--safe-top));
     right: 20px;
     width: 44px;
     height: 44px;

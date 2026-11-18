@@ -69,7 +69,7 @@
   .confirmation-page {
     min-height: 100vh;
     /* px, not rem: this clears the fixed-height SiteHeader, which does not ramp. */
-    padding-top: 64px;
+    padding-top: calc(64px + var(--safe-top));
     /* Transparent so the /shop cosmic background shows through (no dark panel). */
     background: transparent;
     color: var(--theme-text, #ffffff);

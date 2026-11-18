@@ -3,17 +3,7 @@
   import CopyText from "#lib/shared/copy-edit/CopyText.svelte";
   import type { PageCopy } from "#lib/shared/copy-edit/page-copy.svelte";
   import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
-  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
-  import type { TypeKind } from "../_data/loop-words-examples";
-
-  const COMPONENT_OF: Record<TypeKind, LOOPComponent> = {
-    rotated: LOOPComponent.ROTATED,
-    // The app's icon for the left-right reflection.
-    reflected: LOOPComponent.MIRRORED,
-    swapped: LOOPComponent.SWAPPED,
-    inverted: LOOPComponent.INVERTED,
-    rewound: LOOPComponent.REWOUND,
-  };
+  import { COMPONENT_OF, type TypeKind } from "../_data/loop-kinds";
 
   let {
     copy,

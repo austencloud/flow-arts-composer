@@ -48,18 +48,17 @@ export function castFrameCenter(box: CastFrameBox): Point3 {
 }
 
 /**
- * The share of the view's height and width the cast box covers when seen from
- * `eye` looking at `target` through a pinhole camera. `inFront` is false when
- * any corner sits behind (or on) the lens, in which case the fills are
- * Infinity.
+ * Where the box's corners land in the view when seen from `eye` looking at
+ * `target` through a pinhole camera. The view runs from -1 to 1 both ways,
+ * with y up. Null when any corner sits behind (or on) the lens.
  */
-export function projectedBoxFill(
+function projectedBoxExtents(
   eye: Point3,
   target: Point3,
   box: CastFrameBox,
   fovDeg: number,
   aspect: number
-): { height: number; width: number; inFront: boolean } {
+): { minX: number; maxX: number; minY: number; maxY: number } | null {
   let fx = target.x - eye.x;
   let fy = target.y - eye.y;
   let fz = target.z - eye.z;
@@ -95,8 +94,7 @@ export function projectedBoxFill(
         const vy = y - eye.y;
         const vz = z - eye.z;
         const depth = vx * fx + vy * fy + vz * fz;
-        if (depth <= 0.05)
-          return { height: Infinity, width: Infinity, inFront: false };
+        if (depth <= 0.05) return null;
         const sx = (vx * rx + vz * rz) / (depth * tanH);
         const sy = (vx * ux + vy * uy + vz * uz) / (depth * tanV);
         minX = Math.min(minX, sx);
@@ -104,11 +102,29 @@ export function projectedBoxFill(
         minY = Math.min(minY, sy);
         maxY = Math.max(maxY, sy);
       }
+  return { minX, maxX, minY, maxY };
+}
+
+/**
+ * The share of the view's height and width the cast box covers when seen from
+ * `eye` looking at `target` through a pinhole camera. `inFront` is false when
+ * any corner sits behind (or on) the lens, in which case the fills are
+ * Infinity.
+ */
+export function projectedBoxFill(
+  eye: Point3,
+  target: Point3,
+  box: CastFrameBox,
+  fovDeg: number,
+  aspect: number
+): { height: number; width: number; inFront: boolean } {
+  const extents = projectedBoxExtents(eye, target, box, fovDeg, aspect);
+  if (!extents) return { height: Infinity, width: Infinity, inFront: false };
   // Measured from the view centre, so an aim point that is not the box centre
   // (the viewer aims a little above the feet) still keeps every corner inside.
   return {
-    height: Math.max(maxY, -minY),
-    width: Math.max(maxX, -minX),
+    height: Math.max(extents.maxY, -extents.minY),
+    width: Math.max(extents.maxX, -extents.minX),
     inFront: true,
   };
 }
@@ -175,6 +191,153 @@ export function fitCastDistance(
     else near = mid;
   }
   return far;
+}
+
+/** Half the width a standing body takes, shoulders and a relaxed arm included. */
+const CAST_BODY_HALF_WIDTH = 0.45;
+/**
+ * A shot of the bodies alone (the Character tool) fills this much of the clear
+ * part of the view, from the top of the head to the floor in front of the
+ * feet. Props may cross the edge: the body is the subject.
+ */
+export const BODY_HEIGHT_FILL = 0.94;
+export const BODY_MAX_WIDTH_FILL = 0.94;
+
+/** World-space box around the performers' bodies alone, floor to head, no prop reach. */
+export function bodyFrameBox(
+  spots: readonly { x: number; z: number }[],
+  floorY: number
+): CastFrameBox | null {
+  if (spots.length === 0) return null;
+  const box: CastFrameBox = {
+    min: { x: Infinity, y: floorY, z: Infinity },
+    max: { x: -Infinity, y: floorY + CAST_BODY_HEIGHT, z: -Infinity },
+  };
+  for (const spot of spots) {
+    box.min.x = Math.min(box.min.x, spot.x - CAST_BODY_HALF_WIDTH);
+    box.max.x = Math.max(box.max.x, spot.x + CAST_BODY_HALF_WIDTH);
+    box.min.z = Math.min(box.min.z, spot.z - CAST_BODY_HALF_WIDTH);
+    box.max.z = Math.max(box.max.z, spot.z + CAST_BODY_HALF_WIDTH);
+  }
+  return box;
+}
+
+export interface BodyShotOptions extends CastFitOptions {
+  /** Share of the view height a bar covers down from the top edge. */
+  topInset?: number;
+  /** Share of the view height a bar covers up from the bottom edge. */
+  bottomInset?: number;
+}
+
+/** However tall the bars are reported, the bodies keep at least a fifth of the view. */
+const MAX_BAR_INSET = 0.4;
+
+function barInset(share: number | undefined): number {
+  return share !== undefined && Number.isFinite(share)
+    ? Math.min(Math.max(share, 0), MAX_BAR_INSET)
+    : 0;
+}
+
+/**
+ * Where to aim and how far back to sit, along `direction` (target to eye), so
+ * the bodies stand as large as the view allows, centred head to feet in the
+ * part of the view no bar covers. `heightFill` is the share of that clear
+ * band the bodies take.
+ */
+export function fitBodiesShot(
+  spots: readonly { x: number; z: number }[],
+  floorY: number,
+  direction: Point3,
+  options: BodyShotOptions
+): { target: Point3; distance: number } | null {
+  const box = bodyFrameBox(spots, floorY);
+  if (!box) return null;
+  const centre = castFrameCenter(box);
+  const minDistance = options.minDistance ?? 1.5;
+  const maxDistance = options.maxDistance ?? 24;
+  const length = Math.hypot(direction.x, direction.y, direction.z);
+  if (!Number.isFinite(length) || length < 1e-9) {
+    return { target: centre, distance: maxDistance };
+  }
+  const ex = direction.x / length;
+  const ey = direction.y / length;
+  const ez = direction.z / length;
+  // The screen's up: the same basis projectedBoxExtents builds, forward = -e.
+  let rx = ez;
+  let rz = -ex;
+  const rl = Math.hypot(rx, rz);
+  if (rl < 1e-6) {
+    rx = 1;
+    rz = 0;
+  } else {
+    rx /= rl;
+    rz /= rl;
+  }
+  const ux = rz * ey;
+  const uy = rx * ez - rz * ex;
+  const uz = -rx * ey;
+
+  const top = barInset(options.topInset);
+  const bottom = barInset(options.bottomInset);
+  // In view units (-1 the bottom edge, 1 the top) the clear band is centred
+  // at `bandCentre` and reaches `band` either side of it.
+  const band = 1 - top - bottom;
+  const bandCentre = bottom - top;
+  const halfSpan = (options.heightFill ?? BODY_HEIGHT_FILL) * band;
+  const maxWidthFill = options.maxWidthFill ?? BODY_MAX_WIDTH_FILL;
+  const tanV = Math.tan(((options.fovDeg / 2) * Math.PI) / 180);
+
+  // At a given distance, slide the aim along the screen's up until the bodies
+  // sit in the middle of the clear band. Corners at different depths make
+  // that slightly non-linear, so it settles over a few passes.
+  const shotAt = (distance: number) => {
+    let lift = 0;
+    for (let pass = 0; ; pass++) {
+      const target = {
+        x: centre.x + ux * lift,
+        y: centre.y + uy * lift,
+        z: centre.z + uz * lift,
+      };
+      const extents = projectedBoxExtents(
+        {
+          x: target.x + ex * distance,
+          y: target.y + ey * distance,
+          z: target.z + ez * distance,
+        },
+        target,
+        box,
+        options.fovDeg,
+        options.aspect
+      );
+      if (!extents) return { target, extents };
+      const offCentre = (extents.minY + extents.maxY) / 2 - bandCentre;
+      if (pass === 5 || Math.abs(offCentre) < 1e-4) return { target, extents };
+      lift += offCentre * distance * tanV;
+    }
+  };
+  const fits = (distance: number): boolean => {
+    const { extents } = shotAt(distance);
+    return (
+      extents !== null &&
+      (extents.maxY - extents.minY) / 2 <= halfSpan &&
+      Math.max(extents.maxX, -extents.minX) <= maxWidthFill
+    );
+  };
+
+  let distance = maxDistance;
+  if (fits(minDistance)) {
+    distance = minDistance;
+  } else if (fits(maxDistance)) {
+    let near = minDistance;
+    let far = maxDistance;
+    for (let step = 0; step < 40; step++) {
+      const mid = (near + far) / 2;
+      if (fits(mid)) far = mid;
+      else near = mid;
+    }
+    distance = far;
+  }
+  return { target: shotAt(distance).target, distance };
 }
 
 export function isPointNearCast(

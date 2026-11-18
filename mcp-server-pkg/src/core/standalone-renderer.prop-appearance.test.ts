@@ -84,16 +84,16 @@ describe("packaged standalone prop appearances", () => {
       rightPropType: "staff",
     } as const;
 
-    const fire = await pixels(
+    const pictograph = await pixels(
       await renderer.renderToPng(input, {
         ...shared,
-        fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+        fanAppearance: { build: "pictograph", frameColor: "black", cover: "bare" },
       })
     );
-    const day = await pixels(
+    const sense = await pixels(
       await renderer.renderToPng(input, {
         ...shared,
-        fanAppearance: { build: "day", frameColor: "white", cover: "covered" },
+        fanAppearance: { build: "sense", frameColor: "black", cover: "bare" },
       })
     );
     const staffOnly = await pixels(
@@ -106,7 +106,34 @@ describe("packaged standalone prop appearances", () => {
     // This checks rendered pixels rather than SVG text: the selected fan build
     // must survive the Node raster path, and changing only the left prop must
     // not replace the right-hand staff.
-    expect(changedPixels(fire, day)).toBeGreaterThan(1_000);
-    expect(changedPixels(fire, staffOnly)).toBeGreaterThan(1_000);
+    expect(changedPixels(pictograph, sense)).toBeGreaterThan(1_000);
+    expect(changedPixels(pictograph, staffOnly)).toBeGreaterThan(1_000);
+  });
+
+  it("draws a fan look that is waiting on its maker as the pictograph fan", async () => {
+    const renderer = getStandaloneRenderer();
+    const shared = {
+      darkMode: true,
+      size: 280,
+      showGrid: false,
+      showTKA: false,
+      leftPropType: "fan",
+      rightPropType: "staff",
+    } as const;
+    const pictograph = await pixels(
+      await renderer.renderToPng(input, {
+        ...shared,
+        fanAppearance: { build: "pictograph", frameColor: "black", cover: "bare" },
+      })
+    );
+    for (const waiting of ["fire", "lotus", "day"] as const) {
+      const drawn = await pixels(
+        await renderer.renderToPng(input, {
+          ...shared,
+          fanAppearance: { build: waiting, frameColor: "white", cover: "covered" },
+        })
+      );
+      expect(changedPixels(pictograph, drawn)).toBe(0);
+    }
   });
 });

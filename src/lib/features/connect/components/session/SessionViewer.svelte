@@ -436,6 +436,7 @@
     inset: 0;
     z-index: var(--z-modal);
     background: var(--theme-overlay-bg-dark, rgba(0, 0, 0, 0.9));
+    padding-top: var(--safe-top);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -555,7 +556,7 @@
   /* Participants dropdown */
   .participants-dropdown {
     position: absolute;
-    top: 64px;
+    top: calc(64px + var(--safe-top));
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;

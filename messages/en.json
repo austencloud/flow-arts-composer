@@ -10545,5 +10545,10 @@
   "create_save_note_add": "Add",
   "library_ui_no_collection": "None",
   "auth_phone_use_your_phone": "Use your phone",
-  "viewer_scan_loading_sequence": "Loading sequence…"
+  "viewer_scan_loading_sequence": "Loading sequence…",
+  "effect_deep_which_prop": "Which prop gets the effect",
+  "effect_deep_tile_left_prop": "{effect}, left prop",
+  "effect_deep_tile_right_prop": "{effect}, right prop",
+  "effect_deep_tile_both_props": "{effect}, both props",
+  "effect_deep_left_and_right": "{left} on the left prop, {right} on the right prop"
 }

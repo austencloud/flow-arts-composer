@@ -1071,6 +1071,7 @@
         (presentation === "content" && !fillPages)}
       fill={visualPagesFill}
       {fitRoom}
+      {handProps}
       dock={phoneDock}
       onTuneHeading={phoneDock ? onEffectTuneHeading : undefined}
       {bpm}

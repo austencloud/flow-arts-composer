@@ -66,7 +66,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 12px 16px;
+    padding: calc(12px + var(--safe-top)) 16px 12px;
     background: var(--theme-card-bg, rgba(30, 30, 50, 0.97));
     border-bottom: 1px solid var(--theme-accent, #8b5cf6);
     color: var(--theme-text, #fff);

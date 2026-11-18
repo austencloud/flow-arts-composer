@@ -115,7 +115,8 @@
 </script>
 
 <div class="header" style:--performer-color={performerColor}>
-  {#if isAllMode || isMultiMode}
+  <!-- A cast of one is that performer, not a group: show who it is. -->
+  {#if (isAllMode && performerCount > 1) || isMultiMode}
     <div class="identity">
       <div class="character-circle all-mode" aria-hidden="true">
         <i class="fas fa-users"></i>

@@ -104,6 +104,54 @@ export function sceneStageFramingAspect(
   return Math.max(NARROWEST_FRAMING_ASPECT, aspect);
 }
 
+/** What the camera frames when a docked panel resizes the stage. */
+export type SceneStageSubject = "cast" | "bodies";
+
+/**
+ * The stage frames the whole cast, prop reach included, except while the
+ * docked panel is choosing a character: the body is then what is being judged,
+ * so it stands as large as the stage allows. A phone sheet or a floating panel
+ * covers the stage instead of resizing it, and the view stays where it is.
+ */
+export function sceneStageSubject(
+  dockIsOpen: boolean,
+  activeTool: SceneControlTool | null,
+  performerTab: string
+): SceneStageSubject {
+  return dockIsOpen && activeTool === "performer" && performerTab === "character"
+    ? "bodies"
+    : "cast";
+}
+
+/** Bars drawn over the stage's top and bottom edges, as shares of its height. */
+export interface StageBars {
+  top: number;
+  bottom: number;
+}
+
+/** A bar may claim this much of the stage at most; the picture keeps the rest. */
+const MAX_STAGE_BAR_SHARE = 0.3;
+
+/**
+ * How much of the stage the bars over it cover: the performer bar (and its
+ * hint) from the top, the transport's reserve from the bottom. The camera
+ * keeps the bodies between them.
+ */
+export function stageBarShares(
+  stageHeight: number,
+  topBarBottomPx: number,
+  bottomBarPx: number
+): StageBars {
+  if (!Number.isFinite(stageHeight) || stageHeight <= 0) {
+    return { top: 0, bottom: 0 };
+  }
+  const share = (px: number): number =>
+    Number.isFinite(px) && px > 0
+      ? Math.min(px / stageHeight, MAX_STAGE_BAR_SHARE)
+      : 0;
+  return { top: share(topBarBottomPx), bottom: share(bottomBarPx) };
+}
+
 export function resolveSceneControlLayout(
   workspaceWidth: number,
   workspaceHeight: number,

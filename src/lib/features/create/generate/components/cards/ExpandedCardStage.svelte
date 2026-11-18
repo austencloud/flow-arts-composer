@@ -770,6 +770,7 @@
   /* A phone held upright, or Customize on a phone held sideways: the whole
      screen, bottom nav included. */
   .expanded-card-stage[data-presentation="fill"] {
+    /* behind the status bar: the stage's surface runs under it; the panel inside pads below it */
     position: fixed;
     inset: 0;
     z-index: var(--z-drawer, 400);
@@ -785,10 +786,13 @@
     > :global(.generation-settings-overlay) {
     border-radius: 0;
     border: none;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    /* The panel's own background runs under the status bar, so its words
+       start below it with no seam. */
+    padding-top: calc(16px + var(--safe-top));
+    padding-bottom: calc(16px + var(--safe-bottom));
     /* A phone on its side has its notch on one of these. */
-    padding-left: calc(16px + env(safe-area-inset-left, 0px));
-    padding-right: calc(16px + env(safe-area-inset-right, 0px));
+    padding-left: calc(16px + var(--safe-left));
+    padding-right: calc(16px + var(--safe-right));
   }
 
   /* A desktop window too short for the LOOP stage: centered over the dimmed
@@ -800,7 +804,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
+    padding: calc(16px + var(--safe-top)) 16px 16px;
     background: color-mix(
       in srgb,
       var(--theme-surface, #101018) 76%,
@@ -813,10 +817,11 @@
     position: relative;
     inset: auto;
     width: min(100%, 880px);
-    max-height: calc(100dvh - 32px);
+    max-height: calc(100dvh - 32px - var(--safe-top));
   }
 
   .expanded-card-backdrop {
+    /* behind the status bar: a dim with no content of its own */
     position: fixed;
     inset: 0;
     z-index: var(--z-drawer, 400);
@@ -837,7 +842,7 @@
     inset: auto 0 0;
     z-index: calc(var(--z-drawer, 400) + 1);
     width: min(100%, 880px);
-    height: min(30rem, calc(100dvh - 16px));
+    height: min(30rem, calc(100dvh - 16px - var(--safe-top)));
     margin-inline: auto;
   }
 
@@ -845,7 +850,7 @@
      allows (customize-overview-layout.ts). In a 30rem box they dropped to
      plain rows, so it takes up to 46rem wherever the window has it. */
   .expanded-card-stage[data-presentation="sheet"][data-card-id="customize"] {
-    height: min(46rem, calc(100dvh - 16px));
+    height: min(46rem, calc(100dvh - 16px - var(--safe-top)));
   }
 
   /* LOOP's content has a height of its own (a Combo is taller than a Single),
@@ -858,7 +863,7 @@
     > :global(.loop-expanded-overlay) {
     position: relative;
     inset: auto;
-    max-height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px - var(--safe-top));
   }
 
   /* Setups sizes its panel by its content, up to the screen less a strip of
@@ -868,7 +873,7 @@
     display: flex;
     flex-direction: column;
     height: auto;
-    max-height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px - var(--safe-top));
     overflow: hidden;
   }
 
@@ -900,28 +905,29 @@
   .expanded-card-stage[data-presentation="float"] {
     position: fixed;
     inset: 0;
+    top: var(--safe-top);
     margin: auto;
     z-index: calc(var(--z-drawer, 400) + 1);
     width: min(100% - 32px, 880px);
-    height: min(30rem, calc(100dvh - 32px));
+    height: min(30rem, calc(100dvh - 32px - var(--safe-top)));
   }
 
   /* 46rem fits Customize's two placement previews at their width-capped size
      beside the Style controls, up to the 880px width. */
   .expanded-card-stage[data-presentation="float"][data-card-id="customize"] {
-    height: min(46rem, calc(100dvh - 32px));
+    height: min(46rem, calc(100dvh - 32px - var(--safe-top)));
   }
 
   /* LOOP's content sizes its panel (a Combo is taller than a Single). */
   .expanded-card-stage[data-presentation="float"][data-card-id="loop"] {
     height: fit-content;
-    max-height: calc(100dvh - 32px);
+    max-height: calc(100dvh - 32px - var(--safe-top));
   }
 
   .expanded-card-stage[data-presentation="float"][data-card-id="loop"]
     > :global(.loop-expanded-overlay) {
     position: relative;
     inset: auto;
-    max-height: calc(100dvh - 32px);
+    max-height: calc(100dvh - 32px - var(--safe-top));
   }
 </style>

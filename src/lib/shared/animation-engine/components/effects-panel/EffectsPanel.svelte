@@ -8,6 +8,12 @@
     type EffectId,
   } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import EffectSelector from "./EffectSelector.svelte";
+  import { chooseHandBarStep, type HandBarStep } from "./hand-bar-step.js";
+  import HandPropToolbar, {
+    type HandPropToolbarProps,
+    type PropHandChoice,
+  } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import type { PropEffectTarget } from "#lib/shared/effects/domain/per-prop-effects.js";
   import EffectsInspector from "./EffectsInspector.svelte";
   import LedCustomize from "./customize/LedCustomize.svelte";
   import EffectDock from "./EffectDock.svelte";
@@ -84,6 +90,13 @@
      */
     fitRoom?: boolean;
     /**
+     * The host's sequence has two props. With the strip layout, the bar gains
+     * a Both / Left / Right row at its far end (while it fits on the bar's one
+     * line), and the tiles set the chosen prop. The tray opens on Both and the
+     * choice is its own. Omit for a host with one prop.
+     */
+    handProps?: HandPropToolbarProps;
+    /**
      * With the sidebar layout: a phone's bottom dock under the player, about
      * 360 x 215-310px. The roster is sixteen one-line tiles with a single row
      * under them (Tune, power, Reset all); the looks and sliders live only in
@@ -127,6 +140,7 @@
     showHeading = true,
     fill = false,
     fitRoom = false,
+    handProps,
     dock = false,
     onTuneHeading,
     wideWorkspace = false,
@@ -151,7 +165,133 @@
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let CustomizeComponent = $state<Component<any> | null>(null);
 
-  const activeEffect = $derived(effectsConfigState.activeEffect);
+  /** The effect the two props share (the left prop's while they differ). */
+  const primaryEffect = $derived(effectsConfigState.activeEffect);
+  /** Set while the tray's tuning page is open for the other prop's effect, so
+   *  every part of that page reads the effect it was opened for. Tuning is per
+   *  effect, not per prop. */
+  let tuneOverride = $state<EffectId | null>(null);
+  const activeEffect = $derived(tuneOverride ?? primaryEffect);
+  const leftEffect = $derived(effectsConfigState.effectForHand(0));
+  const rightEffect = $derived(effectsConfigState.effectForHand(1));
+  const differ = $derived(effectsConfigState.effectsDiffer());
+
+  // ── Which prop the tray sets ───────────────────────────────────────────────
+  // The Both / Left / Right row sits at the far end of the strip's bar when the
+  // sequence has two props and the row fits on the bar's one line beside the
+  // short Off chip. It opens on Both and the choice is the tray's own. Where
+  // the row is not shown the tray stays on Both, and a mix still shows: a dot
+  // per hand on the tiles, and no tile lit.
+  let trayHand = $state<PropHandChoice>("both");
+  let barWidth = $state(0);
+  let handRowEl = $state<HTMLElement | null>(null);
+  /** An unseen copy of the chip in its word form, so its natural width is
+   *  known whichever form is on the bar. */
+  let wordChipEl = $state<HTMLElement | null>(null);
+  let wordChipWidth = $state(0);
+  /** The row at word-sized tracks: its narrowest width that keeps every word
+   *  whole. */
+  let handRowMinWidth = $state(0);
+  const BAR_GAP = 8;
+  /** The icon-only chip's width (CSS `.off-chip.icon-only`). */
+  const ICON_CHIP_WIDTH = 44;
+  const rowWanted = $derived(
+    !!handProps && layout === "strip" && !fitRoom && !dock
+  );
+  // Decided from natural widths alone, so no form can flicker into another.
+  // The row is on the bar whenever the sequence has two props. Until all are
+  // measured the word form is shown, then judged.
+  const measured = $derived(
+    barWidth > 0 && wordChipWidth > 0 && handRowMinWidth > 0
+  );
+  const barStep = $derived<HandBarStep>(
+    measured
+      ? chooseHandBarStep({
+          wordChip: wordChipWidth,
+          iconChip: ICON_CHIP_WIDTH,
+          rowMin: handRowMinWidth,
+          bar: barWidth,
+          gap: BAR_GAP,
+        })
+      : "words"
+  );
+  const rowShown = $derived(rowWanted);
+  const iconOnly = $derived(rowShown && barStep !== "words");
+  const wordsHidden = $derived(rowShown && barStep === "pictures");
+  // Measured after paint. The word chip's copy is always in the page (out of
+  // the flow). The row's word-sized width is read with its words shown and its
+  // width at min-content, then put back in the same frame. Nothing here
+  // changes the bar's height.
+  $effect(() => {
+    void barWidth;
+    void t("viewer_ui_both");
+    void t("viewer_ui_left");
+    void t("viewer_ui_right");
+    void t("effect_deep_off");
+    if (handRowEl) {
+      const hid = handRowEl.classList.contains("words-hidden");
+      const width = handRowEl.style.width;
+      if (hid) handRowEl.classList.remove("words-hidden");
+      handRowEl.style.width = "min-content";
+      handRowMinWidth = handRowEl.offsetWidth;
+      handRowEl.style.width = width;
+      if (hid) handRowEl.classList.add("words-hidden");
+    }
+    if (wordChipEl) wordChipWidth = wordChipEl.offsetWidth;
+  });
+  $effect(() => {
+    // Leaving the tuning page, or a mix that no longer holds that effect,
+    // puts it back on the primary effect.
+    if (
+      tuneOverride &&
+      ((!detailOpen && !customizeOpen) ||
+        (tuneOverride !== leftEffect && tuneOverride !== rightEffect))
+    )
+      tuneOverride = null;
+  });
+  const handNow = $derived<PropHandChoice>(rowShown ? trayHand : "both");
+  const trayTarget = $derived<PropEffectTarget>(
+    handNow === "both" ? "both" : handNow === "left" ? 0 : 1
+  );
+  /** The effect the chosen prop wears, which the lit tile shows. Both with the
+   *  props apart lights no tile: the dots say where each one is. */
+  const shownEffect = $derived<string>(
+    handNow === "both"
+      ? differ
+        ? ""
+        : primaryEffect
+      : handNow === "left"
+        ? leftEffect
+        : rightEffect
+  );
+  /** The chosen prop wears an effect: the Off chip's pressed state. */
+  const handOn = $derived(
+    handNow === "both"
+      ? primaryEffect !== "none"
+      : (handNow === "left" ? leftEffect : rightEffect) !== "none"
+  );
+  /** Dots per hand while the props differ; `null` names the lit tile "both
+   *  props" for a two-prop host; undefined for a host with one prop. */
+  const tilePair = $derived<{ left: string; right: string } | null | undefined>(
+    differ
+      ? { left: leftEffect, right: rightEffect }
+      : handProps
+        ? null
+        : undefined
+  );
+  /** The short Off chip: the row is on the bar, or the props differ so no one
+   *  effect can be named. */
+  const shortChip = $derived(rowShown || differ);
+  const trayHandProps = $derived<HandPropToolbarProps | null>(
+    handProps
+      ? {
+          hand: trayHand,
+          leftPropType: handProps.leftPropType,
+          rightPropType: handProps.rightPropType,
+          onHandChange: (next) => (trayHand = next),
+        }
+      : null
+  );
   $effect(() => {
     if (activeEffect !== "led") ledCustomizePage.current = "pattern";
   });
@@ -252,7 +392,13 @@
   /** The look each tile shows (effect-catalog-looks). The list arrangement
    *  has names only. */
   const catalogLooks = $derived(
-    (fitRoom ? pickerFit?.portrait : catalogFit ? catalogFit.portrait : rosterFit)
+    (
+      fitRoom
+        ? pickerFit?.portrait
+        : catalogFit
+          ? catalogFit.portrait
+          : rosterFit
+    )
       ? effectCatalogLooks(effectsConfigState)
       : null
   );
@@ -274,7 +420,9 @@
   /** The phone tray has no catalog; it shows each effect's current look as a
    *  tile-format picture over its name (EffectSelector `trayPictures`). */
   const trayLooks = $derived(
-    layout === "strip" && !fitRoom ? effectCatalogLooks(effectsConfigState) : null
+    layout === "strip" && !fitRoom
+      ? effectCatalogLooks(effectsConfigState)
+      : null
   );
 
   const sidebarView = $derived(
@@ -538,7 +686,8 @@
   });
 
   function handleEffectSelect(effectId: string): void {
-    if (effectId === activeEffect) {
+    // The lit tile is the one effect both props wear; with a mix none is lit.
+    if (effectId === shownEffect) {
       void handleCustomizeOpen();
       return;
     }
@@ -633,16 +782,49 @@
   );
 
   function handleTileTap(effectId: string): void {
-    if (effectId === activeEffect) {
-      detailOpen = true;
+    if (effectId === shownEffect) {
+      // Tuning is per effect: the other prop's lit tile opens its own page.
+      if (isEffectId(effectId)) {
+        tuneOverride = effectId === primaryEffect ? null : effectId;
+        detailOpen = true;
+      }
       return;
     }
     if (isEffectId(effectId)) {
-      const previous = activeEffect;
-      effectsConfigState.setActiveEffect(effectId);
+      const previous = shownEffect || primaryEffect;
+      effectsConfigState.setEffectFor(trayTarget, effectId);
       if (preferSelectedDetail) detailOpen = true;
-      reportSetting("active_effect", previous, effectId);
+      reportSetting(
+        trayTarget === "both"
+          ? "active_effect"
+          : trayTarget === 0
+            ? "active_effect_left"
+            : "active_effect_right",
+        previous,
+        effectId
+      );
     }
+  }
+
+  /** The short Off chip beside the row: Off for the chosen prop, and back to
+   *  what it wore. The long chip (one prop, no row) keeps handleOffTap. */
+  function handleHandOffTap(): void {
+    const previous = shownEffect || primaryEffect;
+    effectsConfigState.toggleEffectFor(trayTarget, EFFECTS[0]?.id);
+    detailOpen = false;
+    const next =
+      trayTarget === "both"
+        ? effectsConfigState.activeEffect
+        : effectsConfigState.effectForHand(trayTarget);
+    reportSetting(
+      trayTarget === "both"
+        ? "active_effect"
+        : trayTarget === 0
+          ? "active_effect_left"
+          : "active_effect_right",
+      previous,
+      next
+    );
   }
 
   function handleOffTap(): void {
@@ -1268,7 +1450,8 @@
       {:else if fitRoom}
         <div class="drill-view">
           <EffectSelector
-            {activeEffect}
+            activeEffect={shownEffect}
+            pair={tilePair}
             onSelect={handleTileTap}
             onPrewarm={handleEffectPrewarm}
             onOff={handleOffTap}
@@ -1284,26 +1467,78 @@
           <!-- Off lives above the grid (not as a 17th tile) so the picker stays
                a clean 4×4. Tapping the active effect's tile drills into tuning,
                so this chip is the one explicit kill switch. -->
-          <div class="picker-bar">
-            <button
-              type="button"
-              class="off-chip"
-              class:active={activeEffect === "none"}
-              aria-pressed={activeEffect === "none"}
-              onclick={handleOffTap}
-            >
-              <i class="fas fa-ban" aria-hidden="true"></i>
-              <span
-                >{activeEffect === "none"
-                  ? t("effect_deep_off")
-                  : t("effect_deep_turn_off", {
-                      effect: effectUiLabel(EFFECT_LABELS[activeEffect] ?? ""),
-                    })}</span
+          <div class="picker-bar" bind:clientWidth={barWidth}>
+            {#if shortChip}
+              <!-- Short form: the row is beside it, or the props differ and no
+                   one effect can be named. The visible word names it; where one
+                   effect is at stake the existing sentence does. With no room
+                   for the word it is the icon alone, named the same way. -->
+              <button
+                type="button"
+                class="off-chip short"
+                class:icon-only={iconOnly}
+                class:active={!handOn}
+                aria-pressed={!handOn}
+                aria-label={handOn && shownEffect
+                  ? t("effect_deep_turn_off", {
+                      effect: effectUiLabel(
+                        EFFECT_LABELS[shownEffect] ?? shownEffect
+                      ),
+                    })
+                  : iconOnly
+                    ? t("effect_deep_off")
+                    : undefined}
+                onclick={handleHandOffTap}
               >
-            </button>
+                <i class="fas fa-ban" aria-hidden="true"></i>
+                {#if !iconOnly}<span>{t("effect_deep_off")}</span>{/if}
+              </button>
+            {:else}
+              <button
+                type="button"
+                class="off-chip"
+                class:active={activeEffect === "none"}
+                aria-pressed={activeEffect === "none"}
+                onclick={handleOffTap}
+              >
+                <i class="fas fa-ban" aria-hidden="true"></i>
+                <span
+                  >{activeEffect === "none"
+                    ? t("effect_deep_off")
+                    : t("effect_deep_turn_off", {
+                        effect: effectUiLabel(
+                          EFFECT_LABELS[activeEffect] ?? ""
+                        ),
+                      })}</span
+                >
+              </button>
+            {/if}
+            {#if rowWanted && trayHandProps}
+              <span
+                class="off-chip short measure"
+                aria-hidden="true"
+                bind:this={wordChipEl}
+              >
+                <i class="fas fa-ban"></i>
+                <span>{t("effect_deep_off")}</span>
+              </span>
+              <div
+                class="tray-hand"
+                class:words-hidden={wordsHidden}
+                bind:this={handRowEl}
+              >
+                <HandPropToolbar
+                  handProps={trayHandProps}
+                  line="regular"
+                  disabled={false}
+                  ariaLabel={t("effect_deep_which_prop")}
+                />
+              </div>
+            {/if}
           </div>
           <EffectSelector
-            {activeEffect}
+            activeEffect={shownEffect}
+            pair={tilePair}
             onSelect={handleTileTap}
             onPrewarm={handleEffectPrewarm}
             layout="tray"
@@ -1349,8 +1584,9 @@
           onclick={handleGridDisable}
         >
           <i class="fas fa-ban" aria-hidden="true"></i>
+          <!-- With the props apart no one effect can be named. -->
           <span
-            >{activeEffect === "none"
+            >{activeEffect === "none" || differ
               ? t("effect_deep_off")
               : t("effect_deep_turn_off", {
                   effect: effectUiLabel(EFFECT_LABELS[activeEffect] ?? ""),
@@ -1360,7 +1596,8 @@
       </div>
 
       <EffectSelector
-        {activeEffect}
+        activeEffect={shownEffect}
+        pair={tilePair}
         onSelect={handleEffectSelect}
         onPrewarm={handleEffectPrewarm}
         activeAction="tune"
@@ -1826,6 +2063,69 @@
      ("Off" → "Turn off Sparkle") reflows nothing. */
   .picker-bar {
     display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .off-chip.short {
+    flex: none;
+  }
+  .off-chip.icon-only {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  /* The word chip's unseen twin, for its natural width. Out of the flow and
+     off the screen to the start side, so it never adds scroll. */
+  .off-chip.measure {
+    /* behind the status bar: unseen measuring twin, hidden and off the screen */
+    position: fixed;
+    inset-inline-start: -9999px;
+    top: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  /* The Both / Left / Right row at the bar's far end. Its natural width is
+     three equal tracks as wide as the longest word; given less room it shrinks
+     toward word-sized tracks and stops there, so no word is cut and the row is
+     never dropped. The three tracks are equal whenever each word fits at an
+     equal share (minmax(max-content, 1fr)). */
+  .tray-hand {
+    flex: 0 1 auto;
+    margin-inline-start: auto;
+    width: max-content;
+    min-width: min-content;
+  }
+  .tray-hand :global(.ui-segments) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(max-content, 1fr));
+  }
+  .tray-hand :global(.ui-segments button) {
+    position: relative;
+    flex: none;
+  }
+  .tray-hand :global(.hand-art) {
+    flex: none;
+  }
+  /* Press height: the drawn pill stays 28px (24px tight) but the pressable
+     box is the bar's own height. The track's 3px padding and 1px border sit
+     around the button, so 5px each way reaches the bar's edge. */
+  .tray-hand :global(.ui-segments button)::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: -5px;
+  }
+  /* Last step: only when even word-sized tracks do not fit beside the icon
+     chip. All three words leave the screen together; their names stay. */
+  .tray-hand.words-hidden :global(.hand-word) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .off-chip {
     display: inline-flex;

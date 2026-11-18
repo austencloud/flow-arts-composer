@@ -50,6 +50,9 @@
     reportViewerControlChange,
     type ViewerControlSink,
   } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import EffectHandDot from "#lib/shared/animation-engine/components/effects-panel/EffectHandDot.svelte";
+  import { effectUiLabel } from "#lib/shared/animation-engine/components/effects-panel/effect-ui-label.js";
+  import { globalEffectMix } from "./effects-mix.js";
   import { onDestroy } from "svelte";
 
   interface Props {
@@ -175,9 +178,14 @@
   // per performer. Motion stays a scene-level modifier in both modes.
   // The global default a performer inherits when it has no override is the
   // effects-config wildcard.
-  const inheritedEffect = $derived(
-    config.config.tipEffectMap["*"]?.effect ?? "none"
+  // This popover sets both props at once. While the two wear different
+  // effects (set elsewhere) no single tile is the answer, so none lights.
+  const globalEffect = $derived(
+    config.effectsDiffer() ? "none" : config.effectForHand(0)
   );
+  // A performer with no effect of its own inherits that same answer, so a
+  // mix never lights the left prop's tile alone.
+  const inheritedEffect = $derived(globalEffect);
   const performerEffect = $derived.by<EffectKey | null>(() => {
     if (multi) {
       // The group shares an effect only when every performer resolves to the
@@ -198,7 +206,7 @@
     if (multi || performer) {
       return performerEffect === key;
     }
-    return config.config.tipEffectMap["*"]?.effect === key;
+    return globalEffect === key;
   }
 
   function toggle(key: EffectKey) {
@@ -260,7 +268,7 @@
     }
     // Global mode - wildcard tip map. Toggling the active effect off returns
     // to "none" so the grid has a consistent off-state semantic.
-    const previous = config.config.tipEffectMap["*"]?.effect ?? "none";
+    const previous = globalEffect;
     const currentlyActive = previous === key;
     config.setTipEffectMap({ "*": { effect: currentlyActive ? "none" : key } });
     reportViewerControlChange(
@@ -272,11 +280,31 @@
     );
   }
 
+  // A mix marks the tile of each prop's effect with that hand's dot and counts
+  // each distinct effect once; matching props read as before.
+  const globalMix = $derived(
+    globalEffectMix(
+      config.effectsDiffer(),
+      config.effectForHand(0),
+      config.effectForHand(1)
+    )
+  );
+  const showMix = $derived(!multi && !performer && config.effectsDiffer());
+
+  function mixHandLabel(key: string, label: string): string | null {
+    if (!showMix) return null;
+    const effect = effectUiLabel(label);
+    if (globalMix.leftTile === key) {
+      return t("effect_deep_tile_left_prop", { effect });
+    }
+    if (globalMix.rightTile === key) {
+      return t("effect_deep_tile_right_prop", { effect });
+    }
+    return null;
+  }
+
   const globalEnabledCount = $derived(
-    (config.config.tipEffectMap["*"]?.effect &&
-    config.config.tipEffectMap["*"].effect !== "none"
-      ? 1
-      : 0) +
+    globalMix.count +
       (scene3DRender.motion.blur || scene3DRender.motion.speedLines ? 1 : 0)
   );
 
@@ -562,6 +590,9 @@
         <EffectSelector
           activeEffect={activeEffectKey ?? "none"}
           activeAction="tune"
+          pair={!multi && !performer?.rawEffect && config.effectsDiffer()
+            ? { left: config.effectForHand(0), right: config.effectForHand(1) }
+            : undefined}
           onSelect={(effect) => {
             if (isEffectId(effect)) openEffectDetail(effect);
           }}
@@ -610,17 +641,33 @@
     <div class="effect-chips">
       {#each effectChips as effect}
         {@const enabled = isEnabled(effect.key)}
+        {@const handLabel = mixHandLabel(effect.key, effect.label)}
         <button
           class="effect-chip"
           class:active={enabled}
           style="--color: {effect.color}"
           onclick={() => toggle(effect.key)}
-          aria-label={enabled ? effect.label : `Enable ${effect.label}`}
+          aria-label={handLabel ??
+            (enabled ? effect.label : `Enable ${effect.label}`)}
           aria-pressed={enabled}
           title={enabled ? effect.label : "Click to enable"}
         >
           <i class="fas fa-{effect.icon}" aria-hidden="true"></i>
           <span>{effect.label}</span>
+          {#if showMix}
+            <span class="hand-dot-slot left"
+              ><EffectHandDot
+                hand="left"
+                visible={globalMix.leftTile === effect.key}
+              /></span
+            >
+            <span class="hand-dot-slot right"
+              ><EffectHandDot
+                hand="right"
+                visible={globalMix.rightTile === effect.key}
+              /></span
+            >
+          {/if}
         </button>
       {/each}
     </div>
@@ -820,6 +867,29 @@
       border-color var(--duration-fast),
       color var(--duration-fast),
       opacity var(--duration-fast);
+  }
+
+  .effect-chip {
+    position: relative;
+  }
+
+  /* Hand dots: 4px in from the tile's edge (inside its 1px border), left hand
+     top left, right hand top right, out of flow like the tray's. */
+  .effect-chip .hand-dot-slot {
+    position: absolute;
+    top: calc(4px - 1px);
+    display: block;
+    width: 6px;
+    height: 6px;
+    max-width: none;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .effect-chip .hand-dot-slot.left {
+    left: calc(4px - 1px);
+  }
+  .effect-chip .hand-dot-slot.right {
+    right: calc(4px - 1px);
   }
 
   .effect-chip span {

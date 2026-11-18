@@ -243,7 +243,8 @@
     align-items: center;
     justify-content: center;
     z-index: var(--z-modal);
-    padding: var(--spacing-md, 16px);
+    padding: calc(var(--spacing-md, 16px) + var(--safe-top))
+      var(--spacing-md, 16px) var(--spacing-md, 16px);
     animation: fadeIn var(--duration-fast) var(--ease-standard);
   }
 

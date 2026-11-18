@@ -5,6 +5,7 @@
  * set_preferences, get_preferences, reset_preferences
  */
 
+import { FAN_WAITING_NOTE, isFanBuildWaiting } from "../../../packages/tka-pictograph/src/fan-builds.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
@@ -81,7 +82,7 @@ export function registerPreferenceTools(server: McpServer): void {
           cover: z.enum(["bare", "covered"]),
         })
         .optional()
-        .describe("Physical appearance for fan and bigfan props"),
+        .describe(`Physical appearance for fan and bigfan props. ${FAN_WAITING_NOTE}`),
     },
     async (newPrefs) => {
       const before = { ...getPreferences() };
@@ -123,14 +124,21 @@ export function registerPreferenceTools(server: McpServer): void {
         }
       }
 
+      // The setting is kept as given, but a look that is still waiting on its
+      // maker is drawn as the pictograph fan, so say so.
+      const waitingNote = isFanBuildWaiting(newPrefs.fanAppearance?.build)
+        ? `\n\nThe ${newPrefs.fanAppearance?.build} fan look is waiting on its maker's approval, so pictographs draw the pictograph fan for now.`
+        : "";
+
       return {
         content: [
           {
             type: "text" as const,
             text:
-              changes.length > 0
+              (changes.length > 0
                 ? `Updated preferences:\n${changes.map((c) => `  • ${c}`).join("\n")}\n\nAll future pictographs will use these settings.`
-                : "No preferences changed (values were already set to these).",
+                : "No preferences changed (values were already set to these).") +
+              waitingNote,
           },
         ],
       };

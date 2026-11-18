@@ -343,7 +343,7 @@
       <SceneControls
         {bpm}
         topOffset="76px"
-        topLeftOffset={word ? undefined : "max(1rem, env(safe-area-inset-top))"}
+        topLeftOffset={word ? undefined : "max(1rem, var(--safe-top))"}
         bottomOffset={sceneControlsBottomOffset}
         leftOffset={sceneControlsLeftOffset}
         {allowSaveScene}
@@ -359,6 +359,7 @@
 
 <style>
   .viewer-3d-fullscreen {
+    /* behind the status bar: the canvas runs under it; the header and controls inside use --safe-top */
     position: fixed;
     inset: 0;
     z-index: 100;
@@ -387,7 +388,7 @@
 
   .word-label {
     position: absolute;
-    top: max(1rem, env(safe-area-inset-top));
+    top: max(1rem, var(--safe-top));
     left: max(1rem, env(safe-area-inset-left));
     min-width: 0;
     max-width: min(38rem, calc(100% - 24rem));
@@ -416,7 +417,7 @@
 
   .scene-command-bar {
     position: absolute;
-    top: max(1rem, env(safe-area-inset-top));
+    top: max(1rem, var(--safe-top));
     right: max(0.75rem, env(safe-area-inset-right));
     display: flex;
     align-items: center;

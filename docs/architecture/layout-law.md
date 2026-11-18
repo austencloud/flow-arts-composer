@@ -118,6 +118,10 @@ page the day he makes it.
   through.
 - **Never taller than the screen.** A menu or dialog fits the screen it opens
   on.
+- **Clear of the status bar.** A fixed layer that reaches the top edge keeps
+  its words and controls below `var(--safe-top)`, the phone's status bar. Its
+  background may still run under the bar; if a layer may sit behind it, say
+  why on its `position: fixed` line: `/* behind the status bar: ... */`.
 
 ## Proof
 
@@ -159,7 +163,7 @@ A rule that only exists as words gets broken again. These checks exist today:
 - Caused changes are animated: `src/lib/shared/transitions/motion-coverage.test.ts`.
 - Reduced motion: `src/lib/shared/transitions/reduced-motion-css.test.ts`.
 - Guide words never scale: `tests/unit/guide-fit-type-roles-contract.test.ts`.
-- One type size, type roles, seven window widths, the page never scrolls, text fills and shared owners in source: `npm run layout:scan` (`scripts/layout/scan.mjs`). A branch may not add breaks: for each rule, the count across the files it changed may not go up from where it left `main`. `wt:finish` runs it on style changes. `npm run layout:scan -- --totals` prints today's counts.
+- One type size, type roles, seven window widths, the page never scrolls, text fills, shared owners and clear of the status bar in source: `npm run layout:scan` (`scripts/layout/scan.mjs`). A branch may not add breaks: for each rule, the count across the files it changed may not go up from where it left `main`. `wt:finish` runs it on style changes. `npm run layout:scan -- --totals` prints today's counts.
 - Fit, scroll, cut-off text, text that runs past its box, small text, tap size and hero share on real screens at every size: `npm run layout:sweep` (`scripts/layout/sweep.mjs`, spill check in `scripts/layout/spill.mjs`, tested by `tests/unit/layout/layout-spill.test.ts`), run on demand and before a ship. `--only construct --sizes 360x591` checks one screen at one size.
 - The device list matches `scripts/layout/device-list.json`: `tests/unit/layout/device-list.test.ts`.
 - A loading screen leaves when the page is drawn, for the boot screen only: `tests/unit/boot-bar-self-timing.test.ts`, `tests/unit/startup-splash-handoff.test.ts` and `tests/unit/shared/application/boot-screen.test.ts` (no timer in `src/app.html` takes the screen away; a long wait shows the message and Reload). `node scripts/boot-handoff-check.mjs` proves it in a real browser with the app's code held back 30 s, at 1280×800 and 390×844; run it on demand after a change to the boot screen. Loaders inside the app are still checked by eye.

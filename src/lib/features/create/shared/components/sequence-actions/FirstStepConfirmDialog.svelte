@@ -48,7 +48,7 @@
     align-items: center;
     justify-content: center;
     z-index: var(--z-modal);
-    padding: 16px;
+    padding: calc(16px + var(--safe-top)) 16px 16px;
   }
 
   .first-beat-dialog {

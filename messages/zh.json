@@ -677,7 +677,7 @@
   "feedback_sign_in_to_send": "登录后发送",
   "feedback_submit_subtitle": "用你的意见帮助改进 Flow Arts Composer",
   "feedback_submit_title": "提交反馈",
-  "feedback_submitted_message": "感谢你帮助改进 Flow Arts Composer。我们已收到你的反馈，并将进行审核。",
+  "feedback_submitted_message": "感谢你帮助改进 Flow Arts Composer。你的反馈已收到，将会进行审核。",
   "feedback_submitted_title": "反馈已提交！",
   "feedback_submitted_toast": "反馈已提交！感谢你帮助改进 Flow Arts Composer。",
   "feedback_submitting": "正在提交...",
@@ -10332,5 +10332,10 @@
   "create_save_row_collection": "合集",
   "create_save_collection_count": "{count} 个合集",
   "create_save_note_add": "添加",
-  "library_ui_no_collection": "无"
+  "library_ui_no_collection": "无",
+  "effect_deep_which_prop": "效果作用于哪个道具",
+  "effect_deep_tile_left_prop": "{effect}，左侧道具",
+  "effect_deep_tile_right_prop": "{effect}，右侧道具",
+  "effect_deep_tile_both_props": "{effect}，两个道具",
+  "effect_deep_left_and_right": "左侧道具：{left}，右侧道具：{right}"
 }

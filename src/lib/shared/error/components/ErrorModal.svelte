@@ -303,7 +303,7 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     animation: fadeIn var(--duration-normal) var(--ease-standard-out);
-    padding: 24px;
+    padding: calc(24px + var(--safe-top)) 24px 24px;
   }
 
   @keyframes fadeIn {
@@ -318,7 +318,7 @@
   .error-modal {
     display: flex;
     flex-direction: column;
-    max-height: calc(100dvh - 48px);
+    max-height: calc(100dvh - 48px - var(--safe-top));
     background: linear-gradient(145deg, #1e1e2e 0%, #181825 100%);
     border: 1px solid var(--error-color);
     border-radius: 16px;
@@ -605,7 +605,7 @@
 
   @media (max-width: 700px) {
     .error-overlay {
-      padding: 12px;
+      padding: calc(12px + var(--safe-top)) 12px 12px;
       align-items: flex-end;
     }
 
@@ -613,7 +613,7 @@
     .error-modal.has-params {
       max-width: 100%;
       border-radius: 16px 16px 0 0;
-      max-height: min(90dvh, calc(100dvh - 24px));
+      max-height: min(90dvh, calc(100dvh - 24px - var(--safe-top)));
     }
 
     .has-params .error-body {

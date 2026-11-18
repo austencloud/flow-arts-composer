@@ -48,7 +48,7 @@
 <style>
   .release-callout {
     position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    top: calc(var(--safe-top) + 16px);
     left: 50%;
     translate: -50% 0;
     z-index: 900;

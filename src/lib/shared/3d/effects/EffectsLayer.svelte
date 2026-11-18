@@ -85,6 +85,10 @@
      * while the 3D picker said LED — gooey LEDs.
      */
     activeEffects?: readonly EffectType[];
+    /** The effects each prop wears, from the orchestrator. Absent or empty:
+     *  the rig-wide `activeEffects` apply to that prop, as before. */
+    leftActiveEffects?: readonly EffectType[];
+    rightActiveEffects?: readonly EffectType[];
     /** Hand-anchor offsets applied by PerformerRig before the live props. */
     leftHandPos: { x: number; z: number };
     rightHandPos: { x: number; z: number };
@@ -115,6 +119,8 @@
     staffLength = AUSTEN_STAFF.length,
     propScale = 1,
     activeEffects = [],
+    leftActiveEffects = [],
+    rightActiveEffects = [],
     leftHandPos,
     rightHandPos,
     leftTipData = [],
@@ -142,9 +148,9 @@
    * hasn't plumbed them, so an unplumbed host degrades to the old behaviour
    * rather than going dark.
    *
-   * Known limitation: this is a per-rig set, so a config with DIFFERENT effects
-   * per tip lights every one of them on all four tips. The whole-rig case (what
-   * every surface uses today) is correct. Per-tip gating is a follow-up.
+   * This rig-wide set says which of the seven effects are on at all.
+   * `leftActiveEffects` / `rightActiveEffects` then light an effect only on
+   * the prop that wears it. The gate is per prop, not per tip.
    */
   const activeSet = $derived(
     activeEffects.length > 0
@@ -156,6 +162,19 @@
         )
   );
   const isActive = (id: string) => activeSet.has(id);
+  // Per prop: an effect lights only the prop that wears it.
+  const leftSet = $derived(
+    leftActiveEffects.length > 0
+      ? new Set<string>(leftActiveEffects)
+      : activeSet
+  );
+  const rightSet = $derived(
+    rightActiveEffects.length > 0
+      ? new Set<string>(rightActiveEffects)
+      : activeSet
+  );
+  const onLeft = (id: string) => leftSet.has(id);
+  const onRight = (id: string) => rightSet.has(id);
   const zap3D = $derived(unifiedState ? resolveZap3D(unifiedState.zap) : null);
   const zapEnabled = $derived(isActive("zap"));
   const sparkles3D = $derived(
@@ -326,7 +345,7 @@
       prop: 0 | 1,
       color: string
     ) => {
-      if (!ends) return;
+      if (!ends || !(prop === 0 ? onLeft("zap") : onRight("zap"))) return;
       out.push({ position: ends.positive, prop, end: 1, color });
       if (ends.negative)
         out.push({ position: ends.negative, prop, end: 0, color });
@@ -375,7 +394,7 @@
   <!-- worldSpread / baseRadius / worldGravity, never the raw intent values:
        intent.spread is 2D canvas pixels and reading it as metres is what put
        7-metre sparkles on a 0.86m staff. -->
-  {#if leftEnds}
+  {#if leftEnds && onLeft("sparkles")}
     <SparkleEmitter
       position={leftEnds.positive}
       enabled={true}
@@ -400,7 +419,7 @@
     {/if}
   {/if}
 
-  {#if rightEnds}
+  {#if rightEnds && onRight("sparkles")}
     <SparkleEmitter
       position={rightEnds.positive}
       enabled={true}
@@ -480,7 +499,7 @@
     propType={leftPropType}
     propHand="left"
     params={ghost3D}
-    enabled={ghostEnabled && isPlaying}
+    enabled={ghostEnabled && onLeft("ghost") && isPlaying}
     propLength={staffLength}
     geometryScale={propScale}
     handAnchor={leftHandPos}
@@ -494,7 +513,7 @@
     propType={rightPropType}
     propHand="right"
     params={ghost3D}
-    enabled={ghostEnabled && isPlaying}
+    enabled={ghostEnabled && onRight("ghost") && isPlaying}
     propLength={staffLength}
     geometryScale={propScale}
     handAnchor={rightHandPos}
@@ -511,7 +530,7 @@
      puddles / refraction.
      ============================================================================= -->
 {#if !pooledEffectsManaged && gooEnabled && goo3D && isPlaying}
-  {#if leftEnds && gooShowRightEnd}
+  {#if leftEnds && onLeft("goo") && gooShowRightEnd}
     <WaterEmitter3D
       position={leftEnds.positive}
       propVelocity={leftPositiveVelocityVec}
@@ -519,7 +538,7 @@
       enabled={true}
     />
   {/if}
-  {#if leftEnds?.negative && gooShowLeftEnd}
+  {#if leftEnds?.negative && onLeft("goo") && gooShowLeftEnd}
     <WaterEmitter3D
       position={leftEnds.negative}
       propVelocity={leftNegativeVelocityVec}
@@ -527,7 +546,7 @@
       enabled={true}
     />
   {/if}
-  {#if rightEnds && gooShowRightEnd}
+  {#if rightEnds && onRight("goo") && gooShowRightEnd}
     <WaterEmitter3D
       position={rightEnds.positive}
       propVelocity={rightPositiveVelocityVec}
@@ -535,7 +554,7 @@
       enabled={true}
     />
   {/if}
-  {#if rightEnds?.negative && gooShowLeftEnd}
+  {#if rightEnds?.negative && onRight("goo") && gooShowLeftEnd}
     <WaterEmitter3D
       position={rightEnds.negative}
       propVelocity={rightNegativeVelocityVec}
@@ -551,7 +570,7 @@
      timeout or max-size.
      ============================================================================= -->
 {#if !pooledEffectsManaged && bubblesEnabled && bubbles3D && isPlaying}
-  {#if leftEnds}
+  {#if leftEnds && onLeft("bubbles")}
     <BubbleEmitter3D
       position={leftEnds.positive}
       propVelocity={leftPositiveVelocityVec}
@@ -560,7 +579,7 @@
       {qualityTier}
     />
   {/if}
-  {#if leftEnds?.negative}
+  {#if leftEnds?.negative && onLeft("bubbles")}
     <BubbleEmitter3D
       position={leftEnds.negative}
       propVelocity={leftNegativeVelocityVec}
@@ -569,7 +588,7 @@
       {qualityTier}
     />
   {/if}
-  {#if rightEnds}
+  {#if rightEnds && onRight("bubbles")}
     <BubbleEmitter3D
       position={rightEnds.positive}
       propVelocity={rightPositiveVelocityVec}
@@ -578,7 +597,7 @@
       {qualityTier}
     />
   {/if}
-  {#if rightEnds?.negative}
+  {#if rightEnds?.negative && onRight("bubbles")}
     <BubbleEmitter3D
       position={rightEnds.negative}
       propVelocity={rightNegativeVelocityVec}
@@ -595,7 +614,7 @@
      ============================================================================= -->
 {#if !pooledEffectsManaged && petalsEnabled && petals3D && isPlaying}
   <PetalAmbientShower3D params={petals3D} enabled={true} />
-  {#if leftEnds && petalsShowRightEnd}
+  {#if leftEnds && onLeft("petals") && petalsShowRightEnd}
     <PetalEmitter3D
       position={leftEnds.positive}
       propVelocity={leftPositiveVelocityVec}
@@ -603,7 +622,7 @@
       enabled={true}
     />
   {/if}
-  {#if leftEnds?.negative && petalsShowLeftEnd}
+  {#if leftEnds?.negative && onLeft("petals") && petalsShowLeftEnd}
     <PetalEmitter3D
       position={leftEnds.negative}
       propVelocity={leftNegativeVelocityVec}
@@ -611,7 +630,7 @@
       enabled={true}
     />
   {/if}
-  {#if rightEnds && petalsShowRightEnd}
+  {#if rightEnds && onRight("petals") && petalsShowRightEnd}
     <PetalEmitter3D
       position={rightEnds.positive}
       propVelocity={rightPositiveVelocityVec}
@@ -619,7 +638,7 @@
       enabled={true}
     />
   {/if}
-  {#if rightEnds?.negative && petalsShowLeftEnd}
+  {#if rightEnds?.negative && onRight("petals") && petalsShowLeftEnd}
     <PetalEmitter3D
       position={rightEnds.negative}
       propVelocity={rightNegativeVelocityVec}
@@ -635,7 +654,7 @@
      Sub-phases 1i.ii (blur) and 1i.iii (genie hue-shift) deferred.
      ============================================================================= -->
 {#if !pooledEffectsManaged && smokeEnabled && smoke3D && isPlaying}
-  {#if leftEnds && smokeShowRightEnd}
+  {#if leftEnds && onLeft("smoke") && smokeShowRightEnd}
     <SmokeRenderer3D
       position={leftEnds.positive}
       propVelocity={leftPositiveVelocityVec}
@@ -643,7 +662,7 @@
       enabled={true}
     />
   {/if}
-  {#if leftEnds?.negative && smokeShowLeftEnd}
+  {#if leftEnds?.negative && onLeft("smoke") && smokeShowLeftEnd}
     <SmokeRenderer3D
       position={leftEnds.negative}
       propVelocity={leftNegativeVelocityVec}
@@ -651,7 +670,7 @@
       enabled={true}
     />
   {/if}
-  {#if rightEnds && smokeShowRightEnd}
+  {#if rightEnds && onRight("smoke") && smokeShowRightEnd}
     <SmokeRenderer3D
       position={rightEnds.positive}
       propVelocity={rightPositiveVelocityVec}
@@ -659,7 +678,7 @@
       enabled={true}
     />
   {/if}
-  {#if rightEnds?.negative && smokeShowLeftEnd}
+  {#if rightEnds?.negative && onRight("smoke") && smokeShowLeftEnd}
     <SmokeRenderer3D
       position={rightEnds.negative}
       propVelocity={rightNegativeVelocityVec}

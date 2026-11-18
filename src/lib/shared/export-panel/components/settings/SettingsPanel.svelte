@@ -129,6 +129,7 @@
 
 <style>
   .settings-backdrop {
+    /* behind the status bar: only a dim; the panel inside pads its first row below it */
     position: fixed;
     top: 0;
     left: 0;
@@ -147,6 +148,8 @@
     width: clamp(320px, 40vw, 600px);
     max-width: 100vw;
     height: 100%;
+    padding-top: var(--safe-top);
+    box-sizing: border-box;
     background: var(--theme-panel-bg);
     border-left: 1px solid var(--theme-stroke);
     box-shadow: -4px 0 24px color-mix(in srgb, #000 50%, transparent);

@@ -168,8 +168,9 @@ export function scanAssetLiterals(sourceRoot = join(repoRoot, "src")) {
 }
 
 /**
- * Character models and thumbnails live in scene-3d's registry (hard-coded R2
- * URLs), so they never appear as literals in `src/`.
+ * Character models live in scene-3d's registry (hard-coded R2 URLs), so they
+ * never appear as literals in `src/`. Their picker portraits are app static
+ * files (static/images/character-portraits) and ship with the build.
  */
 export async function characterAssetPaths() {
   return (await registryAssetPaths()).filter(
@@ -190,12 +191,6 @@ export async function registryAssetPaths() {
     if (!url.startsWith(R2_ORIGIN)) continue;
     paths.push(
       posix.join(R2_BUNDLE_PREFIX, url.slice(R2_ORIGIN.length + 1))
-    );
-    paths.push(
-      posix.join(
-        R2_BUNDLE_PREFIX,
-        `models/avatars/thumbnails/${definition.id}.webp`
-      )
     );
   }
   return [...paths, ...EXPLICIT_R2_PATHS, ...EXPLICIT_STATIC_DIRECTORIES];

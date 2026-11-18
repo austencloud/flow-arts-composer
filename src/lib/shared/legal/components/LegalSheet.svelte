@@ -227,8 +227,8 @@
             <h3>13. Contact</h3>
             <p>
               Questions? Email
-              <LinkChip size="inline" href="mailto:austencloud@gmail.com"
-                >austencloud@gmail.com</LinkChip
+              <LinkChip size="inline" href="mailto:tkaflowarts@gmail.com"
+                >tkaflowarts@gmail.com</LinkChip
               >.
             </p>
             <p>
@@ -245,6 +245,7 @@
 
 <style>
   .sheet-backdrop {
+    /* behind the status bar: a dim; the sheet inside is a bottom sheet capped at 85% of the window */
     position: fixed;
     inset: 0;
     background: rgb(0, 0, 0);

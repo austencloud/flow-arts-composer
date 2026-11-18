@@ -4,6 +4,8 @@ import {
 } from "#lib/shared/3d/domain/character-model.js";
 import { DEPLOYED_CHARACTER_DEFINITIONS } from "#lib/shared/3d/config/deployed-characters.js";
 import { characterThumbnailUrl } from "#lib/shared/3d/constants/r2-cdn.js";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const PERSONAL_CHARACTER_ID = "personal-metaperson";
@@ -38,6 +40,31 @@ describe("character catalog license boundary", () => {
       name: "Austen",
       availability: "local-evaluation",
     });
-    expect(characterThumbnailUrl(PERSONAL_CHARACTER_ID)).toBeNull();
+  });
+});
+
+describe("character portraits", () => {
+  it("ships a portrait with the app for every deployed character", () => {
+    for (const character of DEPLOYED_CHARACTER_DEFINITIONS) {
+      expect(characterThumbnailUrl(character.id)).toBe(
+        `/images/character-portraits/${character.id}.webp`
+      );
+      expect(
+        existsSync(
+          join(
+            process.cwd(),
+            "static/images/character-portraits",
+            `${character.id}.webp`
+          )
+        ),
+        `portrait file for ${character.id}`
+      ).toBe(true);
+    }
+  });
+
+  it("keeps a local body's portrait beside its model, out of the shipped folder", () => {
+    expect(characterThumbnailUrl(PERSONAL_CHARACTER_ID)).toBe(
+      "/models/avatars/bakeoff/portraits/personal-metaperson.webp"
+    );
   });
 });

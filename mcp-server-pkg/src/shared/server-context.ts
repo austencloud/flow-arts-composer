@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 import { exec, spawn } from "child_process";
 import { tmpdir } from "os";
 import { calculateOrientations } from "@tka/render-core";
+import { defaultFanBuild } from "../../../packages/tka-pictograph/src/fan-builds.js";
 import type {
   MotionData,
   PictographData,
@@ -69,7 +70,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showRightMotion: true,
   leftPropType: null,
   rightPropType: null,
-  fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+  fanAppearance: { build: defaultFanBuild(), frameColor: "black", cover: "bare" },
 };
 
 // Current session preferences (starts with defaults)

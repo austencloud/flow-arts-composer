@@ -221,6 +221,7 @@
 
 <style>
   .bento-portal {
+    /* behind the status bar: a holder for the bottom sheet, which stops short of the top */
     position: fixed;
     inset: 0;
     z-index: var(--z-priority);
@@ -232,6 +233,7 @@
   }
 
   .bento-backdrop {
+    /* behind the status bar: a dim with no content of its own */
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.65);

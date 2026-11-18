@@ -649,7 +649,6 @@
     <PerformerCharacterPicker
       selectedCharacterId={inspection.characterId}
       pendingCharacterId={null}
-      previewPerformer={null}
       onSelect={(id) => {
         inspection.setCharacter(id);
         characterDrawerOpen = false;

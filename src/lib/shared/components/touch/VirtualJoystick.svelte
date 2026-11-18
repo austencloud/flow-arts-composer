@@ -243,6 +243,7 @@
 
 <style>
   .joystick-container {
+    /* behind the status bar: an inert touch layer; the stick itself sits low on the screen */
     position: fixed;
     inset: 0;
     pointer-events: none;

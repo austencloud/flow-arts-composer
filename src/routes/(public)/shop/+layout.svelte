@@ -24,7 +24,7 @@
   /* Floats over the shop content, clear of the fixed SiteHeader. Shop-scoped. */
   .shop-cart-affordance {
     position: fixed;
-    top: calc(64px + env(safe-area-inset-top, 0px) + 8px);
+    top: calc(64px + var(--safe-top) + 8px);
     right: calc(16px + env(safe-area-inset-right, 0px));
     z-index: 40;
   }

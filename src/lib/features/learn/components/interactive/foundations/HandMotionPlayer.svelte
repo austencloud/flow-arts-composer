@@ -24,6 +24,7 @@
     onStepChange = undefined,
     onSeekRef = undefined,
     framed = true,
+    transitionKey = null,
     onCanvasInitialized,
     onLoadError,
   }: {
@@ -48,6 +49,9 @@
     onStepChange?: (currentStep: number, sequenceId: string | null) => void;
     onSeekRef?: (seek: ((step: number) => void) | null) => void;
     framed?: boolean;
+    /** Keep it the same across a change of `sequence` and the props glide to
+     *  the new pose instead of jumping (InlineAnimationPlayer's pose glide). */
+    transitionKey?: string | null;
     onCanvasInitialized?: () => void;
     onLoadError?: (message: string) => void;
   } = $props();
@@ -109,6 +113,7 @@
     {onExternalPlayingChange}
     {onStepChange}
     {onSeekRef}
+    {transitionKey}
     {onCanvasInitialized}
     {onLoadError}
   />

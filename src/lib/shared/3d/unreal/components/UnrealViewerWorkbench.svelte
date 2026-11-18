@@ -304,7 +304,7 @@
   }
   @media (max-width: 767px) and (orientation: portrait) {
     .scene-caption {
-      top: calc(max(1rem, env(safe-area-inset-top)) + 4rem);
+      top: calc(max(1rem, var(--safe-top)) + 4rem);
       bottom: auto;
     }
   }

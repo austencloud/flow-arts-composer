@@ -10,6 +10,7 @@ import {
   QUICK_PICKER_MAX_STRIP_PORTRAIT,
   QUICK_PICKER_MIN_NARROW_SIDE_WIDTH,
   QUICK_PICKER_MIN_PLAYER_SCALE,
+  QUICK_PICKER_FLOOR_PLAYER_SCALE,
   QUICK_PICKER_OFF_WIDTH,
   QUICK_PICKER_OFFSET,
   QUICK_PICKER_STRIP_GAP,
@@ -157,7 +158,6 @@ describe("fitEffectQuickPicker", () => {
   });
 
   it.each([
-    ["phone", 375, 343],
     ["tablet", 820, 770],
     // Pictures at their largest: before, the last tile in view showed whole
     // or nearly so, and the row read as complete.
@@ -203,9 +203,11 @@ describe("fitEffectQuickPicker", () => {
   // Measured on /create/generate while playing: the content area above the
   // bottom navigation, the player with its controls, and the room under them
   // before the toolbar (or, on the tablet, the open notation rail).
+  // A phone held upright is never a strip (it has its own describe below):
+  // this is the narrowest window that is not a phone.
   const phone = {
-    bounds: { left: 0, top: 0, width: 375, height: 623 },
-    player: { left: 13, top: 119, width: 350, height: 394 },
+    bounds: { left: 0, top: 0, width: 500, height: 748 },
+    player: { left: 12, top: 119, width: 475, height: 519 },
     roomBelow: 47,
     count: COUNT,
   };
@@ -267,72 +269,6 @@ describe("fitEffectQuickPicker", () => {
     expect(fit.side).toBe("above");
   });
 
-  // Austen, 2026-11-01, on a 375x667 phone: "You can only see two effects at
-  // a time, and the X button and the off button take up large amounts of
-  // clickable space."
-  it("docks two rows over the short phone's control row, never the animation", () => {
-    const controls = 44;
-    const fit = strip({ ...phone, controls });
-    expect(fit.side).toBe("dock");
-    expect(fit.rows).toBe(2);
-    expect(fit.catalog.rows).toBe(2);
-    expect(fit.catalog.cols).toBe(Math.ceil(COUNT / 2));
-    // Two rows of tiles, the gap between them, the padding and the border.
-    const tile = pictureTileHeight(fit.catalog.portrait);
-    expect(fit.height).toBeGreaterThanOrEqual(
-      2 * QUICK_PICKER_STRIP_PAD + 2 * tile + CATALOG_GAP
-    );
-    // It stands on the floor and reaches over the control row, no further.
-    const roomDocked =
-      phone.bounds.top +
-      phone.bounds.height -
-      (phone.player.top + phone.player.height);
-    expect(fit.cover).toBeGreaterThan(0);
-    expect(fit.cover).toBeLessThanOrEqual(controls);
-    expect(fit.cover).toBe(fit.height - roomDocked);
-    expect(fit.catalog.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
-    // Three whole tiles a row and part of a fourth, where one row held two.
-    const room =
-      phone.player.width -
-      2 * QUICK_PICKER_STRIP_PAD -
-      QUICK_PICKER_OFF_WIDTH -
-      CATALOG_GAP;
-    const inView = room / stripTilePitch(fit.catalog.portrait);
-    expect(Math.floor(inView)).toBeGreaterThanOrEqual(3);
-    expect(inView - Math.floor(inView)).toBeGreaterThan(0.25);
-    expect(inView - Math.floor(inView)).toBeLessThan(0.75);
-    expect(fit.trackWidth).toBe(
-      fit.catalog.cols * (fit.catalog.portrait + 2 * INSET) +
-        (fit.catalog.cols - 1) * CATALOG_GAP
-    );
-    expect(fit.trackWidth).toBeGreaterThan(room);
-  });
-
-  it("takes smaller pictures in two rows for a fourth effect across, not larger ones", () => {
-    // Measured on /create/generate at 375x667 while playing, 2026-11-01: the
-    // room under the player (145px) holds two rows of the one row's 88px
-    // pictures, two and a half a row. Smaller ones show three and a half.
-    const box = {
-      bounds: { left: 0, top: 0, width: 375, height: 622.5 },
-      player: { left: 12.7, top: 83.3, width: 350, height: 394 },
-      roomBelow: 0,
-      controls: 44,
-      count: EFFECTS.length,
-    };
-    const fit = strip(box);
-    expect(fit.rows).toBe(2);
-    expect(fit.catalog.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
-    const room =
-      box.player.width -
-      2 * QUICK_PICKER_STRIP_PAD -
-      QUICK_PICKER_OFF_WIDTH -
-      CATALOG_GAP;
-    const inView = room / stripTilePitch(fit.catalog.portrait);
-    expect(Math.floor(inView)).toBe(3);
-    expect(fit.cover).toBeGreaterThanOrEqual(0);
-    expect(fit.cover).toBeLessThan(box.controls / 2);
-  });
-
   it("keeps one row where there is no control row to cover", () => {
     const fit = strip({ ...phone, controls: 0 });
     expect(fit.rows).toBe(1);
@@ -350,114 +286,227 @@ describe("fitEffectQuickPicker", () => {
 
 describe("fitEffectQuickPicker on a phone held upright", () => {
   const count = EFFECTS.length;
-  // Measured on /create/generate at 412x915 while playing.
-  // The others follow that layout: the content area above the 44px bottom
-  // navigation, the player (its square animation and 44px of controls)
-  // centred in it, and the 63px toolbar under it.
-  const phones = [
-    {
-      name: "375x812",
-      bounds: { left: 0, top: 0, width: 375, height: 768 },
-      player: { left: 13, top: 192, width: 350, height: 394 },
-      roomBelow: 119,
-    },
-    {
-      name: "390x844",
-      bounds: { left: 0, top: 0, width: 390, height: 800 },
-      player: { left: 13, top: 200, width: 365, height: 409 },
-      roomBelow: 128,
-    },
-    {
-      name: "412x915",
-      bounds: { left: 0, top: 0, width: 412, height: 871 },
-      player: { left: 13, top: 225, width: 387, height: 431 },
-      roomBelow: 152,
-    },
-    {
-      name: "430x932",
-      bounds: { left: 0, top: 0, width: 430, height: 888 },
-      player: { left: 13, top: 225, width: 405, height: 449 },
-      roomBelow: 151,
-    },
-  ];
+  const controls = 44;
 
-  /** Whole tiles the old one-row strip showed at this width. */
-  function wholeInStrip(playerWidth: number, portrait: number) {
-    const room =
-      playerWidth -
-      2 * QUICK_PICKER_STRIP_PAD -
-      QUICK_PICKER_OFF_WIDTH -
-      CATALOG_GAP;
-    return Math.floor((room + CATALOG_GAP) / stripTilePitch(portrait));
+  // The Construct player on each phone: `bounds` is the content area (room
+  // from its top to the bottom navigation), the player's box its square
+  // animation plus the 44px control row, `roomAbove` the empty room between
+  // the player's top and the area's top. The first three follow the sizes
+  // worked out for the design (344x760, 360x591, 387x775); the rest are laid
+  // out the same way.
+  function phoneBox(opts: {
+    width: number;
+    boundsTop: number;
+    boundsHeight: number;
+    playerWidth: number;
+    animation: number;
+    playerTop: number;
+  }) {
+    return {
+      bounds: {
+        left: 0,
+        top: opts.boundsTop,
+        width: opts.width,
+        height: opts.boundsHeight,
+      },
+      player: {
+        left: (opts.width - opts.playerWidth) / 2,
+        top: opts.playerTop,
+        width: opts.playerWidth,
+        height: opts.animation + controls,
+      },
+      roomAbove: opts.playerTop - opts.boundsTop,
+      controls,
+      count,
+    };
   }
 
-  it.each(phones)(
-    "wraps the pictures four across under the $name player",
-    ({ bounds, player, roomBelow }) => {
-      const fit = fitEffectQuickPicker({ bounds, player, roomBelow, count });
-      expect(fit.arrangement).toBe("grid");
-      if (fit.arrangement !== "grid") return;
-      expect(fit.catalog.cols).toBe(4);
-      expect(fit.catalog.rows * fit.catalog.cols).toBeGreaterThanOrEqual(count);
-      expect(fit.catalog.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
-      // Docked under the player: the whole animation stays in view and the
-      // grid stays inside the bounds.
+  const sizes = {
+    "344x760": phoneBox({
+      width: 344,
+      boundsTop: 53,
+      boundsHeight: 663,
+      playerWidth: 336,
+      animation: 319,
+      playerTop: 136,
+    }),
+    "360x591": phoneBox({
+      width: 360,
+      boundsTop: 53,
+      boundsHeight: 494,
+      playerWidth: 354,
+      animation: 329,
+      playerTop: 53,
+    }),
+    "360x640": phoneBox({
+      width: 360,
+      boundsTop: 53,
+      boundsHeight: 543,
+      playerWidth: 354,
+      animation: 329,
+      playerTop: 53,
+    }),
+    "375x667": phoneBox({
+      width: 375,
+      boundsTop: 53,
+      boundsHeight: 569,
+      playerWidth: 369,
+      animation: 344,
+      playerTop: 53,
+    }),
+    "387x775": phoneBox({
+      width: 387,
+      boundsTop: 54,
+      boundsHeight: 677,
+      playerWidth: 364,
+      animation: 325,
+      playerTop: 54,
+    }),
+    "412x915": phoneBox({
+      width: 412,
+      boundsTop: 53,
+      boundsHeight: 818,
+      playerWidth: 387,
+      animation: 387,
+      playerTop: 225,
+    }),
+  };
+  type SizeName = keyof typeof sizes;
+
+  function phoneFit(name: SizeName) {
+    const box = sizes[name];
+    const fit = fitEffectQuickPicker(box);
+    if (fit.arrangement !== "grid") {
+      throw new Error(`expected the grid at ${name}, got ${fit.arrangement}`);
+    }
+    return { box, fit };
+  }
+
+  it.each(Object.keys(sizes) as SizeName[])(
+    "%s: four across and four down, docked, never the strip or a scroll",
+    (name) => {
+      const { box, fit } = phoneFit(name);
       expect(fit.side).toBe("dock");
-      expect(player.top + player.height + fit.height).toBeLessThanOrEqual(
-        bounds.top + bounds.height
+      expect(fit.catalog.cols).toBe(4);
+      expect(fit.catalog.rows).toBe(4);
+      expect(fit.scrolls).toBe(false);
+      expect(fit.short).toBe(0);
+      expect(fit.shift).toBe(0);
+      if (fit.catalog.orientation === "dense") {
+        expect(fit.catalog.tile).toBe(34);
+        expect(fit.catalog.gap).toBe(4);
+      } else {
+        expect(fit.catalog.portrait).toBeGreaterThanOrEqual(
+          MIN_CATALOG_PORTRAIT
+        );
+      }
+      // Nothing under the floors: the player 80%, or 75% with the rows tight.
+      expect(fit.scale).toBeGreaterThanOrEqual(
+        fit.tight
+          ? QUICK_PICKER_FLOOR_PLAYER_SCALE
+          : QUICK_PICKER_MIN_PLAYER_SCALE
       );
-      // The room under the player holds about two rows, not all four: the
-      // grid scrolls down, showing at least twice the old row's whole tiles.
-      expect(fit.scrolls).toBe(true);
-      const tile = pictureTileHeight(fit.catalog.portrait);
-      const head =
-        2 * QUICK_PICKER_STRIP_PAD + QUICK_PICKER_HEAD + QUICK_PICKER_HEAD_GAP;
-      const rowsInView =
-        (fit.height - head + fit.catalog.gap) / (tile + fit.catalog.gap);
-      expect(rowsInView).toBeGreaterThanOrEqual(1.5);
-      const oldRow = fitEffectQuickPicker({
-        bounds: { ...bounds, height: player.top + player.height + 110 },
-        player,
-        count,
-      });
-      if (oldRow.arrangement !== "strip") throw new Error("expected a strip");
-      expect(rowsInView * fit.catalog.cols).toBeGreaterThanOrEqual(
-        2 * wholeInStrip(player.width, oldRow.catalog.portrait)
-      );
+      expect(fit.scale).toBeLessThanOrEqual(1);
+      expect(fit.lift).toBeLessThanOrEqual(box.roomAbove);
+      // The lifted, shrunk animation's bottom edge stays above the sheet.
+      const animation = box.player.height - controls;
+      const bottom = box.player.top - fit.lift + animation * fit.scale;
+      const floor = box.bounds.top + box.bounds.height;
+      expect(bottom + fit.height).toBeLessThanOrEqual(floor + 0.5);
     }
   );
 
-  it("shows every effect without scrolling where the room under it holds them", () => {
-    const player = { left: 13, top: 60, width: 350, height: 394 };
-    const bounds = { left: 0, top: 0, width: 375, height: 900 };
-    const fit = fitEffectQuickPicker({ bounds, player, count });
-    expect(fit.arrangement).toBe("grid");
-    if (fit.arrangement !== "grid") return;
-    expect(fit.scrolls).toBe(false);
-    expect(fit.height).toBeGreaterThanOrEqual(gridPanelHeight(fit.catalog));
-    expect(player.top + player.height + fit.height).toBeLessThanOrEqual(
-      bounds.height
-    );
+  it("387x775: pictures at their smallest, not lifted, the player scaled to about 87%", () => {
+    const { fit } = phoneFit("387x775");
+    expect(fit.catalog.orientation).toBe("stack");
+    expect(fit.catalog.portrait).toBe(MIN_CATALOG_PORTRAIT);
+    expect(fit.lift).toBe(0);
+    expect(fit.tight).toBe(false);
+    // 12 + 44 + 8 + 36 + 8 + (4 x 64 + 3 x 6) + 12, and the sheet's border.
+    expect(fit.height).toBe(395);
+    expect(fit.scale).toBeCloseTo(0.868, 2);
   });
 
-  it("floats the grid under the controls where the room there holds it all", () => {
-    const player = { left: 13, top: 60, width: 350, height: 394 };
-    const bounds = { left: 0, top: 0, width: 375, height: 900 };
-    const fit = fitEffectQuickPicker({ bounds, player, roomBelow: 420, count });
-    expect(fit.arrangement === "grid" && fit.side).toBe("below");
-    expect(
-      fit.arrangement === "grid" && fit.height + QUICK_PICKER_STRIP_GAP
-    ).toBeLessThanOrEqual(420);
+  it("344x760: pictures 75 x 64, the player lifted to the top and scaled to 84%", () => {
+    const { box, fit } = phoneFit("344x760");
+    expect(fit.catalog.orientation).toBe("stack");
+    expect(fit.catalog.portrait).toBe(MIN_CATALOG_PORTRAIT);
+    expect(pictureTileHeight(fit.catalog.portrait)).toBe(64);
+    expect(fit.height).toBe(395);
+    expect(fit.lift).toBe(box.roomAbove);
+    expect(fit.scale).toBeCloseTo(0.84, 2);
+    expect(fit.tight).toBe(false);
   });
 
-  it("keeps the row on a short phone, where the grid would show fewer", () => {
-    const fit = fitEffectQuickPicker({
-      bounds: { left: 0, top: 0, width: 375, height: 623 },
-      player: { left: 13, top: 119, width: 350, height: 394 },
-      roomBelow: 47,
-      count,
-    });
-    expect(fit.arrangement).toBe("strip");
+  it("360x591: dense tiles 34 tall, the rows tight, the player at 76%", () => {
+    const { fit } = phoneFit("360x591");
+    expect(fit.catalog.orientation).toBe("dense");
+    expect(fit.tight).toBe(true);
+    // 8 + 36 + 6 + 32 + 6 + (4 x 34 + 3 x 4) + 8, and the border.
+    expect(fit.height).toBe(245);
+    expect(fit.scale).toBeCloseTo(0.757, 2);
+    expect(fit.scale).toBeLessThan(QUICK_PICKER_MIN_PLAYER_SCALE);
+  });
+
+  it.each(["360x640", "375x667"] as SizeName[])(
+    "%s: dense tiles with the ordinary rows, the player over 80%",
+    (name) => {
+      const { fit } = phoneFit(name);
+      expect(fit.catalog.orientation).toBe("dense");
+      expect(fit.tight).toBe(false);
+      // 12 + 44 + 8 + 36 + 8 + 148 + 12, and the border.
+      expect(fit.height).toBe(269);
+      expect(fit.scale).toBeGreaterThanOrEqual(QUICK_PICKER_MIN_PLAYER_SCALE);
+    }
+  );
+
+  it("412x915: the largest pictures, the player lifted and whole", () => {
+    const { box, fit } = phoneFit("412x915");
+    expect(fit.catalog.orientation).toBe("stack");
+    expect(fit.catalog.portrait).toBeGreaterThan(MIN_CATALOG_PORTRAIT);
+    expect(fit.scale).toBe(1);
+    expect(fit.lift).toBeGreaterThan(0);
+    expect(fit.lift).toBeLessThan(box.roomAbove);
+    expect(fit.tight).toBe(false);
+  });
+
+  it("lifts only as far as the sheet needs, to the pixel", () => {
+    const { box, fit } = phoneFit("412x915");
+    const floor = box.bounds.top + box.bounds.height;
+    const bottom = box.player.top - fit.lift + (box.player.height - controls);
+    expect(floor - fit.height - bottom).toBeGreaterThanOrEqual(0);
+    expect(floor - fit.height - bottom).toBeLessThan(1);
+  });
+
+  it("scales the player from its top edge also where it has no room to lift", () => {
+    const { box, fit } = phoneFit("387x775");
+    expect(box.roomAbove).toBe(0);
+    expect(fit.lift).toBe(0);
+    expect(fit.scale).toBeLessThan(1);
+  });
+
+  it("never picks the strip or a scroll for any portrait phone", () => {
+    for (let height = 520; height <= 1000; height += 20) {
+      for (const width of [320, 344, 360, 375, 390, 412, 430]) {
+        if (height - 53 - 44 <= width) continue; // not held upright
+        const fit = fitEffectQuickPicker({
+          bounds: { left: 0, top: 53, width, height: height - 53 - 44 },
+          player: {
+            left: 3,
+            top: 83,
+            width: width - 6,
+            height: width - 6 + controls,
+          },
+          roomAbove: 30,
+          controls,
+          count,
+        });
+        expect(fit.arrangement).toBe("grid");
+        if (fit.arrangement !== "grid") continue;
+        expect(fit.catalog.cols).toBe(4);
+        expect(fit.scrolls).toBe(false);
+      }
+    }
   });
 
   it("leaves the laptop and landscape phone panels beside the player", () => {
@@ -475,198 +524,23 @@ describe("fitEffectQuickPicker on a phone held upright", () => {
       count,
     });
     expect(landscape.arrangement).toBe("side");
-    expect(landscape.arrangement === "side" && landscape.catalog?.cols).toBe(2);
-  });
-});
-
-describe("fitEffectQuickPicker lifting a tall phone's player", () => {
-  const count = EFFECTS.length;
-  // Measured on /create/generate while playing, the notation rail open: the
-  // content area, the player (its square animation and 44px of controls),
-  // the rail under it, and the empty room between the player's top and the
-  // top of the area it is centred in.
-  const phones = {
-    "375x812": {
-      bounds: { left: 0, top: 0, width: 375, height: 767.3 },
-      player: { left: 13, top: 148.5, width: 350, height: 394 },
-      roomBelow: 86.2,
-      roomAbove: 67.8,
-    },
-    "390x844": {
-      bounds: { left: 0, top: 0, width: 390, height: 799.3 },
-      player: { left: 13, top: 155, width: 365, height: 408.7 },
-      roomBelow: 90.7,
-      roomAbove: 74.3,
-    },
-    "430x932": {
-      bounds: { left: 0, top: 0, width: 430, height: 887.3 },
-      player: { left: 13, top: 172.8, width: 405, height: 448.7 },
-      roomBelow: 103,
-      roomAbove: 92.1,
-    },
-  };
-
-  function grid(box: Parameters<typeof fitEffectQuickPicker>[0]) {
-    const fit = fitEffectQuickPicker(box);
-    if (fit.arrangement !== "grid") throw new Error("expected a grid");
-    return fit;
-  }
-
-  /** The sheet stays under the lifted (and shrunk) animation and inside the
-   *  bounds, the player never rises past the room above it, and it never
-   *  shrinks past the least scale. */
-  function expectClear(
-    box: (typeof phones)["430x932"],
-    fit: ReturnType<typeof grid>
-  ) {
-    expect(fit.side).toBe("dock");
-    expect(fit.lift).toBeLessThanOrEqual(box.roomAbove);
-    expect(fit.scale).toBeGreaterThanOrEqual(QUICK_PICKER_MIN_PLAYER_SCALE);
-    expect(fit.scale).toBeLessThanOrEqual(1);
-    // It shrinks from its top edge.
-    const liftedBottom =
-      box.player.top - fit.lift + box.player.height * fit.scale;
-    expect(liftedBottom + fit.height).toBeLessThanOrEqual(
-      box.bounds.top + box.bounds.height
-    );
-  }
-
-  it("lifts the 430x932 player so every effect shows without scrolling", () => {
-    const box = phones["430x932"];
-    const fit = grid({ ...box, count });
-    expectClear(box, fit);
-    expect(fit.lift).toBeGreaterThan(0);
-    // Smaller pictures do it, so the player keeps its size.
-    expect(fit.scale).toBe(1);
-    expect(fit.scrolls).toBe(false);
-    expect(fit.catalog.rows * fit.catalog.cols).toBeGreaterThanOrEqual(count);
-    // Smaller pictures than the column allows, never under the smallest.
-    expect(fit.catalog.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
-    expect(fit.height).toBeGreaterThanOrEqual(
-      Math.ceil(gridPanelHeight(fit.catalog))
-    );
   });
 
-  it("lifts only as far as the grid needs", () => {
-    const box = { ...phones["430x932"], roomAbove: 200 };
-    const fit = grid({ ...box, count });
-    expectClear(box, fit);
-    expect(fit.scrolls).toBe(false);
-    expect(fit.lift).toBeLessThan(box.roomAbove);
-    expect(fit.scale).toBe(1);
-    // Not a pixel more: the sheet then reaches exactly to the bounds' floor.
-    expect(
-      box.player.top + box.player.height - fit.lift + fit.height
-    ).toBeGreaterThan(box.bounds.top + box.bounds.height - 1);
-    // The room holds the pictures at the size the columns allow.
-    const atRest = grid({ ...box, roomAbove: 0, count });
-    expect(fit.catalog.portrait).toBe(atRest.catalog.portrait);
-  });
-
-  it.each(["375x812", "390x844"] as const)(
-    "lifts the %s player all the way and shrinks it a little so every effect shows",
-    (name) => {
-      const box = phones[name];
-      const fit = grid({ ...box, count });
-      expectClear(box, fit);
-      expect(fit.lift).toBe(Math.floor(box.roomAbove));
-      expect(fit.scale).toBeLessThan(1);
-      expect(fit.scrolls).toBe(false);
-      expect(fit.catalog.rows * fit.catalog.cols).toBeGreaterThanOrEqual(count);
-      // Only as small as the rows need: a hundredth larger and they would not
-      // fit under it.
-      const larger = box.player.height * (fit.scale + 0.01);
-      expect(box.player.top - fit.lift + larger + fit.height).toBeGreaterThan(
-        box.bounds.top + box.bounds.height
-      );
-    }
-  );
-
-  it("scrolls rather than shrink the player past its least scale", () => {
-    const fit = grid({ ...phones["375x812"], roomAbove: 0, count });
-    expect(fit.lift).toBe(0);
-    expect(fit.scale).toBe(1);
-    expect(fit.scrolls).toBe(true);
-  });
-
-  it("does not lift where there is no room above", () => {
-    const fit = grid({ ...phones["430x932"], roomAbove: 0, count });
-    expect(fit.lift).toBe(0);
-    expect(fit.scale).toBe(1);
-    expect(fit.scrolls).toBe(true);
-  });
-
-  describe("with the head row covering the control row", () => {
-    const controls = 44;
-
-    it("lifts less than a sheet that stood under the control row", () => {
-      const box = phones["430x932"];
-      const under = grid({ ...box, count });
-      const over = grid({ ...box, controls, count });
-      expect(over.side).toBe("dock");
-      expect(over.lift).toBeLessThan(under.lift);
-      expect(over.lift).toBeGreaterThanOrEqual(0);
-    });
-
-    it("keeps the picture larger where the player has to shrink", () => {
-      const box = phones["375x812"];
-      const under = grid({ ...box, count });
-      const over = grid({ ...box, controls, count });
-      expect(under.scale).toBeLessThan(1);
-      expect(over.scale).toBeGreaterThan(under.scale);
-    });
-
-    it.each(["375x812", "390x844", "430x932"] as const)(
-      "meets the picture with no gap under the %s player",
-      (name) => {
-        const box = phones[name];
-        const fit = grid({ ...box, controls, count });
-        expect(fit.side).toBe("dock");
-        // The sheet stands on the floor; the control row's top, after the lift
-        // and the shrink (the row shrinks with the player), is its top edge.
-        const controlsTop =
-          box.player.top -
-          fit.lift +
-          fit.scale * (box.player.height - controls);
-        const sheetTop = box.bounds.top + box.bounds.height - fit.height;
-        expect(Math.abs(sheetTop - controlsTop)).toBeLessThanOrEqual(2);
-      }
-    );
-
-    it("hangs a floating tray from the control row's top, with no gap", () => {
-      const player = { left: 13, top: 60, width: 350, height: 394 };
-      const bounds = { left: 0, top: 0, width: 375, height: 900 };
-      const whole = grid({ bounds, player, roomBelow: 420, count });
-      // A room that holds the tray only because the control row's height
-      // counts as room under it.
-      const roomBelow = whole.height - controls;
-      const fit = grid({ bounds, player, roomBelow, controls, count });
-      expect(fit.side).toBe("below");
-      expect(fit.lift).toBe(0);
-      expect(fit.height).toBeLessThanOrEqual(roomBelow + controls);
-    });
-  });
-
-  it("never lifts the player for the side panel or a landscape phone", () => {
-    const laptop = fitEffectQuickPicker({
-      bounds: { left: 64, top: 0, width: 1366, height: 900 },
-      player: { left: 440, top: 81, width: 614, height: 658 },
-      roomAbove: 81,
+  it("a window wider than a phone keeps the older grid, with room for the hand row", () => {
+    const fit = fitEffectQuickPicker({
+      bounds: { left: 0, top: 0, width: 600, height: 1100 },
+      player: { left: 13, top: 60, width: 574, height: 574 + controls },
+      controls,
       count,
     });
-    expect(laptop.arrangement).toBe("side");
-    expect(laptop.lift).toBe(0);
-    expect(laptop.scale).toBe(1);
-    const landscape = fitEffectQuickPicker({
-      bounds: { left: 72, top: 0, width: 762, height: 390 },
-      player: { left: 351, top: 81, width: 205, height: 249 },
-      roomBelow: 8,
-      roomAbove: 77,
-      count,
-    });
-    expect(landscape.arrangement).toBe("side");
-    expect(landscape.lift).toBe(0);
-    expect(landscape.scale).toBe(1);
+    if (fit.arrangement !== "grid") return;
+    expect(fit.tight).toBe(false);
+    expect(gridPanelHeight(fit.catalog)).toBeGreaterThan(
+      2 * QUICK_PICKER_STRIP_PAD +
+        QUICK_PICKER_HEAD +
+        QUICK_PICKER_HEAD_GAP +
+        fit.catalog.rows * pictureTileHeight(fit.catalog.portrait)
+    );
   });
 });
 

@@ -1,38 +1,36 @@
 <!--
-  /lab/loop-words: LOOPs explained to a newcomer in ten screens, a draft for
-  Austen to correct (dev only; +page.server.ts returns 404 elsewhere). Every
-  word lives in copy.json and is editable in place through the dev edit bar.
-  Every picture is the real animator or real pictographs, played from engine
-  built LOOPs (_data/).
+  /lab/loop-words: what a LOOP is, on one screen, for a newcomer (dev only;
+  +page.server.ts returns 404 elsewhere). A sentence, the step beside the same
+  step under one LOOP type, the five types with a line each, and a small line.
+  It tours the five types by itself; a tap on a row stays on that type.
+
+  Exactly two players are ever mounted. The right one keeps its canvas and
+  changes sequence only at the start of a play, while both rest on the start
+  pose; its props glide to the new pose (the player's pose glide, via a fixed
+  transitionKey). Every word lives in copy.json and is editable in place
+  through the dev edit bar.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser, dev } from "$app/env";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import CopyText from "#lib/shared/copy-edit/CopyText.svelte";
   import { createPageCopy } from "#lib/shared/copy-edit/page-copy.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import {
-    EXAMPLES,
-    SHOWCASE_STEP,
-    REFLECTION_AXES,
-    TYPE_ORDER,
-    oneStepSequence,
-    type TypeKind,
-  } from "./_data/loop-words-examples";
+  import { TYPE_ORDER, type TypeKind } from "./_data/loop-kinds";
+  import { SHOWCASE_STEP, oneStepSequence } from "./_data/showcase-step";
   import {
     buildShowcaseTwins,
-    isTwinOf,
-    reflectionLineOf,
+    isQuarterTurnOf,
+    wrongTwins,
     type ShowcaseTwins,
   } from "./_data/showcase-twins";
-  import WhatScreen from "./_components/WhatScreen.svelte";
-  import FiveScreen from "./_components/FiveScreen.svelte";
-  import TypeScreen from "./_components/TypeScreen.svelte";
-  import LinesScreen from "./_components/LinesScreen.svelte";
-  import TimesScreen from "./_components/TimesScreen.svelte";
-  import WordsScreen from "./_components/WordsScreen.svelte";
+  import { lineOf, passesOf, tourPasses, type Pass } from "./_data/tour";
+  import { playAt, stepAt } from "./_components/clock";
+  import Player from "./_components/Player.svelte";
+  import TypeRow from "./_components/TypeRow.svelte";
   import copyJson from "./copy.json";
 
   const copy = createPageCopy({
@@ -40,52 +38,53 @@
     initial: copyJson,
   });
 
-  type Screen =
-    | { id: "what" }
-    | { id: "five" }
-    | { id: "type"; kind: TypeKind }
-    | { id: "lines" }
-    | { id: "times" }
-    | { id: "words" };
-
-  const SCREENS: Screen[] = [
-    { id: "what" },
-    { id: "five" },
-    // The four reflection lines follow the Reflected screen.
-    ...TYPE_ORDER.flatMap((kind): Screen[] =>
-      kind === "reflected"
-        ? [{ id: "type", kind }, { id: "lines" }]
-        : [{ id: "type", kind }]
-    ),
-    { id: "times" },
-    { id: "words" },
-  ];
-
-  let index = $state(0);
-  let direction = $state<1 | -1>(1);
-  const screen = $derived(SCREENS[index]!);
-
-  function go(to: number): void {
-    const next = Math.max(0, Math.min(SCREENS.length - 1, to));
-    if (next === index) return;
-    direction = next > index ? 1 : -1;
-    index = next;
-  }
-
-  // One clock for the page. Each screen counts from when it appeared, so a
-  // screen always opens on its first step.
-  let now = $state(0);
-  let shownAt = $state(0);
-  $effect(() => {
-    void index;
-    shownAt = performance.now();
-  });
-  const elapsed = $derived(Math.max(0, now - shownAt));
-
+  const base: SequenceData = oneStepSequence(SHOWCASE_STEP, "loop-words-step");
+  let showcase = $state.raw<ShowcaseTwins | null>(null);
+  let hasQuarter = $state(false);
+  let twinsChecked = $state<"pending" | "ok" | "wrong">("pending");
   let still = $state(false);
 
+  // One clock. `origin` is when the current run of plays began: page open,
+  // then each tap that picks a type.
+  let now = $state(0);
+  let origin = $state(0);
+  /** The type a tap picked; null while the page tours by itself. */
+  let pinned = $state<TypeKind | null>(null);
+  /** A tap during a move waits for the move to finish. */
+  let pending: TypeKind | null = null;
+
+  const at = $derived(playAt(now - origin, still));
+  const passes = $derived(
+    pinned ? passesOf(pinned, hasQuarter) : tourPasses(hasQuarter)
+  );
+  const pass = $derived(passes[at.index % passes.length]!);
+  const step = $derived(stepAt(0, at.frac));
+  const line = $derived(lineOf(pass.twin));
+
+  function twinFor(built: ShowcaseTwins, p: Pass): SequenceData {
+    if (p.twin === "quarter-turn") return built.quarter;
+    const reflection = lineOf(p.twin);
+    if (reflection) return built.lines[reflection];
+    return built.types[p.kind];
+  }
+  const twin = $derived(showcase ? twinFor(showcase, pass) : null);
+
+  function pick(kind: TypeKind): void {
+    if (kind === pinned && pending === null) return;
+    pending = kind;
+    if (!playAt(performance.now() - origin, still).moving) applyPending(performance.now());
+  }
+
+  function applyPending(t: number): void {
+    if (!pending) return;
+    pinned = pending;
+    pending = null;
+    origin = t;
+    now = t;
+  }
+
   // Dev only: the copy edit bar floats over the bottom of the window, so the
-  // page keeps that much room clear under the pager while the bar is there.
+  // page keeps that much room clear while the bar is there.
   let barSpace = $state(0);
   $effect(() => {
     if (!dev) return;
@@ -105,15 +104,6 @@
     };
   });
 
-  // Screen 2's step, its five twins and its four reflections (Create's own
-  // transforms), checked against the engine's pair algebra.
-  const base: SequenceData = oneStepSequence(SHOWCASE_STEP, "loop-words-step");
-  let showcase = $state<ShowcaseTwins | null>(null);
-  const twins = $derived<Record<TypeKind, SequenceData> | null>(
-    showcase?.types ?? null
-  );
-  let twinsChecked = $state<"pending" | "ok" | "wrong">("pending");
-
   onMount(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)");
     const readStill = () => {
@@ -126,25 +116,27 @@
 
     let frame = 0;
     const tick = (t: number) => {
+      if (pending && !playAt(t - origin, still).moving) applyPending(t);
       now = t;
       frame = requestAnimationFrame(tick);
     };
+    origin = performance.now();
     frame = requestAnimationFrame(tick);
 
     void buildShowcaseTwins(base).then((built) => {
-      const step = base.steps[0]!;
-      const wrong: string[] = TYPE_ORDER.filter(
-        (kind) => !isTwinOf(kind, step, built.types[kind].steps[0]!)
-      );
-      for (const axis of REFLECTION_AXES) {
-        const twin = built.lines[axis]?.steps[0];
-        if (!twin || reflectionLineOf(step, twin) !== axis) wrong.push(axis);
-      }
+      const stepData = base.steps[0]!;
+      const wrong = wrongTwins(stepData, built);
       if (wrong.length) {
         console.warn("loop-words: these twins are not their change", wrong);
       }
       twinsChecked = wrong.length ? "wrong" : "ok";
+      hasQuarter = isQuarterTurnOf(stepData, built.quarter.steps[0]!);
       showcase = built;
+      // The tour opens on its first type, from the start pose.
+      if (!pinned) {
+        origin = performance.now();
+        now = origin;
+      }
     });
 
     return () => {
@@ -152,26 +144,6 @@
       query.removeEventListener("change", readStill);
     };
   });
-
-  // Swipe: a mostly sideways drag of 40px or more turns the page.
-  let downAt: { x: number; y: number } | null = null;
-  function onPointerDown(event: PointerEvent): void {
-    downAt = { x: event.clientX, y: event.clientY };
-  }
-  function onPointerUp(event: PointerEvent): void {
-    if (!downAt) return;
-    const dx = event.clientX - downAt.x;
-    const dy = event.clientY - downAt.y;
-    downAt = null;
-    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-    go(index + (dx < 0 ? 1 : -1));
-  }
-  function onKeydown(event: KeyboardEvent): void {
-    const target = event.target as HTMLElement | null;
-    if (target?.isContentEditable || target?.closest?.("input, textarea")) return;
-    if (event.key === "ArrowRight") go(index + 1);
-    if (event.key === "ArrowLeft") go(index - 1);
-  }
 </script>
 
 <svelte:head>
@@ -179,82 +151,66 @@
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<svelte:window onkeydown={onKeydown} />
+{#snippet stepCaption()}<CopyText {copy} key="pair-step" />{/snippet}
+
+{#snippet twinCaption()}
+  <!-- Every name sits in the same cell, hidden, so the caption is always as
+       wide as the longest one and nothing moves when it changes. -->
+  <span class="caption-slot">
+    {#each TYPE_ORDER as kind (kind)}
+      <span class="caption-ghost" aria-hidden="true">{copy.text[`name-${kind}`]}</span>
+    {/each}
+    <span class="caption-live">
+      <Crossfade key={pass.kind} duration={DURATION.normal} mode="crossfade">
+        <CopyText {copy} key={`name-${pass.kind}`} />
+      </Crossfade>
+    </span>
+  </span>
+{/snippet}
 
 <main
   class="loop-words"
   data-twins={twinsChecked}
-  data-screen={index + 1}
+  data-active={pass.kind}
+  data-twin={pass.twin}
   style:--bar-space={`${barSpace}px`}
 >
-  <div
-    class="stage"
-    role="presentation"
-    onpointerdown={onPointerDown}
-    onpointerup={onPointerUp}
-    onpointercancel={() => (downAt = null)}
-  >
-    <Crossfade
-      key={index}
-      fill
-      mode="swap"
-      motion="step"
-      {direction}
-      duration={still ? 0 : DURATION.normal}
-      label={`${index + 1} / ${SCREENS.length}`}
-    >
-      <div class="screen-box">
+  <div class="band">
+    <h1 class="title"><CopyText {copy} key="what-title" /></h1>
+    <p class="sentence"><CopyText {copy} key="what-line" /></p>
+
+    <div class="pair-box">
+      <div class="pair">
         {#if browser}
-          {#if screen.id === "what"}
-            <WhatScreen {copy} example={EXAMPLES.rotated} {elapsed} {still} />
-          {:else if screen.id === "five"}
-            <FiveScreen {copy} {base} {twins} {elapsed} {still} />
-          {:else if screen.id === "type"}
-            <TypeScreen
-              {copy}
-              kind={screen.kind}
-              example={EXAMPLES[screen.kind]}
-              {elapsed}
-              {still}
-            />
-          {:else if screen.id === "lines"}
-            <LinesScreen
-              {copy}
-              lines={showcase?.lines ?? null}
-              {elapsed}
-              {still}
-            />
-          {:else if screen.id === "times"}
-            <TimesScreen {copy} example={EXAMPLES.quartered} {elapsed} {still} />
-          {:else}
-            <WordsScreen {copy} {twins} {elapsed} {still} />
-          {/if}
+          <Player
+            sequence={base}
+            {step}
+            moving={at.moving}
+            {line}
+            label={copy.text["pair-step"] ?? ""}
+            caption={stepCaption}
+          />
+          <Player
+            sequence={twin}
+            {step}
+            moving={at.moving}
+            {line}
+            transitionKey="loop-words-twin"
+            label={copy.text[`name-${pass.kind}`] ?? pass.kind}
+            caption={twinCaption}
+          />
         {/if}
       </div>
-    </Crossfade>
-  </div>
+    </div>
 
-  <nav class="pager">
-    <button
-      type="button"
-      class="turn"
-      aria-label={copy.text["pager-previous"]}
-      disabled={index === 0}
-      onclick={() => go(index - 1)}
-    >
-      <i class="fas fa-chevron-left" aria-hidden="true"></i>
-    </button>
-    <p class="mark" aria-live="polite">{index + 1} / {SCREENS.length}</p>
-    <button
-      type="button"
-      class="turn"
-      aria-label={copy.text["pager-next"]}
-      disabled={index === SCREENS.length - 1}
-      onclick={() => go(index + 1)}
-    >
-      <i class="fas fa-chevron-right" aria-hidden="true"></i>
-    </button>
-  </nav>
+    <div class="rows">
+      {#each TYPE_ORDER as kind (kind)}
+        <TypeRow {copy} {kind} active={pass.kind === kind} onpick={pick} />
+      {/each}
+    </div>
+
+    <p class="small"><CopyText {copy} key="what-small" /></p>
+  </div>
 </main>
 
 {#if dev}
@@ -266,79 +222,134 @@
 {/if}
 
 <style>
-  /* The page never scrolls: it is exactly the window, and each screen fits
-     the space between the top and the pager. */
+  /* The page never scrolls: it is exactly the window. The pair takes every
+     pixel the words do not need. */
   :global(html:has(.loop-words)),
   :global(body:has(.loop-words)) {
     overflow: hidden;
   }
 
   .loop-words {
+    container: loop-words / size;
     position: fixed;
     inset: 0;
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    max-width: 40rem;
-    margin-inline: auto;
-    padding: max(1rem, env(safe-area-inset-top)) 1rem
-      calc(max(0.5rem, env(safe-area-inset-bottom)) + var(--bar-space, 0px));
+    padding: max(1rem, var(--safe-top)) 1rem
+      calc(max(1rem, env(safe-area-inset-bottom)) + var(--bar-space, 0px));
     background: var(--gradient-cosmic, #0d1020);
     color: var(--theme-text, #fff);
     overflow: hidden;
   }
 
-  .stage {
-    position: relative;
+  /* Upright: the words above and below the pair, one column. The pair grows
+     to the two largest squares the width allows (--pair-max) and no further;
+     height left over goes to the rows, so no hole opens around the pair. */
+  .band {
+    --pair-max: calc(
+      (min(100cqw, var(--shell-w, 100cqw)) - 0.75rem) / 2 + 1.5rem
+    );
+    --side-cap: max(30rem, 40cqh);
+    justify-self: center;
+    width: min(100%, var(--shell-w, 100%));
     min-height: 0;
-    touch-action: none;
-    user-select: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows:
+      auto auto minmax(0, var(--pair-max)) minmax(min-content, 1fr)
+      auto;
+    grid-template-areas: "title" "sentence" "pair" "rows" "small";
+    row-gap: 0.5rem;
   }
 
-  .screen-box {
-    height: 100%;
+  /* Sideways phones and wide windows: the pair on the left, the words beside
+     it, the two centred as one group. A nearly square window (the Fold
+     unfolded with the edit bar up) stays upright, where the pair is larger.
+     On a large monitor each square stops at --side-cap, so the words are not
+     left as a footnote beside two giant pictures. */
+  @container loop-words (min-aspect-ratio: 4 / 3) {
+    .band {
+      grid-template-columns:
+        minmax(0, calc(2 * var(--side-cap) + 0.75rem))
+        minmax(0, 27.5rem);
+      justify-content: center;
+      grid-template-rows: minmax(0, 1fr) auto auto auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "pair ."
+        "pair title"
+        "pair sentence"
+        "pair rows"
+        "pair small"
+        "pair .";
+      column-gap: 1.5rem;
+    }
   }
 
-  .pager {
+  .title {
+    grid-area: title;
+    margin: 0;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .sentence {
+    grid-area: sentence;
+    margin: 0;
+    font-size: var(--font-size-base);
+    line-height: 1.35;
+  }
+
+  .pair-box {
+    grid-area: pair;
+    min-height: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding-top: 0.5rem;
+    justify-content: center;
+    container-type: size;
   }
 
-  .turn {
-    width: var(--alt-touch-target, 36px);
-    height: var(--alt-touch-target, 36px);
+  /* Two squares side by side, as large as the box allows. A caption takes
+     about 1.5rem under each. */
+  .pair {
+    --pair-gap: 0.75rem;
+    --side: max(
+      0px,
+      min(
+        calc((100cqw - var(--pair-gap)) / 2),
+        calc(100cqh - 1.5rem)
+      )
+    );
     display: grid;
-    place-items: center;
-    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.18));
-    border-radius: 999px;
-    background: var(--theme-card-bg, rgb(255 255 255 / 0.06));
-    color: inherit;
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    transition: opacity var(--duration-fast) var(--ease-standard);
+    grid-template-columns: repeat(2, var(--side));
+    gap: var(--pair-gap);
   }
 
-  .turn:disabled {
-    opacity: 0.35;
-    cursor: default;
+  .caption-slot {
+    display: inline-grid;
   }
 
-  .turn:focus-visible {
-    outline: 2px solid var(--theme-accent, #7aa2ff);
-    outline-offset: 2px;
+  .caption-ghost,
+  .caption-live {
+    grid-area: 1 / 1;
   }
 
-  .mark {
+  .caption-ghost {
+    visibility: hidden;
+  }
+
+  .rows {
+    grid-area: rows;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.125rem;
+  }
+
+  .small {
+    grid-area: small;
     margin: 0;
     font-size: var(--font-size-sm);
-    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
     color: var(--theme-text-dim, rgb(255 255 255 / 0.72));
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .turn {
-      transition: none;
-    }
   }
 </style>

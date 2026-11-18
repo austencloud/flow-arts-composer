@@ -20,9 +20,13 @@ import {
 } from "./cast-framing";
 
 export {
+  bodyFrameBox,
   castFrameBox,
   castFrameCenter,
+  fitBodiesShot,
   fitCastDistance,
+  BODY_HEIGHT_FILL,
+  BODY_MAX_WIDTH_FILL,
   isPointNearCast,
   projectedBoxFill,
   castStanding,

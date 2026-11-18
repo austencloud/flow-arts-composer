@@ -135,6 +135,7 @@
     position: fixed;
     inset: 0;
     z-index: 2;
+    padding-top: var(--safe-top);
     min-width: 0;
     min-height: 0;
     overflow: hidden;

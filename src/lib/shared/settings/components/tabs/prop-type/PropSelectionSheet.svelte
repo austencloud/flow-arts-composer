@@ -213,7 +213,7 @@
        calc(100dvh - safe-area-top): iOS tucks under the notch; on Android the
        top inset is ~0 so it stays pinned to the top (matches the Fold). */
     height: 100vh;
-    height: calc(100dvh - env(safe-area-inset-top, 0px));
+    height: calc(100dvh - var(--safe-top));
     --sheet-max-width: 480px;
     border-radius: var(--sheet-radius-large, 20px)
       var(--sheet-radius-large, 20px) 0 0;

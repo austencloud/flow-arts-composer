@@ -579,7 +579,7 @@
      env() is the web fallback; both are 0 on desktop). iOS input mode anchors
      the sheet to the visual viewport instead, so it keeps no top inset. */
   :global(.quick-feedback-drawer.bottom-sheet:not(.ios-input-mode)) {
-    padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+    padding-top: var(--safe-top);
   }
 
   /* iOS pans the visual viewport when its keyboard opens. Anchor the sheet to

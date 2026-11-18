@@ -538,6 +538,7 @@
    * containing block that used to be the trap becomes the feature.
    */
   .inspect-surface {
+    /* behind the status bar: a holder; the frosted panel inside pads its first row below it */
     position: fixed;
     inset: 0;
     z-index: var(--z-modal);
@@ -556,6 +557,9 @@
     -webkit-backdrop-filter: blur(22px) saturate(115%);
     width: 100%;
     height: 100%;
+    /* The frosted panel runs under the status bar; its first row starts below it. */
+    padding-top: var(--safe-top);
+    box-sizing: border-box;
     overflow: hidden;
     /* Everything below sizes off THIS box, not the viewport. Without it the
        responsive tier keyed to the panel's own width can never fire. */

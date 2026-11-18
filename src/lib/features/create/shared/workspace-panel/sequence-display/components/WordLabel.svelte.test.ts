@@ -44,10 +44,14 @@ function renderWordLabel() {
 describe("WordLabel word actions", () => {
   it("keeps inverse halves grouped while highlighting the expanded beat", () => {
     render(WordLabel, { word: "MW-Θ-QNX-Ω-P", activeStepNumber: 5 });
-    const letters = document.querySelectorAll(".word-label .letter");
+    const letters = document.querySelectorAll(".word-fit-row .letter");
     expect(letters).toHaveLength(8);
-    expect(document.querySelectorAll(".word-label .group-dot")).toHaveLength(1);
-    expect(document.querySelector(".word-label .letter.active")).toBe(letters[4]);
+    expect(document.querySelectorAll(".word-fit-row .group-dot")).toHaveLength(
+      1
+    );
+    expect(document.querySelector(".word-fit-row .letter.active")).toBe(
+      letters[4]
+    );
   });
 
   it("opens the action menu and reads the exact workspace label aloud", async () => {
@@ -127,6 +131,73 @@ describe("WordLabel word actions", () => {
         pointerType: "touch",
       })
     );
+  });
+
+  it("keeps the measuring ruler out of sight, touch and the accessible name", async () => {
+    const trigger = renderWordLabel();
+    await expect.element(trigger).toBeVisible();
+
+    const frame = document.querySelector<HTMLElement>(".word-ruler-frame");
+    expect(frame).not.toBeNull();
+    expect(frame!.getAttribute("aria-hidden")).toBe("true");
+    expect(frame!.inert).toBe(true);
+    expect(getComputedStyle(frame!).visibility).toBe("hidden");
+    expect(getComputedStyle(frame!).pointerEvents).toBe("none");
+    for (const img of frame!.querySelectorAll("img")) {
+      expect(img.getAttribute("alt")).toBe("");
+    }
+
+    // A hit test in the button's middle lands on the button's own row.
+    const button = trigger.element() as HTMLElement;
+    const box = button.getBoundingClientRect();
+    const hit = document.elementFromPoint(
+      box.left + box.width / 2,
+      box.top + box.height / 2
+    );
+    expect(hit && frame!.contains(hit)).toBeFalsy();
+  });
+
+  it("cuts a word that cannot fit to whole letters and one ellipsis, keeping the full word in its name", async () => {
+    const word = "KIΨ-DCΨIΘX-Ω-VVYΩVX";
+    const host = document.createElement("div");
+    host.className = "word-label-slot";
+    host.style.width = "60px";
+    document.body.append(host);
+    render(WordLabel, { target: host, props: { word } });
+
+    const button = host.querySelector<HTMLButtonElement>("button.word-label")!;
+    await expect.element(button).toBeVisible();
+    await expect
+      .poll(() => host.querySelectorAll(".word-fit-row .ellipsis").length)
+      .toBe(1);
+
+    expect(button.getAttribute("aria-label")).toContain(word);
+    const shown = host.querySelectorAll(".word-fit-row .letter").length;
+    expect(shown).toBeGreaterThanOrEqual(1);
+    expect(shown).toBeLessThan(12);
+    // Whole letters only: nothing in the row is narrower than it is drawn.
+    for (const letter of host.querySelectorAll<HTMLElement>(
+      ".word-fit-row .letter"
+    )) {
+      expect(letter.getBoundingClientRect().width).toBeGreaterThan(0);
+    }
+    expect(button.getBoundingClientRect().width).toBeLessThanOrEqual(
+      host.getBoundingClientRect().width + 0.5
+    );
+    host.remove();
+  });
+
+  it("never lets a letter, dot, bar or chevron shrink", () => {
+    render(WordLabel, { word: "MW-Θ-QNX-Ω-P" });
+    const pieces = document.querySelectorAll<HTMLElement>(
+      ".word-fit-row > .letter, .word-fit-row > .group-dot, .word-fit-row > .menu-indicator"
+    );
+    expect(pieces.length).toBeGreaterThan(0);
+    for (const piece of pieces) {
+      expect(getComputedStyle(piece).flexShrink).toBe("0");
+    }
+    const button = document.querySelector<HTMLElement>(".word-label.has-word")!;
+    expect(getComputedStyle(button).overflow).toBe("visible");
   });
 
   it("has no AAA accessibility violations", async () => {

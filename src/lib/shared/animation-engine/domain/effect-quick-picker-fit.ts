@@ -61,6 +61,9 @@
 import {
   CATALOG_CAPTION_HEIGHT,
   CATALOG_GAP,
+  DENSE_GAP,
+  DENSE_PHONE_ICON,
+  DENSE_TILE_HEIGHT,
   CATALOG_INNER_GAP,
   CATALOG_TILE_BORDER,
   CATALOG_TILE_PAD,
@@ -145,6 +148,15 @@ export type EffectQuickPickerFit =
       scale: number;
       /** The grid never moves the player sideways. */
       shift: 0;
+      /** The sheet's rows at their tight sizes (a phone short of room): the
+       *  hand row is 32px, not 36. */
+      tight: boolean;
+      /** A phone held upright: the sheet's rows take the fit's own sizes
+       *  (`tight` or ordinary) rather than the older grid's. */
+      phone: boolean;
+      /** Px the sheet still stands over the shrunk animation where not even
+       *  the floor scale makes room. 0 everywhere a phone is measured. */
+      short: number;
     }
   | {
       arrangement: "strip";
@@ -174,6 +186,15 @@ export type EffectQuickPickerFit =
 export const QUICK_PICKER_PAD = 12;
 export const QUICK_PICKER_HEAD = 44;
 export const QUICK_PICKER_HEAD_GAP = 8;
+/** The Both / Left / Right row between the head row and the tiles, and the
+ *  space under it (the head's own gap is above it). */
+export const QUICK_PICKER_HAND_ROW = 36;
+export const QUICK_PICKER_HAND_GAP = 8;
+/** The sheet's rows at their tight sizes, for a phone short of room. */
+export const QUICK_PICKER_TIGHT_PAD = 8;
+export const QUICK_PICKER_TIGHT_HEAD = 36;
+export const QUICK_PICKER_TIGHT_GAP = 6;
+export const QUICK_PICKER_TIGHT_HAND_ROW = 32;
 /** Space between the player and the panel, and between the panel and the
  *  edge of its bounds. */
 export const QUICK_PICKER_OFFSET = 12;
@@ -214,6 +235,13 @@ const STRIP_PORTRAIT_PER_WIDTH = 0.12;
 /** The docked grid shrinks a lifted player no further than this, so the
  *  animation stays the thing you are looking at. */
 export const QUICK_PICKER_MIN_PLAYER_SCALE = 0.8;
+/** With the sheet's rows already tight, the player may give up more, but
+ *  never under this. */
+export const QUICK_PICKER_FLOOR_PLAYER_SCALE = 0.75;
+/** A portrait window this narrow or narrower is a phone: its list is always
+ *  four tiles across and four down, never the strip. */
+export const QUICK_PICKER_PHONE_MAX_WIDTH = 480;
+const PHONE_COLUMNS = 4;
 
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
 
@@ -238,6 +266,8 @@ export function sidePanelHeight(
     2 * QUICK_PICKER_PAD +
     QUICK_PICKER_HEAD +
     QUICK_PICKER_HEAD_GAP +
+    QUICK_PICKER_HAND_ROW +
+    QUICK_PICKER_HAND_GAP +
     rows * tile +
     (rows - 1) * gap
   );
@@ -249,6 +279,8 @@ export function gridPanelHeight(catalog: EffectCatalogFit): number {
     2 * QUICK_PICKER_STRIP_PAD +
     QUICK_PICKER_HEAD +
     QUICK_PICKER_HEAD_GAP +
+    QUICK_PICKER_HAND_ROW +
+    QUICK_PICKER_HAND_GAP +
     catalog.rows * pictureTileHeight(catalog.portrait) +
     (catalog.rows - 1) * catalog.gap
   );
@@ -379,6 +411,10 @@ export function fitEffectQuickPicker({
     );
   }
 
+  if (isPortraitPhone(bounds)) {
+    return fitPhoneGrid({ bounds, player, roomAbove, controls, count });
+  }
+
   const strip = fitStrip(bounds, player, roomBelow, count);
   const grid = fitGrid(
     bounds,
@@ -406,6 +442,183 @@ export function fitEffectQuickPicker({
       )
       .find((option) => option !== null);
   return narrow ?? fitTwoRowStrip(bounds, player, controls, count, strip);
+}
+
+/** A portrait window as narrow as a phone's. */
+function isPortraitPhone(bounds: QuickPickerRect): boolean {
+  return (
+    bounds.width <= QUICK_PICKER_PHONE_MAX_WIDTH && bounds.height > bounds.width
+  );
+}
+
+/** The sheet's row sizes: ordinary, or tight where the phone is short. */
+interface SheetRows {
+  pad: number;
+  head: number;
+  gap: number;
+  hand: number;
+  tight: boolean;
+}
+const ORDINARY_ROWS: SheetRows = {
+  pad: QUICK_PICKER_PAD,
+  head: QUICK_PICKER_HEAD,
+  gap: QUICK_PICKER_HEAD_GAP,
+  hand: QUICK_PICKER_HAND_ROW,
+  tight: false,
+};
+const TIGHT_ROWS: SheetRows = {
+  pad: QUICK_PICKER_TIGHT_PAD,
+  head: QUICK_PICKER_TIGHT_HEAD,
+  gap: QUICK_PICKER_TIGHT_GAP,
+  hand: QUICK_PICKER_TIGHT_HAND_ROW,
+  tight: true,
+};
+
+/** The docked sheet's outer height: padding, head row, hand row, the gaps
+ *  between the three, the tiles, and the sheet's top border. */
+function phoneSheetHeight(rows: SheetRows, tilesHeight: number): number {
+  return (
+    2 * rows.pad +
+    rows.head +
+    rows.hand +
+    2 * rows.gap +
+    tilesHeight +
+    QUICK_PICKER_BORDER
+  );
+}
+
+/**
+ * The list on a phone held upright: always four tiles across and four down,
+ * under one head row and the hand row, never the strip and never a scroll.
+ * Pictures where a picture is 56px wide or more, the dense tile (icon over
+ * name, 34px tall) otherwise. When room is short, things give way in this
+ * order: (1) the player lifts into the empty room above it; (2) the pictures
+ * shrink to the smallest; (3) the player scales from its top edge down to
+ * `QUICK_PICKER_MIN_PLAYER_SCALE`, also with no room to lift; (4) the tiles go
+ * dense; (5) the sheet's rows go tight; (6) the player scales on, never under
+ * `QUICK_PICKER_FLOOR_PLAYER_SCALE`.
+ */
+function fitPhoneGrid({
+  bounds,
+  player,
+  roomAbove,
+  controls,
+  count,
+}: {
+  bounds: QuickPickerRect;
+  player: QuickPickerRect;
+  roomAbove: number;
+  controls: number;
+  count: number;
+}): EffectQuickPickerFit {
+  const floor = bounds.top + bounds.height;
+  // The sheet's head row covers the control row, so the animation is what
+  // lifts and shrinks; its bottom edge is what the sheet must stay under.
+  const animation = Math.max(1, player.height - Math.max(0, controls));
+  const reach = Math.max(0, Math.floor(roomAbove));
+  const roster = fitEffectRoster({
+    width: player.width - 2 * QUICK_PICKER_STRIP_PAD,
+    count,
+    columns: PHONE_COLUMNS,
+  });
+  const rowCount = Math.ceil(count / PHONE_COLUMNS);
+
+  /** What the player does for a sheet this tall: lifted only as far as it
+   *  needs, then (with all its lift used) shrunk from its top edge. Worked out
+   *  once for the open sheet, never per frame. */
+  const place = (sheet: number) => {
+    const need = Math.ceil(player.top + animation + sheet - floor);
+    if (need <= reach) return { lift: Math.max(0, need), scale: 1 };
+    const room = floor - sheet - (player.top - reach);
+    const scale = Math.floor((room / animation) * 1000) / 1000;
+    return { lift: reach, scale: Math.min(1, scale) };
+  };
+
+  const pictureCatalog = (portrait: number): EffectCatalogFit => ({
+    cols: PHONE_COLUMNS,
+    rows: rowCount,
+    orientation: "stack",
+    portrait,
+    gap: CATALOG_GAP,
+    fill: false,
+  });
+  const dense: EffectCatalogFit = {
+    cols: PHONE_COLUMNS,
+    rows: rowCount,
+    orientation: "dense",
+    portrait: 0,
+    gap: DENSE_GAP,
+    fill: false,
+    icon: DENSE_PHONE_ICON,
+    tile: DENSE_TILE_HEIGHT,
+  };
+  const tiles = (catalog: EffectCatalogFit) =>
+    catalog.rows *
+      (catalog.orientation === "dense"
+        ? DENSE_TILE_HEIGHT
+        : pictureTileHeight(catalog.portrait)) +
+    (catalog.rows - 1) * catalog.gap;
+
+  const take = (
+    catalog: EffectCatalogFit,
+    rows: SheetRows,
+    placed: { lift: number; scale: number },
+    short = 0
+  ): EffectQuickPickerFit => ({
+    arrangement: "grid",
+    side: "dock",
+    height: Math.ceil(phoneSheetHeight(rows, tiles(catalog))),
+    catalog,
+    scrolls: false,
+    lift: placed.lift,
+    scale: placed.scale,
+    shift: 0,
+    tight: rows.tight,
+    phone: true,
+    short,
+  });
+
+  if (roster) {
+    // (1), (2): the largest pictures that leave the player whole, lifted as
+    // far as that takes.
+    for (
+      let portrait = roster.portrait;
+      portrait >= MIN_CATALOG_PORTRAIT;
+      portrait--
+    ) {
+      const catalog = pictureCatalog(portrait);
+      const placed = place(phoneSheetHeight(ORDINARY_ROWS, tiles(catalog)));
+      if (placed.scale === 1) return take(catalog, ORDINARY_ROWS, placed);
+    }
+    // (3): the smallest pictures, the player lifted all the way and shrunk.
+    const smallest = pictureCatalog(MIN_CATALOG_PORTRAIT);
+    const placed = place(phoneSheetHeight(ORDINARY_ROWS, tiles(smallest)));
+    if (placed.scale >= QUICK_PICKER_MIN_PLAYER_SCALE) {
+      return take(smallest, ORDINARY_ROWS, placed);
+    }
+  }
+
+  // (4) dense tiles, still four across, with the ordinary rows; (5) the rows
+  // tight; (6) the player on down to its floor.
+  const ordinary = place(phoneSheetHeight(ORDINARY_ROWS, tiles(dense)));
+  if (ordinary.scale >= QUICK_PICKER_MIN_PLAYER_SCALE) {
+    return take(dense, ORDINARY_ROWS, ordinary);
+  }
+  const tight = place(phoneSheetHeight(TIGHT_ROWS, tiles(dense)));
+  if (tight.scale >= QUICK_PICKER_FLOOR_PLAYER_SCALE) {
+    return take(dense, TIGHT_ROWS, tight);
+  }
+  // Not even this makes room: the floor scale, and the sheet reports by how
+  // many px it stands over the animation.
+  const sheet = phoneSheetHeight(TIGHT_ROWS, tiles(dense));
+  const bottom =
+    player.top - reach + animation * QUICK_PICKER_FLOOR_PLAYER_SCALE;
+  return take(
+    dense,
+    TIGHT_ROWS,
+    { lift: reach, scale: QUICK_PICKER_FLOOR_PLAYER_SCALE },
+    Math.max(0, Math.ceil(bottom + sheet - floor))
+  );
 }
 
 /** The room for the panel on `side` of `player`, at most `target`. */
@@ -470,7 +683,9 @@ function fitSide(
       2 * QUICK_PICKER_PAD -
       2 * QUICK_PICKER_BORDER -
       QUICK_PICKER_HEAD -
-      QUICK_PICKER_HEAD_GAP,
+      QUICK_PICKER_HEAD_GAP -
+      QUICK_PICKER_HAND_ROW -
+      QUICK_PICKER_HAND_GAP,
     count,
   });
   // A player shorter than four across needs keeps the taller panel, and a
@@ -535,6 +750,8 @@ function fitNarrowSide(
     2 * QUICK_PICKER_PAD +
     QUICK_PICKER_HEAD +
     QUICK_PICKER_HEAD_GAP +
+    QUICK_PICKER_HAND_ROW +
+    QUICK_PICKER_HAND_GAP +
     1.5 * pictureTileHeight(pictures.portrait) +
     pictures.gap;
   if (height < least) return null;
@@ -723,7 +940,11 @@ function gridWins(
   // A scrolling grid shows a row and a half at least: the cut row under the
   // whole one shows that it scrolls.
   const head =
-    2 * QUICK_PICKER_STRIP_PAD + QUICK_PICKER_HEAD + QUICK_PICKER_HEAD_GAP;
+    2 * QUICK_PICKER_STRIP_PAD +
+    QUICK_PICKER_HEAD +
+    QUICK_PICKER_HEAD_GAP +
+    QUICK_PICKER_HAND_ROW +
+    QUICK_PICKER_HAND_GAP;
   if (scrolls && height < head + 1.5 * tile + catalog.gap) return null;
 
   // Whole tiles in view, against the strip's.
@@ -748,6 +969,9 @@ function gridWins(
     lift,
     scale,
     shift: 0,
+    tight: false,
+    phone: false,
+    short: 0,
   };
 }
 
@@ -778,6 +1002,8 @@ function wholeGrid(
       2 * QUICK_PICKER_STRIP_PAD +
       QUICK_PICKER_HEAD +
       QUICK_PICKER_HEAD_GAP +
+      QUICK_PICKER_HAND_ROW +
+      QUICK_PICKER_HAND_GAP +
       (roster.rows - 1) * roster.gap;
     // A tile's height grows with its picture's width by 3/8: solve for the
     // widest picture whose rows fit.

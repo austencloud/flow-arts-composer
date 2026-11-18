@@ -6762,7 +6762,7 @@
   "effect_deep_name_silk": "Soie",
   "effect_deep_name_smoke": "Fumée",
   "effect_deep_name_soft_photographic_glow": "Douce lueur photographique",
-  "effect_deep_name_sparkle": "Scintillement",
+  "effect_deep_name_sparkle": "Étincelles",
   "effect_deep_name_sparse_green_motes": "Rares particules vertes",
   "effect_deep_name_spirit_veil": "Voile d’esprit",
   "effect_deep_name_starfall": "Pluie d’étoiles",
@@ -10332,5 +10332,10 @@
   "create_save_row_collection": "Collection",
   "create_save_collection_count": "{count} collections",
   "create_save_note_add": "Ajouter",
-  "library_ui_no_collection": "Aucune"
+  "library_ui_no_collection": "Aucune",
+  "effect_deep_which_prop": "Quel accessoire reçoit l'effet",
+  "effect_deep_tile_left_prop": "{effect}, accessoire gauche",
+  "effect_deep_tile_right_prop": "{effect}, accessoire droit",
+  "effect_deep_tile_both_props": "{effect}, les deux accessoires",
+  "effect_deep_left_and_right": "{left} sur l'accessoire gauche, {right} sur l'accessoire droit"
 }
