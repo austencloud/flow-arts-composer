@@ -242,6 +242,15 @@ export const QUICK_PICKER_FLOOR_PLAYER_SCALE = 0.75;
  *  four tiles across and four down, never the strip. */
 export const QUICK_PICKER_PHONE_MAX_WIDTH = 480;
 const PHONE_COLUMNS = 4;
+/** The narrowest picture on the phone's grid (19.5px tall). Every other host
+ *  keeps `MIN_CATALOG_PORTRAIT`; under this the phone's list is icon tiles. */
+export const QUICK_PICKER_PHONE_MIN_PICTURE = 52;
+/** With ordinary rows, the smallest pictures are taken only while the player
+ *  keeps this much of its size. */
+export const QUICK_PICKER_PICTURE_SCALE = 0.9;
+/** With the rows tight, the smallest pictures are taken while the player keeps
+ *  at least this much; pictures never take it lower. */
+export const QUICK_PICKER_PICTURE_FLOOR_SCALE = 0.8;
 
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
 
@@ -490,13 +499,16 @@ function phoneSheetHeight(rows: SheetRows, tilesHeight: number): number {
 /**
  * The list on a phone held upright: always four tiles across and four down,
  * under one head row and the hand row, never the strip and never a scroll.
- * Pictures where a picture is 56px wide or more, the dense tile (icon over
- * name, 34px tall) otherwise. When room is short, things give way in this
- * order: (1) the player lifts into the empty room above it; (2) the pictures
- * shrink to the smallest; (3) the player scales from its top edge down to
- * `QUICK_PICKER_MIN_PLAYER_SCALE`, also with no room to lift; (4) the tiles go
- * dense; (5) the sheet's rows go tight; (6) the player scales on, never under
- * `QUICK_PICKER_FLOOR_PLAYER_SCALE`.
+ * Pictures where a picture is 52px wide or more, the dense tile (icon over
+ * name, 34px tall) otherwise. The player lifts into the empty room above it
+ * first, and where that is not enough, things give way in this order:
+ * (1) the largest pictures that leave the player whole, with the ordinary
+ * rows; (2) the smallest pictures, with the ordinary rows, if the player keeps
+ * 90% of its size; (3) the rows go tight (shorter head and hand rows, less
+ * padding), with the largest pictures that leave the player whole; (4) the
+ * smallest pictures with the tight rows, if the player keeps 80%; (5) icon
+ * tiles, first with the ordinary rows if the player keeps 80%, then with the
+ * tight rows down to 75%, and last the player at 75% whatever the sheet needs.
  */
 function fitPhoneGrid({
   bounds,
@@ -520,6 +532,7 @@ function fitPhoneGrid({
     width: player.width - 2 * QUICK_PICKER_STRIP_PAD,
     count,
     columns: PHONE_COLUMNS,
+    minPortrait: QUICK_PICKER_PHONE_MIN_PICTURE,
   });
   const rowCount = Math.ceil(count / PHONE_COLUMNS);
 
@@ -579,27 +592,30 @@ function fitPhoneGrid({
   });
 
   if (roster) {
-    // (1), (2): the largest pictures that leave the player whole, lifted as
-    // far as that takes.
-    for (
-      let portrait = roster.portrait;
-      portrait >= MIN_CATALOG_PORTRAIT;
-      portrait--
-    ) {
-      const catalog = pictureCatalog(portrait);
-      const placed = place(phoneSheetHeight(ORDINARY_ROWS, tiles(catalog)));
-      if (placed.scale === 1) return take(catalog, ORDINARY_ROWS, placed);
-    }
-    // (3): the smallest pictures, the player lifted all the way and shrunk.
-    const smallest = pictureCatalog(MIN_CATALOG_PORTRAIT);
-    const placed = place(phoneSheetHeight(ORDINARY_ROWS, tiles(smallest)));
-    if (placed.scale >= QUICK_PICKER_MIN_PLAYER_SCALE) {
-      return take(smallest, ORDINARY_ROWS, placed);
+    // The ordinary rows, then the tight rows: the largest pictures that leave
+    // the player whole, else the smallest if the player keeps its share.
+    const stages: [SheetRows, number][] = [
+      [ORDINARY_ROWS, QUICK_PICKER_PICTURE_SCALE],
+      [TIGHT_ROWS, QUICK_PICKER_PICTURE_FLOOR_SCALE],
+    ];
+    for (const [rows, keep] of stages) {
+      for (
+        let portrait = roster.portrait;
+        portrait >= QUICK_PICKER_PHONE_MIN_PICTURE;
+        portrait--
+      ) {
+        const catalog = pictureCatalog(portrait);
+        const placed = place(phoneSheetHeight(rows, tiles(catalog)));
+        if (placed.scale === 1) return take(catalog, rows, placed);
+      }
+      const smallest = pictureCatalog(QUICK_PICKER_PHONE_MIN_PICTURE);
+      const placed = place(phoneSheetHeight(rows, tiles(smallest)));
+      if (placed.scale >= keep) return take(smallest, rows, placed);
     }
   }
 
-  // (4) dense tiles, still four across, with the ordinary rows; (5) the rows
-  // tight; (6) the player on down to its floor.
+  // (5) icon tiles, still four across: the ordinary rows, then tight, then
+  // the player on down to its floor.
   const ordinary = place(phoneSheetHeight(ORDINARY_ROWS, tiles(dense)));
   if (ordinary.scale >= QUICK_PICKER_MIN_PLAYER_SCALE) {
     return take(dense, ORDINARY_ROWS, ordinary);

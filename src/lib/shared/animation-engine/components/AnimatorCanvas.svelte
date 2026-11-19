@@ -135,6 +135,7 @@ Last audit: 2025-12-27
     hideProgressBar = false,
     overlayVisibility = undefined,
     shareStudioTransport = false,
+    transportOverShortCanvas = false,
     hideHeader = false,
     isSeamlesslyLoopable = undefined,
     progressBarVariant = "gradient",
@@ -267,6 +268,11 @@ Last audit: 2025-12-27
       >
     >;
     shareStudioTransport?: boolean;
+    /** On a window under 700 px tall, the transport row floats over the
+     *  canvas's bottom edge instead of taking a band of its own, so a short
+     *  phone gives that band's height to the picture. (The viewer dock's
+     *  tabs change form at the same height: TWO_ROWS_MIN_WINDOW_HEIGHT.) */
+    transportOverShortCanvas?: boolean;
     /** Hide the WordHeader slot (portrait-mobile reclaims this vertical space). */
     hideHeader?: boolean;
     isSeamlesslyLoopable?: boolean;
@@ -890,6 +896,20 @@ Last audit: 2025-12-27
     activeWordHeaderStep(currentStep, sequenceData?.steps.length ?? 0)
   );
 
+  // Where the transport floats over the canvas (`over-short-canvas`, same
+  // 700 px line as its media query), the bottom-corner glyphs sit above the
+  // row instead of under the pause button.
+  const SHORT_WINDOW_MAX_HEIGHT = 700;
+  let windowHeight = $state(Infinity);
+  let floatingTransportHeight = $state(0);
+  const glyphBottomInset = $derived(
+    !progressLine &&
+      transportOverShortCanvas &&
+      windowHeight < SHORT_WINDOW_MAX_HEIGHT
+      ? floatingTransportHeight
+      : 0
+  );
+
   function handleContextMenu(e: MouseEvent) {
     if (!hasContextMenu) return;
     cancelLongPress();
@@ -898,6 +918,8 @@ Last audit: 2025-12-27
     contextMenuHost?.openContextMenu(e.clientX, e.clientY);
   }
 </script>
+
+<svelte:window bind:innerHeight={windowHeight} />
 
 {#snippet cornerToggleControl()}
   <button
@@ -1022,6 +1044,7 @@ Last audit: 2025-12-27
       propElementalGlyphVisible={effectivePropElementalGlyphVisible}
       {propElementalType}
       {glyphFrame}
+      {glyphBottomInset}
       {effectiveBeatNumbersVisible}
       leftPathLinesVisible={effectiveLeftPathLinesVisible}
       rightPathLinesVisible={effectiveRightPathLinesVisible}
@@ -1083,6 +1106,7 @@ Last audit: 2025-12-27
     <div
       class="progress-slot"
       class:on-canvas={progressLine && motionCueProgressOnCanvas(motionCues)}
+      class:over-short-canvas={!progressLine && transportOverShortCanvas}
     >
       {#if progressLine}
         <SequenceProgressBar
@@ -1118,6 +1142,7 @@ Last audit: 2025-12-27
         <div
           class="shared-transport"
           data-shared-studio-transport={shareStudioTransport || undefined}
+          bind:clientHeight={floatingTransportHeight}
           use:ownTransport={{
             target: sharedTransport?.transportTarget ?? null,
             animate: true,
@@ -1624,7 +1649,8 @@ Last audit: 2025-12-27
      is always an in-flow row — it reserves its own space and the canvas above
      shrinks to fit, never the other way around. (A floating overlay variant
      existed briefly and covered the bottom of the canvas; Viewer3DCanvas's
-     timeline is in-flow now too, so both panes press up.) */
+     timeline is in-flow now too, so both panes press up.) The one exception
+     is a host's opt-in on a short window: `over-short-canvas` below. */
   /* Not clipped: the progress line runs along the slot's top edge, and its
      scrub knob is centred on that line, so half of it overhangs the canvas.
      The content wrapper still clips anything past the player. */
@@ -1660,6 +1686,41 @@ Last audit: 2025-12-27
   .progress-slot.on-canvas :global(.playback-line .line) {
     top: auto;
     bottom: 0;
+  }
+
+  /* A short window (under 700 px, the viewer dock's two-row limit): the
+     transport row floats on the canvas's bottom edge like a video player's,
+     over a fade, with the progress line along the very bottom. The slot
+     takes no height, so the canvas gets the row's band. A transport loaned
+     to the studio leaves this slot and keeps its own look. */
+  @media (max-height: 699.98px) {
+    .progress-slot.over-short-canvas {
+      position: relative;
+      z-index: 4;
+      height: 0;
+    }
+    .progress-slot.over-short-canvas > .shared-transport {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+    }
+    .progress-slot.over-short-canvas :global(.unified-timeline) {
+      background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.62),
+        rgba(0, 0, 0, 0.3) 60%,
+        transparent
+      );
+      backdrop-filter: none;
+    }
+    .progress-slot.over-short-canvas :global(.unified-timeline .transport-pill) {
+      padding-top: 10px;
+      padding-bottom: calc(var(--transport-line-height) + 4px);
+    }
+    .progress-slot.over-short-canvas :global(.pill-track .line) {
+      top: auto;
+      bottom: 0;
+    }
   }
 
   /* The live canvas has its own flight while its transport takes another slot.

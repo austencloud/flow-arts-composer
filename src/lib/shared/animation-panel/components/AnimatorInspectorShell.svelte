@@ -6,6 +6,7 @@
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { EffectCatalogLook } from "#lib/shared/animation-engine/components/effects-panel/effect-catalog-looks";
   import IconRailNav from "../pill-nav/IconRailNav.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   interface RailPill {
     id: T;
@@ -36,6 +37,8 @@
     artPanel = false,
     regionLabel = "Animation controls",
     pageOnly = false,
+    navigation = "rail",
+    navigationLead,
     onNavMount,
     onScrollMount,
   }: {
@@ -58,11 +61,43 @@
      *  (a dock under its stage, a panel with its own heading) gets the page
      *  alone: no rail, no page title and no sidebar surface of its own. */
     pageOnly?: boolean;
+    /**
+     * `rail` (every host but one): the icon column down the side, and the
+     * page's title over it. `tabs`: the pages as named tabs in one row across
+     * the top, after `navigationLead` (the host's way back), and no page
+     * title, since the selected tab already names the page. For a host whose
+     * pane is this panel and nothing else (the Shape Engine's Customize
+     * workspace).
+     */
+    navigation?: "rail" | "tabs";
+    navigationLead?: Snippet;
     onNavMount?: (element: HTMLElement | null) => void;
     onScrollMount?: (element: HTMLElement | null) => void;
   } = $props();
 
   let panelScrollElement = $state<HTMLElement>();
+  let tabsRowElement = $state<HTMLElement>();
+
+  const tabbed = $derived(navigation === "tabs" && !pageOnly);
+  const uid = $props.id();
+  const tabId = (id: T) => `${uid}-tab-${id}`;
+  const panelId = `${uid}-page`;
+  // The rail's names and summaries ("Effects: Trails") are the tabs' names.
+  const tabOptions = $derived(
+    pills.map((pill) => ({
+      value: pill.id,
+      label: pill.label,
+      ariaLabel: pill.summary ? `${pill.label}: ${pill.summary}` : pill.label,
+      id: tabId(pill.id),
+      controls: panelId,
+    }))
+  );
+
+  $effect(() => {
+    if (!tabbed) return;
+    onNavMount?.(tabsRowElement ?? null);
+    return () => onNavMount?.(null);
+  });
 
   $effect(() => {
     onScrollMount?.(panelScrollElement ?? null);
@@ -80,8 +115,23 @@
   aria-label={regionLabel}
   inert={exporting || undefined}
 >
+  {#if tabbed}
+    <div class="inspector-tabs-row" bind:this={tabsRowElement}>
+      {#if navigationLead}{@render navigationLead()}{/if}
+      <div class="inspector-tabs">
+        <SegmentedControl
+          options={tabOptions}
+          value={(activeId ?? pills[0]?.id) as T}
+          onchange={(id) => onSelect(id)}
+          semantics="tabs"
+          color="accent"
+          ariaLabel={regionLabel}
+        />
+      </div>
+    </div>
+  {/if}
   <div class="sidebar-rail-layout">
-    {#if !pageOnly}
+    {#if !pageOnly && !tabbed}
       <IconRailNav
         {pills}
         {activeId}
@@ -112,8 +162,13 @@
                   class="panel-center-inner"
                   class:fill-body={fillBody}
                   class:fluid-body={fluidBody}
+                  id={tabbed ? panelId : undefined}
+                  role={tabbed ? "tabpanel" : undefined}
+                  aria-labelledby={tabbed && activeId
+                    ? tabId(activeId)
+                    : undefined}
                 >
-                  {#if !pageOnly}
+                  {#if !pageOnly && !tabbed}
                     <h2 class="panel-title">{activeLabel}</h2>
                   {/if}
                   {@render body()}
@@ -160,6 +215,29 @@
 
   .animator-inspector.exporting {
     opacity: 0.5;
+  }
+
+  /* Tabs: the host's way back, then the pages by name, in one row. The tabs
+     take the rest of the row and share it; a word never shrinks below its
+     own width (flex-basis auto), so the longest language still fits whole. */
+  .inspector-tabs-row {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* Tight below: the page's first row sits a gap under the line, no more. */
+    padding: 8px 14px 6px;
+    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+  }
+
+  .inspector-tabs {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .inspector-tabs :global(.ui-segments button) {
+    flex: 1 1 auto;
+    white-space: nowrap;
   }
 
   .sidebar-rail-layout {

@@ -13,6 +13,7 @@
     CATALOG_TILE_PAD,
     MAX_LIST_ROW,
     type EffectCatalogFit,
+    type EffectPictureFit,
   } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
 
   interface Props {
@@ -56,6 +57,11 @@
      *  an object while they differ, which puts one dot per hand on the tile it
      *  wears. Omit for a host with one effect for everything. */
     pair?: { left: string; right: string } | null;
+    /** A host whose pane is the effects page alone: four across, each tile
+     *  its picture over a 14px name, the rows sharing the height the parent
+     *  gives the grid (`fitEffectPictures`). Takes the place of `catalog`;
+     *  needs `portrait`. */
+    pictures?: EffectPictureFit | null;
   }
 
   const {
@@ -73,6 +79,7 @@
     onOff,
     dock = false,
     pair,
+    pictures = null,
   }: Props = $props();
 
   // With two props every tile keeps both dot slots mounted, so a dot fades
@@ -105,7 +112,8 @@
     };
   }
 
-  const showCatalog = $derived(!!catalog);
+  const pictureGrid = $derived(!!pictures && !!portrait);
+  const showCatalog = $derived(!!catalog && !pictureGrid);
   const showPortraits = $derived(
     !!catalog && catalog.portrait > 0 && !!portrait
   );
@@ -138,14 +146,18 @@
   class="effect-selector-shell"
   class:fit
   class:catalog={showCatalog}
-  class:fill={catalog?.fill}
+  class:fill={(showCatalog && catalog?.fill) || pictureGrid}
 >
   <div
     class="effect-selector"
     class:tray={layout === "tray"}
     class:pictures={trayPictures}
     class:catalog={showCatalog}
-    class:fill={catalog?.fill}
+    class:fill={showCatalog && catalog?.fill}
+    class:picture-grid={pictureGrid}
+    style:--fx-picture-cols={pictureGrid ? pictures?.cols : undefined}
+    style:--fx-picture-rows={pictureGrid ? pictures?.rows : undefined}
+    style:--fx-picture-gap={pictureGrid ? `${pictures?.gap}px` : undefined}
     class:dock
     class:fixed-tile={!!catalog?.tile}
     data-orientation={catalog?.orientation}
@@ -212,7 +224,16 @@
         onpointerdown={() => !disabled && onPrewarm?.(effect.id)}
         use:claimedViewTransitionName={morphPart("tile", effect.id)}
       >
-        {#if showCatalog}
+        {#if pictureGrid && portrait}
+          <span
+            class="effect-portrait page-picture"
+            class:whole={!pictures?.cover}
+            aria-hidden="true"
+          >
+            {@render portrait(effect.id)}
+          </span>
+          <span class="effect-label">{effectUiLabel(effect.label)}</span>
+        {:else if showCatalog}
           {#if showPortraits && portrait}
             <span
               class="effect-portrait"
@@ -273,7 +294,7 @@
             /></span
           >
         {/if}
-        {#if isActive && activeAction === "tune" && !dock}
+        {#if isActive && activeAction === "tune" && !dock && !pictureGrid}
           <span
             class="tune-badge"
             aria-hidden="true"
@@ -680,5 +701,65 @@
 
   .tune-badge i {
     font-size: 9px;
+  }
+
+  /* ── The pictures page (`pictures`) ──
+     The grid divides the height its parent gives it into rows; inside a tile
+     the name keeps its one line and the picture takes the rest, so nothing in
+     the tile has a fixed height. The numbers are effect-catalog-fit.ts's
+     PICTURE_* constants. */
+  .effect-selector.picture-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    grid-template-columns: repeat(var(--fx-picture-cols), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--fx-picture-rows), minmax(0, 1fr));
+    gap: var(--fx-picture-gap);
+  }
+
+  .picture-grid .effect-btn {
+    min-height: 0;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 4.5px;
+    border-radius: 12px;
+    color: var(--theme-text, white);
+  }
+
+  .effect-portrait.page-picture {
+    flex: 1 1 0;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    border-radius: 8px;
+  }
+
+  .page-picture > :global(*) {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The painting is never stretched: it fills a box near its own shape, and
+     sits whole in one that is not (the tiles of an effects-off page). */
+  .page-picture :global(canvas) {
+    object-fit: cover;
+  }
+
+  .page-picture.whole :global(canvas) {
+    object-fit: contain;
+  }
+
+  .picture-grid .effect-label {
+    flex: none;
+    height: 22px;
+    line-height: 22px;
+    font-size: var(--font-size-min, 14px);
+    font-weight: 600;
+  }
+
+  /* Selected: the whole ring and a tint of the effect's ink. */
+  .picture-grid .effect-btn.active {
+    border-width: 2px;
+    padding: 4px;
+    background: color-mix(in srgb, var(--effect-color) 16%, transparent);
   }
 </style>

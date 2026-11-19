@@ -1459,6 +1459,14 @@
     scroll-snap-align: start;
   }
 
+  /* A phone's picture tile is as narrow as 52px of picture, so the name takes
+     the tile's whole inner width, as the icon tile's does: the longest names
+     ("Pulsazione", "Inchiostro") stay whole. The picture is centred, so it
+     stays where it was. */
+  .fx-quick-panel.phone :global(.catalog[data-orientation="stack"] .effect-btn) {
+    padding-inline: 0;
+  }
+
   /* The leading Off tile: slim (QUICK_PICKER_OFF_WIDTH, the touch-target
      floor), the rows' height, the power glyph above the word. */
   .fx-quick-off-tile {

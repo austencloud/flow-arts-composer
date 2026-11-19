@@ -59,8 +59,13 @@
      *
      * - `fit`   every chip in a grid sharing the height the host gives the dock.
      *           Nothing scrolls, whatever the effect's look count.
+     * - `cards` no box: a "Looks" head with Tune, then every look as one card
+     *           of one shape with its picture, Original last. The effect's
+     *           name is on its tile above, so the head leaves it out.
      */
-    looks?: "rail" | "wrap" | "tiles" | "fit";
+    looks?: "rail" | "wrap" | "tiles" | "fit" | "cards";
+    /** Your look's settings, for its card under `cards`. */
+    customPatch?: Record<string, unknown> | null;
   }
 
   const {
@@ -81,6 +86,7 @@
     tuneError = false,
     tuneLabel = "",
     looks = "rail",
+    customPatch = null,
   }: Props = $props();
 
   const accent = $derived(effectInk(registration.meta.color, getThemeMode()));
@@ -93,6 +99,7 @@
 <section
   class="effect-dock"
   class:fit={looks === "fit"}
+  class:cards={looks === "cards"}
   style:--effect-accent={accent}
   aria-label={t("effect_deep_effect_controls", {
     effect: effectUiLabel(registration.meta.label),
@@ -110,10 +117,15 @@
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
       </button>
     {/if}
-    <span class="dock-identity">
-      <i class="fas {registration.meta.icon} dock-icon" aria-hidden="true"></i>
-      <span class="dock-name">{effectUiLabel(registration.meta.label)}</span>
-    </span>
+    {#if looks === "cards"}
+      <span class="dock-looks">{t("effect_deep_looks")}</span>
+    {:else}
+      <span class="dock-identity">
+        <i class="fas {registration.meta.icon} dock-icon" aria-hidden="true"
+        ></i>
+        <span class="dock-name">{effectUiLabel(registration.meta.label)}</span>
+      </span>
+    {/if}
     {#if onTune}
       <button
         type="button"
@@ -134,7 +146,24 @@
     <p class="tune-error" role="alert">{t("effect_deep_tune_load_failed")}</p>
   {/if}
 
-  {#if looks === "tiles"}
+  {#if looks === "cards"}
+    <EffectPresetsSection
+      presetGroup={registration.presetGroup}
+      {activePresetId}
+      {defaultChipId}
+      {customChipId}
+      {customDisabled}
+      {customColors}
+      {customPatch}
+      accentColor={accent}
+      effectLabel={registration.meta.label}
+      {onSelectPreset}
+      showHeading={false}
+      showSummary={false}
+      showCustomize={false}
+      cards
+    />
+  {:else if looks === "tiles"}
     <!-- The inspector's own Looks section, rendered here rather than
          reimplemented: one owner for the thumbnail presentation, so the dock and
          the inspector can never drift apart on what a look looks like
@@ -387,6 +416,46 @@
     min-width: 2.75rem;
     text-align: right;
     flex-shrink: 0;
+  }
+
+  /* ── Cards: no box, words at reading size ── */
+  .effect-dock.cards {
+    gap: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+  }
+
+  .dock-looks {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: var(--font-size-md, 16px);
+    font-weight: 700;
+    color: var(--theme-text, white);
+  }
+
+  .effect-dock.cards .tune-btn,
+  .effect-dock.cards .slider-label,
+  .effect-dock.cards .slider-val {
+    font-size: var(--font-size-min, 14px);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .effect-dock.cards .slider-label {
+    font-weight: 600;
+    color: var(--theme-text, white);
+  }
+
+  /* The slider is the row's whole target: its box is the 44px row, with
+     the track centred in it. */
+  .effect-dock.cards .slider-row {
+    min-height: var(--min-touch-target, 44px);
+  }
+
+  .effect-dock.cards .slider {
+    height: var(--min-touch-target, 44px);
   }
 
   @media (prefers-reduced-motion: reduce) {

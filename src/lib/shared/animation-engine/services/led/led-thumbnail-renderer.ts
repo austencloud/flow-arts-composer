@@ -141,7 +141,7 @@ const RENDER_PIXELS_PER_VIEW_UNIT = 1.06;
  * thin ring cluster is a few faint pixels. Same renderer, same photometry: only
  * the sweep geometry and the final blit change.
  */
-export type LedFormat = "card" | "tile" | "chip";
+export type LedFormat = "card" | "tile" | "chip" | "tall";
 
 interface LedFraming {
   half: number;
@@ -184,6 +184,17 @@ const FRAMING: Record<LedFormat, LedFraming> = {
     gain: 1.1,
     thicken: 1.3,
     bloom: 0.95,
+  },
+  // The tall tile frames the chip's two figures in a taller box, shown four
+  // times larger, so the hairline needs less help than the chip's and the
+  // exposure sits between the chip and the tile.
+  tall: {
+    half: 0.26,
+    drift: 0.04,
+    stations: [0.28, 0.72],
+    gain: 1.3,
+    thicken: 1.6,
+    bloom: 0.9,
   },
 };
 

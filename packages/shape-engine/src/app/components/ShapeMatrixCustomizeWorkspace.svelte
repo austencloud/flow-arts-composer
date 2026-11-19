@@ -5,11 +5,12 @@
   watching: the hero, its relationships, the carousel and the dock stay put,
   and every change is judged against the live pair.
 
-  The body is the canonical Animator inspector, the export sidebar's own
-  grammar: a rail naming the four abilities (Effects, Props, Motion, Display)
-  beside one page at a time, each page composed for a sidebar's width. The
-  earlier overlay poured the dock tray's strips across a pane built for a
-  grid, and every section read as a few controls adrift in an empty room.
+  The body is the canonical Animator inspector with its pages named as tabs
+  in one row (Effects, Props, Motion, Display), after the way back, and one
+  page at a time under them, filling the pane. The earlier overlay poured the
+  dock tray's strips across a pane built for a grid, and every section read
+  as a few controls adrift in an empty room; the icon rail after it spent a
+  column and a title row saying what the tabs now say in words.
 
   One Customize button under the animation opens the workspace on the page
   the rail last showed, and the rail picks the page from there; nothing under
@@ -66,6 +67,7 @@
   const open = $derived(section !== null);
 
   const theoryEffects = ["trails", ...CANVAS2D_HOSTED_EFFECTS] as const;
+  const introId = $props.id();
   let backButton = $state<HTMLButtonElement | null>(null);
 
   function close(): void {
@@ -130,20 +132,14 @@
     class="customize-workspace"
     role="dialog"
     aria-label={t("shape_engine_customize_aria")}
+    aria-describedby={introId}
     tabindex="-1"
     onkeydown={onKeydown}
     transition:flyFade={{ y: 8 }}
   >
-    <header class="workspace-header">
-      <PanelButton bind:ref={backButton} onclick={close}>
-        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        <span>{t("shape_engine_back_to_grid")}</span>
-      </PanelButton>
-      <div class="workspace-title">
-        <h2>{t("shape_engine_customize_aria")}</h2>
-        <p>{t("shape_engine_customize_intro")}</p>
-      </div>
-    </header>
+    <!-- The dialog's name says what this is; the selected tab says which
+         page. The sentence stays for a screen reader. -->
+    <p id={introId} class="sr-only">{t("shape_engine_customize_intro")}</p>
     <div class="workspace-body">
       <AnimationPanel
         isExporting={false}
@@ -170,7 +166,20 @@
         showSequenceMarks={!theory}
         availableEffects={theory ? theoryEffects : undefined}
         regionLabel={t("shape_engine_animation_settings")}
-      />
+        navigation="tabs"
+      >
+        {#snippet navigationLead()}
+          <PanelButton
+            bind:ref={backButton}
+            onclick={close}
+            ariaLabel={t("shape_engine_back_to_grid")}
+            title={t("shape_engine_back_to_grid")}
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span class="back-words">{t("shape_engine_back_to_grid")}</span>
+          </PanelButton>
+        {/snippet}
+      </AnimationPanel>
     </div>
   </div>
 {/if}
@@ -186,7 +195,7 @@
     border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
     border-radius: 16px;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
     overflow: hidden;
@@ -199,39 +208,29 @@
       ),
       var(--theme-bg-deep, #0a0f14);
     color: var(--theme-text, #fff);
+    container: customize-workspace / inline-size;
   }
 
-  .workspace-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    min-height: var(--min-touch-target, 44px);
-    padding: 0.6rem 0.9rem;
-    border-bottom: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
-  }
-
-  .workspace-header :global(.panel-btn) {
+  .workspace-body :global(.panel-btn) {
     flex: 0 0 auto;
   }
 
-  .workspace-title {
-    display: grid;
-    gap: 0.15rem;
-    min-width: 0;
+  /* Back keeps its words while the row holds them in the longest of the
+     twelve languages, so the row looks the same in every one of them. Below
+     that, Back is its arrow alone; the words stay its accessible name.
+     Measured at 14px: Spanish needs a 518px row with three tabs and 579px
+     with Props as a fourth (outside the Composer); the row is the workspace
+     less its 1px borders, and a few pixels spare cover font rounding. */
+  @container customize-workspace (max-width: 523px) {
+    .back-words {
+      display: none;
+    }
   }
 
-  .workspace-title h2 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .workspace-title p {
-    margin: 0;
-    font-size: var(--font-size-min, 0.875rem);
-    line-height: 1.4;
-    color: var(--theme-text-dim, rgb(255 255 255 / 0.62));
+  @container customize-workspace (max-width: 584px) {
+    .workspace-body:has(:global(.ui-segments > :nth-child(4))) .back-words {
+      display: none;
+    }
   }
 
   .workspace-body {

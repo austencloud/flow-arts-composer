@@ -129,6 +129,7 @@ captureEffectDiagnostics to the context menu.
     propElementalGlyphVisible = false,
     propElementalType = null,
     glyphFrame = "pictograph",
+    glyphBottomInset = 0,
     effectiveBeatNumbersVisible = false,
     placementGlyphVisible = false,
     leftPathLinesVisible = false,
@@ -209,6 +210,8 @@ captureEffectDiagnostics to the context menu.
     propElementalGlyphVisible?: boolean;
     propElementalType?: ElementalType | null;
     glyphFrame?: GlyphOverlayFrameMode;
+    /** Pixels the bottom-corner glyphs keep clear of (a floating transport). */
+    glyphBottomInset?: number;
     effectiveBeatNumbersVisible?: boolean;
     /** Show the α/β/γ start→end position indicator (guide hand-path exploration). */
     placementGlyphVisible?: boolean;
@@ -644,6 +647,7 @@ captureEffectDiagnostics to the context menu.
           bothMotionsVisible}
         {propElementalType}
         {glyphFrame}
+        bottomInset={glyphBottomInset}
         stepNumbersVisible={effectiveBeatNumbersVisible}
         {placementGlyphVisible}
         opacity={chromeOpacity}

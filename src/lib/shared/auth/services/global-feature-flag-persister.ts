@@ -31,6 +31,7 @@ import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.j
 import { isValidUserRole } from "../domain/models/feature-flag";
 import type { UserRole } from "../domain/models/user-role";
 import type { GlobalFlagOverrides } from "./types";
+import { noteServiceFailure } from "#lib/shared/offline/state/service-outage-state.svelte.js";
 
 const LOG_PREFIX = "[GlobalFeatureFlagPersister]";
 const FIRESTORE_DOC_PATH = "config/featureFlags";
@@ -87,6 +88,7 @@ export class GlobalFeatureFlagPersister {
       return localOverrides;
     } catch (error) {
       console.warn(`${LOG_PREFIX} Firestore load failed, falling back to localStorage:`, error);
+      noteServiceFailure(error);
       return this.readLocalStorage();
     }
   }

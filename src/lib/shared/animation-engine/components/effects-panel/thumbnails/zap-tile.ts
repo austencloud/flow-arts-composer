@@ -15,7 +15,14 @@ import {
   lcg,
   terminal,
 } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type ZapIntent = EffectConfigMap["zap"];
 export const ZAP_TILE_SEED = 0x2a17;
@@ -144,7 +151,12 @@ function drawStorm(
     const i = 4 + Math.floor(rand() * (main.length - 8));
     const o = main[i]!;
     const ang = (rand() - 0.5) * 2.2 + (rand() < 0.5 ? -0.9 : 0.9);
-    let len = (60 + rand() * 110) * (0.5 + p.branching) * SCALE * 0.5 * (isSmallStyle(st) ? 0.7 : 1);
+    let len =
+      (60 + rand() * 110) *
+      (0.5 + p.branching) *
+      SCALE *
+      0.5 *
+      (isSmallStyle(st) ? 0.7 : 1);
     // Forks stay inside the tile: a bolt that leaves the frame reads as cropped.
     const yEnd = o.y + Math.sin(ang) * len;
     if (yEnd < 28) len *= (o.y - 28) / (o.y - yEnd);
@@ -244,7 +256,9 @@ function drawPlasma(
   );
   glowStroke(ctx, pts, width, p.leftColor, glow, p.intensity, "#fff", g);
   // Sputter sparks shedding off the arc: count follows frequency.
-  const sparks = isSmallStyle(st) ? Math.min(5, Math.round(p.frequency * 0.6)) : Math.round(p.frequency * 2.2);
+  const sparks = isSmallStyle(st)
+    ? Math.min(5, Math.round(p.frequency * 0.6))
+    : Math.round(p.frequency * 2.2);
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   for (let s = 0; s < sparks; s += 1) {
@@ -327,7 +341,13 @@ function drawWeb(
       ctx.fillStyle = "#fff";
       ctx.globalAlpha = p.intensity;
       ctx.beginPath();
-      ctx.arc(q.x, q.y, 2.4 * SCALE * (isSmallStyle(st) ? st.k * 0.6 : 1), 0, Math.PI * 2);
+      ctx.arc(
+        q.x,
+        q.y,
+        2.4 * SCALE * (isSmallStyle(st) ? st.k * 0.6 : 1),
+        0,
+        Math.PI * 2
+      );
       ctx.fill();
       ctx.restore();
     }
@@ -351,7 +371,7 @@ export function paintZapTile(
 ): void {
   const rand = lcg(ZAP_TILE_SEED);
   const st = isSmall(format)
-    ? SMALL_STYLE[format as "tile" | "chip"]
+    ? SMALL_STYLE[smallTable(format as SmallFormat)]
     : CARD_STYLE;
   if (st.view) frame(ctx, format, st.view, 0);
   ground(ctx, [0.03, 0.03, 0.06]);

@@ -57,6 +57,7 @@
     fit = false,
     room = false,
     dock = false,
+    share = false,
     onSettingChange,
     visibilityManagerOverride,
   }: {
@@ -71,6 +72,11 @@
     /** A phone's bottom dock: four across two rows that share the body's
      *  height, each row capped at 120px, and nothing scrolls. */
     dock?: boolean;
+    /** The page is this panel's alone (the Shape Engine's Customize
+     *  workspace, pages as tabs): the eight tiles share the whole box, two
+     *  across four rows (four across two in a wide box), names at reading
+     *  size and every word of a description shown. */
+    share?: boolean;
     onSettingChange?: (previousValue: string, value: string) => void;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
@@ -96,7 +102,14 @@
   onDestroy(() => vm.unregisterObserver(handleVisibilityChange));
 </script>
 
-<div class="effort-panel" class:fill class:fit class:room class:dock>
+<div
+  class="effort-panel"
+  class:fill
+  class:fit
+  class:room
+  class:dock
+  class:share
+>
   <div class="effort-grid" class:fill style:--effort-cols={columns}>
     {#each EFFORTS as effort}
       <button
@@ -224,6 +237,49 @@
   @container effort-panel (min-width: 34rem) and (min-height: 22rem) {
     .room .effort-sub {
       display: block;
+    }
+  }
+
+  /* Shared: the rows divide the box, the curve takes what the words leave. */
+  .effort-panel.share {
+    container: effort-panel / size;
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .share .effort-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .share .effort-btn,
+  .share .effort-btn.with-sub {
+    min-height: 0;
+    padding: 10px;
+    gap: 4px;
+    font-size: var(--font-size-min, 14px);
+  }
+  .share .effort-curve {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+  }
+  .share .effort-label,
+  .share .effort-sub {
+    flex: none;
+    max-width: 100%;
+    text-align: center;
+  }
+  .share .effort-sub {
+    line-height: 1.3;
+  }
+  @container effort-panel (orientation: landscape) {
+    .share .effort-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
     }
   }
 

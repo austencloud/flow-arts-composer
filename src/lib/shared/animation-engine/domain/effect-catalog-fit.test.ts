@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { DENSE_GAP, fitEffectPicker } from "./effect-catalog-fit";
+import {
+  DENSE_GAP,
+  fitEffectPicker,
+  fitEffectPictures,
+  PICTURE_CAPTION_HEIGHT,
+  PICTURE_GAP,
+  PICTURE_INNER_GAP,
+  PICTURE_INSET,
+} from "./effect-catalog-fit";
 
 const count = 17;
 
@@ -55,5 +63,65 @@ describe("fitEffectPicker", () => {
   it("answers nothing for an empty box", () => {
     expect(fitEffectPicker({ width: 0, height: 100, count })).toBeNull();
     expect(fitEffectPicker({ width: 100, height: 0, count })).toBeNull();
+  });
+});
+
+describe("fitEffectPictures", () => {
+  // The Customize workspace at 1455 x 1139, as measured in the browser: the
+  // page's grid box is 565 wide, 632 tall under Trails' three looks and 868
+  // with effects off.
+  it("gives his window's sixteen effects 135 x 152 tiles and 123 x 112 pictures", () => {
+    const fit = fitEffectPictures({ width: 565, height: 632, count: 16 });
+    expect(fit).toMatchObject({ cols: 4, rows: 4, gap: PICTURE_GAP });
+    expect(fit?.tileWidth).toBeCloseTo(135.25, 2);
+    expect(fit?.tileHeight).toBe(152);
+    expect(fit?.pictureWidth).toBeCloseTo(123.25, 2);
+    expect(fit?.pictureHeight).toBe(112);
+    expect(fit?.shape).toBe("tall");
+    expect(fit?.cover).toBe(true);
+  });
+
+  it("three times the picture the old roster had (101 x 38)", () => {
+    for (const height of [632, 868]) {
+      const fit = fitEffectPictures({ width: 565, height, count: 16 })!;
+      expect(fit.pictureWidth * fit.pictureHeight).toBeGreaterThanOrEqual(
+        3 * 101 * 38
+      );
+    }
+  });
+
+  it("rows add up to the height it was given, whatever the height", () => {
+    for (const height of [380, 452, 632, 868]) {
+      const fit = fitEffectPictures({ width: 565, height, count: 16 })!;
+      expect(fit.rows * fit.tileHeight + (fit.rows - 1) * fit.gap).toBeCloseTo(
+        height,
+        6
+      );
+      expect(fit.tileHeight).toBe(
+        fit.pictureHeight +
+          2 * PICTURE_INSET +
+          PICTURE_INNER_GAP +
+          PICTURE_CAPTION_HEIGHT
+      );
+    }
+  });
+
+  it("keeps the 6:5 painting whole in the tall tiles of an effects-off page", () => {
+    const fit = fitEffectPictures({ width: 565, height: 868, count: 16 })!;
+    expect(fit.tileHeight).toBe(211);
+    expect(fit.shape).toBe("tall");
+    expect(fit.cover).toBe(false);
+  });
+
+  it("paints the wide card for a short, wide picture box", () => {
+    const fit = fitEffectPictures({ width: 565, height: 300, count: 16 })!;
+    expect(fit.shape).toBe("wide");
+  });
+
+  it("answers null for a box with no room", () => {
+    expect(fitEffectPictures({ width: 0, height: 600, count: 16 })).toBeNull();
+    expect(
+      fitEffectPictures({ width: 565, height: 150, count: 16 })
+    ).toBeNull();
   });
 });

@@ -45,17 +45,21 @@
 {#if hidden}
   <!-- Customize belongs to the Composer's player. -->
 {:else if placement === "panel"}
-  <PanelButton
-    ariaLabel={open
-      ? t("shape_engine_customize_workspace_close")
-      : t("shape_engine_customize_aria")}
-    ariaPressed={open}
-    disabled={!hasPair}
-    onclick={toggle}
-  >
-    <i class="fas fa-sliders" aria-hidden="true"></i>
-    {t("shape_engine_customize")}
-  </PanelButton>
+  <!-- No box of its own: the slot only lets the pressed look reach the
+       shared button. -->
+  <span class="customize-slot">
+    <PanelButton
+      ariaLabel={open
+        ? t("shape_engine_customize_workspace_close")
+        : t("shape_engine_customize_aria")}
+      ariaPressed={open}
+      disabled={!hasPair}
+      onclick={toggle}
+    >
+      <i class="fas fa-sliders" aria-hidden="true"></i>
+      {t("shape_engine_customize")}
+    </PanelButton>
+  </span>
 {:else}
   <div class="stage-actions">
     <button
@@ -125,7 +129,13 @@
     );
   }
 
-  .stage-action.open {
+  .customize-slot {
+    display: contents;
+  }
+
+  /* Pressed while its workspace is open: the corner gear's own open look. */
+  .stage-action.open,
+  .customize-slot :global(.panel-btn[aria-pressed="true"]) {
     opacity: 1;
     color: var(--theme-text, #fff);
     background: color-mix(

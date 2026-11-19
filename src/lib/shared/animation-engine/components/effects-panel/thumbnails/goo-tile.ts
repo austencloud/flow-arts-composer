@@ -20,7 +20,14 @@ import {
   lcg,
   mix,
 } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type GooIntent = EffectConfigMap["goo"];
 export const GOO_TILE_SEED = 0x6007;
@@ -59,10 +66,7 @@ const SMALL: Record<"tile" | "chip", GooSmall> = {
   },
 };
 
-function arcAt(
-  t: number,
-  arc: Arc = ARC
-): { x: number; y: number } {
+function arcAt(t: number, arc: Arc = ARC): { x: number; y: number } {
   const u = 1 - t;
   return {
     x: u * u * arc.x0 + 2 * u * t * arc.cx + t * t * arc.x1,
@@ -80,7 +84,9 @@ function beads(
   const out: Bead[] = [];
   // Head radius, and the fraction of the arc the body spans.
   const thick = (14 + p.motionEmission * 24) * (small?.fat ?? 1);
-  const tailLen = small ? 0.7 + p.motionEmission * 0.28 : 0.55 + p.motionEmission * 0.4;
+  const tailLen = small
+    ? 0.7 + p.motionEmission * 0.28
+    : 0.55 + p.motionEmission * 0.4;
   const N = 70;
   for (let i = 0; i <= N; i += 1) {
     const t = 1 - (i / N) * tailLen; // 1 = head
@@ -176,7 +182,9 @@ export function paintGooTile(
   intent: GooIntent,
   format: TileFormat = "card"
 ): void {
-  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  const small = isSmall(format)
+    ? SMALL[smallTable(format as SmallFormat)]
+    : null;
   if (small) frame(ctx, format, small.view, 0);
   const rand = lcg(GOO_TILE_SEED);
   const pal = resolveWaterPalette(intent);

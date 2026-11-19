@@ -44,6 +44,27 @@ describe("fitDisplayGrid", () => {
     expect(size.height).toBeLessThanOrEqual(330);
   });
 
+  it("fits the Shape Engine's eleven Display tiles only with a short last row", () => {
+    // The Customize workspace's Display page at 1455 x 1139: a 565 x 918 box,
+    // eleven tiles with their props, nothing grouped. Eleven divides by no
+    // column count, so only a short row (which DisplayPanel centres) fits.
+    const box = {
+      ...CHIP,
+      gapX: 8,
+      gapY: 8,
+      count: 11,
+      width: 565,
+      height: 918,
+      grow: true,
+      groupBoundary: null,
+    };
+    expect(fitDisplayGrid(box)).toBeNull();
+    const fit = fitDisplayGrid({ ...box, allowPartialRows: true })!;
+    expect(fit.cols).toBe(3);
+    expect(11 % fit.cols).toBe(2);
+    expect(fit.tile * 3 + 8 * 2).toBeLessThanOrEqual(565);
+  });
+
   it("falls back to the width-only layout where pictures would be stamps", () => {
     // The side-by-side studio on a phone held sideways.
     expect(fitDisplayGrid({ ...CHIP, width: 255, height: 213 })).toBeNull();

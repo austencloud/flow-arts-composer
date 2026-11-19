@@ -28,6 +28,8 @@
     type TileFormat,
     frame,
     unitsPerDisplayPx,
+    smallTable,
+    type SmallFormat,
   } from "./tile-format";
 
   interface Props {
@@ -319,9 +321,11 @@
     const ctx = node.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const small = format === "card" ? null : SMALL[format];
+    const small = format === "card" ? null : SMALL[smallTable(format)];
     if (small) frame(ctx, format, small.view, 0);
-    const upp = small ? unitsPerDisplayPx(small.view, format as "tile" | "chip") : 1;
+    const upp = small
+      ? unitsPerDisplayPx(small.view, format as SmallFormat)
+      : 1;
 
     const intent = { ...CHARCOAL_DEFAULTS, ...(preset.patch ?? {}) };
     const params = semanticToCharcoalParams(
@@ -383,7 +387,9 @@
           small ? 1.1 * upp : 0.8,
           p.size * (0.55 + heat * 0.45) * 2
         );
-        ctx.lineWidth = small ? core * (pass.width > 1 ? 1.8 : 1) : core * pass.width;
+        ctx.lineWidth = small
+          ? core * (pass.width > 1 ? 1.8 : 1)
+          : core * pass.width;
         ctx.beginPath();
         ctx.moveTo(tx, ty);
         ctx.lineTo(x, y);

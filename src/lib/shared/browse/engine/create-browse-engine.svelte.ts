@@ -80,6 +80,7 @@ import {
   onLibrarySequenceAdded,
 } from "#lib/shared/library/library-events.js";
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { noteServiceFailure } from "#lib/shared/offline/state/service-outage-state.svelte.js";
 import {
   MIN_COLUMNS as MIN_COLUMNS_DEFAULT,
   getMaxColumnsForWidth,
@@ -752,6 +753,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     } catch (err) {
       if (!isCurrentRequest()) return;
       console.error("[BrowseEngine] Failed to load community sequences:", err);
+      noteServiceFailure(err);
       error = err instanceof Error ? err.message : "Failed to load sequences";
     } finally {
       if (isCurrentRequest()) isLoading = false;

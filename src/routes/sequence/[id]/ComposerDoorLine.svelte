@@ -74,7 +74,32 @@
     text-align: start;
     white-space: nowrap;
     cursor: pointer;
-    transition: background var(--duration-normal) var(--ease-standard);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      height var(--duration-emphasis) var(--ease-out),
+      min-height var(--duration-emphasis) var(--ease-out),
+      opacity var(--duration-normal) var(--ease-standard),
+      visibility 0s;
+  }
+
+  /* On a window under 700 px tall (the viewer dock's two-row limit) the line
+     steps aside while a dock menu is open, so the picture keeps its room,
+     and comes back when the menu closes. */
+  @media (max-height: 699.98px) {
+    :global(.sequence-route-page:has(.dock[data-tray-open]))
+      .composer-door-line {
+      height: 0;
+      min-height: 0;
+      opacity: 0;
+      border-bottom-width: 0;
+      visibility: hidden;
+      transition:
+        background var(--duration-normal) var(--ease-standard),
+        height var(--duration-emphasis) var(--ease-out),
+        min-height var(--duration-emphasis) var(--ease-out),
+        opacity var(--duration-fast) var(--ease-standard),
+        visibility 0s var(--duration-emphasis);
+    }
   }
 
   .composer-door-line:hover {

@@ -13,6 +13,7 @@
   Sections: Effects → Props → Motion → Display → Export.
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -260,6 +261,16 @@
      *  name and power button there, so the body keeps its height for the
      *  controls. Called with null when the tune view closes. */
     onEffectTuneHeading?: (heading: EffectTuneHeading | null) => void;
+    /**
+     * Sidebar only. `tabs` names the pages in one row across the top, after
+     * `navigationLead` (the host's way back), in place of the icon rail and
+     * the page title, and lets the Effects, Motion and Display pages take
+     * the whole pane: pictures first, rows sharing the height. For a host
+     * whose pane is this panel alone (the Shape Engine's Customize
+     * workspace). Every other host keeps the rail.
+     */
+    navigation?: "rail" | "tabs";
+    navigationLead?: Snippet;
   }
 
   let {
@@ -314,6 +325,8 @@
     dockTrayMaxHeight,
     dockStartsOpen = false,
     onEffectTuneHeading,
+    navigation = "rail",
+    navigationLead,
   }: Props = $props();
 
   const effectiveRegionLabel = $derived(
@@ -699,7 +712,9 @@
       : undefined
   );
 
-  const effortSummary = $derived(localizedEffortLabel(activeEffort.id as EffortId));
+  const effortSummary = $derived(
+    localizedEffortLabel(activeEffort.id as EffortId)
+  );
   const effortAccent = $derived(activeEffort.color);
 
   // What the Playback page (and the merged Motion page above Effort) holds.
@@ -715,6 +730,14 @@
    *  fit-room pages and every sidebar keep their own arrangements. */
   const phoneDock = $derived(
     layout === "bottom" && presentation === "content" && fillPages && !fitRoom
+  );
+  /** The tabbed host's pages: the pane is theirs, every row shares it. */
+  const tabbedPages = $derived(
+    navigation === "tabs" &&
+      layout === "sidebar" &&
+      presentation === "full" &&
+      visualPagesFill &&
+      !fitRoom
   );
 
   const playbackSummary = $derived.by(() => {
@@ -1070,6 +1093,7 @@
       showHeading={(layout === "bottom" && !visualPagesFill) ||
         (presentation === "content" && !fillPages)}
       fill={visualPagesFill}
+      page={tabbedPages}
       {fitRoom}
       {handProps}
       dock={phoneDock}
@@ -1140,7 +1164,11 @@
      carry one, and the effort tiles were the single unlabelled block under a
      heading named for something else. -->
 {#snippet effortBody(labelled = false)}
-  <div class="section-pad" class:fill-effort={visualPagesFill}>
+  <div
+    class="section-pad"
+    class:fill-effort={visualPagesFill}
+    class:shared-page={tabbedPages}
+  >
     {#if labelled}
       <span class="rt-section-label">{t("viewer_ui_effort")}</span>
     {/if}
@@ -1152,9 +1180,10 @@
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
       showSubtitles={layout === "sidebar" || fitRoom}
-      fill={visualPagesFill && !fitRoom && !phoneDock}
+      fill={visualPagesFill && !fitRoom && !phoneDock && !tabbedPages}
       room={fitRoom}
       dock={phoneDock}
+      share={tabbedPages}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -1223,7 +1252,7 @@
        its own tab in the dock, and both already name it. The label was earned
        back when this block sat inside the merged Motion page, where a heading
        named for something else needed correcting. -->
-  <div class="section-pad display-rows">
+  <div class="section-pad display-rows" class:shared-page={tabbedPages}>
     <div
       class="rt-section"
       role="region"
@@ -1239,6 +1268,7 @@
         fill={(layout === "sidebar" || visualPagesFill) && !phoneDock}
         dock={phoneDock}
         grow={fillPages}
+        share={tabbedPages}
         compact={fitRoom}
         room={fitRoom}
         {onSettingChange}
@@ -1349,8 +1379,7 @@
 
 {#snippet exportQualityField(labelled: boolean)}
   <div class="field" class:unlabelled={!labelled}>
-    {#if labelled}<span class="field-label">{t("viewer_ui_quality")}</span
-      >{/if}
+    {#if labelled}<span class="field-label">{t("viewer_ui_quality")}</span>{/if}
     <div class="rt-chip-row">
       <button
         type="button"
@@ -1380,8 +1409,7 @@
         type="button"
         class="rt-chip"
         aria-pressed={exportOptions?.videoIncludeStartPlacement}
-        onclick={() =>
-          setStartHold(!exportOptions?.videoIncludeStartPlacement)}
+        onclick={() => setStartHold(!exportOptions?.videoIncludeStartPlacement)}
       >
         <i class="fas fa-step-backward" aria-hidden="true"></i>
         {t("animation_export_start_hold")}
@@ -1659,6 +1687,8 @@
           resolvedPill === "motion" ||
           resolvedPill === "effort"))}
     pageOnly={presentation === "content"}
+    navigation={tabbedPages ? "tabs" : "rail"}
+    {navigationLead}
     regionLabel={presentation === "content"
       ? activePillLabel || effectiveRegionLabel
       : t("viewer_ui_animation_export_settings")}
@@ -2079,9 +2109,7 @@
   @container (width < 30rem) {
     .dock-dense:not(.fill)
       :global(
-        .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(
-            .host-sized
-          )
+        .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(.host-sized)
           .rt-chip
       ) {
       gap: 3px;
@@ -2094,9 +2122,7 @@
     }
     .dock-dense:not(.fill)
       :global(
-        .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(
-            .host-sized
-          )
+        .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(.host-sized)
           .chip-label
       ) {
       min-height: calc(2 * 1.1em);
@@ -2264,6 +2290,18 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  /* The tabbed host's Motion and Display pages: the page ends a gap above
+     the pane's edge, and the Motion page's one sentence is at reading size. */
+  .section-pad.shared-page {
+    gap: 12px;
+    padding-top: 4px;
+    padding-bottom: 12px;
+  }
+
+  .shared-page .section-hint {
+    font-size: var(--font-size-min, 14px);
   }
 
   .section-hint {

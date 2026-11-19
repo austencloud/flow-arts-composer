@@ -26,7 +26,14 @@ import {
   traceForward,
 } from "#lib/shared/effects/renderers/ribbon-trace.js";
 import { TILE_H, TILE_W, blob, css, ground, hexToRgb, mix } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type AnimalIntent = EffectConfigMap["animal"];
 
@@ -760,7 +767,10 @@ function stage(
   const path = densePath(wave ? WAVE_KNOTS : KNOTS);
   let pathLen = 0;
   for (let i = 1; i < path.length; i++)
-    pathLen += Math.hypot(path[i]!.x - path[i - 1]!.x, path[i]!.y - path[i - 1]!.y);
+    pathLen += Math.hypot(
+      path[i]!.x - path[i - 1]!.x,
+      path[i]!.y - path[i - 1]!.y
+    );
   // The wave: the body spans most of the wave whatever the preset, longer
   // bodies reaching a little further.
   const bodyLen = wave
@@ -831,7 +841,9 @@ export function paintAnimalTile(
   intent: AnimalIntent,
   format: TileFormat = "card"
 ): void {
-  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  const small = isSmall(format)
+    ? SMALL[smallTable(format as SmallFormat)]
+    : null;
   if (small) frame(ctx, format, small.view, 0);
   const pal = resolveAnimalPalette(intent);
   const body = hexToRgb(pal.body);

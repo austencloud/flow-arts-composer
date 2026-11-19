@@ -20,7 +20,14 @@ import {
   rollEmberFlag,
 } from "#lib/shared/effects/domain/petal-palettes.js";
 import { blob, ground, hexToRgb, lcg } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type PetalsIntent = EffectConfigMap["petals"];
 export const PETALS_TILE_SEED = 0x9e7a;
@@ -161,11 +168,11 @@ function smallLeaves(
   p: PetalsIntent,
   pal: PetalPalette,
   rand: Rand,
-  format: "tile" | "chip",
+  format: SmallFormat,
   view: Box
 ): Leaf[] {
   const k = 0.92 + Math.min(0.16, p.intensity * 0.16);
-  return SMALL_LEAVES[format].map(([u, v, sz, rot, face]) => {
+  return SMALL_LEAVES[smallTable(format)].map(([u, v, sz, rot, face]) => {
     const shape = pickPetalSprite(pal, rand);
     return {
       x: view.x + u * view.w,
@@ -190,10 +197,10 @@ export function paintPetalsTile(
   const rand = lcg(PETALS_TILE_SEED);
   const pal = resolvePetalPalette(intent);
   const view = isSmall(format)
-    ? frame(ctx, format, SMALL_VIEW[format as "tile" | "chip"], 0)
+    ? frame(ctx, format, SMALL_VIEW[smallTable(format as SmallFormat)], 0)
     : null;
   const leaves = view
-    ? smallLeaves(intent, pal, rand, format as "tile" | "chip", view)
+    ? smallLeaves(intent, pal, rand, format as SmallFormat, view)
     : petals(intent, pal, rand);
   const tint = hexToRgb(pal.tints[0] ?? "#ffffff");
   ground(ctx, [0.035, 0.03, 0.04]);
@@ -201,7 +208,15 @@ export function paintPetalsTile(
   // under the head where the newest leaves are.
   if (view) {
     // The pink glow the leaves sit in.
-    blob(ctx, view.x + view.w * 0.5, view.y + view.h * 0.5, view.w * 0.55, view.h * 0.8, tint, 0.3);
+    blob(
+      ctx,
+      view.x + view.w * 0.5,
+      view.y + view.h * 0.5,
+      view.w * 0.55,
+      view.h * 0.8,
+      tint,
+      0.3
+    );
   } else {
     blob(ctx, 300, 110, 330, 150, tint, 0.09);
     const head = arcAt(1);

@@ -58,6 +58,11 @@
      *  tool panel) shows bigger buttons rather than empty space below them.
      *  The arrangement and the picture size are still the fitted ones. */
     stretch = false,
+    /** With `fill`: the page is this panel's alone (the Shape Engine's
+     *  Customize workspace, pages as tabs). The fitted rows share the whole
+     *  box as under `stretch`, a short last row sits centred, half a tile
+     *  in where it must, and the names are at reading size. */
+    share = false,
     /** The host scrolls this panel inside a box it does not size (Post
      *  Studio's tool panel body), so there is no definite height to fit to.
      *  The tiles become short, in two rows where the width allows, and the
@@ -121,6 +126,7 @@
     fill?: boolean;
     grow?: boolean;
     stretch?: boolean;
+    share?: boolean;
     compact?: boolean;
     room?: boolean;
     hostSized?: boolean;
@@ -531,7 +537,8 @@
       count: chips.length,
       grow,
       minArt: compact ? COMPACT_MIN_ART : undefined,
-      allowPartialRows: compact,
+      // A shared page may end on a short row: it sits centred.
+      allowPartialRows: compact || share,
       // Compact chrome is measured from one-line labels; keep them on one.
       minTileWidth: compact ? widestLabel(gridEl) + padX + 2 : undefined,
       groupBoundary: showPropChips || compact ? null : 4,
@@ -679,7 +686,8 @@
   <div
     class="vis-grid-shell"
     class:fill
-    class:stretch={fill && (stretch || room)}
+    class:stretch={fill && (stretch || room || share)}
+    class:share={fill && share}
     class:room={fill && room}
     class:dock
     bind:this={shellEl}
@@ -695,7 +703,7 @@
       class:dock
       bind:this={gridEl}
       style={fitted
-        ? `--vis-cols: ${fitCols}; --vis-tile: ${fitTile}px; --tile-art: ${fitArt}px;`
+        ? `--vis-cols: ${fitCols}; --vis-cols2: ${fitCols * 2}; --vis-tile: ${fitTile}px; --tile-art: ${fitArt}px;`
         : dock
           ? `--vis-rows: ${Math.ceil(chips.length / 4)};`
           : undefined}
@@ -724,7 +732,13 @@
           fitted &&
           index === chips.length - (chips.length % fitCols)
             ? Math.floor((fitCols - (chips.length % fitCols)) / 2) + 1
-            : undefined}
+            : share &&
+                fill &&
+                fitted &&
+                chips.length % fitCols > 0 &&
+                index === chips.length - (chips.length % fitCols)
+              ? fitCols - (chips.length % fitCols) + 1
+              : undefined}
           onclick={() => toggleChip(chip)}
         >
           {#if chip.preview}
@@ -896,6 +910,21 @@
 
   .vis-grid-shell.stretch > .vis-grid.fitted .rt-chip {
     aspect-ratio: auto;
+  }
+
+  /* Shared: half-column tracks, each tile spanning two, so a short last row
+     can start half a tile in and sit centred (the start is set inline). */
+  .vis-grid-shell.share > .vis-grid.fitted {
+    grid-template-columns: repeat(var(--vis-cols2), minmax(0, 1fr));
+  }
+
+  .vis-grid-shell.share > .vis-grid.fitted > .rt-chip {
+    grid-column-end: span 2;
+    min-height: 0;
+  }
+
+  .vis-grid-shell.share .chip-label {
+    font-size: var(--font-size-min, 14px);
   }
 
   /* A host that never scrolls: a label keeps to the two lines the fit allowed

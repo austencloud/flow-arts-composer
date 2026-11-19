@@ -10337,5 +10337,7 @@
   "effect_deep_tile_left_prop": "{effect}，左侧道具",
   "effect_deep_tile_right_prop": "{effect}，右侧道具",
   "effect_deep_tile_both_props": "{effect}，两个道具",
-  "effect_deep_left_and_right": "左侧道具：{left}，右侧道具：{right}"
+  "effect_deep_left_and_right": "左侧道具：{left}，右侧道具：{right}",
+  "site_outage_title": "部分功能暂时无法使用",
+  "site_outage_body": "登录、保存、浏览和分享链接目前无法使用。网站的 Google 账号出了问题，Austen 正在努力恢复。"
 }

@@ -10337,5 +10337,7 @@
   "effect_deep_tile_left_prop": "{effect}, prop izquierdo",
   "effect_deep_tile_right_prop": "{effect}, prop derecho",
   "effect_deep_tile_both_props": "{effect}, ambos props",
-  "effect_deep_left_and_right": "{left} en el prop izquierdo, {right} en el prop derecho"
+  "effect_deep_left_and_right": "{left} en el prop izquierdo, {right} en el prop derecho",
+  "site_outage_title": "Algunas cosas no funcionan ahora mismo",
+  "site_outage_body": "El inicio de sesión, guardar, Explorar y los enlaces compartidos no funcionan. La cuenta de Google del sitio tiene un problema, y Austen está trabajando para recuperarla."
 }

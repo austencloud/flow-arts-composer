@@ -16,7 +16,14 @@ import {
 } from "#lib/shared/effects/domain/smoke-palettes.js";
 import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 import { blob, css, ground, hexToRgb, lcg } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type SmokeIntent = EffectConfigMap["smoke"];
 export const SMOKE_TILE_SEED = 0x5d0c;
@@ -303,7 +310,9 @@ export function paintSmokeTile(
 ): void {
   const rand = lcg(SMOKE_TILE_SEED);
   const pal = resolveSmokePalette(intent);
-  const plume = isSmall(format) ? PLUME[format as "tile" | "chip"] : null;
+  const plume = isSmall(format)
+    ? PLUME[smallTable(format as SmallFormat)]
+    : null;
   if (plume) frame(ctx, format, plume.view, 0);
   const lead: boolean[] = [];
   const puffs = plume

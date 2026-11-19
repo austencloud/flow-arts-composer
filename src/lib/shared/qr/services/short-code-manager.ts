@@ -65,6 +65,7 @@ import {
   verifyEncodedChoreography,
   type ChoreographyProjection,
 } from "./choreography-fidelity";
+import { noteServiceFailure } from "#lib/shared/offline/state/service-outage-state.svelte.js";
 
 export type { ShortCodeData } from "./types";
 
@@ -1587,6 +1588,7 @@ export class ShortCodeManager {
           isTimeoutError(error) ? "timeout" : "error",
           errorLabel(error)
         );
+        noteServiceFailure(error);
         return null;
       });
 

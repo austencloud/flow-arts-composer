@@ -10336,5 +10336,7 @@
   "effect_deep_tile_left_prop": "{effect}, attrezzo sinistro",
   "effect_deep_tile_right_prop": "{effect}, attrezzo destro",
   "effect_deep_tile_both_props": "{effect}, entrambi gli attrezzi",
-  "effect_deep_left_and_right": "{left} sull'attrezzo sinistro, {right} sull'attrezzo destro"
+  "effect_deep_left_and_right": "{left} sull'attrezzo sinistro, {right} sull'attrezzo destro",
+  "site_outage_title": "Alcune cose non funzionano in questo momento",
+  "site_outage_body": "Accesso, salvataggio, Sfoglia e link condivisi non funzionano. L'account Google del sito ha un problema, e Austen sta lavorando per ripristinarlo."
 }

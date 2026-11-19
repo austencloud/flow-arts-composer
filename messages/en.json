@@ -10550,5 +10550,7 @@
   "effect_deep_tile_left_prop": "{effect}, left prop",
   "effect_deep_tile_right_prop": "{effect}, right prop",
   "effect_deep_tile_both_props": "{effect}, both props",
-  "effect_deep_left_and_right": "{left} on the left prop, {right} on the right prop"
+  "effect_deep_left_and_right": "{left} on the left prop, {right} on the right prop",
+  "site_outage_title": "Some things are down right now",
+  "site_outage_body": "Sign-in, saving, Browse and shared links are not working. The site's Google account has a problem, and Austen is working on getting it back."
 }

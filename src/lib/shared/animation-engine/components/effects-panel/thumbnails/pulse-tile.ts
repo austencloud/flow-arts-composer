@@ -41,9 +41,11 @@ import {
 import { TILE_H, TILE_W, blob, ground, hexToRgb, lcg } from "./tile-paint";
 import {
   type Box,
+  type SmallFormat,
   type TileFormat,
   frame,
   isSmall,
+  smallTable,
   unitsPerDisplayPx,
 } from "./tile-format";
 
@@ -175,9 +177,9 @@ const SMALL: Record<
 function paintPulseSmall(
   ctx: CanvasRenderingContext2D,
   intent: PulseIntent,
-  format: "tile" | "chip"
+  format: SmallFormat
 ): void {
-  const small = SMALL[format];
+  const small = SMALL[smallTable(format)];
   const view = frame(ctx, format, small.view, 0);
   const upp = unitsPerDisplayPx(view, format);
   const params = resolvePulse2D({
@@ -265,7 +267,10 @@ class Sim {
   private readonly last: [Tip | null, Tip | null] = [null, null];
   private ringBeat = -1;
 
-  constructor(intent: PulseIntent, readonly phase0: number) {
+  constructor(
+    intent: PulseIntent,
+    readonly phase0: number
+  ) {
     this.params = resolvePulse2D({
       ...intent,
       colorMode: "solid",
@@ -392,7 +397,7 @@ export function paintPulseTile(
   format: TileFormat = "card"
 ): void {
   if (isSmall(format)) {
-    paintPulseSmall(ctx, intent, format as "tile" | "chip");
+    paintPulseSmall(ctx, intent, format as SmallFormat);
     return;
   }
   const rand = lcg(PULSE_TILE_SEED);

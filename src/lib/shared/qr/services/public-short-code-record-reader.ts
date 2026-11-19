@@ -3,6 +3,7 @@ import {
   type FirestoreFields,
 } from "#lib/shared/firestore/firestore-value-codec.js";
 import type { ShortCodeData } from "./types";
+import { isSuspendedProbeResponse } from "#lib/shared/offline/domain/service-outage.js";
 
 const FIRESTORE_HOST = "https://firestore.googleapis.com/v1";
 const DEFAULT_PROJECT_ID = "the-kinetic-alphabet";
@@ -79,8 +80,13 @@ export async function fetchPublicShortCodeRecord(
 
   if (response.status === 404) return null;
   if (!response.ok) {
+    // Keep Google's own reason: a 403 that says the project "has been
+    // suspended" is what shows the site-wide outage notice.
+    const body = await response.text().catch(() => "");
+    const suspended = isSuspendedProbeResponse(response.status, body);
     throw new Error(
-      `Firestore REST returned ${response.status} ${response.statusText}`
+      `Firestore REST returned ${response.status} ${response.statusText}` +
+        (suspended ? " (project has been suspended)" : "")
     );
   }
 

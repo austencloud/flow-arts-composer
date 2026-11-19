@@ -8,6 +8,7 @@
 // themselves, which is not an error worth surfacing.
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { POPUP_NO_RESULT } from "./popup-return-watch";
+import { noteServiceFailure } from "#lib/shared/offline/state/service-outage-state.svelte.js";
 
 export function getAuthErrorCode(error: unknown): string | undefined {
   return (error as { code?: string } | null | undefined)?.code;
@@ -36,6 +37,9 @@ export function isExpectedAuthInterruption(error: unknown): boolean {
  */
 export function mapAuthError(error: unknown): string | null {
   const errorCode = getAuthErrorCode(error);
+  // Every sign-in surface's failure passes through here, so this is where a
+  // suspended Firebase project is noticed (it shows the site-wide notice).
+  noteServiceFailure(error);
 
   switch (errorCode) {
     case "auth/popup-blocked":

@@ -9,6 +9,8 @@
     type TileFormat,
     frame,
     unitsPerDisplayPx,
+    smallTable,
+    type SmallFormat,
   } from "./tile-format";
 
   interface Props {
@@ -34,8 +36,18 @@
     "tile" | "chip",
     { view: Box; gap: number; fat: number; scale: number }
   > = {
-    tile: { view: { x: 80, y: 42, w: 560, h: 210 }, gap: 118, fat: 1.35, scale: 1.12 },
-    chip: { view: { x: 202.5, y: 42, w: 315, h: 210 }, gap: 72, fat: 1.5, scale: 1.12 },
+    tile: {
+      view: { x: 80, y: 42, w: 560, h: 210 },
+      gap: 118,
+      fat: 1.35,
+      scale: 1.12,
+    },
+    chip: {
+      view: { x: 202.5, y: 42, w: 315, h: 210 },
+      gap: 72,
+      fat: 1.5,
+      scale: 1.12,
+    },
   };
 
   /**
@@ -237,7 +249,7 @@
     const ctx = node.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const small = format === "card" ? null : SMALL[format];
+    const small = format === "card" ? null : SMALL[smallTable(format)];
     if (small) frame(ctx, format, small.view, 0);
 
     const intent = { ...DEFAULT_EFFECTS_CONFIG.fire, ...(preset.patch ?? {}) };
@@ -301,7 +313,16 @@
         0x1a7f,
         fat
       );
-      drawPlume(ctx, WIDTH / 2 + gap, baseY, scale, palette, false, 0x93c1, fat);
+      drawPlume(
+        ctx,
+        WIDTH / 2 + gap,
+        baseY,
+        scale,
+        palette,
+        false,
+        0x93c1,
+        fat
+      );
     }
 
     ctx.restore();

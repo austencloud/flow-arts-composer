@@ -24,9 +24,12 @@
   import {
     fitEffectCatalog,
     fitEffectPicker,
+    fitEffectPictures,
     fitEffectRoster,
     holdEffectRoster,
   } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
+  import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import {
     matchPresetId,
     pickedPresetId,
@@ -34,7 +37,7 @@
   } from "./presets/match-preset";
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, flexPresence } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { startMorph } from "#lib/shared/transitions/results-morph.js";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
@@ -109,6 +112,15 @@
     onTuneHeading?: (heading: EffectTuneHeading | null) => void;
     /** Post Studio can show the roster beside looks and tuning when its panel is wide. */
     wideWorkspace?: boolean;
+    /**
+     * With the sidebar layout and `fill`: the host's pane is this page and
+     * nothing else (the Shape Engine's Customize workspace). One head row (the
+     * Effects switch, Reset all), the effects as pictures four across, and
+     * under them the looks as one row of equal cards with the everyday slider.
+     * The pictures take every pixel the looks leave, and all of it when
+     * effects are off. No footer.
+     */
+    page?: boolean;
     /** Post Studio opens an already chosen effect's looks and tuning first. */
     preferSelectedDetail?: boolean;
     pagedRichDetail?: boolean;
@@ -144,6 +156,7 @@
     dock = false,
     onTuneHeading,
     wideWorkspace = false,
+    page = false,
     preferSelectedDetail = false,
     pagedRichDetail = false,
     availableEffects,
@@ -349,7 +362,7 @@
   );
   /** The arrangement the roster takes whenever nothing is on. */
   const restingCatalogFit = $derived(
-    fill && pictureHost
+    fill && pictureHost && !page
       ? fitEffectCatalog({
           width: rosterWidth,
           height: catalogRoom - CATALOG_CHROME_Y,
@@ -376,6 +389,19 @@
     return fit;
   });
 
+  // The pictures page (`page`): the grid's box is whatever the head row and
+  // the looks leave, measured, so its rows add up to the pane.
+  let pageGridRect = $state<DOMRectReadOnly>();
+  const pageFit = $derived(
+    page
+      ? fitEffectPictures({
+          width: Math.floor(pageGridRect?.width ?? 0),
+          height: Math.floor(pageGridRect?.height ?? 0),
+          count: rosterCount,
+        })
+      : null
+  );
+
   // The strip page of a host that never scrolls: one arrangement for both
   // states, from the box it was given, with Off as one more tile.
   let stripRect = $state<DOMRectReadOnly>();
@@ -393,11 +419,13 @@
    *  has names only. */
   const catalogLooks = $derived(
     (
-      fitRoom
-        ? pickerFit?.portrait
-        : catalogFit
-          ? catalogFit.portrait
-          : rosterFit
+      page
+        ? pageFit
+        : fitRoom
+          ? pickerFit?.portrait
+          : catalogFit
+            ? catalogFit.portrait
+            : rosterFit
     )
       ? effectCatalogLooks(effectsConfigState)
       : null
@@ -412,10 +440,15 @@
         ? catalogFit.portrait
         : rosterFit?.portrait) ?? 0
   );
+  /** The pictures page paints the 6:5 picture for a box near that shape, and
+   *  the 8:3 one (tile or card by width, as everywhere else) for a wide one. */
+  const paintedWidth = $derived(pageFit ? pageFit.pictureWidth : pictureWidth);
   const pictureFormat = $derived(
-    pictureWidth > 0 && pictureWidth <= SMALL_PICTURE_MAX
-      ? ("tile" as const)
-      : ("card" as const)
+    pageFit?.shape === "tall"
+      ? ("tall" as const)
+      : paintedWidth > 0 && paintedWidth <= SMALL_PICTURE_MAX
+        ? ("tile" as const)
+        : ("card" as const)
   );
   /** The phone tray has no catalog; it shows each effect's current look as a
    *  tile-format picture over its name (EffectSelector `trayPictures`). */
@@ -742,6 +775,16 @@
     reportSetting("active_effect", previous, "none");
   }
 
+  /** The page's Effects switch, as the phone list's: off, and back on to the
+   *  effect (or the pair) that was last on. */
+  function handlePageToggle(): void {
+    const previous = activeEffect;
+    customizeOpen = false;
+    CustomizeComponent = null;
+    effectsConfigState.toggleEffectFor("both", EFFECTS[0]?.id);
+    reportSetting("active_effect", previous, effectsConfigState.activeEffect);
+  }
+
   // ── Phone dock (sidebar layout + dock) ────────────────────────────────────
   // The tune view's heading goes to the host's header row when it listens, so
   // the dock body spends its ~245px on the controls alone.
@@ -889,6 +932,15 @@
       !effectsConfigState.hasCustom(activeEffect as EffectId)
   );
   /** Trail's Custom chip shows the captured custom blue/red dots; other effects use accent. */
+  /** Your look's settings, for the pictures page's card of it. */
+  const customPatch = $derived(
+    customDisabled || !isEffectId(activeEffect)
+      ? null
+      : (effectsConfigState.personalDefault(activeEffect) as unknown as Record<
+          string,
+          unknown
+        > | null)
+  );
   const customColors = $derived.by(() => {
     if (activeEffect !== "trails") return null;
     const c = effectsConfigState.personalDefault("trails");
@@ -968,7 +1020,7 @@
 {#snippet effectDock(
   onTune: () => void,
   tuneLabel: string,
-  looks: "rail" | "wrap" | "tiles"
+  looks: "rail" | "wrap" | "tiles" | "cards"
 )}
   <!-- Keyed on the effect, because switching effects on the roster is now the
        primary gesture and it used to be the harshest thing in the panel: the
@@ -1008,6 +1060,7 @@
         {tuneLabel}
         tuneLoading={customizeLoadingEffect === activeEffect}
         tuneError={customizeFailedEffect === activeEffect}
+        customPatch={looks === "cards" ? customPatch : null}
         {looks}
       />
     {/if}
@@ -1141,7 +1194,55 @@
         mode="swap"
         duration={DURATION.fast}
       >
-        {#if sidebarView === "browser" || sidebarView === "catalog"}
+        {#if page && sidebarView === "browser"}
+          <!-- Sized from the pane, as the catalog is: the Crossfade's box hugs
+               its layer, so a flex child would not stretch to fill it. -->
+          <div class="sb-page" style:height={`${catalogRoom}px`}>
+            <div class="sb-page-head">
+              <SettingToggleButton
+                label={t("effect_deep_effects")}
+                checked={activeEffect !== "none"}
+                onToggle={handlePageToggle}
+                surface="plain"
+                density="compact"
+              />
+              <PanelButton
+                variant="quiet"
+                onclick={() => (confirmResetAllOpen = true)}
+              >
+                {t("effect_deep_reset_all_to_original")}
+              </PanelButton>
+            </div>
+            <div class="sb-page-grid" bind:contentRect={pageGridRect}>
+              <EffectSelector
+                {activeEffect}
+                onSelect={handleSidebarEffectSelect}
+                onPrewarm={handleEffectPrewarm}
+                activeAction="tune"
+                {availableEffects}
+                pictures={pageFit}
+                portrait={catalogPortrait}
+              />
+            </div>
+            {#if activeEffect !== "none" && registration}
+              <!-- Off: the looks leave and the pictures grow into their
+                   room, on the same clock. -->
+              <div
+                class="sb-page-looks"
+                transition:flexPresence={{
+                  measured: true,
+                  duration: DURATION.normal,
+                }}
+              >
+                {@render effectDock(
+                  () => (sidebarDetailOpen = true),
+                  t("effect_deep_tune"),
+                  "cards"
+                )}
+              </div>
+            {/if}
+          </div>
+        {:else if sidebarView === "browser" || sidebarView === "catalog"}
           <div
             class="sb-section sb-browser"
             class:catalog={sidebarView === "catalog"}
@@ -1300,7 +1401,10 @@
 
     <!-- The dock carries Reset all as an icon in its roster row, and the tune
          view resets one effect through its Original look. -->
-    {#if !dock}<div class="sb-section sb-footer" bind:borderBoxSize={footerBox}>
+    {#if !dock && !page}<div
+        class="sb-section sb-footer"
+        bind:borderBoxSize={footerBox}
+      >
         <button
           type="button"
           class="reset-all-btn"
@@ -1703,6 +1807,44 @@
   /* The host sets the height. Size containment keeps the panel's content out
      of that height, so a tall dock overflows into the host's scroll instead of
      stretching the panel that the catalog is sized from. */
+  /* ── The pictures page (`page`) ──
+     A column the height of the pane: the head row, the grid sharing whatever
+     is left, the looks at their own height. */
+  .sb-page {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 16px 6px;
+  }
+
+  .sb-page-head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: var(--min-touch-target, 44px);
+  }
+
+  .sb-page-head :global(.panel-btn) {
+    flex: none;
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .sb-page-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sb-page-looks {
+    flex: none;
+    min-height: 0;
+  }
+
   .effects-panel.fill {
     flex: 1 1 0;
     min-height: 0;

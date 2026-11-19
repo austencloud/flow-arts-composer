@@ -17,7 +17,14 @@ import {
   lcg,
   terminal,
 } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type SparkleIntent = EffectConfigMap["sparkles"];
 export const SPARKLE_TILE_SEED = 0x5a3c;
@@ -192,10 +199,10 @@ function drawSmallStars(
   ctx: CanvasRenderingContext2D,
   p: SparkleIntent,
   rand: Rand,
-  format: "tile" | "chip",
+  format: SmallFormat,
   view: Box
 ): void {
-  const layout = SMALL_STARS[format];
+  const layout = SMALL_STARS[smallTable(format)];
   const shown = Math.min(
     layout.length,
     Math.max(format === "chip" ? 4 : 5, Math.round(4 + p.rate * 4))
@@ -203,12 +210,14 @@ function drawSmallStars(
   const sizeK = 0.85 + Math.min(0.3, p.size * 0.6);
   const order = layout.map((_, i) => i);
   // Drop the faintest first when the rate is low; the lead always stays.
-  const keep = new Set(order.slice(0, shown).concat(SMALL_LEAD[format]));
+  const keep = new Set(
+    order.slice(0, shown).concat(SMALL_LEAD[smallTable(format)])
+  );
   layout.forEach(([u, v, a], i) => {
     if (!keep.has(i)) return;
     const jx = (rand() - 0.5) * p.spread * 0.04;
     const jy = (rand() - 0.5) * p.spread * 0.06;
-    const lead = i === SMALL_LEAD[format];
+    const lead = i === SMALL_LEAD[smallTable(format)];
     glint(
       ctx,
       view.x + (u + jx) * view.w,
@@ -230,7 +239,7 @@ export function paintSparkleTile(
 ): void {
   const small = isSmall(format);
   const view = small
-    ? frame(ctx, format, SMALL_VIEW[format as "tile" | "chip"], 0)
+    ? frame(ctx, format, SMALL_VIEW[smallTable(format as SmallFormat)], 0)
     : null;
   ground(ctx, [0.03, 0.03, 0.06]);
   const wash: Rgb =
@@ -242,8 +251,22 @@ export function paintSparkleTile(
             : intent.color
         );
   if (view) {
-    blob(ctx, view.x + view.w / 2, view.y + view.h / 2, view.w * 0.5, view.h * 0.6, wash, 0.09);
-    drawSmallStars(ctx, intent, lcg(SPARKLE_TILE_SEED), format as "tile" | "chip", view);
+    blob(
+      ctx,
+      view.x + view.w / 2,
+      view.y + view.h / 2,
+      view.w * 0.5,
+      view.h * 0.6,
+      wash,
+      0.09
+    );
+    drawSmallStars(
+      ctx,
+      intent,
+      lcg(SPARKLE_TILE_SEED),
+      format as SmallFormat,
+      view
+    );
     return;
   }
   blob(ctx, 400, 120, 260, 150, wash, 0.08);

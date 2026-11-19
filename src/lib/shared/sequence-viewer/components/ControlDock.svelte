@@ -455,6 +455,7 @@
   class:wide={overlay && wide}
   class:actions-compact={actionsCompact}
   data-tab-form={tabForm}
+  data-tray-open={trayOpen || undefined}
   style:--dock-tray-max={trayMaxHeight}
   data-swipe-block
   bind:this={dockEl}

@@ -8,6 +8,8 @@
     type TileFormat,
     frame,
     unitsPerDisplayPx,
+    smallTable,
+    type SmallFormat,
   } from "./tile-format";
 
   interface Props {
@@ -164,9 +166,11 @@
     const ctx = node.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const small = format === "card" ? null : SMALL[format];
+    const small = format === "card" ? null : SMALL[smallTable(format)];
     if (small) frame(ctx, format, small.view, 0);
-    const upp = small ? unitsPerDisplayPx(small.view, format as "tile" | "chip") : 1;
+    const upp = small
+      ? unitsPerDisplayPx(small.view, format as SmallFormat)
+      : 1;
 
     const intent = { ...TRAIL_DEFAULTS, ...(preset.patch ?? {}) };
     // A small format never draws thinner than 2 display px, and never brighter

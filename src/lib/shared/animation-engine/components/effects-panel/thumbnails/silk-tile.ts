@@ -37,7 +37,14 @@ import {
   mix,
   smoothstep,
 } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type SilkIntent = EffectConfigMap["silk"];
 export const SILK_TILE_SEED = 0x5117;
@@ -456,7 +463,9 @@ export function paintSilkTile(
   propColor: string,
   format: TileFormat = "card"
 ): void {
-  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  const small = isSmall(format)
+    ? SMALL[smallTable(format as SmallFormat)]
+    : null;
   if (small) frame(ctx, format, small.view, 0);
   const palette = resolveSilkPalette(intent);
   const body = hexToRgb(palette.body);

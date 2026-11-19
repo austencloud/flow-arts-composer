@@ -618,7 +618,12 @@ export class PublicSequencesLoader {
         : query(publicSeqRef, orderBy("word", "asc"), limit(CATALOG_PAGE_SIZE));
       const snapshot: QuerySnapshot<DocumentData> = await getDocs(q);
       if (snapshot.metadata?.fromCache) {
-        throw new Error("Public catalog read did not reach Firestore");
+        // Firestore answered from cache only: the same meaning as its own
+        // "unavailable", so it carries that code for the classifiers.
+        throw Object.assign(
+          new Error("Public catalog read did not reach Firestore"),
+          { code: "unavailable" }
+        );
       }
       snapshot.forEach((docSnap) => {
         const data = normalizeLegacySequence(

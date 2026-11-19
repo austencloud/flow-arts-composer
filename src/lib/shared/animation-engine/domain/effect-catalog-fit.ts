@@ -87,14 +87,17 @@ export function fitEffectRoster({
   width,
   count,
   columns = ROSTER_COLUMNS,
+  minPortrait = MIN_CATALOG_PORTRAIT,
 }: Pick<EffectCatalogBox, "width" | "count"> & {
   columns?: number;
+  /** The narrowest picture this host accepts; the phone's grid takes 52. */
+  minPortrait?: number;
 }): EffectCatalogFit | null {
   if (width <= 0 || count <= 0) return null;
   const cols = columns;
   const innerW = (width - (cols - 1) * CATALOG_GAP) / cols - 2 * INSET;
   const portrait = Math.floor(innerW);
-  if (portrait < MIN_CATALOG_PORTRAIT || innerW < CATALOG_NAME_WIDTH) {
+  if (portrait < minPortrait || innerW < CATALOG_NAME_WIDTH) {
     return null;
   }
   return {
@@ -252,5 +255,79 @@ function fitList({
     portrait: 0,
     gap: CATALOG_LIST_GAP,
     fill: true,
+  };
+}
+
+// ── The pictures page ─────────────────────────────────────────────────────────
+// A host whose whole pane is the effects page (the Shape Engine's Customize
+// workspace) gives the grid every pixel the head row and the looks leave it.
+// Four across, the picture over a 14px name, and the rows share the height, so
+// the page has no empty band at any size. Turning effects off hands the looks'
+// room to the grid, which grows into it.
+
+export const PICTURE_COLUMNS = 4;
+export const PICTURE_GAP = 8;
+/** EffectSelector's picture tile: 4.5px of padding inside its 1.5px border. */
+export const PICTURE_INSET = 6;
+/** Between the picture and the name. */
+export const PICTURE_INNER_GAP = 6;
+/** One line of the 14px name. */
+export const PICTURE_CAPTION_HEIGHT = 22;
+/** The taller painting (tile-format.ts `tall`), 288 x 240. */
+export const TALL_PICTURE_ASPECT = 6 / 5;
+/** A picture box within this ratio of its painting's shape crops the painting
+ *  to fill it; further off, the painting sits whole inside it, on the same
+ *  dark ground, so a subject is never cut in half. */
+export const PICTURE_COVER_LIMIT = 1.25;
+
+export interface EffectPictureFit {
+  cols: number;
+  rows: number;
+  gap: number;
+  tileWidth: number;
+  tileHeight: number;
+  pictureWidth: number;
+  pictureHeight: number;
+  /** Which painting suits the box: the 6:5 `tall` one, or the 8:3 card. */
+  shape: "tall" | "wide";
+  /** Crop the painting to fill the box, or fit it whole. */
+  cover: boolean;
+}
+
+export function fitEffectPictures({
+  width,
+  height,
+  count,
+  columns = PICTURE_COLUMNS,
+}: EffectCatalogBox & { columns?: number }): EffectPictureFit | null {
+  if (width <= 0 || height <= 0 || count <= 0) return null;
+  const cols = Math.min(columns, count);
+  const rows = Math.ceil(count / cols);
+  const tileWidth = (width - (cols - 1) * PICTURE_GAP) / cols;
+  const tileHeight = (height - (rows - 1) * PICTURE_GAP) / rows;
+  const pictureWidth = tileWidth - 2 * PICTURE_INSET;
+  const pictureHeight =
+    tileHeight - 2 * PICTURE_INSET - PICTURE_INNER_GAP - PICTURE_CAPTION_HEIGHT;
+  if (pictureWidth <= 0 || pictureHeight <= 0) return null;
+  const aspect = pictureWidth / pictureHeight;
+  const offTall = Math.max(
+    aspect / TALL_PICTURE_ASPECT,
+    TALL_PICTURE_ASPECT / aspect
+  );
+  const offWide = Math.max(
+    aspect / CATALOG_PORTRAIT_ASPECT,
+    CATALOG_PORTRAIT_ASPECT / aspect
+  );
+  const shape = offTall <= offWide ? "tall" : "wide";
+  return {
+    cols,
+    rows,
+    gap: PICTURE_GAP,
+    tileWidth,
+    tileHeight,
+    pictureWidth,
+    pictureHeight,
+    shape,
+    cover: Math.min(offTall, offWide) <= PICTURE_COVER_LIMIT,
   };
 }

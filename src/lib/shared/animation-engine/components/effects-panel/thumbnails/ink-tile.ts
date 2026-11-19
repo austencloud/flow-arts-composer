@@ -31,7 +31,14 @@ import {
   mix,
   smoothstep,
 } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type InkIntent = EffectConfigMap["ink"];
 export const INK_TILE_SEED = 0x1a4b;
@@ -669,7 +676,9 @@ export function paintInkTile(
   intent: InkIntent,
   format: TileFormat = "card"
 ): void {
-  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  const small = isSmall(format)
+    ? SMALL[smallTable(format as SmallFormat)]
+    : null;
   if (small) frame(ctx, format, small.view, 0);
   const p = resolveInk2D(intent);
   const pal = p.resolvedPalette;
@@ -700,9 +709,7 @@ export function paintInkTile(
   } else blob(ctx, 330, 140, 360, 170, hexToRgb(pal.pigment), 0.05);
 
   const knots = small
-    ? KNOTS.map(
-        ([x, y]) => [CENTER.x + (x - 370) * small.squeeze, y] as const
-      )
+    ? KNOTS.map(([x, y]) => [CENTER.x + (x - 370) * small.squeeze, y] as const)
     : KNOTS;
   const all = recordStroke(P, rand, knots);
   const { kept: points, drops: breakDrops } = breakupTail(P, all, rand);

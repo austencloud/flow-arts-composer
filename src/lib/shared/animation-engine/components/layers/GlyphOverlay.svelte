@@ -78,6 +78,9 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     opacity = 1,
     // The viewer's hand colors; turn numbers wear the color of their hand.
     primaryPropColors = null,
+    // Pixels at the bottom the corner glyphs keep clear of: the viewer's
+    // transport row floats there on a short window.
+    bottomInset = 0,
   }: {
     letter?: Letter | null;
     displayedLetter?: Letter | null;
@@ -97,6 +100,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     glyphFrame?: GlyphOverlayFrameMode;
     opacity?: number;
     primaryPropColors?: { left: string; right: string } | null;
+    bottomInset?: number;
   } = $props();
 
   let overlayWidth = $state(0);
@@ -104,6 +108,18 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   const frame = $derived(
     calculateGlyphOverlayFrame(glyphFrame, overlayWidth, overlayHeight)
   );
+  // The bottom glyphs' row, raised by the inset. The SVG fits its viewBox
+  // ("meet"), so one screen pixel spans the larger of the two unit ratios.
+  const bottomRow = $derived.by(() => {
+    if (bottomInset <= 0 || overlayWidth <= 0 || overlayHeight <= 0) {
+      return frame.bottomOffset;
+    }
+    const unitsPerPixel = Math.max(
+      frame.width / overlayWidth,
+      frame.height / overlayHeight
+    );
+    return frame.bottomOffset - bottomInset * unitsPerPixel;
+  });
 
   // Cross-fade duration in ms
   const FADE_DURATION = DURATION.normal;
@@ -285,7 +301,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
       {#key glyphKey}
         <g
           class="glyph-group"
-          transform={`translate(0 ${frame.bottomOffset})`}
+          transform={`translate(0 ${bottomRow})`}
           in:opaqueFade={{ duration: FADE_DURATION, easing: cubicOut }}
           out:opaqueFade={{ duration: FADE_DURATION, easing: cubicOut }}
         >
@@ -335,7 +351,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
       {#key elementalKey}
         <g
           class="elemental-glyph-transition"
-          transform={`translate(${frame.rightOffset} ${frame.bottomOffset})`}
+          transform={`translate(${frame.rightOffset} ${bottomRow})`}
           in:opaqueFade|global={{ duration: FADE_DURATION, easing: cubicOut }}
           out:opaqueFade|global={{ duration: FADE_DURATION, easing: cubicOut }}
         >

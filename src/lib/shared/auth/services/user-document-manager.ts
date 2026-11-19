@@ -43,6 +43,7 @@ import {
 } from "#lib/shared/analytics/services/posthog.js";
 import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
 import { isFirestoreOfflineError } from "../utils/is-firestore-offline-error";
+import { noteServiceFailure } from "#lib/shared/offline/state/service-outage-state.svelte.js";
 import { refreshPublicSequenceOwnerProfile } from "#lib/shared/library/services/public-sequence-persister.js";
 
 /**
@@ -488,6 +489,7 @@ export class UserDocumentManager {
       // Lost connection mid-sync: nothing is broken, and the next sign-in or
       // page load runs the sync again. A warning, not a reported exception.
       if (isFirestoreOfflineError(error)) {
+        noteServiceFailure(error);
         console.warn(
           `[UserDocumentManager] ${currentStep.message} (offline); will retry on next load`
         );

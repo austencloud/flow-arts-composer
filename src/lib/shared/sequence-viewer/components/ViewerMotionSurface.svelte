@@ -904,6 +904,7 @@
              read-ahead lane is not a card navigator. -->
         <AnimatorCanvas
           shareStudioTransport={side === "left"}
+          transportOverShortCanvas={!inStudio}
           sequenceData={studioFrame?.sequence ??
             playback.animationState.sequenceData}
           currentStep={studioFrame?.position ?? playback.currentStep}

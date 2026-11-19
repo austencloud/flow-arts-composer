@@ -1,7 +1,7 @@
 <script lang="ts">
   import { effectUiLabel, effectUiTrait } from "./effect-ui-label";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import type { EffectPresetGroup } from "./presets/types";
+  import type { EffectPreset, EffectPresetGroup } from "./presets/types";
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
   import { createEffectLookPreview } from "./effect-look-preview";
@@ -30,6 +30,16 @@
     showSummary?: boolean;
     showCustomize?: boolean;
     customizeTarget?: string;
+    /** Off where the host draws its own "Looks" head (the pictures page). */
+    showHeading?: boolean;
+    /**
+     * Every look as one card of one shape, pictures included: the presets,
+     * then Your look, then Original last. Up to four share a row; more wrap on
+     * the same four columns. The pictures page of the Customize workspace.
+     */
+    cards?: boolean;
+    /** Your look's settings, painted on its card under `cards`. */
+    customPatch?: Record<string, unknown> | null;
   }
 
   const {
@@ -48,6 +58,9 @@
     showSummary = true,
     showCustomize = true,
     customizeTarget,
+    showHeading = true,
+    cards = false,
+    customPatch = null,
   }: Props = $props();
 
   // Trail's Default IS the colour-matched factory blue/red, so its Default chip
@@ -89,24 +102,118 @@
   const ultraCols = $derived(
     presetModels.length >= 4 && presetModels.length % 4 !== 1 ? 4 : 3
   );
+
+  /** A short, stable tag for a patch, so a changed Your look paints anew
+   *  rather than reusing the picture cached for its id. */
+  function patchTag(patch: Record<string, unknown>): string {
+    const text = JSON.stringify(patch);
+    let hash = 0;
+    for (let i = 0; i < text.length; i += 1) {
+      hash = (hash * 31 + text.charCodeAt(i)) | 0;
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  /** Under `cards`, Your look and Original as looks of their own, painted
+   *  from their own settings: Original is the factory look (no patch). */
+  const anchorModels = $derived.by(() => {
+    if (!cards) return [];
+    const models: {
+      id: string;
+      name: string;
+      description: string;
+      preset: EffectPreset;
+      preview: ReturnType<typeof createEffectLookPreview>;
+    }[] = [];
+    const color = accentColor;
+    if (customChipId && !customDisabled) {
+      const patch = customPatch ?? {};
+      const preset: EffectPreset = {
+        id: `${customChipId}-${patchTag(patch)}`,
+        name: t("effect_deep_your_look"),
+        previewColor: color,
+        patch,
+      };
+      models.push({
+        id: customChipId,
+        name: t("effect_deep_your_look"),
+        description: t("effect_deep_updates_controls"),
+        preset,
+        preview: createEffectLookPreview(presetGroup.effectType, preset),
+      });
+    }
+    if (defaultChipId) {
+      const preset: EffectPreset = {
+        id: defaultChipId,
+        name: t("effect_deep_original"),
+        previewColor: color,
+        patch: {},
+      };
+      models.push({
+        id: defaultChipId,
+        name: t("effect_deep_original"),
+        description: t("effect_deep_factory_settings"),
+        preset,
+        preview: createEffectLookPreview(presetGroup.effectType, preset),
+      });
+    }
+    return models;
+  });
+
+  const cardCount = $derived(presetModels.length + anchorModels.length);
+  const cardCols = $derived(Math.max(1, Math.min(4, cardCount)));
 </script>
 
-<div class="presets-section">
-  <div class="section-heading" class:with-tune={showCustomize && !!onCustomize}>
-    <span class="section-label">{t("effect_deep_looks")}</span>
-    {#if showCustomize && onCustomize}
-      <button
-        class="customize-btn"
-        type="button"
-        style:--btn-accent={accentColor}
-        aria-controls={customizeTarget}
-        onclick={onCustomize}
-      >
-        <i class="fas fa-sliders" aria-hidden="true"></i>
-        {t("effect_deep_tune")}
-      </button>
-    {/if}
-  </div>
+{#snippet lookCard(
+  id: string,
+  preset: EffectPreset,
+  preview: ReturnType<typeof createEffectLookPreview>,
+  name: string,
+  description: string
+)}
+  {@const isActive = id === activePresetId}
+  <button
+    class="preset-card look-card"
+    class:active={isActive}
+    type="button"
+    role="radio"
+    aria-checked={isActive}
+    style:--card-accent={accentColor}
+    onclick={() => onSelectPreset(id)}
+  >
+    <div class="preview-area">
+      <EffectPresetThumbnail
+        effectType={presetGroup.effectType}
+        {preset}
+        legacyModel={preview}
+        {propType}
+        active={isActive}
+      />
+    </div>
+    <span class="preset-name">{name}</span>
+    <span class="preset-trait">{description}</span>
+  </button>
+{/snippet}
+
+<div class="presets-section" class:cards>
+  {#if showHeading}<div
+      class="section-heading"
+      class:with-tune={showCustomize && !!onCustomize}
+    >
+      <span class="section-label">{t("effect_deep_looks")}</span>
+      {#if showCustomize && onCustomize}
+        <button
+          class="customize-btn"
+          type="button"
+          style:--btn-accent={accentColor}
+          aria-controls={customizeTarget}
+          onclick={onCustomize}
+        >
+          <i class="fas fa-sliders" aria-hidden="true"></i>
+          {t("effect_deep_tune")}
+        </button>
+      {/if}
+    </div>{/if}
 
   <div
     class="look-choices"
@@ -115,7 +222,28 @@
       effect: effectUiLabel(effectLabel),
     })}
   >
-    {#if presetModels.length > 0}
+    {#if cards}
+      <div class="look-cards" style:--look-cols={cardCols}>
+        {#each presetModels as item (item.preset.id)}
+          {@render lookCard(
+            item.preset.id,
+            item.preset,
+            item.preview,
+            effectUiLabel(item.preset.name),
+            effectUiTrait(item.description)
+          )}
+        {/each}
+        {#each anchorModels as anchor (anchor.id)}
+          {@render lookCard(
+            anchor.id,
+            anchor.preset,
+            anchor.preview,
+            anchor.name,
+            anchor.description
+          )}
+        {/each}
+      </div>
+    {:else if presetModels.length > 0}
       <div class="preset-grid" data-cols={wideCols} data-cols-wide={ultraCols}>
         {#each presetModels as item (item.preset.id)}
           {@const isActive = item.preset.id === activePresetId}
@@ -144,7 +272,7 @@
       </div>
     {/if}
 
-    {#if defaultChipId || customChipId}
+    {#if !cards && (defaultChipId || customChipId)}
       <div class="anchor-grid">
         {#if defaultChipId}
           {@const isDefaultActive = activePresetId === defaultChipId}
@@ -490,6 +618,30 @@
     .preset-grid[data-cols-wide="4"] {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+  }
+
+  /* ── Cards: every look one shape, one row up to four ── */
+  .look-cards {
+    display: grid;
+    grid-template-columns: repeat(var(--look-cols, 4), minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .look-card {
+    gap: 4px;
+    padding: 6px 6px 8px;
+  }
+
+  .look-card .preset-name,
+  .look-card .preset-trait {
+    padding-inline: 6px;
+  }
+
+  /* Every word of a supporting line shows: the row takes the tallest card. */
+  .look-card .preset-trait {
+    display: block;
+    -webkit-line-clamp: none;
+    overflow: visible;
   }
 
   @media (prefers-reduced-motion: reduce) {

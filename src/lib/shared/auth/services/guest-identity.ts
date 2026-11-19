@@ -5,6 +5,7 @@ import {
   captureExceptionWhenReady,
   captureWhenReady,
 } from "#lib/shared/analytics/services/posthog.js";
+import { noteServiceFailure } from "#lib/shared/offline/state/service-outage-state.svelte.js";
 
 /**
  * Lazily provision an anonymous Firebase identity. Idempotent and
@@ -95,6 +96,7 @@ export async function ensureGuestIdentity(
       }
     })
     .catch((err: unknown) => {
+      noteServiceFailure(err);
       // Anonymous auth provider may be disabled in the Firebase console
       // (auth/admin-restricted-operation), or sign-in may fail offline. Swallow
       // so a guest's first persistable action doesn't surface an uncaught

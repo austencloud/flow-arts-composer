@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import "../../app.css";
+  import ServiceOutageNotice from "#lib/shared/offline/components/ServiceOutageNotice.svelte";
 
   let { children } = $props<{
     children: Snippet;
@@ -13,3 +14,6 @@
 </svelte:head>
 
 {@render children()}
+
+<!-- Shows only while Google has the Firebase project switched off. -->
+<ServiceOutageNotice placement="overlay" />

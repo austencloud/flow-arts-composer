@@ -13,6 +13,9 @@ import {
   QUICK_PICKER_FLOOR_PLAYER_SCALE,
   QUICK_PICKER_OFF_WIDTH,
   QUICK_PICKER_OFFSET,
+  QUICK_PICKER_PHONE_MIN_PICTURE,
+  QUICK_PICKER_PICTURE_FLOOR_SCALE,
+  QUICK_PICKER_PICTURE_SCALE,
   QUICK_PICKER_STRIP_GAP,
   QUICK_PICKER_STRIP_PAD,
   QUICK_PICKER_STRIP_EDGE_CLEAR,
@@ -287,36 +290,31 @@ describe("fitEffectQuickPicker", () => {
 describe("fitEffectQuickPicker on a phone held upright", () => {
   const count = EFFECTS.length;
   const controls = 44;
+  /** The progress row's height on the real screens below. */
+  const rowHeight = 40;
 
-  // The Construct player on each phone: `bounds` is the content area (room
-  // from its top to the bottom navigation), the player's box its square
-  // animation plus the 44px control row, `roomAbove` the empty room between
-  // the player's top and the area's top. The first three follow the sizes
-  // worked out for the design (344x760, 360x591, 387x775); the rest are laid
-  // out the same way.
+  // Each size is the Construct player as the page measured it with the list
+  // open (2026-11-18, the picker's own inputs): `bounds` is the content area,
+  // `player` the box at rest (its square animation plus the progress row),
+  // `roomAbove` the empty room between the player's top and the layout's top.
   function phoneBox(opts: {
-    width: number;
-    boundsTop: number;
     boundsHeight: number;
-    playerWidth: number;
-    animation: number;
     playerTop: number;
+    playerWidth: number;
+    playerHeight: number;
+    roomAbove: number;
+    width: number;
   }) {
     return {
-      bounds: {
-        left: 0,
-        top: opts.boundsTop,
-        width: opts.width,
-        height: opts.boundsHeight,
-      },
+      bounds: { left: 0, top: 0, width: opts.width, height: opts.boundsHeight },
       player: {
         left: (opts.width - opts.playerWidth) / 2,
         top: opts.playerTop,
         width: opts.playerWidth,
-        height: opts.animation + controls,
+        height: opts.playerHeight,
       },
-      roomAbove: opts.playerTop - opts.boundsTop,
-      controls,
+      roomAbove: opts.roomAbove,
+      controls: rowHeight,
       count,
     };
   }
@@ -324,51 +322,59 @@ describe("fitEffectQuickPicker on a phone held upright", () => {
   const sizes = {
     "344x760": phoneBox({
       width: 344,
-      boundsTop: 53,
-      boundsHeight: 663,
-      playerWidth: 336,
-      animation: 319,
-      playerTop: 136,
+      boundsHeight: 715,
+      playerTop: 135.87109375,
+      playerWidth: 318,
+      playerHeight: 358,
+      roomAbove: 82.87109375,
     }),
     "360x591": phoneBox({
       width: 360,
-      boundsTop: 53,
-      boundsHeight: 494,
-      playerWidth: 354,
-      animation: 329,
+      boundsHeight: 546,
       playerTop: 53,
+      playerWidth: 328,
+      playerHeight: 368,
+      roomAbove: 0,
     }),
     "360x640": phoneBox({
       width: 360,
-      boundsTop: 53,
-      boundsHeight: 543,
-      playerWidth: 354,
-      animation: 329,
-      playerTop: 53,
+      boundsHeight: 595,
+      playerTop: 74.5,
+      playerWidth: 334,
+      playerHeight: 374,
+      roomAbove: 21.5,
     }),
     "375x667": phoneBox({
       width: 375,
-      boundsTop: 53,
-      boundsHeight: 569,
-      playerWidth: 369,
-      animation: 344,
-      playerTop: 53,
+      boundsHeight: 622,
+      playerTop: 80.3828125,
+      playerWidth: 349,
+      playerHeight: 389,
+      roomAbove: 27.3828125,
     }),
     "387x775": phoneBox({
       width: 387,
-      boundsTop: 54,
-      boundsHeight: 677,
+      boundsHeight: 730,
+      playerTop: 120.8203125,
+      playerWidth: 361,
+      playerHeight: 401,
+      roomAbove: 67.8203125,
+    }),
+    "390x844": phoneBox({
+      width: 390,
+      boundsHeight: 799,
+      playerTop: 148.9921875,
       playerWidth: 364,
-      animation: 325,
-      playerTop: 54,
+      playerHeight: 404,
+      roomAbove: 95.9921875,
     }),
     "412x915": phoneBox({
       width: 412,
-      boundsTop: 53,
-      boundsHeight: 818,
-      playerWidth: 387,
-      animation: 387,
-      playerTop: 225,
+      boundsHeight: 870,
+      playerTop: 170,
+      playerWidth: 386,
+      playerHeight: 426,
+      roomAbove: 117,
     }),
   };
   type SizeName = keyof typeof sizes;
@@ -387,6 +393,7 @@ describe("fitEffectQuickPicker on a phone held upright", () => {
     (name) => {
       const { box, fit } = phoneFit(name);
       expect(fit.side).toBe("dock");
+      expect(fit.phone).toBe(true);
       expect(fit.catalog.cols).toBe(4);
       expect(fit.catalog.rows).toBe(4);
       expect(fit.scrolls).toBe(false);
@@ -395,50 +402,80 @@ describe("fitEffectQuickPicker on a phone held upright", () => {
       if (fit.catalog.orientation === "dense") {
         expect(fit.catalog.tile).toBe(34);
         expect(fit.catalog.gap).toBe(4);
+        // Icon tiles: the player 80%, or 75% with the rows tight.
+        expect(fit.scale).toBeGreaterThanOrEqual(
+          fit.tight
+            ? QUICK_PICKER_FLOOR_PLAYER_SCALE
+            : QUICK_PICKER_MIN_PLAYER_SCALE
+        );
       } else {
         expect(fit.catalog.portrait).toBeGreaterThanOrEqual(
-          MIN_CATALOG_PORTRAIT
+          QUICK_PICKER_PHONE_MIN_PICTURE
+        );
+        // Pictures: the player whole, 90% or more with the ordinary rows, 80%
+        // or more with the tight ones.
+        expect(fit.scale).toBeGreaterThanOrEqual(
+          fit.tight
+            ? QUICK_PICKER_PICTURE_FLOOR_SCALE
+            : QUICK_PICKER_PICTURE_SCALE
         );
       }
-      // Nothing under the floors: the player 80%, or 75% with the rows tight.
-      expect(fit.scale).toBeGreaterThanOrEqual(
-        fit.tight
-          ? QUICK_PICKER_FLOOR_PLAYER_SCALE
-          : QUICK_PICKER_MIN_PLAYER_SCALE
-      );
       expect(fit.scale).toBeLessThanOrEqual(1);
       expect(fit.lift).toBeLessThanOrEqual(box.roomAbove);
       // The lifted, shrunk animation's bottom edge stays above the sheet.
-      const animation = box.player.height - controls;
+      const animation = box.player.height - rowHeight;
       const bottom = box.player.top - fit.lift + animation * fit.scale;
       const floor = box.bounds.top + box.bounds.height;
       expect(bottom + fit.height).toBeLessThanOrEqual(floor + 0.5);
     }
   );
 
-  it("387x775: pictures at their smallest, not lifted, the player scaled to about 87%", () => {
+  it("387x775: the smallest pictures, the rows tight, the player at about 86%", () => {
     const { fit } = phoneFit("387x775");
     expect(fit.catalog.orientation).toBe("stack");
-    expect(fit.catalog.portrait).toBe(MIN_CATALOG_PORTRAIT);
-    expect(fit.lift).toBe(0);
-    expect(fit.tight).toBe(false);
-    // 12 + 44 + 8 + 36 + 8 + (4 x 64 + 3 x 6) + 12, and the sheet's border.
-    expect(fit.height).toBe(395);
-    expect(fit.scale).toBeCloseTo(0.868, 2);
+    expect(fit.catalog.portrait).toBe(QUICK_PICKER_PHONE_MIN_PICTURE);
+    expect(pictureTileHeight(fit.catalog.portrait)).toBe(62.5);
+    expect(fit.tight).toBe(true);
+    // 8 + 36 + 6 + 32 + 6 + (4 x 62.5 + 3 x 6) + 8, and the sheet's border.
+    expect(fit.height).toBe(365);
+    expect(fit.lift).toBe(67);
+    expect(fit.scale).toBeCloseTo(0.862, 2);
   });
 
-  it("344x760: pictures 75 x 64, the player lifted to the top and scaled to 84%", () => {
+  it("344x760: the smallest pictures, the rows tight, the player at about 93%", () => {
     const { box, fit } = phoneFit("344x760");
     expect(fit.catalog.orientation).toBe("stack");
-    expect(fit.catalog.portrait).toBe(MIN_CATALOG_PORTRAIT);
-    expect(pictureTileHeight(fit.catalog.portrait)).toBe(64);
-    expect(fit.height).toBe(395);
-    expect(fit.lift).toBe(box.roomAbove);
-    expect(fit.scale).toBeCloseTo(0.84, 2);
+    expect(fit.catalog.portrait).toBe(QUICK_PICKER_PHONE_MIN_PICTURE);
+    expect(fit.tight).toBe(true);
+    expect(fit.height).toBe(365);
+    expect(fit.lift).toBe(Math.floor(box.roomAbove));
+    expect(fit.scale).toBeCloseTo(0.931, 2);
+  });
+
+  it("390x844: the smallest pictures with the ordinary rows, the player over 90%", () => {
+    const { fit } = phoneFit("390x844");
+    expect(fit.catalog.orientation).toBe("stack");
+    expect(fit.catalog.portrait).toBe(QUICK_PICKER_PHONE_MIN_PICTURE);
+    expect(fit.tight).toBe(false);
+    // 12 + 44 + 8 + 36 + 8 + (4 x 62.5 + 3 x 6) + 12, and the border.
+    expect(fit.height).toBe(389);
+    expect(fit.scale).toBeGreaterThanOrEqual(QUICK_PICKER_PICTURE_SCALE);
+    expect(fit.scale).toBeLessThan(1);
+  });
+
+  it("412x915: the largest pictures, the player lifted and whole", () => {
+    const { box, fit } = phoneFit("412x915");
+    expect(fit.catalog.orientation).toBe("stack");
+    expect(fit.catalog.portrait).toBeGreaterThan(
+      QUICK_PICKER_PHONE_MIN_PICTURE
+    );
+    expect(fit.scale).toBe(1);
+    expect(fit.lift).toBeGreaterThan(0);
+    expect(fit.lift).toBeLessThan(box.roomAbove);
     expect(fit.tight).toBe(false);
   });
 
-  it("360x591: dense tiles 34 tall, the rows tight, the player at 76%", () => {
+  it("360x591: icon tiles 34 tall, the rows tight, the player at 76%, as before", () => {
     const { fit } = phoneFit("360x591");
     expect(fit.catalog.orientation).toBe("dense");
     expect(fit.tight).toBe(true);
@@ -449,7 +486,7 @@ describe("fitEffectQuickPicker on a phone held upright", () => {
   });
 
   it.each(["360x640", "375x667"] as SizeName[])(
-    "%s: dense tiles with the ordinary rows, the player over 80%",
+    "%s: icon tiles with the ordinary rows, the player over 80%",
     (name) => {
       const { fit } = phoneFit(name);
       expect(fit.catalog.orientation).toBe("dense");
@@ -460,29 +497,33 @@ describe("fitEffectQuickPicker on a phone held upright", () => {
     }
   );
 
-  it("412x915: the largest pictures, the player lifted and whole", () => {
-    const { box, fit } = phoneFit("412x915");
-    expect(fit.catalog.orientation).toBe("stack");
-    expect(fit.catalog.portrait).toBeGreaterThan(MIN_CATALOG_PORTRAIT);
-    expect(fit.scale).toBe(1);
-    expect(fit.lift).toBeGreaterThan(0);
-    expect(fit.lift).toBeLessThan(box.roomAbove);
-    expect(fit.tight).toBe(false);
-  });
-
   it("lifts only as far as the sheet needs, to the pixel", () => {
     const { box, fit } = phoneFit("412x915");
     const floor = box.bounds.top + box.bounds.height;
-    const bottom = box.player.top - fit.lift + (box.player.height - controls);
+    const bottom = box.player.top - fit.lift + (box.player.height - rowHeight);
     expect(floor - fit.height - bottom).toBeGreaterThanOrEqual(0);
     expect(floor - fit.height - bottom).toBeLessThan(1);
   });
 
   it("scales the player from its top edge also where it has no room to lift", () => {
-    const { box, fit } = phoneFit("387x775");
+    const { box, fit } = phoneFit("360x591");
     expect(box.roomAbove).toBe(0);
     expect(fit.lift).toBe(0);
     expect(fit.scale).toBeLessThan(1);
+  });
+
+  it("gives the smallest pictures only where the player keeps its share", () => {
+    // 387x775 with the player lower and no room to lift: the tight rows would
+    // leave it under 80%, so the list falls back to icon tiles.
+    const low = {
+      ...sizes["387x775"],
+      player: { ...sizes["387x775"].player, top: 180 },
+      roomAbove: 0,
+    };
+    const fit = fitEffectQuickPicker(low);
+    expect(fit.arrangement).toBe("grid");
+    if (fit.arrangement !== "grid") return;
+    expect(fit.catalog.orientation).toBe("dense");
   });
 
   it("never picks the strip or a scroll for any portrait phone", () => {

@@ -9,6 +9,8 @@
     type TileFormat,
     frame,
     unitsPerDisplayPx,
+    smallTable,
+    type SmallFormat,
   } from "./tile-format";
 
   interface Props {
@@ -34,8 +36,18 @@
     "tile" | "chip",
     { view: Box; lights: number; spread: number; r: number }
   > = {
-    tile: { view: { x: 107, y: 40, w: 506, h: 190 }, lights: 3, spread: 118, r: 62 },
-    chip: { view: { x: 217.5, y: 40, w: 285, h: 190 }, lights: 2, spread: 96, r: 56 },
+    tile: {
+      view: { x: 107, y: 40, w: 506, h: 190 },
+      lights: 3,
+      spread: 118,
+      r: 62,
+    },
+    chip: {
+      view: { x: 217.5, y: 40, w: 285, h: 190 },
+      lights: 2,
+      spread: 96,
+      r: 56,
+    },
   };
 
   const BLUE = DEFAULT_EFFECTS_CONFIG.trails.leftColor;
@@ -184,7 +196,7 @@
     const ctx = node.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const small = format === "card" ? null : SMALL[format];
+    const small = format === "card" ? null : SMALL[smallTable(format)];
     if (small) frame(ctx, format, small.view, 0);
 
     const intent = { ...DEFAULT_EFFECTS_CONFIG.bloom, ...(preset.patch ?? {}) };
@@ -218,7 +230,9 @@
           ? 84
           : 70;
     const r = baseR * (0.72 + 0.56 * normRadius(intent.radius));
-    const upp = small ? unitsPerDisplayPx(small.view, format as "tile" | "chip") : 1;
+    const upp = small
+      ? unitsPerDisplayPx(small.view, format as SmallFormat)
+      : 1;
     const cy = HEIGHT / 2;
 
     ctx.save();
@@ -250,7 +264,7 @@
           cy,
           len,
           small ? 1 : alpha * Math.min(1, 0.45 + intent.spikes * 0.55),
-          small ? 1.6 * upp / 2 : 1
+          small ? (1.6 * upp) / 2 : 1
         );
       }
     });

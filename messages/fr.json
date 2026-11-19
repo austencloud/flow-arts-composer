@@ -10337,5 +10337,7 @@
   "effect_deep_tile_left_prop": "{effect}, accessoire gauche",
   "effect_deep_tile_right_prop": "{effect}, accessoire droit",
   "effect_deep_tile_both_props": "{effect}, les deux accessoires",
-  "effect_deep_left_and_right": "{left} sur l'accessoire gauche, {right} sur l'accessoire droit"
+  "effect_deep_left_and_right": "{left} sur l'accessoire gauche, {right} sur l'accessoire droit",
+  "site_outage_title": "Certaines choses ne marchent pas en ce moment",
+  "site_outage_body": "La connexion, l'enregistrement, Parcourir et les liens partagés ne fonctionnent pas. Le compte Google du site a un problème, et Austen travaille à le rétablir."
 }

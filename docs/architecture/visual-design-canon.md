@@ -532,6 +532,14 @@ The tiles give way before anything scrolls: smaller first, then an icon over
 the name. A name may be shortened by its translator but is never cut
 (section 10).
 
+Where four rows of them fit under the hand row, each tile carries a picture of
+its effect, and the playing picture above gives way to make the room: it lifts,
+the list's rows tighten, then it shrinks. Icon tiles are only for the phones
+too short for that; a bigger playing picture is not a reason to drop the
+pictures. The hand dots keep their corners and size on a picture tile, beside
+the picture. Austen's pick, 2026-11-18 ("B, pictures"), over icon tiles with
+the playing picture at full size.
+
 ### Application shell
 
 The persistent navigation rail is narrow and stable. The active background can

@@ -6,6 +6,11 @@
  *   (desktop panel tiles). Backing store 240x90, about three times display.
  * - chip: 3:2, shown at 29x20 (the Effects button) and about 30x20 (the rail
  *   item). Backing store 96x64.
+ * - tall: 6:5, shown at about 126x104 (the picture-first tiles of the Shape
+ *   Engine's Customize workspace). Backing store 288x240, about twice
+ *   display. It has no compositions of its own: a painter frames it on its
+ *   chip subject (`smallTable`), which `frame()` grows to the taller aspect,
+ *   so the subject keeps the chip's width and gains ground above and below.
  *
  * A painter keeps composing in card coordinates (720x270). In a small format
  * it calls `frame()` first, which maps a box of the card around its subject
@@ -16,12 +21,13 @@
  */
 import { TILE_H, TILE_W } from "./tile-paint";
 
-export type TileFormat = "card" | "tile" | "chip";
+export type TileFormat = "card" | "tile" | "chip" | "tall";
 
 export const TILE_FORMAT_SIZE: Record<TileFormat, { w: number; h: number }> = {
   card: { w: TILE_W, h: TILE_H },
   tile: { w: 240, h: 90 },
   chip: { w: 96, h: 64 },
+  tall: { w: 288, h: 240 },
 };
 
 export interface Box {
@@ -33,6 +39,21 @@ export interface Box {
 
 export function isSmall(format: TileFormat): boolean {
   return format !== "card";
+}
+
+/** Every format but the card. */
+export type SmallFormat = Exclude<TileFormat, "card">;
+
+/** The small formats a painter composes for. */
+export type SmallTable = "tile" | "chip";
+
+/**
+ * The composition a small format is painted from. The tall tile borrows the
+ * chip's: it is the nearest in shape, and its subject box is drawn to fill a
+ * frame, which is what a picture-first tile wants.
+ */
+export function smallTable(format: SmallFormat): SmallTable {
+  return format === "tall" ? "chip" : format;
 }
 
 /** What a painter may say about its subject in each small format. */
@@ -90,7 +111,7 @@ export function unitsPerBackingPx(view: Box, format: TileFormat): number {
 }
 
 /** Display widths the small formats are painted for (CSS px). */
-export const DISPLAY_W = { tile: 74, chip: 29 } as const;
+export const DISPLAY_W = { tile: 74, chip: 29, tall: 126 } as const;
 
 /**
  * Card-space units per display pixel for a framed view. A mark meant to be

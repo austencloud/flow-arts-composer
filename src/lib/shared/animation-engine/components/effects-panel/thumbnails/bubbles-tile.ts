@@ -17,9 +17,11 @@ import {
 import { type Rgb, blob, css, ground, hexToRgb, lcg } from "./tile-paint";
 import {
   type Box,
+  type SmallFormat,
   type TileFormat,
   frame,
   isSmall,
+  smallTable,
   unitsPerDisplayPx,
 } from "./tile-format";
 
@@ -163,11 +165,11 @@ const SMALL_BUBBLES: Record<
 function smallField(
   p: BubblesIntent,
   rand: Rand,
-  format: "tile" | "chip",
+  format: SmallFormat,
   view: Box
 ): Bubble[] {
   const k = 0.92 + Math.min(0.16, p.intensity * 0.16);
-  return SMALL_BUBBLES[format].map(([u, v, rf], i) => ({
+  return SMALL_BUBBLES[smallTable(format)].map(([u, v, rf], i) => ({
     x: view.x + u * view.w,
     y: view.y + v * view.h,
     r: rf * view.h * k,
@@ -313,7 +315,7 @@ export function paintBubblesTile(
 ): void {
   const rand = lcg(BUBBLES_TILE_SEED);
   if (isSmall(format)) {
-    paintSmall(ctx, intent, rand, format as "tile" | "chip");
+    paintSmall(ctx, intent, rand, format as SmallFormat);
     return;
   }
   const pal = resolveBubblePalette(intent);
@@ -334,14 +336,22 @@ function paintSmall(
   ctx: CanvasRenderingContext2D,
   intent: BubblesIntent,
   rand: Rand,
-  format: "tile" | "chip"
+  format: SmallFormat
 ): void {
   const pal = resolveBubblePalette(intent);
   const film = filmOf(pal);
-  const view = frame(ctx, format, SMALL_VIEW[format], 0);
+  const view = frame(ctx, format, SMALL_VIEW[smallTable(format)], 0);
   ground(ctx, [0.03, 0.03, 0.055]);
   // A film-coloured wash behind the cluster, so the clear bubbles catch it.
-  blob(ctx, view.x + view.w * 0.5, view.y + view.h * 0.55, view.w * 0.6, view.h * 0.75, film.rgb, 0.3);
+  blob(
+    ctx,
+    view.x + view.w * 0.5,
+    view.y + view.h * 0.55,
+    view.w * 0.6,
+    view.h * 0.75,
+    film.rgb,
+    0.3
+  );
   const minRim = 1.5 * unitsPerDisplayPx(view, format);
   ctx.save();
   for (const b of smallField(intent, rand, format, view)) {

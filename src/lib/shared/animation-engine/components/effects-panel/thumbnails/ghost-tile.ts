@@ -19,7 +19,14 @@ import {
 } from "#lib/shared/effects/renderers/ghost-2d-renderer.js";
 import type { EffectConfigMap } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { blob, ground, hexToRgb } from "./tile-paint";
-import { type Box, type TileFormat, frame, isSmall } from "./tile-format";
+import {
+  type Box,
+  type SmallFormat,
+  type TileFormat,
+  frame,
+  isSmall,
+  smallTable,
+} from "./tile-format";
 
 export type GhostIntent = EffectConfigMap["ghost"];
 
@@ -78,7 +85,9 @@ export function paintGhostTile(
   sprite: GhostTileSprite | null,
   format: TileFormat = "card"
 ): void {
-  const small = isSmall(format) ? SMALL[format as "tile" | "chip"] : null;
+  const small = isSmall(format)
+    ? SMALL[smallTable(format as SmallFormat)]
+    : null;
   if (small) frame(ctx, format, small.view, 0);
   ground(ctx, [0.03, 0.035, 0.06]);
   blob(ctx, 400, 140, 300, 170, hexToRgb(GHOST_FROST_WHITE), 0.05);

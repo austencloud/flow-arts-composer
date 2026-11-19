@@ -86,6 +86,7 @@
   // Debug tools
   import AdminToolbar from "./debug/components/AdminToolbar.svelte";
   import ImpersonationBar from "./debug/components/ImpersonationBar.svelte";
+  import ServiceOutageNotice from "./offline/components/ServiceOutageNotice.svelte";
   import { initUserPreviewContext } from "./debug/context/user-preview-context";
   import {
     userPreviewState,
@@ -312,6 +313,10 @@
 
   <!-- Content + Navigation Wrapper (flex layout) -->
   <div class="content-wrapper">
+    <!-- Google-side outage notice: in the flow, so it pushes the content down
+         instead of covering a control. Shows only while calls really fail. -->
+    <ServiceOutageNotice />
+
     <!-- Impersonation bar (top of content, both platforms) -->
     {#if isImpersonating && userPreviewState.data.profile}
       <ImpersonationBar

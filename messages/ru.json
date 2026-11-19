@@ -10337,5 +10337,7 @@
   "effect_deep_tile_left_prop": "{effect}, левый реквизит",
   "effect_deep_tile_right_prop": "{effect}, правый реквизит",
   "effect_deep_tile_both_props": "{effect}, оба реквизита",
-  "effect_deep_left_and_right": "{left} на левом реквизите, {right} на правом реквизите"
+  "effect_deep_left_and_right": "{left} на левом реквизите, {right} на правом реквизите",
+  "site_outage_title": "Сейчас кое-что не работает",
+  "site_outage_body": "Вход, сохранение, раздел «Обзор» и общие ссылки не работают. С аккаунтом Google сайта возникла проблема, и Остин работает над её решением."
 }
