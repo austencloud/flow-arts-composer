@@ -10338,6 +10338,6 @@
   "effect_deep_tile_right_prop": "{effect}, 오른쪽 프롭",
   "effect_deep_tile_both_props": "{effect}, 두 프롭 모두",
   "effect_deep_left_and_right": "왼쪽 프롭에 {left}, 오른쪽 프롭에 {right}",
-  "site_outage_title": "지금 일부 기능이 작동하지 않습니다",
-  "site_outage_body": "로그인, 저장, 찾아보기, 공유 링크가 작동하지 않습니다. 사이트의 Google 계정에 문제가 생겼고, Austen이 복구하고 있습니다."
+  "site_outage_title": "지금 일부 기능이 작동하지 않아요",
+  "site_outage_body": "로그인, 저장, 찾아보기, 공유 링크가 작동하지 않아요. 사이트의 Google 계정에 문제가 생겨서 Austen이 복구하고 있어요."
 }

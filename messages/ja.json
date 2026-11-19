@@ -10339,5 +10339,5 @@
   "effect_deep_tile_both_props": "{effect}、両方のプロップ",
   "effect_deep_left_and_right": "左のプロップに{left}、右のプロップに{right}",
   "site_outage_title": "現在、一部の機能が使えません",
-  "site_outage_body": "サインイン、保存、ブラウズ、共有リンクが使えません。サイトのGoogleアカウントに問題が起きていて、Austenが復旧に取り組んでいます。"
+  "site_outage_body": "ログイン、保存、ブラウズ、共有リンクが使えません。サイトのGoogleアカウントに問題が起きていて、Austenが復旧に取り組んでいます。"
 }

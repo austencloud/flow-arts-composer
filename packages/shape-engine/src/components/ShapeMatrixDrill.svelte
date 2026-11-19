@@ -98,6 +98,7 @@
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
   import ShapeMatrixStageActions from "./ShapeMatrixStageActions.svelte";
+  import { fitActionRow } from "./action-row-fit";
   import { registerShapeMatrixPlaybackShortcut } from "../app/services/shape-matrix-playback-shortcut";
   import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
   import UnifiedTimeline from "#lib/shared/timeline/UnifiedTimeline.svelte";
@@ -1600,6 +1601,7 @@
         name: SHAPE_MATRIX_ACTIONS_NAME,
         enabled: morphingFrames,
       }}
+      use:fitActionRow
     >
       {#if onselectRealization}
         <PanelButton
@@ -1666,6 +1668,9 @@
     position: relative;
     height: 100%;
     display: grid;
+    /* An auto track is as wide as its widest content's minimum, so a row of
+       long words used to widen the column past the pane. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     grid-template-areas:
       "modes"
@@ -1993,10 +1998,13 @@
   }
   .select-action {
     grid-area: action;
+    min-width: 0;
     min-height: var(--min-touch-target, 44px);
     display: flex;
     gap: 0.5rem;
     visibility: hidden;
+    /* Read by fitActionRow: the phone tier below turns it off. */
+    --action-row-two-rows: 1;
   }
   .select-action.available {
     visibility: visible;
@@ -2005,6 +2013,31 @@
     flex: 1 1 0;
     min-width: 0;
     white-space: nowrap;
+  }
+  /* The fit ladder (action-row-fit.ts). Rung 1 is the tier's own look, so it
+     has no rules here; each rung below adds to the one before. Transitions
+     stay off while the owner measures, so a rung never animates in. */
+  .select-action:global([data-fit-measuring]),
+  .select-action:global([data-fit-measuring]) :global(*) {
+    transition: none !important;
+  }
+  .select-action:global([data-fit-rung="2"]) :global(.panel-btn i),
+  .select-action:global([data-fit-rung="3"]) :global(.panel-btn i),
+  .select-action:global([data-fit-rung="4"]) :global(.panel-btn i),
+  .select-action:global([data-fit-rung="5"]) :global(.panel-btn i) {
+    display: none;
+  }
+  .select-action:global([data-fit-rung="3"]) :global(.panel-btn),
+  .select-action:global([data-fit-rung="4"]) :global(.panel-btn),
+  .select-action:global([data-fit-rung="5"]) :global(.panel-btn) {
+    padding-inline: 0.5rem;
+  }
+  .select-action:global([data-fit-rung="4"]) :global(.panel-btn) {
+    flex: 1 1 auto;
+  }
+  .select-action:global([data-fit-rung="5"]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   @container shape-matrix-drill (max-width: 42rem) {
     .action-suffix {
@@ -2051,6 +2084,8 @@
 
     .select-action {
       min-height: 2.125rem;
+      /* No second row here: it would take the animation's height. */
+      --action-row-two-rows: 0;
     }
     .select-action :global(.panel-btn) {
       min-height: 2.125rem;
