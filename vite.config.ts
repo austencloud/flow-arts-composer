@@ -16,6 +16,7 @@ import { createViteDependencyRefreshPlugin } from "./src/config/vite-plugin-depe
 import { deployStaticCopyPlugin } from "./src/config/vite-plugin-deploy-static-copy";
 import { SSR_RESOLVE_CONDITIONS } from "./src/config/vite-ssr-conditions";
 import { featureGatePlugin } from "./src/config/vite-plugin-feature-gate";
+import { localOnlyGatePlugin } from "./src/config/vite-plugin-local-only";
 import { museumPlacementPlugin } from "./src/lib/features/museum/dev/museum-placement-plugin";
 import { composerPlacementPlugin } from "./src/lib/shared/3d/scene-composer/persistence/composer-placement-plugin";
 import { sveltekit } from "@sveltejs/kit/vite";
@@ -1052,6 +1053,22 @@ function classifiedChunkGroups() {
 // HTTP/1.1 automatically, so nothing breaks for other checkouts.
 const devCertPath = path.resolve(dirname, ".cert/dev-cert.pem");
 const devKeyPath = path.resolve(dirname, ".cert/dev-key.pem");
+// The dev server answers this computer only. Setting TKA_DEV_HOST to a wider
+// address (for example "::" or "0.0.0.0") exposes it to the network, so that
+// needs Austen's yes. On 2026-11-18 a server bound to every address was reached
+// from the internet through a tunnel.
+const devHost = process.env.TKA_DEV_HOST || "::1";
+const devFsAllow = [
+  ".",
+  ...(() => {
+    try {
+      const nodeModulesOwner = path.dirname(fs.realpathSync("node_modules"));
+      return nodeModulesOwner === path.resolve(".") ? [] : [nodeModulesOwner];
+    } catch {
+      return [];
+    }
+  })(),
+];
 const devHttps =
   fs.existsSync(devCertPath) && fs.existsSync(devKeyPath)
     ? { cert: fs.readFileSync(devCertPath), key: fs.readFileSync(devKeyPath) }
@@ -1331,6 +1348,9 @@ export default defineConfig(({ command, mode }) => ({
     ...getEnabledFeaturesDefineMap(),
   },
   plugins: [
+    // First, so it runs before Vite's own middlewares. Vite skips allowedHosts
+    // when server.https is set, so this is what refuses tunnel hostnames.
+    localOnlyGatePlugin(),
     // In a task worktree, serve this checkout's packages/* instead of the
     // primary checkout's that node_modules links to. Nothing in the primary.
     ...workspaceResolvePlugins(dirname),
@@ -1805,28 +1825,40 @@ export default defineConfig(({ command, mode }) => ({
   // DEV SERVER (Vite 6.0 enhancements)
   // ============================================================================
   server: {
-    host: "0.0.0.0",
+    host: devHost,
     port: 5173,
     strictPort: true, // 📱 Mobile debugging requires consistent port (ADB reverse tcp:5173)
     // HTTP/2 when the mkcert dev cert exists (see devHttps above). Vite enables
     // HTTP/2 automatically for https servers that have no server.proxy (none here).
     https: devHttps,
-    allowedHosts: [".trycloudflare.com", "dev.tkaflowarts.com"],
+    // Left at Vite's default: only localhost and IP hosts pass. A public
+    // hostname (a tunnel) goes back here only with a login in front of it
+    // (Cloudflare Access) and Austen's yes.
     headers: {
       // Enable OAuth popups to communicate with parent window
       "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
       "Cross-Origin-Embedder-Policy": "unsafe-none",
     },
     fs: {
-      // "../../../" keeps the primary checkout's node_modules reachable when the
-      // server runs from a worktree under E:/worktrees/<repo>/<name> whose
-      // node_modules is a junction into the primary checkout.
-      allow: [
-        ".",
-        "../../",
-        "../../../",
-        "../../../animator",
-        "../../../desktop",
+      // Serve this project and nothing above it. In a worktree, node_modules is
+      // a junction into the primary checkout and pnpm workspace links resolve
+      // into that checkout's package folders, so the checkout that owns the
+      // real node_modules stays readable too. E:/ and E:/worktrees must not be.
+      allow: devFsAllow,
+      // Setting deny replaces Vite's defaults, so they are repeated here
+      // (Vite 8.3), followed by key-shaped files that must never be served.
+      deny: [
+        ".env",
+        ".env.*",
+        "*.{crt,pem,key,p12,pfx,cer,der}",
+        ".npmrc",
+        ".yarnrc.yml",
+        "**/.git/**",
+        "**/serviceAccount*.json",
+        "**/*service-account*.json",
+        "**/*adminsdk*.json",
+        "**/*.token",
+        "**/.cloudflared/**",
       ],
       strict: true, // 2026: Security best practice
     },
@@ -1868,6 +1900,6 @@ export default defineConfig(({ command, mode }) => ({
   preview: {
     port: 4173,
     strictPort: true,
-    host: "0.0.0.0",
+    host: devHost,
   },
 }));

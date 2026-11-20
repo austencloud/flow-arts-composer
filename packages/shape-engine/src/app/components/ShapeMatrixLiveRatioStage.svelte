@@ -120,6 +120,15 @@
      * draws the same prop in.
      */
     propColors?: { left: string; right: string } | null;
+    /**
+     * False while this stage is out of sight: the other surface is in front,
+     * or the compact layout shows the grid. The draw loop stops then, and
+     * starts again from the present moment when the stage comes forward, so
+     * its first frame there is drawn fresh. Drawing a hidden stage every frame
+     * took the main thread from the Matrix in front of it: the tap that opens
+     * a tile waited behind it, four times as long on a slow phone.
+     */
+    active?: boolean;
   }
 
   let {
@@ -135,6 +144,7 @@
     leftPropType = "staff",
     rightPropType = "staff",
     propColors = null,
+    active = true,
   }: Props = $props();
 
   /*
@@ -408,6 +418,12 @@
     return kept;
   }
 
+  /** Set by the draw loop below: starts it again when the stage comes back. */
+  let resumeDrawing: (() => void) | null = null;
+  $effect(() => {
+    if (active) resumeDrawing?.();
+  });
+
   onMount(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
@@ -417,6 +433,11 @@
     const tips: EmitterTip[] = [];
 
     const draw = (now: number) => {
+      // Out of sight, the loop parks; `resumeDrawing` restarts it.
+      if (!active) {
+        frame = 0;
+        return;
+      }
       frame = requestAnimationFrame(draw);
       const element = canvas;
       const context = element?.getContext("2d");
@@ -779,8 +800,18 @@
       }
     };
 
+    resumeDrawing = () => {
+      if (frame) return;
+      // Time out of sight does not count: the figure carries on from where it
+      // stopped rather than jumping a frame's worth of the clock.
+      last = performance.now();
+      frame = requestAnimationFrame(draw);
+    };
     frame = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      resumeDrawing = null;
+      cancelAnimationFrame(frame);
+    };
   });
 </script>
 

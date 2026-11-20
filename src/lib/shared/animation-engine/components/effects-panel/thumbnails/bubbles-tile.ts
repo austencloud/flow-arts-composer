@@ -162,6 +162,9 @@ const SMALL_BUBBLES: Record<
   ],
 };
 
+/** Rim width, in display px at 74 wide, the tile's bubbles are held to. */
+const TILE_RIM_PX = 2.6;
+
 function smallField(
   p: BubblesIntent,
   rand: Rand,
@@ -352,7 +355,10 @@ function paintSmall(
     film.rgb,
     0.3
   );
-  const minRim = 1.5 * unitsPerDisplayPx(view, format);
+  // The phone list shows the tile 52 wide, not the 74 `DISPLAY_W.tile` is
+  // worked out for, so the tile's rim gets 74/52 of the width and more.
+  const minRimPx = format === "tile" ? TILE_RIM_PX : 1.5;
+  const minRim = minRimPx * unitsPerDisplayPx(view, format);
   ctx.save();
   for (const b of smallField(intent, rand, format, view)) {
     drawBubble(ctx, b, pal, film, minRim);

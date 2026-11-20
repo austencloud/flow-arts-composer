@@ -73,7 +73,7 @@
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { DURATION } from "@austencloud/motion";
-  import { growFade } from "@austencloud/motion";
+  import { flightGrowFade } from "../services/flight-grow-fade";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     SHAPE_MATRIX_ACTIVE_STAGE_NAME,
@@ -1321,7 +1321,7 @@
         name: SHAPE_MATRIX_MODES_NAME,
         enabled: morphingFrames,
       }}
-      transition:growFade={frameMotion()}
+      transition:flightGrowFade={frameMotion()}
     >
       <ElementChipRow
         selected={selectedMode}
@@ -1504,7 +1504,7 @@
           name: SHAPE_MATRIX_STRIP_NAME,
           enabled: morphingFrames,
         }}
-        transition:growFade={frameMotion()}
+        transition:flightGrowFade={frameMotion()}
       >
         {#if railRealization && pictographRailReady}
           <LazyMount

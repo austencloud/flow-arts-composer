@@ -20,6 +20,7 @@
   import { EFFECTS, EFFECT_LABELS, getRegistration } from "./effect-registry";
   import type { EffectRegistration } from "./effect-registry";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
+  import { formatForPictureWidth } from "./picture-format";
   import { effectCatalogLooks } from "./effect-catalog-looks";
   import {
     fitEffectCatalog,
@@ -431,8 +432,6 @@
       : null
   );
 
-  /** Pictures up to this wide are painted for it (the small tile format). */
-  const SMALL_PICTURE_MAX = 130;
   const pictureWidth = $derived(
     (fitRoom
       ? pickerFit?.portrait
@@ -446,9 +445,7 @@
   const pictureFormat = $derived(
     pageFit?.shape === "tall"
       ? ("tall" as const)
-      : paintedWidth > 0 && paintedWidth <= SMALL_PICTURE_MAX
-        ? ("tile" as const)
-        : ("card" as const)
+      : formatForPictureWidth(paintedWidth)
   );
   /** The phone tray has no catalog; it shows each effect's current look as a
    *  tile-format picture over its name (EffectSelector `trayPictures`). */

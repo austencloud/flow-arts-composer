@@ -89,6 +89,7 @@
   import EffectSelector from "./EffectSelector.svelte";
   import EffectHandDot from "./EffectHandDot.svelte";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
+  import { formatForPictureWidth } from "./picture-format";
   import {
     EFFECTS,
     EFFECT_COLORS,
@@ -720,10 +721,13 @@
 {#snippet portrait(effectId: string)}
   {@const look = looks?.get(effectId)}
   {#if look}
+    <!-- The same rule as the Effects panel: a small picture is painted in the
+         tile format, a big look card keeps the card. -->
     <EffectPresetThumbnail
       effectType={effectId}
       preset={look.preset}
       legacyModel={look.model}
+      format={formatForPictureWidth(fit?.catalog?.portrait ?? 0)}
     />
   {/if}
 {/snippet}

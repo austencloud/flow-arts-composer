@@ -69,6 +69,7 @@
   import type { UnifiedPlaybackContext } from "#lib/shared/timeline/unified-playback-context.js";
   import { registerShapeMatrixPlaybackShortcut } from "../services/shape-matrix-playback-shortcut";
   import { growFade } from "@austencloud/motion";
+  import { flightGrowFade } from "../../services/flight-grow-fade";
   import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -341,6 +342,11 @@
     app.compact && app.surface === "theory" && app.activeView === "detail"
   );
   const morphingFrames = $derived(stageShowing && app.mandalaHandoff);
+  // The live stage draws only while it can be seen: this surface is in front,
+  // and a compact layout is showing the stage rather than the grid.
+  const stageVisible = $derived(
+    app.surface === "theory" && (!app.compact || app.activeView === "detail")
+  );
   // A flight snapshots the frame the panes change in, so a frame growing in
   // or out at that moment would be caught half size.
   const frameMotion = () =>
@@ -460,7 +466,7 @@
           name: SHAPE_MATRIX_MODES_NAME,
           enabled: morphingFrames,
         }}
-        transition:growFade={frameMotion()}
+        transition:flightGrowFade={frameMotion()}
       >
         <ElementChipRow
           selected={app.theoryMode}
@@ -613,6 +619,7 @@
                   leftPropType={drawnProps.left}
                   rightPropType={drawnProps.right}
                   {propColors}
+                  active={stageVisible}
                 />
               </div>
             </button>

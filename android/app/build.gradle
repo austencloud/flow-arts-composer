@@ -35,11 +35,14 @@ android {
     }
 }
 
-// The pre-push step numbers each phone build (-PtkaVersionCode). The updater
+// The pre-push step numbers each phone build (-PtkaVersionCode), and the
+// Android Build workflow numbers each store bundle the same way. The updater
 // treats a new build number as a new install: it goes back to the bundled
-// web layer and deletes downloaded ones. Every build is otherwise number 1.
+// web layer and deletes downloaded ones. Google Play refuses a bundle whose
+// number is not higher than the last one it took. Without the property every
+// build is number 1. Debug and release both read it.
 androidComponents {
-    onVariants(selector().withBuildType("debug")) { variant ->
+    onVariants(selector().all()) { variant ->
         if (project.hasProperty("tkaVersionCode")) {
             variant.outputs.each { output ->
                 output.versionCode.set(project.property("tkaVersionCode") as Integer)

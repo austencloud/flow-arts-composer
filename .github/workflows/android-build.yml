@@ -75,6 +75,17 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
 
+      - name: Compute version code
+        # Google Play refuses a bundle whose version code is not higher than the
+        # last upload. Use the repo's own numbering (ten-second ticks since
+        # 2020-01-01), the same one the phone build uses.
+        id: version
+        run: |
+          CODE=$(node -e "import('./scripts/lib/native-push-deploy-core.mjs').then(m => console.log(m.nativeBuildNumber()))")
+          case "$CODE" in ''|*[!0-9]*) echo "Bad version code: $CODE"; exit 1;; esac
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "Version code: $CODE"
+
       - name: Build release AAB
         working-directory: android
         env:
@@ -82,7 +93,25 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleRelease
+        run: ./gradlew bundleRelease -PtkaVersionCode=${{ steps.version.outputs.code }}
+
+      - name: Verify AAB version code
+        env:
+          BUNDLETOOL_VERSION: "1.18.1"
+          EXPECTED: ${{ steps.version.outputs.code }}
+        run: |
+          curl -fsSL -o bundletool.jar "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          ACTUAL=$(java -jar bundletool.jar dump manifest --bundle android/app/build/outputs/bundle/release/app-release.aab --xpath /manifest/@android:versionCode)
+          echo "Expected version code: $EXPECTED, bundle has: $ACTUAL"
+          {
+            echo "### Android bundle"
+            echo ""
+            echo "Version code: \`$ACTUAL\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::Bundle version code $ACTUAL does not match $EXPECTED"
+            exit 1
+          fi
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4

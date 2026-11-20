@@ -107,6 +107,15 @@
      */
     holdMotion?: boolean;
     /**
+     * While true, an allocation change lands in one step, as it does under
+     * reduced motion: nothing is measured, pinned or slid. For an owner whose
+     * change is carried by something else, such as a view transition that
+     * snapshots the frame the panes change in. Measuring there forced extra
+     * layout passes inside the transition's update callback, a wait the tap
+     * paid before the first frame moved.
+     */
+    snap?: boolean;
+    /**
      * Asked once, when an allocation changes. True moves the edge on the
      * compositor instead of sliding the layout: the group takes its end
      * layout in one step, the last panel travels from where it was on screen
@@ -128,6 +137,7 @@
     gap = 6,
     flattened = false,
     holdMotion = false,
+    snap = false,
     compositorEdge,
   }: Props = $props();
 
@@ -416,7 +426,7 @@
     void panels;
     untrack(() => {
       pendingBasisHandoffs = [];
-      if (!containerRef || prefersReducedMotion()) return;
+      if (!containerRef || snap || prefersReducedMotion()) return;
 
       panels.forEach((panel, index) => {
         const key = panel.id ?? index;
@@ -757,7 +767,12 @@
     void sizes;
     void manuallySizedPanels;
     untrack(() => {
-      if (!containerRef || activeDragIndex !== null || prefersReducedMotion()) {
+      if (
+        !containerRef ||
+        activeDragIndex !== null ||
+        snap ||
+        prefersReducedMotion()
+      ) {
         // No motion: nothing stays parked, the content takes its real size.
         if (parkedPanels.size > 0) {
           parkedPanels.clear();

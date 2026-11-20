@@ -3,15 +3,13 @@
   import type { EffectPreset } from "../presets/types";
   import { withAlpha } from "./tile-paint";
   import { queueTilePaint } from "./tile-paint-queue";
+  import { TILE_FORMAT_SIZE, type TileFormat } from "./tile-format";
   import {
-    TILE_FORMAT_SIZE,
-    type Box,
-    type TileFormat,
-    frame,
-    unitsPerDisplayPx,
-    smallTable,
-    type SmallFormat,
-  } from "./tile-format";
+    bloomExposure as exposure,
+    bloomLightColors,
+    bloomNormRadius as normRadius,
+    paintBloomSmall,
+  } from "./bloom-small";
 
   interface Props {
     preset: EffectPreset<"bloom">;
@@ -28,32 +26,6 @@
   const HEIGHT = 270;
 
   /**
-   * Small formats: two flares whose cores are about 40% of the frame height,
-   * spike lines that run to the frame's edge, and nothing else. The view is
-   * centred on the card's middle so the same look reads at both sizes.
-   */
-  const SMALL: Record<
-    "tile" | "chip",
-    { view: Box; lights: number; spread: number; r: number }
-  > = {
-    tile: {
-      view: { x: 107, y: 40, w: 506, h: 190 },
-      lights: 3,
-      spread: 118,
-      r: 62,
-    },
-    chip: {
-      view: { x: 217.5, y: 40, w: 285, h: 190 },
-      lights: 2,
-      spread: 96,
-      r: 56,
-    },
-  };
-
-  const BLUE = DEFAULT_EFFECTS_CONFIG.trails.leftColor;
-  const RED = DEFAULT_EFFECTS_CONFIG.trails.rightColor;
-
-  /**
    * A stylised portrait of the look rather than a replay of it. The tile is
    * ~304x114 in the panel, which is too small to judge a real bloom render -
    * Halo's actual output is barely above the background at that size. So this
@@ -65,36 +37,6 @@
    * spikes, smear from streak and afterglow. Nothing is keyed off preset.id, so
    * the tile cannot drift away from what the preset actually does.
    */
-  function lightColors(intent: typeof DEFAULT_EFFECTS_CONFIG.bloom): string[] {
-    switch (intent.colorMode) {
-      case "prop-matched":
-        return [BLUE, RED];
-      case "palette":
-        return intent.palette.length
-          ? intent.palette.slice(0, 3)
-          : [intent.color];
-      case "rainbow":
-        return [
-          "hsl(350, 85%, 62%)",
-          "hsl(45, 90%, 60%)",
-          "hsl(195, 85%, 60%)",
-        ];
-      case "solid":
-      default:
-        return [intent.color];
-    }
-  }
-
-  /** Lift the floor so a dim preset still reads, without flattening the range. */
-  function exposure(intensity: number): number {
-    return 0.55 + 0.45 * Math.min(1, Math.max(0, intensity));
-  }
-
-  /** Presets live roughly in 20-90; map that onto the tile generously. */
-  function normRadius(radius: number): number {
-    return Math.min(1, Math.max(0, (radius - 20) / 70));
-  }
-
   function drawHalo(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -196,11 +138,13 @@
     const ctx = node.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const small = format === "card" ? null : SMALL[smallTable(format)];
-    if (small) frame(ctx, format, small.view, 0);
+    if (format !== "card") {
+      paintBloomSmall(ctx, preset.patch ?? {}, format);
+      return;
+    }
 
     const intent = { ...DEFAULT_EFFECTS_CONFIG.bloom, ...(preset.patch ?? {}) };
-    const colors = lightColors(intent);
+    const colors = bloomLightColors(intent);
     const alpha = exposure(intent.intensity);
     const reach = Math.min(1, intent.streak * 0.6 + intent.afterglow * 0.6);
 
@@ -212,27 +156,11 @@
     ctx.fillRect(-WIDTH, -HEIGHT, WIDTH * 3, HEIGHT * 3);
 
     // Bigger halo when there are fewer lights, so a solid preset still fills.
-    const lit = small ? colors.slice(0, small.lights) : colors;
-    const spread = small
-      ? lit.length === 1
-        ? 0
-        : small.spread
-      : colors.length === 1
-        ? 0
-        : colors.length === 2
-          ? 118
-          : 152;
-    const baseR = small
-      ? small.r
-      : colors.length === 1
-        ? 98
-        : colors.length === 2
-          ? 84
-          : 70;
+    const lit = colors;
+    const spread =
+      colors.length === 1 ? 0 : colors.length === 2 ? 118 : 152;
+    const baseR = colors.length === 1 ? 98 : colors.length === 2 ? 84 : 70;
     const r = baseR * (0.72 + 0.56 * normRadius(intent.radius));
-    const upp = small
-      ? unitsPerDisplayPx(small.view, format as SmallFormat)
-      : 1;
     const cy = HEIGHT / 2;
 
     ctx.save();
@@ -248,23 +176,18 @@
           ctx,
           x,
           cy,
-          small
-            ? Math.max(r * 0.5, small.view.h * 0.22)
-            : r * (0.12 + 0.2 * intent.coreStrength),
-          small ? 1 : alpha * (0.4 + 0.6 * intent.coreStrength)
+          r * (0.12 + 0.2 * intent.coreStrength),
+          alpha * (0.4 + 0.6 * intent.coreStrength)
         );
       }
       if (intent.spikes > 0) {
-        const len = small
-          ? small.view.h * 0.48
-          : Math.min(HEIGHT * 0.46, r * (0.9 + 1.7 * intent.spikes));
+        const len = Math.min(HEIGHT * 0.46, r * (0.9 + 1.7 * intent.spikes));
         drawSpikes(
           ctx,
           x,
           cy,
           len,
-          small ? 1 : alpha * Math.min(1, 0.45 + intent.spikes * 0.55),
-          small ? (1.6 * upp) / 2 : 1
+          alpha * Math.min(1, 0.45 + intent.spikes * 0.55)
         );
       }
     });

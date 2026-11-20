@@ -5,6 +5,7 @@
     SHAPE_MATRIX_BAR_SURFACE_NAME,
     SHAPE_MATRIX_BAR_SWAP_NAME,
     SHAPE_MATRIX_BAR_TURNS_NAME,
+    measureMandalaArt,
   } from "../../services/shape-matrix-artwork";
   import { s as t } from "../../strings.svelte.js";
   import { tick, untrack } from "svelte";
@@ -47,6 +48,7 @@
   import { runMandalaMorph } from "../services/shape-matrix-mandala-morph";
   import { runShapeMatrixDetailReveal } from "../services/shape-matrix-reveal";
   import { growFade, motionDuration } from "@austencloud/motion";
+  import { flightGrowFade } from "../../services/flight-grow-fade";
   import ShapeMatrixFocusWorkspace from "./ShapeMatrixFocusWorkspace.svelte";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
 
@@ -211,6 +213,17 @@
      one ribbon into the other while the page is still arriving. Chrome does
      not animate into place on first paint: the restore lands instantly, and
      every surface change the user makes after that crossfades. */
+  /* A folded pane's pictures keep what they had (ShapeMatrixMandalaArt) and
+     look again only when measured. A flight measures them itself before its
+     capture; any other pane swap, such as reduced motion landing the panes at
+     once, may leave their boxes the same size, so no resize tells them. */
+  $effect(() => {
+    void appState.compact;
+    void appState.activeView;
+    if (appState.mandalaHandoff) return;
+    untrack(measureMandalaArt);
+  });
+
   let booted = $state(false);
   $effect(() => {
     const frame = requestAnimationFrame(() => {
@@ -486,6 +499,9 @@
     bind:this={gridPaneElement}
     inert={appState.compact && appState.activeView !== "matrix"}
     aria-hidden={appState.compact && appState.activeView !== "matrix"}
+    data-pane-folded={appState.compact && appState.activeView !== "matrix"
+      ? ""
+      : undefined}
   >
     <DualSourceCrossfade
       active={theory ? "second" : "first"}
@@ -511,7 +527,7 @@
     title={t("shape_engine_surprise_title")}
     disabled={!theory && !appState.data}
     onclick={surpriseMe}
-    transition:growFade={topSwapMotion()}
+    transition:flightGrowFade={topSwapMotion()}
   >
     <i class="fas fa-dice" aria-hidden="true"></i>
   </button>
@@ -539,6 +555,9 @@
     bind:this={detailPaneElement}
     inert={appState.compact && appState.activeView !== "detail"}
     aria-hidden={appState.compact && appState.activeView !== "detail"}
+    data-pane-folded={appState.compact && appState.activeView !== "detail"
+      ? ""
+      : undefined}
   >
     <DualSourceCrossfade
       active={theory ? "second" : "first"}
@@ -686,7 +705,7 @@
               enabled: appState.mandalaHandoff,
             }}
             onclick={showDetail}
-            transition:growFade={topSwapMotion()}
+            transition:flightGrowFade={topSwapMotion()}
           >
             <span>{t("shape_engine_detail")}</span>
             <i class="fas fa-arrow-right" aria-hidden="true"></i>
@@ -721,9 +740,12 @@
 
   <div class="workspace" bind:this={workspaceElement}>
     <div class="workspace-source">
+      <!-- A flight carries the compact pane swap; the panes land at once
+           under it (see the panel-wrapper rule below). -->
       <PanelGroup
         direction="horizontal"
         bind:sizes
+        snap={appState.mandalaHandoff}
         gap={appState.compact ? 0 : 8}
         panels={[
           {
@@ -1257,6 +1279,22 @@
     min-height: 0;
   }
 
+  /* A compact host shows one pane; the other folds to nothing. The folded
+     pane keeps the app's full width inside its clipped, zero-width slot, so
+     opening it again lays out nothing that was not already laid out, and its
+     pictures keep their size (ShapeMatrixMandalaArt). Laying the pane out
+     from zero width was most of the tap's wait before a flight. A plain
+     slide keeps its squeeze: the width holds only once the slide is over,
+     and a flight, which swaps the panes at once, takes it at once. */
+  .workspace-pane[data-pane-folded] {
+    min-width: 100cqw;
+    transition: min-width 0s linear var(--duration-emphasis, 300ms);
+  }
+
+  :global(html.shape-matrix-morph) .workspace-pane[data-pane-folded] {
+    transition: none;
+  }
+
   /* The compact seam. ShapeMatrixApp decides `compact` in script from the
      same two rem bounds, so the markup and this stylesheet always change
      tiers together, whatever the root font size. Keep the two in step. */
@@ -1361,8 +1399,14 @@
 
      Each layer has a name on one side only, so its old and new rules are its
      exit and its entrance; only the flower, the surface and the top bar's
-     controls exist on both sides and travel. */
-  :global(html.shape-matrix-morph) {
+     controls exist on both sides and travel.
+
+     The tunables live on the transition's own root, `::view-transition`, and
+     only its pseudo-elements read them. A custom property on `html` is
+     inherited by every element in the page, so declaring these there made
+     the tap re-style the whole page (14 ms at full speed) before the flight
+     could start. */
+  :global(html.shape-matrix-morph::view-transition) {
     --flight: calc(var(--duration-dramatic) * 1.6);
     /* The surface and the flower swap pictures on one schedule, as shares of
        --flight. Opening: the tile's picture hands over in the first
@@ -1670,8 +1714,13 @@
      `fold-chip-in-delay`, so it is there before the grid reaches it. Going
      back: the grid fades in over `unfold-fade-in` from its first frame, so it
      is seen leaving the chip, and the chip's old picture stays fully visible
-     as the source for `unfold-chip-hold`. */
-  :global(html.shape-matrix-morph.shape-matrix-morph-fold) {
+     as the source for `unfold-chip-hold`.
+
+     Like the flight's other tunables they sit on `::view-transition`, where
+     only the transition reads them, and on the plain flight class rather than
+     the fold class, so the fold's arrival inside the capture window restyles
+     nothing but the transition. */
+  :global(html.shape-matrix-morph::view-transition) {
     --fold-duration: 0.5;
     --fold-delay: 0;
     --fold-fade-hold: 0.6;

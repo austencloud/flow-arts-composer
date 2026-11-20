@@ -45,12 +45,25 @@
 
   let host = $state<HTMLDivElement | null>(null);
   let side = $state(0);
-  const src = $derived(side > 0 ? paint(side) : "");
+  // A pane folded shut keeps the picture it had, at the size it had, and
+  // paints nothing new: no resize repaint as its box shrinks to the tile's
+  // smallest size on the way out, and no fresh pair painted at a size it is
+  // about to leave. Unseen, those repaints cost the tap 50 ms. The pane
+  // opening again measures its real size and paints once.
+  let held = $state(false);
+  let lastSrc = "";
+  const src = $derived.by(() => {
+    if (held && lastSrc) return lastSrc;
+    lastSrc = side > 0 ? paint(side) : "";
+    return lastSrc;
+  });
 
   $effect(() => {
     const node = host;
     if (!node) return;
     const measure = () => {
+      held = node.closest("[data-pane-folded]") !== null;
+      if (held) return;
       side = Math.round(Math.min(node.clientWidth, node.clientHeight));
     };
     measure();

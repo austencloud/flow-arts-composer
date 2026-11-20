@@ -15,7 +15,7 @@ import {
   resolveSmokePalette,
 } from "#lib/shared/effects/domain/smoke-palettes.js";
 import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
-import { blob, css, ground, hexToRgb, lcg } from "./tile-paint";
+import { type Rgb, blob, css, ground, hexToRgb, lcg } from "./tile-paint";
 import {
   type Box,
   type SmallFormat,
@@ -123,6 +123,14 @@ const PLUME: Record<"tile" | "chip", SmokePlume> = {
 };
 
 type Pt = readonly [number, number];
+
+/** Tile-only extra weight (see `paintSmokeTile`). */
+const TILE_DARK_BOOST = 4.6;
+/** How much of a dark palette's core colour the tile keeps (darker reads better on the lit ground). */
+const TILE_DARK_CORE = 0.45;
+/** How far a darker-than-edge core moves toward the edge colour in the tile. */
+const TILE_CORE_TO_EDGE = 0.7;
+const TILE_COLOUR_BOOST = 4;
 
 /** Point on a Catmull-Rom spline through `pts`, `s` from 0 to 1. */
 function splineAt(pts: readonly Pt[], s: number): { x: number; y: number } {
@@ -318,19 +326,41 @@ export function paintSmokeTile(
   const puffs = plume
     ? buildPlume(intent, rand, plume, lead)
     : build(intent, pal, rand);
-  const core = hexToRgb(pal.core);
   const edge = hexToRgb(pal.edge);
   const dark = 0.2126 * edge[0] + 0.7152 * edge[1] + 0.0722 * edge[2] < 0.45;
+  const tileDark = plume !== null && format === "tile" && dark;
+  const edgeLum = 0.2126 * edge[0] + 0.7152 * edge[1] + 0.0722 * edge[2];
+  const coreRaw = hexToRgb(pal.core);
+  const coreLum =
+    0.2126 * coreRaw[0] + 0.7152 * coreRaw[1] + 0.0722 * coreRaw[2];
+  // Tile only. A dark palette keeps a darker core, which reads on its lit
+  // ground; a coloured one whose core is darker than its edge (Campfire) leans
+  // toward the edge colour so the middle of each puff is not its dimmest part.
+  const core: Rgb = tileDark
+    ? (coreRaw.map((v) => v * TILE_DARK_CORE) as Rgb)
+    : plume !== null && format === "tile" && edgeLum < 0.6 && coreLum < edgeLum
+      ? (coreRaw.map((v, i) => v + (edge[i]! - v) * TILE_CORE_TO_EDGE) as Rgb)
+      : coreRaw;
   ground(
     ctx,
     dark
-      ? [0.27, 0.26, 0.31]
+      ? tileDark
+        ? [0.4, 0.39, 0.44]
+        : [0.27, 0.26, 0.31]
       : plume
         ? [0.07, 0.07, 0.095]
         : [0.03, 0.03, 0.045]
   );
   if (dark) {
-    blob(ctx, 390, 120, 380, 230, [0.62, 0.6, 0.68], plume ? 0.9 : 0.75);
+    blob(
+      ctx,
+      390,
+      120,
+      380,
+      230,
+      tileDark ? [0.78, 0.76, 0.84] : [0.62, 0.6, 0.68],
+      plume ? 0.9 : 0.75
+    );
   } else if (plume) {
     blob(
       ctx,
@@ -354,11 +384,27 @@ export function paintSmokeTile(
   leadGrad.addColorStop(0, css(core, 1));
   leadGrad.addColorStop(0.55, css(core, 0.55));
   leadGrad.addColorStop(1, css(edge, 0));
-  const boost = dark ? (plume ? 2.4 : 1.7) : plume ? 1.5 : 0.8;
+  // The phone list shows the tile 52 wide, where a dark palette on its lit
+  // ground and a coloured plume on the dark one both lose too much. Those two
+  // get more weight in the tile only; white smoke keeps the 1.5 it had.
+  const tileBoost = plume && format === "tile";
+  const boost = dark
+    ? plume
+      ? tileBoost
+        ? TILE_DARK_BOOST
+        : 2.4
+      : 1.7
+    : plume
+      ? tileBoost
+        ? 1.5 + TILE_COLOUR_BOOST * Math.max(0, 0.6 - edgeLum)
+        : 1.5
+      : 0.8;
   puffs.forEach((q, idx) => {
     const alpha = q.alpha * boost;
     if (alpha <= 0.015) return;
-    ctx.fillStyle = plume && lead[idx] ? leadGrad : grad;
+    // A dark palette's edge colour is as bright as the lit ground it sits on,
+    // so the tile paints its whole plume from the core colour.
+    ctx.fillStyle = plume && (lead[idx] || tileDark) ? leadGrad : grad;
     const cos = Math.cos(q.angle);
     const sin = Math.sin(q.angle);
     const sx = q.stretch * q.r;

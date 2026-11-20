@@ -27,14 +27,19 @@
   const HEIGHT = 270;
 
   /**
-   * Small formats: the whole figure-eight across the width of the frame, drawn
+   * Small formats: the whole figure-eight and its glow inside the frame, drawn
    * with a line of at least 2px at display size and a glow of about 3px more.
-   * The chip is squarer, so it stretches the eight taller (ampK) rather than
-   * shrinking it; the curve stays the same lemniscate.
+   * The line and glow are sized in display px, so they grow with the view; the
+   * view is wide enough that the glow fades to the ground about 2 display px
+   * short of each side at 52 wide. That makes the figure about 16% smaller than
+   * the old 640-wide view, and the tile takes the eight 28% lower (ampK) so the
+   * glow also clears the top and bottom. The chip is squarer, so it stretches the
+   * eight taller (ampK) and sits in a wider view; the curve stays the same
+   * lemniscate, centred on the card's middle.
    */
   const SMALL: Record<"tile" | "chip", { view: Box; ampK: number }> = {
-    tile: { view: { x: 40, y: 15, w: 640, h: 240 }, ampK: 1 },
-    chip: { view: { x: 40, y: -146.5, w: 640, h: 427 }, ampK: 1.6 },
+    tile: { view: { x: -20, y: -7.5, w: 760, h: 285 }, ampK: 0.72 },
+    chip: { view: { x: -90, y: -165, w: 900, h: 600 }, ampK: 1.2 },
   };
 
   /**

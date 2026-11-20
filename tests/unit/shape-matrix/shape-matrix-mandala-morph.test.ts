@@ -23,14 +23,22 @@ function createHarness(startMorph: MandalaMorphDependencies["startMorph"]) {
     beginMandalaHandoff: vi.fn(),
     endMandalaHandoff: vi.fn(),
   };
-  const settle = vi.fn(async () => {});
+  const settle = vi.fn(async (read: () => void) => read());
+  const props = new Map<string, string>();
+  const vars = {
+    set: vi.fn((values: Record<string, string>) => {
+      for (const [name, value] of Object.entries(values)) props.set(name, value);
+    }),
+    clear: vi.fn(() => props.clear()),
+  };
   const deps: MandalaMorphDependencies = {
     startMorph,
     flush: (fn) => fn(),
     root: () => root,
     settle,
+    vars,
   };
-  return { classes, host, deps, settle };
+  return { classes, host, deps, settle, vars, props };
 }
 
 describe("runMandalaMorph", () => {
@@ -177,7 +185,8 @@ describe("runMandalaMorph", () => {
 describe("the grid folding into the back chip", () => {
   // The pane exists only before the mutation and the glyph only after it, so
   // each box has to be read on its own side; the shell's fold keyframes read
-  // the result from the root and fall back to the plain fade without it.
+  // the result from the transition's own stylesheet and fall back to the
+  // plain fade without it.
   function foldHarness(boxes: {
     pane: () => FoldBox | null;
     glyph: () => FoldBox | null;
@@ -192,20 +201,8 @@ describe("the grid folding into the back chip", () => {
       return { finished } as unknown as ViewTransition;
     });
     const harness = createHarness(startMorph);
-    const props = new Map<string, string>();
-    const root = harness.deps.root()!;
-    const withStyle = Object.assign(root, {
-      style: {
-        setProperty: (name: string, value: string) => void props.set(name, value),
-        removeProperty: (name: string) => {
-          props.delete(name);
-          return "";
-        },
-      },
-    });
-    harness.deps.root = () => withStyle;
     harness.deps.foldBoxes = boxes;
-    return { ...harness, props, land: () => land(), update: () => update() };
+    return { ...harness, land: () => land(), update: () => update() };
   }
 
   const pane = { left: 0, top: 100, width: 400, height: 600 };
@@ -259,6 +256,130 @@ describe("the grid folding into the back chip", () => {
 
     expect(props.size).toBe(0);
     expect(classes.has(SHAPE_MATRIX_MORPH_FOLD_CLASS)).toBe(false);
+  });
+});
+
+describe("the tap's reads and writes", () => {
+  // Every read of a box or a style forces the page to lay out whatever was
+  // written before it. On each side the flight reads everything first and
+  // writes after, so the tap pays for one layout per side, the one the
+  // snapshot needs anyway. Its values go on the transition's own stylesheet,
+  // never on the root element, whose custom properties every element in the
+  // page inherits: setting them there restyled the whole page before the
+  // flight could start.
+  function orderedHarness(back: boolean) {
+    const order: string[] = [];
+    let update: () => Promise<void> = async () => {};
+    const startMorph = vi.fn(
+      (_mutate: () => void, settleStep: () => Promise<void>) => {
+        order.push("startMorph");
+        update = settleStep;
+        return { finished: new Promise<void>(() => {}) } as unknown as ViewTransition;
+      }
+    );
+    const harness = createHarness(startMorph);
+    const rootWrites: string[] = [];
+    const root = harness.deps.root()!;
+    const watchedRoot = Object.assign(root, {
+      style: new Proxy(
+        {},
+        {
+          get: (_target, key) => {
+            rootWrites.push(String(key));
+            return () => {};
+          },
+        }
+      ),
+    });
+    harness.deps.root = () => watchedRoot;
+    harness.deps.flush = (fn) => {
+      fn();
+      order.push("flush");
+    };
+    harness.deps.settle = vi.fn(async (read: () => void) => {
+      order.push("measure art");
+      read();
+      order.push("flush pictures");
+    });
+    harness.deps.foldBoxes = {
+      pane: () => {
+        order.push("read pane");
+        return { left: 0, top: 100, width: 400, height: 600 };
+      },
+      glyph: () => {
+        order.push("read glyph");
+        return { left: 20, top: 20, width: 16, height: 16 };
+      },
+    };
+    harness.deps.floorRest = () => {
+      order.push("read floor");
+      return "0.01";
+    };
+    harness.vars.set.mockImplementation((values: Record<string, string>) => {
+      order.push("write vars");
+      for (const [name, value] of Object.entries(values)) {
+        harness.props.set(name, value);
+      }
+    });
+    runMandalaMorph(harness.host, () => {}, { back }, harness.deps);
+    return { ...harness, order, rootWrites, update: () => update() };
+  }
+
+  it("opening: reads the pane after the handoff, then the glyph and floor before the pictures flush, then writes once", async () => {
+    const { order, rootWrites, vars, update } = orderedHarness(false);
+    await update();
+    expect(order).toEqual([
+      "flush",
+      "read pane",
+      "startMorph",
+      "measure art",
+      "read glyph",
+      "read floor",
+      "flush pictures",
+      "write vars",
+    ]);
+    expect(vars.set).toHaveBeenCalledTimes(1);
+    expect(rootWrites).toEqual([]);
+  });
+
+  it("going back: reads the glyph and the floor as they stand, then the pane on the new side", async () => {
+    const { order, rootWrites, vars, props, update } = orderedHarness(true);
+    await update();
+    expect(order).toEqual([
+      "flush",
+      "read glyph",
+      "read floor",
+      "startMorph",
+      "measure art",
+      "read pane",
+      "flush pictures",
+      "write vars",
+    ]);
+    expect(vars.set).toHaveBeenCalledTimes(1);
+    expect(props.get("--shape-matrix-floor-rest")).toBe("0.01");
+    expect(rootWrites).toEqual([]);
+  });
+
+  it("clears its values when the flight lands", async () => {
+    let land: () => void = () => {};
+    const finished = new Promise<void>((resolve) => {
+      land = resolve;
+    });
+    const { host, deps, vars, props } = createHarness(
+      (_mutate, settleStep) => {
+        void settleStep();
+        return { finished } as unknown as ViewTransition;
+      }
+    );
+    deps.floorRest = () => "1";
+    runMandalaMorph(host, () => {}, {}, deps);
+    await Promise.resolve();
+    expect(props.get("--shape-matrix-floor-rest")).toBe("1");
+
+    land();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(vars.clear).toHaveBeenCalled();
+    expect(props.size).toBe(0);
   });
 });
 

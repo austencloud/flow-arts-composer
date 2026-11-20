@@ -80,23 +80,6 @@ const KNOTS: ReadonlyArray<readonly [number, number]> = (() => {
   return k;
 })();
 
-/**
- * Small formats lay the body out as one wide wave across the frame instead of
- * a coil, head at the right end, newest first. The renderer's own slither
- * rides on top of it, so the body still moves like the card's.
- */
-const WAVE_KNOTS: ReadonlyArray<readonly [number, number]> = [
-  [676, 132],
-  [606, 104],
-  [532, 150],
-  [458, 108],
-  [384, 152],
-  [310, 110],
-  [236, 150],
-  [162, 114],
-  [90, 140],
-];
-
 function mixHex(a: string, b: string, t: number): string {
   return css(mix(hexToRgb(a), hexToRgb(b), t), 1);
 }
@@ -201,10 +184,9 @@ interface Geometry {
 function geometry(
   p: AnimalIntent,
   chain: Vec2[],
-  scale: number,
-  /** Wave boost override: small formats keep the slither modest. */
-  ampBoost: number = 1 + (scale - 1) * 0.5
+  scale: number
 ): Geometry {
+  const ampBoost = 1 + (scale - 1) * 0.5;
   const N = chain.length;
   const build =
     p.creature === "caterpillar" ? 1.55 : p.creature === "dragon" ? 1.15 : 1;
@@ -567,8 +549,7 @@ function drawHead(
   p: AnimalIntent,
   pal: AnimalPalette,
   { cx, cy, baseHalf }: Geometry,
-  scale: number,
-  headK = 1
+  scale: number
 ): void {
   const I = vis(p.intensity);
   let hx = cx[0]! - cx[1]!;
@@ -578,7 +559,7 @@ function drawHead(
   hy /= hl;
   const perpX = -hy;
   const perpY = hx;
-  const headR = (baseHalf * 1.15 + 1.2 * scale) * headK;
+  const headR = baseHalf * 1.15 + 1.2 * scale;
   const headCx = cx[0]! + hx * headR * 0.25;
   const headCy = cy[0]! + hy * headR * 0.25;
 
@@ -724,10 +705,9 @@ function drawCreature(
   pal: AnimalPalette,
   chain: Vec2[],
   path: Vec2[],
-  scale: number,
-  small = false
+  scale: number
 ): void {
-  const g = geometry(p, chain, scale, small ? 1.8 : undefined);
+  const g = geometry(p, chain, scale);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   drawBody(ctx, p, pal, g, 0, g.N - 1, scale);
@@ -755,27 +735,20 @@ function drawCreature(
 
   if (p.creature === "dragon")
     drawWhiskers(ctx, p, pal, path, g.baseHalf, scale);
-  drawHead(ctx, p, pal, g, scale, small ? 1.9 : 1);
+  drawHead(ctx, p, pal, g, scale);
   ctx.globalAlpha = 1;
 }
 
 /** Stage the creature: body resampled along the figure, then centered and fitted in the frame. */
-function stage(
-  p: AnimalIntent,
-  wave = false
-): { chain: Vec2[]; path: Vec2[]; zoom: number } {
-  const path = densePath(wave ? WAVE_KNOTS : KNOTS);
+function stage(p: AnimalIntent): { chain: Vec2[]; path: Vec2[]; zoom: number } {
+  const path = densePath(KNOTS);
   let pathLen = 0;
   for (let i = 1; i < path.length; i++)
     pathLen += Math.hypot(
       path[i]!.x - path[i - 1]!.x,
       path[i]!.y - path[i - 1]!.y
     );
-  // The wave: the body spans most of the wave whatever the preset, longer
-  // bodies reaching a little further.
-  const bodyLen = wave
-    ? pathLen * (0.72 + 0.28 * p.bodyLength)
-    : (160 + p.bodyLength * 440) * LENGTH_SCALE;
+  const bodyLen = (160 + p.bodyLength * 440) * LENGTH_SCALE;
   const chain: Vec2[] = Array.from({ length: SEGMENTS }, () => ({
     x: 0,
     y: 0,
@@ -808,13 +781,11 @@ function stage(
   const dy = TILE_H / 2 - (minY + maxY) / 2;
   // Fit: zoom the whole figure (widths included) so a short hook does not
   // sit as a small mark in a wide frame; capped so creatures still differ.
-  const zoom = wave
-    ? 1
-    : Math.min(
-        1.45,
-        (TILE_H * 0.8) / (maxY - minY),
-        (TILE_W * 0.9) / (maxX - minX)
-      );
+  const zoom = Math.min(
+    1.45,
+    (TILE_H * 0.8) / (maxY - minY),
+    (TILE_W * 0.9) / (maxX - minX)
+  );
   const fit = (q: Vec2) => {
     q.x = TILE_W / 2 + (q.x + dx - TILE_W / 2) * zoom;
     q.y = TILE_H / 2 + (q.y + dy - TILE_H / 2) * zoom;
@@ -824,27 +795,408 @@ function stage(
   return { chain, path, zoom };
 }
 
-/**
- * Small formats: a wide wave with the head at the right end, painted with a
- * body about 2.5 display px thick (`body` is the half-width in card units that
- * gives that), a head clearly larger than the body, and the layer drawn a
- * second time additively so it is brighter. The chip crops to the head and
- * the last stretch of body.
- */
-const SMALL: Record<"tile" | "chip", { view: Box; body: number }> = {
-  tile: { view: { x: -14, y: -34, w: 748, h: 280.5 }, body: 12.4 },
-  chip: { view: { x: 345, y: 15, w: 360, h: 240 }, body: 15.8 },
+
+/* ------------------------------------------------------------------ */
+/* Small formats, second design: one creature that owns the frame.     */
+/* ------------------------------------------------------------------ */
+
+/** The creature's spine, head first, in the small view's card units: a long gentle S, tail up left, head low right looking right. */
+const SMALL_SPINE: ReadonlyArray<readonly [number, number]> = [
+  [606, 172],
+  [528, 166],
+  [458, 120],
+  [398, 72],
+  [332, 62],
+  [264, 108],
+  [212, 168],
+  [150, 184],
+  [96, 136],
+  [52, 56],
+];
+
+const SMALL_VIEW: Record<"tile" | "chip", Box> = {
+  tile: { x: -14, y: -34, w: 748, h: 280.5 },
+  chip: { x: 300, y: -10, w: 420, h: 280 },
 };
+
+function smallHalfWidth(u: number): number {
+  if (u < 0.1) return 0.74 + (u / 0.1) * 0.26;
+  const t = (u - 0.1) / 0.9;
+  return Math.max(0.05, 1 - Math.pow(t, 1.1) * 0.95);
+}
+
+function smallGeometry(chain: Vec2[], base: number, build: number): Geometry {
+  const N = chain.length;
+  const cx = chain.map((c) => c.x);
+  const cy = chain.map((c) => c.y);
+  const nx: number[] = [];
+  const ny: number[] = [];
+  const hw: number[] = [];
+  const leftX: number[] = [];
+  const leftY: number[] = [];
+  const rightX: number[] = [];
+  const rightY: number[] = [];
+  for (let i = 0; i < N; i++) {
+    let tx = cx[Math.min(N - 1, i + 1)]! - cx[Math.max(0, i - 1)]!;
+    let ty = cy[Math.min(N - 1, i + 1)]! - cy[Math.max(0, i - 1)]!;
+    const tl = Math.hypot(tx, ty) || 1;
+    tx /= tl;
+    ty /= tl;
+    nx[i] = -ty;
+    ny[i] = tx;
+    hw[i] = base * build * smallHalfWidth(i / (N - 1));
+    leftX[i] = cx[i]! + nx[i]! * hw[i]!;
+    leftY[i] = cy[i]! + ny[i]! * hw[i]!;
+    rightX[i] = cx[i]! - nx[i]! * hw[i]!;
+    rightY[i] = cy[i]! - ny[i]! * hw[i]!;
+  }
+  return {
+    N,
+    baseHalf: base * build,
+    cx,
+    cy,
+    nx,
+    ny,
+    hw,
+    leftX,
+    leftY,
+    rightX,
+    rightY,
+    litX: cx,
+    litY: cy,
+    shadeX: cx,
+    shadeY: cy,
+  };
+}
+
+function hexLum(hex: string): number {
+  const c = hexToRgb(hex);
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+function alphaHex(hex: string, a: number): string {
+  return css(hexToRgb(hex), a);
+}
+
+/** The creature's head, eye, tongue, horns or feelers for the small formats. */
+function drawSmallHead(
+  ctx: CanvasRenderingContext2D,
+  p: AnimalIntent,
+  pal: AnimalPalette,
+  g: Geometry,
+  dark: boolean,
+  Ik: number
+): void {
+  const base = g.baseHalf;
+  let hx = g.cx[0]! - g.cx[2]!;
+  let hy = g.cy[0]! - g.cy[2]!;
+  const hl = Math.hypot(hx, hy) || 1;
+  hx /= hl;
+  hy /= hl;
+  // The side that faces up the screen carries the eye and the light.
+  let px = -hy;
+  let py = hx;
+  if (py > 0) {
+    px = -px;
+    py = -py;
+  }
+  const rx = base * 1.75;
+  const ry = base * 1.3;
+  const hcx = g.cx[0]! + hx * base * 0.45;
+  const hcy = g.cy[0]! + hy * base * 0.45;
+  const heading = Math.atan2(hy, hx);
+  const headFill = mixHex(pal.body, pal.edge, dark ? 0.12 : 0.1);
+
+  if (p.creature === "dragon") {
+    ctx.globalAlpha = Ik;
+    ctx.strokeStyle = pal.edge;
+    ctx.lineCap = "round";
+    ctx.lineWidth = base * 0.5;
+    for (const side of [1, -1]) {
+      const bx = hcx - hx * rx * 0.2 + px * side * ry * 0.5;
+      const by = hcy - hy * rx * 0.2 + py * side * ry * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.quadraticCurveTo(
+        bx - hx * base * 1.2 + px * side * base * 0.25,
+        by - hy * base * 1.2 + py * side * base * 0.25,
+        bx - hx * base * 2.4 + px * side * base * 0.3,
+        by - hy * base * 2.4 + py * side * base * 0.3
+      );
+      ctx.stroke();
+    }
+  }
+  if (p.creature === "caterpillar") {
+    ctx.globalAlpha = Ik;
+    ctx.strokeStyle = pal.edge;
+    ctx.fillStyle = pal.edge;
+    ctx.lineCap = "round";
+    ctx.lineWidth = base * 0.2;
+    for (const side of [1, -1]) {
+      const bx = hcx + hx * rx * 0.55 + px * side * ry * 0.35;
+      const by = hcy + hy * rx * 0.55 + py * side * ry * 0.35;
+      const ex = bx + hx * base * 1.3 + px * side * base * 0.4;
+      const ey = by + hy * base * 1.3 + py * side * base * 0.4;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(ex, ey, base * 0.24, 0, TAU);
+      ctx.fill();
+    }
+  }
+  if (p.creature === "snake") {
+    // A forked tongue: a small accent past the snout.
+    const rootX = hcx + hx * rx * 0.95;
+    const rootY = hcy + hy * rx * 0.95;
+    const len = base * 1.5;
+    const fx = rootX + hx * len * 0.65;
+    const fy = rootY + hy * len * 0.65;
+    ctx.globalAlpha = 0.95;
+    ctx.strokeStyle = "#e0306a";
+    ctx.lineWidth = Math.max(5, base * 0.16);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(rootX, rootY);
+    ctx.lineTo(fx, fy);
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(
+      rootX + hx * len + px * base * 0.35,
+      rootY + hy * len + py * base * 0.35
+    );
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(
+      rootX + hx * len - px * base * 0.35,
+      rootY + hy * len - py * base * 0.35
+    );
+    ctx.stroke();
+  }
+
+  ctx.save();
+  ctx.translate(hcx, hcy);
+  ctx.rotate(heading);
+  ctx.globalAlpha = Ik;
+  ctx.fillStyle = headFill;
+  const headPath = () => {
+    ctx.beginPath();
+    ctx.moveTo(rx, 0);
+    ctx.bezierCurveTo(rx * 0.9, -ry * 0.5, rx * 0.4, -ry, -rx * 0.25, -ry);
+    ctx.bezierCurveTo(-rx * 0.8, -ry, -rx * 1.0, -ry * 0.5, -rx * 1.0, 0);
+    ctx.bezierCurveTo(-rx * 1.0, ry * 0.5, -rx * 0.8, ry, -rx * 0.25, ry);
+    ctx.bezierCurveTo(rx * 0.4, ry, rx * 0.9, ry * 0.5, rx, 0);
+    ctx.closePath();
+  };
+  headPath();
+  ctx.fill();
+  // Under-shade and top light across the head, like the body.
+  ctx.save();
+  headPath();
+  ctx.clip();
+  ctx.globalAlpha = 0.32;
+  ctx.fillStyle = mixHex(pal.body, "#000000", 0.6);
+  // Local +y points to the creature's right-hand side on screen.
+  const upSide = hx * py - hy * px >= 0 ? 1 : -1;
+  ctx.beginPath();
+  ctx.ellipse(-rx * 0.05, -upSide * ry * 0.62, rx * 1.1, ry * 0.62, 0, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 0.62;
+  ctx.fillStyle = mixHex(pal.edge, "#ffffff", 0.5);
+  ctx.beginPath();
+  ctx.ellipse(rx * 0.1, upSide * ry * 0.55, rx * 0.72, ry * 0.2, 0, 0, TAU);
+  ctx.fill();
+  // The eye: one bright point on the lit side.
+  const ex = rx * 0.22;
+  const ey = upSide * ry * 0.36;
+  const eyeR = Math.max(9, base * 0.34);
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = mixHex(pal.edge, "#ffffff", 0.5);
+  ctx.beginPath();
+  ctx.arc(ex, ey, eyeR * 2.1, 0, TAU);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(ex, ey, eyeR, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+}
+
+function paintSmallCreature(
+  ctx: CanvasRenderingContext2D,
+  p: AnimalIntent,
+  pal: AnimalPalette,
+  dark: boolean
+): void {
+  // Dragons and caterpillars carry horns and feelers and a bigger head, so they
+  // sit a little lower: the head stays clear of the gear corner and nothing is
+  // cut off at the bottom.
+  const lower = p.creature === "snake" ? 0 : p.creature === "dragon" ? 14 : 9;
+  const path = densePath(SMALL_SPINE.map(([x, y]) => [x, y + lower] as const));
+  let pathLen = 0;
+  for (let i = 1; i < path.length; i++)
+    pathLen += Math.hypot(
+      path[i]!.x - path[i - 1]!.x,
+      path[i]!.y - path[i - 1]!.y
+    );
+  const bodyLen = pathLen * (0.8 + 0.2 * p.bodyLength);
+  const chain: Vec2[] = Array.from({ length: SEGMENTS }, () => ({
+    x: 0,
+    y: 0,
+  }));
+  resampleAlongPath(path, chain, bodyLen / (SEGMENTS - 1));
+  const Ik = 0.8 + 0.2 * vis(p.intensity);
+  const build =
+    p.creature === "caterpillar" ? 1.22 : p.creature === "dragon" ? 1.1 : 1;
+  const base = 31 * (0.85 + 0.3 * p.width);
+  const g = smallGeometry(chain, base, build);
+  const { N, cx, cy, nx, ny, hw } = g;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  // Light round the creature, wider than the body and low, in its edge colour.
+  if (!dark) {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < N; i += 2) {
+      const r = hw[i]! * 1.95 + 10;
+      const grad = ctx.createRadialGradient(
+        cx[i]!,
+        cy[i]!,
+        0,
+        cx[i]!,
+        cy[i]!,
+        r
+      );
+      grad.addColorStop(0, alphaHex(pal.edge, 0.13));
+      grad.addColorStop(1, alphaHex(pal.edge, 0));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx[i]!, cy[i]!, r, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  if (p.creature === "caterpillar") drawLegs(ctx, p, pal, g, 0, N - 1);
+  if (p.creature === "dragon") drawCrest(ctx, p, pal, g, 0, N - 1);
+
+  const outline = () => {
+    ctx.beginPath();
+    traceForward(ctx, g.leftX, g.leftY, 0, N - 1, N);
+    traceBackward(ctx, g.rightX, g.rightY, 0, N - 1, N);
+    ctx.closePath();
+  };
+  // Body colour at the head, running toward the edge colour at the tail.
+  const tailTo =
+    pal.hueShift && pal.bodyAlt
+      ? pal.bodyAlt
+      : mixHex(pal.body, pal.edge, dark ? 0.25 : 0.5);
+  const fill = ctx.createLinearGradient(cx[0]!, cy[0]!, cx[N - 1]!, cy[N - 1]!);
+  // A deep body (velvet) is lifted toward its edge colour so it reads at 52 wide.
+  const bodyLum = hexLum(pal.body);
+  const lift = dark || pal.emissive ? 0 : Math.max(0, (0.3 - bodyLum) / 0.3) * 1.0;
+  fill.addColorStop(0, lift ? mixHex(pal.body, pal.edge, lift) : pal.body);
+  fill.addColorStop(1, tailTo);
+  ctx.globalAlpha = Ik;
+  ctx.fillStyle = fill;
+  outline();
+  ctx.fill();
+
+  ctx.save();
+  outline();
+  ctx.clip();
+  // Cylinder shading: a dark side below, a light line along the top. The
+  // light comes from above and slightly left, so the lit side follows the bend.
+  const lx = -0.35;
+  const ly = -0.94;
+  const sx: number[] = [];
+  const sy: number[] = [];
+  const tx: number[] = [];
+  const ty: number[] = [];
+  const ux: number[] = [];
+  const uy: number[] = [];
+  for (let i = 0; i < N; i++) {
+    const d = Math.max(-1, Math.min(1, (nx[i]! * lx + ny[i]! * ly) * 1.7));
+    sx.push(cx[i]! - nx[i]! * hw[i]! * 0.55 * d);
+    sy.push(cy[i]! - ny[i]! * hw[i]! * 0.55 * d);
+    tx.push(cx[i]! + nx[i]! * hw[i]! * 0.5 * d);
+    ty.push(cy[i]! + ny[i]! * hw[i]! * 0.5 * d);
+    const u = Math.max(-1, Math.min(1, d * 3));
+    ux.push(cx[i]! - nx[i]! * hw[i]! * 0.82 * u);
+    uy.push(cy[i]! - ny[i]! * hw[i]! * 0.82 * u);
+  }
+  ctx.globalAlpha = 0.4;
+  ctx.strokeStyle = mixHex(pal.body, "#000000", 0.62);
+  ctx.lineWidth = g.baseHalf;
+  ctx.beginPath();
+  traceForward(ctx, sx, sy, 0, N - 1, N);
+  ctx.stroke();
+  ctx.globalAlpha = dark ? 0.5 : 0.62;
+  ctx.strokeStyle = mixHex(pal.body, "#000000", 0.8);
+  ctx.lineWidth = Math.max(6, g.baseHalf * 0.34);
+  ctx.beginPath();
+  traceForward(ctx, ux, uy, 0, N - 1, N);
+  ctx.stroke();
+  ctx.globalAlpha = 0.85;
+  ctx.strokeStyle = mixHex(pal.edge, "#ffffff", 0.55);
+  ctx.lineWidth = Math.max(5, g.baseHalf * 0.26);
+  ctx.beginPath();
+  traceForward(ctx, tx, ty, 0, N - 1, N);
+  ctx.stroke();
+  ctx.restore();
+
+  if (p.creature === "caterpillar") drawBands(ctx, p, pal, g, 0, N - 1);
+  drawSmallHead(ctx, p, pal, g, dark, Ik);
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Small formats: one creature that owns the frame. An S-curve of two bends, tail
+ * up left and head low right (clear of the selected tile's gear), thickest
+ * just behind the head and tapering to a fine tail, shaded along its length and
+ * across it, sitting in a soft glow of its own edge colour, with a head larger
+ * than the body and one bright eye. Dark creatures keep their lit ground.
+ */
+export function paintAnimalSmall(
+  ctx: CanvasRenderingContext2D,
+  intent: AnimalIntent,
+  format: "tile" | "chip" | "tall"
+): void {
+  frame(ctx, format, SMALL_VIEW[smallTable(format)], 0);
+  const pal = resolveAnimalPalette(intent);
+  const body = hexToRgb(pal.body);
+  const edge = hexToRgb(pal.edge);
+  const lum = 0.2126 * body[0] + 0.7152 * body[1] + 0.0722 * body[2];
+  const dark = !pal.emissive && lum < 0.08;
+  ground(ctx, dark ? [0.4, 0.39, 0.44] : [0.03, 0.03, 0.045]);
+  if (dark) blob(ctx, 380, 120, 400, 220, [0.78, 0.76, 0.84], 0.8);
+  else
+    blob(
+      ctx,
+      360,
+      120,
+      420,
+      190,
+      edge,
+      pal.emissive ? 0.16 : 0.1 + 0.05 * intent.intensity
+    );
+  ctx.globalCompositeOperation = pal.emissive ? "lighter" : "source-over";
+  paintSmallCreature(ctx, intent, pal, dark);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 1;
+}
 
 export function paintAnimalTile(
   ctx: CanvasRenderingContext2D,
   intent: AnimalIntent,
   format: TileFormat = "card"
 ): void {
-  const small = isSmall(format)
-    ? SMALL[smallTable(format as SmallFormat)]
-    : null;
-  if (small) frame(ctx, format, small.view, 0);
+  if (isSmall(format)) {
+    paintAnimalSmall(ctx, intent, format as SmallFormat);
+    return;
+  }
   const pal = resolveAnimalPalette(intent);
   const body = hexToRgb(pal.body);
   const edge = hexToRgb(pal.edge);
@@ -863,25 +1215,14 @@ export function paintAnimalTile(
       pal.emissive ? 0.14 : 0.06 + 0.04 * intent.intensity
     );
 
-  const { chain, path, zoom } = stage(intent, !!small);
+  const { chain, path, zoom } = stage(intent);
   const layer = document.createElement("canvas");
   layer.width = TILE_W;
   layer.height = TILE_H;
   const lctx = layer.getContext("2d")!;
-  // Small: the scale that gives the target body half-width, kept in step with
-  // the preset's own width (a wider look is a little thicker).
-  const scale = small
-    ? (small.body * (0.85 + 0.3 * intent.width)) /
-      ((2.5 + intent.width * 13) * vis(intent.intensity))
-    : SCALE * zoom;
-  drawCreature(lctx, intent, pal, chain, path, scale, !!small);
+  drawCreature(lctx, intent, pal, chain, path, SCALE * zoom);
   ctx.globalCompositeOperation = pal.emissive ? "lighter" : "source-over";
   ctx.drawImage(layer, 0, 0);
-  if (small) {
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = dark ? 0 : 0.3;
-    ctx.drawImage(layer, 0, 0);
-  }
   ctx.globalCompositeOperation = "source-over";
   ctx.globalAlpha = 1;
 }

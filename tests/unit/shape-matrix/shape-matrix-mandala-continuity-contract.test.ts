@@ -324,6 +324,32 @@ describe("shape matrix mandala continuity", () => {
     expect(shell).toContain("runMandalaMorph");
   });
 
+  it("keeps a folded pane laid out and its pictures as they were", () => {
+    // A compact host folds the pane it is not showing to zero width. Laying
+    // that pane out again from zero stalled the flight's second frame, and
+    // repainting its pictures at the squeezed size on the way out cost the
+    // first open after a load 50 ms before the flight could start.
+    const shell = read("app/components/ShapeMatrixAppShell.svelte");
+    for (const view of ["matrix", "detail"]) {
+      expect(shell).toContain(
+        `inert={appState.compact && appState.activeView !== "${view}"}`
+      );
+      expect(shell).toContain(
+        `data-pane-folded={appState.compact && appState.activeView !== "${view}"`
+      );
+    }
+    expect(shell).toMatch(
+      /\.workspace-pane\[data-pane-folded\] \{\s*min-width: 100cqw;\s*transition: min-width 0s linear var\(--duration-emphasis/
+    );
+    expect(shell).toMatch(
+      /html\.shape-matrix-morph\) \.workspace-pane\[data-pane-folded\] \{\s*transition: none;/
+    );
+
+    const art = read("components/ShapeMatrixMandalaArt.svelte");
+    expect(art).toContain('held = node.closest("[data-pane-folded]") !== null;');
+    expect(art).toContain("if (held && lastSrc) return lastSrc;");
+  });
+
   it("keeps the carousel out of the flying rectangle", () => {
     // The canvas box is the stage; the strip is its own card with its own
     // shared name, so it rises in after the stage lands instead of riding

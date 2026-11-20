@@ -37,10 +37,19 @@
  * 5. the grid folds into the back chip's grid glyph opening and grows out of
  *    it going back. The pane and the glyph exist on opposite sides of the
  *    mutation, so one box is read before it and the other inside the update
- *    callback, after the flush. The vector and scale go on the root as
- *    `--shape-matrix-fold-x/-y/-scale` with the `shape-matrix-morph-fold`
- *    class; if either box is missing nothing is set and the shell's plain
- *    recede/return runs.
+ *    callback. The vector and scale are `--shape-matrix-fold-x/-y/-scale`,
+ *    with the `shape-matrix-morph-fold` class on the root; if either box is
+ *    missing nothing is set and the shell's plain recede/return runs.
+ *
+ * 6. the tap is on the clock. On each side every box and style is read before
+ *    anything more is written: the old side's box and rest strength straight
+ *    after the handoff, the new side's right after the art is measured and
+ *    before its pictures are flushed. A read after a write makes the browser
+ *    lay the page out again, once per read, while the screen waits. And the
+ *    flight's own values (`--shape-matrix-floor-rest` and the fold) go on the
+ *    `::view-transition` tree through a small stylesheet, never on the root:
+ *    a custom property on the root is inherited by every element, so setting
+ *    one re-styles the whole page inside the capture window.
  *
  * Both surfaces fly with this one helper and one set of names: the Level
  * Matrix's grid and drill, and the Ratio Playground's grid and stage. All four
@@ -96,20 +105,30 @@ export interface MandalaMorphOptions {
   back?: boolean;
 }
 
+/** The flight's own custom properties, scoped to the transition's pseudo-elements. */
+export interface FlightVars {
+  set(vars: Record<string, string>): void;
+  clear(): void;
+}
+
 export interface MandalaMorphDependencies {
   startMorph: (
     mutate: () => void,
     settle: () => Promise<void>
   ) => ViewTransition | null;
   flush: (fn: () => void) => void;
-  root: () => {
-    classList: DOMTokenList;
-    style?: Pick<CSSStyleDeclaration, "setProperty" | "removeProperty">;
-  } | null;
-  /** Awaited inside the update callback, before the new-state capture. */
-  settle: () => Promise<void>;
+  root: () => { classList: DOMTokenList } | null;
+  /**
+   * Awaited inside the update callback, before the new-state capture. It calls
+   * `read` once the new side is laid out and before it writes anything more.
+   */
+  settle: (read: () => void) => Promise<void>;
+  /** Where the flight's values go; defaults to the page's flight stylesheet. */
+  vars?: FlightVars;
   /** Reads the fold's two boxes; defaults to the live page. */
   foldBoxes?: FoldBoxes;
+  /** Reads the claimed floor's resting opacity; defaults to the live page. */
+  floorRest?: () => string | null;
 }
 
 /**
@@ -184,26 +203,54 @@ export function claimedMandalaFloor(root: ParentNode): Element | null {
   return null;
 }
 
-/** Tell the flight how strongly the stage's still rests on the page. */
-function recordFloorRest(): void {
-  if (typeof document === "undefined") return;
+/** How strongly the stage's still rests on the page, from the claimed floor. */
+function pageFloorRest(): string | null {
+  if (typeof document === "undefined") return null;
   const floor = claimedMandalaFloor(document);
-  if (!floor) return;
-  document.documentElement.style.setProperty(
-    SHAPE_MATRIX_FLOOR_REST_VAR,
-    getComputedStyle(floor).opacity
-  );
+  return floor ? getComputedStyle(floor).opacity : null;
 }
 
 /**
- * Size and paint the element that owns the shared name at its new box, then
- * wait for that image to decode, so the capture holds the real picture.
+ * Size the art at its new box (the one layout pass the new side needs), let
+ * the caller read the page while that layout is fresh, then paint the element
+ * that owns the shared name and wait for its picture to decode, so the capture
+ * holds the real picture.
  */
-export async function settleMandalaEndpoint(): Promise<void> {
+export async function settleMandalaEndpoint(
+  read: () => void = () => {}
+): Promise<void> {
   measureMandalaArt();
+  read();
   flushSync();
   const images = activeMandalaImages().filter((img) => img.getAttribute("src"));
   await Promise.all(images.map((img) => img.decode().catch(() => {})));
+}
+
+/**
+ * One `<style>` in the head whose only rule targets `::view-transition`. The
+ * transition's pseudo-elements inherit from it, so the keyframes see the
+ * values, and no element in the page does, so writing it re-styles nothing
+ * but the transition.
+ */
+function pageFlightVars(): FlightVars {
+  let sheet: HTMLStyleElement | null = null;
+  return {
+    set(vars) {
+      if (typeof document === "undefined") return;
+      const body = Object.entries(vars)
+        .map(([name, value]) => `${name}: ${value};`)
+        .join(" ");
+      if (!sheet) {
+        sheet = document.createElement("style");
+        sheet.dataset.shapeMatrixFlight = "";
+        document.head.append(sheet);
+      }
+      sheet.textContent = `:root::view-transition { ${body} }`;
+    },
+    clear() {
+      if (sheet) sheet.textContent = "";
+    },
+  };
 }
 
 const defaultDependencies: MandalaMorphDependencies = {
@@ -212,6 +259,8 @@ const defaultDependencies: MandalaMorphDependencies = {
   root: () =>
     typeof document === "undefined" ? null : document.documentElement,
   settle: settleMandalaEndpoint,
+  vars: pageFlightVars(),
+  floorRest: pageFloorRest,
 };
 
 export function runMandalaMorph(
@@ -221,30 +270,44 @@ export function runMandalaMorph(
   deps: MandalaMorphDependencies = defaultDependencies
 ): ViewTransition | null {
   const root = deps.root();
+  const boxes = deps.foldBoxes ?? pageFoldBoxes;
+  const readFloorRest = deps.floorRest ?? (() => null);
   root?.classList.add(SHAPE_MATRIX_MORPH_CLASS);
   if (options.back) root?.classList.add(SHAPE_MATRIX_MORPH_BACK_CLASS);
   deps.flush(() => {
     options.before?.();
     host.beginMandalaHandoff();
   });
-  // Going back the flight leaves from the floor as it stands now; going forward
-  // it lands on the floor as it stands once the stage is showing.
-  if (options.back) recordFloorRest();
-
+  // The old side, read now and before anything more is written. The pane and
+  // the chip take their names in the handoff, so this is the earliest they can
+  // be found; the layout the read forces is the one the old snapshot needs
+  // anyway, done a moment early rather than twice.
+  //
   // Opening, the pane is on the old side and the glyph on the new; going back,
-  // the other way round. Read the old side's box now.
-  const boxes = deps.foldBoxes ?? pageFoldBoxes;
+  // the other way round. Going back the flight also leaves from the floor as
+  // it stands now, in handoff (never quite zero, so its snapshot paints);
+  // going forward it lands on the floor as the stage shows it, read inside
+  // the callback.
   const oldBox = options.back ? boxes.glyph() : boxes.pane();
-  const recordFold = () => {
-    const newBox = options.back ? boxes.pane() : boxes.glyph();
+  let floorRest = options.back ? readFloorRest() : null;
+  let newBox: FoldBox | null = null;
+  const readNewSide = () => {
+    newBox = options.back ? boxes.pane() : boxes.glyph();
+    if (!options.back) floorRest = readFloorRest();
+  };
+  const writeFlight = () => {
+    const vars: Record<string, string> = {};
+    if (floorRest !== null) vars[SHAPE_MATRIX_FLOOR_REST_VAR] = floorRest;
     const fold = options.back
       ? foldVector(newBox, oldBox)
       : foldVector(oldBox, newBox);
-    if (!fold || !root?.style) return;
-    root.style.setProperty(SHAPE_MATRIX_FOLD_X_VAR, `${fold.x}px`);
-    root.style.setProperty(SHAPE_MATRIX_FOLD_Y_VAR, `${fold.y}px`);
-    root.style.setProperty(SHAPE_MATRIX_FOLD_SCALE_VAR, `${fold.scale}`);
-    root.classList.add(SHAPE_MATRIX_MORPH_FOLD_CLASS);
+    if (fold) {
+      vars[SHAPE_MATRIX_FOLD_X_VAR] = `${fold.x}px`;
+      vars[SHAPE_MATRIX_FOLD_Y_VAR] = `${fold.y}px`;
+      vars[SHAPE_MATRIX_FOLD_SCALE_VAR] = `${fold.scale}`;
+      root?.classList.add(SHAPE_MATRIX_MORPH_FOLD_CLASS);
+    }
+    if (Object.keys(vars).length > 0) deps.vars?.set(vars);
   };
 
   const finish = () => {
@@ -254,17 +317,14 @@ export function runMandalaMorph(
       SHAPE_MATRIX_MORPH_BACK_CLASS,
       SHAPE_MATRIX_MORPH_FOLD_CLASS
     );
-    root?.style?.removeProperty(SHAPE_MATRIX_FOLD_X_VAR);
-    root?.style?.removeProperty(SHAPE_MATRIX_FOLD_Y_VAR);
-    root?.style?.removeProperty(SHAPE_MATRIX_FOLD_SCALE_VAR);
+    deps.vars?.clear();
   };
 
   let transition: ViewTransition | null;
   try {
     transition = deps.startMorph(mutate, async () => {
-      await deps.settle();
-      if (!options.back) recordFloorRest();
-      recordFold();
+      await deps.settle(readNewSide);
+      writeFlight();
     });
   } catch (error) {
     finish();

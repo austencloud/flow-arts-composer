@@ -156,14 +156,17 @@ interface SmallRing {
   /** Brightness against the front ring. */
   gain: number;
 }
+/** The tile's centre dot, so it stays the brightest mark next to the thicker ring. */
+const TILE_DOT_K = 1.5;
 const SMALL: Record<
   "tile" | "chip",
   { view: Box; stroke: number; back: SmallRing; front: SmallRing }
 > = {
   tile: {
     view: { x: 0, y: 0, w: 720, h: 270 },
-    stroke: 2,
-    back: { x: 215, y: 150, r: 84, gain: 0.5 },
+    // 74/52 of the chip's 2: the phone list shows this 52 wide.
+    stroke: 3,
+    back: { x: 215, y: 150, r: 84, gain: 0.7 },
     front: { x: 445, y: 140, r: 106, gain: 1 },
   },
   chip: {
@@ -202,6 +205,10 @@ function paintPulseSmall(
   );
   const level = 0.78 + 0.22 * clamp01(intent.intensity);
   const w = small.stroke * upp;
+  // The tile's ring is thicker, so it sits a little under the centre dot and
+  // the dot stays the brightest mark (keeps the gear corner clear).
+  const tile = format === "tile";
+  const ringAlpha = tile ? 0.86 : 0.95;
   // Colours here are 0..1 triples; the hot tint comes in 0..255.
   const rgba = (c: readonly number[], a: number, scale = 255): string =>
     `rgba(${Math.round(c[0]! * scale)},${Math.round(c[1]! * scale)},${Math.round(
@@ -223,7 +230,7 @@ function paintPulseSmall(
     ctx.strokeStyle = rgba(ring, 0.2 * g);
     ctx.stroke();
     ctx.lineWidth = line;
-    ctx.strokeStyle = rgba(hot, 0.95 * g, 1);
+    ctx.strokeStyle = rgba(hot, ringAlpha * g, 1);
     ctx.beginPath();
     ctx.arc(r.x, r.y, r.r, 0, TAU);
     ctx.stroke();
@@ -233,12 +240,12 @@ function paintPulseSmall(
   draw(small.front, w);
   // The tip that rang: a dot at the front ring's centre; a velocity look
   // throws a brighter flash.
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.fillStyle = tile ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.9)";
   ctx.beginPath();
   ctx.arc(
     small.front.x,
     small.front.y,
-    (intent.trigger === "velocity" ? 2 : 1.4) * upp,
+    (intent.trigger === "velocity" ? 2 : 1.4) * (tile ? TILE_DOT_K : 1) * upp,
     0,
     TAU
   );
