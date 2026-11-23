@@ -1,5 +1,7 @@
 # Poi Legality — everything we know, in one place
 
+**Update 2026-11-22.** Austen's October rules, his 2026-11-22 calls and his sitting 1 verdicts settle the turnaround question this doc left open: under gravity alone, a poi turns around only as a pendulum does, level with the floor and pointing out (section 5, "Settled since"). Checker rule 5 now says that; stalls are held back for now. The θ guess below is set aside. The full sourced history from July to November is kept by the poi desk at `E:/tka-poi/state/history.md`.
+
 **Repository status (2026-10-14):** Later measured transcription evidence is in [the SpiroAnim corpus](../research/spiroanim/README.md). Letter resolution in that corpus does not prove every transition physically executable; the dynamic-transition uncertainties below remain.
 
 **What this is.** Every attempt this project has made to define which TKA motions
@@ -54,10 +56,14 @@ the transition layer, which nobody has measured yet. Section 5.
 | 2   | ANTI at 0 turns never                            | "no tramel motion"                           |
 | 3   | PRO at 0 turns with IN orientation never         | "cannot isolate inward-facing swinging prop" |
 | 4   | DASH needs ≥ 0.5 turns                           | "can't stop momentum on a dime"              |
-| 5   | No instant CW↔CCW spin reversal                  | "needs stall or transition beat"             |
+| 5   | A turnaround is a pendulum turn: out, at a side  | Austen 2026-10-18; sitting 1, 2026-11-22     |
 
 Rules 1–4 are per-motion (`validateMotion`); rule 5 is per-transition
-(`validateTransition`).
+(`validateTransition`). Until 2026-11-22 rule 5 forbade any CW↔CCW spin
+reversal ("needs stall or transition beat"), which section 5 shows was wrong.
+It now allows a change of spin direction, or of the way the hand travels round
+the grid, only when the beat before it ends pointing out with the hand at east
+or west, and refuses it otherwise.
 
 Supporting map, `poi-gravity-orientation-deriver.ts` — the orientation a prop
 takes hanging under gravity at each grid location:
@@ -199,10 +205,51 @@ reversals of momentum are possible if done in a specific way where the
 orientation lands in a specific way and we just haven't developed the language
 or algorithms to identify that quite yet."_
 
-### The candidate language: θ, the prop's angle from gravity-down
+### Settled since: a poi turns around while it points out
 
-**Status: a hypothesis, mine, derived from one worked example plus the gravity
-map. Not confirmed by Austen and not tested against data.**
+Austen's words, each quoted from his chats:
+
+- 2026-10-15: _"Any antispin needs 1 turn, and must go from out to out. isos
+  (pro at 0) can have 0 turns but must also be out - out."_
+- 2026-10-18: a poi can point in _"as long as the momentum continues in that
+  same path until an out point occurs"_.
+- 2026-10-18: _"every prop except poi can do one thing poi can't do - Antispins
+  with 0 turns"_.
+- 2026-10-19, of Gage's 72 CAPs: _"all 72 of Gage's patterns should physically
+  work."_ `capPoiProblem` in `src/lib/shared/guide-topics/caps-topic.ts`
+  already applies the out-point rule to them.
+- 2026-11-22, asked whether a turnaround must point out wherever the hand is
+  (option A) or lie level with the floor (option B, the θ guess below), he
+  picked A.
+
+That pick read the turnaround point as the **out point** alone. His sitting 1
+verdicts the same day (ten moving poi on `/test/poi-reversals`, saved in
+`src/lib/features/levels/poi-lab/data/poi-reversal-observations.json`) narrowed
+it. Only the pendulum (hand still, poi level) and the extendulum with the hand
+at a side and the poi pointing out past it were legal. Turning out at the top
+or bottom, out on a diagonal, sideways, or pointing in were all illegal
+("Instant momentum change."). Asked whether that means level with the floor
+and pointing out, he said:
+
+> "if you apply momentum in the correct way, you can stall upwards or even
+> sidewards. It just takes a certain amount of momentum and build-up and
+> pull-back at the right rate with the right handpath being applied. ... But if
+> you're talking pendulums only and we're experiencing gravity, then yes, that
+> is how it would be"
+
+He then chose pendulum turns only for the checker until it can see a hand path
+build up. Rule 5 is written to that: out, with the hand at east or west.
+`capPoiProblem` still applies the looser out-point rule to Gage's CAPs.
+
+Still open: dashes, floats, statics and planes other than the wall plane have
+no call on record. Austen chose on 2026-11-22 to settle them in short judging
+sittings, ten moving poi at a time, on `/test/poi-reversals`.
+
+### Set aside: θ, the prop's angle from gravity-down
+
+**Status: a July hypothesis, mine, derived from one worked example plus the
+gravity map. Austen picked the out-point rule over it on 2026-11-22. Kept for
+the record.**
 
 Define θ as the angle between the prop's bearing and straight down.
 `getGravityOrientation` is already the θ = 0 map.
@@ -259,7 +306,9 @@ extension condition is physical and tempo-dependent.
 1. **Is legality binary or a tempo envelope?** Asked 2026-07-18, never answered,
    and it still gates the shape of any filter. The θ proposal implies the answer
    is "both, separably" — but that is an implication, not an answer.
-2. **Does θ = ±90° hold for reversals?** Needs Austen's eye and a dataset.
+2. ~~Does θ = ±90° hold for reversals?~~ Answered 2026-11-22: for a pendulum
+   turn, yes, and the poi must also point out. Stalls at other angles need
+   momentum build-up (section 5).
 3. **What is the transition-layer restriction actually made of?** The steady
    state loses 3 flowers of 28. If poi is as restrictive in practice as it feels,
    the restriction is here, and it is entirely unmeasured.

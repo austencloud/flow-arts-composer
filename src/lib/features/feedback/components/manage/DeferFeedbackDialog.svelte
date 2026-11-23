@@ -138,6 +138,7 @@
 
 <style>
   .defer-dialog-overlay {
+    /* behind the status bar: a dim with a centred dialog that cannot reach the top */
     position: fixed;
     inset: 0;
     display: flex;

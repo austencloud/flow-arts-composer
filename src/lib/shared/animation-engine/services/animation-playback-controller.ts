@@ -59,6 +59,11 @@ export class AnimationPlaybackController {
   // Adds a 1-step pause at the end position so the user can see the final state
   private endPlacementHoldDuration: number = 0;
 
+  // Opt-in (off by default): a host whose props cannot rest at the start pose
+  // (a poi needs momentum) plays from partway through the first motion beat and
+  // wraps straight back into motion, with no start-position hold and no end hold.
+  private startInMotion: boolean = false;
+
   // Loop completion callback (used by tempo practice training)
   private loopCompleteCallback: (() => void) | null = null;
 
@@ -149,7 +154,8 @@ export class AnimationPlaybackController {
 
     // Store total duration for duration-aware playback (includes start position)
     // For freeform sequences, add 1-step end position hold so the user can see the final state
-    this.endPlacementHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
+    this.endPlacementHoldDuration =
+      this._isSeamlesslyLoopable || this.startInMotion ? 0 : 1;
     this.totalDuration =
       this.animationEngine.getTotalDurationWithStartPlacement() +
       this.endPlacementHoldDuration;
@@ -166,7 +172,28 @@ export class AnimationPlaybackController {
     // Update prop states from initial initialization
     this.updatePropStatesFromEngine();
 
+    if (this.startInMotion) this.seekIntoMotion();
+
     return true;
+  }
+
+  /**
+   * Opt in (or out) of starting in motion. Takes effect on the next
+   * initialize(); the host sets it before each load.
+   */
+  setStartInMotion(on: boolean): void {
+    this.startInMotion = on;
+  }
+
+  /** Halfway through the first motion beat: the first drawn frame is mid-flow. */
+  private seekIntoMotion(): void {
+    this.isFirstLoop = false;
+    this.timePosition = this.animationEngine.getStartPlacementDuration() + 0.5;
+    const step = this.animationEngine.calculateStateDurationAware(
+      this.timePosition
+    );
+    this.syncCurrentStep(step);
+    this.updatePropStatesFromEngine();
   }
 
   updateSequenceData(sequenceData: SequenceData): void {
@@ -196,7 +223,8 @@ export class AnimationPlaybackController {
     this.state.setSequenceMetadata(metadata.word, metadata.author);
 
     // Update total duration (includes start position + end hold for freeform sequences)
-    this.endPlacementHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
+    this.endPlacementHoldDuration =
+      this._isSeamlesslyLoopable || this.startInMotion ? 0 : 1;
     this.totalDuration =
       this.animationEngine.getTotalDurationWithStartPlacement() +
       this.endPlacementHoldDuration;
@@ -749,7 +777,8 @@ export class AnimationPlaybackController {
               this.endPlacementHoldDuration;
           }
 
-          const wrapStart = this._isSeamlesslyLoopable
+          const wrapStart =
+            this._isSeamlesslyLoopable || this.startInMotion
             ? fallbackStartPlacementDuration
             : 0;
           // Carry the overrun into the new loop, wrapped by the loop body

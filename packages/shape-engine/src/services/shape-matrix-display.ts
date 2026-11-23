@@ -271,6 +271,22 @@ export function describeSoloFlower(
   };
 }
 
+/**
+ * A Ratios hand alone, in everyday spinner words: "4-petal antispin flower".
+ * Null when the ratio draws no flower (a still hand, a float), since the
+ * ratio label already says all there is.
+ */
+export function theorySoloFlowerName(flower: TheoryFlower): string | null {
+  if (isStationaryRatio(flower.ratio) || isFloatRatio(flower.ratio))
+    return null;
+  if (flower.style === "pro" && flower.petals === 0)
+    return t("shape_engine_solo_extension");
+  return t(
+    flower.style === "pro" ? "shape_engine_solo_pro" : "shape_engine_solo_anti",
+    { petals: flower.petals }
+  );
+}
+
 export function localizedTheoryFlowerLabel(flower: TheoryFlower): string {
   const ratio = theoryRatioLabel(flower.ratio);
   if (isStationaryRatio(flower.ratio))

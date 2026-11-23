@@ -362,4 +362,8 @@
   .error {
     color: #ff8a8a;
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  main {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

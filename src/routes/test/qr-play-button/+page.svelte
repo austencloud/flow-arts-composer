@@ -105,4 +105,8 @@
   .qr.dark { background: #0b1020; }
   figcaption { margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.75; text-align: center; }
   .cell canvas { border-radius: 12px; }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .wrap {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

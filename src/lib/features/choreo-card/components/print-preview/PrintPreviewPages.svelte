@@ -32,7 +32,10 @@
   import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
   import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
   import { getCompositionDispatcher } from "#lib/shared/render/get-composition-dispatcher.js";
-  import { loadOverridePlacementBundle } from "#lib/shared/render/services/override-placement-bundle.js";
+  import {
+    loadOverridePlacementBundle,
+    reseedWhenPlacementLoaded,
+  } from "#lib/shared/render/services/override-placement-bundle.js";
   import { prewarmCardPool } from "#lib/shared/render/services/card-pool-prewarm.js";
   import { warmCardBackCachesAsync } from "../../services/card-back/warm-card-back-caches";
   import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
@@ -319,8 +322,11 @@
   // never pushes an empty set over the pool's seeded one.
   async function refreshOverrideBundle(): Promise<void> {
     try {
-      getCompositionDispatcher().updateOverrideBundle(
-        await loadOverridePlacementBundle()
+      const dispatcher = getCompositionDispatcher();
+      dispatcher.updateOverrideBundle(await loadOverridePlacementBundle());
+      // Pushed after a miss: send the complete set once the data loads.
+      reseedWhenPlacementLoaded((fresh) =>
+        dispatcher.updateOverrideBundle(fresh)
       );
     } catch (err) {
       console.warn("[PrintPreview] override bundle refresh failed:", err);

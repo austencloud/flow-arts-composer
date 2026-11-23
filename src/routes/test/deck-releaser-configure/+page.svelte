@@ -359,4 +359,9 @@
       --min-touch-target: 52px;
     }
   }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .harness {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

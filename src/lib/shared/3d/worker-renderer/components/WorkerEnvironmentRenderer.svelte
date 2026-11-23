@@ -348,6 +348,7 @@
         viewer={interactionViewer}
         cameraArbiter={performerCameraArbiter}
         {cameraSnapshot}
+        getPerformerBodies={() => renderer?.performerBodies ?? null}
         onInteractionChange={handlePerformerInteractionChange}
         onFailure={onPerformerInteractionFailure}
         onHintDismissed={onPerformerInteractionHintDismissed}

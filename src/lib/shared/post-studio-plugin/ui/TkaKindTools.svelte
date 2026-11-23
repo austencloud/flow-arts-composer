@@ -58,6 +58,15 @@
     CREDIT_MAX_LEAD_LENGTH,
     CREDIT_WORDMARK,
   } from "#lib/shared/media-composition/domain/credit.js";
+  import {
+    LOOP_RUN_CHANGES,
+    LOOP_RUN_COLOURS,
+    LOOP_RUN_LAYOUTS,
+    loopRunDefaultEvents,
+    loopRunLength,
+    type LoopRunChange,
+    type LoopRunLayout,
+  } from "#lib/shared/media-composition/domain/loop-run.js";
   import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import { useTkaEditor } from "./tka-editor-context";
   import { growFade } from "#lib/shared/transitions/motion.js";
@@ -129,6 +138,33 @@
       beatsBehind: current?.beatsBehind ?? 0,
       ...(turned && { mirror: true, flip: true, swap: true }),
     });
+  }
+
+  /**
+   * A LOOP run's change, starting layout or seed, with the usual play for
+   * the new choice laid over it and the clip's length fitted to that play.
+   */
+  function replay(
+    run: Extract<NonNullable<ToolPanelProps["item"]>, { kind: "loop" }>,
+    choice: { change?: LoopRunChange; layout?: LoopRunLayout; seed?: number }
+  ): void {
+    if (locked) return;
+    const change = choice.change ?? run.change;
+    const layout = choice.layout ?? run.layout;
+    const seed = choice.seed ?? run.seed;
+    const steps = run.sequence.sequence.steps.length;
+    const events = loopRunDefaultEvents(change, layout, steps, seed);
+    const play = {
+      change,
+      layout,
+      seed,
+      colour: LOOP_RUN_COLOURS[change],
+      events,
+    };
+    const duration = loopRunLength({ ...play }, steps) + 0.6;
+    editor.edit((project, ctx) =>
+      updateItem(project, run.id, { loop: play, duration }, ctx)
+    );
   }
 
   function patchItem(patch: PostItemPatch): void {
@@ -707,6 +743,53 @@
         onchange={(value) => patchItem({ marks: value === "on" })}
         ariaLabel={t("post_editor_flash_marks")}
       />
+    </div>
+  {/if}
+{:else if item?.kind === "loop"}
+  {#if tool === "loop" && item.kind === "loop"}
+    {@const run = item}
+    {@const steps = run.sequence.sequence.steps.length}
+    <div class="flash-tools">
+      <span class="readout-name">{t("post_editor_loop_change")}</span>
+      <select
+        class="field"
+        value={run.change}
+        aria-label={t("post_editor_loop_change")}
+        disabled={locked}
+        onchange={(event) =>
+          replay(run, { change: event.currentTarget.value as LoopRunChange })}
+      >
+        {#each LOOP_RUN_CHANGES as change (change)}
+          <option value={change}>{t(`post_editor_loop_${change}`)}</option>
+        {/each}
+      </select>
+      <span class="readout-name">{t("post_editor_loop_layout")}</span>
+      <select
+        class="field"
+        value={run.layout}
+        aria-label={t("post_editor_loop_layout")}
+        disabled={locked}
+        onchange={(event) =>
+          replay(run, { layout: event.currentTarget.value as LoopRunLayout })}
+      >
+        {#each LOOP_RUN_LAYOUTS as layout (layout)}
+          <option value={layout}>{t(`post_editor_loop_layout_${layout}`)}</option>
+        {/each}
+      </select>
+      <ValueSlider
+        label={t("post_editor_loop_seed")}
+        value={run.seed}
+        min={1}
+        max={Math.max(1, steps)}
+        step={1}
+        format={(value) => String(Math.round(value))}
+        disabled={locked}
+        onchange={(seed) => replay(run, { seed: Math.round(seed) })}
+      />
+      <PanelButton disabled={locked} onclick={() => replay(run, {})}>
+        {t("post_editor_loop_replay")}
+      </PanelButton>
+      <p class="hint">{t("post_editor_loop_hint")}</p>
     </div>
   {/if}
 {:else if item?.kind === "credit"}

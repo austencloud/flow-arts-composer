@@ -22,6 +22,7 @@ import { createStaffEffectPainter } from "#lib/shared/media-composition/services
 import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
 import { createFlashPainter } from "#lib/shared/media-composition/services/flash-painter.js";
 import { createCreditPainter } from "#lib/shared/media-composition/services/credit-painter.js";
+import { createLoopRunPainter } from "#lib/shared/media-composition/services/loop-run-painter.js";
 import { createCometTrailsPainter } from "#lib/shared/media-composition/services/comet-trails-painter.js";
 import {
   itemIdFromCometTrailsRole,
@@ -71,6 +72,7 @@ export function createTkaPainters(
   const cometPainters = new Map<string, PostStudioLayerPainter>();
   const flashPainters = new Map<string, PostStudioLayerPainter>();
   const creditPainters = new Map<string, PostStudioLayerPainter>();
+  const loopPainters = new Map<string, PostStudioLayerPainter>();
 
   function videoItem(itemId: string): PostVideoItem | null {
     if (!latest) return null;
@@ -194,6 +196,26 @@ export function createTkaPainters(
     },
   };
 
+  const loopFactory: PainterFactory = {
+    id: "tka-loop",
+    create(role, env) {
+      const plan = env.compiled.loops.find((entry) => entry.role === role);
+      if (!plan) return null;
+      latest = env;
+      const itemId = plan.itemId;
+      let painter = loopPainters.get(itemId);
+      if (!painter) {
+        painter = createLoopRunPainter(
+          () =>
+            latest?.compiled.loops.find((entry) => entry.itemId === itemId) ??
+            null
+        );
+        loopPainters.set(itemId, painter);
+      }
+      return painter;
+    },
+  };
+
   const staffFactory: PainterFactory = {
     id: "tka-staff",
     create(role, env) {
@@ -248,6 +270,7 @@ export function createTkaPainters(
     titlesFactory,
     flashFactory,
     creditFactory,
+    loopFactory,
     staffFactory,
     cometFactory,
   ];

@@ -382,6 +382,7 @@
 		overflow: hidden;
 	}
 	.stage {
+		/* behind the status bar: the full-screen probe canvas, its readout clears the bar */
 		position: fixed;
 		inset: 0;
 		width: 100vw;
@@ -390,7 +391,7 @@
 	}
 	.hud {
 		position: fixed;
-		top: 0.5rem;
+		top: calc(0.5rem + var(--safe-top));
 		left: 0.5rem;
 		padding: 0.4rem 0.7rem;
 		font: 12px ui-monospace, monospace;

@@ -13,6 +13,16 @@
   import { THE_GRID_ALPHA3 } from "./level-1/_data/the-grid-pictograph";
   import { aabbWordSteps } from "./level-1/_data/aabb-word";
   import { bakeReversals } from "./level-1/_data/guide-sequence-adapter";
+  import {
+    EX_C,
+    EX_S,
+    TOPIC_THUMBS,
+    GLYPH_A_TURN,
+  } from "./level-2/_data/glyph-examples";
+  import {
+    ZANS_DIAMOND_ORIGINAL,
+    zansDiamondStrip,
+  } from "#lib/shared/guide-topics/zans-diamond-topic.js";
   import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
   import {
     buildConceptPath,
@@ -76,6 +86,21 @@
   const nextPage = firstTopic
     ? { href: localHref(firstTopicHref), title: firstTopic.title }
     : null;
+
+  // Each row of the list carries a picture of its section (2026-11-20, Guide
+  // pass 2), drawn by the same HubPictograph as the stages above. Picks:
+  // Level 2 is turns, so the A with a turn; Ratios, the one-to-one turn
+  // example; the Codex, a lettered C; Motion paths, the S with two arcs; Zan's
+  // Diamond, one step of that pattern; the book, the first picture of the
+  // Words page's word.
+  const sectionPictures = {
+    level2: GLYPH_A_TURN,
+    ratios: TOPIC_THUMBS["one-one-turns"],
+    codex: EX_C,
+    motion_paths: EX_S,
+    zans_diamond: zansDiamondStrip(ZANS_DIAMOND_ORIGINAL)[2],
+  } as const;
+  const bookPicture = word[0];
 
   // Level 1 lives in its stages; the list carries the rest.
   const guideSections = [
@@ -205,6 +230,9 @@
             <div class="section-list">
               {#each !small ? guideSections : n === 2 ? guideSections.slice(0, SECTIONS_ON_FIRST_PHONE_SCREEN) : guideSections.slice(SECTIONS_ON_FIRST_PHONE_SCREEN) as section (section.key)}
                 <a class="section-row" href={localHref(section.href)}>
+                  <span class="row-art" aria-hidden="true">
+                    <HubPictograph pictographData={sectionPictures[section.key]} />
+                  </span>
                   <span class="section-copy">
                     <strong>
                       {#if section.key === "level2"}
@@ -219,16 +247,21 @@
               {/each}
               {#if !small || n === 3}
               <a class="section-row" href="/guides/level-1.pdf" download>
+                <span class="row-art" aria-hidden="true">
+                  <HubPictograph pictographData={bookPicture} />
+                </span>
                 <span class="section-copy">
-                  <strong>
+                  <strong class="pdf-title">
                     <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
                     {tDynamic("guide_hub_pdf_title")}
                   </strong>
                   <span class="pdf-description"
                     >{tDynamic("guide_hub_pdf_description")}</span
                   >
+                  <span class="pdf-action"
+                    >{tDynamic("guide_hub_download_pdf")}</span
+                  >
                 </span>
-                <span class="pdf-action">{tDynamic("guide_hub_download_pdf")}</span>
               </a>
               {/if}
             </div>
@@ -471,6 +504,13 @@
     border-color: color-mix(in srgb, var(--guide-accent) 60%, transparent);
     background: color-mix(in srgb, var(--guide-accent) 8%, transparent);
   }
+  /* The section's picture: a figure, never under 88px. */
+  .row-art {
+    flex: 0 0 auto;
+    width: 5.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+  }
   .section-copy {
     display: flex;
     flex: 1 1 auto;
@@ -485,12 +525,18 @@
     font-size: 1.05rem;
     letter-spacing: -0.01em;
   }
+  .section-copy > strong.pdf-title {
+    white-space: nowrap;
+  }
   .section-copy > span {
     color: var(--ink-dim);
     font-size: 0.9rem;
     line-height: 1.4;
   }
-  .pdf-action {
+  .section-copy > .pdf-action {
+    align-self: flex-start;
+    margin-top: 0.3rem;
+    color: var(--ink);
     flex: 0 0 auto;
     min-height: 2.5rem;
     padding: 0.4rem 0.9rem;

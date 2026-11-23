@@ -38,14 +38,18 @@ function firePointer(
   target.dispatchEvent(event);
 }
 
-function buildHarness() {
+function buildHarness(
+  options: {
+    getPerformerBodies?: () =>
+      | readonly { index: number; segments: Float32Array }[]
+      | null;
+  } = {}
+) {
   const captured = new Set<number>();
   const canvas = new EventTarget() as HTMLCanvasElement;
   let surfaceRect = { left: 0, top: 0, width: 100, height: 100 };
   let projectionRect = { left: 0, top: 0, width: 100, height: 100 };
-  const getBoundingClientRect = vi.fn(
-    () => ({ ...surfaceRect }) as DOMRect
-  );
+  const getBoundingClientRect = vi.fn(() => ({ ...surfaceRect }) as DOMRect);
   const projectionContainer = {
     getBoundingClientRect: vi.fn(() => ({ ...projectionRect }) as DOMRect),
   } as unknown as HTMLElement;
@@ -99,6 +103,7 @@ function buildHarness() {
     projectionContainer,
     viewer,
     cameraArbiter,
+    getPerformerBodies: options.getPerformerBodies,
   });
   const frame = {
     camera: {
@@ -135,6 +140,30 @@ function buildHarness() {
 }
 
 describe("worker performer interaction bridge", () => {
+  it("uses the worker's body capsules for a mouse and the proxy for a performer without them", () => {
+    let bodies: { index: number; segments: Float32Array }[] = [
+      // Performer 0's body, off to the left of the centre ray.
+      { index: 0, segments: new Float32Array([-0.9, 1, 0, -0.9, 1.4, 0, 0.1]) },
+    ];
+    const { bridge, canvas } = buildHarness({
+      getPerformerBodies: () => bodies,
+    });
+
+    firePointer(canvas, "pointermove", { clientX: 50, clientY: 50 });
+    expect(bridge.hoveredIndex).toBeNull();
+
+    bodies = [
+      { index: 0, segments: new Float32Array([0, 1, 0, 0, 1.3, 0, 0.1]) },
+    ];
+    firePointer(canvas, "pointermove", { clientX: 50, clientY: 49 });
+    expect(bridge.hoveredIndex).toBe(0);
+
+    // No body sent for performer 0: it is grabbed through its capsule again.
+    bodies = [];
+    firePointer(canvas, "pointermove", { clientX: 50, clientY: 50 });
+    expect(bridge.hoveredIndex).toBe(0);
+  });
+
   it("selects and hovers through the canonical proxy without WebGL", () => {
     const { bridge, canvas, captured, viewer } = buildHarness();
     firePointer(canvas, "pointermove", { clientX: 50, clientY: 50 });

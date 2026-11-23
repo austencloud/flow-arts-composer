@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { fitTimelineRows, TIMELINE_FIT_MIN_UNIT } from "./grid-calculations";
+import {
+  calculateTimelineRowsByBeatCount,
+  calculateTimelineUnitSize,
+  calculateWorkbenchTimelineRows,
+  clampTimelineUnitSizeToHeight,
+  fitTimelineRows,
+  TIMELINE_FIT_MIN_UNIT,
+  TIMELINE_TOUCH_FLOOR,
+  timelineRowUnits,
+} from "./grid-calculations";
 
 const steps = (count: number) =>
   Array.from({ length: count }, () => ({ duration: 1 }));
@@ -92,6 +101,119 @@ describe("fitTimelineRows", () => {
         );
       }
     );
+  });
+
+  describe("a long step on a narrow phone", () => {
+    const durations = (...d: number[]) => d.map((duration) => ({ duration }));
+
+    // StepGrid's two paths: the fit when one is found, otherwise workbench
+    // rows at the width-based size, clamped to the height with the 94px floor.
+    const layOut = (
+      seq: { duration: number }[],
+      host: { sizingWidth: number; containerHeight: number },
+      beatsPerRow = 4
+    ) => {
+      const common = { ...host, popReserve: 16, hasStart: true, isNarrow: true };
+      const fit = fitTimelineRows({ ...common, steps: seq, beatsPerRow });
+      if (fit) return { rows: fit.rows, unit: fit.unitSize };
+      const rows = calculateWorkbenchTimelineRows({
+        ...common,
+        steps: seq,
+        beatsPerRow,
+      });
+      const widthBased = calculateTimelineUnitSize(
+        host.sizingWidth,
+        timelineRowUnits(rows, true)
+      );
+      const unit = clampTimelineUnitSizeToHeight(
+        widthBased,
+        host.containerHeight,
+        Math.max(rows.length, 1),
+        16,
+        94
+      );
+      return { rows, unit };
+    };
+
+    // Measured on 5173: a 360 x 640 phone in Construct gives a 358px host,
+    // 155px tall with the step editor open; the 387 x 775 visitor phone a
+    // 215px host; the Fold's cover screen is 344 wide.
+    const PHONES = [
+      { name: "360 x 640", sizingWidth: 358 - 32, containerHeight: 155 },
+      { name: "387 x 775", sizingWidth: 385 - 32, containerHeight: 215 },
+      { name: "344 x 760", sizingWidth: 342 - 32, containerHeight: 230 },
+    ];
+    const SEQUENCES = [
+      [4],
+      [2, 1],
+      [3, 1],
+      [4, 1],
+      [4, 1, 1, 1],
+      [1, 1, 4, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 4],
+      [1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
+    ];
+
+    it.each(PHONES)("never draws a row wider than the $name phone", (host) => {
+      for (const d of SEQUENCES) {
+        const { rows, unit } = layOut(durations(...d), host);
+        const units = timelineRowUnits(rows, true);
+        expect(
+          units * unit + (units - 1),
+          `durations ${d}`
+        ).toBeLessThanOrEqual(host.sizingWidth);
+        // Up to 4x every cell stays at least the touch floor.
+        expect(unit, `durations ${d}`).toBeGreaterThanOrEqual(
+          TIMELINE_TOUCH_FLOOR
+        );
+      }
+    });
+
+    it("keeps Start, a 4x step and a 1x step on one row at 360 wide", () => {
+      // Wren's case: the 4x step was drawn 426px wide and step 2 sat off screen.
+      const { rows, unit } = layOut(durations(4, 1), PHONES[0]!);
+      expect(rows).toHaveLength(1);
+      expect((1 + 4 + 1) * unit + 2).toBeLessThanOrEqual(326);
+    });
+
+    it("gives a long step its own row when four to a row would go under the touch floor", () => {
+      const rows = calculateWorkbenchTimelineRows({
+        steps: durations(1, 1, 4, 1, 1, 1, 1, 1),
+        beatsPerRow: 4,
+        hasStart: true,
+        sizingWidth: 326,
+        isNarrow: true,
+      });
+      expect(rows.map((row) => row.steps.map((s) => s.stepIndex))).toEqual([
+        [0, 1],
+        [2],
+        [3, 4, 5, 6],
+        [7],
+      ]);
+    });
+
+    it("leaves one-beat sequences, and wide hosts, in their beat rows", () => {
+      const ones = steps(9);
+      expect(
+        calculateWorkbenchTimelineRows({
+          steps: ones,
+          beatsPerRow: 4,
+          hasStart: true,
+          sizingWidth: 326,
+          isNarrow: true,
+        })
+      ).toEqual(calculateTimelineRowsByBeatCount(ones, 4));
+      const long = durations(1, 1, 4, 1, 1, 1, 1, 1);
+      expect(
+        calculateWorkbenchTimelineRows({
+          steps: long,
+          beatsPerRow: 4,
+          hasStart: true,
+          sizingWidth: 1200,
+          isNarrow: false,
+        })
+      ).toEqual(calculateTimelineRowsByBeatCount(long, 4));
+    });
   });
 
   it("keeps a sequence that already fits at its width-based size", () => {

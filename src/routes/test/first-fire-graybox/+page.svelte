@@ -223,6 +223,7 @@
     --theme-text-on-accent: #170802;
     --min-touch-target: 44px;
     --duration-normal: 160ms;
+    /* behind the status bar: a full-screen scene, its review panel clears the bar */
     position: fixed;
     inset: 0;
     min-inline-size: 20rem;
@@ -250,7 +251,7 @@
 
   .review-hud {
     position: absolute;
-    inset-block-start: clamp(0.8rem, 1.5vw, 1.5rem);
+    inset-block-start: calc(clamp(0.8rem, 1.5vw, 1.5rem) + var(--safe-top));
     inset-inline: clamp(0.8rem, 1.5vw, 1.5rem);
     z-index: 60;
     display: flex;
@@ -464,7 +465,7 @@
 
   @media (min-width: 2600px) {
     .review-hud {
-      inset-block-start: 2rem;
+      inset-block-start: calc(2rem + var(--safe-top));
       inset-inline: 2rem;
     }
 

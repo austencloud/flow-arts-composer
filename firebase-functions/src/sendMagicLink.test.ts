@@ -4,12 +4,15 @@ import {
   handleRedeemMagicLinkCode,
   handleResolveMagicLinkEmail,
   handleSendMagicLink,
+  resolveCallerAddress,
   type MagicLinkRuntime,
   type RedeemMagicLinkCodeRuntime,
   type ResolveMagicLinkEmailRuntime,
 } from "./sendMagicLink";
 
 const REQUEST_ID = "144599f0-7a73-4f38-8f3d-a654dc6c47c6";
+const CALLER_CHOSEN_ID = "0867d981-cda5-4d0e-bc72-d75284111db8";
+const CALLER_ADDRESS = "203.0.113.7";
 const RECIPIENT = "person@example.com";
 const MAGIC_LINK_STATE = "a".repeat(43);
 const MAGIC_LINK_EXPIRES_AT = 1_800_000;
@@ -43,12 +46,14 @@ function createRuntime(overrides: RuntimeOverrides = {}) {
     appCheckStatus: "missing",
     authStatus: "anonymous",
     initiatingUid: null,
+    callerAddress: CALLER_ADDRESS,
     now: () => {
       now += 25;
       return now;
     },
     createRequestId: () => REQUEST_ID,
     createSignInState: jest.fn().mockResolvedValue({
+      status: "created",
       state: MAGIC_LINK_STATE,
       expiresAtMs: MAGIC_LINK_EXPIRES_AT,
       oneTimeCode: "123456",
@@ -221,7 +226,8 @@ describe("handleSendMagicLink", () => {
     expect(runtime.createSignInState).toHaveBeenCalledWith(
       RECIPIENT,
       REQUEST_ID,
-      null
+      null,
+      CALLER_ADDRESS
     );
     expect(fetch).toHaveBeenCalledWith(
       "https://api.brevo.com/v3/smtp/email",
@@ -288,6 +294,67 @@ describe("handleSendMagicLink", () => {
     );
   });
 
+  it("issues the request id itself and ignores one chosen by the caller", async () => {
+    const { runtime } = createRuntime();
+
+    const result = await handleSendMagicLink(
+      { email: RECIPIENT, requestId: CALLER_CHOSEN_ID },
+      runtime
+    );
+
+    expect(result.requestId).toBe(REQUEST_ID);
+    expect(runtime.createSignInState).toHaveBeenCalledWith(
+      RECIPIENT,
+      REQUEST_ID,
+      null,
+      CALLER_ADDRESS
+    );
+  });
+
+  it("refuses a rate-limited send before any link or mail is made", async () => {
+    const { runtime } = createRuntime({
+      createSignInState: jest
+        .fn()
+        .mockResolvedValue({ status: "rate-limited" }),
+    });
+
+    await expect(
+      handleSendMagicLink({ email: RECIPIENT }, runtime)
+    ).rejects.toMatchObject({
+      code: "resource-exhausted",
+      message: "Too many sign-in emails. Try again later.",
+    });
+    expect(runtime.generateLink).not.toHaveBeenCalled();
+    expect(runtime.fetch).not.toHaveBeenCalled();
+  });
+
+  it("refuses the send when the limits cannot be read", async () => {
+    const { runtime } = createRuntime({
+      createSignInState: jest
+        .fn()
+        .mockRejectedValue(
+          Object.assign(new Error("unavailable"), { code: "unavailable" })
+        ),
+    });
+
+    await expectHttpsError(
+      handleSendMagicLink({ email: RECIPIENT }, runtime),
+      "internal"
+    );
+    expect(runtime.generateLink).not.toHaveBeenCalled();
+    expect(runtime.fetch).not.toHaveBeenCalled();
+  });
+
+  it("never logs the caller address", async () => {
+    const { runtime, info, error } = createRuntime();
+
+    await handleSendMagicLink({ email: RECIPIENT }, runtime);
+
+    expect(
+      JSON.stringify({ info: info.mock.calls, error: error.mock.calls })
+    ).not.toContain(CALLER_ADDRESS);
+  });
+
   it("never writes a recipient or sign-in link to structured logs", async () => {
     const { runtime, info, error } = createRuntime();
 
@@ -326,6 +393,7 @@ describe("handleRedeemMagicLinkCode", () => {
   ): RedeemMagicLinkCodeRuntime {
     return {
       redeemCode: jest.fn().mockResolvedValue({
+        status: "redeemed",
         email: RECIPIENT,
         initiatingUid: null,
       }),
@@ -380,6 +448,7 @@ describe("handleRedeemMagicLinkCode", () => {
     const updated = user("canonical-1", RECIPIENT, ["primary@example.com"]);
     const runtime = createRedeemRuntime({
       redeemCode: jest.fn().mockResolvedValue({
+        status: "redeemed",
         email: RECIPIENT,
         initiatingUid: "canonical-1",
       }),
@@ -404,7 +473,7 @@ describe("handleRedeemMagicLinkCode", () => {
 
   it("rejects invalid or consumed codes without looking up an account", async () => {
     const runtime = createRedeemRuntime({
-      redeemCode: jest.fn().mockResolvedValue(null),
+      redeemCode: jest.fn().mockResolvedValue({ status: "invalid" }),
     });
 
     await expectHttpsError(
@@ -415,6 +484,23 @@ describe("handleRedeemMagicLinkCode", () => {
       "failed-precondition"
     );
     expect(runtime.getUserByEmail).not.toHaveBeenCalled();
+    expect(runtime.createCustomToken).not.toHaveBeenCalled();
+  });
+
+  it("answers a typed-code lock without looking up an account", async () => {
+    const runtime = createRedeemRuntime({
+      redeemCode: jest.fn().mockResolvedValue({ status: "locked" }),
+    });
+
+    await expectHttpsError(
+      handleRedeemMagicLinkCode(
+        { action: "redeem-code", requestId: REQUEST_ID, code: "000000" },
+        runtime
+      ),
+      "resource-exhausted"
+    );
+    expect(runtime.getUserByEmail).not.toHaveBeenCalled();
+    expect(runtime.getUser).not.toHaveBeenCalled();
     expect(runtime.createCustomToken).not.toHaveBeenCalled();
   });
 });
@@ -458,5 +544,23 @@ describe("handleResolveMagicLinkEmail", () => {
       ),
       "failed-precondition"
     );
+  });
+});
+
+describe("resolveCallerAddress", () => {
+  it("takes the last X-Forwarded-For entry, which the caller cannot forge", () => {
+    expect(
+      resolveCallerAddress({
+        headers: { "x-forwarded-for": "198.51.100.1, 203.0.113.7" },
+        ip: "198.51.100.1",
+      })
+    ).toBe("203.0.113.7");
+  });
+
+  it("falls back to the socket address, then to one shared bucket", () => {
+    expect(
+      resolveCallerAddress({ headers: {}, socket: { remoteAddress: "::1" } })
+    ).toBe("::1");
+    expect(resolveCallerAddress(undefined)).toBe("unknown");
   });
 });

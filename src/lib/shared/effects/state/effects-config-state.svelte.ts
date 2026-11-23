@@ -503,7 +503,10 @@ export function createEffectsConfigState(
       t.leftColor = DEFAULT_EFFECTS_CONFIG.trails.leftColor;
       t.rightColor = DEFAULT_EFFECTS_CONFIG.trails.rightColor;
     };
-    const liveTrails = config.trails as { leftColor?: string; rightColor?: string };
+    const liveTrails = config.trails as {
+      leftColor?: string;
+      rightColor?: string;
+    };
     if (config.activePresets.trails !== "trail-neon" && isNeon(liveTrails)) {
       resetColors(liveTrails);
       healedConfig = true;
@@ -634,7 +637,15 @@ export function createEffectsConfigState(
     sceneUndo.commitState();
   }
 
-  function setActiveEffect(effect: EffectType) {
+  // Counts the effect picks a person makes (tray, shortcuts, menus). Hydration,
+  // URL seeding, replace, restore, undo and redo never touch it, so a scene
+  // can react to a pick without reacting to a load.
+  let userPickCount = $state(0);
+
+  // `byUser: false` is for code that borrows the effect for a moment (a video
+  // export) and puts it back: that is not a pick, so no scene reacts to it.
+  function setActiveEffect(effect: EffectType, options?: { byUser?: boolean }) {
+    if (options?.byUser !== false) userPickCount++;
     rememberEffectsOn();
     if (persist)
       sceneUndo.captureState("set-active-effect", "Set active effect");
@@ -688,6 +699,7 @@ export function createEffectsConfigState(
     if (target === "both") {
       setActiveEffect(effect);
     } else {
+      userPickCount++;
       if (persist)
         sceneUndo.captureState("set-active-effect", "Set active effect");
       const next = withPropEffect(config.tipEffectMap, target, effect);
@@ -707,6 +719,7 @@ export function createEffectsConfigState(
     rememberEffectsOn();
     if (target === "both" && config.activeEffect === "none" && lastPair) {
       // Back to the pair that was last on, mix included, in one write.
+      userPickCount++;
       if (persist)
         sceneUndo.captureState("set-active-effect", "Set active effect");
       const next = withPropPair(
@@ -918,6 +931,10 @@ export function createEffectsConfigState(
     },
     get version() {
       return version;
+    },
+    /** Rises by one on every effect pick a person makes. */
+    get userPickCount() {
+      return userPickCount;
     },
     get prewarmHint() {
       return prewarmHint;

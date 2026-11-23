@@ -368,13 +368,113 @@ describe("performer press vs camera-controls listener ordering", () => {
     }
   );
 
-  it("falls back to the forgiving proxy when no visible surface is hit", () => {
+  it("falls back to the forgiving proxy for a performer with no body segments when no visible surface is hit", () => {
     const { canvas, detach, visualRoot } = buildHarness();
     visualRoot.visible = false;
     firePointer(canvas, "pointerdown", { clientX: 50, clientY: 50 });
     expect(canvas.dataset.performerDragAnchorSource).toBe("proxy");
     firePointer(canvas, "pointerup", { clientX: 50, clientY: 50 });
     detach();
+  });
+
+  describe("body-only grabbing with a mouse", () => {
+    // The harness proxy is a 2 m box around the performer. These segments sit
+    // inside it but well off the centre ray: a hand held out to the left.
+    const offCentreBody = () =>
+      new Float32Array([-0.9, 1, 0, -0.9, 1.4, 0, 0.05]);
+    // A forearm held out to the right, beyond the proxy's reach.
+    const outstretchedArm = () =>
+      new Float32Array([1.4, 1, 0, 2.2, 1, 0, 0.12]);
+
+    function pixelOf(
+      camera: PerspectiveCamera,
+      point: { x: number; y: number; z: number }
+    ): { clientX: number; clientY: number } {
+      const projected = new Vector3(point.x, point.y, point.z).project(camera);
+      return {
+        clientX: ((projected.x + 1) * 100) / 2,
+        clientY: ((1 - projected.y) * 100) / 2,
+      };
+    }
+
+    it("shows no grab cursor inside the capsule but off the body", () => {
+      const { canvas, interaction, detach } = buildHarness();
+      interaction.registerBodyPick(0, offCentreBody);
+      firePointer(canvas, "pointermove", { clientX: 50, clientY: 50 });
+      expect(canvas.style.cursor).not.toBe("grab");
+      expect(interaction.hoveredIndex).toBeNull();
+      detach();
+    });
+
+    it("lets a press inside the capsule but off the body through to the camera", () => {
+      const { canvas, viewer, orbitDown, interaction, detach } = buildHarness();
+      interaction.registerBodyPick(0, offCentreBody);
+      firePointer(canvas, "pointerdown", { clientX: 50, clientY: 50 });
+      firePointer(canvas, "pointerup", { clientX: 50, clientY: 50 });
+      expect(orbitDown).toHaveBeenCalledTimes(1);
+      expect(viewer.replacePerformerSelection).not.toHaveBeenCalled();
+      expect(viewer.beginSpatialEdit).not.toHaveBeenCalled();
+      detach();
+    });
+
+    it("grabs and selects an outstretched arm that lies outside the capsule", () => {
+      const { canvas, viewer, camera, interaction, detach } = buildHarness();
+      interaction.registerBodyPick(0, outstretchedArm);
+      const over = pixelOf(camera, { x: 1.8, y: 1, z: 0 });
+
+      firePointer(canvas, "pointermove", over);
+      expect(canvas.style.cursor).toBe("grab");
+      expect(interaction.hoveredIndex).toBe(0);
+
+      firePointer(canvas, "pointerdown", over);
+      expect(canvas.dataset.performerDragAnchorSource).toBe("body");
+      firePointer(canvas, "pointerup", over);
+      expect(viewer.replacePerformerSelection).toHaveBeenCalledWith(0);
+      detach();
+    });
+
+    it("still grabs through the capsule when the performer has no body segments", () => {
+      const { canvas, interaction, detach } = buildHarness();
+      interaction.registerBodyPick(0, () => null);
+      firePointer(canvas, "pointermove", { clientX: 50, clientY: 50 });
+      expect(canvas.style.cursor).toBe("grab");
+      expect(interaction.hoveredIndex).toBe(0);
+      detach();
+    });
+
+    it("grabs a visible skinned surface under the pointer and anchors to it", () => {
+      const { canvas, viewer, visibleKnee, interaction, detach } =
+        buildHarness();
+      (visibleKnee as unknown as { isSkinnedMesh: boolean }).isSkinnedMesh =
+        true;
+      interaction.registerBodyPick(
+        0,
+        () => new Float32Array([0, 0.6, -1, 0, 1.2, -1, 0.3])
+      );
+      firePointer(canvas, "pointerdown", { clientX: 50, clientY: 50 });
+      expect(canvas.dataset.performerDragAnchorSource).toBe("visual");
+      firePointer(canvas, "pointerup", { clientX: 50, clientY: 50 });
+      expect(viewer.replacePerformerSelection).toHaveBeenCalledWith(0);
+      detach();
+    });
+
+    it("keeps today's forgiving capsule target for a finger", () => {
+      const { canvas, visualRoot, interaction, detach } = buildHarness();
+      visualRoot.visible = false;
+      interaction.registerBodyPick(0, offCentreBody);
+      firePointer(canvas, "pointerdown", {
+        clientX: 50,
+        clientY: 50,
+        pointerType: "touch",
+      });
+      expect(canvas.dataset.performerDragAnchorSource).toBe("proxy");
+      firePointer(canvas, "pointerup", {
+        clientX: 50,
+        clientY: 50,
+        pointerType: "touch",
+      });
+      detach();
+    });
   });
 
   it("compensates when the anchored surface deforms during the drag", () => {

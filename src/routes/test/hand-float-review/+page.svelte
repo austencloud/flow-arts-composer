@@ -475,4 +475,8 @@
   .picto.nudged {
     border-color: #ffb454;
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .review {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -830,6 +830,7 @@
 
 <style>
   .playground {
+    /* behind the status bar: a full-screen 3D stage, the shared viewer UI keeps its own inset */
     position: fixed;
     inset: 0;
     min-width: 0;

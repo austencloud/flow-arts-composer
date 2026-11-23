@@ -142,6 +142,8 @@ export function tkaRow(
       return ["back", "flash", "timing", ...TAIL];
     case "credit":
       return ["back", "credit", "timing", ...TAIL];
+    case "loop":
+      return ["back", "loop", "timing", ...TAIL];
     case "mandala":
       return [
         "back",

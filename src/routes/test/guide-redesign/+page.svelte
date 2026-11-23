@@ -454,6 +454,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
+    padding-top: calc(8px + var(--safe-top));
     background: rgba(10, 10, 10, 0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -502,14 +503,14 @@
     min-height: 100vh;
     background: #fafafa;
     color: #1a1a1a;
-    padding-top: 64px;
+    padding-top: calc(64px + var(--safe-top));
   }
   .sidebar-current {
     position: fixed;
-    top: 64px;
+    top: calc(64px + var(--safe-top));
     left: 0;
     width: 260px;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 64px - var(--safe-top));
     overflow-y: auto;
     background: #fff;
     border-right: 1px solid #e5e5e5;
@@ -627,15 +628,15 @@
     min-height: 100vh;
     background: #0c0c14;
     color: #e0e0e8;
-    padding-top: 64px;
+    padding-top: calc(64px + var(--safe-top));
     font-family: 'Inter', system-ui, sans-serif;
   }
   .sidebar-glass {
     position: fixed;
-    top: 64px;
+    top: calc(64px + var(--safe-top));
     left: 0;
     width: 260px;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 64px - var(--safe-top));
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.03);
     border-right: 1px solid rgba(99, 102, 241, 0.12);
@@ -650,7 +651,7 @@
   }
   .reading-progress {
     position: fixed;
-    top: 64px;
+    top: calc(64px + var(--safe-top));
     left: 260px;
     right: 0;
     height: 3px;
@@ -859,17 +860,17 @@
     min-height: 100vh;
     background: oklch(0.13 0.015 270);
     color: oklch(0.90 0.01 270);
-    padding-top: 64px;
+    padding-top: calc(64px + var(--safe-top));
     font-family: 'Inter', system-ui, sans-serif;
   }
 
   /* Sidebar — compact, glass */
   .sidebar-bleeding {
     position: fixed;
-    top: 64px;
+    top: calc(64px + var(--safe-top));
     left: 0;
     width: 220px;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 64px - var(--safe-top));
     overflow-y: auto;
     overflow-x: clip;
     background: oklch(0.15 0.02 270 / 0.6);
@@ -946,7 +947,7 @@
   .reading-progress-bleeding {
     grid-column: full;
     position: fixed;
-    top: 64px;
+    top: calc(64px + var(--safe-top));
     left: 220px;
     right: 0;
     height: 2px;

@@ -50,6 +50,7 @@
   import ElementChipRow from "./ElementChipRow.svelte";
   import PropRelationshipChipRow from "./PropRelationshipChipRow.svelte";
   import ShapeMatrixSoloCard from "./ShapeMatrixSoloCard.svelte";
+  import ShapeMatrixHandSwitch from "./ShapeMatrixHandSwitch.svelte";
   import {
     buildModeRealizationCandidates,
     type ModeRealization,
@@ -117,6 +118,9 @@
     /** The flowers a solo can switch to, by hand, at the current turns. */
     soloAxes?: { left: readonly Flower[]; right: readonly Flower[] };
     onsolopick?: (hand: "left" | "right", flower: Flower) => void;
+    /** The stage's Both / Left / Right switch. Without it the switch stays
+        hidden, for hosts that embed one view (a guide page, a picker). */
+    onhandschange?: (hands: "both" | "left" | "right") => void;
     data: ShapeMatrixData;
     /** Optional composing surface action. The public archive remains a viewer;
      *  pickers can receive the exact realization this drill already built. */
@@ -159,6 +163,7 @@
     solo = null,
     soloAxes = { left: [], right: [] },
     onsolopick,
+    onhandschange,
     data,
     onselectRealization,
     selectLabel = t("shape_engine_use_realization"),
@@ -1355,6 +1360,11 @@
   {/if}
 
   <div class="media-stage">
+    {#if onhandschange && pair}
+      <div class="hands-row" data-focus-mode-chrome>
+        <ShapeMatrixHandSwitch value={solo ?? "both"} onchange={onhandschange} />
+      </div>
+    {/if}
     <!-- The stage rectangle is the selected matrix tile's box, arrived. It
          carries the shared stage name so the whole stage flies between the
          tile and the detail view; the mandala inside carries its own. -->
@@ -1709,10 +1719,21 @@
     min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
+      "hands"
       "hero"
       "strip";
+  }
+
+  /* Which hands play sits over the stage it changes, on the same side as on
+     Ratios, where it shares the stage's heading row. */
+  .hands-row {
+    grid-area: hands;
+    display: flex;
+    justify-content: flex-end;
+    min-width: 0;
+    padding-bottom: 0.375rem;
   }
 
   /* container-type: size makes cqw/cqh resolve against the animation region,

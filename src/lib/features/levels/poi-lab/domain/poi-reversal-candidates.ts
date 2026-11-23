@@ -30,7 +30,8 @@ export type PoiCandidateSelectionReason =
   | "calibration-extendulum"
   | "coverage"
   | "boundary"
-  | "repeat";
+  | "repeat"
+  | "sitting";
 
 export interface PoiCandidateSelection {
   candidate: PoiReversalCandidate;
@@ -80,12 +81,16 @@ function buildCandidate(
   };
   const phaseOffset = trajectoryPropIndexAt(phaseProbe, reversalStepIndex) - 8;
   const propPhase = norm(reversalPropPosition - phaseOffset);
+  // The extendulum turns with the hand at the sides and the poi pointing out
+  // past it, as Austen described it on 2026-07-29 and judged legal in sitting
+  // 1 (2026-11-22). The step-1 path that once carried this label turns with
+  // the hand at top and bottom; he judged that one illegal.
   const calibration =
     radius === 0 && reversalPropPosition === 2
       ? "pendulum"
       : radius === 1 &&
           handDirection === 1 &&
-          reversalStepIndex === 0 &&
+          reversalStepIndex === 2 &&
           reversalPropPosition === 2
         ? "extendulum"
         : undefined;

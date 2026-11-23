@@ -11,7 +11,12 @@
     type IntrinsicSizeMotion,
   } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, reducedMotion } from "#lib/shared/transitions/motion.js";
+  import {
+    announcePictographEdit,
+    pictographEditTravelling,
+  } from "#lib/shared/pictograph/shared/state/pictograph-edit-motion.svelte.js";
+  import type { PictographEdit } from "#lib/shared/pictograph/shared/services/pictograph-edit-travel.js";
   import UndoButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
   import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
@@ -117,8 +122,14 @@
   // A transform, an example or Clear replaces the whole pair, which restarts
   // the grid's own edit history. The pairs they replaced stay here so Undo can
   // step back past them once the grid has nothing left to undo.
+  // A pair a transform made also keeps that transform, so Undo glides back
+  // the way it came.
   let replacedPairs = $state<
-    { left: GridLocation | null; right: GridLocation | null }[]
+    {
+      left: GridLocation | null;
+      right: GridLocation | null;
+      edit?: PictographEdit;
+    }[]
   >([]);
   /** The placement just built, which its slot answers. */
   let lit = $state<PlacementType | null>(null);
@@ -154,6 +165,35 @@
   const built = $derived(
     placementKindFor(placement.leftLocation, placement.rightLocation)
   );
+  // While the hands travel to a transformed pair, the symbol and the answer
+  // cards keep the pair they left, and change as the hands arrive.
+  let held = $state<{
+    left: GridLocation | null;
+    right: GridLocation | null;
+  } | null>(null);
+  let holdFrame = 0;
+  const shown = $derived(
+    held ?? { left: placement.leftLocation, right: placement.rightLocation }
+  );
+  const shownBuilt = $derived(placementKindFor(shown.left, shown.right));
+  function holdUntilLanded(from: {
+    left: GridLocation | null;
+    right: GridLocation | null;
+  }) {
+    held ??= from;
+    cancelAnimationFrame(holdFrame);
+    const startedAt = performance.now();
+    const check = () => {
+      if (!pictographEditTravelling() || performance.now() - startedAt > 1500) {
+        held = null;
+        holdFrame = 0;
+        return;
+      }
+      holdFrame = requestAnimationFrame(check);
+    };
+    holdFrame = requestAnimationFrame(check);
+  }
+  onDestroy(() => cancelAnimationFrame(holdFrame));
   const stageMotion = createLayoutMotion({
     getRoot: () => experienceElement,
     groups: [
@@ -236,6 +276,14 @@
             : t("learn_ui_drag_or_tap_hand")
   );
 
+  // The hand the task line asks for, drawn beside it. A line that is not
+  // about one hand (free play, a repeat hint, nothing to do) draws none.
+  const taskHand = $derived(
+    !instruction || (repeatHint && instruction === repeatHint)
+      ? null
+      : placement.activeHand
+  );
+
   // The board comes first. Grid modes, transforms and the worked examples
   // only appear once all three are found on both grids.
   const freePlay = $derived(workshop.canFinish);
@@ -256,7 +304,7 @@
       const previous = replacedPairs.at(-1);
       if (!previous) return false;
       replacedPairs = replacedPairs.slice(0, -1);
-      loadPair(previous.left, previous.right);
+      loadPair(previous.left, previous.right, previous.edit && inverse(previous.edit));
       return true;
     },
     redo() {
@@ -287,9 +335,7 @@
         target: false,
         correction: false,
         selected:
-          freePlay &&
-          placement.leftLocation === pair.left &&
-          placement.rightLocation === pair.right,
+          freePlay && shown.left === pair.left && shown.right === pair.right,
       };
     })
   );
@@ -335,7 +381,35 @@
     scheduleClear();
   }
 
-  function loadPair(left: GridLocation | null, right: GridLocation | null) {
+  /** The transform that takes a pair back to where it was. */
+  function inverse(edit: PictographEdit): PictographEdit {
+    return edit.kind === "rotate"
+      ? {
+          ...edit,
+          direction:
+            edit.direction === "clockwise" ? "counterclockwise" : "clockwise",
+        }
+      : edit;
+  }
+
+  function loadPair(
+    left: GridLocation | null,
+    right: GridLocation | null,
+    edit?: PictographEdit
+  ) {
+    // Announced before the new pair commits, so the grid's hands travel to it
+    // instead of jumping. Reduced motion keeps the jump.
+    if (
+      edit &&
+      !reducedMotion() &&
+      (left !== placement.leftLocation || right !== placement.rightLocation)
+    ) {
+      announcePictographEdit(edit);
+      holdUntilLanded({
+        left: placement.leftLocation,
+        right: placement.rightLocation,
+      });
+    }
     workshop.rememberPlacement(left, right, gridMode);
     preset = { left, right };
     placement = {
@@ -348,15 +422,19 @@
     epoch++;
   }
 
-  function replacePair(left: GridLocation | null, right: GridLocation | null) {
+  function replacePair(
+    left: GridLocation | null,
+    right: GridLocation | null,
+    edit?: PictographEdit
+  ) {
     // Swapping two hands on one point changes nothing worth undoing.
     if (left === placement.leftLocation && right === placement.rightLocation)
       return;
     replacedPairs = [
       ...replacedPairs,
-      { left: placement.leftLocation, right: placement.rightLocation },
+      { left: placement.leftLocation, right: placement.rightLocation, edit },
     ];
-    loadPair(left, right);
+    loadPair(left, right, edit);
   }
 
   function study(kind: PlacementType) {
@@ -378,7 +456,20 @@
       action === "flip" ? "mirror" : action,
       { rotationSteps, reflectionAxis: action === "flip" ? 2 : 0 }
     );
-    replacePair(result.left, result.right);
+    const edit: PictographEdit =
+      action === "rotate"
+        ? {
+            kind: "rotate",
+            direction: rotationSteps > 0 ? "clockwise" : "counterclockwise",
+            steps: Math.abs(rotationSteps),
+          }
+        : action === "swap"
+          ? { kind: "swap", beside: true }
+          : {
+              kind: "reflect",
+              axis: action === "flip" ? "horizontal" : "vertical",
+            };
+    replacePair(result.left, result.right, edit);
   }
 
   function changeGrid(mode: GridMode) {
@@ -448,7 +539,17 @@
         data-placement-layout="workshop"
       >
         <div class="current-task" aria-live="polite">
-          <Crossfade key={instruction}>{instruction}</Crossfade>
+          <Crossfade key={`${taskHand ?? "none"}:${instruction}`}>
+            {#if instruction}
+              <span class="task-line">
+                {#if taskHand}
+                  <span class="task-hand" data-hand={taskHand} aria-hidden="true"
+                  ></span>
+                {/if}
+                <span class="task-text">{instruction}</span>
+              </span>
+            {/if}
+          </Crossfade>
         </div>
 
         <div class="stage-row">
@@ -472,9 +573,9 @@
               <PropPlacementGrid
                 bind:this={grid}
                 {gridMode}
-                positionLetter={built ? PLACEMENT_LETTERS[built] : null}
-                pictographLabel={built
-                  ? `${PLACEMENT_TYPE_INFO[built].label}. ${placementBrief(built)}`
+                positionLetter={shownBuilt ? PLACEMENT_LETTERS[shownBuilt] : null}
+                pictographLabel={shownBuilt
+                  ? `${PLACEMENT_TYPE_INFO[shownBuilt].label}. ${placementBrief(shownBuilt)}`
                   : t("learn_ui_your_placement")}
                 animateContent={true}
                 leftPropType={PropType.HAND}
@@ -506,7 +607,7 @@
                 {/snippet}
               </PropPlacementGrid>
               <span class="sr-only" aria-live="polite"
-                >{built ? PLACEMENT_TYPE_INFO[built].label : ""}</span
+                >{shownBuilt ? PLACEMENT_TYPE_INFO[shownBuilt].label : ""}</span
               >
             </div>
           </div>
@@ -622,15 +723,48 @@
     gap: 0.75rem;
     width: 100%;
   }
+  /* The task is the loudest line of words here: above the subtitle, in full
+     text colour, at a fixed size per breakpoint (never one that scales with
+     the window). Its height is fixed too, so the board stays put as the
+     sentence changes or goes empty. */
   .current-task {
+    --task-size: 1.375rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-height: 1.5rem;
     justify-content: center;
-    font-size: var(--font-size-min);
-    font-weight: 500;
-    color: var(--theme-text-dim);
+    height: calc(var(--task-size) * 1.45);
+    max-width: 100%;
+    font-size: var(--task-size);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--theme-text);
+  }
+  .task-line {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    max-width: 100%;
+  }
+  .task-text {
+    text-wrap: balance;
+    text-align: left;
+  }
+  /* The board's own hand artwork, in the colour the board draws that hand;
+     the right hand is mirrored as on the board. About 1.6 times cap height. */
+  .task-hand {
+    flex: none;
+    height: 1.15em;
+    aspect-ratio: 3 / 4;
+    background: var(--task-hand-color);
+    mask: url("/images/props/hand.svg") center / contain no-repeat;
+  }
+  .task-hand[data-hand="left"] {
+    --task-hand-color: var(--dm-motion-blue);
+  }
+  .task-hand[data-hand="right"] {
+    --task-hand-color: var(--dm-motion-red);
+    transform: scaleX(-1);
   }
   .stage-row {
     display: grid;
@@ -686,6 +820,18 @@
     justify-content: center;
     align-items: center;
     gap: inherit;
+  }
+  /* Undo shows only its icon here (its word stays hidden, as in the
+     Composer's narrow workspace), but the button's own width follows this
+     row's `auto` and counted the hidden word, so it came out about twice
+     the height. Icon-only means a circle at the touch target. */
+  .history-controls :global(.undo-button) {
+    width: var(--min-touch-target);
+    padding-inline: 0;
+    gap: 0;
+  }
+  .history-controls :global(.undo-button .workspace-action-label) {
+    display: none;
   }
   .continue-arrival {
     width: 100%;
@@ -777,9 +923,9 @@
       gap: 0.375rem;
     }
     .current-task {
-      min-height: 1.25rem;
-      line-height: 1.25;
-      text-align: center;
+      --task-size: 1.125rem;
+      /* Two lines, since a longer language wraps on the narrowest phones. */
+      height: calc(var(--task-size) * 2.5);
     }
     .stage-row {
       width: 100%;

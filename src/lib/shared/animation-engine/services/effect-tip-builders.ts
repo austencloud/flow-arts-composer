@@ -29,6 +29,17 @@ export function hasTrailTips(map: TipEffectMap | undefined): boolean {
 }
 
 /**
+ * How many tracked tips each prop has in the full incoming list. Counted
+ * before the per-effect filter: two tips of one prop can wear different
+ * effects, and the prop still has two tips.
+ */
+function countTipsPerProp(tips: PropTipData[]): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (const t of tips) counts.set(t.propIndex, (counts.get(t.propIndex) ?? 0) + 1);
+  return counts;
+}
+
+/**
  * Build the flat emitter list for the per-tip overlay effects. Unlike
  * buildFourPosTips (4 fixed slots, base props only), this carries every
  * matching tip including tunnel kaleidoscope layers (propIndex >= 2), each
@@ -51,9 +62,11 @@ export function buildEmitterTips(
   const baseRight =
     params.props.tunnelPropColors?.right ?? params.trailSettings.rightColor;
   const out: EmitterTip[] = [];
+  const tipsPerProp = countTipsPerProp(tips);
   for (const t of tips) {
     if (resolveEffect(t.propIndex, t.tipIndex, tipMap, {}) !== effect) continue;
     out.push({
+      onlyTip: tipsPerProp.get(t.propIndex) === 1,
       x: t.x,
       y: t.y,
       propIndex: t.propIndex,
@@ -133,6 +146,8 @@ export function buildArrayTips(
   tipIndex: number;
   /** Which end of the prop (0 or 1); absent on center fallbacks. */
   end?: number;
+  /** The prop's only tracked tip: the tracking mode cannot drop it. */
+  onlyTip?: boolean;
   color: string;
   velocityX?: number;
   velocityY?: number;
@@ -150,10 +165,12 @@ export function buildArrayTips(
     propIndex: number;
     tipIndex: number;
     end?: number;
+    onlyTip?: boolean;
     color: string;
     velocityX?: number;
     velocityY?: number;
   }[] = [];
+  const tipsPerProp = countTipsPerProp(tips);
   let globalTipIndex = 0;
   for (const t of tips) {
     if (resolveEffect(t.propIndex, t.tipIndex, tipMap, {}) !== effect) continue;
@@ -163,6 +180,7 @@ export function buildArrayTips(
       propIndex: t.propIndex,
       tipIndex: globalTipIndex++,
       end: t.tipIndex,
+      onlyTip: tipsPerProp.get(t.propIndex) === 1,
       velocityX: t.velocityX,
       velocityY: t.velocityY,
       color: resolveTipColor(

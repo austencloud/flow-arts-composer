@@ -685,6 +685,7 @@
     --studio-card: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
     --studio-stroke: var(--theme-stroke, rgba(255, 255, 255, 0.14));
     --studio-accent: var(--theme-accent, #67a8ff);
+    /* behind the status bar: a full-screen stage, its title clears the bar */
     position: fixed;
     inset: 0;
     min-width: 0;
@@ -716,7 +717,7 @@
 
   .title-block {
     position: absolute;
-    top: clamp(18px, 3cqh, 34px);
+    top: calc(clamp(18px, 3cqh, 34px) + var(--safe-top));
     left: clamp(18px, 3cqw, 42px);
     pointer-events: none;
   }

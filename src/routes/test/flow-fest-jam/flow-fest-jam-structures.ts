@@ -69,7 +69,7 @@ function part(geometry: BufferGeometry, colour: string, x: number, y: number, z:
   return g;
 }
 
-interface Piece {
+export interface Piece {
   fabric: BufferGeometry[];
   hard: BufferGeometry[];
 }
@@ -81,7 +81,7 @@ const post = (h: number, r = 0.04) => new CylinderGeometry(r, r, h, 6);
  * valance band at the eave and a leg at each corner (plus mid-side legs on big
  * spans). Depth is along the front (+X), width across.
  */
-function peakedTent(depth: number, width: number, eave: number, rise: number, colour: string, legsPerSide = 2, centrePole = false): Piece {
+export function peakedTent(depth: number, width: number, eave: number, rise: number, colour: string, legsPerSide = 2, centrePole = false): Piece {
   const fabric: BufferGeometry[] = [];
   const hard: BufferGeometry[] = [];
   const roof = new ConeGeometry(Math.SQRT1_2, 1, 4, 1, true);

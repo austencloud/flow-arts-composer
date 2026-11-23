@@ -25,6 +25,13 @@ describe("clampTimelineUnitSizeToHeight", () => {
     expect(clampTimelineUnitSizeToHeight(354, 100, 2)).toBe(48);
   });
 
+  it("lets the touch floor give way when the width affords less", () => {
+    // A row the width can only give 39px a cell: lifting it to 48 made the
+    // row wider than .scroll-wrapper and cut its last cells off for good.
+    expect(clampTimelineUnitSizeToHeight(39, 100, 2)).toBe(39);
+    expect(clampTimelineUnitSizeToHeight(39, 400, 2, 16, 94)).toBe(39);
+  });
+
   it("passes through when there is no measured height or no rows", () => {
     expect(clampTimelineUnitSizeToHeight(354, 0, 1)).toBe(354);
     expect(clampTimelineUnitSizeToHeight(354, 293, 0)).toBe(354);

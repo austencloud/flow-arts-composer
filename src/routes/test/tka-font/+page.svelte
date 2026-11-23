@@ -126,4 +126,8 @@
     color: #9aa3b2;
     font-family: ui-monospace, monospace;
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .wrap {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

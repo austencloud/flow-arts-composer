@@ -433,6 +433,7 @@ function renderFrame(now: number): void {
     applyCurrentEffects();
     renderCurrentFrame(deltaMs / 1000);
     frameCount += 1;
+    const performerBodies = performerStage?.getBodyPickFrames() ?? [];
     post({
       type: "frame",
       requestId,
@@ -440,6 +441,7 @@ function renderFrame(now: number): void {
       frame: frameCount,
       renderedAt: now,
       deltaMs,
+      ...(performerBodies.length > 0 ? { performerBodies } : {}),
     });
   }
   if (visible) animationFrame = scope.requestAnimationFrame(renderFrame);

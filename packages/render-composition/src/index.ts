@@ -44,6 +44,7 @@ export {
   computeLoopIconStripWidth,
   getReflectionIconTransform,
   LOOP_ICON_COLORS,
+  LOOP_ICON_PATHS,
   type LoopRotationPeriod,
   type LoopInversionPeriod,
   type LoopReflectionAxis,

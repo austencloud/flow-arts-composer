@@ -1,7 +1,8 @@
 import type { Smoke2DParams } from "../translators/canvas2d-types";
 import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { setParticleTransform } from "./particle-transform";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 
 /**
  * A single live puff particle.
@@ -100,7 +101,7 @@ export class Smoke2DRenderer {
     //    tunnel kaleidoscope layer (propIndex >= 2).
     const seen = new Set<string>();
     for (const e of emitters) {
-      if (!this.isEndEnabled(e.end, params)) continue;
+      if (!tipWearsEffect(e, params.trackingMode)) continue;
       const id = emitterId(e.propIndex, e.tipIndex);
       seen.add(id);
       const last = this.lastTipPos.get(id);
@@ -296,7 +297,7 @@ export class Smoke2DRenderer {
         const sin = Math.sin(p.angle);
         const sx = p.stretch * radius;
         const sy = radius / p.stretch;
-        ctx.setTransform(sx * cos, sx * sin, -sy * sin, sy * cos, p.x, p.y);
+        setParticleTransform(ctx, savedTransform, sx * cos, sx * sin, -sy * sin, sy * cos, p.x, p.y);
         ctx.globalAlpha = alpha;
         ctx.beginPath();
         ctx.arc(0, 0, 1.0, 0, TAU);
@@ -309,10 +310,6 @@ export class Smoke2DRenderer {
     }
   }
 
-  private isEndEnabled(end: "A" | "B", params: Smoke2DParams): boolean {
-    if (params.trackingMode === "both_ends") return true;
-    return params.trackingMode === "left_end" ? end === "A" : end === "B";
-  }
 
   dispose(): void {
     this.puffs = [];

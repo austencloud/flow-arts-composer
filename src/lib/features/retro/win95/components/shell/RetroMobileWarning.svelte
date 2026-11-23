@@ -62,6 +62,7 @@
 <style>
   /* Full-screen teal background                                         */
   .mobile-warning {
+    /* behind the status bar: a teal background with one centred message */
     position: fixed;
     inset: 0;
     z-index: 10001;

@@ -75,6 +75,7 @@
 
 <style>
   .scrim {
+    /* behind the status bar: a dim over the screen, it holds no words */
     position: fixed;
     inset: 0;
     z-index: 5;
@@ -109,6 +110,7 @@
     gap: 1rem;
     margin: -1rem -1rem 1rem;
     padding: 1rem;
+    padding-top: calc(1rem + var(--safe-top));
     border-bottom: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.12));
     background: var(--theme-panel-bg, #111426);
   }

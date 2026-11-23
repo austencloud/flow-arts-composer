@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { onDocumentDeleted } from "firebase-functions/v2/firestore";
+import { canReturnSourceSequence } from "./collectionMemberAccess";
 
 type CollectionAccessRole = "viewer" | "editor";
 
@@ -655,14 +656,22 @@ export const loadSharedCollectionMembers =
       publicRefs.length ? db.getAll(...publicRefs) : Promise.resolve([]),
     ]);
 
+    const access = {
+      actorId,
+      collectionOwnerId: ownerId,
+      sharedWithActor: shareSnapshot?.exists === true,
+    };
     const sequences = sequenceIds.flatMap((sequenceId, index) => {
       const source = sourceSnapshots[index];
       const publicMirror = publicSnapshots[index];
       const sourceOwnerId = sequenceOwners[sequenceId] ?? ownerId;
       const useSource =
-        source?.exists &&
-        (collection.isPublic !== true ||
-          source.data()?.visibility === "public");
+        source?.exists === true &&
+        canReturnSourceSequence(
+          access,
+          sourceOwnerId,
+          source.data()?.visibility
+        );
       const snapshot = useSource
         ? source
         : publicMirror?.exists

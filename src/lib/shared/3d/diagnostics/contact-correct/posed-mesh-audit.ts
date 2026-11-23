@@ -1,4 +1,5 @@
 import { Triangle, Vector3, type Object3D, type SkinnedMesh } from "three";
+import { dominantBoneIndex } from "../../domain/performer-body-pick";
 
 export interface FiniteStaffCylinder {
   a: Readonly<Vector3>;
@@ -63,23 +64,8 @@ function dominantBoneName(
   mesh: SkinnedMesh,
   vertexIndex: number
 ): string | null {
-  const skinIndex = mesh.geometry.getAttribute("skinIndex");
-  const skinWeight = mesh.geometry.getAttribute("skinWeight");
-  if (!skinIndex || !skinWeight || !mesh.skeleton) return null;
-
-  let bestSlot = 0;
-  let bestWeight = -Infinity;
-  for (let slot = 0; slot < 4; slot += 1) {
-    const weight = skinWeight.getComponent(vertexIndex, slot);
-    if (weight > bestWeight) {
-      bestWeight = weight;
-      bestSlot = slot;
-    }
-  }
-  return (
-    mesh.skeleton.bones[skinIndex.getComponent(vertexIndex, bestSlot)]?.name ??
-    null
-  );
+  const index = dominantBoneIndex(mesh, vertexIndex);
+  return index === null ? null : (mesh.skeleton.bones[index]?.name ?? null);
 }
 
 function isHeldPalmTriangle(

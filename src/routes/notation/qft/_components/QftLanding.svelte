@@ -39,6 +39,7 @@
 
 <style>
   .landing {
+    /* behind the status bar: a dim with one centred card that cannot touch the top */
     position: fixed;
     inset: 0;
     z-index: 4;

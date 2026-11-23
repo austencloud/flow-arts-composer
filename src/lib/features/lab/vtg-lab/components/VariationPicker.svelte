@@ -183,6 +183,7 @@
 
 <style>
   .backdrop {
+    /* behind the status bar: a dim with a centred picker that cannot reach the top */
     position: fixed;
     inset: 0;
     z-index: var(--z-modal, 1000);

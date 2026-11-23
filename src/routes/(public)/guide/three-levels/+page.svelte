@@ -36,6 +36,8 @@
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
   import CapReadout from "./_components/CapReadout.svelte";
+  import CapMandala from "./_components/CapMandala.svelte";
+  import CapFlower from "./_components/CapFlower.svelte";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
@@ -97,6 +99,17 @@
     const next = sameWordCaps[sameWord.n % sameWordCaps.length]!;
     capIndex = CAPS.indexOf(next);
   };
+
+  // Stills for the screens that carry words: the same CAP data the picker
+  // and the players use, drawn by the app's mandala and TKAWordGlyph. Six
+  // CAPs spread across the chart make the contact sheet; the first word that
+  // several CAPs share makes the pair.
+  const sheetCaps = (() => {
+    const step = Math.floor(CAP_WORDS.length / 6);
+    return Array.from({ length: 6 }, (_, i) => CAP_WORDS[i * step]!.caps[0]!);
+  })();
+  const sharedCaps = CAP_WORDS.find((w) => w.caps.length > 1)!.caps.slice(0, 2);
+  const plainItems = (c: (typeof CAPS)[number]) => unlettered(capStrip(c));
 
   // The picker offers each word once, a tab per VTG timing and a group per
   // direction, as the Eight Step page sorts its paths. A word shared by several
@@ -180,7 +193,15 @@
     | "vtgBody"
     | "vtgCap"
     | "vtg"
-    | "close";
+    | "close"
+    | "namesStill"
+    | "capSheet"
+    | "lettersPlate"
+    | "pair"
+    | "vtgFlowers"
+    | "closeLinks"
+    | "closeTake"
+    | "closeFig";
   let tier = $state<ScreenTier>("large");
   // A joined screen that will not fit at its smallest scale falls back, in
   // place, to its words and then its player (GuideScreens onoverflow). Before
@@ -313,7 +334,7 @@
         out.push({ label: pickerLabel, parts: ["picker", "lettersShared"] });
       } else {
         out.push({ label: pickerLabel, parts: ["picker"] });
-        out.push({ label: sharedLabel, parts: ["lettersShared"] });
+        out.push({ label: sharedLabel, parts: ["lettersShared", "pair"] });
       }
     };
     const watch = (name: string) =>
@@ -338,9 +359,13 @@
           [t("guide_threelevels_screen_leaves_out"), ["namesLimit", "names"]],
         ],
         [
-          [names, ["lede", "namesText"]],
+          [t("guide_caps_eyebrow"), ["lede", "namesStill"]],
+          [names, ["namesText", "namesStill"]],
           [watch(names), ["names"]],
-          [t("guide_threelevels_screen_leaves_out"), ["namesLimit"]],
+          [
+            t("guide_threelevels_screen_leaves_out"),
+            ["namesLimit", "namesStill"],
+          ],
         ]
       );
       pick(
@@ -350,16 +375,17 @@
           [watch(capTitle), ["capLimit", "cap"]],
         ],
         [
-          [capTitle, ["capBody", "capLimit"]],
+          [capTitle, ["capBody", "capLimit", "capSheet"]],
           [watch(capTitle), ["cap"]],
         ]
       );
-      out.push({ label: t("guide_threelevels_screen_gage_caps"), parts: ["capRules", "capCredit"] });
-      out.push({ label: letters, parts: ["lettersText"] });
+      out.push({ label: t("guide_threelevels_screen_gage_caps"), parts: ["capRules", "capSheet"] });
+      out.push({ label: t("guide_threelevels_screen_credit"), parts: ["capCredit", "capSheet"] });
+      out.push({ label: letters, parts: ["lettersText", "lettersPlate"] });
       out.push({ label: watch(letters), parts: ["letters"] });
       pushPicker();
-      out.push({ label: vtg, parts: ["vtgBody"] });
-      out.push({ label: t("guide_threelevels_screen_three_spins"), parts: ["vtgCap", "vtgCheck"] });
+      out.push({ label: vtg, parts: ["vtgBody", "vtgFlowers"] });
+      out.push({ label: t("guide_threelevels_screen_three_spins"), parts: ["vtgCap", "vtgCheck", "pair"] });
       out.push({ label: watch(vtg), parts: ["vtg"] });
     } else {
       if (tier === "large")
@@ -378,7 +404,7 @@
           [t("guide_threelevels_screen_gage_caps"), ["capRules", "cap", "capCredit"]],
         ],
         [
-          [capTitle, ["capBody", "capRules"]],
+          [capTitle, ["capBody", "capRules", "capSheet"]],
           [watch(capTitle), ["cap", "capCredit"]],
         ]
       );
@@ -386,7 +412,7 @@
         "letters",
         [[letters, ["lettersText", "letters"]]],
         [
-          [letters, ["lettersText"]],
+          [letters, ["lettersText", "lettersPlate"]],
           [watch(letters), ["letters"]],
         ]
       );
@@ -398,12 +424,18 @@
           [t("guide_threelevels_screen_three_spins"), ["vtgCap", "vtg"]],
         ],
         [
-          [vtg, ["vtgBody", "vtgCap"]],
+          [vtg, ["vtgBody", "vtgCap", "vtgFlowers"]],
           [watch(vtg), ["vtg"]],
         ]
       );
     }
-    out.push({ label: t("guide_caps_close_title"), parts: ["close"] });
+    if (tier === "small") {
+      out.push({ label: t("guide_caps_close_title"), parts: ["close", "closeFig"] });
+      out.push({ label: t("guide_caps_close_title"), parts: ["closeTake", "closeFig"] });
+      out.push({ label: t("guide_threelevels_screen_keep_reading"), parts: ["closeLinks", "closeFig"] });
+    } else {
+      out.push({ label: t("guide_caps_close_title"), parts: ["close", "closeLinks", "closeFig"] });
+    }
     return out;
   });
   const has = (n: number, part: Part) => views[n]?.parts.includes(part);
@@ -504,6 +536,17 @@
               </div>
             {/if}
 
+            {#if has(n, "namesStill")}
+              <div class="still">
+                <CapMandala
+                  items={zans.items}
+                  label="Zan's Diamond"
+                  size={150}
+                  darkMode={picTheme === "dark"}
+                />
+              </div>
+            {/if}
+
             {#if has(n, "names")}
               <SequenceShowcase
                 variant="compact"
@@ -593,11 +636,39 @@
               </div>
             {/if}
 
+            {#if has(n, "capSheet")}
+              <div class="still sheet">
+                {#each small ? sheetCaps.slice(0, 3) : sheetCaps as c (c.word)}
+                  <CapMandala
+                    items={capStrip(c)}
+                    word={c.word}
+                    label={c.word}
+                    size={72}
+                    glyphHeight={16}
+                    darkMode={picTheme === "dark"}
+                  />
+                {/each}
+              </div>
+            {/if}
+
             {#if has(n, "lettersText") && !has(n, "letters")}
               <div class="centered">
                 <h2>{t("guide_caps_letters_title")}</h2>
                 <p>{t("guide_caps_letters_body")}</p>
                 <p>{t("guide_caps_letters_repeat")}</p>
+              </div>
+            {/if}
+
+            {#if has(n, "lettersPlate")}
+              <div class="still">
+                <CapMandala
+                  items={capStrip(sharedCaps[0]!)}
+                  word={sharedCaps[0]!.word}
+                  label={sharedCaps[0]!.word}
+                  size={120}
+                  glyphHeight={22}
+                  darkMode={picTheme === "dark"}
+                />
               </div>
             {/if}
 
@@ -758,6 +829,29 @@
               </div>
             {/if}
 
+            {#if has(n, "vtgFlowers")}
+              <div class="still flowers">
+                <CapFlower spin="extension" size={90} />
+                <CapFlower spin="antispin" size={90} />
+                <CapFlower spin="prospin" size={90} />
+              </div>
+            {/if}
+
+            {#if has(n, "pair")}
+              <div class="still pair">
+                {#each sharedCaps as c, i (i)}
+                  <CapMandala
+                    items={capStrip(c)}
+                    word={c.word}
+                    label={c.word}
+                    size={120}
+                    glyphHeight={22}
+                    darkMode={picTheme === "dark"}
+                  />
+                {/each}
+              </div>
+            {/if}
+
             {#if has(n, "vtg")}
               <SequenceShowcase
                 sequence={capLettered}
@@ -789,7 +883,16 @@
               <div class="centered">
                 <h2>{t("guide_caps_close_title")}</h2>
                 <p>{t("guide_caps_close_body")}</p>
+                {#if !small}<p>{t("guide_caps_close_take")}</p>{/if}
+              </div>
+            {/if}
+            {#if has(n, "closeTake")}
+              <div class="centered">
                 <p>{t("guide_caps_close_take")}</p>
+              </div>
+            {/if}
+            {#if has(n, "closeLinks")}
+              <div class="centered">
                 <div class="links">
                   <LinkChip href={localHref("/guide/zans-diamond")}
                     >Zan's Diamond</LinkChip
@@ -798,6 +901,37 @@
                     >{t("guide_caps_link_ratios")}</LinkChip
                   >
                 </div>
+              </div>
+            {/if}
+
+            {#if has(n, "closeFig")}
+              <div class="still readings">
+                <figure>
+                  <CapMandala
+                    items={plainItems(sharedCaps[0]!)}
+                    label={t("guide_caps_names_title")}
+                    size={96}
+                    darkMode={picTheme === "dark"}
+                  />
+                  <figcaption>{t("guide_caps_names_title")}</figcaption>
+                </figure>
+                <figure>
+                  <div class="word-art">
+                    {#if browser}
+                    <TKAWordGlyph
+                      word={sharedCaps[0]!.word}
+                      height={32}
+                      darkMode={picTheme === "dark"}
+                      fitToParent
+                    />
+                    {/if}
+                  </div>
+                  <figcaption>{t("guide_caps_letters_title")}</figcaption>
+                </figure>
+                <figure>
+                  <CapFlower spin="antispin" size={96} caption={false} />
+                  <figcaption>{t("guide_caps_vtg_title")}</figcaption>
+                </figure>
               </div>
             {/if}
           </div>
@@ -1072,6 +1206,51 @@
     }
   }
 
+  .still {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0.5rem calc(16px * var(--fit, 1));
+    min-width: 0;
+  }
+  .still > :global(*) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .still.sheet {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .still.readings {
+    align-items: start;
+    column-gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .readings figure {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    min-width: 0;
+  }
+  .readings figcaption {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--theme-text);
+    text-align: center;
+  }
+  .word-art {
+    display: grid;
+    place-items: center;
+    inline-size: min(calc(96px * var(--fit, 1)), 100%);
+    aspect-ratio: 1;
+  }
   .links {
     display: flex;
     flex-wrap: wrap;

@@ -47,7 +47,7 @@ import {
   type PetalWakeSource2D,
 } from "../domain/petal-airflow";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 
 export interface FlyingPetal {
   /** Canvas position and velocity (px, px/s; y down). */
@@ -118,7 +118,7 @@ export class PetalFlightSim {
     this.seen.clear();
     this.wakeSources.length = 0;
     for (const e of emitters) {
-      if (!isEndEnabled(e.end, params)) continue;
+      if (!tipWearsEffect(e, params.trackingMode)) continue;
       const id = emitterId(e.propIndex, e.tipIndex);
       this.seen.add(id);
       let tip = this.tips.get(id);
@@ -283,10 +283,6 @@ export class PetalFlightSim {
   }
 }
 
-function isEndEnabled(end: "A" | "B", params: Petals2DParams): boolean {
-  if (params.trackingMode === "both_ends") return true;
-  return params.trackingMode === "left_end" ? end === "A" : end === "B";
-}
 
 /** Keep the list sorted far to near, newest last among equals. */
 function insertByDepth(petals: FlyingPetal[], petal: FlyingPetal): void {

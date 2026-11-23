@@ -12,9 +12,8 @@ vi.mock("#lib/shared/3d/undo/get-scene-undo-manager.js", () => ({
   }),
 }));
 
-const { createEffectsConfigState } = await import(
-  "../effects-config-state.svelte"
-);
+const { createEffectsConfigState } =
+  await import("../effects-config-state.svelte");
 
 function make(map?: Record<string, { effect: string }>, active?: string) {
   return createEffectsConfigState(
@@ -88,7 +87,10 @@ describe("per-prop effects in the effects state", () => {
   });
 
   it("leaves existing per-tip keys alone", () => {
-    const s = make({ "*": { effect: "trails" }, "0-1": { effect: "sparkles" } });
+    const s = make({
+      "*": { effect: "trails" },
+      "0-1": { effect: "sparkles" },
+    });
     s.setEffectFor(1, "fire");
     expect(s.tipEffectMap["0-1"]).toEqual({ effect: "sparkles" });
     s.setEffectFor(1, "trails");
@@ -228,5 +230,36 @@ describe("loading a saved map", () => {
     expect(s.tipEffectMap).toEqual(old);
     expect(s.effectsDiffer()).toBe(false);
     expect(s.snapshot().tipEffectMap).toEqual(old);
+  });
+});
+
+describe("user pick counter", () => {
+  it("bumps once on each of the three user writes", () => {
+    const s = make();
+    expect(s.userPickCount).toBe(0);
+    s.setActiveEffect("fire");
+    expect(s.userPickCount).toBe(1);
+    s.setEffectFor("both", "led");
+    expect(s.userPickCount).toBe(2);
+    s.setEffectFor(1, "trails");
+    expect(s.userPickCount).toBe(3);
+    s.toggleEffectFor("both", "fire");
+    expect(s.userPickCount).toBe(4);
+  });
+
+  it("does not bump for a borrowed effect (a video export)", () => {
+    const s = make();
+    s.setActiveEffect("fire", { byUser: false });
+    expect(s.activeEffect).toBe("fire");
+    expect(s.userPickCount).toBe(0);
+  });
+
+  it("does not bump when a config is replaced", () => {
+    const s = make();
+    s.replace({
+      ...DEFAULT_EFFECTS_CONFIG,
+      activeEffect: "fire",
+    } as typeof DEFAULT_EFFECTS_CONFIG);
+    expect(s.userPickCount).toBe(0);
   });
 });

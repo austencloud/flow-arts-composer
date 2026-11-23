@@ -1027,6 +1027,7 @@
   }
 
   .lab {
+    /* behind the status bar: a full-screen scene, its readout clears the bar */
     position: fixed;
     inset: 0;
     display: grid;
@@ -1047,7 +1048,7 @@
 
   .hud {
     position: absolute;
-    top: 1rem;
+    top: calc(1rem + var(--safe-top));
     left: 1rem;
     max-width: 22rem;
     padding: 0.75rem 1rem;

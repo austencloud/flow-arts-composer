@@ -251,3 +251,26 @@ describe("CharacterInstanceState — picking a prop mid-effect equips too", () =
     expect(a.settings.propBuild).toBeNull();
   });
 });
+
+describe("followSharedEffect", () => {
+  it("equips the build, leaves no effect of its own, one undo entry", () => {
+    const undo = getSceneUndoManager();
+    const a = createCharacterInstanceState(makeConfig(), makeDeps());
+    a.setProp(PropType.FAN);
+    a.setEffect("trails");
+    const before = undo.historySize;
+    a.followSharedEffect("fire");
+    expect(a.settings.effect).toBeNull();
+    expect(a.settings.handEffects).toBeNull();
+    expect(a.settings.propBuild?.fanBuild).toBe("fire");
+    const after = undo.historySize;
+    expect(after - before).toBe(1);
+  });
+
+  it("turning the effect off keeps the build and still follows", () => {
+    const a = createCharacterInstanceState(makeConfig(), makeDeps());
+    a.setEffect("fire");
+    a.followSharedEffect("none");
+    expect(a.settings.effect).toBeNull();
+  });
+});

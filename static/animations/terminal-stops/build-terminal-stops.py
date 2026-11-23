@@ -17,6 +17,9 @@ from mathutils import Matrix
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Raw FBX sources are kept off the repository. Point ANIMATION_SOURCE_DIR at
+# the folder that holds them; without it the script looks beside itself.
+SOURCE_DIR = os.environ.get("ANIMATION_SOURCE_DIR", SCRIPT_DIR)
 BLEND_FRAMES = 4
 CLIPS = (
     {
@@ -221,7 +224,7 @@ def monotonic_root_curve(
 
 
 def build_clip(spec: dict[str, object]) -> None:
-    source_path = os.path.join(SCRIPT_DIR, str(spec["source"]))
+    source_path = os.path.join(SOURCE_DIR, str(spec["source"]))
     if not os.path.exists(source_path):
         raise FileNotFoundError(source_path)
 

@@ -191,6 +191,7 @@ describe("production release feature gate", () => {
     const flags = await loadProductionFeatureFlags();
     expect(flags.getSsrRenderedFeatureComponentPaths()).toEqual([
       "features/learn/components/PublicConceptCourse.svelte",
+      "shared/animation-engine/components/settings-panels/PathShapePanel.svelte",
     ]);
 
     const { featureGatePlugin } =
@@ -228,5 +229,15 @@ describe("production release feature gate", () => {
         { ssr: true }
       )
     ).resolves.toBe("\0feature-gate-stub.js");
+
+    // The Guide's Motion Paths page prerenders the path settings panel.
+    await expect(
+      resolveId.call(
+        { resolve },
+        "#lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte",
+        "E:/tka-platform/src/routes/(public)/guide/motion-paths/_components/PathPanelFigure.svelte",
+        { ssr: true }
+      )
+    ).resolves.toBeNull();
   });
 });

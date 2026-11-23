@@ -405,17 +405,12 @@
   }
 
   function surpriseMe(): void {
-    // A Ratios surprise rolls a whole new grid, so there is no tile on screen
-    // to fly from: flown, the screen sat empty for half a second while the new
-    // tiles painted, then a flower left a grid nobody had seen. It opens the
-    // stage plainly.
-    if (!appState.compact || theory || appState.activeView === "detail") {
-      appState.surpriseMe();
-      return;
-    }
-    runMandalaMorph(appState, () => appState.showDetail(), {
-      before: () => appState.surpriseMe(Math.random, { navigate: false }),
-    });
+    // On a phone the dice rolls what is in front and leaves you there. At the
+    // grid it rolls new tiles in place and marks one; the Detail button opens
+    // it. Jumping to the stage swapped the whole screen for a tap that asked
+    // for new tiles (Austen, 2026-11-20). Wide hosts show both at once.
+    const stayOnGrid = appState.compact && appState.activeView !== "detail";
+    appState.surpriseMe(Math.random, stayOnGrid ? { navigate: false } : {});
   }
 
   /* The result half of the reveal: the chosen relationship lands, then the

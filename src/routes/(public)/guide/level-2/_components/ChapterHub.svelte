@@ -16,6 +16,10 @@
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import type { Level2TopicPage } from "../_data/level2-topic-routes";
+  import HubPictograph from "../../_components/HubPictograph.svelte";
+  import TwoHandStrip from "./TwoHandStrip.svelte";
+  import { TOPIC_THUMBS } from "../_data/glyph-examples";
+  import { TYPE1_A } from "../_data/type-strips";
 
   let {
     title,
@@ -30,18 +34,87 @@
   } = $props();
 
   let tier = $state<ScreenTier>("large");
-  onMount(() => watchScreenTier((v) => (tier = v)));
+  // The shortest phones have no height for the player stage: the intro shows
+  // the strip's frames alone there.
+  let short = $state(false);
+  // The window's size decides how many rows one screen holds.
+  let viewport = $state({ w: 1280, h: 800 });
+  onMount(() => {
+    const mq = window.matchMedia("(max-height: 640px)");
+    short = mq.matches;
+    mq.onchange = () => (short = mq.matches);
+    const measure = () =>
+      (viewport = { w: window.innerWidth, h: window.innerHeight });
+    measure();
+    window.addEventListener("resize", measure);
+    const stop = watchScreenTier((v) => (tier = v));
+    return () => {
+      window.removeEventListener("resize", measure);
+      stop();
+    };
+  });
+
+  // A row is a picture at least 88px wide (the Guide front page's size) with
+  // its label beside it, so a phone cannot hold the whole list: it runs over
+  // as many screens as it needs, labelled "(2)", "(3)" like the front page.
+  const ROW_PX = 116;
+  const CHROME_PX = 205;
+  const INTRO_PX = 90;
+  const columns = $derived(
+    Math.max(1, Math.floor((Math.min(viewport.w - 32, 1024) + 8) / 392))
+  );
+  const rowsPerScreen = $derived(
+    Math.max(
+      1,
+      Math.floor(
+        (viewport.h -
+          CHROME_PX -
+          (columns > 1 ? 60 : 0) -
+          (tier === "large" ? INTRO_PX : 0)) /
+          ROW_PX
+      ) * columns
+    )
+  );
+  const listScreens = $derived(Math.max(1, Math.ceil(topics.length / rowsPerScreen)));
+  // Rows are shared out evenly (3, 2, 2), so no screen holds one stray row.
+  const pages = $derived.by(() => {
+    const base = Math.floor(topics.length / listScreens);
+    const extra = topics.length % listScreens;
+    let at = 0;
+    return Array.from({ length: listScreens }, (_, i) => {
+      const size = base + (i < extra ? 1 : 0);
+      const rows = topics.slice(at, at + size);
+      at += size;
+      return rows;
+    });
+  });
 
   const first = $derived(topics[0]);
+  // The intro screen's strip: A-One for 1-Turns, the same A with two turns on
+  // the blue hand for 2-Turns.
+  const twoTurns = $derived(first?.chapter === "double-turns");
+  const strip = $derived(
+    twoTurns
+      ? { ...TYPE1_A, word: "A-Two", left: { ...TYPE1_A.left, turns: 2 } }
+      : TYPE1_A
+  );
   // Below a large window the intro gets its own screen and the topics the
   // next.
   const views = $derived(
     tier !== "large"
       ? [
-          { label: tDynamic("guide_screen_intro"), intro: true, list: false },
-          { label: listLabel, intro: false, list: true },
+          { label: tDynamic("guide_screen_intro"), intro: true, rows: [] as typeof topics },
+          ...pages.map((rows, i) => ({
+            label: i === 0 ? listLabel : `${listLabel} (${i + 1})`,
+            intro: false,
+            rows,
+          })),
         ]
-      : [{ label: listLabel, intro: true, list: true }]
+      : pages.map((rows, i) => ({
+          label: i === 0 ? listLabel : `${listLabel} (${i + 1})`,
+          intro: i === 0,
+          rows,
+        }))
   );
 </script>
 
@@ -67,13 +140,28 @@
       <div class="hub-body" class:brief={tier === "small"}>
         {#if view?.intro}
           <p class="intro"><Sentences text={intro} /></p>
+          {#if tier !== "large"}
+            <div class="intro-strip">
+            <TwoHandStrip
+              id={`hub-${strip.word}`}
+              word={strip.word}
+              caption=""
+              stripOnly={short}
+              left={strip.left}
+              right={strip.right}
+            />
+            </div>
+          {/if}
         {/if}
-        {#if view?.list}
+        {#if view && view.rows.length > 0}
         <nav class="topic-list" aria-label={listLabel}>
           <ol>
-            {#each topics as topic (topic.slug)}
+            {#each view.rows as topic (topic.slug)}
               <li>
                 <a href={localHref(`/guide/level-2/${topic.slug}`)}>
+                  <span class="thumb" aria-hidden="true">
+                    <HubPictograph pictographData={TOPIC_THUMBS[topic.slug]} />
+                  </span>
                   <span class="copy">
                     <strong>{localizedLevel2Topic(topic, "h1")}</strong>
                     <span class="desc"
@@ -140,6 +228,18 @@
   .topic-list a:focus-visible {
     border-color: #4ea7e8;
     background: oklch(0.22 0.03 270 / 0.7);
+  }
+  .intro-strip :global(.showcase-wrap) {
+    margin: 0.4rem 0 0;
+    padding: 0;
+  }
+  .thumb {
+    flex: none;
+    width: 5.5rem;
+    height: 5.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+    background: oklch(0.12 0.02 270 / 0.7);
   }
   .copy {
     flex: 1 1 auto;

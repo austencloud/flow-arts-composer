@@ -682,4 +682,9 @@
       scroll-behavior: auto !important;
     }
   }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .catalog-shell {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -38,7 +38,9 @@
   }
 
   .test-page {
+    /* the showroom's title is its first row, so the holder starts it below a phone's status bar */
     position: fixed;
     inset: 0;
+    padding-top: var(--safe-top);
   }
 </style>

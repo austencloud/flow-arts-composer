@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { page } from "$app/state";
   import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import QftStage from "#lib/shared/notation/qft/components/QftStage.svelte";
   import {
@@ -18,6 +19,12 @@
     PoiCandidateSelectionReason,
     PoiReversalVerdict,
   } from "#lib/features/levels/poi-lab/domain/poi-reversal-candidates.js";
+  import { POI_REVERSAL_CANDIDATES } from "#lib/features/levels/poi-lab/domain/poi-reversal-candidates.js";
+  import {
+    createSwingTiming,
+    displayTrajectory,
+  } from "#lib/features/levels/poi-lab/domain/poi-swing-timing.js";
+  import { resolvePoiReversalSitting } from "#lib/features/levels/poi-lab/domain/poi-reversal-sittings.js";
   import { createPoiReversalReviewState } from "#lib/features/levels/poi-lab/state/poi-reversal-review-state.svelte.js";
 
   const STEP_MS = 620;
@@ -40,11 +47,28 @@
     };
   }
 
-  const review = createPoiReversalReviewState(seed, persistObservations);
+  // ?sitting=<name> shows a fixed set of candidates in order (one sitting).
+  const sitting = resolvePoiReversalSitting(
+    page.url.searchParams.get("sitting"),
+    POI_REVERSAL_CANDIDATES
+  );
+  const review = createPoiReversalReviewState(
+    seed,
+    persistObservations,
+    sitting
+  );
   const candidate = $derived(review.selection?.candidate ?? null);
   const selectionReason = $derived(review.selection?.reason ?? null);
   const increments = $derived(
     candidate ? buildTrajectoryIncrements(candidate.trajectory) : []
+  );
+  // The stage draws a still hand with a hair of movement and plays at swing
+  // speed; the step strip and the saved candidate keep the model's own path.
+  const stageTrajectory = $derived(
+    candidate ? displayTrajectory(candidate.trajectory) : null
+  );
+  const swingRate = $derived(
+    stageTrajectory ? createSwingTiming(stageTrajectory) : () => 1
   );
   const reversals = $derived(
     candidate ? trajectoryReversals(candidate.trajectory) : []
@@ -89,7 +113,7 @@
     const tick = (now: number) => {
       const delta = Math.min(64, now - last);
       last = now;
-      cursor = (cursor + delta / STEP_MS) % 8;
+      cursor = (cursor + (delta / STEP_MS) * swingRate(cursor)) % 8;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -124,6 +148,11 @@
     detail: string;
   } {
     switch (reason) {
+      case "sitting":
+        return {
+          label: `Sitting ${sitting?.name ?? ""} · ${review.sittingJudged + 1} of ${sitting?.candidates.length ?? 0}`,
+          detail: "Chosen for this sitting. Judge it on its own.",
+        };
       case "calibration-pendulum":
         return {
           label: "Pendulum calibration",
@@ -226,8 +255,13 @@
     </div>
 
     <div class="progress" aria-label="Review progress">
-      <strong>{review.uniqueReviewedCount}</strong>
-      <span>of {review.totalCandidateCount} candidates</span>
+      {#if sitting}
+        <strong>{review.sittingJudged}</strong>
+        <span>of {sitting.candidates.length} in sitting {sitting.name}</span>
+      {:else}
+        <strong>{review.uniqueReviewedCount}</strong>
+        <span>of {review.totalCandidateCount} candidates</span>
+      {/if}
       <small>
         {review.observations.length}
         {review.observations.length === 1 ? "observation" : "observations"}
@@ -279,7 +313,7 @@
 
         <div class="stage-shell">
           <QftStage
-            trajectory={candidate.trajectory}
+            trajectory={stageTrajectory ?? candidate.trajectory}
             {increments}
             {cursor}
             extent={270}
@@ -294,7 +328,7 @@
             onStepFullBack={() => stepBy(-1)}
             onStepFullFwd={() => stepBy(1)}
           />
-          <span class="tempo-note">Playback speed is for reading</span>
+          <span class="tempo-note">Speed follows the swing</span>
         </div>
 
         <div class="step-grid" aria-label="Trajectory steps">
@@ -508,6 +542,14 @@
         </div>
       </aside>
     </div>
+  {:else if sitting}
+    <section class="empty-state">
+      <h2>Sitting {sitting.name} is done</h2>
+      <p>
+        All {sitting.candidates.length} have a verdict. Press Save if the button above
+        still shows unsaved observations.
+      </p>
+    </section>
   {:else}
     <section class="empty-state">
       <h2>No candidate is available</h2>
@@ -1243,5 +1285,9 @@
     .step-button:hover {
       transform: none;
     }
+  }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .teacher-page {
+    border-top: var(--safe-top) solid transparent;
   }
 </style>

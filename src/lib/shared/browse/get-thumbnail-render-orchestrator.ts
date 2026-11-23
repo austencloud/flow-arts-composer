@@ -3,6 +3,10 @@ import { ThumbnailRenderOrchestrator } from '#lib/shared/browse/services/thumbna
 import { getThumbnailRenderQueue } from '#lib/shared/browse/get-thumbnail-render-queue.js';
 import { getThumbnailRenderer } from '#lib/shared/browse/get-thumbnail-renderer.js';
 import { getThumbnailLocalCache } from '#lib/shared/browse/get-thumbnail-local-cache.js';
+import {
+	isArrowPlacementDataLoaded,
+	whenArrowPlacementDataReady
+} from '#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js';
 import { getThumbnailMetricsCollector } from '#lib/shared/browse/get-thumbnail-metrics-collector.js';
 
 // Preserve the orchestrator across HMR so its warm in-memory URL cache (the only
@@ -21,10 +25,17 @@ if (import.meta.hot) {
 
 export function getThumbnailRenderOrchestrator(): ThumbnailRenderOrchestrator {
 	if (!browser) throw new Error('getThumbnailRenderOrchestrator() is browser-only');
-	return instance ??= new ThumbnailRenderOrchestrator(
-		getThumbnailRenderQueue(),
-		getThumbnailRenderer(),
-		getThumbnailLocalCache(),
-		getThumbnailMetricsCollector(),
-	);
+	if (!instance) {
+		instance = new ThumbnailRenderOrchestrator(
+			getThumbnailRenderQueue(),
+			getThumbnailRenderer(),
+			getThumbnailLocalCache(),
+			getThumbnailMetricsCollector(),
+		);
+		instance.setPlacementData({
+			whenReady: whenArrowPlacementDataReady,
+			isLoaded: isArrowPlacementDataLoaded
+		});
+	}
+	return instance;
 }

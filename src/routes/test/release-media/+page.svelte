@@ -165,4 +165,8 @@
     display: block;
     margin-top: 0.5rem;
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  main {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

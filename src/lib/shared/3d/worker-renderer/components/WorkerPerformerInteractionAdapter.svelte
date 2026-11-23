@@ -23,6 +23,7 @@
   import { onMount, untrack } from "svelte";
 
   import type { ApplicationThreadCameraSnapshot } from "../domain/application-thread-camera";
+  import type { WorkerPerformerBodyFrame } from "../domain/worker-renderer-protocol";
   import {
     createWorkerPerformerInteractionBridge,
     type WorkerPerformerInteractionBridge,
@@ -47,6 +48,8 @@
     viewer: WorkerPerformerInteractionViewer;
     cameraArbiter: WorkerPerformerInteractionCameraArbiter;
     cameraSnapshot: ApplicationThreadCameraSnapshot;
+    /** The worker's newest body capsules; read only when the pointer tests. */
+    getPerformerBodies?: () => readonly WorkerPerformerBodyFrame[] | null;
     onInteractionChange?: (
       snapshot: WorkerPerformerInteractionStateSnapshot
     ) => void;
@@ -61,6 +64,7 @@
     viewer,
     cameraArbiter,
     cameraSnapshot,
+    getPerformerBodies,
     onInteractionChange,
     onFailure,
     onHintDismissed,
@@ -241,6 +245,7 @@
         projectionContainer,
         viewer,
         cameraArbiter,
+        getPerformerBodies: () => getPerformerBodies?.() ?? null,
         onHintDismissed: () => onHintDismissed?.(),
       });
       reportCapability(bridge.update(currentFrame()));

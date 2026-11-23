@@ -207,6 +207,7 @@
 
 <style>
   .editor-overlay {
+    /* behind the status bar: a full-screen editor, its header is padded below the bar */
     position: fixed;
     inset: 0;
     z-index: var(--z-toast);
@@ -225,6 +226,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
+    padding-top: calc(20px + var(--safe-top));
     z-index: 10;
     pointer-events: none;
   }

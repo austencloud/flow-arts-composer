@@ -217,6 +217,7 @@
   }
 
   .page {
+    /* behind the status bar: a full-screen scene with no words of its own */
     position: fixed;
     inset: 0;
     width: 100vw;

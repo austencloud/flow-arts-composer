@@ -1,6 +1,6 @@
 import type { Silk2DParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 import { SILK_GL_VERTEX_FLOATS, SilkClothGL } from "./silk-cloth-gl";
 import {
   SILK_CLOTH_COLUMNS,
@@ -101,7 +101,7 @@ export class Silk2DRenderer {
     const pixels = PIXELS_PER_METRE * Math.max(0.25, scale);
 
     for (const tip of emitters) {
-      if (!this.isEndEnabled(tip.end, params)) continue;
+      if (!tipWearsEffect(tip, params.trackingMode)) continue;
       const id = emitterId(tip.propIndex, tip.tipIndex);
       const pin = { x: tip.x / pixels, y: -tip.y / pixels, z: 0 };
       let streamer = this.streamers.get(id);
@@ -430,10 +430,6 @@ export class Silk2DRenderer {
     return this.layerContext;
   }
 
-  private isEndEnabled(end: "A" | "B", params: Silk2DParams): boolean {
-    if (params.trackingMode === "both_ends") return true;
-    return params.trackingMode === "left_end" ? end === "A" : end === "B";
-  }
 
   /** Number of streamers alive, held or falling. */
   get streamerCount(): number {

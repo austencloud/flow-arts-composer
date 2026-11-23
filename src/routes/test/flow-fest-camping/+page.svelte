@@ -636,6 +636,7 @@
     grid-template-rows: auto auto 1fr;
     gap: 8px;
     padding: 12px;
+    padding-top: calc(12px + var(--safe-top));
     background: #0f1419;
     color: #e8edf2;
     font-family: system-ui, sans-serif;

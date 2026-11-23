@@ -1242,6 +1242,40 @@ export function createCharacterInstanceState(
   }
 
   /**
+   * Put on the build `effect` needs and hand the effect itself back to the
+   * scene: this performer keeps no effect of its own, so the tray, the hub and
+   * both renderers all read one shared answer. One undo entry, like setEffect.
+   */
+  function followSharedEffect(effect: EffectType | null): void {
+    const before = $state.snapshot(_settings);
+    const equip = buildForEffect(effectiveProp, effect, effectivePropBuild);
+    _settings = {
+      ..._settings,
+      effect: null,
+      handEffects: null,
+      ...(equip?.prop ? { prop: equip.prop } : {}),
+      ...(equip?.propBuild
+        ? { propBuild: { ...(_settings.propBuild ?? {}), ...equip.propBuild } }
+        : {}),
+    };
+    const after = $state.snapshot(_settings);
+    sceneUndo.pushSelfRestoringEntry(
+      "toggle-effect",
+      equip
+        ? `Effect: ${effect ?? "off"} (build equipped)`
+        : `Effect: ${effect ?? "off"}`,
+      {
+        undo: () => {
+          _settings = before;
+        },
+        redo: () => {
+          _settings = after;
+        },
+      }
+    );
+  }
+
+  /**
    * Give this performer's hands different effects. The renderer already
    * resolves an effect per prop, so the pair only has to reach the tip map
    * `Viewer3DScene` builds: prop 0 is the left hand, prop 1 the right.
@@ -1712,6 +1746,7 @@ export function createCharacterInstanceState(
     setEffort,
     setProp,
     setEffect,
+    followSharedEffect,
     setHandEffects,
     setStaffLengthCm,
     setPropBuild,

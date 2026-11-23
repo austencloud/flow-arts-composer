@@ -606,6 +606,7 @@
 
 <style>
   .offscreen {
+    /* behind the status bar: parked far off screen, never seen */
     position: fixed;
     left: -99999px;
     top: -99999px;

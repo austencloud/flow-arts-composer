@@ -53,6 +53,7 @@
   }
 
   .viewer-host {
+    /* behind the status bar: a full-screen 3D viewer with a centred load note */
     position: fixed;
     inset: 0;
     overflow: hidden;

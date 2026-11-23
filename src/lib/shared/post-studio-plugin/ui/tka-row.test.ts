@@ -132,6 +132,7 @@ describe("tka tool rows are today's rows", () => {
     expect(row("titles")).toEqual(["back", "titles", "timing", ...TAIL]);
     expect(row("flash")).toEqual(["back", "flash", "timing", ...TAIL]);
     expect(row("credit")).toEqual(["back", "credit", "timing", ...TAIL]);
+    expect(row("loop")).toEqual(["back", "loop", "timing", ...TAIL]);
     expect(row("mandala")).toEqual([
       "back",
       "sequence",
@@ -174,6 +175,7 @@ describe("tka tool rows are today's rows", () => {
     expect(isPanelTool("fly", TKA_TOOLS)).toBe(true);
     expect(isPanelTool("flash", TKA_TOOLS)).toBe(true);
     expect(isPanelTool("credit", TKA_TOOLS)).toBe(true);
+    expect(isPanelTool("loop", TKA_TOOLS)).toBe(true);
   });
   it("arrangement: Grid, Speed and the look tools; a cell's own tools", () => {
     expect(row("arrangement")).toEqual([

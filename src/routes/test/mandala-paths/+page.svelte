@@ -523,4 +523,8 @@
 		opacity: 1;
 		color: #f87171;
 	}
+	/* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+	.page-root {
+		border-top: var(--safe-top) solid transparent;
+	}
 </style>

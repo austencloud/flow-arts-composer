@@ -6,7 +6,9 @@ side, cross behind, side, cross in front.
 ## Provenance
 
 - Provider: Adobe Mixamo
-- Source files: `left strafe walking.fbx` and `right strafe walking.fbx`
+- Source files: `left strafe walking.fbx` and `right strafe walking.fbx`, kept
+  off this repository; `build-grapevine.py` reads them from the folder named
+  by `ANIMATION_SOURCE_DIR`
 - Source import date recorded by the repository: 2026-04-04
 - Original Mixamo motion IDs: not preserved by that import
 - Skeleton: Mixamo humanoid

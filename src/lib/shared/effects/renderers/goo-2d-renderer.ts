@@ -1,7 +1,7 @@
 import { normalizeGooLiquidControls } from "../domain/effects-config";
 import type { GooParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 import { resolveGooLook2D, type GooLook2D } from "./goo-look-2d";
 import {
   GOO_PIECE_FLOATS,
@@ -82,7 +82,7 @@ export class Goo2DRenderer {
 
     this.tips.length = 0;
     for (const e of emitters) {
-      if (!isEndEnabled(e.end, params)) continue;
+      if (!tipWearsEffect(e, params.trackingMode)) continue;
       this.tips.push({ id: emitterId(e.propIndex, e.tipIndex), x: e.x, y: e.y });
     }
     const look = resolveGooLook2D(params.palette);
@@ -419,10 +419,6 @@ function smoothMax(a: number, b: number, width: number): number {
   return Math.max(a, b) + overlap * overlap * width * 0.25;
 }
 
-function isEndEnabled(end: "A" | "B", params: GooParams): boolean {
-  if (params.trackingMode === "both_ends") return true;
-  return params.trackingMode === "left_end" ? end === "A" : end === "B";
-}
 
 function clamp01(value: number): number {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;

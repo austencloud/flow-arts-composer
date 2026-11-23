@@ -1114,4 +1114,8 @@
     font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.6);
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

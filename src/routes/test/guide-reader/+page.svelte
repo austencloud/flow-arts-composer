@@ -8,6 +8,7 @@
 
 <style>
   .host {
+    /* behind the status bar: a holder, the guide reader clears the bar itself */
     position: fixed;
     inset: 0;
     container-type: inline-size;

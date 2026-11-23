@@ -97,6 +97,7 @@
 
 <style>
   .tag-panel-backdrop {
+    /* behind the status bar: a dim behind the tag panel, it holds no words */
     position: fixed;
     inset: 0;
     z-index: 100;

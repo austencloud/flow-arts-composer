@@ -156,8 +156,20 @@ export class ImageComposer {
   // seed snapshot.
   private placementReady: (() => Promise<void>) | null = null;
 
-  setPlacementReadiness(ready: () => Promise<void>): void {
+  // Synchronous "have all four placement stores loaded" check, injected beside
+  // placementReady (this module must not import the Firebase-bound owner). A
+  // cell prepared while it reads false is provisional: drawn with default arrow
+  // spots, so it is kept only in this composer's memory cache, under a key that
+  // is read only while the data is still missing, and never written to
+  // IndexedDB. Absent (the worker composer, tests) means always loaded.
+  private isPlacementLoaded: (() => boolean) | null = null;
+
+  setPlacementReadiness(
+    ready: () => Promise<void>,
+    isLoaded?: () => boolean
+  ): void {
     this.placementReady = ready;
+    this.isPlacementLoaded = isLoaded ?? null;
   }
 
   // composeCardFrontParallel runs cell rasterization on a worker pool but reuses
@@ -814,7 +826,16 @@ export class ImageComposer {
 
       const blobKey = `${baseKey}:${stepSize}`;
 
-      let img = this.memoryCache.get(blobKey);
+      // A cell kept under the provisional key was drawn before the placement
+      // data loaded; it is read only while the data is still missing, so it
+      // stops being served the moment the data loads and then ages out.
+      const provisionalKey = `${blobKey}:provisional`;
+      let img =
+        this.memoryCache.get(blobKey) ??
+        (this.isPlacementLoaded && !this.isPlacementLoaded()
+          ? this.memoryCache.get(provisionalKey)
+          : undefined);
+      let cellProvisional = false;
 
       if (img) {
         this.layer2Hits++;
@@ -839,10 +860,12 @@ export class ImageComposer {
           // every prop and arrow. Custom palettes land here (the compositor's
           // blue/red layer caches must not leak into them), so prepare first,
           // the same way the compositor branch does.
-          const preparedPictograph = await this.prepareForRaster(
-            pictographData,
-            finalVisibilitySettings
-          );
+          const { prepared: preparedPictograph, placementLoaded } =
+            await this.prepareForRasterTracked(
+              pictographData,
+              finalVisibilitySettings
+            );
+          cellProvisional = !placementLoaded;
 
           const pictographCanvas = await this.canvas2DRenderer.renderPictograph(
             preparedPictograph,
@@ -855,21 +878,23 @@ export class ImageComposer {
           );
           img = await canvasToImage(pictographCanvas);
 
-          imageToBlob(img).then((blob) => {
-            this.blobCache.set(blobKey, blob).catch((err) => {
-              console.warn("[ImageComposer] Failed to cache blob:", err);
+          // Provisional cells never reach IndexedDB.
+          if (!cellProvisional)
+            imageToBlob(img).then((blob) => {
+              this.blobCache.set(blobKey, blob).catch((err) => {
+                console.warn("[ImageComposer] Failed to cache blob:", err);
+              });
+              this.writeThroughToPreviewCache(
+                pictographData,
+                stepNumber,
+                stepSize,
+                finalVisibilitySettings,
+                blob
+              );
             });
-            this.writeThroughToPreviewCache(
-              pictographData,
-              stepNumber,
-              stepSize,
-              finalVisibilitySettings,
-              blob
-            );
-          });
         }
 
-        this.memoryCache.set(blobKey, img);
+        this.memoryCache.set(cellProvisional ? provisionalKey : blobKey, img);
       }
 
       const x = column * stepSize + horizontalOffset;
@@ -1165,7 +1190,25 @@ export class ImageComposer {
     pictographData: StepData | PictographData,
     visibilitySettings: PictographVisibilityOptions
   ): Promise<PreparedPictographData> {
+    return (
+      await this.prepareForRasterTracked(pictographData, visibilitySettings)
+    ).prepared;
+  }
+
+  /**
+   * prepareForRaster plus whether the placement data had loaded when the cell
+   * was positioned. Decided once, right after the readiness wait and before
+   * preparing: a cell prepared without the data stays provisional even if the
+   * data lands midway.
+   */
+  private async prepareForRasterTracked(
+    pictographData: StepData | PictographData,
+    visibilitySettings: PictographVisibilityOptions
+  ): Promise<{ prepared: PreparedPictographData; placementLoaded: boolean }> {
     if (this.placementReady) await this.placementReady();
+    const placementLoaded = this.isPlacementLoaded
+      ? this.isPlacementLoaded()
+      : true;
     const themeMode = visibilitySettings.darkMode ? "dark" : "light";
     const { pictographPreparer: preparer } =
       await import("../../pictograph/shared/services/pictograph-preparer");
@@ -1189,7 +1232,10 @@ export class ImageComposer {
       leftBuugengFlipped: visibilitySettings.leftBuugengFlipped,
       rightBuugengFlipped: visibilitySettings.rightBuugengFlipped,
     });
-    return prepared as unknown as PreparedPictographData;
+    return {
+      prepared: prepared as unknown as PreparedPictographData,
+      placementLoaded,
+    };
   }
 
   /**

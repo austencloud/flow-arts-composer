@@ -44,11 +44,12 @@ describe("poi reversal candidate experiment", () => {
       propRate: [1, 1, 1, 1, -1, -1, -1, -1],
       propPhase: 2,
     });
+    expect(extendulum?.id).toBe("poi-r1-dcw-s3-p2");
     expect(extendulum?.trajectory).toEqual({
       radius: 1,
       handDirection: 1,
-      propRate: [1, 1, 1, 1, -1, -1, -1, -1],
-      propPhase: 2,
+      propRate: [-1, -1, 1, 1, 1, 1, -1, -1],
+      propPhase: 4,
     });
   });
 

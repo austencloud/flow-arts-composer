@@ -282,6 +282,7 @@
 
 <style>
   .page {
+    /* behind the status bar: a full-screen scene, its label and controls clear the bar */
     position: fixed;
     inset: 0;
     width: 100vw;

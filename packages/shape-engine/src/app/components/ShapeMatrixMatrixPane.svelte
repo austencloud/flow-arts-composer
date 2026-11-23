@@ -78,6 +78,7 @@
         onselect={onselect ?? state.selectPair}
         onsolo={onsolo ?? state.selectSolo}
         soloHand={state.soloHand}
+        hint
       />
     {/if}
   </div>

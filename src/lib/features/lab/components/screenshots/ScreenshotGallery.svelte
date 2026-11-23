@@ -826,6 +826,7 @@
 
   /* Tag Picker Modal */
   .tag-picker-backdrop {
+    /* behind the status bar: a dim with a centred tag picker that cannot reach the top */
     position: fixed;
     inset: 0;
     z-index: 200;

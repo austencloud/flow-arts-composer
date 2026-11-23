@@ -50,6 +50,7 @@
   }
 
   .workbench-host {
+    /* behind the status bar: a holder, the viewer workbench inside keeps its own inset */
     position: fixed;
     inset: 0;
     overflow: hidden;

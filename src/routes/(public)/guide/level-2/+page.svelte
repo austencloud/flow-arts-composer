@@ -1,11 +1,16 @@
 <script lang="ts">
   import Sentences from "../_components/Sentences.svelte";
+  import { sentences } from "../_components/sentences";
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import GuideScreens from "../_components/fit/GuideScreens.svelte";
+  import HubPictograph from "../_components/HubPictograph.svelte";
+  import GuidePictograph from "../level-1/_components/GuidePictograph.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { GLYPH_A_PLAIN, GLYPH_A_TURN, TOPIC_THUMBS } from "./_data/glyph-examples";
   import {
     watchScreenTier,
     type ScreenTier,
@@ -14,15 +19,48 @@
   // One screen at a time (2026-10-24 fit pass): a large window shows the
   // intro and the chapters together; anything smaller gives each a screen.
   let tier = $state<ScreenTier>("large");
-  onMount(() => watchScreenTier((v) => (tier = v)));
+  let tall = $state(true);
+  onMount(() => {
+    const mq = window.matchMedia("(min-height: 700px)");
+    tall = mq.matches;
+    mq.onchange = () => (tall = mq.matches);
+    return watchScreenTier((v) => (tier = v));
+  });
+  // The pair of pictographs stays at 120px or more, so on a short window the
+  // intro's words run over two screens (the first sentences, then the rest)
+  // and the pair stands on both.
+  const introParts = $derived.by(() => {
+    const all = sentences(tDynamic("guide_level2_intro"));
+    const cut = Math.max(1, Math.ceil(all.length / 2) );
+    return [all.slice(0, cut).join(" "), all.slice(cut).join(" ")];
+  });
   const views = $derived(
     tier === "large"
-      ? [{ label: tDynamic("guide_hub_level2_title"), intro: true, chapters: true }]
+      ? [
+          {
+            label: tDynamic("guide_hub_level2_title"),
+            intro: "all" as const,
+            chapters: true,
+          },
+        ]
       : [
-          { label: tDynamic("guide_screen_intro"), intro: true, chapters: false },
+          {
+            label: tDynamic("guide_screen_intro"),
+            intro: tall ? ("all" as const) : ("first" as const),
+            chapters: false,
+          },
+          ...(tall
+            ? []
+            : [
+                {
+                  label: `${tDynamic("guide_screen_intro")} (2)`,
+                  intro: "second" as const,
+                  chapters: false,
+                },
+              ]),
           {
             label: tDynamic("guide_level2_chapters"),
-            intro: false,
+            intro: false as const,
             chapters: true,
           },
         ]
@@ -55,19 +93,50 @@
   >
     {#snippet screen(n)}
       {@const view = views[n]}
-      <div class="landing-body">
+      <div class="landing-body" class:brief={tier === "small"}>
         {#if view?.intro}
-          <p class="byline">{tDynamic("guide_level2_byline")}</p>
+          {#if view.intro !== "second"}
+            <p class="byline">{tDynamic("guide_level2_byline")}</p>
+          {/if}
           <section class="intro">
-            <p><Sentences text={tDynamic("guide_level2_intro")} /></p>
+            <p>
+              <Sentences
+                text={view.intro === "all"
+                  ? tDynamic("guide_level2_intro")
+                  : view.intro === "first"
+                    ? introParts[0]
+                    : introParts[1]}
+              />
+            </p>
           </section>
+          {#if tier !== "large"}
+            <figure class="pair">
+              {#each [{ d: GLYPH_A_PLAIN, k: "shape_engine_level_1_short" }, { d: GLYPH_A_TURN, k: "guide_paths_one_turn" }] as item (item.k)}
+                <div class="pair-item">
+                  <div class="pair-pic">
+                    <GuidePictograph
+                      data={item.d}
+                      size="md"
+                      eager
+                      forceTheme="dark"
+                      propType={PropType.STAFF}
+                    />
+                  </div>
+                  <figcaption>{tDynamic(item.k)}</figcaption>
+                </div>
+              {/each}
+            </figure>
+          {/if}
         {/if}
         {#if view?.chapters}
           <nav class="toc" aria-label={tDynamic("guide_level2_toc")}>
-            <h2>{tDynamic("guide_level2_chapters")}</h2>
+            <h2 class:sr-only={tier === "small"}>{tDynamic("guide_level2_chapters")}</h2>
             <ol>
               <li>
                 <a href={localHref("/guide/level-2/turns")}>
+                  <span class="thumb" aria-hidden="true">
+                    <HubPictograph pictographData={GLYPH_A_TURN} />
+                  </span>
                   <span class="copy">
                     <strong>{tDynamic("guide_level2_chapter1_title")}</strong>
                     <span>{tDynamic("guide_level2_chapter1_description")}</span>
@@ -77,6 +146,9 @@
               </li>
               <li>
                 <a href={localHref("/guide/level-2/double-turns")}>
+                  <span class="thumb" aria-hidden="true">
+                    <HubPictograph pictographData={TOPIC_THUMBS["double-turn-shifts"]} />
+                  </span>
                   <span class="copy">
                     <strong>{tDynamic("guide_level2_chapter2_title")}</strong>
                     <span>{tDynamic("guide_level2_chapter2_description")}</span>
@@ -164,6 +236,57 @@
     border-color: #4ea7e8;
     background: oklch(0.22 0.03 270 / 0.7);
   }
+  .pair {
+    margin: 0 0 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .pair-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pair-pic {
+    width: 8.5rem;
+    height: 8.5rem;
+    border: 1px solid oklch(0.45 0.04 270 / 0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    background: oklch(0.18 0.02 270 / 0.6);
+  }
+  @media (max-height: 700px) {
+    .pair-pic {
+      width: 7.5rem;
+      height: 7.5rem;
+    }
+  }
+  .pair-pic :global(.guide-pictograph),
+  .pair-pic :global(.pictograph-wrapper) {
+    width: 100%;
+    height: 100%;
+    max-width: none !important;
+  }
+  .pair figcaption {
+    font-size: 0.9rem;
+    color: oklch(0.68 0.02 270);
+  }
+  .thumb {
+    flex: none;
+    width: 6.5rem;
+    height: 6.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+    background: oklch(0.12 0.02 270 / 0.7);
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
   .copy {
     flex: 1 1 auto;
     min-width: 0;
@@ -173,9 +296,34 @@
   }
   .copy span {
     display: block;
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
     color: oklch(0.68 0.02 270);
     margin-top: 0.25rem;
+  }
+  /* A phone keeps each box to the chapter name, as the chapter fronts do, so
+     the pictures and both boxes fit one screen. */
+  .brief .toc a {
+    padding: 0.5rem 1rem;
+  }
+  .brief .toc ol {
+    gap: 0.5rem;
+  }
+  .brief .toc {
+    margin-bottom: 0.6rem;
+  }
+  /* A phone has the whole screen for two rows, so the pictures are large. */
+  .brief .thumb {
+    width: 9rem;
+    height: 9rem;
+  }
+  @media (max-height: 700px) {
+    .brief .thumb {
+      width: 8rem;
+      height: 8rem;
+    }
+  }
+  .brief .copy span {
+    display: none;
   }
   .toc i {
     color: oklch(0.68 0.02 270);

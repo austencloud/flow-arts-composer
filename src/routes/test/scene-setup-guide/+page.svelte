@@ -29,6 +29,7 @@
   }
 
   .stage-stand-in {
+    /* behind the status bar: a painted backdrop with no words or buttons */
     position: fixed;
     inset: 0;
     overflow: hidden;

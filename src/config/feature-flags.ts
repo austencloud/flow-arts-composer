@@ -377,6 +377,9 @@ const SSR_STUBBED_SHARED_RENDER_PATHS: string[] = [
  */
 const SSR_RENDERED_FEATURE_COMPONENT_PATHS: string[] = [
   "features/learn/components/PublicConceptCourse.svelte",
+  // The Guide's Motion Paths page shows this settings panel read-only; it is
+  // plain markup and its tiles come from the page's own mandala snippet.
+  "shared/animation-engine/components/settings-panels/PathShapePanel.svelte",
 ];
 
 /**

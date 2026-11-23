@@ -51,11 +51,17 @@ import {
   CREDIT_MAX_LEAD_LENGTH,
   type CreditPlan,
 } from "#lib/shared/media-composition/domain/credit.js";
+import {
+  LoopRunSettingsSchema,
+  type LoopRunPlan,
+  type LoopRunSequenceSnapshot,
+} from "#lib/shared/media-composition/domain/loop-run.js";
 import type { tkaProjectShape } from "./project-extension";
 import {
   compileArrangementItem,
   compileCreditItem,
   compileFlashItem,
+  compileLoopRunItem,
   compileMandalaItem,
   compileSequenceItem,
   compileTitlesItem,
@@ -96,6 +102,7 @@ declare module "@austencloud/video-editor/core" {
     mandala: PostMandalaItem;
     flash: PostFlashItem;
     credit: PostCreditItem;
+    loop: PostLoopItem;
   }
   interface PluginVideoFields extends TkaVideoFields {}
   interface PluginCardFields extends TkaCardFields {}
@@ -104,6 +111,7 @@ declare module "@austencloud/video-editor/core" {
     titles: TunnelTitlesPlan[];
     flashes: FlashPlan[];
     credits: CreditPlan[];
+    loops: LoopRunPlan[];
   }
   interface PluginOverlaySpec {
     mode?: PostMovesMode;
@@ -118,6 +126,8 @@ declare module "@austencloud/video-editor/core" {
     marks?: boolean;
     /** A credit's small line over the wordmark. */
     lead?: string;
+    /** A LOOP run's sequence and play. */
+    loop?: PostLoopFields;
   }
   interface PluginItemPatch {
     overlay?: boolean;
@@ -174,6 +184,8 @@ declare module "@austencloud/video-editor/core" {
     marks?: boolean;
     /** A credit's small line over the wordmark; empty draws the wordmark alone. */
     lead?: string;
+    /** A LOOP run's sequence, seed, change, starting layout, colour and moments. */
+    loop?: Partial<PostLoopFields>;
   }
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type */
@@ -631,6 +643,41 @@ export const PostCreditItemSchema = z
 
 export type PostCreditItem = z.infer<typeof PostCreditItemSchema>;
 
+// The schema checks the entry's JSON shape; the record itself is the editor's
+// SequenceData, as a mandala clip's entries are.
+const LoopRunSequenceSnapshotSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    sequence: z.record(z.string(), z.unknown()),
+  })
+  .passthrough() as unknown as z.ZodType<LoopRunSequenceSnapshot>;
+
+/**
+ * A LOOP run: one sequence the clip carries, drawn as tiles in a ring or in
+ * rows, with each repeat brought in the way its LOOP type changes the seed,
+ * or performed in its tile with each staff handed on. See
+ * `media-composition/domain/loop-run.ts`.
+ */
+export const PostLoopItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("loop"),
+    sequence: LoopRunSequenceSnapshotSchema,
+    ...LoopRunSettingsSchema.shape,
+  })
+  .strict();
+
+export type PostLoopItem = z.infer<typeof PostLoopItemSchema>;
+/** The fields a LOOP run adds to an item. */
+export type PostLoopFields = Pick<PostLoopItem, "sequence" | "seed" | "change" | "layout" | "colour" | "events"> &
+  Partial<
+    Pick<
+      PostLoopItem,
+      "badges" | "room" | "waitingGrids" | "lineReach" | "startAlways" | "cardStart" | "pairsGap" | "plainTiles"
+    >
+  >;
+
 /** Kinds drawn from the sequence, which read the move of the footage under them. */
 export const SEQUENCE_ITEM_KINDS: readonly PostItemKind[] = [
   "animation",
@@ -895,5 +942,16 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
       kind: "credit",
       lead: (spec.lead ?? CREDIT_DEFAULT_LEAD).slice(0, CREDIT_MAX_LEAD_LENGTH),
     }),
+  },
+  {
+    kind: "loop",
+    schema: PostLoopItemSchema,
+    label: "LOOP",
+    defaultBox: () => ({ ...POST_BOX.full }),
+    compile: compileLoopRunItem,
+    create: (base, spec) => {
+      if (!spec.loop) throw new Error("A LOOP run needs its sequence and play.");
+      return { ...base, kind: "loop", ...spec.loop };
+    },
   },
 ];

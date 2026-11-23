@@ -38,6 +38,8 @@ import {
   updateMusic,
   type MusicPatch,
   beatSeconds,
+  addOverlayItem,
+  POST_MAX_TEXT_LENGTH,
 } from "@austencloud/video-editor/core";
 import {
   POST_QR_URL_RULE,
@@ -85,6 +87,10 @@ import {
   CREDIT_MAX_LEAD_LENGTH,
   addCreditItem,
 } from "#lib/shared/media-composition/domain/credit.js";
+import {
+  addLoopRunItem,
+  type LoopRunInit,
+} from "#lib/shared/media-composition/domain/loop-run-item.js";
 import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   TAKE_MAX_BPM,
@@ -170,6 +176,20 @@ export type PostProjectOp =
       lead?: string;
       duration?: number;
     }
+  | {
+      op: "add-text";
+      /** One line of words, as the core text clip holds it. */
+      text: string;
+      at?: PostTimeRef;
+      duration?: number;
+      size?: "s" | "m" | "l";
+      /** Where it sits, as shares of the frame; absent is the core's own overlay box. */
+      box?: { x: number; y: number; width: number; height: number };
+    }
+  | ({
+      op: "add-loop";
+      at?: PostTimeRef;
+    } & Omit<LoopRunInit, "at">)
   | {
       op: "fly-into-next";
       item: string;
@@ -727,6 +747,55 @@ function applyOp(
         ...(op.duration !== undefined ? { duration: op.duration } : {}),
       });
       if (!result) throw new Error("The credit could not be placed.");
+      return result.project;
+    }
+    case "add-text": {
+      if (typeof op.text !== "string" || op.text.length > POST_MAX_TEXT_LENGTH)
+        throw new Error(`text must be words up to ${POST_MAX_TEXT_LENGTH} letters.`);
+      if (op.size !== undefined && !["s", "m", "l"].includes(op.size))
+        throw new Error("size must be s, m or l.");
+      if (
+        op.duration !== undefined &&
+        (typeof op.duration !== "number" || !(op.duration > 0))
+      )
+        throw new Error("duration must be seconds above 0.");
+      if (
+        op.box !== undefined &&
+        ![op.box.x, op.box.y, op.box.width, op.box.height].every(
+          (n) => typeof n === "number" && n >= 0 && n <= 1
+        )
+      )
+        throw new Error("box must be x, y, width and height as shares of the frame.");
+      const result = addOverlayItem(
+        project,
+        {
+          kind: "text",
+          text: op.text,
+          size: op.size ?? "m",
+          at: op.at !== undefined ? resolvePostTime(op.at, project.music, "at") : 0,
+          ...(op.duration !== undefined ? { duration: op.duration } : {}),
+          ...(op.box !== undefined ? { box: { ...op.box } } : {}),
+          fill: false,
+        },
+        ctx
+      );
+      if (!result) throw new Error("The words could not be placed.");
+      return result.project;
+    }
+    case "add-loop": {
+      if (
+        op.duration !== undefined &&
+        (typeof op.duration !== "number" || !(op.duration > 0))
+      )
+        throw new Error("duration must be seconds above 0.");
+      const { op: _op, at, ...init } = op;
+      const result = addLoopRunItem(project, ctx, {
+        ...init,
+        ...(at !== undefined
+          ? { at: resolvePostTime(at, project.music, "at") }
+          : {}),
+      });
+      if (!result) throw new Error("The LOOP run could not be placed.");
       return result.project;
     }
     case "fly-into-next": {

@@ -20,7 +20,7 @@ import {
   BubbleFilmSpriteCache,
 } from "./bubble-film-sprites";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 
 /** One soap bubble. Position is integrated; sway is added at draw time. */
 interface Bubble {
@@ -144,7 +144,7 @@ export class Bubbles2DRenderer {
 
     const seen = new Set<string>();
     for (const e of emitters) {
-      if (!isEndEnabled(e.end, params)) continue;
+      if (!tipWearsEffect(e, params.trackingMode)) continue;
       const id = emitterId(e.propIndex, e.tipIndex);
       seen.add(id);
       this.emit(id, e, params, step, scale, baseR, poolCap);
@@ -660,10 +660,6 @@ function wobbleX(b: Bubble): number {
   return Math.sin(b.age * b.wobbleFreq + b.wobblePhase) * b.wobbleAmp;
 }
 
-function isEndEnabled(end: "A" | "B", params: Bubbles2DParams): boolean {
-  if (params.trackingMode === "both_ends") return true;
-  return params.trackingMode === "left_end" ? end === "A" : end === "B";
-}
 
 /** Stable 0-1 hash, so a bubble's torn lip keeps its pattern frame to frame. */
 function hash01(n: number): number {

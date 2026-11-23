@@ -385,6 +385,7 @@
   .cell:focus-visible { outline: 2px solid rgba(127, 214, 239, 0.7); outline-offset: 2px; }
 
   .overlay {
+    /* behind the status bar: a dim with one centred card that cannot touch the top */
     position: fixed;
     inset: 0;
     z-index: var(--z-modal, 1000);
@@ -409,4 +410,8 @@
   .player { width: min(78vw, 520px); aspect-ratio: 1; }
   .zoomcap { font-size: 0.95rem; color: #cfe6f2; font-variant-numeric: tabular-nums; }
   .hint { color: #64748b; font-size: 0.8rem; }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

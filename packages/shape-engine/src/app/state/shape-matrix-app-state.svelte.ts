@@ -53,6 +53,8 @@ export interface ShapeMatrixCompactFocusRequest {
   target: ShapeMatrixAppView;
 }
 export type ShapeMatrixAxisTarget = "left" | "both" | "right";
+/** Which hands the stage plays: both, or one hand of the pair alone. */
+export type ShapeMatrixHandsOnStage = "both" | "left" | "right";
 
 export interface ShapeMatrixSelectPairOptions {
   /**
@@ -678,6 +680,17 @@ export function createShapeMatrixAppState(
   }
 
   /**
+   * The stage's Both / Left / Right switch on Ratios. Left and Right are the
+   * two hands of the pair already on stage, so the switch only changes what
+   * plays, never what either hand does, and never leaves the stage.
+   */
+  function showTheoryHands(hands: ShapeMatrixHandsOnStage): void {
+    if (!theoryPair) return;
+    if (hands === "both") selectTheoryPair(theoryPair, { navigate: false });
+    else selectTheorySolo(hands, theoryPair[hands], { navigate: false });
+  }
+
+  /**
    * Roll the whole experience in one state transition: a new 4×4, one of its
    * crossings, and one hand relationship for the resulting animation.
    */
@@ -1000,6 +1013,13 @@ export function createShapeMatrixAppState(
     syncState();
   }
 
+  /** The same switch on Levels. */
+  function showHands(hands: ShapeMatrixHandsOnStage): void {
+    if (!selectedPair) return;
+    if (hands === "both") selectPair(selectedPair, { navigate: false });
+    else selectSolo(hands, selectedPair[hands], { navigate: false });
+  }
+
   function setMode(mode: VtgMode | null): void {
     selectedMode = selectedPair
       ? (mode ?? selectedMode ?? MODE_ORDER[0] ?? null)
@@ -1242,6 +1262,7 @@ export function createShapeMatrixAppState(
     setTheoryMode,
     selectTheoryPair,
     selectTheorySolo,
+    showTheoryHands,
     surpriseMe,
     setPropType,
     setPropHand,
@@ -1252,6 +1273,7 @@ export function createShapeMatrixAppState(
     setMode,
     setPropMode,
     selectSolo,
+    showHands,
     showMatrix,
     showDetail,
     setCompact,

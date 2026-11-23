@@ -369,6 +369,7 @@
 
 <style>
   .page {
+    /* behind the status bar: a full-screen scene, its readouts clear the bar */
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -399,7 +400,7 @@
 
   .perf-readout {
     position: absolute;
-    inset-block-start: clamp(0.75rem, 1.5vw, 1.5rem);
+    inset-block-start: calc(clamp(0.75rem, 1.5vw, 1.5rem) + var(--safe-top));
     inset-inline-end: clamp(0.75rem, 1.5vw, 1.5rem);
     z-index: 20;
     display: flex;

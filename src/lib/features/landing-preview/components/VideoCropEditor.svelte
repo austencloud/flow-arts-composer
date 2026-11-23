@@ -450,6 +450,7 @@
 
 <style>
   .crop-editor {
+    /* behind the status bar: a full-screen editor, its header is padded below the bar */
     position: fixed;
     inset: 0;
     z-index: var(--z-toast);
@@ -464,6 +465,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
+    padding-top: calc(16px + var(--safe-top));
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
   }
 

@@ -148,6 +148,7 @@
     --theme-text-dim: #bdc9ac;
     --min-touch-target: 44px;
     --duration-normal: 160ms;
+    /* behind the status bar: a full-screen scene, its review panel clears the bar */
     position: fixed;
     inset: 0;
     min-inline-size: 20rem;
@@ -163,7 +164,7 @@
 
   .review-hud {
     position: absolute;
-    inset-block-start: clamp(0.75rem, 1.5vw, 1.5rem);
+    inset-block-start: calc(clamp(0.75rem, 1.5vw, 1.5rem) + var(--safe-top));
     inset-inline: clamp(0.75rem, 1.5vw, 1.5rem);
     z-index: 60;
     display: flex;

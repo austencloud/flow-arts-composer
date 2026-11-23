@@ -542,6 +542,7 @@
     grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
+    padding-top: calc(0.5rem + var(--safe-top));
     overflow: hidden;
     background: var(--theme-panel-bg, #11131a);
     color: var(--theme-text, #e8edf6);

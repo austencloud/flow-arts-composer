@@ -239,4 +239,8 @@
     height: 240px;
     flex: 0 0 auto;
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .palettes {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

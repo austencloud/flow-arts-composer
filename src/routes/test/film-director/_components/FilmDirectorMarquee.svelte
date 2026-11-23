@@ -88,7 +88,8 @@
        stays reachable. */
     align-content: safe center;
     row-gap: clamp(1.75rem, 3vw, 2.75rem);
-    padding: clamp(1.5rem, 4vw, 3rem) 0 clamp(3rem, 8vw, 6rem);
+    padding: calc(clamp(1.5rem, 4vw, 3rem) + var(--safe-top)) 0
+      clamp(3rem, 8vw, 6rem);
     overflow-y: auto;
     color: var(--theme-text, #fff);
     background: #070812;

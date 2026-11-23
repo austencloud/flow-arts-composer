@@ -171,6 +171,7 @@
     position: fixed;
     left: 0;
     top: 0;
+    padding-top: var(--safe-top);
     bottom: 0;
     width: 240px;
     background: var(--theme-panel-bg, rgba(16, 16, 28, 0.96));

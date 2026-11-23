@@ -104,6 +104,7 @@
 
 <style>
   .edit-modal {
+    /* behind the status bar: a dim with a centred modal that cannot reach the top */
     position: fixed;
     inset: 0;
     z-index: var(--z-modal);

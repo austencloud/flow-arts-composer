@@ -36,6 +36,7 @@
 
 <style>
   .cosmos {
+    /* behind the status bar: the painted starfield, it holds no words */
     position: fixed;
     inset: 0;
     z-index: 0;

@@ -260,6 +260,7 @@
 
 <style>
   .sheet-backdrop {
+    /* behind the status bar: a dim behind a bottom sheet, it holds no words */
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);

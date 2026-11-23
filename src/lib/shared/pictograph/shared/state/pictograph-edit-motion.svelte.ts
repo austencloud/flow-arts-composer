@@ -196,7 +196,24 @@ export function createPictographEditMotion() {
     );
   }
 
-  return { announce, snapNext, join, ready, leave, frameFor };
+  /**
+   * True from an announcement until the props have landed: while the edit
+   * waits for a drawing to join, while the clock waits to start, and through
+   * the old arrows' fade and the props' travel. A lesson holds its answer
+   * until this turns false, so the answer changes as the hands arrive.
+   */
+  function travelling(): boolean {
+    const at = now();
+    if (announced && at - announced.at <= ANNOUNCE_WINDOW_MS) return true;
+    const current = run;
+    if (!current) return false;
+    if (current.startedAt === null) return true;
+    return (
+      elapsed < current.timeline.arrowsOutMs + current.timeline.travelMs
+    );
+  }
+
+  return { announce, snapNext, join, ready, leave, frameFor, travelling };
 }
 
 export type PictographEditMotion = ReturnType<
@@ -213,6 +230,11 @@ export function getPictographEditMotion(): PictographEditMotion {
 /** Announce the edit about to commit to the sequence on screen. */
 export function announcePictographEdit(edit: PictographEdit): void {
   getPictographEditMotion().announce(edit);
+}
+
+/** Whether an announced edit's props are still on their way. */
+export function pictographEditTravelling(): boolean {
+  return getPictographEditMotion().travelling();
 }
 
 /** The next drawings to change snap: a whole new sequence is arriving. */

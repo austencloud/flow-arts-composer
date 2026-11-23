@@ -126,6 +126,7 @@
   .app {
     position: fixed;
     inset: 0;
+    padding-top: var(--safe-top);
     z-index: 1;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;

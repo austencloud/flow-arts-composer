@@ -7,6 +7,10 @@ export type PreWarmPriority = "background" | "user-visible" | "user-blocking";
 import { deriveCacheKey } from "./cell-cache-key-deriver";
 import { pictographBlobCache } from "#lib/shared/render/services/pictograph-blob-cache.js";
 import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import {
+  isArrowPlacementDataLoaded,
+  whenArrowPlacementDataReady,
+} from "#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js";
 import { getWorkerRenderPool } from "#lib/shared/render/services/worker-render-pool.js";
 import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { buildRenderOptions as buildCellRenderOptions } from "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js";
@@ -302,6 +306,9 @@ export class CellPreWarmer {
 
     const { data, prepareOptions, renderOptions, visibility } =
       resolvePreviewCellRender(task.pictographData, task.isDark, options);
+    // Provisional (placement data missing) cells are never persisted.
+    void whenArrowPlacementDataReady();
+    const placementLoaded = isArrowPlacementDataLoaded();
     const prepared = await pictographPreparer.prepareSingle(
       data,
       prepareOptions
@@ -319,7 +326,7 @@ export class CellPreWarmer {
         visibility,
         resolvedStepNum
       );
-      if (!signal.aborted) {
+      if (!signal.aborted && placementLoaded) {
         await pictographBlobCache.set(task.cacheKey, blob);
       }
     } catch {

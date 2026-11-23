@@ -242,6 +242,7 @@
 
 <style>
   .lab {
+    /* behind the status bar: a full-screen canvas, its controls sit at the bottom */
     position: fixed;
     inset: 0;
     display: grid;

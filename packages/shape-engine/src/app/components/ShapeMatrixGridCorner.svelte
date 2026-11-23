@@ -192,11 +192,13 @@
         </div>
       {/key}
 
-      <div class="foot">
-        {#if !hasPair}
+      <!-- Only before a pick: an empty foot still took a row and a gap, and
+           pushed Surprise past the top of a laptop-sized cell. -->
+      {#if !hasPair}
+        <div class="foot">
           <span class="hint">{t("shape_engine_pick_crossing")}</span>
-        {/if}
-      </div>
+        </div>
+      {/if}
     </div>
   {/if}
 

@@ -16,7 +16,10 @@ import {
   type StageBounds,
   type StagePosition,
 } from "../../components/performer-interaction/performer-pointer-interaction.svelte";
-import type { WorkerCameraSnapshot } from "../domain/worker-renderer-protocol";
+import type {
+  WorkerCameraSnapshot,
+  WorkerPerformerBodyFrame,
+} from "../domain/worker-renderer-protocol";
 import {
   assessWorkerPerformerInteractionCapability,
   type WorkerPerformerInteractionCapability,
@@ -90,6 +93,12 @@ export interface WorkerPerformerInteractionBridgeOptions {
   projectionContainer?: HTMLElement;
   viewer: WorkerPerformerInteractionViewer;
   cameraArbiter: WorkerPerformerInteractionCameraArbiter | null;
+  /**
+   * The worker's newest body capsules per performer index. Read only when the
+   * pointer tests a hit; absent, or a performer missing from it, keeps that
+   * performer on the capsule proxy.
+   */
+  getPerformerBodies?: () => readonly WorkerPerformerBodyFrame[] | null;
   onHintDismissed?: () => void;
 }
 
@@ -102,6 +111,7 @@ export interface ProjectedWorkerStagePosition {
 interface PickProxy {
   mesh: Mesh;
   unregister: () => void;
+  unregisterBody: () => void;
 }
 
 interface BadgeProxy {
@@ -441,9 +451,13 @@ export class WorkerPerformerInteractionBridge {
           performerIndex: performer.index,
           performerPickTarget: true,
         };
+        const index = performer.index;
         proxy = {
           mesh,
           unregister: this.interaction.registerPickTarget(mesh),
+          unregisterBody: this.interaction.registerBodyPick(index, () =>
+            this.bodySegmentsFor(index)
+          ),
         };
         this.pickProxies.set(performer.index, proxy);
       }
@@ -490,10 +504,18 @@ export class WorkerPerformerInteractionBridge {
     }
   }
 
+  private bodySegmentsFor(index: number): Float32Array | null {
+    const bodies = this.options.getPerformerBodies?.();
+    if (!bodies) return null;
+    for (const body of bodies) if (body.index === index) return body.segments;
+    return null;
+  }
+
   private removePickProxy(index: number): void {
     const proxy = this.pickProxies.get(index);
     if (!proxy) return;
     proxy.unregister();
+    proxy.unregisterBody();
     proxy.mesh.geometry.dispose();
     this.pickProxies.delete(index);
   }

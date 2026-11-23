@@ -148,4 +148,9 @@
   .jump { display: flex; align-items: center; gap: 0.3rem; font-size: 12px; color: #9fb2bd; }
   .jump input { width: 5ch; background: #11161c; border: 1px solid #263041; color: #cfe6f2; border-radius: 5px; padding: 0.25rem 0.4rem; font: 13px monospace; text-align: center; }
   .keys { flex: none; padding: 0.35rem 0.9rem 0.6rem; color: #64748b; font-size: 12px; background: #0d1116; }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .wrap {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

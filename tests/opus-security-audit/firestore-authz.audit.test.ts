@@ -298,32 +298,29 @@ describe("finding 1: publicSoloProps / publicHandPaths ownership takeover", () =
     ]);
   }
 
-  it("MEASURED: the current rules ACCEPT the takeover (documents the defect)", async () => {
+  // FIXED 2026-11-21: update now checks the stored owner.
+  it("MEASURED: the rules REFUSE the takeover and the victim's doc is untouched", async () => {
     await seedVictimArtifacts();
 
-    // Minimal request: one updateDoc from an unrelated full account.
-    await assertSucceeds(
+    await assertFails(
       updateDoc(doc(attackerDb(), `publicSoloProps/${HASH}`), {
         ownerId: ATTACKER_UID,
         steps: ["attacker-payload"],
       })
     );
-    await assertSucceeds(
+    await assertFails(
       updateDoc(doc(attackerDb(), `publicHandPaths/${HASH}`), {
         ownerId: ATTACKER_UID,
         locations: ["attacker-payload"],
       })
     );
 
-    // The content-addressed invariant (doc id == contentHash of the payload)
-    // is now broken: the id still says HASH, the body is the attacker's.
     await env.withSecurityRulesDisabled(async (context) => {
       const snap = await getDoc(
         doc(context.firestore(SDK_SETTINGS), `publicSoloProps/${HASH}`)
       );
-      expect(snap.data()?.ownerId).toBe(ATTACKER_UID);
-      expect(snap.data()?.steps).toEqual(["attacker-payload"]);
-      expect(snap.data()?.contentHash).toBe(HASH);
+      expect(snap.data()?.ownerId).toBe(VICTIM_UID);
+      expect(snap.data()?.steps).toEqual(["victim-step"]);
     });
   });
 

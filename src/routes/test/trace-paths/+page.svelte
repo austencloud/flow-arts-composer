@@ -775,7 +775,7 @@ diagnostic here and are not persisted or transmitted, same as in the game.
     container-type: inline-size;
     min-height: 100svh;
     box-sizing: border-box;
-    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+    padding-top: max(0.5rem, var(--safe-top));
     padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
     padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
     padding-left: max(0.5rem, env(safe-area-inset-left, 0px));

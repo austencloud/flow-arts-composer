@@ -45,7 +45,13 @@ export type PictographEdit =
     }
   /** "vertical" is Mirror (E ↔ W), "horizontal" is Flip (N ↔ S). */
   | { readonly kind: "reflect"; readonly axis: "vertical" | "horizontal" }
-  | { readonly kind: "swap" }
+  /**
+   * `beside` sends the right prop along the inward bend of the left prop's
+   * arc when the two spots are not opposite, so the props pass beside each
+   * other instead of through each other (the Learn lesson's Swap). Opposite
+   * spots already arc round opposite sides.
+   */
+  | { readonly kind: "swap"; readonly beside?: boolean }
   /** Orientation-only changes (Invert): props spin where they stand. */
   | { readonly kind: "spin" }
   /** An unannounced in-place change: undo, a turns edit, a reused cell. */
@@ -152,7 +158,15 @@ function travelMotion(
     gridMode,
     // The travel IS the pathway: force the circle (or the straight line)
     // regardless of the global animation path-shape setting.
-    pathShape: path === "dash" ? "linear" : "arc",
+    pathShape:
+      path === "dash"
+        ? "linear"
+        : edit.kind === "swap" &&
+            edit.beside &&
+            hand === HandSide.RIGHT &&
+            compassSteps(from, to) !== 4
+          ? "concave"
+          : "arc",
   });
 }
 

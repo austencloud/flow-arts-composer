@@ -49,6 +49,7 @@ describe("tka plugin", () => {
     expectTypeOf<"mandala">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<"flash">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<"credit">().toMatchTypeOf<PostItemKind>();
+    expectTypeOf<"loop">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<Extract<PostItem, { kind: "animation" }>>().not.toBeNever();
     // The checks above also pass if a kind type decays to any; these name the exact unions.
     expectTypeOf<PostItemKind>().toEqualTypeOf<
@@ -64,6 +65,7 @@ describe("tka plugin", () => {
       | "mandala"
       | "flash"
       | "credit"
+      | "loop"
     >();
     expectTypeOf<keyof PluginItemKinds>().toEqualTypeOf<
       | "animation"
@@ -74,6 +76,7 @@ describe("tka plugin", () => {
       | "mandala"
       | "flash"
       | "credit"
+      | "loop"
     >();
     expect(TKA_ITEM_KINDS.map((definition) => definition.kind)).toEqual([
       "animation",
@@ -84,6 +87,7 @@ describe("tka plugin", () => {
       "mandala",
       "flash",
       "credit",
+      "loop",
     ]);
   });
 
@@ -236,6 +240,7 @@ describe("tka painter factories", () => {
       "tka-titles",
       "tka-flash",
       "tka-credit",
+      "tka-loop",
       "tka-staff",
       "tka-comet",
     ]);

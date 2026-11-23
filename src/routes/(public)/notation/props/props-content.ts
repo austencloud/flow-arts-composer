@@ -62,11 +62,64 @@ export const PROPS: Record<PropKey, PropEntry> = {
     label: "site_prop_poi",
     kind: "site_props_page_poi_kind",
     propType: "poi",
-    note: "site_props_page_poi_note",
-    paragraphs: ["site_props_page_poi_p1", "site_props_page_poi_p2"],
+    note: "site_props_page_poi_note_flower",
+    paragraphs: ["site_props_page_poi_p1_flower", "site_props_page_poi_p2"],
   },
 };
 
 export function isPropKey(value: string): value is PropKey {
   return (PROP_KEYS as readonly string[]).includes(value);
+}
+
+/**
+ * The block under the player. It follows the picked prop: staves are always
+ * the left drawing, and the right drawing is the picked prop (clubs when
+ * staves themselves are picked). Poi has no staff twin, so its block shows its
+ * own drawing instead. Each variant is whole sentences under its own keys.
+ */
+export type CompareKey = "clubs" | "fans" | "buugeng" | "poi";
+
+export interface CompareEntry {
+  /** Message key: the heading. */
+  title: string;
+  /** Message key: the words. */
+  text: string;
+  /** Message key: label under the picked prop's drawing. */
+  label: string;
+  /** Prop type id the picked prop's drawing uses. */
+  propType: string;
+}
+
+export const COMPARE: Record<CompareKey, CompareEntry> = {
+  clubs: {
+    title: "site_props_page_compare_title",
+    text: "site_props_page_compare_text",
+    label: "site_props_page_compare_clubs",
+    propType: "club",
+  },
+  fans: {
+    title: "site_props_page_compare_fans_title",
+    text: "site_props_page_compare_fans_text",
+    label: "site_props_page_compare_fans_label",
+    propType: "fan",
+  },
+  buugeng: {
+    title: "site_props_page_compare_buugeng_title",
+    text: "site_props_page_compare_buugeng_text",
+    label: "site_props_page_compare_buugeng_label",
+    propType: "buugeng",
+  },
+  poi: {
+    title: "site_props_page_poi_title",
+    text: "site_props_page_poi_text",
+    label: "site_props_page_poi_label",
+    propType: "poi",
+  },
+};
+
+export const COMPARE_KEYS = Object.keys(COMPARE) as CompareKey[];
+
+/** Staves and clubs share the staves-and-clubs block. */
+export function compareKeyFor(prop: PropKey): CompareKey {
+  return prop === "staves" ? "clubs" : prop;
 }

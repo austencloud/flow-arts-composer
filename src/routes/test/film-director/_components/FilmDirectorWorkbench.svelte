@@ -409,6 +409,7 @@
   }
 
   .director-workbench {
+    /* behind the status bar: a full-screen stage, its exit button clears the bar */
     position: fixed;
     inset: 0;
     min-width: 0;
@@ -630,7 +631,7 @@
 
   .exit-button {
     position: absolute;
-    top: max(0.85rem, env(safe-area-inset-top));
+    top: max(0.85rem, var(--safe-top));
     left: max(0.85rem, env(safe-area-inset-left));
     z-index: 65;
     display: inline-flex;
@@ -668,7 +669,7 @@
      accepted edit. */
   .edit-error {
     position: absolute;
-    top: calc(max(0.85rem, env(safe-area-inset-top)) + 3.6rem);
+    top: calc(max(0.85rem, var(--safe-top)) + 3.6rem);
     right: max(4.75rem, calc(env(safe-area-inset-right) + 4.75rem));
     left: max(0.85rem, env(safe-area-inset-left));
     z-index: 72;

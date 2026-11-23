@@ -269,4 +269,8 @@
       border-top: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.12));
     }
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -9,6 +9,7 @@ import {
 } from "#lib/shared/media-composition/domain/take-timing.js";
 import { isPostCardQrUrl } from "./card-qr";
 import { CREDIT_MAX_LEAD_LENGTH } from "#lib/shared/media-composition/domain/credit.js";
+import { LoopRunSettingsSchema } from "#lib/shared/media-composition/domain/loop-run.js";
 import { shiftTkaItemTimes } from "./item-times";
 import { MANDALA_MAX_SEQUENCES } from "#lib/shared/mandala/domain/mandala-shift-types.js";
 import {
@@ -134,6 +135,21 @@ export const TKA_EDIT_HOOKS: EditHooks = {
         next.sequences = patch.sequences.slice(0, MANDALA_MAX_SEQUENCES);
       if (patch.shift) next.shift = { ...item.shift, ...patch.shift };
       if (patch.look) next.look = { ...item.look, ...patch.look };
+    }
+    if (item.kind === "loop" && patch.loop) {
+      // A play that breaks the schema is passed over as a whole.
+      const { sequence, ...play } = patch.loop;
+      const merged = {
+        seed: item.seed,
+        change: item.change,
+        layout: item.layout,
+        colour: item.colour,
+        events: item.events,
+        ...play,
+      };
+      const parsed = LoopRunSettingsSchema.safeParse(merged);
+      if (parsed.success) Object.assign(next, parsed.data);
+      if (sequence?.sequence) next.sequence = sequence;
     }
     if (item.kind === "credit" && patch.lead !== undefined) {
       // Kept as typed, spaces and all, so the field never fights the cursor.

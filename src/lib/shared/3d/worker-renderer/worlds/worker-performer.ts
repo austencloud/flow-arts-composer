@@ -25,6 +25,7 @@ import {
 } from "@austencloud/scene-3d/worker";
 import type {
   WorkerSceneEffectsSnapshot,
+  WorkerPerformerBodyFrame,
   WorkerPerformerSnapshot,
   WorkerPropSnapshot,
   WorkerSelectionMarkerSnapshot,
@@ -42,6 +43,12 @@ import type { WorkerSelectionMarkerVisual } from "./selection-markers/worker-sel
 import { WorkerImperativeEffectFrameBuilder } from "../effects/worker-imperative-effect-frame-builder";
 import { TIP_EFFECT_SLOTS_PER_RIG } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
 import { applyLegacyContactLock } from "./worker-contact-lock";
+import {
+  BODY_PICK_SEGMENT_STRIDE,
+  fitBodyPickCapsules,
+  writeBodyPickSegments,
+  type BodyPickFit,
+} from "../../domain/performer-body-pick";
 
 const STAFF_HORIZONTAL_QUATERNION = new Quaternion().setFromEuler(
   new Euler(0, 0, Math.PI / 2)
@@ -236,6 +243,9 @@ export class WorkerPerformer {
   /** The reset key last applied to the animator. */
   private contactResetKey: number | undefined;
   private avatarRoot: Object3D | null = null;
+  /** Fitted once when the Character loads; a new Character is a new performer. */
+  private bodyFit: BodyPickFit | null = null;
+  private bodySegments: Float32Array | null = null;
   private badge: WorkerPerformerBadgeObject | null = null;
   private readonly selectionMarker: WorkerSelectionMarkerVisual;
   private readonly hoverMarker: WorkerPerformerHoverMarker;
@@ -322,7 +332,9 @@ export class WorkerPerformer {
       // checkout or machine may not have it. Same recovery as the main-thread
       // CharacterSwapTransition: show the mannequin, not an empty stage.
       if (!avatarLocalOnly) throw error;
-      console.warn(`Character ${avatarId} is not on this machine; showing the mannequin.`);
+      console.warn(
+        `Character ${avatarId} is not on this machine; showing the mannequin.`
+      );
       await this.services.skeleton.loadModel(getAvatarModelPath("x-bot"));
     }
     if (this.disposed) return;
@@ -341,6 +353,14 @@ export class WorkerPerformer {
       if (renderable.isMesh) renderable.castShadow = true;
     });
     this.root.add(this.avatarRoot);
+    this.avatarRoot.updateMatrixWorld(true);
+    this.bodyFit = fitBodyPickCapsules(this.avatarRoot);
+    this.bodySegments =
+      this.bodyFit.capsules.length > 0
+        ? new Float32Array(
+            this.bodyFit.capsules.length * BODY_PICK_SEGMENT_STRIDE
+          )
+        : null;
 
     const fingerChains = this.services.skeleton.getState().fingerChains;
     if (fingerChains) this.services.fingers.initialize(fingerChains);
@@ -376,6 +396,16 @@ export class WorkerPerformer {
 
   getEffects(): WorkerSceneEffectsSnapshot {
     return this.effectOutput;
+  }
+
+  /**
+   * The body's world capsules for the pose last solved, in one array reused
+   * across calls. Null while the body shape is unknown (no skinned mesh).
+   */
+  getBodyPick(): Float32Array | null {
+    if (this.disposed || !this.bodyFit || !this.bodySegments) return null;
+    writeBodyPickSegments(this.bodyFit, this.bodySegments);
+    return this.bodySegments;
   }
 
   private localSelectionMarker(snapshot: WorkerPerformerSnapshot) {
@@ -681,6 +711,8 @@ export class WorkerPerformer {
     this.root.removeFromParent();
     this.root.clear();
     this.avatarRoot = null;
+    this.bodyFit = null;
+    this.bodySegments = null;
   }
 }
 
@@ -692,6 +724,7 @@ interface WorkerPerformerLike {
   update(deltaSeconds: number): void;
   setEffectSourceIdBase?(sourceIdBase: number): void;
   getEffects?(): WorkerSceneEffectsSnapshot;
+  getBodyPick?(): Float32Array | null;
   getDiagnostics?(): {
     renderables: number;
     visibleRenderables: number;
@@ -840,6 +873,27 @@ export class WorkerPerformerStage {
       imperative.push(...(output.imperative ?? []));
     }
     return { playing, sources, imperative };
+  }
+
+  /**
+   * Every built performer's current body segments, keyed by the index the
+   * application's pointer interaction uses. Performers with no fitted body
+   * are left out. The arrays belong to the performers and are reused.
+   */
+  getBodyPickFrames(): WorkerPerformerBodyFrame[] {
+    const frames: WorkerPerformerBodyFrame[] = [];
+    let position = 0;
+    for (const [id, snapshot] of this.snapshots) {
+      const place = position;
+      position += 1;
+      const segments = this.performers.get(id)?.getBodyPick?.();
+      if (!segments) continue;
+      frames.push({
+        index: snapshot.interactionIndex ?? snapshot.badge?.index ?? place,
+        segments,
+      });
+    }
+    return frames;
   }
 
   getDiagnostics(): {

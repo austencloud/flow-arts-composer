@@ -116,6 +116,10 @@ import { pictographBlobCache } from "#lib/shared/render/services/pictograph-blob
 import { getWorkerRenderPool } from "#lib/shared/render/services/worker-render-pool.js";
 import { deriveCacheKey } from "./cell-cache-key-deriver";
 import { compositeStepNumberOnBlob } from "./step-number-compositor";
+import {
+  isArrowPlacementDataLoaded,
+  whenArrowPlacementDataReady,
+} from "#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js";
 import * as pictographCloudCache from "#lib/shared/render/services/pictograph-cloud-cache.js";
 import { deriveCloudCellHash } from "#lib/shared/render/services/cloud-cell-key.js";
 import { pngBlobToWebp } from "#lib/shared/render/services/png-blob-to-webp.js";
@@ -239,6 +243,11 @@ export async function renderCell(
   // (ACCT: minted staff, printed bp=1 big staff), so a miss is not a broken card.
   const { data, prepareOptions, renderOptions, visibility } =
     resolvePreviewCellRender(pictographData, isDark, options);
+  // Drawn without the arrow placement data, this cell is provisional: shown,
+  // but never persisted or uploaded. Decided before preparing; the call also
+  // starts the load (and its throttled retry) for later cells.
+  void whenArrowPlacementDataReady();
+  const placementLoaded = isArrowPlacementDataLoaded();
   const prepared = await pictographPreparer.prepareSingle(data, prepareOptions);
 
   const pool = getWorkerRenderPool();
@@ -251,13 +260,13 @@ export async function renderCell(
     undefined
   );
 
-  pictographBlobCache.set(cacheKey, blob).catch(() => {});
+  if (placementLoaded) pictographBlobCache.set(cacheKey, blob).catch(() => {});
 
   // Crowd-source upload — ONLY when uploadCanonical (render-at-publish), so a
   // scan card's personal-preference render never pollutes the canonical store.
   // Awaited so warm passes report done only after the blob actually landed;
   // the save path already wraps the whole warm in fire-and-forget.
-  if (options.uploadCanonical && cloudHash) {
+  if (placementLoaded && options.uploadCanonical && cloudHash) {
     try {
       const webp = await pngBlobToWebp(blob);
       await pictographCloudCache.upload(cloudHash, webp);

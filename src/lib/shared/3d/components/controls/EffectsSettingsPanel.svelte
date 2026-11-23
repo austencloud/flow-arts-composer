@@ -53,6 +53,8 @@
   import EffectHandDot from "#lib/shared/animation-engine/components/effects-panel/EffectHandDot.svelte";
   import { effectUiLabel } from "#lib/shared/animation-engine/components/effects-panel/effect-ui-label.js";
   import { globalEffectMix } from "./effects-mix.js";
+  import { countOwnEffects } from "#lib/shared/3d/domain/performer-effect-follow.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import { onDestroy } from "svelte";
 
   interface Props {
@@ -66,6 +68,17 @@
      * Ignored in global scope, which writes the shared EffectsConfig.
      */
     onEffectEdit?: (effect: EffectType) => boolean;
+    /**
+     * Set by a host whose scene holds one performer and no edit sink. A pick
+     * then writes the shared effect and the performer just follows it: this
+     * puts on the build the effect needs and keeps no effect of its own.
+     */
+    onSharedEffect?: (effect: EffectType) => boolean;
+    /**
+     * Returns the selected performers to the scene's effect. Absent when the
+     * host cannot apply it, which hides the row that offers it.
+     */
+    onUseSceneEffect?: () => boolean;
     presentation?: "standard" | "performer-hub";
     /** Content room measured by the hub's bounded scroller, excluding its padding. */
     availableHeight?: number;
@@ -77,6 +90,8 @@
     performers = null,
     onSettingChange,
     onEffectEdit,
+    onSharedEffect,
+    onUseSceneEffect,
     presentation = "standard",
     availableHeight = 0,
     onNavigate,
@@ -127,6 +142,20 @@
   let introHeight = $state(0);
   let motionHeight = $state(0);
   const HUB_GAP = 10;
+  // Performers carrying an effect of their own are the ones the scene's
+  // effect no longer reaches.
+  const ownEffectCount = $derived(
+    multi
+      ? countOwnEffects(multi)
+      : performer
+        ? countOwnEffects([performer])
+        : 0
+  );
+  const showOwnEffectRow = $derived(
+    presentation === "performer-hub" && !!onUseSceneEffect && ownEffectCount > 0
+  );
+  // The row grows inside the measured head block, so the list below gives up
+  // its room frame by frame as the row opens and takes it back as it closes.
   const catalogRoom = $derived(
     Math.max(0, availableHeight - introHeight - motionHeight - HUB_GAP * 2)
   );
@@ -252,7 +281,10 @@
       // another replaces it. Reset-to-inherit is the CascadeBadge's job.
       const active = performerEffect === key;
       const next = (active ? "none" : key) as EffectType;
-      if (onEffectEdit) {
+      if (onSharedEffect) {
+        if (!onSharedEffect(next)) return;
+        config.setEffectFor("both", next);
+      } else if (onEffectEdit) {
         if (!onEffectEdit(next)) return;
       } else {
         performer.setEffect(next);
@@ -356,6 +388,18 @@
   onDestroy(() => {
     if (copyTimer) clearTimeout(copyTimer);
   });
+
+  function useSceneEffect(): void {
+    const previous = performerEffect;
+    if (!onUseSceneEffect?.()) return;
+    reportViewerControlChange(
+      onSettingChange,
+      "viewer_3d_effects",
+      "effect",
+      previous,
+      "scene"
+    );
+  }
 
   function openEffectDetail(effect: EffectType): void {
     if (!isEnabled(effect)) toggle(effect);
@@ -574,12 +618,29 @@
         {/if}
       </div>
     {:else}
-      <div class="effects-intro" bind:offsetHeight={introHeight}>
-        <strong>Choose an effect</strong>
-        <span
-          >Selection applies to the current performer scope. Open any effect to
-          tune it.</span
-        >
+      <div class="effects-head" bind:offsetHeight={introHeight}>
+        <div class="effects-intro">
+          <strong>Choose an effect</strong>
+          <span
+            >Selection applies to the current performer scope. Open any effect
+            to tune it.</span
+          >
+        </div>
+
+        {#if showOwnEffectRow}
+          <div class="own-effect-row" transition:growFade>
+            <span class="own-effect-text"
+              >{ownEffectCount === 1
+                ? "This performer has its own effect."
+                : `${ownEffectCount} performers have their own effect.`}</span
+            >
+            <button
+              type="button"
+              class="own-effect-button"
+              onclick={useSceneEffect}>Use the scene's effect</button
+            >
+          </div>
+        {/if}
       </div>
 
       <div
@@ -1043,6 +1104,48 @@
   .copy-btn.failed {
     color: var(--semantic-error);
     border-color: var(--semantic-error);
+  }
+
+  .effects-head {
+    flex: none;
+  }
+
+  .own-effect-row {
+    display: flex;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 10px;
+    background: var(--surface-inset);
+  }
+
+  .own-effect-text {
+    flex: 1 1 12ch;
+    min-width: 0;
+    color: var(--theme-text);
+    font-size: var(--font-size-sm);
+    line-height: 1.35;
+  }
+
+  .own-effect-button {
+    flex: none;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--theme-stroke-strong);
+    border-radius: 9px;
+    background: var(--theme-panel-bg);
+    color: var(--theme-text);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+  }
+
+  .own-effect-button:hover {
+    background: var(--theme-card-hover-bg);
   }
 
   .hub-effect-catalog {

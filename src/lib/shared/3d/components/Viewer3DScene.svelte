@@ -10,7 +10,14 @@
     performerHandEffects,
     performerTipEffectMap,
   } from "../effects/performer-tip-effect-map.js";
-  import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
+  import {
+    flushSync,
+    onMount,
+    onDestroy,
+    tick,
+    untrack,
+    type Snippet,
+  } from "svelte";
   import {
     PerformerRig,
     type ContactMode,
@@ -30,6 +37,10 @@
   import type { GridMode } from "@austencloud/scene-3d";
   import Grid3D from "./Grid3D.svelte";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import {
+    performerHasOwnEffect,
+    trayPickClearsOwnEffect,
+  } from "#lib/shared/3d/domain/performer-effect-follow.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { CharacterInstanceState } from "../state/character-instance-state.svelte.js";
@@ -425,6 +436,27 @@
   const globalTipEffectMap = $derived(
     viewerEffects?.tipEffectMap ?? legacyTipEffectMap
   );
+
+  // A tray pick reaches a lone performer that still carries an effect of its
+  // own (a saved scene, a link, performers removed since). The count read at
+  // setup is the baseline, so loading a scene never counts as a pick. The
+  // clear is its own undo entry beside the tray's, so one pick is two steps.
+  let seenEffectPicks = viewerEffects?.userPickCount ?? 0;
+  $effect(() => {
+    const picks = viewerEffects?.userPickCount ?? 0;
+    if (picks === seenEffectPicks) return;
+    seenEffectPicks = picks;
+    untrack(() => {
+      const list = performerManager.performers;
+      const sole = list[0];
+      if (
+        sole &&
+        trayPickClearsOwnEffect(list.length, performerHasOwnEffect(sole))
+      ) {
+        sole.setEffect(null, { equipBuild: false });
+      }
+    });
+  });
 
   $effect(() => {
     // Sync on mount and whenever visibility settings change

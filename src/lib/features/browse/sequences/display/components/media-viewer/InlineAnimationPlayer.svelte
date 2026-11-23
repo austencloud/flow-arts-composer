@@ -210,6 +210,7 @@
     glyphFrame = "pictograph",
     initialQualityTier = undefined,
     initialStep = null,
+    startInMotion = false,
     ephemeral = false,
   }: {
     sequence: SequenceData;
@@ -444,6 +445,10 @@
     initialQualityTier?: QualityTier;
     /** Fractional playback position applied immediately after each load. */
     initialStep?: number | null;
+    /** For props that cannot rest at the start pose (a poi needs momentum):
+     *  begin partway through the first beat, play at once, and wrap straight
+     *  back into motion with no start-pose or end hold. Off by default. */
+    startInMotion?: boolean;
     /** Scoped embeds must not inherit or write the user's playback defaults. */
     ephemeral?: boolean;
   } = $props();
@@ -915,7 +920,7 @@
           pc.togglePlayback();
         }
       });
-    }, autoPlayDelay);
+    }, startInMotion ? 0 : autoPlayDelay);
     return () => clearTimeout(autoplayTimer);
   });
 
@@ -963,6 +968,7 @@
       // already implements — see animation-playback-controller.ts's
       // shouldLoop branches in onAnimationUpdate/runStepPlaybackTick).
       animationState.setShouldLoop(!singlePlay);
+      playbackController.setStartInMotion(startInMotion);
       const success = playbackController.initialize(
         fullSequence,
         animationState

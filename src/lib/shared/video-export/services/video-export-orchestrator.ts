@@ -1317,7 +1317,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
             ? "trails"
             : "none";
 
-    ecs?.setActiveEffect(effect);
+    // Borrowed for the export and restored after it, so not a person's pick.
+    ecs?.setActiveEffect(effect, { byUser: false });
 
     return saved;
   }

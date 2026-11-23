@@ -95,6 +95,7 @@
     showWordHeader = false,
     showCaption = true,
     autoPlay = true,
+    startInMotion = false,
     cornerToggle = false,
     cornerToggleAtRest = false,
     toolbar,
@@ -170,6 +171,9 @@
     showCaption?: boolean;
     /** Forwarded to the inline player so a host can start with a still frame. */
     autoPlay?: boolean;
+    /** Forwarded to the inline player: begin mid-motion and loop without a
+        start-pose hold, for props that cannot rest (poi). Off by default. */
+    startInMotion?: boolean;
     /** Exposes the inline player's keyboard-accessible play/pause button. */
     cornerToggle?: boolean;
     /** Forwarded to the inline player: the pause control stays visible at rest. */
@@ -325,6 +329,7 @@
   const playerProps = $derived({
     sequence,
     autoPlay,
+    startInMotion,
     chrome: "minimal",
     fill: true,
     cornerToggle,

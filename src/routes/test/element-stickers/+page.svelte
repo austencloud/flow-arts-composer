@@ -394,4 +394,9 @@
   .slot :global(svg) { width: 100%; height: 100%; display: block; }
   .cut { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; border: 1px dashed rgba(0, 0, 0, 0.4); pointer-events: none; }
   .loading { position: absolute; inset: 0; display: grid; place-content: center; color: rgba(0, 0, 0, 0.4); }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

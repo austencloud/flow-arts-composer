@@ -175,6 +175,7 @@
   }
 
   .backdrop {
+    /* behind the status bar: a dim behind the history panel, it holds no words */
     position: fixed;
     inset: 0;
     z-index: 99;

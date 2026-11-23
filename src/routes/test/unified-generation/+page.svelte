@@ -519,6 +519,7 @@
   /* Deck releaser owns the full viewport (4K), so pickers are BIG centered modals,
      not grid-confined overlays. Backdrop dims the page; panel centers and goes large. */
   .modal-backdrop {
+    /* behind the status bar: a dim with one centred panel that cannot touch the top */
     position: fixed; inset: 0; z-index: 1000;
     display: flex; align-items: center; justify-content: center;
     padding: clamp(16px, 4vh, 48px);
@@ -671,4 +672,8 @@
   .seed-tag { font-weight: 500; text-transform: none; color: #22c55e; font-variant-numeric: tabular-nums; }
   .draw-list { display: flex; flex-wrap: wrap; gap: 6px; }
   .draw-id { font-size: 11px; font-family: ui-monospace, monospace; padding: 3px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.75); }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .harness {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

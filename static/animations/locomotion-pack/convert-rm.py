@@ -9,6 +9,9 @@ import bpy
 import os
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
+# Raw FBX sources are kept off the repository. Point ANIMATION_SOURCE_DIR at
+# the folder that holds them; without it the script looks beside itself.
+source_dir = os.environ.get("ANIMATION_SOURCE_DIR", script_dir)
 
 # Map source FBX -> output GLB
 conversions = {
@@ -24,7 +27,7 @@ conversions = {
 }
 
 for fbx_name, glb_name in conversions.items():
-    fbx_path = os.path.join(script_dir, fbx_name)
+    fbx_path = os.path.join(source_dir, fbx_name)
     glb_path = os.path.join(script_dir, glb_name)
 
     if not os.path.exists(fbx_path):

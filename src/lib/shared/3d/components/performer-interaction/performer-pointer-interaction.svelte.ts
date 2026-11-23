@@ -1,4 +1,8 @@
 import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+import {
+  createLiveBodyPick,
+  raycastBodyPickSegments,
+} from "#lib/shared/3d/domain/performer-body-pick.js";
 import type CameraControls from "camera-controls";
 import {
   Camera,
@@ -287,7 +291,7 @@ interface PressedPointer {
   startPositions: Map<number, StagePosition>;
   dragPlaneY: number;
   grabOffset: StagePosition;
-  anchorSource: "visual" | "proxy" | "touch";
+  anchorSource: "visual" | "proxy" | "touch" | "body";
   visualAnchor: VisualSurfaceAnchor | null;
   additive: boolean;
   longPressSelected: boolean;
@@ -297,7 +301,7 @@ interface PressedPointer {
 interface PerformerHit {
   performerIndex: number;
   dragPlaneY: number;
-  anchorSource: "visual" | "proxy" | "touch";
+  anchorSource: "visual" | "proxy" | "touch" | "body";
   visualAnchor: VisualSurfaceAnchor | null;
 }
 
@@ -318,6 +322,9 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
   const anchorLocalPoint = new Vector3();
   const pickTargets = new Set<Object3D>();
   const visualPickTargets = new Map<number, Object3D>();
+  // Per performer: the current world-space body capsules, or null while the
+  // body shape is not known. Read only at hit-test time.
+  const bodyPickSources = new Map<number, () => Float32Array | null>();
   const activePointers = new Set<number>();
   let pressed = $state<PressedPointer | null>(null);
   let hoveredIndex = $state<number | null>(null);
@@ -443,6 +450,52 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
         };
   }
 
+  function isBadgeProxy(object: Object3D): boolean {
+    return (object as Object3D & { isSprite?: boolean }).isSprite === true;
+  }
+
+  /**
+   * Mouse and pen: the pointer counts only over the performer's body. A
+   * performer with fitted body segments is tested against those, straight
+   * from the ray (an outstretched arm lies outside the capsule). One with no
+   * segments yet keeps the capsule so it is never ungrabbable. Badges are
+   * visible things and always count. The nearest hit wins.
+   */
+  function bodyHitFromCurrentRay(): PerformerHit | null {
+    const origin = raycaster.ray.origin;
+    const direction = raycaster.ray.direction;
+    const withBody = new Set<number>();
+    let best: { performerIndex: number; distance: number; y: number } | null =
+      null;
+
+    for (const [performerIndex, source] of bodyPickSources) {
+      const segments = source();
+      if (!segments || segments.length === 0) continue;
+      withBody.add(performerIndex);
+      const hit = raycastBodyPickSegments(origin, direction, segments);
+      if (hit && (!best || hit.distance < best.distance))
+        best = { performerIndex, distance: hit.distance, y: hit.point.y };
+    }
+
+    for (const hit of raycaster.intersectObjects([...pickTargets], false)) {
+      const performerIndex = performerIndexFromObject(hit.object);
+      if (performerIndex === null) continue;
+      if (!isBadgeProxy(hit.object) && withBody.has(performerIndex)) continue;
+      if (!best || hit.distance < best.distance)
+        best = { performerIndex, distance: hit.distance, y: hit.point.y };
+      break;
+    }
+
+    if (!best) return null;
+    const bodyHit = withBody.has(best.performerIndex);
+    return {
+      performerIndex: best.performerIndex,
+      dragPlaneY: best.y,
+      anchorSource: bodyHit ? "body" : "proxy",
+      visualAnchor: null,
+    };
+  }
+
   function isRenderedMesh(
     hit: Intersection<Object3D>,
     root: Object3D
@@ -526,7 +579,7 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     return anchor.object.localToWorld(anchorLocalPoint);
   }
 
-  function visualHitFromCurrentRay(): PerformerHit | null {
+  function visualHitFromCurrentRay(bodyOnly = false): PerformerHit | null {
     const hits = raycaster.intersectObjects(
       [...visualPickTargets.values()],
       true
@@ -536,6 +589,8 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
       if (performerIndex === null) continue;
       const root = visualPickTargets.get(performerIndex);
       if (!root || !isRenderedMesh(hit, root)) continue;
+      // Once a performer's body is known, a held prop is not the body.
+      if (bodyOnly && !isBodySurface(performerIndex, hit.object)) continue;
       return {
         performerIndex,
         dragPlaneY: hit.point.y,
@@ -546,9 +601,22 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     return null;
   }
 
+  function performerHasBody(performerIndex: number): boolean {
+    const segments = bodyPickSources.get(performerIndex)?.();
+    return Boolean(segments && segments.length > 0);
+  }
+
+  function isBodySurface(performerIndex: number, object: Object3D): boolean {
+    if (!performerHasBody(performerIndex)) return true;
+    return (
+      (object as Object3D & { isSkinnedMesh?: boolean }).isSkinnedMesh === true
+    );
+  }
+
   function hitTest(event: PointerEvent): PerformerHit | null {
     if (!setRayFromEvent(event)) return null;
-    return coarseHitFromCurrentRay(event);
+    if (event.pointerType === "touch") return coarseHitFromCurrentRay(event);
+    return bodyHitFromCurrentRay();
   }
 
   function pressHitTest(event: PointerEvent): PerformerHit | null {
@@ -556,7 +624,9 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     // The capsule makes acquisition forgiving, but it is not the thing the
     // user sees. A single precise pick at press time gives the visible knee,
     // hand, or prop the same direct-manipulation contract as the cursor.
-    return visualHitFromCurrentRay() ?? coarseHitFromCurrentRay(event);
+    if (event.pointerType === "touch")
+      return visualHitFromCurrentRay() ?? coarseHitFromCurrentRay(event);
+    return visualHitFromCurrentRay(true) ?? bodyHitFromCurrentRay();
   }
 
   function dragTarget(): StagePosition | null {
@@ -1073,9 +1143,30 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
       object: Object3D
     ): () => void {
       visualPickTargets.set(performerIndex, object);
+      // The rendered Character lives under this group on the application
+      // thread, so its body capsules can be fitted from it when first needed.
+      const source = createLiveBodyPick(object);
+      bodyPickSources.set(performerIndex, source);
       return () => {
         if (visualPickTargets.get(performerIndex) === object)
           visualPickTargets.delete(performerIndex);
+        if (bodyPickSources.get(performerIndex) === source)
+          bodyPickSources.delete(performerIndex);
+      };
+    },
+    /**
+     * A performer's current world-space body capsules (see
+     * `performer-body-pick.ts`), for a renderer whose Character is not on this
+     * thread. The getter returns null while the body shape is unknown.
+     */
+    registerBodyPick(
+      performerIndex: number,
+      source: () => Float32Array | null
+    ): () => void {
+      bodyPickSources.set(performerIndex, source);
+      return () => {
+        if (bodyPickSources.get(performerIndex) === source)
+          bodyPickSources.delete(performerIndex);
       };
     },
     attach,

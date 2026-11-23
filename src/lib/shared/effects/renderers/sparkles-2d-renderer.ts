@@ -1,5 +1,6 @@
 import type { Sparkles2DParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
+import { setParticleTransform } from "./particle-transform";
 import { emitterId } from "./emitter-tip";
 
 interface Particle {
@@ -263,7 +264,7 @@ export class Sparkles2DRenderer {
 
         const cos = Math.cos(p.rotation);
         const sin = Math.sin(p.rotation);
-        ctx.setTransform(cos, sin, -sin, cos, p.x, p.y);
+        setParticleTransform(ctx, savedTransform, cos, sin, -sin, cos, p.x, p.y);
 
         // Glow bed. Optional: if the platform can't author sprites the star
         // still draws, just without the halo underneath it.

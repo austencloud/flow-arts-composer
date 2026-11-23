@@ -149,6 +149,80 @@ describe("ThumbnailRenderOrchestrator cache tiers", () => {
     expect(localCache.get).not.toHaveBeenCalled();
   });
 
+  describe("placement data not loaded", () => {
+    function withPlacement(loaded: { value: boolean }) {
+      const made = makeOrchestrator();
+      made.orchestrator.setPlacementData({
+        whenReady: async () => {},
+        isLoaded: () => loaded.value,
+      });
+      return made;
+    }
+
+    it("a render that starts unloaded is shown and kept in memory only", async () => {
+      const loaded = { value: false };
+      const { orchestrator, render, localCache } = withPlacement(loaded);
+      const upload = vi.mocked(cloudCacheModule.upload);
+      upload.mockClear();
+
+      const first = await orchestrator.getThumbnail({
+        sequence,
+        input,
+        skipCache: true,
+      });
+      expect(first.url).toBe("blob:test");
+      expect(localCache.set).not.toHaveBeenCalled();
+      expect(upload).not.toHaveBeenCalled();
+
+      // Still unloaded: the memory copy is served, no second draw.
+      const again = await orchestrator.getThumbnail({ sequence, input });
+      expect(again.source).toBe("memory");
+      expect(render).toHaveBeenCalledTimes(1);
+    });
+
+    it("the same request after the data loads renders again and writes all three", async () => {
+      const loaded = { value: false };
+      const { orchestrator, render, localCache } = withPlacement(loaded);
+      const upload = vi.mocked(cloudCacheModule.upload);
+      upload.mockClear();
+      const key = deriveKey(input);
+
+      await orchestrator.getThumbnail({ sequence, input, skipCache: true });
+      expect(orchestrator.getCached(key.hash)).toBe("blob:test");
+
+      loaded.value = true;
+      // The provisional picture is no longer served.
+      expect(orchestrator.getCached(key.hash)).toBeNull();
+
+      const redrawn = await orchestrator.getThumbnail({ sequence, input });
+      expect(render).toHaveBeenCalledTimes(2);
+      expect(redrawn.fromCache).toBe(false);
+      expect(localCache.set).toHaveBeenCalledTimes(1);
+      expect(upload).toHaveBeenCalledTimes(1);
+      expect(orchestrator.getCached(key.hash)).toBe("blob:test");
+
+      // A good picture stays served.
+      const third = await orchestrator.getThumbnail({ sequence, input });
+      expect(third.source).toBe("memory");
+      expect(render).toHaveBeenCalledTimes(2);
+    });
+
+    it("decides once before drawing: data landing midway stays provisional", async () => {
+      const loaded = { value: false };
+      const made = withPlacement(loaded);
+      made.render.mockImplementationOnce(async () => {
+        loaded.value = true;
+        return { blob: new Blob(["x"]), qrConsistent: true };
+      });
+      await made.orchestrator.getThumbnail({
+        sequence,
+        input,
+        skipCache: true,
+      });
+      expect(made.localCache.set).not.toHaveBeenCalled();
+    });
+  });
+
   it("reserves the exclusive queue lane only for QR-bearing thumbnails", async () => {
     const ordinary = makeOrchestrator();
     await ordinary.orchestrator.getThumbnail({

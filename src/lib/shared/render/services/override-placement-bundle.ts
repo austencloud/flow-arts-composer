@@ -8,7 +8,11 @@ import { getDefaultOverrideRepository } from "#lib/shared/pictograph/arrow/posit
 import { getSpecialOverrideRepository } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton.js";
 import { getGlobalAdjustmentRepository } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton.js";
 import { getPropGeometryRepository } from "#lib/shared/pictograph/arrow/positioning/prop-geometry/services/prop-geometry-singleton.js";
-import { whenArrowPlacementDataReady } from "#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js";
+import {
+  isArrowPlacementDataLoaded,
+  onArrowPlacementDataLoaded,
+  whenArrowPlacementDataReady,
+} from "#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js";
 import type { DefaultArrowPlacementDoc } from "#lib/shared/pictograph/arrow/positioning/default-override/domain/default-arrow-placement.js";
 import type { SpecialArrowPlacement } from "#lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement.js";
 import type { GlobalArrowAdjustment } from "#lib/shared/pictograph/arrow/positioning/global/domain/global-arrow-adjustment.js";
@@ -28,8 +32,14 @@ export interface OverridePlacementBundle {
  */
 export async function loadOverridePlacementBundle(): Promise<OverridePlacementBundle> {
   await whenArrowPlacementDataReady();
+  lastSnapshotComplete = isArrowPlacementDataLoaded();
   return buildOverridePlacementBundle();
 }
+
+// Whether the latest awaited snapshot was taken with every store loaded. A
+// caller installs it some time later (the pool seed also waits for its asset
+// bundle), and the data can land in that gap.
+let lastSnapshotComplete = true;
 
 export function buildOverridePlacementBundle(): OverridePlacementBundle {
   return {
@@ -38,4 +48,34 @@ export function buildOverridePlacementBundle(): OverridePlacementBundle {
     global: getGlobalAdjustmentRepository()?.getAll() ?? [],
     propGeometry: getPropGeometryRepository()?.getAll() ?? [],
   };
+}
+
+let reseedPending = false;
+
+/**
+ * A snapshot taken after a miss (ceiling or failed load) holds empty stores.
+ * Hand `apply` a complete snapshot, once, the moment the data loads, so a
+ * worker pool seeded unloaded is re-seeded (callers pass the dispatcher's
+ * existing `update-overrides` push). No-op when the data is already loaded or
+ * a re-seed is already waiting.
+ */
+export function reseedWhenPlacementLoaded(
+  apply: (bundle: OverridePlacementBundle) => void
+): void {
+  if (reseedPending) return;
+  if (isArrowPlacementDataLoaded()) {
+    // The data landed between the snapshot and its install: no listener will
+    // fire for it any more, so push the complete set now.
+    if (!lastSnapshotComplete) {
+      lastSnapshotComplete = true;
+      apply(buildOverridePlacementBundle());
+    }
+    return;
+  }
+  reseedPending = true;
+  onArrowPlacementDataLoaded(() => {
+    reseedPending = false;
+    lastSnapshotComplete = true;
+    apply(buildOverridePlacementBundle());
+  });
 }

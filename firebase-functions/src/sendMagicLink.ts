@@ -12,8 +12,8 @@ import {
   createMagicLinkSignInState,
   redeemMagicLinkCode,
   resolveMagicLinkSignInState,
-  type MagicLinkSignInState,
-  type RedeemedMagicLinkCode,
+  type MagicLinkCodeRedemption,
+  type MagicLinkSignInStateResult,
   type ResolvedMagicLinkSignInState,
 } from "./auth/magicLinkStateStore";
 import { createSignInCodeHtml } from "./email/signInEmail";
@@ -26,12 +26,15 @@ const DEFAULT_SENDER_EMAIL = "noreply@tkaflowarts.com";
 const DEFAULT_SENDER_NAME = "Flow Arts Composer";
 const PROVIDER_TIMEOUT_MS = 10_000;
 const MAGIC_LINK_STATE_PARAM = "magicLinkState";
-const REQUEST_ID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface SendMagicLinkRequest {
   email: string;
   continueUrl?: string;
+  /**
+   * Older and current clients still send one. It is ignored: the server
+   * issues the request id and returns it only to this caller, who reads it
+   * from the response before redeeming.
+   */
   requestId?: string;
 }
 
@@ -97,6 +100,7 @@ function isRedeemMagicLinkCodeRequest(
 
 type MagicLinkStage =
   | "configuration"
+  | "rate_limit"
   | "state_creation"
   | "link_generation"
   | "provider_request"
@@ -114,13 +118,16 @@ export interface MagicLinkRuntime {
   appCheckStatus: "verified" | "missing";
   authStatus: "authenticated" | "anonymous";
   initiatingUid: string | null;
+  /** Caller address for the per-caller send limit. Never logged or stored raw. */
+  callerAddress: string;
   now(): number;
   createRequestId(): string;
   createSignInState(
     email: string,
     requestId: string,
-    initiatingUid: string | null
-  ): Promise<MagicLinkSignInState>;
+    initiatingUid: string | null,
+    callerAddress: string
+  ): Promise<MagicLinkSignInStateResult>;
   generateLink(
     email: string,
     settings: { url: string; handleCodeInApp: boolean }
@@ -139,10 +146,7 @@ export interface ResolveMagicLinkEmailRuntime {
 }
 
 export interface RedeemMagicLinkCodeRuntime {
-  redeemCode(
-    requestId: string,
-    code: string
-  ): Promise<RedeemedMagicLinkCode | null>;
+  redeemCode(requestId: string, code: string): Promise<MagicLinkCodeRedemption>;
   getUser(uid: string): Promise<admin.auth.UserRecord>;
   getUserByEmail(email: string): Promise<admin.auth.UserRecord>;
   createUser(
@@ -155,13 +159,31 @@ export interface RedeemMagicLinkCodeRuntime {
   createCustomToken(uid: string): Promise<string>;
 }
 
-function resolveRequestId(
-  candidate: unknown,
-  createRequestId: () => string
+/**
+ * The caller's address for the per-caller send limit. Google's front end
+ * appends the address it saw to X-Forwarded-For, so the last entry is the one
+ * a caller cannot choose; earlier entries can be forged. Falls back to the
+ * socket address, then to one shared "unknown" bucket.
+ */
+export function resolveCallerAddress(
+  rawRequest:
+    | {
+        headers?: Record<string, string | string[] | undefined>;
+        ip?: string;
+        socket?: { remoteAddress?: string };
+      }
+    | undefined
 ): string {
-  return typeof candidate === "string" && REQUEST_ID_PATTERN.test(candidate)
-    ? candidate
-    : createRequestId();
+  const header = rawRequest?.headers?.["x-forwarded-for"];
+  const forwarded = Array.isArray(header) ? header.join(",") : header;
+  const last = forwarded
+    ?.split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .pop();
+  return (
+    last || rawRequest?.socket?.remoteAddress || rawRequest?.ip || "unknown"
+  );
 }
 
 function resolveAuthHost(continueUrl?: string): string {
@@ -288,7 +310,15 @@ export async function handleRedeemMagicLinkCode(
   const requestId = typeof data?.requestId === "string" ? data.requestId : "";
   const code = typeof data?.code === "string" ? data.code : "";
   const redeemed = await runtime.redeemCode(requestId, code);
-  if (!redeemed) {
+  if (redeemed.status === "locked") {
+    // Same answer for every address, account or not. The emailed link is
+    // not affected by this lock.
+    throw new functions.https.HttpsError(
+      "resource-exhausted",
+      "Too many wrong codes. Use the link in the email, or try again in an hour."
+    );
+  }
+  if (redeemed.status !== "redeemed") {
     throw new functions.https.HttpsError(
       "failed-precondition",
       "This sign-in code is invalid or expired"
@@ -365,7 +395,9 @@ export async function handleSendMagicLink(
     );
   }
 
-  const requestId = resolveRequestId(data.requestId, runtime.createRequestId);
+  // Always issued here. A caller-chosen id let anyone redeem against states
+  // they did not receive; the client reads the id back from the response.
+  const requestId = runtime.createRequestId();
   const startedAt = runtime.now();
   const authHost = resolveAuthHost(data.continueUrl);
   let stage: MagicLinkStage = "configuration";
@@ -388,12 +420,23 @@ export async function handleSendMagicLink(
       );
     }
 
-    stage = "state_creation";
-    const { state, oneTimeCode } = await runtime.createSignInState(
+    stage = "rate_limit";
+    const created = await runtime.createSignInState(
       email,
       requestId,
-      runtime.initiatingUid
+      runtime.initiatingUid,
+      runtime.callerAddress
     );
+    if (created.status === "rate-limited") {
+      // The limits are the same for every address, so this reveals nothing
+      // about whether an account exists.
+      throw new functions.https.HttpsError(
+        "resource-exhausted",
+        "Too many sign-in emails. Try again later."
+      );
+    }
+    stage = "state_creation";
+    const { state, oneTimeCode } = created;
 
     stage = "link_generation";
     const continueUrl = addMagicLinkState(
@@ -539,13 +582,13 @@ export const sendMagicLink = functions.https.onCall(
   ): Promise<MagicLinkCallableResponse> => {
     if (isResolveMagicLinkEmailRequest(data)) {
       return handleResolveMagicLinkEmail(data, {
-        resolveSignInState: resolveMagicLinkSignInState,
+        resolveSignInState: (state) => resolveMagicLinkSignInState(state),
       });
     }
 
     if (isRedeemMagicLinkCodeRequest(data)) {
       return handleRedeemMagicLinkCode(data, {
-        redeemCode: redeemMagicLinkCode,
+        redeemCode: (requestId, code) => redeemMagicLinkCode(requestId, code),
         getUser: (uid) => admin.auth().getUser(uid),
         getUserByEmail: (email) => admin.auth().getUserByEmail(email),
         createUser: (properties) => admin.auth().createUser(properties),
@@ -562,9 +605,16 @@ export const sendMagicLink = functions.https.onCall(
       appCheckStatus: context.app ? "verified" : "missing",
       authStatus: context.auth ? "authenticated" : "anonymous",
       initiatingUid: context.auth?.uid ?? null,
+      callerAddress: resolveCallerAddress(context.rawRequest),
       now: Date.now,
       createRequestId: randomUUID,
-      createSignInState: createMagicLinkSignInState,
+      createSignInState: (email, requestId, initiatingUid, callerAddress) =>
+        createMagicLinkSignInState(
+          email,
+          requestId,
+          initiatingUid,
+          callerAddress
+        ),
       generateLink: (email, settings) =>
         admin.auth().generateSignInWithEmailLink(email, settings),
       fetch: (input, init) => fetch(input, init),

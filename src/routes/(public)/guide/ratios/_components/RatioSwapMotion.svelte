@@ -7,11 +7,17 @@
     /** Prop spins in one full drawing. */
     prop: number;
     tint: string;
+    /** Draws this panel in its own spin, whatever the switch says. */
+    spin?: "pro" | "anti";
+    /** A short word beside the ratio, such as the spin or the turns. */
+    label?: string;
+    /** Replaces the petal count in the heading (Float has none). */
+    petalsText?: string;
   }
 </script>
 
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
@@ -22,7 +28,40 @@
   import { SHAPE_MATRIX_GUIDE_COLORS } from "@tka/shape-engine/services/shape-matrix-render.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
-  let { panels }: { panels: RatioSwapPanel[] } = $props();
+  /*
+   * Two panels with every control is the Watch screen. The other props let a
+   * Guide screen use one animator for a smaller picture: one or more panels,
+   * with the play button, the pro/anti switch, the counts, the status line and
+   * the scrubber each left out when the words beside it do not need them.
+   */
+  let {
+    panels,
+    controls = true,
+    switcher = true,
+    counts = true,
+    status = true,
+    scrub: scrubber = true,
+    stageMax = 22,
+    startSpin = "pro",
+    compact = false,
+    bare = false,
+  }: {
+    panels: RatioSwapPanel[];
+    controls?: boolean;
+    switcher?: boolean;
+    counts?: boolean;
+    status?: boolean;
+    scrub?: boolean;
+    /** Widest a drawing gets at the screen's full scale, in rem. */
+    stageMax?: number;
+    startSpin?: "pro" | "anti";
+    /** One short row per panel: the play button sits in the heading and the
+     * counts beside the drawing instead of under it. */
+    compact?: boolean;
+    /** Only the drawing, the play button and (with several panels) a ratio
+     * tag: the smallest cut, for a screen with no room for a heading. */
+    bare?: boolean;
+  } = $props();
 
   type Spin = "pro" | "anti";
 
@@ -46,7 +85,7 @@
 
   const longest = $derived(Math.max(...panels.map((panel) => panel.hand)));
 
-  let spin = $state<Spin>("pro");
+  let spin = $state<Spin>(untrack(() => startSpin));
   /** Time, counted in hand circles. Past `longest` is the resting hold. */
   let clock = $state(0);
   let playing = $state(false);
@@ -119,30 +158,37 @@
   }
 
   const routes = $derived(
-    panels.map((panel) => ({ panel, full: route(panel, spin) }))
+    panels.map((panel) => ({
+      panel,
+      style: panel.spin ?? spin,
+      full: route(panel, panel.spin ?? spin),
+    }))
   );
 
   const views = $derived(
-    routes.map(({ panel, full }) => {
+    routes.map(({ panel, style, full }) => {
       const circles = Math.min(clock, panel.hand);
       const done = Math.floor((circles / panel.hand) * (full.length - 1));
-      const now = pose(panel, spin, circles);
-      const petalCount = petals(panel, spin);
+      const now = pose(panel, style, circles);
+      const petalCount = petals(panel, style);
       return {
         panel,
         ghost: pointList(full),
         trail: pointList([...full.slice(0, done + 1), now.tip]),
-        start: pose(panel, spin, 0).tip,
+        start: pose(panel, style, 0).tip,
+        style,
         now,
         circles,
         spins: (circles * panel.prop) / panel.hand,
         closed: clock >= panel.hand,
-        petals: tDynamic(
-          petalCount === 1
-            ? "guide_ratios_one_petal"
-            : "guide_ratios_many_petals",
-          { count: petalCount }
-        ),
+        petals:
+          panel.petalsText ??
+          tDynamic(
+            petalCount === 1
+              ? "guide_ratios_one_petal"
+              : "guide_ratios_many_petals",
+            { count: petalCount }
+          ),
       };
     })
   );
@@ -199,126 +245,183 @@
   });
 </script>
 
-<div class="motion" use:renderGateTarget={gate}>
-  <div class="motion-controls">
-    <button type="button" class="play" onclick={toggle}>
-      <svg class="play-icon" viewBox="0 0 16 16" aria-hidden="true">
-        {#if playing}
-          <rect x="3" y="2" width="3.5" height="12" rx="1" />
-          <rect x="9.5" y="2" width="3.5" height="12" rx="1" />
-        {:else}
-          <path
-            d="M4 2.2v11.6a1 1 0 0 0 1.5.86l9.3-5.8a1 1 0 0 0 0-1.72L5.5 1.34A1 1 0 0 0 4 2.2z"
-          />
-        {/if}
-      </svg>
+{#snippet playButton()}
+  <button
+    type="button"
+    class="play"
+    class:icon={compact}
+    onclick={toggle}
+    aria-label={compact
+      ? tDynamic(playing ? "guide_ratios_pause" : "guide_ratios_play")
+      : undefined}
+  >
+    <svg class="play-icon" viewBox="0 0 16 16" aria-hidden="true">
+      {#if playing}
+        <rect x="3" y="2" width="3.5" height="12" rx="1" />
+        <rect x="9.5" y="2" width="3.5" height="12" rx="1" />
+      {:else}
+        <path
+          d="M4 2.2v11.6a1 1 0 0 0 1.5.86l9.3-5.8a1 1 0 0 0 0-1.72L5.5 1.34A1 1 0 0 0 4 2.2z"
+        />
+      {/if}
+    </svg>
+    {#if !compact}
       <span
         >{tDynamic(playing ? "guide_ratios_pause" : "guide_ratios_play")}</span
       >
-    </button>
-    <div class="spin-pick">
-      <SegmentedControl
-        options={[
-          { value: "pro", label: tDynamic("guide_ratios_prospin") },
-          { value: "anti", label: tDynamic("guide_ratios_antispin") },
-        ]}
-        value={spin}
-        onchange={(value: Spin) => (spin = value)}
-        size="sm"
-        semantics="radiogroup"
-        ariaLabel={tDynamic("guide_ratios_spin_direction")}
-      />
-    </div>
-  </div>
+    {/if}
+  </button>
+{/snippet}
 
-  <ul class="motion-panels" role="list">
-    {#each views as view (view.panel.ratio)}
+<div
+  class="motion"
+  class:compact
+  class:bare
+  class:solo={panels.length === 1}
+  use:renderGateTarget={gate}
+  style="--stage-max: {stageMax}rem"
+>
+  {#if (controls && !compact) || switcher}
+    <div class="motion-controls">
+      {#if controls && !compact}
+        {@render playButton()}
+      {/if}
+      {#if switcher}
+        <div class="spin-pick">
+          <SegmentedControl
+            options={[
+              { value: "pro", label: tDynamic("guide_ratios_prospin") },
+              { value: "anti", label: tDynamic("guide_ratios_antispin") },
+            ]}
+            value={spin}
+            onchange={(value: Spin) => (spin = value)}
+            size="sm"
+            semantics="radiogroup"
+            ariaLabel={tDynamic("guide_ratios_spin_direction")}
+          />
+        </div>
+      {/if}
+    </div>
+  {/if}
+
+  <ul
+    class="motion-panels"
+    role="list"
+    style="grid-template-columns: repeat({panels.length}, minmax(0, 1fr))"
+  >
+    {#each views as view, index (index)}
       <li class="motion-panel" style="--level-tint: {view.panel.tint}">
+        {#if !bare}
         <p class="motion-head">
           <DifficultyBadge level={view.panel.level} size="1.5rem" />
           <span class="motion-ratio">{view.panel.ratio}</span>
+          {#if view.panel.label}
+            <span class="motion-label">{view.panel.label}</span>
+          {/if}
           <span class="motion-petals">{view.petals}</span>
         </p>
-        <svg
-          class="motion-stage"
-          viewBox="{-VIEW} {-VIEW} {VIEW * 2} {VIEW * 2}"
-          role="img"
-          aria-label={tDynamic("guide_ratios_motion_description", {
-            ratio: view.panel.ratio,
-            style: tDynamic(
-              spin === "pro" ? "guide_ratios_prospin" : "guide_ratios_antispin"
-            ),
-            hand: times(view.panel.hand),
-            prop: times(view.panel.prop),
-            laps: laps(view.panel.hand),
-          })}
-          style="--ink-trail: {SHAPE_MATRIX_GUIDE_COLORS.left}"
-        >
-          <circle class="hand-circle" r={HAND_RADIUS} />
-          <polyline class="ghost" points={view.ghost} />
-          <polyline class="trail" points={view.trail} />
-          <circle
-            class="start"
-            class:met={view.closed}
-            cx={view.start.x}
-            cy={view.start.y}
-            r="6"
-          />
-          <line
-            class="arm"
-            x1="0"
-            y1="0"
-            x2={view.now.hand.x}
-            y2={view.now.hand.y}
-          />
-          <circle class="center" r="3.5" />
-          <line
-            class="prop"
-            x1={view.now.hand.x}
-            y1={view.now.hand.y}
-            x2={view.now.tip.x}
-            y2={view.now.tip.y}
-          />
-          <circle
-            class="hand"
-            cx={view.now.hand.x}
-            cy={view.now.hand.y}
-            r="7"
-          />
-          <circle class="tip" cx={view.now.tip.x} cy={view.now.tip.y} r="5.5" />
-        </svg>
-        <dl class="motion-counts">
-          <div>
-            <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
-            <dd>{count(view.circles, view.panel.hand)}</dd>
-          </div>
-          <div>
-            <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
-            <dd>{count(view.spins, view.panel.prop)}</dd>
-          </div>
-        </dl>
-        <p class="motion-status" class:closed={view.closed}>
-          {view.closed
-            ? tDynamic("guide_ratios_closed_after", {
-                laps: laps(view.panel.hand),
-              })
-            : tDynamic("guide_ratios_still_drawing")}
-        </p>
+        {/if}
+        <div class="motion-body">
+          <svg
+            class="motion-stage"
+            viewBox="{-VIEW} {-VIEW} {VIEW * 2} {VIEW * 2}"
+            role="img"
+            aria-label={tDynamic("guide_ratios_motion_description", {
+              ratio: view.panel.ratio,
+              style: tDynamic(
+                view.style === "pro"
+                  ? "guide_ratios_prospin"
+                  : "guide_ratios_antispin"
+              ),
+              hand: times(view.panel.hand),
+              prop: times(view.panel.prop),
+              laps: laps(view.panel.hand),
+            })}
+            style="--ink-trail: {SHAPE_MATRIX_GUIDE_COLORS.left}"
+          >
+            <circle class="hand-circle" r={HAND_RADIUS} />
+            <polyline class="ghost" points={view.ghost} />
+            <polyline class="trail" points={view.trail} />
+            <circle
+              class="start"
+              class:met={view.closed}
+              cx={view.start.x}
+              cy={view.start.y}
+              r="6"
+            />
+            <line
+              class="arm"
+              x1="0"
+              y1="0"
+              x2={view.now.hand.x}
+              y2={view.now.hand.y}
+            />
+            <circle class="center" r="3.5" />
+            <line
+              class="prop"
+              x1={view.now.hand.x}
+              y1={view.now.hand.y}
+              x2={view.now.tip.x}
+              y2={view.now.tip.y}
+            />
+            <circle
+              class="hand"
+              cx={view.now.hand.x}
+              cy={view.now.hand.y}
+              r="7"
+            />
+            <circle
+              class="tip"
+              cx={view.now.tip.x}
+              cy={view.now.tip.y}
+              r="5.5"
+            />
+          </svg>
+          {#if counts && !bare}
+            <dl class="motion-counts">
+              <div>
+                <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
+                <dd>{count(view.circles, view.panel.hand)}</dd>
+              </div>
+              <div>
+                <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
+                <dd>{count(view.spins, view.panel.prop)}</dd>
+              </div>
+            </dl>
+          {/if}
+          {#if compact && controls && index === 0}
+            {@render playButton()}
+          {/if}
+        </div>
+        {#if bare && panels.length > 1}
+          <p class="motion-tag">{view.panel.ratio}</p>
+        {/if}
+        {#if status && !bare}
+          <p class="motion-status" class:closed={view.closed}>
+            {view.closed
+              ? tDynamic("guide_ratios_closed_after", {
+                  laps: laps(view.panel.hand),
+                })
+              : tDynamic("guide_ratios_still_drawing")}
+          </p>
+        {/if}
       </li>
     {/each}
   </ul>
 
-  <label class="motion-scrub">
-    <span>{tDynamic("guide_ratios_hand_cycles")}</span>
-    <input
-      type="range"
-      min="0"
-      max={longest}
-      step="0.01"
-      value={Math.min(clock, longest)}
-      oninput={scrub}
-    />
-  </label>
+  {#if scrubber}
+    <label class="motion-scrub">
+      <span>{tDynamic("guide_ratios_hand_cycles")}</span>
+      <input
+        type="range"
+        min="0"
+        max={longest}
+        step="0.01"
+        value={Math.min(clock, longest)}
+        oninput={scrub}
+      />
+    </label>
+  {/if}
 </div>
 
 <style>
@@ -414,6 +517,74 @@
     font-weight: 660;
   }
 
+  /* The stage and its counts: stacked in the full panel, side by side in a
+     compact one. In the Watch screen the wrapper adds no box. */
+  .motion-body {
+    display: contents;
+  }
+
+  /* A compact panel keeps its play button over the empty corner of the
+     drawing, so it costs the panel no row of its own. */
+  .play.icon {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    z-index: 2;
+    inline-size: var(--touch, 44px);
+    padding: 0;
+    justify-content: center;
+  }
+
+  .compact .motion-body {
+    position: relative;
+  }
+
+  .compact .motion-petals {
+    margin-left: 0;
+  }
+
+  .bare .motion-body {
+    display: block;
+    position: relative;
+  }
+
+  .bare .motion-panel {
+    padding: 0.35rem;
+  }
+
+  .motion-tag {
+    margin: 0;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-weight: 660;
+    color: var(--ink);
+  }
+
+  .compact .motion-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .compact .motion-counts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+  }
+
+  .compact .motion-counts dd {
+    font-size: var(--font-size-xl);
+  }
+
+  .compact .motion-head {
+    padding-bottom: 0.35rem;
+  }
+
+  .motion-label {
+    color: var(--ink-dim);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+
   .motion-petals {
     margin-left: auto;
     color: var(--ink-dim);
@@ -423,7 +594,7 @@
   .motion-stage {
     display: block;
     /* Follows the guide screen's scale, so the fit box can size it. */
-    inline-size: min(100%, calc(22rem * var(--fit, 1)));
+    inline-size: min(100%, calc(var(--stage-max, 22rem) * var(--fit, 1)));
     aspect-ratio: 1;
     margin-inline: auto;
     overflow: visible;
@@ -565,6 +736,18 @@
     }
   }
 
+  /* One compact panel keeps its heading on one row, play button last. */
+  .compact.solo .motion-head {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  .compact.solo .motion-petals {
+    flex-basis: auto;
+    margin-left: auto;
+    text-align: right;
+  }
+
   /* A short, wide window: the controls and scrubber share one row, and each
      drawing takes its panel's height with its counts beside it. */
   @media (max-height: 520px) and (min-width: 640px) {
@@ -592,7 +775,7 @@
     .motion-stage {
       grid-column: 1;
       grid-row: 1 / span 3;
-      inline-size: calc(22rem * var(--fit, 1));
+      inline-size: calc(var(--stage-max, 22rem) * var(--fit, 1));
     }
   }
 </style>

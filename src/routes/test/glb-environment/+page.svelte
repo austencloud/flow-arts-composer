@@ -71,6 +71,7 @@
 
 <style>
   main {
+    /* behind the status bar: a full-screen scene, its note clears the bar */
     position: fixed;
     inset: 0;
     background: #07111f;
@@ -78,7 +79,7 @@
   }
   p {
     margin: 0;
-    padding: 24px 16px;
+    padding: calc(24px + var(--safe-top)) 16px 24px;
   }
   nav {
     position: absolute;

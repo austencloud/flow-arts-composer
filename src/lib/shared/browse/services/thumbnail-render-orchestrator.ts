@@ -305,6 +305,17 @@ export class ThumbnailRenderOrchestrator {
   // Track which generation each key was last rendered at
   private renderedGenerations = new Map<string, number>();
 
+  // Arrow placement data seam. Without it every render counts as complete.
+  // A render that starts before the placement stores have loaded is drawn with
+  // default arrow spots: it may be shown and kept in memory for this page, but
+  // never written to IndexedDB or uploaded.
+  private placementData: {
+    whenReady: () => Promise<void>;
+    isLoaded: () => boolean;
+  } | null = null;
+  // Keys whose memory-cache picture was drawn before the placement data loaded.
+  private provisionalHashes = new Set<string>();
+
   // Uploads that have been handed to Storage but have not settled yet. Kept so
   // a batch pass can wait for its own writes instead of guessing.
   private inFlightUploads = new Set<Promise<void>>();
@@ -316,6 +327,31 @@ export class ThumbnailRenderOrchestrator {
     private metrics?: ThumbnailMetricsCollector
   ) {
     this.backgroundQueue.setMaxConcurrent(1);
+  }
+
+  /** Inject the arrow placement readiness and loaded checks (tests need no Firebase). */
+  setPlacementData(placementData: {
+    whenReady: () => Promise<void>;
+    isLoaded: () => boolean;
+  }): void {
+    this.placementData = placementData;
+  }
+
+  /**
+   * A picture kept in memory while the placement data was missing stops being
+   * served the moment the data is loaded: its generation is marked stale, the
+   * same mechanism an admin cache clear uses, so the next request for the key
+   * renders again and persists. Whoever loaded the stores, the check reads the
+   * stores themselves, so no event is needed.
+   */
+  private retireProvisional(hash: string): void {
+    if (!this.provisionalHashes.has(hash)) return;
+    if (!this.placementData?.isLoaded()) return;
+    this.provisionalHashes.delete(hash);
+    // Below any generation, so it is never served and its next request skips
+    // the tiers and renders fresh. The old blob URL is not revoked: a card on
+    // screen may still show it.
+    this.renderedGenerations.set(hash, -1);
   }
 
   /**
@@ -354,6 +390,7 @@ export class ThumbnailRenderOrchestrator {
   invalidateAllCaches(): void {
     this.cacheGeneration++;
     this.renderedGenerations.clear();
+    this.provisionalHashes.clear();
     this.memoryCache.clear();
     // Nuke in-memory URL cache + persistent "known exists" list
     cloudCacheModule.clearMemoryCache(true);
@@ -363,6 +400,7 @@ export class ThumbnailRenderOrchestrator {
   }
 
   getCached(hash: string): string | null {
+    this.retireProvisional(hash);
     const lastRenderedGen = this.renderedGenerations.get(hash) ?? 0;
     if (lastRenderedGen < this.cacheGeneration) return null;
     return this.memoryCache.get(hash);
@@ -448,6 +486,7 @@ export class ThumbnailRenderOrchestrator {
     // static/cloud/local for the first request of every key each session,
     // making the whole gallery re-render locally.) After an admin nuke bumps
     // the generation, 0 < generation correctly forces a fresh render.
+    this.retireProvisional(key.hash);
     const lastRenderedGen = this.renderedGenerations.get(key.hash) ?? 0;
     const mustSkipCache =
       request.skipCache || lastRenderedGen < this.cacheGeneration;
@@ -629,6 +668,15 @@ export class ThumbnailRenderOrchestrator {
           if (!request.signal?.aborted) {
             request.onStatusChange?.({ state: "rendering" });
           }
+          // Decided once, before drawing: a render that begins without the
+          // placement data stays provisional even if the data lands midway.
+          // The renderer's composer waits for the same readiness, so this
+          // await only fixes the moment of the decision.
+          let placementLoaded = true;
+          if (this.placementData) {
+            await this.placementData.whenReady();
+            placementLoaded = this.placementData.isLoaded();
+          }
           const { blob, qrConsistent } = await this.renderer.render(
             request.sequence,
             key.inputs,
@@ -675,13 +723,20 @@ export class ThumbnailRenderOrchestrator {
           // shared cache for everyone. Skip all cache writes so the next mount
           // retries (and succeeds once the short code / network is available).
           if (qrConsistent) {
-            // Save to local cache (for ALL thumbnails - instant next time)
-            this.localCache.set(key.hash, blob).catch(() => {});
+            if (placementLoaded) {
+              // Save to local cache (for ALL thumbnails - instant next time)
+              this.localCache.set(key.hash, blob).catch(() => {});
 
-            // Upload to cloud (for shared/default classes only — includes the
-            // deterministic QR variant now)
-            if (key.usesDefaults && request.shareRender !== false) {
-              uploadToCloud(this, key, blob);
+              // Upload to cloud (for shared/default classes only — includes the
+              // deterministic QR variant now)
+              if (key.usesDefaults && request.shareRender !== false) {
+                uploadToCloud(this, key, blob);
+              }
+              this.provisionalHashes.delete(key.hash);
+            } else {
+              // Drawn with default arrow spots. Memory only, for the life of
+              // the page; retireProvisional stops serving it once the data loads.
+              this.provisionalHashes.add(key.hash);
             }
 
             // Store in memory cache for instant revisits

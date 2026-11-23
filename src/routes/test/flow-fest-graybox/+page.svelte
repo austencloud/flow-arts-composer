@@ -240,6 +240,7 @@
     --muted: #c7d1c2;
     --accent: #ffbd68;
     --min-touch-target: 44px;
+    /* behind the status bar: a full-screen scene, its review panel clears the bar */
     position: fixed;
     inset: 0;
     min-inline-size: 20rem;
@@ -255,7 +256,7 @@
 
   .review-hud {
     position: absolute;
-    inset-block-start: clamp(0.75rem, 1.4vw, 1.5rem);
+    inset-block-start: calc(clamp(0.75rem, 1.4vw, 1.5rem) + var(--safe-top));
     inset-inline: clamp(0.75rem, 1.4vw, 1.5rem);
     z-index: 50;
     display: flex;
@@ -485,7 +486,7 @@
 
   .reset-action {
     position: absolute;
-    inset-block-start: clamp(6.8rem, 10vw, 8.5rem);
+    inset-block-start: calc(clamp(6.8rem, 10vw, 8.5rem) + var(--safe-top));
     inset-inline-start: clamp(0.75rem, 1.4vw, 1.5rem);
     z-index: 55;
   }
@@ -576,7 +577,7 @@
     }
 
     .reset-action {
-      inset-block-start: 6.6rem;
+      inset-block-start: calc(6.6rem + var(--safe-top));
     }
   }
 
@@ -598,7 +599,7 @@
     }
 
     .reset-action {
-      inset-block-start: 0.75rem;
+      inset-block-start: calc(0.75rem + var(--safe-top));
       inset-inline: auto 0.75rem;
     }
 

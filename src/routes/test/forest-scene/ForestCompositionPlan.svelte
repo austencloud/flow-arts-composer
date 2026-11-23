@@ -515,6 +515,7 @@
     --theme-plan-depth: #79a7ae;
     --theme-plan-current: #b6a8a0;
     --settings-plan-gap: clamp(0.75rem, 1.2cqw, 1.5rem);
+    /* behind the status bar: the plan's backdrop, its header clears the bar */
     position: fixed;
     inset: 0;
     overflow: auto;
@@ -539,8 +540,8 @@
     align-items: end;
     justify-content: space-between;
     gap: var(--settings-plan-gap);
-    padding: clamp(1rem, 2cqh, 2.2rem) clamp(1rem, 2cqw, 2.8rem)
-      clamp(0.8rem, 1.5cqh, 1.5rem);
+    padding: calc(clamp(1rem, 2cqh, 2.2rem) + var(--safe-top))
+      clamp(1rem, 2cqw, 2.8rem) clamp(0.8rem, 1.5cqh, 1.5rem);
     border-bottom: 1px solid var(--theme-plan-line-soft);
   }
 

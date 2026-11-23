@@ -453,6 +453,8 @@ export interface CrowdFigurePlacement {
   /** three.js rotation.y; the model faces +z at 0. */
   rotationY: number;
   scale?: number;
+  /** Radians of sideways lean about the facing axis; 0 (the default) stands straight. */
+  lean?: number;
   /** 0..1, a small per-person shift in the clothes' colour. */
   tint?: number;
 }
@@ -648,7 +650,7 @@ export class JamCrowd {
     const g = figure.group;
     const s = at.scale ?? 1;
     g.position.set(at.x, at.y, at.z);
-    g.rotation.set(0, at.rotationY, 0);
+    g.rotation.set(0, at.rotationY, at.lean ?? 0);
     g.scale.setScalar(s);
     g.updateMatrix();
   }

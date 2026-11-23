@@ -763,7 +763,11 @@ export function clampTimelineUnitSizeToHeight(
   const padding = 8;
   const availableHeight = containerHeight - 2 * popReserve - gaps - padding;
   const heightBased = Math.floor(availableHeight / rowCount);
-  const fitted = Math.max(48, Math.min(widthBased, heightBased));
+  // The touch floor never makes a cell wider than the width allows: rows that
+  // don't fit the height scroll, but a row wider than .scroll-wrapper loses
+  // its right-most cells, which nothing can scroll back into view.
+  const floor = Math.min(TIMELINE_TOUCH_FLOOR, widthBased);
+  const fitted = Math.max(floor, Math.min(widthBased, heightBased));
   if (!legibleSize) return fitted;
 
   const visibleRows = Math.min(rowCount, MIN_VISIBLE_ROWS);
@@ -772,6 +776,57 @@ export function clampTimelineUnitSizeToHeight(
       visibleRows
   );
   return Math.max(fitted, Math.min(legibleSize, widthBased, visibleRowsBased));
+}
+
+/** The smallest cell a timeline row may give one beat while it can afford it. */
+export const TIMELINE_TOUCH_FLOOR = 48;
+
+/**
+ * The widest row's length in beats: its steps' durations plus the start
+ * column, never under 2 so a lone start tile isn't drawn huge. Every row is
+ * sized by it, so a long step makes the cells smaller and never the row wider
+ * than the host. Sizing a phone's rows by their cell count instead drew a 4x
+ * step 420px wide on a 360px phone and pushed the next step off the screen
+ * (Wren, 2026-11-15).
+ */
+export function timelineRowUnits(
+  rows: readonly TimelineRow[],
+  hasStart: boolean
+): number {
+  let widest = 0;
+  for (const row of rows) widest = Math.max(widest, row.totalDuration);
+  return Math.max(widest + (hasStart ? 1 : 0), 2);
+}
+
+/**
+ * Rows for the Create workbench. They break by beat count (the LOOP repeat or
+ * the layout's column count), so rows line up with the sequence. On a narrow
+ * host a row holding a long step can need cells under the touch floor to fit;
+ * then the rows are packed by time instead, `beatsPerRow` beats to a row, so a
+ * long step starts a row of its own and the cells stay readable. A sequence of
+ * one-beat steps comes out the same either way.
+ */
+export function calculateWorkbenchTimelineRows(params: {
+  steps: readonly { duration?: number }[];
+  beatsPerRow: number;
+  hasStart: boolean;
+  /** Host width minus the edge reserve on both sides. */
+  sizingWidth: number;
+  isNarrow: boolean;
+}): TimelineRow[] {
+  const { steps, beatsPerRow, hasStart, sizingWidth, isNarrow } = params;
+  const byBeats = calculateTimelineRowsByBeatCount(steps, beatsPerRow);
+  if (!isNarrow || sizingWidth <= 0) return byBeats;
+
+  const unit = calculateTimelineUnitSize(
+    sizingWidth,
+    timelineRowUnits(byBeats, hasStart),
+    0
+  );
+  if (unit >= TIMELINE_TOUCH_FLOOR) return byBeats;
+  // The start column rides in the first row without taking a beat, as it does
+  // in the beat-count rows.
+  return calculateTimelineRows(steps, Math.max(1, beatsPerRow), false);
 }
 
 /**
@@ -805,7 +860,8 @@ export function fitTimelineRows(params: {
   containerHeight: number;
   popReserve: number;
   hasStart: boolean;
-  /** A narrow host sizes by its cell count and never doubles its rows. */
+  /** A narrow host never doubles its rows, and packs them by time when a long
+   *  step would otherwise need cells under the touch floor. */
   isNarrow: boolean;
   /** For a card nobody can scroll or edit: the whole sequence matters more than
    *  the cell size, so there is no floor, and longer rows are tried even on a
@@ -843,18 +899,18 @@ export function fitTimelineRows(params: {
     unitSize: number;
   } | null = null;
   for (const beats of candidates) {
-    const rows = calculateTimelineRowsByBeatCount(steps, beats);
+    // The save card nobody edits keeps its beat-count rows and just shrinks.
+    const rows = calculateWorkbenchTimelineRows({
+      steps,
+      beatsPerRow: beats,
+      hasStart,
+      sizingWidth,
+      isNarrow: isNarrow && !shrinkToFit,
+    });
     const rowCount = Math.max(rows.length, start);
     if (rowCount === 0) continue;
 
-    let maxRowDuration = 0;
-    for (const row of rows) {
-      maxRowDuration = Math.max(maxRowDuration, row.totalDuration);
-    }
-    const fullRowUnits = maxRowDuration + start;
-    const units = isNarrow
-      ? Math.max(Math.min(steps.length + start, fullRowUnits), 2)
-      : Math.max(fullRowUnits, 2);
+    const units = timelineRowUnits(rows, hasStart);
     const widthBased = calculateTimelineUnitSize(
       sizingWidth,
       units,

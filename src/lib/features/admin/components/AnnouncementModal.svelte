@@ -161,6 +161,7 @@
 
 <style>
   .modal-overlay {
+    /* behind the status bar: a dim with a centred box that cannot reach the top */
     position: fixed;
     top: 0;
     left: 0;

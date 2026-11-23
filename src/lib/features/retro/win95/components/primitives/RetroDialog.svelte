@@ -107,6 +107,7 @@
 <style>
   /* Overlay: dims background and centers the dialog                    */
   .retro-dialog-overlay {
+    /* behind the status bar: a dim with a centred dialog that cannot reach the top */
     position: fixed;
     inset: 0;
     z-index: var(--retro-z-dialog, 100);

@@ -36,6 +36,7 @@
 
 <style>
   .harness {
+    /* behind the status bar: a holder for a full-screen stage */
     position: fixed;
     inset: 0;
     overflow: hidden;

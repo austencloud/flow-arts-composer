@@ -193,6 +193,7 @@
 
 <style>
   .page {
+    /* behind the status bar: a full-screen scene, its controls clear the bar */
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -203,7 +204,7 @@
 
   .review-controls {
     position: fixed;
-    top: 1rem;
+    top: calc(1rem + var(--safe-top));
     right: 1rem;
     z-index: 10;
     display: flex;

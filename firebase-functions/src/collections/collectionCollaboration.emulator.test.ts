@@ -321,4 +321,68 @@ describe("collection collaboration callables", () => {
       wrappedLoadMembers(request(strangerId, { ownerId, collectionId }))
     ).rejects.toMatchObject({ code: "permission-denied" });
   });
+
+  // A collection owner can write any id and owner into the member list, so
+  // listing someone else's private sequence must never hand it back.
+  async function listVictimSequence(
+    listOwnerId: string,
+    listId: string,
+    isPublic: boolean
+  ): Promise<void> {
+    await db.doc(`users/${listOwnerId}/collections/${listId}`).set({
+      id: listId,
+      ownerId: listOwnerId,
+      name: "Bait",
+      kind: "manual",
+      isPublic,
+      sequenceIds: ["recipient-sequence"],
+      sequenceOwnerIds: { "recipient-sequence": recipientId },
+      sequenceCount: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  it("hides another user's private sequence in the caller's own collection", async () => {
+    await listVictimSequence(strangerId, "stranger-own", false);
+
+    const loaded = await wrappedLoadMembers(
+      request(strangerId, { ownerId: strangerId, collectionId: "stranger-own" })
+    );
+    expect(loaded.sequences).toEqual([]);
+  });
+
+  it("hides another user's private sequence in a public collection", async () => {
+    await listVictimSequence(ownerId, "owner-public", true);
+
+    const loaded = await wrappedLoadMembers(
+      request(strangerId, { ownerId, collectionId: "owner-public" })
+    );
+    expect(loaded.sequences).toEqual([]);
+  });
+
+  it("hides a third user's private sequence in a collection shared with the caller", async () => {
+    await listVictimSequence(ownerId, "owner-shared", false);
+    await db
+      .doc(`users/${ownerId}/collections/owner-shared/shares/${strangerId}`)
+      .set({ recipientId: strangerId, role: "viewer" });
+
+    const loaded = await wrappedLoadMembers(
+      request(strangerId, { ownerId, collectionId: "owner-shared" })
+    );
+    expect(loaded.sequences).toEqual([]);
+  });
+
+  it("still returns the caller's own private sequence and public ones", async () => {
+    await listVictimSequence(ownerId, "owner-shared-2", false);
+    await db
+      .doc(`users/${ownerId}/collections/owner-shared-2/shares/${recipientId}`)
+      .set({ recipientId, role: "editor" });
+
+    const loaded = await wrappedLoadMembers(
+      request(recipientId, { ownerId, collectionId: "owner-shared-2" })
+    );
+    expect(loaded.sequences).toHaveLength(1);
+    expect(loaded.sequences[0]).toMatchObject({ id: "recipient-sequence" });
+  });
 });

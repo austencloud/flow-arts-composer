@@ -197,3 +197,15 @@ describe("Pulse2DRenderer", () => {
     expect(fullRings(1)).toBeGreaterThan(fullRings(0));
   });
 });
+
+describe("Pulse2DRenderer tracking mode on a one-tip prop", () => {
+  const ringsFor = (t: PulseTipInput) =>
+    fireAndAge({ ...params({ ...QUIET, trigger: "beat" }), trackingMode: "right_end" }, [t]).arcs.filter(
+      (a) => a.full
+    ).length;
+
+  it("right_end drops end A on a multi-tip prop but not a prop's only tip", () => {
+    expect(ringsFor(tip(200, 150, 0))).toBe(0);
+    expect(ringsFor({ ...tip(200, 150, 0), onlyTip: true })).toBeGreaterThan(0);
+  });
+});

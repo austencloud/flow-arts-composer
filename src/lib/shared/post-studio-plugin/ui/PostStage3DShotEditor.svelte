@@ -391,6 +391,7 @@
 
 <style>
   .shot-editor {
+    /* behind the status bar: a full-screen editor, its layout is padded below the bar */
     position: fixed;
     inset: 0;
     z-index: 1000;
@@ -413,6 +414,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
     gap: 1.25rem;
     padding: clamp(1rem, 3vw, 2.5rem);
+    padding-top: calc(clamp(1rem, 3vw, 2.5rem) + var(--safe-top));
   }
 
   .slot {

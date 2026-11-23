@@ -8,6 +8,7 @@
 
 <style>
 	.frame {
+		/* behind the status bar: a backdrop holding one centred loader */
 		position: fixed;
 		inset: 0;
 		background: #07070c;

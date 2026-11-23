@@ -2404,4 +2404,9 @@
       margin-top: 0.25rem;
     }
   }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .trace-page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

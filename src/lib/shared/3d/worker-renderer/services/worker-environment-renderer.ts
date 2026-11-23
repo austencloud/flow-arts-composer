@@ -10,6 +10,7 @@ import {
   type WorkerRendererBootMetrics,
   type WorkerRendererInMessage,
   type WorkerRendererOutMessage,
+  type WorkerPerformerBodyFrame,
   type WorkerPerformerSnapshot,
   type WorkerSceneEffectsSnapshot,
   type WorkerViewport,
@@ -147,6 +148,11 @@ export class WorkerEnvironmentRenderer {
   private history: WorkerSceneSwitchMeasurement[] = [];
   private disposed = false;
   private performers: readonly WorkerPerformerSnapshot[] = [];
+  /**
+   * The newest body capsules from the live worker, read by the pointer at
+   * hit-test time. A plain field on purpose: nothing reactive runs per frame.
+   */
+  private latestPerformerBodies: readonly WorkerPerformerBodyFrame[] = [];
   private effects: WorkerSceneEffectsSnapshot = { playing: false, sources: [] };
   private camera: WorkerCameraSnapshot | null = null;
   private qualityTier: WorkerEffectQualityTier = "medium";
@@ -355,9 +361,15 @@ export class WorkerEnvironmentRenderer {
     this.postSessionMessage({ type: "effects", effects });
   }
 
+  /** The live worker's newest body capsules, by interaction index. */
+  get performerBodies(): readonly WorkerPerformerBodyFrame[] {
+    return this.latestPerformerBodies;
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.latestPerformerBodies = [];
     this.resizeObserver?.disconnect();
     this.container.removeEventListener("pointermove", this.handlePointerMove);
     this.container.removeEventListener("pointerdown", this.handlePointerDown);
@@ -480,6 +492,7 @@ export class WorkerEnvironmentRenderer {
     }
     if (message.type === "frame") {
       if (slot === this.active) {
+        this.latestPerformerBodies = message.performerBodies ?? [];
         if (this.pending) this.probe.recordOutgoingFrame(message.deltaMs);
         this.onFrame?.(message.deltaMs);
       } else if (

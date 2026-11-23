@@ -94,4 +94,9 @@
   .hero-tag { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.32); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
 
   .sidebar-slot { flex: 0 0 360px; max-width: 360px; height: 100%; display: flex; flex-direction: column; }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -101,3 +101,61 @@ describe("Animal2DRenderer", () => {
     r.dispose();
   });
 });
+
+describe("Animal2DRenderer tracking mode", () => {
+  // Counts strokes and fills; a creature that is drawn paints at least one.
+  function countingCtx(): { ctx: CanvasRenderingContext2D; draws: () => number } {
+    let n = 0;
+    const base = {
+      canvas: { width: 400, height: 400 },
+      globalAlpha: 1,
+      globalCompositeOperation: "source-over",
+      createRadialGradient: () => ({ addColorStop: () => {} }),
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      fill: () => void n++,
+      stroke: () => void n++,
+    } as unknown as Record<string, unknown>;
+    const ctx = new Proxy(base, {
+      get: (t, p) => (p in t ? t[p as string] : () => {}),
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    return { ctx, draws: () => n };
+  }
+
+  function drawn(
+    emitters: Array<{ end: "A" | "B"; tipIndex: number; onlyTip?: boolean }>
+  ): number {
+    const r = new Animal2DRenderer();
+    const { ctx, draws } = countingCtx();
+    const p = { ...params("snake"), trackingMode: "right_end" as const };
+    for (let i = 0; i < 5; i++) {
+      r.render(
+        ctx,
+        p,
+        emitters.map((e) => ({ ...e, x: 100 + i * 20, y: 100, propIndex: 0, color: "#fff" })),
+        0.016,
+        1,
+        false
+      );
+    }
+    r.dispose();
+    return draws();
+  }
+
+  it("right_end draws on a prop whose only tip is end A", () => {
+    expect(drawn([{ end: "A", tipIndex: 0, onlyTip: true }])).toBeGreaterThan(0);
+  });
+
+  it("right_end on a two-tip prop draws end B only", () => {
+    const bOnly = drawn([{ end: "B", tipIndex: 1, onlyTip: false }]);
+    expect(bOnly).toBeGreaterThan(0);
+    expect(drawn([{ end: "A", tipIndex: 0, onlyTip: false }])).toBe(0);
+    // Both ends supplied: same output as end B alone (one creature, not two).
+    expect(
+      drawn([
+        { end: "A", tipIndex: 0, onlyTip: false },
+        { end: "B", tipIndex: 1, onlyTip: false },
+      ])
+    ).toBe(bOnly);
+  });
+});

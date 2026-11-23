@@ -117,6 +117,7 @@
 
 <style>
   .capture-stage {
+    /* behind the status bar: a bare capture canvas with no controls or words */
     position: fixed;
     top: 0;
     left: 0;

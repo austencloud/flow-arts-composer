@@ -112,6 +112,7 @@
       onselect={onselect ?? appState.selectTheoryPair}
       onsolo={onsolo ?? appState.selectTheorySolo}
       soloHand={appState.theorySoloHand}
+      hint
     />
   </div>
 </section>

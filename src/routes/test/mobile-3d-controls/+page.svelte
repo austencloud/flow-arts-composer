@@ -74,6 +74,7 @@
 
 <style>
   .harness-error {
+    /* behind the status bar: a centred error note that cannot reach the top */
     position: fixed;
     inset: 0;
     display: flex;

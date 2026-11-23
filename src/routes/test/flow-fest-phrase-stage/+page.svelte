@@ -589,6 +589,7 @@
 
 <style>
   .page {
+    /* behind the status bar: a full-screen stage, the stage bar and dock clear the bar */
     position: fixed;
     inset: 0;
     display: grid;
@@ -620,7 +621,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: max(12px, env(safe-area-inset-top))
+    padding: max(12px, var(--safe-top))
       max(12px, env(safe-area-inset-right)) 0
       max(16px, env(safe-area-inset-left));
     pointer-events: none;
@@ -684,7 +685,7 @@
       grid-template-columns: minmax(0, 1fr);
       align-content: start;
       gap: 4px;
-      padding: max(6px, env(safe-area-inset-top))
+      padding: max(6px, var(--safe-top))
         max(6px, env(safe-area-inset-right)) 6px 6px;
       /* Both cards fit the height of a phone on its side. */
       --phrase-card-pad: 6px;
@@ -703,7 +704,7 @@
 
   .error {
     position: absolute;
-    top: 1rem;
+    top: calc(1rem + var(--safe-top));
     left: 50%;
     z-index: 31;
     transform: translateX(-50%);

@@ -86,6 +86,7 @@
 
 <style>
   main {
+    /* behind the status bar: a full-screen scene, its buttons sit at the bottom */
     position: fixed;
     inset: 0;
     background: #07111f;

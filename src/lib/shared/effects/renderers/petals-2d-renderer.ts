@@ -5,6 +5,7 @@ import {
   drawPetalSilhouette,
 } from "../domain/petal-palettes";
 import type { EmitterTip } from "./emitter-tip";
+import { setParticleTransform } from "./particle-transform";
 import { PetalFlightSim, type FlyingPetal } from "./petal-flight-sim";
 import { petalBodyToWorld } from "../domain/petal-aero";
 import {
@@ -75,7 +76,7 @@ export class Petals2DRenderer {
     const savedTransform = ctx.getTransform();
     try {
       for (const p of this.sim.petals) {
-        this.drawPetal(ctx, p, params.resolvedPalette);
+        this.drawPetal(ctx, savedTransform, p, params.resolvedPalette);
       }
     } finally {
       ctx.setTransform(savedTransform);
@@ -86,6 +87,7 @@ export class Petals2DRenderer {
 
   private drawPetal(
     ctx: CanvasRenderingContext2D,
+    base: DOMMatrix,
     p: FlyingPetal,
     palette: PetalPalette
   ): void {
@@ -133,12 +135,14 @@ export class Petals2DRenderer {
     const set = this.sprites.get(p.shape, p.tint);
     ctx.globalCompositeOperation = "source-over";
     if (!set) {
-      ctx.setTransform(acrossX, acrossY, downX, downY, p.x, p.y);
+      setParticleTransform(ctx, base, acrossX, acrossY, downX, downY, p.x, p.y);
       ctx.globalAlpha = alpha * (0.7 + light * 0.3);
       drawPetalSilhouette(ctx, p.shape, size, p.tint);
     } else {
       const k = size / PETAL_SPRITE_HALF;
-      ctx.setTransform(
+      setParticleTransform(
+        ctx,
+        base,
         acrossX * k,
         acrossY * k,
         downX * k,

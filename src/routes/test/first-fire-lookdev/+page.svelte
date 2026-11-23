@@ -130,6 +130,7 @@
 
 <style>
   .stage {
+    /* behind the status bar: a full-screen scene, the top panel clears the bar */
     position: fixed;
     inset: 0;
     background: #050303;
@@ -155,7 +156,7 @@
   }
 
   .hud--top {
-    top: 1rem;
+    top: calc(1rem + var(--safe-top));
   }
 
   .hud--bottom {

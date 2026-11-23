@@ -83,4 +83,8 @@
     border-color: var(--theme-accent);
     background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .harness {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

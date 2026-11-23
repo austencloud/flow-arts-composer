@@ -600,4 +600,8 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .wrap {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

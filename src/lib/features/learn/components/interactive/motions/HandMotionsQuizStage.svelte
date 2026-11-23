@@ -29,6 +29,7 @@
   import { combinationMove } from "#lib/shared/guide-topics/combination-playback.svelte.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { orderQuizRounds } from "./hand-motions-quiz-order";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
   interface Props {
@@ -52,12 +53,12 @@
   const PLAY_MS = 1100;
   const REST_MS = 1300;
 
-  /** The unanswered combinations, shuffled once. */
-  const order = HAND_COMBINATIONS.map((combination) => combination.id)
-    .filter((id) => !answered.includes(id))
-    .map((id) => ({ id, key: Math.random() }))
-    .sort((a, b) => a.key - b.key)
-    .map(({ id }) => id);
+  /** The unanswered combinations, shuffled once; Static never opens. */
+  const order = orderQuizRounds(
+    HAND_COMBINATIONS.map((combination) => combination.id).filter(
+      (id) => !answered.includes(id)
+    )
+  );
 
   let round = $state(0);
   let lit = $state<HandCombinationId | null>(null);

@@ -233,4 +233,8 @@
     font-size: 0.85rem;
     color: oklch(0.66 0.02 270);
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .harness {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -35,11 +35,12 @@
     calculateGridVerticalCenterOffset,
     calculateGridLayout,
     calculateStepWaveBand,
-    calculateTimelineRowsByBeatCount,
     calculateTimelineUnitSize,
+    calculateWorkbenchTimelineRows,
     calculateTimelinePadding,
     clampTimelineUnitSizeToHeight,
     fitTimelineRows,
+    timelineRowUnits,
     WORKBENCH_EDGE_RESERVE,
   } from "#lib/shared/create/utils/grid-calculations.js";
   import { MIN_LEGIBLE_PICTOGRAPH_SIZE } from "#lib/shared/pictograph/shared/domain/constants/pictograph-legibility.js";
@@ -427,31 +428,23 @@
   const timelineRows = $derived.by(() => {
     if (!isTimelineMode) return [];
     if (timelineFit) return timelineFit.rows;
-    return calculateTimelineRowsByBeatCount(
-      presentedSteps,
-      timelineBeatsPerRow
-    );
+    return calculateWorkbenchTimelineRows({
+      steps: presentedSteps,
+      beatsPerRow: timelineBeatsPerRow,
+      hasStart: Boolean(startPlacement && !startPlacement.isBlank),
+      sizingWidth: Math.max(0, containerWidth - 2 * edgeReserve),
+      isNarrow: containerWidth > 0 && containerWidth < 650,
+    });
   });
 
   const timelineUnitSize = $derived.by(() => {
     if (!isTimelineMode) return 0;
     if (timelineFit) return timelineFit.unitSize;
-    const hasStart = startPlacement && !startPlacement.isBlank;
-    const actualCellCount = presentedSteps.length + (hasStart ? 1 : 0);
+    const hasStart = Boolean(startPlacement && !startPlacement.isBlank);
 
-    // Find the widest row's duration to use as the sizing denominator.
-    // Add 1 for start placement if present.
-    let maxRowDuration = 0;
-    for (const row of timelineRows) {
-      maxRowDuration = Math.max(maxRowDuration, row.totalDuration);
-    }
-    const fullRowUnits = maxRowDuration + (hasStart ? 1 : 0);
-
-    // Mobile-adaptive: on narrow screens, size based on actual cell count
-    const isNarrow = containerWidth > 0 && containerWidth < 650;
-    const totalUnits = isNarrow
-      ? Math.max(Math.min(actualCellCount, fullRowUnits), 2)
-      : Math.max(fullRowUnits, 2);
+    // The widest row's beats, start column included, divide the width, so a
+    // long step shrinks every cell instead of pushing later steps off a phone.
+    const totalUnits = timelineRowUnits(timelineRows, hasStart);
 
     // Reserve the .scroll-wrapper padding on each side so cells are
     // sized to the wrapper's CONTENT box, not its full width. This keeps edge

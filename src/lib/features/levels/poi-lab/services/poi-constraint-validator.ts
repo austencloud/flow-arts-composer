@@ -10,9 +10,13 @@ import {
   RotationDirection,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { getGravityOrientation } from "./poi-gravity-orientation-deriver";
 import { PoiMotionValidity } from "../domain/poi-enums";
-import type { PoiValidationResult, PoiConstraintViolation } from "../domain/poi-models";
+import type {
+  PoiValidationResult,
+  PoiConstraintViolation,
+} from "../domain/poi-models";
 
 export function validateMotion(motion: MotionData): PoiValidationResult {
   const violations: PoiConstraintViolation[] = [];
@@ -74,29 +78,88 @@ export function validateMotion(motion: MotionData): PoiValidationResult {
   };
 }
 
+/** The eight outer grid points in clockwise order. */
+const RING: readonly GridLocation[] = [
+  GridLocation.NORTH,
+  GridLocation.NORTHEAST,
+  GridLocation.EAST,
+  GridLocation.SOUTHEAST,
+  GridLocation.SOUTH,
+  GridLocation.SOUTHWEST,
+  GridLocation.WEST,
+  GridLocation.NORTHWEST,
+];
+
+/** Where a hand can be for a pendulum turn: the sides, level with the floor. */
+const PENDULUM_TURN_POINTS: readonly GridLocation[] = [
+  GridLocation.EAST,
+  GridLocation.WEST,
+];
+
+/**
+ * Which way the hand goes round the grid on this beat, or none when it stays
+ * put, crosses straight through, or touches the centre.
+ */
+function handTravel(motion: MotionData): RotationDirection {
+  const from = RING.indexOf(motion.startLocation);
+  const to = RING.indexOf(motion.endLocation);
+  if (from < 0 || to < 0) return RotationDirection.NO_ROTATION;
+  const step = (to - from + RING.length) % RING.length;
+  if (step === 0 || step === RING.length / 2) {
+    return RotationDirection.NO_ROTATION;
+  }
+  return step < RING.length / 2
+    ? RotationDirection.CLOCKWISE
+    : RotationDirection.COUNTER_CLOCKWISE;
+}
+
+/** True when both beats turn and they turn opposite ways. */
+function changes(a: RotationDirection, b: RotationDirection): boolean {
+  return (
+    a !== RotationDirection.NO_ROTATION &&
+    b !== RotationDirection.NO_ROTATION &&
+    a !== b
+  );
+}
+
 export function validateTransition(
   fromMotion: MotionData,
   toMotion: MotionData
 ): PoiValidationResult {
   const violations: PoiConstraintViolation[] = [];
 
-  // Constraint: Cannot instantly reverse spin direction (needs stall/transition)
-  const fromHasRotation =
-    fromMotion.rotationDirection !== RotationDirection.NO_ROTATION;
-  const toHasRotation =
-    toMotion.rotationDirection !== RotationDirection.NO_ROTATION;
+  // Constraint: a poi turns around only as a pendulum does: level with the
+  // floor and pointing out, so the hand is at a side (east or west) on a beat
+  // that ends pointing out.
+  // Austen, 2026-10-18: a poi may point in partway "as long as the momentum
+  // continues in that same path until an out point occurs". His sitting 1
+  // verdicts (2026-11-22) narrowed it: only the pendulum and the hand-at-the-
+  // side extendulum turned legally; turning out at the top or bottom, out on
+  // a diagonal, sideways or pointing in did not. He added that stalls up or to
+  // the side are possible with build-up and pull-back, but chose pendulum
+  // turns only until the checker can see a hand path build up. So a change of
+  // spin direction, or of the way the hand travels, has to fall on a beat
+  // that ends pointing out at the east or west point.
+  // Gage's CAPs in caps-topic.ts (capPoiProblem) still use the looser
+  // out-point rule. Record: E:/tka-poi/days/2026-11-22/sitting-1.md.
+  const spinChanges = changes(
+    fromMotion.rotationDirection,
+    toMotion.rotationDirection
+  );
+  const travelChanges = changes(handTravel(fromMotion), handTravel(toMotion));
 
-  if (
-    fromHasRotation &&
-    toHasRotation &&
-    fromMotion.rotationDirection !== toMotion.rotationDirection
-  ) {
-    violations.push({
-      violation: PoiMotionValidity.INVALID_SPIN_REVERSAL,
-      message:
-        "Cannot instantly reverse spin direction (CW↔CCW) - needs stall or transition beat",
-      motionHand: toMotion.hand,
-    });
+  if (spinChanges || travelChanges) {
+    const pointsOut = fromMotion.endOrientation === Orientation.OUT;
+    const atSide = PENDULUM_TURN_POINTS.includes(fromMotion.endLocation);
+    if (!pointsOut || !atSide) {
+      violations.push({
+        violation: PoiMotionValidity.INVALID_SPIN_REVERSAL,
+        message: pointsOut
+          ? `A poi turns around only level with the floor, with the hand at a side; this hand is at ${fromMotion.endLocation}`
+          : `A poi turns around only while it points out; this one points ${fromMotion.endOrientation}`,
+        motionHand: toMotion.hand,
+      });
+    }
   }
 
   return {

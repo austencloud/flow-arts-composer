@@ -11,6 +11,11 @@ import {
   type PoiReversalObservation,
   type PoiReversalObservationFile,
 } from "../domain/poi-reversal-observations";
+import {
+  selectNextSittingCandidate,
+  sittingJudgedCount,
+  type PoiReversalSitting,
+} from "../domain/poi-reversal-sittings";
 
 export interface PoiReversalSaveResult {
   ok: boolean;
@@ -35,7 +40,8 @@ function fileWith(
 
 export function createPoiReversalReviewState(
   seedData: unknown,
-  saveObservations: SavePoiReversalObservations
+  saveObservations: SavePoiReversalObservations,
+  sitting: PoiReversalSitting | null = null
 ) {
   const seed = parsePoiReversalObservationFile(seedData);
   const observations = $state<PoiReversalObservation[]>(
@@ -71,7 +77,12 @@ export function createPoiReversalReviewState(
   }
 
   const selection = $derived<PoiCandidateSelection | null>(
-    selectNextPoiReversalCandidate(observations, POI_REVERSAL_CANDIDATES)
+    sitting
+      ? selectNextSittingCandidate(observations, sitting)
+      : selectNextPoiReversalCandidate(observations, POI_REVERSAL_CANDIDATES)
+  );
+  const sittingJudged = $derived(
+    sitting ? sittingJudgedCount(observations, sitting) : 0
   );
   const uniqueReviewedCount = $derived(
     new Set(observations.map((observation) => observation.candidate.id)).size
@@ -195,6 +206,12 @@ export function createPoiReversalReviewState(
     },
     get uniqueReviewedCount() {
       return uniqueReviewedCount;
+    },
+    get sitting() {
+      return sitting;
+    },
+    get sittingJudged() {
+      return sittingJudged;
     },
     get totalCandidateCount() {
       return POI_REVERSAL_CANDIDATES.length;

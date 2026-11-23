@@ -15,8 +15,8 @@
 
   When both hands carry the same turns their columns hold the same shapes, so
   the card shows that set once, in the ink of the hand on stage, with bigger
-  tiles and a switch that says which hand is on stage. The two states cross
-  over as the turns change. -->
+  tiles; the stage's Both / Left / Right switch says which hand is on stage.
+  The two states cross over as the turns change. -->
 <script lang="ts">
   import { s as t } from "../strings.svelte.js";
   import {
@@ -25,7 +25,6 @@
     followHeight,
     growFade,
   } from "@austencloud/motion";
-  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { flowerKey, type Flower } from "@tka/shape-domain";
@@ -39,10 +38,7 @@
     type SoloFlowerDescription,
   } from "../services/shape-matrix-display.js";
   import type { ShapeMatrixData } from "../services/shape-matrix-flowers";
-  import {
-    handsOfferSameShapes,
-    matchingFlowerOnOtherHand,
-  } from "../services/solo-hand-sets.js";
+  import { handsOfferSameShapes } from "../services/solo-hand-sets.js";
   import ShapeMatrixMandalaArt from "./ShapeMatrixMandalaArt.svelte";
 
   type Hand = "left" | "right";
@@ -108,25 +104,10 @@
     );
 
   // Same turns on both hands give the same shapes on both, so one set stands
-  // for both and the switch says whose it is. Changing state is a structural
+  // for both and the stage's switch says whose it is. Changing state is a structural
   // swap, so it crosses over, except under a flight, which wants one frame.
   const sameShapes = $derived(handsOfferSameShapes(axes.left, axes.right));
   const pickerMotion = $derived(morphing ? 0 : DURATION.normal);
-  const handOptions = $derived(
-    HANDS.map((side) => ({
-      value: side,
-      label: handWord(side),
-      tone: side === "left" ? ("blue" as const) : ("red" as const),
-    }))
-  );
-
-  // The other hand takes the same shape: the flower at the selected one's
-  // place on its own list.
-  function switchHand(next: Hand) {
-    if (next === hand) return;
-    const match = matchingFlowerOnOtherHand(axes[hand], axes[next], selectedKey);
-    if (match) onpick?.(next, match);
-  }
 </script>
 
 {#snippet tile(side: Hand, item: Flower)}
@@ -188,17 +169,6 @@
     >
       {#if sameShapes}
         <div class="one-set" class:right={hand === "right"}>
-          <div class="hand-switch">
-            <SegmentedControl
-              options={handOptions}
-              value={hand}
-              onchange={switchHand}
-              size="sm"
-              density="tight"
-              semantics="radiogroup"
-              ariaLabel={t("shape_engine_solo_hand_switch")}
-            />
-          </div>
           <div class="set-tiles">
             {#each axes[hand] as item (flowerKey(item))}
               {@render tile(hand, item)}
@@ -306,8 +276,9 @@
     min-width: 0;
     min-height: 0;
   }
-  /* One set for both hands: the switch stacked beside one row of tiles, which
-     take the width the second column used to, so they grow. */
+  /* One set for both hands: one row of tiles, which take the width the second
+     column used to, so they grow. Which hand is on stage is the stage's own
+     Both / Left / Right switch. */
   .one-set {
     --tile-hand: var(--prop-blue-text, #818cf8);
     display: flex;
@@ -319,13 +290,6 @@
   }
   .one-set.right {
     --tile-hand: var(--prop-red-text, #f87171);
-  }
-  .hand-switch {
-    flex: none;
-    min-width: 0;
-  }
-  .one-set .hand-switch :global(.ui-segments) {
-    flex-direction: column;
   }
   .set-tiles {
     flex: 0 1 auto;
@@ -525,14 +489,10 @@
     .hand-column {
       gap: 0.125rem;
     }
-    /* The one set keeps the band one row high: phone-height segments stacked
-       beside tiles that stay well over the two-column size. */
+    /* The one set keeps the band one row high, with tiles that stay well over
+       the two-column size. */
     .one-set {
       gap: 0.5rem;
-    }
-    .one-set .hand-switch :global(.ui-segments button) {
-      min-height: var(--alt-touch-target, 36px);
-      padding-block: 0;
     }
     .set-tiles {
       flex: 1 1 0;
@@ -592,17 +552,14 @@
       gap: 0.5rem;
       height: 100cqh;
     }
-    /* The one set: the switch across the top, then the four shapes two by two
-       across the width both columns shared, so each is twice as tall. */
+    /* The one set: the four shapes two by two across the width both columns
+       shared, so each is twice as tall. */
     .one-set {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
       align-items: stretch;
       gap: 0.5rem;
       height: 100cqh;
-    }
-    .one-set .hand-switch :global(.ui-segments) {
-      flex-direction: row;
     }
     .set-tiles {
       grid-auto-flow: row;
@@ -686,22 +643,15 @@
      grid row made tall slabs with a small flower in the middle. */
   @container solo-flower-card (height > 22rem) {
     .one-set {
-      grid-template-rows: auto auto;
+      grid-template-rows: auto;
       grid-template-columns: minmax(0, 1fr);
       align-content: center;
     }
-    /* The switch runs the picker's full width so neither word wraps. */
-    .one-set .hand-switch :global(.ui-segments) {
-      display: flex;
-      width: 100%;
-    }
-    .one-set .hand-switch :global(.ui-segments button) {
-      flex: 1 1 0;
-      white-space: nowrap;
-    }
-    /* 4rem holds the switch row and its gap. */
     .set-tiles {
-      --set-tile: min(calc((100cqw - 0.375rem) / 2), calc((100cqh - 4rem) / 2));
+      --set-tile: min(
+        calc((100cqw - 0.375rem) / 2),
+        calc((100cqh - 0.375rem) / 2)
+      );
       grid-template-columns: repeat(2, var(--set-tile));
       grid-auto-rows: var(--set-tile);
       justify-content: center;
@@ -711,7 +661,7 @@
      bigger tiles than two by two. */
   @container solo-picker (aspect-ratio < 1 / 2) {
     .set-tiles {
-      --set-tile: min(100cqw, calc((100cqh - 4rem - 1.125rem) / 4));
+      --set-tile: min(100cqw, calc((100cqh - 1.125rem) / 4));
       grid-template-columns: var(--set-tile);
     }
   }
@@ -791,14 +741,10 @@
       grid-template-rows: none;
       gap: 0.25rem;
     }
-    /* The one set goes back to the band's shape: the switch stacked beside
-       one row of square tiles. */
+    /* The one set goes back to the band's shape: one row of square tiles. */
     .one-set {
       display: flex;
       height: auto;
-    }
-    .one-set .hand-switch :global(.ui-segments) {
-      flex-direction: column;
     }
     .set-tiles {
       flex: 1 1 0;

@@ -90,6 +90,7 @@
   import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import { resolveTheoryPlaybackTick } from "../../services/theory-playback-clock.js";
   import { THEORY_STAGE_VIEW } from "../../services/theory-matrix-artwork.js";
+  import { ratioStageTips } from "../../services/ratio-stage-tips.js";
 
   interface Props {
     hands: LiveHand[];
@@ -606,24 +607,15 @@
           pushPoint(runtime, headX, headY, tailX, tailY);
         }
 
-        /* Both ends emit, the way a real double-ended prop does. */
+        /* A staff emits from both ends; a poi or club from its head only. */
         tips.push(
-          {
-            x: cssWidth / 2 + headX * scale,
-            y: cssHeight / 2 + headY * scale,
-            propIndex: hand.side === "left" ? 0 : 1,
-            tipIndex: 0,
-            end: "A",
-            color,
-          },
-          {
-            x: cssWidth / 2 + tailX * scale,
-            y: cssHeight / 2 + tailY * scale,
-            propIndex: hand.side === "left" ? 0 : 1,
-            tipIndex: 1,
-            end: "B",
-            color,
-          }
+          ...ratioStageTips(
+            hand.side === "left" ? leftPropType : rightPropType,
+            hand.side === "left" ? 0 : 1,
+            { x: cssWidth / 2 + headX * scale, y: cssHeight / 2 + headY * scale },
+            { x: cssWidth / 2 + tailX * scale, y: cssHeight / 2 + tailY * scale },
+            color
+          )
         );
 
         /*
@@ -838,6 +830,9 @@
     /* The grid square is a fixed multiple of the canvas's shorter side, which is
        the side the canvas scales itself from. */
     container-type: size;
+    /* The square is wider than a tall stage; its outer points stay inside, only
+       its empty margin is cut. */
+    overflow: hidden;
   }
 
   .tka-grid {
@@ -845,6 +840,11 @@
     top: 50%;
     left: 50%;
     width: calc(min(100cqw, 100cqh) * var(--grid-span));
+    /* The site reset caps every svg at its box's width. This square is meant to
+       be wider than the box whenever the stage is near square or tall (every
+       phone), and capped it shrank under the hands: the hand points sat inside
+       the circle the hands actually travel. */
+    max-width: none;
     aspect-ratio: 1;
     translate: -50% -50%;
     /* Scaffolding, not the subject. */

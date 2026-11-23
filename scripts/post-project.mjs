@@ -73,6 +73,14 @@ function mediaUrlForFile(file, root) {
 }
 const NO_MUSIC = "This post has no music. Add it with: add-music <file>.";
 
+/** "--room 0.14,0.1": the shares of the clip kept clear above and below the pictures. */
+function roomOption(value) {
+  const [top, bottom] = String(value).split(",").map((part) => Number(part.trim()));
+  if (![top, bottom ?? 0].every((share) => Number.isFinite(share) && share >= 0 && share <= 0.6))
+    throw new Error("--room needs top,bottom shares between 0 and 0.6, such as 0.14,0.1.");
+  return { top, bottom: bottom ?? 0 };
+}
+
 async function request(method, query = {}, body, route = BRIDGE) {
   const url = new URL(route, base);
   for (const [key, value] of Object.entries(query))
@@ -164,6 +172,36 @@ const EDIT_COMMANDS = {
     ...(option("lead") !== undefined ? { lead: option("lead") } : {}),
     ...number("duration"),
   }),
+  "add-text": () => ({
+    op: "add-text",
+    text: positional(0, "the words"),
+    ...time("at"),
+    ...number("duration"),
+    ...text("size"),
+    ...(option("box") !== undefined ? { box: JSON.parse(option("box")) } : {}),
+  }),
+  "add-loop": async () => {
+    const steps = JSON.parse(await fs.readFile(required("steps"), "utf8"));
+    const events = option("events");
+    return {
+      op: "add-loop",
+      steps,
+      change: required("change"),
+      ...text("name"),
+      ...text("layout"),
+      ...text("colour"),
+      ...number("seed"),
+      ...time("at"),
+      ...number("duration"),
+      ...(events !== undefined
+        ? { events: JSON.parse(await fs.readFile(events, "utf8")) }
+        : {}),
+      ...(option("badges") !== undefined
+        ? { badges: JSON.parse(await fs.readFile(option("badges"), "utf8")) }
+        : {}),
+      ...(option("room") !== undefined ? { room: roomOption(option("room")) } : {}),
+    };
+  },
   "fly-into-next": () => ({
     op: "fly-into-next",
     item: required("item"),
@@ -516,7 +554,7 @@ try {
       ? { ...edit, landed: { start: item.start, track: item.track } }
       : edit;
   } else if (command in EDIT_COMMANDS) {
-    result = await sendOps([EDIT_COMMANDS[command]()]);
+    result = await sendOps([await EDIT_COMMANDS[command]()]);
   } else if (command === "features") {
     result = await request("GET", {}, undefined, FEATURE_API);
   } else if (command === "create") {
@@ -963,6 +1001,8 @@ try {
   add-titles [--spoken "how to say it"] [--at T]   name titles clip, over the opening tunnel when there is one
   add-flash [--at T] [--strength 0.22] [--fade 0.4] [--marks true|false]   a 3 s flash clip; its start is the hit
   add-credit [--at T] [--lead "made with"] [--duration 4]   the ready-made Flow Arts Composer credit; --lead "" for the wordmark alone
+  add-text "words" [--at T] [--duration S] [--size s|m|l] [--box '{"x":0.06,"y":0.85,"width":0.88,"height":0.06}']   one plain line of words, editable in the editor
+  add-loop --steps steps.json --change rotated|reflected|swapped|inverted|rewound [--layout ring|rows|pairs|line|card] [--seed 2] [--name EK] [--events play.json] [--badges badges.json] [--room top,bottom] [--at T] [--duration S] [--colour #36c3ff]   a LOOP run carrying its own sequence (engine steps, start position first); without --events it plays the usual way for its change and layout
   fly-into-next --item ID [--seconds 1.13]   cross-fade into the next clip on its lane, both riding one box path
   keyframe --item ID --action list [--channel C] [--json]   keyframes by channel: from the item's start, on the post, and bar.beat with a beat grid
   keyframe --item ID --action set --at T --patch '{"opacity":0.5}' [--easing ease-out]   key animatable fields (box opacity zoom panX panY rotation sourceGeometry)

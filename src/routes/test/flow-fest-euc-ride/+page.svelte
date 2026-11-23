@@ -196,6 +196,7 @@
 
 <style>
   .stage {
+    /* behind the status bar: a full-screen scene, the controls clear the bar */
     position: fixed;
     inset: 0;
     background: #12161c;
@@ -206,7 +207,7 @@
 
   .controls {
     position: absolute;
-    inset-block-start: 0.75rem;
+    inset-block-start: calc(0.75rem + var(--safe-top));
     inset-inline-start: 0.75rem;
     display: flex;
     flex-direction: column;

@@ -1367,6 +1367,70 @@ describe("full users: community write paths succeed", () => {
   });
 });
 
+describe("public hand paths and solo props: only the stored owner may update", () => {
+  const OTHER_UID = "hand-path-owner-1";
+
+  for (const collectionName of ["publicHandPaths", "publicSoloProps"]) {
+    describe(collectionName, () => {
+      beforeEach(async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          const db = context.firestore(SDK_SETTINGS);
+          await setDoc(doc(db, `${collectionName}/theirs`), {
+            ownerId: OTHER_UID,
+            length: 4,
+          });
+          await setDoc(doc(db, `${collectionName}/mine`), {
+            ownerId: FULL_UID,
+            length: 4,
+          });
+        });
+      });
+
+      it("refuses a full user writing their own uid over someone else's entry", async () => {
+        const db = fullCtx().firestore(SDK_SETTINGS);
+        await assertFails(
+          setDoc(doc(db, `${collectionName}/theirs`), {
+            ownerId: FULL_UID,
+            length: 99,
+          })
+        );
+        await assertFails(
+          setDoc(
+            doc(db, `${collectionName}/theirs`),
+            { ownerId: FULL_UID, length: 99 },
+            { merge: true }
+          )
+        );
+        await assertFails(deleteDoc(doc(db, `${collectionName}/theirs`)));
+      });
+
+      it("lets the owner update their entry but not hand it to someone else", async () => {
+        const db = fullCtx().firestore(SDK_SETTINGS);
+        await assertSucceeds(
+          setDoc(
+            doc(db, `${collectionName}/mine`),
+            { ownerId: FULL_UID, length: 5 },
+            { merge: true }
+          )
+        );
+        await assertFails(
+          updateDoc(doc(db, `${collectionName}/mine`), { ownerId: OTHER_UID })
+        );
+      });
+
+      it("still lets a full user create a new entry in their own name", async () => {
+        const db = fullCtx().firestore(SDK_SETTINGS);
+        await assertSucceeds(
+          setDoc(doc(db, `${collectionName}/fresh`), { ownerId: FULL_UID })
+        );
+        await assertFails(
+          setDoc(doc(db, `${collectionName}/fresh-2`), { ownerId: OTHER_UID })
+        );
+      });
+    });
+  }
+});
+
 describe("collections: private is server-private, public is world-readable", () => {
   const OWNER = "coll-owner-1";
   const OTHER = "coll-other-1";

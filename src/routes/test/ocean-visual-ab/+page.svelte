@@ -285,6 +285,7 @@
   .page {
     /* Fixed + raised so the root layout's boot overlay doesn't cover the
 		   comparison. Same reason /test/ocean-probe pins its canvas. */
+    /* behind the status bar: the page's backdrop, its top bar clears the bar */
     position: fixed;
     inset: 0;
     z-index: 9999;
@@ -305,6 +306,7 @@
     align-items: center;
     gap: 1rem;
     padding: 0.5rem 0.75rem;
+    padding-top: calc(0.5rem + var(--safe-top));
     background: #061826;
     border-bottom: 1px solid #123249;
   }

@@ -187,7 +187,7 @@ describe("canonical concept lesson composition", () => {
     // The readout and every slot name the placement. The canonical
     // pictograph already draws the glyph, so a second decorative one beside it
     // would print the same fact twice.
-    expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[built].label");
+    expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[shownBuilt].label");
     expect(placementSlots).toContain("PLACEMENT_TYPE_INFO[slot.kind]");
     expect(placementSlots).toContain("{info.label}");
     expect(placementsSrc).not.toContain("TKAWordGlyph");

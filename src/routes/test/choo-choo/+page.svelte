@@ -584,4 +584,9 @@
   .regenerate-btn:hover {
     border-color: var(--theme-accent, #8b5cf6);
   }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .choo-choo-page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

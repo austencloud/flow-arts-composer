@@ -13,6 +13,7 @@ import {
 import {
   itemIdFromArrangementRole,
   itemIdFromCreditRole,
+  itemIdFromLoopRunRole,
   itemIdFromFlashRole,
   itemIdFromMandalaRole,
   itemIdFromMovesAnimationRole,
@@ -41,6 +42,7 @@ import {
 import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
 import { createFlashPainter } from "#lib/shared/media-composition/services/flash-painter.js";
 import { createCreditPainter } from "#lib/shared/media-composition/services/credit-painter.js";
+import { createLoopRunPainter } from "#lib/shared/media-composition/services/loop-run-painter.js";
 import { createStaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
 import { loadAnimationOverlayPainter } from "#lib/shared/media-composition/services/animation-overlay-painter-registry.js";
 import { qrImageForAppearance } from "./post-qr-image-appearance";
@@ -123,6 +125,20 @@ export function createTkaBindings(env: {
         }
       );
       titlesPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  /** One painter per LOOP run: its own sequence's tiles. */
+  const loopPainters = new Map<string, PostStudioLayerPainter>();
+  function loopPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = loopPainters.get(itemId);
+    if (!painter) {
+      painter = createLoopRunPainter(
+        () =>
+          editor.compiled?.loops.find((plan) => plan.itemId === itemId) ?? null
+      );
+      loopPainters.set(itemId, painter);
     }
     return painter;
   }
@@ -285,6 +301,19 @@ export function createTkaBindings(env: {
         t("post_editor_kind_titles"),
         titlesPainterFor(titlesItemId)
       );
+    }
+    // A LOOP run carries its own sequence, so it needs none from the post.
+    const loopItemId = itemIdFromLoopRunRole(role);
+    if (loopItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_editor_kind_loop"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: loopPainterFor(loopItemId),
+        status: "ready",
+      };
     }
     // A credit needs no sequence either.
     const creditItemId = itemIdFromCreditRole(role);
@@ -525,6 +554,9 @@ export function createTkaBindings(env: {
     }
     for (const plan of editor.compiled?.credits ?? []) {
       painters.set(plan.role, creditPainterFor(plan.itemId));
+    }
+    for (const plan of editor.compiled?.loops ?? []) {
+      painters.set(plan.role, loopPainterFor(plan.itemId));
     }
     for (const track of editor.project.tracks) {
       for (const item of track.items) {

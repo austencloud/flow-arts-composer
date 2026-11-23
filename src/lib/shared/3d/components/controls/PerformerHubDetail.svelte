@@ -38,6 +38,7 @@
     type PerformerHubTab,
   } from "./performer-hub-types";
   import { resolvePerformerHubEmptyScope } from "./performer-hub-empty-scope";
+  import { hubEffectWrite } from "#lib/shared/3d/domain/performer-effect-follow.js";
 
   interface Props {
     onSettingChange?: ViewerControlSink;
@@ -301,6 +302,9 @@
     }
     return applyDirect();
   }
+
+  // The sink's effect edit cannot carry "inherit", so a sink host gets no
+  // "Use the scene's effect" row (onUseSceneEffect stays undefined for it).
 
   function handlePropSelect(propType: PropType): void {
     const previous = currentProp;
@@ -596,6 +600,15 @@
                 writeParameter({ field: "effect", value: effect }, () =>
                   viewer.setEffectScoped(effect)
                 )}
+              onSharedEffect={hubEffectWrite(
+                allPerformers.length,
+                !!onPerformerEdit
+              ) === "shared"
+                ? (effect) => viewer.followSharedEffectScoped(effect)
+                : undefined}
+              onUseSceneEffect={onPerformerEdit
+                ? undefined
+                : () => viewer.resetEffectsScoped()}
               {onSettingChange}
             />
           </div>

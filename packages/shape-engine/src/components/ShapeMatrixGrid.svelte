@@ -49,6 +49,11 @@
     onsolo?: (hand: "left" | "right", item: TAxis) => void;
     /** The hand a header chose, so its header reads as the chosen one. */
     soloHand?: "left" | "right" | null;
+    /**
+     * One line over the grid saying an edge plays one hand and a tile both.
+     * Only for a host whose headers play a hand alone (`onsolo`).
+     */
+    hint?: boolean;
     /** Optional externally-owned selection for restored/shared app state. */
     selectedPair?: { left: TAxis; right: TAxis } | null;
     /**
@@ -111,6 +116,7 @@
     onselect,
     onsolo,
     soloHand = null,
+    hint = false,
     selectedPair,
     pressable = true,
     painter,
@@ -315,6 +321,7 @@
      still describe the pane the grid was collapsed in. -->
 <div
   class="wrap"
+  class:has-hint={hint && Boolean(onsolo)}
   bind:this={wrap}
   style="--cols:{cols}; --rows:{rows}; --cell-max:{maxCellPx}px; --cell-min:{minCellPx}px"
 >
@@ -322,6 +329,9 @@
     <div class="empty">{t("shape_engine_no_flowers")}</div>
   {:else}
     <table class="matrix" aria-label={t("shape_engine_grid_aria")}>
+      {#if hint && onsolo}
+        <caption class="hint">{t("shape_engine_grid_hint")}</caption>
+      {/if}
       <thead>
         <tr>
           <th
@@ -500,12 +510,28 @@
         var(--cell-min, 44px),
         min(
           (100cqw - var(--header-stroke)) / var(--cols),
-          (100cqh - var(--header-stroke)) / var(--rows)
+          (100cqh - var(--header-stroke) - var(--hint-h, 0px)) / var(--rows)
         ),
         var(--cell-max)
       ),
       1px
     );
+  }
+  /* The hint line's height comes out of the fit, so a grid that fills the
+     pane's height still fits with the line over it. */
+  .wrap.has-hint {
+    --hint-h: 1.75rem;
+  }
+  .hint {
+    caption-side: top;
+    min-height: var(--hint-h);
+    box-sizing: border-box;
+    padding-bottom: 0.375rem;
+    color: var(--theme-text-dim, rgb(255 255 255 / 0.72));
+    font-size: var(--font-size-compact, 0.8125rem);
+    font-weight: 600;
+    line-height: 1.35rem;
+    text-align: center;
   }
   .empty {
     padding: 48px;

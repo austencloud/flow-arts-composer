@@ -86,6 +86,7 @@
 
 <style>
   .scrim {
+    /* behind the status bar: a dim over the screen, it holds no words */
     position: fixed;
     inset: 0;
     z-index: 5;
@@ -105,6 +106,7 @@
     width: min(34rem, 94vw);
     overflow-y: auto;
     padding: 1.25rem;
+    padding-top: calc(1.25rem + var(--safe-top));
     background: var(--theme-panel-bg, #111426);
     color: var(--theme-text, #fff);
     box-shadow: -1rem 0 3rem rgb(0 0 0 / 0.35);

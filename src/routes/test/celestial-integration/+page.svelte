@@ -398,6 +398,7 @@
     --gate-active: #f1dfb8;
     --gate-active-text: #263247;
 
+    /* behind the status bar: a full-screen scene, its panel clears the bar */
     position: fixed;
     inset: 0;
     overflow: hidden;
@@ -448,7 +449,7 @@
   }
 
   .review-panel {
-    top: 1rem;
+    top: calc(1rem + var(--safe-top));
     right: 1rem;
     display: grid;
     gap: 0.7rem;
@@ -542,7 +543,7 @@
     }
 
     .review-panel {
-      top: 0.75rem;
+      top: calc(0.75rem + var(--safe-top));
       right: 0.75rem;
       width: min(38rem, calc(100vw - 1.5rem));
     }

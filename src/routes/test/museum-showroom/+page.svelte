@@ -17,6 +17,7 @@
   }
 
   .test-page {
+    /* behind the status bar: a holder for a full-screen museum scene */
     position: fixed;
     inset: 0;
   }

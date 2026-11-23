@@ -38,6 +38,8 @@
     SHAPE_MATRIX_STRIP_NAME,
   } from "../../services/shape-matrix-artwork.js";
   import MandalaHeroLayer from "../../components/MandalaHeroLayer.svelte";
+  import ShapeMatrixHandSwitch from "../../components/ShapeMatrixHandSwitch.svelte";
+  import { theorySoloFlowerName } from "../../services/shape-matrix-display.js";
   import { shapeMatrixTipPoint } from "../../services/shape-matrix-flowers.js";
   import {
     foldUntraceablePropPair,
@@ -508,14 +510,16 @@
             }}
           >
             <div class="pair-keys">
-              {#if solo === "right"}
-                <strong style={`color: ${rightInk};`}>
-                  {theoryRatioLabel(pair.right.ratio)}
+              {#if solo}
+                {@const soloName = theorySoloFlowerName(pair[solo])}
+                <strong
+                  style={`color: ${solo === "left" ? leftInk : rightInk};`}
+                >
+                  {theoryRatioLabel(pair[solo].ratio)}
                 </strong>
-              {:else if solo === "left"}
-                <strong style={`color: ${leftInk};`}>
-                  {theoryRatioLabel(pair.left.ratio)}
-                </strong>
+                {#if soloName}
+                  <span class="solo-name">{soloName}</span>
+                {/if}
               {:else}
                 <strong style={`color: ${leftInk};`}>
                   {theoryRatioLabel(pair.left.ratio)}
@@ -526,6 +530,10 @@
                 </strong>
               {/if}
             </div>
+            <ShapeMatrixHandSwitch
+              value={solo ?? "both"}
+              onchange={app.showTheoryHands}
+            />
           </header>
 
           <!-- The stage is a button, so the gear is its sibling in a shared
@@ -828,6 +836,12 @@
     gap: 0.5rem;
     font-size: var(--font-size-lg, 1.125rem);
     font-variant-numeric: tabular-nums;
+  }
+
+  .solo-name {
+    color: var(--theme-text, #fff);
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: 600;
   }
 
   .against {

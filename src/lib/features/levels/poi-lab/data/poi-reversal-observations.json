@@ -1,5 +1,268 @@
 {
 	"version": 1,
 	"generatorVersion": 1,
-	"observations": []
+	"observations": [
+		{
+			"id": "poi-r0-dcw-s1-p2@01",
+			"candidate": {
+				"id": "poi-r0-dcw-s1-p2",
+				"trajectory": {
+					"radius": 0,
+					"handDirection": 1,
+					"propRate": [
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 2
+				},
+				"reversalStep": 1,
+				"reversalPropPosition": 2,
+				"calibration": "pendulum"
+			},
+			"verdict": "legal",
+			"firstIllegalStep": null,
+			"reason": ""
+		},
+		{
+			"id": "poi-r1-dcw-s3-p2@01",
+			"candidate": {
+				"id": "poi-r1-dcw-s3-p2",
+				"trajectory": {
+					"radius": 1,
+					"handDirection": 1,
+					"propRate": [
+						-1,
+						-1,
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1
+					],
+					"propPhase": 4
+				},
+				"reversalStep": 3,
+				"reversalPropPosition": 2
+			},
+			"verdict": "legal",
+			"firstIllegalStep": null,
+			"reason": ""
+		},
+		{
+			"id": "poi-r1-dcw-s1-p8@01",
+			"candidate": {
+				"id": "poi-r1-dcw-s1-p8",
+				"trajectory": {
+					"radius": 1,
+					"handDirection": 1,
+					"propRate": [
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 8
+				},
+				"reversalStep": 1,
+				"reversalPropPosition": 8
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 4,
+			"reason": "As for number three, I would say it's illegal. The reason beingwhen it gets up to eight at the very top, I mean, when the hand gets to eight, the momentum suddenly does an instant reversal in the opposite direction that it's swinging at the moment of arrival, which doesn't make any sense. So both at eight and at four, this happens"
+		},
+		{
+			"id": "poi-r1-dcw-s1-p2@01",
+			"candidate": {
+				"id": "poi-r1-dcw-s1-p2",
+				"trajectory": {
+					"radius": 1,
+					"handDirection": 1,
+					"propRate": [
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 2
+				},
+				"reversalStep": 1,
+				"reversalPropPosition": 2,
+				"calibration": "extendulum"
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 5,
+			"reason": "It stops and instantly changes momentum somehow"
+		},
+		{
+			"id": "poi-r1-dcw-s1-p4@01",
+			"candidate": {
+				"id": "poi-r1-dcw-s1-p4",
+				"trajectory": {
+					"radius": 1,
+					"handDirection": 1,
+					"propRate": [
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 4
+				},
+				"reversalStep": 1,
+				"reversalPropPosition": 4
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 2,
+			"reason": "Instant momentum change."
+		},
+		{
+			"id": "poi-r1-dcw-s3-p6@01",
+			"candidate": {
+				"id": "poi-r1-dcw-s3-p6",
+				"trajectory": {
+					"radius": 1,
+					"handDirection": 1,
+					"propRate": [
+						-1,
+						-1,
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1
+					],
+					"propPhase": 8
+				},
+				"reversalStep": 3,
+				"reversalPropPosition": 6
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 3,
+			"reason": "Impossible to stop and reverse like this"
+		},
+		{
+			"id": "poi-r1-dcw-s2-p1@01",
+			"candidate": {
+				"id": "poi-r1-dcw-s2-p1",
+				"trajectory": {
+					"radius": 1,
+					"handDirection": 1,
+					"propRate": [
+						-1,
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 2
+				},
+				"reversalStep": 2,
+				"reversalPropPosition": 1
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 2,
+			"reason": "Reversals like this are impossible"
+		},
+		{
+			"id": "poi-r05-dcw-s1-p8@01",
+			"candidate": {
+				"id": "poi-r05-dcw-s1-p8",
+				"trajectory": {
+					"radius": 0.5,
+					"handDirection": 1,
+					"propRate": [
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 8
+				},
+				"reversalStep": 1,
+				"reversalPropPosition": 8
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 1,
+			"reason": "reverses like this are impossible"
+		},
+		{
+			"id": "poi-r1-dccw-s1-p8@01",
+			"candidate": {
+				"id": "poi-r1-dccw-s1-p8",
+				"trajectory": {
+					"radius": 1,
+					"handDirection": -1,
+					"propRate": [
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 8
+				},
+				"reversalStep": 1,
+				"reversalPropPosition": 8
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 1,
+			"reason": "Reverse just like this are impossible"
+		},
+		{
+			"id": "poi-r0-dcw-s1-p4@01",
+			"candidate": {
+				"id": "poi-r0-dcw-s1-p4",
+				"trajectory": {
+					"radius": 0,
+					"handDirection": 1,
+					"propRate": [
+						1,
+						1,
+						1,
+						1,
+						-1,
+						-1,
+						-1,
+						-1
+					],
+					"propPhase": 4
+				},
+				"reversalStep": 1,
+				"reversalPropPosition": 4
+			},
+			"verdict": "illegal",
+			"firstIllegalStep": 1,
+			"reason": "Gravity would make this not feasible"
+		}
+	]
 }

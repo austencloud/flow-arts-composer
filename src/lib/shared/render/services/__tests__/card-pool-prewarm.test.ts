@@ -5,6 +5,7 @@ const mocked = vi.hoisted(() => ({
   getDispatcher: vi.fn(),
   getCardAssetBundle: vi.fn(),
   loadOverridePlacementBundle: vi.fn(),
+  reseedWhenPlacementLoaded: vi.fn(),
 }));
 
 vi.mock("../composition-dispatcher", () => ({
@@ -20,6 +21,7 @@ vi.mock("../get-card-asset-bundle", () => ({
 }));
 vi.mock("../override-placement-bundle", () => ({
   loadOverridePlacementBundle: mocked.loadOverridePlacementBundle,
+  reseedWhenPlacementLoaded: mocked.reseedWhenPlacementLoaded,
 }));
 
 import {
@@ -53,6 +55,7 @@ function createDispatcher() {
     }),
     setAssetBundle: vi.fn(),
     setOverrideBundle: vi.fn(),
+    updateOverrideBundle: vi.fn(),
     ensureInitialized: vi.fn(async () => {
       seededSignature = requestedSignature;
     }),
@@ -65,6 +68,24 @@ beforeEach(() => {
   mocked.probeWorkerSupport.mockResolvedValue(true);
   mocked.getCardAssetBundle.mockResolvedValue({ keys: [], bitmaps: [] });
   mocked.loadOverridePlacementBundle.mockResolvedValue({});
+});
+
+describe("seedCardPool placement re-seed", () => {
+  it("re-seeds the pool with the complete snapshot once the data loads", async () => {
+    const { dispatcher } = createDispatcher();
+    mocked.getDispatcher.mockReturnValue(dispatcher);
+    await seedCardPool(base);
+
+    // One re-seed is registered at seed time, over the existing push.
+    expect(mocked.reseedWhenPlacementLoaded).toHaveBeenCalledTimes(1);
+    expect(dispatcher.updateOverrideBundle).not.toHaveBeenCalled();
+
+    const fresh = { special: [{ key: "k" }] };
+    const apply = mocked.reseedWhenPlacementLoaded.mock.calls[0]![0];
+    apply(fresh);
+    expect(dispatcher.updateOverrideBundle).toHaveBeenCalledTimes(1);
+    expect(dispatcher.updateOverrideBundle).toHaveBeenCalledWith(fresh);
+  });
 });
 
 describe("computeBundleSignature", () => {

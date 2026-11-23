@@ -491,6 +491,7 @@
 
   /* The front door view fills the window unless `w` and `h` size it. */
   .front-door-frame {
+    /* behind the status bar: a backdrop, the front door view clears the bar itself */
     position: fixed;
     inset: 0;
     background: var(--theme-panel-bg, #0f0f14);

@@ -284,6 +284,12 @@ export interface WorkerPerformerSnapshot {
   /** Changes on a seek or a new score; the animator then drops its contact
    *  history. Absent never resets. */
   contactResetKey?: number;
+  /**
+   * The index the application's pointer interaction uses for this performer.
+   * Body pick segments come back under it. Absent: the badge index, then the
+   * performer's place in the list.
+   */
+  interactionIndex?: number;
   badge?: WorkerPerformerBadgeSnapshot | null;
   selectionMarker?: WorkerSelectionMarkerSnapshot | null;
   effectIntent?: WorkerPerformerEffectIntent | null;
@@ -619,6 +625,14 @@ export interface WorkerRendererPosterMessage {
   bitmap: ImageBitmap;
 }
 
+/** One performer's current body capsules, for the application's pointer. */
+export interface WorkerPerformerBodyFrame {
+  /** The index the application's pointer interaction uses. */
+  index: number;
+  /** World segments, seven floats each: `[ax, ay, az, bx, by, bz, radius]`. */
+  segments: Float32Array;
+}
+
 export interface WorkerRendererFrameMessage {
   type: "frame";
   requestId: number;
@@ -626,6 +640,8 @@ export interface WorkerRendererFrameMessage {
   frame: number;
   renderedAt: number;
   deltaMs: number;
+  /** Absent when no performer has a fitted body yet. */
+  performerBodies?: readonly WorkerPerformerBodyFrame[];
 }
 
 export interface WorkerRendererErrorMessage {

@@ -12,6 +12,7 @@
 
 <style>
   main {
+    /* behind the status bar: a backdrop holding one centred notice */
     position: fixed;
     inset: 0;
     overflow: hidden;

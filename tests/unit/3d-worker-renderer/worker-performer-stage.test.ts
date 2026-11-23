@@ -197,4 +197,40 @@ describe("worker performer stage", () => {
     stage.attachTo(scene);
     expect(scene.children).toHaveLength(0);
   });
+
+  it("reports each built performer's body segments under the index the application uses", async () => {
+    const bodies = new Map<string, Float32Array | null>([
+      ["a", new Float32Array([0, 0, 0, 0, 1, 0, 0.2])],
+      ["b", new Float32Array([1, 0, 0, 1, 1, 0, 0.2])],
+      ["c", null],
+    ]);
+    const stage = new WorkerPerformerStage(
+      new Scene(),
+      vi.fn(async (shot: WorkerPerformerSnapshot) => ({
+        id: shot.id,
+        root: new Group(),
+        matchesConfiguration: () => true,
+        setSnapshot: vi.fn(),
+        update: vi.fn(),
+        getBodyPick: () => bodies.get(shot.id) ?? null,
+        dispose: vi.fn(),
+      })) as never
+    );
+    // "a" names its own interaction index; "b" falls back to its badge; "c"
+    // has no body yet, so it is left out.
+    await stage.setSnapshots([
+      { ...snapshot(0), id: "a", interactionIndex: 3 },
+      {
+        ...snapshot(0),
+        id: "b",
+        badge: { index: 1, color: "#fff", opacity: 1, selected: false },
+      },
+      { ...snapshot(0), id: "c" },
+    ]);
+
+    expect(stage.getBodyPickFrames()).toEqual([
+      { index: 3, segments: bodies.get("a") },
+      { index: 1, segments: bodies.get("b") },
+    ]);
+  });
 });

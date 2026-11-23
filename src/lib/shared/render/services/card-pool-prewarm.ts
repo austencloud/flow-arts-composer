@@ -10,7 +10,10 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import { CompositionDispatcher } from "./composition-dispatcher";
 import { getCompositionDispatcher } from "../get-composition-dispatcher";
 import { getCardAssetBundle } from "./get-card-asset-bundle";
-import { loadOverridePlacementBundle } from "./override-placement-bundle";
+import {
+  loadOverridePlacementBundle,
+  reseedWhenPlacementLoaded,
+} from "./override-placement-bundle";
 import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
 
 export interface PrewarmOptions {
@@ -110,6 +113,11 @@ export async function seedCardPool(opts: PrewarmOptions): Promise<void> {
     ]);
     dispatcher.setAssetBundle(bundle);
     dispatcher.setOverrideBundle(overrideBundle);
+    // Seeded after a miss: push the complete snapshot once the data loads,
+    // with the same message Fix Arrows uses.
+    reseedWhenPlacementLoaded((fresh) =>
+      dispatcher.updateOverrideBundle(fresh)
+    );
   } finally {
     // Open the gate after the bundle has been installed, or after a failure so
     // callers never hang behind a failed pre-warm.

@@ -533,6 +533,7 @@
     background: #16181f;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     padding: 20px;
+    padding-top: calc(20px + var(--safe-top));
     overflow-y: auto;
     z-index: 10;
     animation: slide-in 0.15s ease;
@@ -599,5 +600,10 @@
   @media (prefers-reduced-motion: reduce) {
     .cell { transition: none; }
     .detail-panel { animation: none; }
+  }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .page {
+    border-top: var(--safe-top) solid transparent;
   }
 </style>

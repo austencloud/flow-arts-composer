@@ -545,9 +545,15 @@
   }
 
   .panel-overlay {
+    /* behind the status bar: a holder, the panel inside it clears the bar */
     position: fixed;
     inset: 0;
     z-index: 100;
     background: var(--theme-panel-bg, #0f0f1a);
+  }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .demo-page {
+    border-top: var(--safe-top) solid transparent;
   }
 </style>

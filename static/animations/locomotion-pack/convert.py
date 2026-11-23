@@ -6,11 +6,14 @@ import os
 import sys
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
+# Raw FBX sources are kept off the repository. Point ANIMATION_SOURCE_DIR at
+# the folder that holds them; without it the script looks beside itself.
+source_dir = os.environ.get("ANIMATION_SOURCE_DIR", script_dir)
 
-fbx_files = [f for f in os.listdir(script_dir) if f.endswith('.fbx')]
+fbx_files = [f for f in os.listdir(source_dir) if f.endswith('.fbx')]
 
 for fbx_name in fbx_files:
-    fbx_path = os.path.join(script_dir, fbx_name)
+    fbx_path = os.path.join(source_dir, fbx_name)
     glb_name = fbx_name.replace('.fbx', '.glb')
     glb_path = os.path.join(script_dir, glb_name)
 

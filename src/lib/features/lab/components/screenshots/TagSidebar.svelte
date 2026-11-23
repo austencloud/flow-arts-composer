@@ -119,6 +119,7 @@
   @media (max-width: 768px) {
     .sidebar-backdrop {
       display: block;
+      /* behind the status bar: a dim behind the drawer, it holds no words */
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.5);
@@ -153,6 +154,7 @@
       top: 0;
       right: 0;
       bottom: 0;
+      padding-top: var(--safe-top);
       width: 300px;
       max-width: 85vw;
       z-index: 91;

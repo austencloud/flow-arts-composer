@@ -61,6 +61,7 @@
 
 <style>
   .page {
+    /* behind the status bar: a night sky, its words sit at the bottom */
     position: fixed;
     inset: 0;
     display: grid;

@@ -613,6 +613,7 @@
     color: var(--theme-text, #ffffff);
   }
   .surface-wash {
+    /* behind the status bar: a painted wash with no words or buttons */
     position: fixed;
     inset: 0;
     z-index: 0;
@@ -625,6 +626,7 @@
       #0a0a0a;
   }
   .surface-bg {
+    /* behind the status bar: the saved background picture, no words */
     position: fixed;
     inset: 0;
     z-index: 1;
@@ -979,5 +981,9 @@
     .field-actions {
       margin-left: 0;
     }
+  }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .warm-surface {
+    border-top: var(--safe-top) solid transparent;
   }
 </style>

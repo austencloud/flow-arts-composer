@@ -22,6 +22,9 @@ from mathutils import Matrix, Vector
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Raw FBX sources are kept off the repository. Point ANIMATION_SOURCE_DIR at
+# the folder that holds them; without it the script looks beside itself.
+SOURCE_DIR = os.environ.get("ANIMATION_SOURCE_DIR", SCRIPT_DIR)
 SOURCE_FRAME_RATE = 30
 FRAME_RATE = 120
 BAKE_SUBSTEPS = FRAME_RATE // SOURCE_FRAME_RATE
@@ -836,7 +839,7 @@ def validate_bake(
 
 
 def bake_clip(config: dict[str, str]) -> dict[str, object]:
-    source_path = os.path.join(SCRIPT_DIR, config["source"])
+    source_path = os.path.join(SOURCE_DIR, config["source"])
     if not os.path.exists(source_path):
         raise FileNotFoundError(source_path)
 

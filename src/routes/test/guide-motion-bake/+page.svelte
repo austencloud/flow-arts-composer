@@ -106,4 +106,8 @@
   figcaption { padding: 0.5rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; }
   .bytes { opacity: 0.7; }
   .err { color: #f88; word-break: break-word; }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .bake-page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

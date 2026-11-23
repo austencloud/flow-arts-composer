@@ -2,6 +2,7 @@ import type { PluginTool } from "@austencloud/video-editor";
 import {
   faArrowRightToBracket,
   faArrowsLeftRightToLine,
+  faArrowsRotate,
   faBorderTopLeft,
   faClone,
   faDiamond,
@@ -37,6 +38,7 @@ import { tkaEditorOf } from "./tka-editor-context";
  * the post's animation defaults. Sequence is a mandala's ordered list.
  * Auto frame writes a video's framing keys from its footage. Reel view
  * draws a Reel's own controls over the preview, to judge the framing by.
+ * LOOP is a LOOP run's change, starting layout and seed.
  * Credit is a credit's small line over the wordmark. Flash is a flash
  * clip's strength, fade and corner marks; Fly flies a
  * canvas clip into the next clip on its lane.
@@ -65,6 +67,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: (t) => t("post_editor_tool_titles"),
     icon: faHeading,
+  },
+  {
+    id: "loop",
+    type: "panel",
+    label: (t) => t("post_editor_tool_loop"),
+    icon: faArrowsRotate,
   },
   {
     id: "credit",

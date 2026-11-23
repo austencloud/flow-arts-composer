@@ -380,6 +380,7 @@
 <style>
   /* The boot screen's two surfaces, as src/app.html paints #app-loading. */
   .lab-stage {
+    /* behind the status bar: the boot sky fills the whole screen, no words */
     position: fixed;
     inset: 0;
     overflow: hidden;
@@ -459,14 +460,14 @@
 
   .lab-panel {
     position: fixed;
-    top: 12px;
+    top: calc(12px + var(--safe-top));
     right: 12px;
     z-index: 2;
     display: flex;
     flex-direction: column;
     gap: 10px;
     width: min(340px, calc(100vw - 24px));
-    max-height: calc(100vh - 24px);
+    max-height: calc(100vh - 24px - var(--safe-top));
     overflow: auto;
     padding: 14px;
     border-radius: 14px;

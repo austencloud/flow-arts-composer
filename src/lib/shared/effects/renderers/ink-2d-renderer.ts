@@ -1,6 +1,6 @@
 import type { Ink2DParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 import {
   InkLiquidSim,
   inkDropShape,
@@ -67,7 +67,7 @@ export class Ink2DRenderer {
     const jumped = !!boundary?.loopDetected && !boundary.isSeamlesslyLoopable;
     this.tips.length = 0;
     for (const tip of emitters) {
-      if (!isEndEnabled(tip.end, params)) continue;
+      if (!tipWearsEffect(tip, params.trackingMode)) continue;
       this.tips.push({
         key: emitterId(tip.propIndex, tip.tipIndex),
         x: tip.x / pixels,
@@ -368,10 +368,6 @@ export class Ink2DRenderer {
   }
 }
 
-function isEndEnabled(end: "A" | "B", params: Ink2DParams): boolean {
-  if (params.trackingMode === "both_ends") return true;
-  return params.trackingMode === "left_end" ? end === "A" : end === "B";
-}
 
 function smooth(edge0: number, edge1: number, value: number): number {
   const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));

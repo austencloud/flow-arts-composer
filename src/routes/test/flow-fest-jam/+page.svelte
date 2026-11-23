@@ -257,6 +257,7 @@
 
 <style>
   .jam {
+    /* behind the status bar: a full-screen scene, its readouts clear the bar */
     position: fixed;
     inset: 0;
     background: #05070c;
@@ -272,7 +273,7 @@
 
   .error {
     position: absolute;
-    top: 1rem;
+    top: calc(1rem + var(--safe-top));
     left: 50%;
     z-index: 31;
     transform: translateX(-50%);
@@ -328,13 +329,13 @@
   .sound {
     position: absolute;
     left: 0.75rem;
-    top: 0.75rem;
+    top: calc(0.75rem + var(--safe-top));
   }
 
   .perf {
     position: absolute;
     right: 0.75rem;
-    top: 0.5rem;
+    top: calc(0.5rem + var(--safe-top));
     display: grid;
     grid-template-columns: auto auto;
     gap: 0.1rem 0.75rem;

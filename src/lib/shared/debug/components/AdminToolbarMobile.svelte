@@ -281,6 +281,7 @@
 
 <style>
   .mobile-backdrop {
+    /* behind the status bar: a dim behind the toolbar menu, it holds no words */
     position: fixed;
     top: 0;
     left: 0;

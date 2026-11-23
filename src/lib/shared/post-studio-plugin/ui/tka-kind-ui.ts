@@ -1,5 +1,6 @@
 import type { ItemKindUi } from "@austencloud/video-editor";
 import {
+  faArrowsRotate,
   faArrowsUpDownLeftRight,
   faBorderTopLeft,
   faFont,
@@ -31,7 +32,8 @@ export const TKA_KIND_UI: Record<
   | "arrangement"
   | "mandala"
   | "flash"
-  | "credit",
+  | "credit"
+  | "loop",
   ItemKindUi
 > = {
   animation: {
@@ -90,6 +92,11 @@ export const TKA_KIND_UI: Record<
   credit: {
     icon: faFont,
     label: (t) => t("post_editor_kind_credit"),
+    toolPanel: TkaKindTools,
+  },
+  loop: {
+    icon: faArrowsRotate,
+    label: (t) => t("post_editor_kind_loop"),
     toolPanel: TkaKindTools,
   },
 };

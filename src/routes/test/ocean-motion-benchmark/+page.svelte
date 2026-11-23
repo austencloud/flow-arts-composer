@@ -364,6 +364,7 @@
   }
 
   .ocean-stage {
+    /* behind the status bar: a full-screen ocean scene, a benchmark with no controls */
     position: fixed;
     inset: 0;
     width: 100%;

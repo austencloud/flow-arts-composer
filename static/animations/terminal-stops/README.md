@@ -19,10 +19,12 @@ provenance with the assets:
 - https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html
 - https://huggingface.co/datasets/Linzhan/Mixamo-Animations-Characters
 
-Run Blender 5 in this directory to rebuild the GLBs and motion/contact
-sidecars:
+The FBX sources are kept off this repository. To rebuild the GLBs and
+motion/contact sidecars, point `ANIMATION_SOURCE_DIR` at the folder that holds
+`walk-stop-source.fbx` and run Blender 5 in this directory:
 
 ```powershell
+$env:ANIMATION_SOURCE_DIR = "<folder with the FBX sources>"
 & "C:\Program Files\Blender Foundation\Blender 5.0\blender.exe" `
   --background --python build-terminal-stops.py
 ```

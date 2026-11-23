@@ -267,18 +267,23 @@ describe("F2: publicHandPaths / publicSoloProps ownership takeover", () => {
     "/publicSoloProps/{soloPropId}",
   ];
 
+  // FIXED 2026-11-21: create and update are split; update now checks the
+  // stored owner and keeps ownerId unchanged.
   it.each(collections)(
-    "%s update validates request.resource.data.ownerId but never resource.data.ownerId",
+    "%s update checks the stored owner and keeps ownerId unchanged",
     (path) => {
       const block = matchBlock(firestoreRules, path);
-      const clause = allowClause(block, "create, update");
+      expect(block).not.toMatch(/allow\s+create\s*,\s*update/);
 
-      expect(clause).toContain(
+      expect(allowClause(block, "create")).toContain(
         "request.resource.data.ownerId == request.auth.uid"
       );
-      // The stored owner is never consulted, so update is not owner-scoped.
-      expect(clause).not.toMatch(/(?<!request\.)\bresource\.data\.ownerId\b/);
-      // Delete DOES check the stored owner — the asymmetry inside one block.
+      const update = allowClause(block, "update");
+      expect(update).toContain("resource.data.ownerId == request.auth.uid");
+      expect(update).toContain(
+        "request.resource.data.ownerId == resource.data.ownerId"
+      );
+      // Delete checks the stored owner as before.
       expect(allowClause(block, "delete")).toContain(
         "resource.data.ownerId == request.auth.uid"
       );

@@ -718,4 +718,9 @@
   .portable-export button:disabled { opacity: .6; }
   .portable-export button:enabled:hover { border-color: var(--theme-accent, #8cd8ff); }
   .export-error { color: var(--semantic-error, #ffb6ab); }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  main {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -37,6 +37,10 @@ import {
   type FlashPlan,
 } from "#lib/shared/media-composition/domain/flash.js";
 import {
+  loopRunPlanOf,
+  type LoopRunPlan,
+} from "#lib/shared/media-composition/domain/loop-run.js";
+import {
   creditPlanOf,
   type CreditPlan,
 } from "#lib/shared/media-composition/domain/credit.js";
@@ -77,6 +81,16 @@ export function movesAnimationRole(itemId: string): string {
 export function itemIdFromMovesAnimationRole(role: string): string | null {
   const prefix = "moves-animation:";
   return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
+/** A LOOP run's tiles, which `loop-run-painter.ts` paints. */
+export function loopRunRole(itemId: string): string {
+  return `loop:${itemId}`;
+}
+
+export function itemIdFromLoopRunRole(role: string): string | null {
+  const prefix = "loop:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) || null : null;
 }
 
 /** A flash clip's veil and corner marks, which `flash-painter.ts` paints. */
@@ -741,6 +755,43 @@ export function compileFlashItem(item: PostItem, env: CompileItemEnv): boolean {
 }
 
 /**
+ * The `compile` of the LOOP run kind: one painted clip over the item's span
+ * on the post's own clock, as a flash is. Its plan joins the `loops` output.
+ */
+export function compileLoopRunItem(item: PostItem, env: CompileItemEnv): boolean {
+  if (item.kind !== "loop") return false;
+  const { output, box, zIndex, label } = env;
+  const { useRole, region, presetRole } = env;
+  const { regionKeyframesFor, motionFor, seconds } = env;
+  const plan = loopRunPlanOf(item, loopRunRole(item.id));
+  useRole(presetRole(plan.role, "LOOP", "manual", ["image"]));
+  env.addRegion(region(item.id, label, box, "fill", zIndex));
+  const regionKeyframes = regionKeyframesFor(item, output);
+  if (regionKeyframes) env.addRegionKeyframes(regionKeyframes);
+  const motion = motionFor(item);
+  env.addClip({
+    id: item.id,
+    kind: "visual",
+    sourceRole: plan.role,
+    regionId: item.id,
+    start: seconds(item.start),
+    end: seconds(itemEnd(item)),
+    sourceIn: seconds(0),
+    sourceOut: seconds(item.duration),
+    playbackRate: 1,
+    loop: false,
+    opacity: item.opacity,
+    ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+    ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+    transform: IDENTITY_TRANSFORM,
+    useResolvedTimeMap: false,
+    ...(motion ? { motion } : {}),
+  });
+  env.addOutput("loops", plan);
+  return true;
+}
+
+/**
  * The `compile` of the credit kind: one painted clip over the item's span on
  * the post's own clock, as a flash is. Its plan joins the `credits` output.
  */
@@ -909,6 +960,7 @@ export const TKA_COMPILE_OUTPUTS = {
   titles: () => [] as TunnelTitlesPlan[],
   flashes: () => [] as FlashPlan[],
   credits: () => [] as CreditPlan[],
+  loops: () => [] as LoopRunPlan[],
 } satisfies {
   [K in keyof PluginCompiledOutputs]: () => PluginCompiledOutputs[K];
 };

@@ -1,6 +1,6 @@
 import type { Frost2DParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 
 
 interface FrostParticle {
@@ -69,7 +69,7 @@ export class Frost2DRenderer {
     // every tunnel kaleidoscope layer (propIndex >= 2).
     const seen = new Set<string>();
     for (const e of emitters) {
-      if (!this.isEndEnabled(e.end, params)) continue;
+      if (!tipWearsEffect(e, params.trackingMode)) continue;
       const id = emitterId(e.propIndex, e.tipIndex);
       seen.add(id);
       const last = this.lastTipPos.get(id);
@@ -579,10 +579,6 @@ export class Frost2DRenderer {
     }
   }
 
-  private isEndEnabled(end: "A" | "B", params: Frost2DParams): boolean {
-    if (params.trackingMode === "both_ends") return true;
-    return params.trackingMode === "left_end" ? end === "A" : end === "B";
-  }
 
   dispose(): void {
     this.particles = [];

@@ -1,6 +1,6 @@
 import type { Smoke2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
 import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
-import { emitterId } from "#lib/shared/effects/renderers/emitter-tip.js";
+import { emitterId, tipWearsEffect } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { computeEffectScale } from "#lib/shared/effects/renderers/scale.js";
 import {
   FLUID_PROGRAM_DEFINITIONS,
@@ -370,7 +370,7 @@ export class WebGLSmokeRenderer {
     const seen = new Set<string>();
     const sim = this.solver!;
     for (const emitter of emitters) {
-      if (!this.isEndEnabled(emitter.end, params)) continue;
+      if (!tipWearsEffect(emitter, params.trackingMode)) continue;
       const id = emitterId(emitter.propIndex, emitter.tipIndex);
       seen.add(id);
       const previous = this.tipState.get(id);
@@ -678,8 +678,4 @@ export class WebGLSmokeRenderer {
     gl.uniform1i(program.uniforms.get(uniform)!, unit);
   }
 
-  private isEndEnabled(end: "A" | "B", params: Smoke2DParams): boolean {
-    if (params.trackingMode === "both_ends") return true;
-    return params.trackingMode === "left_end" ? end === "A" : end === "B";
-  }
 }

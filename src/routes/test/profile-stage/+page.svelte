@@ -153,4 +153,8 @@
     padding: clamp(16px, 2cqi, 28px);
     background: color-mix(in srgb, var(--theme-panel-bg, rgba(18, 20, 30, 0.98)) 90%, transparent);
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

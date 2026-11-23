@@ -967,4 +967,9 @@
   .transition-study[data-motion-mode="reduced"] .performer-arm {
     animation: none;
   }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .transition-study {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -27,6 +27,7 @@
 
 <style>
   .contact-lab {
+    /* behind the status bar: a full-screen lab scene, its controls sit lower down */
     position: fixed;
     inset: 0;
     min-width: 0;

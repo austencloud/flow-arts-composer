@@ -43,6 +43,15 @@ vi.mock("#lib/shared/render/services/png-blob-to-webp.js", () => ({
     .mockResolvedValue(new Blob(["w"], { type: "image/webp" })),
 }));
 
+const placement = { loaded: true };
+vi.mock(
+  "#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js",
+  () => ({
+    isArrowPlacementDataLoaded: () => placement.loaded,
+    whenArrowPlacementDataReady: async () => {},
+  })
+);
+
 globalThis.URL.createObjectURL = vi.fn(() => "blob:fake");
 
 import { renderCell } from "./preview-cell-renderer";
@@ -53,7 +62,24 @@ const data = { letter: "A", motions: {} } as unknown as PictographData;
 describe("renderCell cloud tier", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    placement.loaded = true;
     blobGet.mockResolvedValue(null); // IndexedDB miss (cold)
+  });
+
+  it("a cell drawn before the placement data loaded is shown but never stored or uploaded", async () => {
+    placement.loaded = false;
+    cloudDownload.mockResolvedValue(null);
+    poolRender.mockResolvedValue(new Blob(["png"], { type: "image/png" }));
+    const url = await renderCell(data, undefined, true, {
+      size: 300,
+      probeCloud: true,
+      uploadCanonical: true,
+    });
+    expect(url).toBe("blob:fake");
+    expect(poolRender).toHaveBeenCalledTimes(1);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(blobSet).not.toHaveBeenCalled();
+    expect(cloudUpload).not.toHaveBeenCalled();
   });
 
   it("probeCloud HIT: downloads, never calls the worker", async () => {

@@ -2123,20 +2123,28 @@ service cloud.firestore {
     // PUBLIC HAND PATHS AND SOLO PROPS
     // ============================================================================
 
-    // Public hand paths - browsable by anyone, writable by owner
+    // Public hand paths - browsable by anyone, writable by owner. Update checks
+    // the stored owner too, so nobody can claim someone else's entry by
+    // writing their own uid over it, and the owner cannot hand it away.
     match /publicHandPaths/{pathId} {
       allow read: if true;
-      allow create, update: if isFullUser()
+      allow create: if isFullUser()
         && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isFullUser()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId;
       allow delete: if isAuthenticated()
         && resource.data.ownerId == request.auth.uid;
     }
 
-    // Public solo props - browsable by anyone, writable by owner
+    // Public solo props - browsable by anyone, writable by owner (same rule).
     match /publicSoloProps/{soloPropId} {
       allow read: if true;
-      allow create, update: if isFullUser()
+      allow create: if isFullUser()
         && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isFullUser()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId;
       allow delete: if isAuthenticated()
         && resource.data.ownerId == request.auth.uid;
     }

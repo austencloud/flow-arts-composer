@@ -1,8 +1,10 @@
 <!--
   The Guide front page's opening picture builds itself once: the empty grid,
   then the two hands at their start (blue south, red north), then the arrows,
-  then the hands travel along them and the letter A appears. It is the first
-  step of the Guide's teaching word AABB, drawn by the one shared builder.
+  then the hands travel along them. It is the hand path of the first step of
+  the Guide's teaching word AABB, drawn by the one shared builder. No letter
+  is shown: a picture that draws hands is a hand path and has no letter
+  (Austen, 2026-11-22).
 
   One renderer owns the whole build (motionStartData/motionProgress), so the
   grid never redraws and progress 1 is pixel-identical to the finished
@@ -94,7 +96,7 @@
       leftPropTypeOverride={PropType.HAND}
       rightPropTypeOverride={PropType.HAND}
       showGrid={true}
-      showTKA={phase === "done"}
+      showTKA={false}
       showPlacements={false}
       showReversals={false}
       showTnD={false}

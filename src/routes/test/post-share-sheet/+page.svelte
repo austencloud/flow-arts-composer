@@ -569,11 +569,16 @@
   }
 
   .offscreen-animation {
+    /* behind the status bar: parked far off screen, never seen */
     position: fixed;
     top: -99999px;
     left: -99999px;
     width: 320px;
     height: 320px;
     overflow: hidden;
+  }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .harness {
+    border-top: var(--safe-top) solid transparent;
   }
 </style>

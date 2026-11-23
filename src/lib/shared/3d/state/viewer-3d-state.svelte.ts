@@ -66,7 +66,10 @@ import type {
   StageBars,
 } from "../domain/scene-control-layout";
 import { isWebGL2Available } from "../capabilities/webgl-capabilities";
-import { loadPersistedMode, STORAGE_KEY_MODE } from "./viewer-3d-render-mode-storage";
+import {
+  loadPersistedMode,
+  STORAGE_KEY_MODE,
+} from "./viewer-3d-render-mode-storage";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
 import {
   HOSTED_CAST_OPENING_AZIMUTH_RAD,
@@ -685,13 +688,9 @@ function buildViewer3DState(
   const persistCamera = persistsStage ? WRITERS.camera : noop;
   const persistPlanes = persistent ? WRITERS.planes : noop;
   const persistPerformers = persistsStage ? WRITERS.performers : noop;
-  const persistActiveFormation = persistsStage
-    ? WRITERS.activeFormation
-    : noop;
+  const persistActiveFormation = persistsStage ? WRITERS.activeFormation : noop;
   const persistSelectedIndex = persistsStage ? WRITERS.selectedIndex : noop;
-  const persistSelectedIndices = persistsStage
-    ? WRITERS.selectedIndices
-    : noop;
+  const persistSelectedIndices = persistsStage ? WRITERS.selectedIndices : noop;
   const persistEffectToggles = persistent ? WRITERS.effectToggles : noop;
   const persistSceneEnvironment =
     persistent && !environmentIsViewOnly ? persistEnvironment : noop;
@@ -1560,6 +1559,14 @@ function buildViewer3DState(
       "toggle-effect",
       `Effect: ${effect ?? "inherit"}`,
       (performer) => performer.setEffect(effect)
+    );
+  }
+
+  function followSharedEffectScoped(effect: EffectType | null): boolean {
+    return applyScopedPerformerEdit(
+      "toggle-effect",
+      `Effect: ${effect ?? "off"}`,
+      (performer) => performer.followSharedEffect(effect)
     );
   }
 
@@ -2864,6 +2871,7 @@ function buildViewer3DState(
     mergePropBuildScoped,
     setEffortScoped,
     setEffectScoped,
+    followSharedEffectScoped,
     setHandEffectsScoped,
     setStaffLengthScoped,
     setHandPlaneScoped,

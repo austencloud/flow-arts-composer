@@ -153,6 +153,7 @@
   }
 
   .backdrop {
+    /* behind the status bar: a dim behind the room list, it holds no words */
     position: fixed;
     inset: 0;
     z-index: 200;
@@ -162,6 +163,7 @@
   }
 
   .room-overlay {
+    /* behind the status bar: a box centred on the screen, it cannot reach the top */
     position: fixed;
     top: 50%;
     left: 50%;

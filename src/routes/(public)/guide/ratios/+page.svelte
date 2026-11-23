@@ -303,6 +303,30 @@
 
   const example = { pro: rotating(1, "pro"), anti: rotating(1, "anti") };
 
+  /** The first rungs of the ladder a words screen sets out as small cards. */
+  const RUNGS = [0, 0.5, 1, 1.5] as const;
+  const STARTS = ["in", "out"] as const;
+  /** Which ladder cards a words screen about the flowers' starts shows. */
+  const LADDER_FIGURES: Record<string, number[]> = {
+    ladder1: [1],
+    ladder2: [0.5, 1],
+    ladderq: [0.25],
+    ladders: [1, 0.5, 0.25],
+  };
+  /** What each traced picture keeps: the pro/anti switch and the two counts
+   * are left out unless the words beside the picture are about them. */
+  const TRACE_OPTIONS: Record<
+    string,
+    { switcher?: boolean; counts?: boolean; stageMax?: number }
+  > = {
+    count: { counts: true },
+    reading: { counts: true },
+    formula: { counts: true },
+    float: { counts: true },
+    beyond: { counts: true },
+    swapCount: { switcher: true },
+  };
+
   /**
    * One end against two. A staff's far end is its near end point-reflected
    * through the hand, which is the near end started the other way, so a
@@ -414,6 +438,52 @@
       prop,
       tint: levelTint(level),
     };
+  });
+
+  /**
+   * A panel for any turn value, from the ratio's own two numbers (hands
+   * first), so a Guide screen can trace the flower its words name. Level and
+   * tint come from the same tables the ladder reads.
+   */
+  function panelFor(
+    turns: TurnValue,
+    extra: Partial<RatioSwapPanel> = {}
+  ): RatioSwapPanel {
+    const ratio = ratioLabel(turns);
+    const [hand = 1, prop = 1] = ratio.split(":").map(Number);
+    const level = levelForTurnValue(turns);
+    return { ratio, level, hand, prop, tint: levelTint(level), ...extra };
+  }
+
+  /** What each traced picture on a words screen draws (part "fig:<name>"). */
+  const tracedPanels = $derived<Record<string, RatioSwapPanel[]>>({
+    count: [panelFor(1, { spin: "anti" })],
+    turns: [
+      panelFor(0, { spin: "anti", label: turnWords(0) }),
+      panelFor(1, { spin: "anti", label: turnWords(1) }),
+    ],
+    origins: [
+      panelFor(0, { spin: "anti" }),
+      panelFor(1, { spin: "anti" }),
+      panelFor(2, { spin: "anti" }),
+    ],
+    reading: [panelFor(0.5, { spin: "anti" })],
+    formula: [panelFor(2, { spin: "anti", label: turnWords(2) })],
+    petals: [
+      panelFor(2, { spin: "pro", label: styleWord("pro") }),
+      panelFor(2, { spin: "anti", label: styleWord("anti") }),
+    ],
+    float: [
+      panelFor("fl", { petalsText: tDynamic("guide_ratios_float_name") }),
+    ],
+    swap: swapPanels,
+    swapLaps: swapPanels,
+    swapCount: swapPanels,
+    swapQuarter: [
+      panelFor(0.25, { spin: "anti" }),
+      panelFor(-0.25, { spin: "anti" }),
+    ],
+    beyond: [panelFor(3, { spin: "anti" })],
   });
 
   /** The pairing the matrix's reading figure takes apart. */
@@ -607,22 +677,75 @@
     group: string,
     level: number,
     words: string,
-    label: string
+    label: string,
+    fig: string,
+    halves: [string, string]
   ): RatioView[] => {
-    const split = at(group, 1) === 1;
+    const step = at(group, 2);
+    const cardOne =
+      step === 0
+        ? []
+        : [{ label: bothEnds(level), parts: [card(level, 0)] }];
+    const first: RatioView[] =
+      step === 0
+        ? [{ label, parts: [words, card(level, 0)], group, max: 2 }]
+        : step === 1
+          ? [{ label, parts: [words, fig], group, max: 2 }]
+          : [
+              { label, parts: [halves[0], `${fig}@s0`] },
+              { label: `${label} (2)`, parts: [halves[1], `${fig}@s1`] },
+            ];
     return [
-      ...(split
-        ? [
-            { label, parts: [words] },
-            { label: bothEnds(level), parts: [card(level, 0)] },
-          ]
-        : [{ label, parts: [words, card(level, 0)], group, max: 1 }]),
+      ...first,
+      ...cardOne,
       {
-        label: split ? bothEnds(level, 2) : bothEnds(level),
+        label: step === 0 ? bothEnds(level) : bothEnds(level, 2),
         parts: [card(level, 1)],
       },
     ];
   };
+  /** Words with the picture they describe, in up to three cuts: one screen
+   * (step 0); the words in two halves that each keep the picture (step 1);
+   * then the same halves with the smallest cut of the picture (step 2). A
+   * screen with no halves goes straight from the joined cut to the small
+   * one. No cut is words alone. */
+  const withFigure = (
+    group: string,
+    label: string,
+    words: string[],
+    fig: string,
+    halves?: [string[], string[]]
+  ): RatioView[] => {
+    // A second half with no words is just the next card: no middle cut.
+    const lone = halves !== undefined && halves[1].length === 0;
+    const max = halves && !lone ? 2 : 1;
+    const step = at(group, max);
+    if (step === 0) return [{ label, parts: [...words, fig], group, max }];
+    if (!halves) return [{ label, parts: [...words, `${fig}@s0`] }];
+    const two = (a: string, b: string, grouped: boolean): RatioView[] => [
+      { label, parts: [...halves[0], a], ...(grouped ? { group, max } : {}) },
+      {
+        label: `${label} (2)`,
+        parts: [...halves[1], b],
+        ...(grouped ? { group, max } : {}),
+      },
+    ];
+    return step === 1 && !lone ? two(fig, fig, true) : two(`${fig}@s0`, `${fig}@s1`, false);
+  };
+  /** Two ideas, each with its own picture, on one screen (step 0) or, when
+   * that will not fit, a screen apiece, so every screen of words keeps its
+   * picture. */
+  const pairedScreens = (
+    group: string,
+    labels: [string, string],
+    parts: [string[], string[]]
+  ): RatioView[] =>
+    at(group, 1) === 0
+      ? [{ label: labels[0], parts: [...parts[0], ...parts[1]], duo: true, group, max: 1 }]
+      : [
+          { label: labels[0], parts: parts[0], duo: true },
+          { label: labels[1], parts: parts[1], duo: true },
+        ];
   /** The both-ends trays of two levels on a laptop: one screen (step 0),
    * a screen per level with its half of the words beside its tray (step 1),
    * then the words alone and the two trays (step 2). */
@@ -653,7 +776,8 @@
           secondWords === undefined
             ? tDynamic("guide_ratios_screen_ends_l1")
             : tDynamic("guide_ratios_screen_ends_past_l1"),
-        parts: [all],
+        parts: [all, "fig:endsBoth"],
+        duo: true,
       },
       { label: both, parts: [trayA, trayB] },
     ];
@@ -667,19 +791,19 @@
     const pairings = tDynamic("guide_ratios_pairings_title");
     if (tier === "small") {
       return [
-        { label: tDynamic("guide_ratios_screen_two_counts"), parts: ["intro:0-2"] },
-        { label: tDynamic("guide_ratios_screen_turns"), parts: ["intro:2-"] },
-        { label: tDynamic("guide_ratios_screen_three_ratios"), parts: ["origins"] },
-        { label: tDynamic("guide_ratios_screen_reading"), parts: ["h:reading", "terms"] },
-        { label: tDynamic("guide_ratios_screen_converting"), parts: ["formula"] },
-        { label: tDynamic("guide_ratios_screen_petals"), parts: ["petals"] },
-        { label: tDynamic("guide_ratios_float_name"), parts: ["float"] },
+        ...withFigure("count", tDynamic("guide_ratios_screen_two_counts"), ["intro:0-2"], "fig:count", [["intro:0-1"], ["intro:1-2"]]),
+        ...withFigure("turns", tDynamic("guide_ratios_screen_turns"), ["intro:2-"], "fig:turns"),
+        ...withFigure("origins", tDynamic("guide_ratios_screen_three_ratios"), ["origins"], "fig:origins"),
+        ...withFigure("reading", tDynamic("guide_ratios_screen_reading"), ["h:reading", "terms"], "fig:reading", [["h:reading", "terms:0"], ["terms:1"]]),
+        ...withFigure("formula", tDynamic("guide_ratios_screen_converting"), ["formula"], "fig:formula"),
+        ...withFigure("petals", tDynamic("guide_ratios_screen_petals"), ["petals"], "fig:petals"),
+        ...withFigure("float", tDynamic("guide_ratios_float_name"), ["float"], "fig:float", [["float:0-1"], ["float:1-"]]),
         { label: tDynamic("guide_ratios_screen_example"), parts: ["worked"] },
-        { label: tDynamic("guide_ratios_screen_common_names"), parts: ["names"] },
-        { label: tDynamic("guide_ratios_screen_ladder"), parts: ["h:ladder", "ladderIntro"] },
-        { label: tDynamic("guide_ratios_screen_four_flowers"), parts: ["ladderOri:0-2"] },
-        { label: tDynamic("guide_ratios_screen_flower_sits"), parts: ["ladderOri:2-3"] },
-        { label: tDynamic("guide_ratios_screen_quarter_flowers"), parts: ["ladderOri:3-"] },
+        ...withFigure("names", tDynamic("guide_ratios_screen_common_names"), ["names"], "fig:names", [["names:0"], ["names:1"]]),
+        ...withFigure("ladder", tDynamic("guide_ratios_screen_ladder"), ["h:ladder", "ladderIntro"], "fig:rungs", [["h:ladder", "ladderIntro:0-1"], ["ladderIntro:1-"]]),
+        ...withFigure("four", tDynamic("guide_ratios_screen_four_flowers"), ["ladderOri:0-2"], "fig:ladder1", [["ladderOri:0-1"], ["ladderOri:1-2"]]),
+        ...withFigure("sits", tDynamic("guide_ratios_screen_flower_sits"), ["ladderOri:2-3"], "fig:ladder2", [["ladderOri:2-3"], []]),
+        ...withFigure("ladderq", tDynamic("guide_ratios_screen_quarter_flowers"), ["ladderOri:3-"], "fig:ladderq"),
         { label: shortLevel(1), parts: ["tinted", "base"] },
         // Two cards a screen: a phone draws each card's flowers large
         // enough to read.
@@ -692,31 +816,31 @@
             parts: [`level-${group.level}:${k * 2}-${k * 2 + 2}`],
           }))
         ),
-        { label: tDynamic("guide_ratios_screen_swap"), parts: ["h:swap", "swapIntro"] },
-        { label: tDynamic("guide_ratios_screen_laps"), parts: ["swapLaps"] },
+        ...withFigure("swapIntro", tDynamic("guide_ratios_screen_swap"), ["h:swap", "swapIntro"], "fig:swap", [["h:swap", "swapIntro:0-1"], ["swapIntro:1-"]]),
+        ...withFigure("laps", tDynamic("guide_ratios_screen_laps"), ["swapLaps"], "fig:swapLaps", [["swapLaps:0-2"], ["swapLaps:2-"]]),
         { label: tDynamic("guide_ratios_screen_watch_swap"), parts: ["swapMotion"] },
-        { label: tDynamic("guide_ratios_screen_counting_petals"), parts: ["swapFormula"] },
-        { label: tDynamic("guide_ratios_screen_quarter_laps"), parts: ["swapQuarter"] },
-        { label: tDynamic("guide_ratios_screen_twelve"), parts: ["h:twelve", "twelveIntro:0-2"] },
-        { label: tDynamic("guide_ratios_screen_in_or_out"), parts: ["twelveIntro:2-"] },
-        { label: tDynamic("guide_ratios_screen_prospin_11"), parts: ["twelveExample"] },
+        ...withFigure("count2", tDynamic("guide_ratios_screen_counting_petals"), ["swapFormula"], "fig:swapCount"),
+        ...withFigure("quarter", tDynamic("guide_ratios_screen_quarter_laps"), ["swapQuarter"], "fig:swapQuarter"),
+        ...withFigure("twelve", tDynamic("guide_ratios_screen_twelve"), ["h:twelve", "twelveIntro:0-2"], "fig:twelve", [["h:twelve", "twelveIntro:0-1"], ["twelveIntro:1-2"]]),
+        ...withFigure("inout", tDynamic("guide_ratios_screen_in_or_out"), ["twelveIntro:2-"], "fig:inOut3"),
+        ...withFigure("ex11", tDynamic("guide_ratios_screen_prospin_11"), ["twelveExample"], "fig:inOut1", [["twelveExample:0-2"], ["twelveExample:2-"]]),
         ...families.map((family, i) => ({
           label: tDynamic("guide_ratios_family", { ratio: family.ratio }),
           parts: [`family-${i}`],
         })),
-        { label: tDynamic("guide_ratios_screen_one_or_two"), parts: ["h:ends", "endsIntro"] },
-        { label: tDynamic("guide_ratios_screen_staff_both"), parts: ["endsOpposite"] },
+        ...withFigure("endsIntro", tDynamic("guide_ratios_screen_one_or_two"), ["h:ends", "endsIntro"], "fig:endsPro", [["h:ends", "endsIntro:0-2"], ["endsIntro:2-"]]),
+        ...withFigure("endsOpp", tDynamic("guide_ratios_screen_staff_both"), ["endsOpposite"], "fig:endsAnti", [["endsOpposite:0-1"], ["endsOpposite:1-"]]),
         // A phone shows one ends card at a time: its words don't shrink.
         // The words ride with the card they describe, or step ahead of it.
-        ...phoneEnds("endsL1", 1, "endsL1", tDynamic("guide_ratios_screen_ends_l1")),
-        ...phoneEnds("endsL2", 2, "endsL4:0-2", tDynamic("guide_ratios_screen_ends_past_l1")),
+        ...phoneEnds("endsL1", 1, "endsL1", tDynamic("guide_ratios_screen_ends_l1"), "fig:inOut1", ["endsL1:0-3", "endsL1:3-"]),
+        ...phoneEnds("endsL2", 2, "endsL4:0-2", tDynamic("guide_ratios_screen_ends_past_l1"), "fig:ladderq", ["endsL4:0-1", "endsL4:1-2"]),
         { label: bothEnds(3), parts: [card(3, 0)] },
         { label: bothEnds(3, 2), parts: [card(3, 1)] },
-        ...phoneEnds("endsL4", 4, "endsL4:2-", tDynamic("guide_ratios_screen_ends_l4")),
+        ...phoneEnds("endsL4", 4, "endsL4:2-", tDynamic("guide_ratios_screen_ends_l4"), "fig:ladderq", ["endsL4:2-3", "endsL4:3-"]),
         ...(at("pairings", 1) === 0
           ? [{ label: pairings, parts: ["h:pairings", "pairingsIntro", "anatomy"], group: "pairings", max: 1 }]
           : [
-              { label: pairings, parts: ["h:pairings", "pairingsIntro"] },
+              { label: pairings, parts: ["h:pairings", "pairingsIntro", "fig:origins@s0"] },
               { label: tDynamic("guide_ratios_cell"), parts: ["anatomy"] },
             ]),
         ...(at("cell", 1) === 0
@@ -725,13 +849,17 @@
               { label: tDynamic("guide_ratios_screen_opening_cell"), parts: ["pairingsChoose"] },
               { label: tDynamic("guide_ratios_screen_matrix"), parts: ["matrix"] },
             ]),
-        { label: tDynamic("guide_ratios_screen_beyond"), parts: ["beyond"] },
+        ...withFigure("beyond", tDynamic("guide_ratios_screen_beyond"), ["beyond"], "fig:beyond", [["beyond:0-2"], ["beyond:2-"]]),
         { label: tDynamic("guide_ratios_sources"), parts: ["sources"] },
       ];
     }
     const medium = tier === "medium";
     return [
-      { label: tDynamic("guide_ratios_screen_two_counts"), parts: ["intro", "origins"] },
+      {
+        label: tDynamic("guide_ratios_screen_two_counts"),
+        parts: ["intro", "origins", "fig:origins"],
+        duo: true,
+      },
       ...(medium
         ? [
             {
@@ -739,7 +867,11 @@
               parts: ["h:reading", "terms", "formula", "worked"],
               duo: true,
             },
-            { label: tDynamic("guide_ratios_screen_petals"), parts: ["petals", "float"] },
+            ...pairedScreens(
+              "petalsFloat",
+              [tDynamic("guide_ratios_screen_petals"), tDynamic("guide_ratios_float_name")],
+              [["petals", "fig:petals"], ["float", "fig:float"]]
+            ),
           ]
         : [
             {
@@ -755,8 +887,16 @@
               duo: true,
             },
           ]),
-      { label: tDynamic("guide_ratios_screen_common_names"), parts: ["names"] },
-      { label: ladderTitle, parts: ["h:ladder", "ladderIntro", "ladderOri"] },
+      {
+        label: tDynamic("guide_ratios_screen_common_names"),
+        parts: ["names", "fig:names"],
+        duo: true,
+      },
+      {
+        label: ladderTitle,
+        parts: ["h:ladder", "ladderIntro", "ladderOri", "fig:ladders"],
+        duo: true,
+      },
       { label: levelLabel(1), parts: ["tinted", "base"] },
       ...(medium
         ? [
@@ -772,7 +912,11 @@
               parts: ["h:swap", "swapIntro", "swapLaps", "swapMotion"],
               duo: true,
             },
-            { label: tDynamic("guide_ratios_screen_counting_petals"), parts: ["swapFormula", "swapQuarter"] },
+            ...pairedScreens(
+              "swapCounts",
+              [tDynamic("guide_ratios_screen_counting_petals"), tDynamic("guide_ratios_screen_quarter_laps")],
+              [["swapFormula", "fig:swapCount"], ["swapQuarter", "fig:swapQuarter"]]
+            ),
           ]
         : [
             {
@@ -788,9 +932,17 @@
               duo: true,
             },
           ]),
-      { label: twelve, parts: ["h:twelve", "twelveIntro", "twelveExample"] },
+      {
+        label: twelve,
+        parts: ["h:twelve", "twelveIntro", "twelveExample", "fig:twelve"],
+        duo: true,
+      },
       { label: tDynamic("guide_ratios_screen_three_families"), parts: ["families"] },
-      { label: ends, parts: ["h:ends", "endsIntro", "endsOpposite"] },
+      {
+        label: ends,
+        parts: ["h:ends", "endsIntro", "endsOpposite", "fig:endsBoth"],
+        duo: true,
+      },
       ...wideEnds("endsA", 1, 2, "endsL1", "endsL1", "ends-1", "ends-2"),
       ...wideEnds("endsB", 3, 4, "endsL4", "endsL4:0-2", "ends-3", "ends-4", "endsL4:2-"),
       {
@@ -801,7 +953,8 @@
       { label: tDynamic("guide_ratios_screen_matrix"), parts: ["matrix"] },
       {
         label: tDynamic("guide_ratios_beyond_title"),
-        parts: ["beyond", "sources"],
+        parts: ["beyond", "sources", "fig:beyond"],
+        duo: true,
       },
     ];
   });
@@ -816,7 +969,19 @@
     const k = part?.split(":")[1];
     return k === undefined ? undefined : Number(k);
   }
-  const VISUAL = /^(worked|base|level-|swapMotion|famil|ends-|anatomy|matrix)/;
+  /** The smallest cut of a list of cards shows two at a time. */
+  function pick<T>(
+    list: readonly T[],
+    cut: boolean,
+    k: number,
+    n = 2
+  ): readonly T[] {
+    if (!cut || list.length <= n) return list;
+    const part = list.slice(k * n, k * n + n);
+    return part.length ? part : list.slice(-n);
+  }
+  const VISUAL =
+    /^(worked|base|level-|swapMotion|famil|ends-|anatomy|matrix|fig:)/;
   const isText = (part: string) => !VISUAL.test(part);
   /** A text part's sentence slice: "intro:2-" is the intro from its third
    * sentence on. */
@@ -858,7 +1023,12 @@
     part.startsWith("h:")
       ? part
       : ENDS_WORDS_TOPIC[part] ??
-        partName(part).replace(/^family-\d+$/, "families");
+        // An ends card is its own topic: "ends-1:0" must not read as the
+        // level's words, or a recut that adds screens before the card sent
+        // the reader forward onto it (2026-11-20).
+        (/^ends-\d+:\d+$/.test(part)
+          ? part.replace(":", "-card-")
+          : partName(part).replace(/^family-\d+$/, "families"));
   // The ends words belong to the level they describe, so a joined screen
   // that splits in place keeps the reader on its own words, not on another
   // level's ("endsL4" is read on both Level 2's and Level 4's screens).
@@ -867,6 +1037,13 @@
     endsL4: "ends-3",
     "endsL4:0-2": "ends-2-words",
     "endsL4:2-": "ends-4-words",
+    // The halves a short phone cuts those words into keep their topic.
+    "endsL1:0-3": "ends-1",
+    "endsL1:3-": "ends-1",
+    "endsL4:0-1": "ends-2-words",
+    "endsL4:1-2": "ends-2-words",
+    "endsL4:2-3": "ends-4-words",
+    "endsL4:3-": "ends-4-words",
   };
   const topics = $derived(views.map((v) => v.parts.map(topic)));
 </script>
@@ -946,6 +1123,9 @@
 
           {#if visuals.length}
             <div class="visuals">
+              {#each visuals.filter((p) => p.startsWith("fig:")) as p (p)}
+                {@render figure(p)}
+              {/each}
               {#if visuals.includes("worked")}
                 {@render worked()}
               {/if}
@@ -1030,15 +1210,20 @@
       <h2>{tDynamic("guide_ratios_pairings_title")}</h2>
     {/if}
   {:else if name === "terms"}
+    {@const which = part.split(":")[1]}
     <dl class="terms">
-      <div>
-        <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
-        <dd>{tDynamic("guide_ratios_hand_cycles_definition")}</dd>
-      </div>
-      <div>
-        <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
-        <dd>{tDynamic("guide_ratios_prop_rotations_definition")}</dd>
-      </div>
+      {#if which !== "1"}
+        <div>
+          <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
+          <dd>{tDynamic("guide_ratios_hand_cycles_definition")}</dd>
+        </div>
+      {/if}
+      {#if which !== "0"}
+        <div>
+          <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
+          <dd>{tDynamic("guide_ratios_prop_rotations_definition")}</dd>
+        </div>
+      {/if}
     </dl>
   {:else if name === "formula"}
     <p>
@@ -1058,8 +1243,10 @@
       >{tDynamic("guide_ratios_petals_end")}
     </p>
   {:else if name === "float"}
-    <p>{tDynamic("guide_ratios_float")}</p>
+    <p>{slice(tDynamic("guide_ratios_float"), part)}</p>
   {:else if name === "names"}
+    {@const which = part.split(":")[1]}
+    {#if which !== "1"}
     <h2>Common names</h2>
     <dl class="terms">
       {#each COMMON_NAMES as entry (entry.name)}
@@ -1072,22 +1259,25 @@
         </div>
       {/each}
     </dl>
+    {/if}
+    {#if which !== "0"}
     <p>
       {tDynamic("guide_ratios_names_note")}
       <LinkChip size="inline" href={localHref("/guide/level-1/staff-motions")}
         >{tDynamic("verified_level1_staff_motions_274")}</LinkChip
       >{spaced(tDynamic("guide_ratios_names_note_end"))}
     </p>
+    {/if}
   {:else if name === "ladderIntro"}
-    <p>{tDynamic("guide_ratios_ladder_intro")}</p>
+    <p>{slice(tDynamic("guide_ratios_ladder_intro"), part)}</p>
   {:else if name === "ladderOri"}
     <p>{slice(tDynamic("guide_ratios_ladder_orientation"), part)}</p>
   {:else if name === "tinted"}
     <p class="note">{tDynamic("guide_ratios_tinted_cards")}</p>
   {:else if name === "swapIntro"}
-    <p>{tDynamic("guide_ratios_swap_intro")}</p>
+    <p>{slice(tDynamic("guide_ratios_swap_intro"), part)}</p>
   {:else if name === "swapLaps"}
-    <p>{tDynamic("guide_ratios_swap_laps")}</p>
+    <p>{slice(tDynamic("guide_ratios_swap_laps"), part)}</p>
   {:else if name === "swapFormula"}
     <p>
       {tDynamic("guide_ratios_swap_formula_before")}
@@ -1104,13 +1294,13 @@
   {:else if name === "twelveIntro"}
     <p>{slice(tDynamic("guide_ratios_twelve_intro"), part)}</p>
   {:else if name === "twelveExample"}
-    <p>{tDynamic("guide_ratios_twelve_example")}</p>
+    <p>{slice(tDynamic("guide_ratios_twelve_example"), part)}</p>
   {:else if name === "endsIntro"}
-    <p>{tDynamic("guide_ratios_ends_intro")}</p>
+    <p>{slice(tDynamic("guide_ratios_ends_intro"), part)}</p>
   {:else if name === "endsOpposite"}
-    <p>{tDynamic("guide_ratios_ends_opposite")}</p>
+    <p>{slice(tDynamic("guide_ratios_ends_opposite"), part)}</p>
   {:else if name === "endsL1"}
-    <p>{tDynamic("guide_ratios_ends_level1")}</p>
+    <p>{slice(tDynamic("guide_ratios_ends_level1"), part)}</p>
   {:else if name === "endsL4"}
     <p>
       {slice(
@@ -1123,12 +1313,15 @@
   {:else if name === "pairingsChoose"}
     <p>{tDynamic("guide_ratios_pairings_choose")}</p>
   {:else if name === "beyond"}
-    <h2>{tDynamic("guide_ratios_beyond_title")}</h2>
-    <p>{tDynamic("guide_ratios_beyond_body")}</p>
+    {#if !part.includes(":") || part.includes(":0-")}
+      <h2>{tDynamic("guide_ratios_beyond_title")}</h2>
+    {/if}
+    <p>{slice(tDynamic("guide_ratios_beyond_body"), part)}</p>
   {:else if name === "sources"}
     <h2>{tDynamic("guide_ratios_sources")}</h2>
     <ul class="source-list">
       <li>
+        {@render still(rotating(2, "anti"), "source", "still-md")}
         <LinkChip
           href={ORIGINAL_SHAPE_MATRIX_URL}
           newTabLabel={tDynamic("guide_ratios_new_tab")}
@@ -1139,6 +1332,7 @@
         >
       </li>
       <li>
+        {@render still(rotating(1, "anti"), "source", "still-md")}
         <LinkChip href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</LinkChip>
       </li>
     </ul>
@@ -1253,76 +1447,7 @@
 
       <ol class="ratio-cards" role="list">
         {#each rows as row (row.turnLabel)}
-          <li class="ratio-card" class:family-card={row.family}>
-            <p class="card-head">
-              <span class="card-ratio">{row.ratio}</span>
-              <span class="card-turns">{row.turnWords}</span>
-            </p>
-            {#if row.starts}
-              {@const paired = row.starts.length > 1}
-              <div class="card-grid">
-                <span class="card-style"
-                  >{tDynamic("guide_ratios_prospin")}</span
-                >
-                <span class="card-style"
-                  >{tDynamic("guide_ratios_antispin")}</span
-                >
-                {#each row.starts as start (start.ori)}
-                  {#each start.flowers as flower (flowerKey(flower))}
-                    {@const facing = (
-                      paired ? flowerFacing(flower) : quarterTurnFacing()
-                    ).toLowerCase()}
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(flower)}
-                        artKey={flowerKey(flower)}
-                        alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}, ${facing}: ${petalWord(flower.petals).toLowerCase()}`}
-                      />
-                    </span>
-                  {/each}
-                  {#each start.flowers as flower (flowerKey(flower))}
-                    <span class="card-facing" aria-hidden="true"
-                      >{paired
-                        ? flowerFacing(flower)
-                        : quarterTurnFacing()}</span
-                    >
-                  {/each}
-                {/each}
-                {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
-                  <span class="card-petals">{petalWord(flower.petals)}</span>
-                {/each}
-              </div>
-            {:else}
-              <div class="card-float">
-                <div class="float-grid">
-                  {#each floatFlowers as flower (flowerKey(flower))}
-                    <div class="float-start">
-                      <span class="still">
-                        <ShapeMatrixMandalaArt
-                          paint={paintFlower(flower)}
-                          artKey={flowerKey(flower)}
-                          alt={tDynamic("guide_ratios_float_alt", {
-                            ratio: row.ratio,
-                            direction: tDynamic(
-                              FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
-                            ),
-                          })}
-                        />
-                      </span>
-                      <span class="card-facing" aria-hidden="true"
-                        >{tDynamic(
-                          FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
-                        )}</span
-                      >
-                    </div>
-                  {/each}
-                </div>
-                <span class="float-words">
-                  {tDynamic("guide_ratios_float_caption")}
-                </span>
-              </div>
-            {/if}
-          </li>
+          {@render ratioCard(row)}
         {/each}
         {#if aside && group.level === WHOLE_TURN_LEVEL}
           <li class="ladder-aside">
@@ -1337,6 +1462,80 @@
       </ol>
     </section>
   {/if}
+{/snippet}
+
+{#snippet ratioCard(row: (typeof ladder)[number], lite: boolean = false)}
+  <li class="ratio-card" class:family-card={row.family}>
+    <p class="card-head">
+      <span class="card-ratio">{row.ratio}</span>
+      <span class="card-turns">{row.turnWords}</span>
+    </p>
+    {#if row.starts}
+      {@const paired = row.starts.length > 1}
+      {@const shownStarts = lite ? row.starts.slice(0, 1) : row.starts}
+      <div class="card-grid">
+        <span class="card-style"
+          >{tDynamic("guide_ratios_prospin")}</span
+        >
+        <span class="card-style"
+          >{tDynamic("guide_ratios_antispin")}</span
+        >
+        {#each shownStarts as start (start.ori)}
+          {#each start.flowers as flower (flowerKey(flower))}
+            {@const facing = (
+              paired ? flowerFacing(flower) : quarterTurnFacing()
+            ).toLowerCase()}
+            <span class="still">
+              <ShapeMatrixMandalaArt
+                paint={paintFlower(flower)}
+                artKey={flowerKey(flower)}
+                alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}, ${facing}: ${petalWord(flower.petals).toLowerCase()}`}
+              />
+            </span>
+          {/each}
+          {#each lite && !paired ? [] : start.flowers as flower (flowerKey(flower))}
+            <span class="card-facing" aria-hidden="true"
+              >{paired
+                ? flowerFacing(flower)
+                : quarterTurnFacing()}</span
+            >
+          {/each}
+        {/each}
+        {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
+          <span class="card-petals">{petalWord(flower.petals)}</span>
+        {/each}
+      </div>
+    {:else}
+      <div class="card-float">
+        <div class="float-grid">
+          {#each floatFlowers as flower (flowerKey(flower))}
+            <div class="float-start">
+              <span class="still">
+                <ShapeMatrixMandalaArt
+                  paint={paintFlower(flower)}
+                  artKey={flowerKey(flower)}
+                  alt={tDynamic("guide_ratios_float_alt", {
+                    ratio: row.ratio,
+                    direction: tDynamic(
+                      FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
+                    ),
+                  })}
+                />
+              </span>
+              <span class="card-facing" aria-hidden="true"
+                >{tDynamic(
+                  FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
+                )}</span
+              >
+            </div>
+          {/each}
+        </div>
+        <span class="float-words">
+          {tDynamic("guide_ratios_float_caption")}
+        </span>
+      </div>
+    {/if}
+  </li>
 {/snippet}
 
 {#snippet familyCard(family: (typeof families)[number])}
@@ -1381,6 +1580,35 @@
   </section>
 {/snippet}
 
+{#snippet endsCard(item: EndsCase)}
+  <li class="ends-card">
+    <p class="ends-head">
+      <span class="ends-ratio">{item.ratio}</span>
+      <span class="ends-style">{styleWord(item.style)}</span>
+    </p>
+    <div class="ends-sum">
+      {#each item.frames as frame, index (frame.label)}
+        <div class="ends-frame" class:ends-both={index === 2}>
+          <span class="still">
+            {#if index > 0}
+              <span class="sum-op" aria-hidden="true"
+                >{index === 1 ? "+" : "="}</span
+              >
+            {/if}
+            <ShapeMatrixMandalaArt
+              paint={paintTogether(frame.flowers)}
+              artKey={`ends-${frame.flowers.map((flower) => flowerKey(flower)).join("+")}`}
+              alt={`${item.ratio} ${styleWord(item.style).toLowerCase()}, ${frame.label.toLowerCase()}: ${frame.meta.toLowerCase()}`}
+            />
+          </span>
+          <span class="ends-label">{frame.label}</span>
+          <span class="ends-meta">{frame.meta}</span>
+        </div>
+      {/each}
+    </div>
+  </li>
+{/snippet}
+
 {#snippet endsTray(tray: EndsLevel, only?: number)}
   <section
     class="ends-level"
@@ -1399,32 +1627,7 @@
     <ul class="ends-cards" role="list">
       {#each tray.cases as item, k (`${item.ratio}-${item.style}`)}
         {#if only === undefined || only === k}
-          <li class="ends-card">
-            <p class="ends-head">
-              <span class="ends-ratio">{item.ratio}</span>
-              <span class="ends-style">{styleWord(item.style)}</span>
-            </p>
-            <div class="ends-sum">
-              {#each item.frames as frame, index (frame.label)}
-                <div class="ends-frame" class:ends-both={index === 2}>
-                  <span class="still">
-                    {#if index > 0}
-                      <span class="sum-op" aria-hidden="true"
-                        >{index === 1 ? "+" : "="}</span
-                      >
-                    {/if}
-                    <ShapeMatrixMandalaArt
-                      paint={paintTogether(frame.flowers)}
-                      artKey={`ends-${frame.flowers.map((flower) => flowerKey(flower)).join("+")}`}
-                      alt={`${item.ratio} ${styleWord(item.style).toLowerCase()}, ${frame.label.toLowerCase()}: ${frame.meta.toLowerCase()}`}
-                    />
-                  </span>
-                  <span class="ends-label">{frame.label}</span>
-                  <span class="ends-meta">{frame.meta}</span>
-                </div>
-              {/each}
-            </div>
-          </li>
+          {@render endsCard(item)}
         {/if}
       {/each}
     </ul>
@@ -1520,6 +1723,150 @@
       {/if}
     {/if}
   </div>
+{/snippet}
+
+{#snippet still(flower: Flower, tag: string, size = "still-md")}
+  <span class="still {size}">
+    <ShapeMatrixMandalaArt
+      paint={paintFlower(flower)}
+      artKey={`${tag}-${flowerKey(flower)}`}
+      alt={flowerAlt(flower)}
+    />
+  </span>
+{/snippet}
+
+{#snippet figure(part: string)}
+  {@const spec = part.slice("fig:".length)}
+  {@const name = spec.split("@")[0]!}
+  {@const cut = spec.includes("@s")}
+  {@const k = cut ? Number(spec.split("@s")[1]) : 0}
+  {@const panels = tracedPanels[name]}
+  {#if panels}
+    {@const option = TRACE_OPTIONS[name] ?? {}}
+    <div class="trace" class:solo={panels.length === 1}>
+      <RatioSwapMotion
+        {panels}
+        controls={true}
+        switcher={cut ? false : (option.switcher ?? false)}
+        counts={cut ? false : (option.counts ?? false)}
+        status={false}
+        scrub={false}
+        compact={true}
+        bare={cut}
+        stageMax={cut ? (panels.length > 2 ? 5 : panels.length === 2 ? 6.5 : 9) : (option.stageMax ?? 22)}
+      />
+    </div>
+  {:else if name === "names"}
+    {@const shown = pick(COMMON_NAMES, cut, k)}
+    <ul class="strip" style="--cols: {shown.length}">
+      {#each shown as entry (entry.name)}
+        <li>
+          {@render still(rotating(entry.turns, entry.style), "name")}
+          <span class="shape-name">{entry.name}</span>
+          <span class="shape-meta">{ratioLabel(entry.turns)}</span>
+        </li>
+      {/each}
+    </ul>
+  {:else if name === "rungs"}
+    <ol class="ratio-cards rungs" role="list">
+      {#each pick(RUNGS, cut, k, 1) as turns (turns)}
+        {@const row = ladder.find((r) => r.turns === turns)}
+        {#if row?.starts}
+          <li class="ratio-card" class:family-card={row.family}>
+            <p class="card-head">
+              <span class="card-ratio">{row.ratio}</span>
+              <span class="card-turns">{row.turnWords}</span>
+            </p>
+            <div class="card-grid">
+              {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
+                <span class="card-style">{styleWord(flower.style)}</span>
+              {/each}
+              {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
+                <span class="still">
+                  <ShapeMatrixMandalaArt
+                    paint={paintFlower(flower)}
+                    artKey={flowerKey(flower)}
+                    alt={flowerAlt(flower)}
+                  />
+                </span>
+              {/each}
+              {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
+                <span class="card-petals">{petalWord(flower.petals)}</span>
+              {/each}
+            </div>
+          </li>
+        {/if}
+      {/each}
+    </ol>
+  {:else if cut && name === "ladderq"}
+    {@const flowers = ladder.find((r) => r.turns === 0.25)?.starts?.[0]?.flowers ?? []}
+    <ul class="strip" style="--cols: {flowers.length}">
+      {#each flowers as flower (flowerKey(flower))}
+        <li>
+          {@render still(flower, "quarter", "still-lg")}
+          <span class="shape-name">{styleWord(flower.style)}</span>
+          <span class="shape-meta">{petalWord(flower.petals)}</span>
+        </li>
+      {/each}
+    </ul>
+  {:else if name === "ladder1" || name === "ladder2" || name === "ladderq" || name === "ladders"}
+    <ol class="ratio-cards ladder-solo" role="list">
+      {#each pick(LADDER_FIGURES[name] ?? [], cut, k, 1) as turns (turns)}
+        {@const row = ladder.find((r) => r.turns === turns)}
+        {#if row}
+          {@render ratioCard(row, cut)}
+        {/if}
+      {/each}
+    </ol>
+  {:else if name === "twelve"}
+    <div class="twelve-rows">
+      {#each families as family (family.turns)}
+        <div class="twelve-row">
+          <span class="card-ratio">{family.ratio}</span>
+          {#each family.shapes as flower (flowerKey(flower))}
+            {@render still(flower, "twelve", "still-sm")}
+          {/each}
+        </div>
+      {/each}
+    </div>
+  {:else if name === "inOut3" || name === "inOut1" || (cut && (name === "endsPro" || name === "endsAnti"))}
+    {@const turns = name === "inOut1" ? 0 : 1}
+    {@const spin = name === "endsAnti" ? "anti" : "pro"}
+    <ul class="strip" style="--cols: 2">
+      {#each STARTS as ori (ori)}
+        {@const flower = rotating(turns, spin, ori)}
+        <li>
+          {@render still(flower, "inout", "still-lg")}
+          <span class="shape-name"
+            >{tDynamic(
+              ori === "in" ? "guide_ratios_starts_in" : "guide_ratios_starts_out"
+            )}</span
+          >
+          <span class="shape-meta"
+            >{turns === 0
+              ? tDynamic(BASE_NAMES[ori])
+              : petalWord(flower.petals)}</span
+          >
+        </li>
+      {/each}
+    </ul>
+  {:else if name === "endsBoth"}
+    <div class="ends-solo ends-wide">
+      <ul class="ends-cards" role="list">
+        {#each endsLevels[1]!.cases as item (item.style)}
+          {@render endsCard(item)}
+        {/each}
+      </ul>
+    </div>
+  {:else if name === "endsPro" || name === "endsAnti"}
+    <div class="ends-solo">
+      <ul class="ends-cards" role="list">
+        {@render endsCard(
+          endsLevels[1]!.cases[name === "endsPro" ? 0 : 1]
+        )}
+      </ul>
+    </div>
+  {/if}
 {/snippet}
 
 <style>
@@ -2276,6 +2623,104 @@
   }
 
   .source-list li {
+    display: grid;
+    justify-items: center;
+    gap: 0.25rem;
     margin: 0;
+  }
+
+  /* A figure that sits under a screen's words: one animator, or a few
+     painted flowers in a row. Everything in it scales with --fit. */
+  .trace {
+    inline-size: min(100%, calc(48rem * var(--fit, 1)));
+  }
+
+  .trace.solo {
+    inline-size: min(100%, calc(22rem * var(--fit, 1)));
+  }
+
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+    gap: 0.6rem;
+    inline-size: min(100%, calc(var(--cols, 4) * 9rem * var(--fit, 1)));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .strip li {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 0.2rem;
+    min-inline-size: 0;
+    margin: 0;
+    text-align: center;
+  }
+
+  .strip .still {
+    inline-size: min(100%, calc(5rem * var(--fit, 1)));
+  }
+
+  .strip .still-lg {
+    inline-size: min(100%, calc(7rem * var(--fit, 1)));
+  }
+
+  .rungs {
+    inline-size: min(100%, calc(38rem * var(--fit, 1)));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  }
+
+  .ladder-solo {
+    inline-size: min(100%, calc(32rem * var(--fit, 1)));
+    /* A lone card keeps a card's width and sits in the middle, not at the
+       left edge of an empty row. */
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(
+        min(100%, calc(var(--card-still) * 2 + 2rem)),
+        calc(16rem * var(--fit, 1))
+      )
+    );
+    justify-content: center;
+  }
+
+  .twelve-rows {
+    display: grid;
+    gap: 0.5rem;
+    inline-size: min(100%, calc(34rem * var(--fit, 1)));
+  }
+
+  .twelve-row {
+    display: grid;
+    grid-template-columns: 2.1rem repeat(4, minmax(0, 1fr));
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    background: var(--surface);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .twelve-row .still-sm {
+    inline-size: min(100%, calc(4.5rem * var(--fit, 1)));
+    justify-self: center;
+  }
+
+  .ends-solo {
+    container: ends-level / inline-size;
+    inline-size: min(100%, calc(26rem * var(--fit, 1)));
+  }
+
+  .ends-solo.ends-wide {
+    inline-size: min(100%, calc(44rem * var(--fit, 1)));
+  }
+
+  .ends-solo .ends-cards {
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 </style>

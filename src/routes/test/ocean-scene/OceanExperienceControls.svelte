@@ -38,7 +38,7 @@
 <style>
   .experience-label {
     position: fixed;
-    top: max(1rem, env(safe-area-inset-top));
+    top: max(1rem, var(--safe-top));
     left: max(5rem, calc(env(safe-area-inset-left) + 5rem));
     z-index: 30;
     display: grid;

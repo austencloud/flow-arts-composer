@@ -170,6 +170,7 @@ export function createWorkerPerformerSnapshot(
   ] as const;
   return {
     id: performer.id,
+    interactionIndex: options.badge?.index,
     avatarId: performer.characterId,
     avatarModelPath: getCharacterModelPath(performer.characterId),
     avatarLocalOnly:

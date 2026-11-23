@@ -2260,4 +2260,9 @@
       height: calc(100vh - 150px);
     }
   }
+
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .marker-page {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

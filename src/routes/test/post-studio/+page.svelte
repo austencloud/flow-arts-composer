@@ -387,4 +387,8 @@
     border-color: rgba(229, 90, 90, 0.28);
     color: #ffb4b4;
   }
+  /* the first row clears a phone's status bar; nothing moves when --safe-top is 0 */
+  .harness {
+    border-top: var(--safe-top) solid transparent;
+  }
 </style>

@@ -44,7 +44,7 @@
 <style>
   .dev-bar {
     position: fixed;
-    top: 16px;
+    top: calc(16px + var(--safe-top));
     right: 16px;
     z-index: 50;
     display: flex;

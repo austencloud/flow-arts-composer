@@ -23,10 +23,15 @@ jobs:
     # the files that changed.
     timeout-minutes: 45
     # workflow_run fires on failure too; only a green CI run may deploy.
+    # The `branches: [main]` filter also matches a fork's branch named main,
+    # so the run must be a push to this repository's own main.
     # Manual dispatch stays available as the escape hatch.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
 
     steps:
       - name: Checkout

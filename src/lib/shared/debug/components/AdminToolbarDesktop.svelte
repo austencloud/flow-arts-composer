@@ -422,6 +422,7 @@
     top: 0;
     left: 0;
     right: 0;
+    padding-top: var(--safe-top);
     z-index: var(--z-debug);
     background: linear-gradient(
       180deg,

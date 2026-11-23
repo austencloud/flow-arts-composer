@@ -658,11 +658,15 @@ describe("shape matrix mandala continuity", () => {
   it("shows the solo card's shapes once when both hands offer the same ones", () => {
     const card = read("components/ShapeMatrixSoloCard.svelte");
     // Same turns on both hands = the same flowers twice, so one set stands for
-    // both, with the shared switch naming the hand on stage.
+    // both. The hand on stage is named by the stage's own Both / Left / Right
+    // switch, so the card carries no second hand switch.
     expect(card).toContain("handsOfferSameShapes(axes.left, axes.right)");
     expect(card).toMatch(/\{#if sameShapes\}\s*<div class="one-set"/);
-    expect(card).toContain("<SegmentedControl");
-    expect(card).toContain('ariaLabel={t("shape_engine_solo_hand_switch")}');
+    expect(card).not.toContain("<SegmentedControl");
+    const drill = read("components/ShapeMatrixDrill.svelte");
+    expect(drill).toMatch(
+      /<ShapeMatrixHandSwitch\s+value=\{solo \?\? "both"\}\s+onchange=\{onhandschange\}/,
+    );
     // The tile ink follows the hand on stage, so its art key carries the side.
     expect(card).toContain("artKey={`${side}:${key}:${artSuffix}`}");
     // Two columns and one set cross over instead of snapping, and a flight

@@ -169,6 +169,7 @@
   }
 
   .loading-shell {
+    /* behind the status bar: a centred loading note that cannot reach the top */
     position: fixed;
     inset: 0;
     display: grid;

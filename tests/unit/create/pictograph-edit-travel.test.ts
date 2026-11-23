@@ -196,6 +196,27 @@ describe("buildEditTravelStep", () => {
     expect(at(1).right).toEqual(endPlacements.right);
   });
 
+  it("passes the two props beside each other on a swap of neighbouring points", () => {
+    const before = drawing(GridLocation.NORTH, GridLocation.EAST);
+    const after = drawing(GridLocation.EAST, GridLocation.NORTH);
+    const plain = travel(before, after, { kind: "swap" });
+    const beside = travel(before, after, { kind: "swap", beside: true });
+    const apart = (positions: ReturnType<typeof plain.at>) =>
+      Math.hypot(
+        positions.left!.x - positions.right!.x,
+        positions.left!.y - positions.right!.y
+      );
+
+    // Plain swap arcs both props over the same stretch of the circle.
+    expect(apart(plain.at(0.5))).toBeLessThan(5);
+    // Beside: one arcs out and the other bends in, clear of each other all
+    // the way, and both still land on the exact end points.
+    for (let step = 1; step < 20; step++)
+      expect(apart(beside.at(step / 20))).toBeGreaterThan(40);
+    expect(beside.at(1).left).toEqual(beside.endPlacements.left);
+    expect(beside.at(1).right).toEqual(beside.endPlacements.right);
+  });
+
   it("spins a prop in place when only its orientation changes", () => {
     const before = drawing(GridLocation.NORTH, GridLocation.SOUTH);
     const after = drawing(

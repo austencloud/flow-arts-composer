@@ -21,15 +21,27 @@
   import BuugengChirality from "./BuugengChirality.svelte";
   import MandalaContrast from "#lib/shared/landing/components/MandalaContrast.svelte";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
+  import poiJson from "#lib/shared/landing/data/poi-flower-sequence.json";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     findPropTypeByValue,
     getPropTypeDisplayInfo,
   } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
-  import { PROP_KEYS, PROPS, isPropKey, type PropKey } from "./props-content";
+  import {
+    COMPARE,
+    COMPARE_KEYS,
+    PROP_KEYS,
+    PROPS,
+    compareKeyFor,
+    isPropKey,
+    type PropKey,
+  } from "./props-content";
   import "#lib/shared/landing/styles/public-editorial.css";
 
   const demoSequence = demoJson as unknown as SequenceData;
+  // Poi cannot hold still, so it plays one continuous flower (no held beats,
+  // dashes, statics or direction change) instead of the shared demo.
+  const poiSequence = poiJson as unknown as SequenceData;
 
   const TITLE = "Prop Notation | The Kinetic Alphabet for Every Prop";
   const DESCRIPTION =
@@ -57,6 +69,23 @@
   }
 
   const current = $derived(PROPS[selected]);
+  const playerSequence = $derived(
+    selected === "poi" ? poiSequence : demoSequence
+  );
+  // The block under the player follows the pick: staves left, the picked prop
+  // right. Poi has no staff twin, so it shows its own drawing alone.
+  const compareKey = $derived(compareKeyFor(selected));
+  const compareCells = $derived(
+    selected === "poi"
+      ? [{ prop: COMPARE.poi.propType, label: t(COMPARE.poi.label) }]
+      : [
+          { prop: "staff", label: t("site_props_page_compare_staves") },
+          {
+            prop: COMPARE[compareKey].propType,
+            label: t(COMPARE[compareKey].label),
+          },
+        ]
+  );
   // The picker art the app's own prop picker uses, drawn as a mask so it
   // takes the segment's ink (the raw SVGs are dark blue and vanish here).
   const propImage = Object.fromEntries(
@@ -139,7 +168,8 @@
     <div class="section-duo demo-star">
       <div class="duo-demo">
         <SequenceHeroDemo
-          sequence={demoSequence}
+          sequence={playerSequence}
+          startInMotion={selected === "poi"}
           note={t(current.note)}
           leftPropType={current.propType}
           rightPropType={current.propType}
@@ -182,17 +212,47 @@
   </section>
 
   <section class="editorial-section has-duo" style="--accent: #ec4899">
-    <h2 class="section-title">{t("site_props_page_compare_title")}</h2>
+    <!-- Headings share one cell (the tallest sets the height) so the drawing
+         below never moves when the pick changes. Every variant stays in the
+         HTML for search and no-JS readers. -->
+    <div class="compare-titles">
+      {#each COMPARE_KEYS as key (key)}
+        <h2
+          class="section-title compare-title"
+          class:active={key === compareKey}
+          inert={key !== compareKey}
+        >
+          {t(COMPARE[key].title)}
+        </h2>
+      {/each}
+    </div>
     <div class="section-duo flip">
       <div class="duo-copy">
         <div class="prose">
-          <p>{t("site_props_page_compare_text")}</p>
+          <div class="prop-panels compare-words">
+            {#each COMPARE_KEYS as key (key)}
+              <div
+                class="prop-panel"
+                class:active={key === compareKey}
+                inert={key !== compareKey}
+              >
+                <p>{t(COMPARE[key].text)}</p>
+                {#if key === "poi"}
+                  <p>
+                    <LinkChip href="/shape-engine"
+                      >{t("site_props_page_poi_shape_chip")}</LinkChip
+                    >
+                  </p>
+                {/if}
+              </div>
+            {/each}
+          </div>
           <p>{t("site_props_page_guide_line")}</p>
           <LinkChip href="/guide">{t("site_read_guide")}</LinkChip>
         </div>
       </div>
       <div class="duo-demo">
-        <MandalaContrast sequence={demoSequence} />
+        <MandalaContrast sequence={playerSequence} cells={compareCells} />
       </div>
     </div>
   </section>
@@ -304,6 +364,29 @@
       opacity var(--duration-fast) var(--ease-standard),
       visibility 0s;
   }
+  /* The comparison headings stack in one cell: the tallest sets the height,
+     the others sit under it, hidden, and cross-fade in on the pick. */
+  .compare-titles {
+    display: grid;
+  }
+  .compare-words {
+    margin-bottom: 1.2rem;
+  }
+  .compare-title {
+    grid-area: 1 / 1;
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s linear var(--duration-fast);
+  }
+  .compare-title.active {
+    visibility: visible;
+    opacity: 1;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s;
+  }
   .prop-panel .section-title {
     margin-bottom: 0.25rem;
   }
@@ -315,7 +398,9 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .prop-panel,
-    .prop-panel.active {
+    .prop-panel.active,
+    .compare-title,
+    .compare-title.active {
       transition: none;
     }
   }

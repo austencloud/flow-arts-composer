@@ -12,6 +12,7 @@ import {
   pulseRingLife,
   smoothstep,
 } from "../domain/pulse-rhythm";
+import { tipWearsEffect } from "./emitter-tip";
 import { mixRgb, parseCssRgb, rgba, WHITE, type Rgb } from "./css-rgb";
 
 export interface PulseTipInput {
@@ -23,6 +24,8 @@ export interface PulseTipInput {
   tipIndex: number;
   /** Which end of the prop (0 or 1); absent for a prop-center fallback. */
   end?: number;
+  /** The prop's only tracked tip: the tracking mode cannot drop it. */
+  onlyTip?: boolean;
   /** Resolved prop color (base trail color or tunnel spectrum) for "prop-matched". */
   color: string;
 }
@@ -165,7 +168,7 @@ export class Pulse2DRenderer {
     this.charging.length = 0;
 
     for (const tip of tips) {
-      if (!isTracked(params.trackingMode, tip.end)) continue;
+      if (!tipWearsEffect(tip as { end?: 0 | 1; onlyTip?: boolean }, params.trackingMode)) continue;
       const key = tip.end === undefined ? 100000 + tip.tipIndex : tip.propIndex * 2 + tip.end;
       const motion = this.track(key, tip, step, unit, beatSeconds);
       const ringHex = resolvePulseRingColor(params, tip.color, tip.tipIndex, this.clock);
@@ -508,11 +511,6 @@ export function drawPulseCharge(
 
 const LEAD_SPANS = [0.35, 0.75, 1.2];
 const GLINT_TURNS = [0, Math.PI / 2];
-
-function isTracked(mode: Pulse2DParams["trackingMode"], end: number | undefined): boolean {
-  if (end === undefined || mode === "both_ends") return true;
-  return mode === "left_end" ? end === 0 : end === 1;
-}
 
 /** Rotate a color's hue around the gray axis, keeping its lightness close. */
 export function rotateHue(c: Rgb, degrees: number): Rgb {

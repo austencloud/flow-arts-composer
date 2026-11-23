@@ -1,7 +1,7 @@
 import type { Animal2DParams } from "../translators/canvas2d-types";
 import type { AnimalIntent } from "../domain/effects-config";
 import type { EmitterTip } from "./emitter-tip";
-import { emitterId } from "./emitter-tip";
+import { emitterId, tipWearsEffect } from "./emitter-tip";
 import { traceForward, traceBackward } from "./ribbon-trace";
 
 type Vec2 = { x: number; y: number };
@@ -44,7 +44,7 @@ export class Animal2DRenderer {
 
     const present = new Map<string, EmitterTip>();
     for (const e of emitters) {
-      if (!this.isEndEnabled(e.end, params)) continue;
+      if (!tipWearsEffect(e, params.trackingMode)) continue;
       present.set(emitterId(e.propIndex, e.tipIndex), e);
     }
 
@@ -691,10 +691,6 @@ export class Animal2DRenderer {
     ctx.globalAlpha = 1;
   }
 
-  private isEndEnabled(end: "A" | "B", params: Animal2DParams): boolean {
-    if (params.trackingMode === "both_ends") return true;
-    return params.trackingMode === "left_end" ? end === "A" : end === "B";
-  }
 
   dispose(): void {
     this.chains.clear();

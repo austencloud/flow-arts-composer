@@ -1740,6 +1740,7 @@
     --action-shadow: 0 0.8rem 2rem rgba(165, 65, 39, 0.28);
     --action-shadow-hover: 0 1rem 2.4rem rgba(165, 65, 39, 0.42);
     --action-focus: #ffe6b0;
+    /* behind the status bar: a full-screen scene, its panels sit low or centred */
     position: fixed;
     inset: 0;
     min-inline-size: 20rem;
