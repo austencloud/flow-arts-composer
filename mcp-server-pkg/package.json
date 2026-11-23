@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@napi-rs/canvas": "^1.0.9",
+    "@napi-rs/canvas": "1.0.9",
     "@resvg/resvg-js": "^2.6.0",
     "jsdom": "^27.4.0",
     "qr-code-styling": "^1.9.2",

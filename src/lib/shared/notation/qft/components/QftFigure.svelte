@@ -86,6 +86,15 @@
   const hand = $derived({ x: poses.hand.x * unit, y: poses.hand.y * unit });
   const head = $derived({ x: poses.head.x * unit, y: poses.head.y * unit });
 
+  /* A hand that swings with the poi travels an arc, not the whole circle. */
+  const handArc = $derived.by(() => {
+    if (!trajectory?.handFollowsProp) return null;
+    return Array.from({ length: 121 }, (_, index) => {
+      const at = trajectoryPosesAt(trajectory, (index / 120) * 8).hand;
+      return `${index === 0 ? "M" : "L"}${at.x * unit},${at.y * unit}`;
+    }).join(" ");
+  });
+
   const samples = $derived(
     trajectory
       ? traceTrajectory(trajectory)
@@ -331,7 +340,9 @@
     </marker>
   </defs>
 
-  {#if layers.handPath && radius > 0.01}
+  {#if layers.handPath && handArc}
+    <path class="hand-path" d={handArc} fill="none" />
+  {:else if layers.handPath && radius > 0.01}
     <circle class="hand-path" cx="0" cy="0" r={radius * unit} />
   {/if}
 

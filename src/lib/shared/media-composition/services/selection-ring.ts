@@ -9,6 +9,14 @@
  */
 
 /**
+ * The ring's gold (`rgba(251, 191, 36, a)`, the app's amber-400) at `alpha`:
+ * the one gold every LOOP run mark that echoes the ring is drawn in.
+ */
+export function selectionGold(alpha: number): string {
+  return `rgba(251, 191, 36, ${alpha})`;
+}
+
+/**
  * The app's amber selection skin (StepCell's `.selection-skin`), as shares of
  * the cell's width so it keeps its look at every size: a 3 px gradient
  * border, 12 px corners and two soft glows on a cell about 120 px wide.
@@ -21,9 +29,9 @@ const RING_WIDE_GLOW_DROP_SHARE = 0.067;
 const RING_MIN_BORDER_PX = 1.5;
 const RING_FROM = "#f59e0b";
 const RING_TO = "#d97706";
-const RING_GLOW = "rgba(251, 191, 36, 0.5)";
-const RING_WIDE_GLOW = "rgba(251, 191, 36, 0.3)";
-const RING_EDGE = "rgba(251, 191, 36, 0.2)";
+const RING_GLOW = selectionGold(0.5);
+const RING_WIDE_GLOW = selectionGold(0.3);
+const RING_EDGE = selectionGold(0.2);
 
 /**
  * The sequence card's current cell (`3px solid rgba(251, 191, 36, 0.9)`,
@@ -32,8 +40,8 @@ const RING_EDGE = "rgba(251, 191, 36, 0.2)";
  */
 const CARD_BORDER_SHARE = 6 / 254;
 const CARD_GLOW_SHARE = 28 / 254;
-const CARD_BORDER = "rgba(251, 191, 36, 0.9)";
-const CARD_GLOW = "rgba(251, 191, 36, 0.5)";
+const CARD_BORDER = selectionGold(0.9);
+const CARD_GLOW = selectionGold(0.5);
 
 export type SelectionRingLook = "skin" | "card";
 

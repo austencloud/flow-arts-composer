@@ -120,13 +120,18 @@ export const LoopRunEventSchema = z.discriminatedUnion("kind", [
       step,
     })
     .strict(),
-  /** The rows layout shows rows `rows[0]` to `rows[1]` filling the box. */
+  /**
+   * The rows layout shows rows `rows[0]` to `rows[1]` filling the box. `gap`
+   * is the gap between neighbouring tiles from then on, across and down, as a
+   * share of a tile (0.08 until a view says otherwise); it eases with the view.
+   */
   z
     .object({
       kind: z.literal("view"),
       at: seconds,
       duration: seconds,
       rows: z.tuple([step, step]),
+      gap: share.optional(),
     })
     .strict(),
   /** The ring's home mark comes up to full strength. */
@@ -149,6 +154,11 @@ export const LoopRunEventSchema = z.discriminatedUnion("kind", [
    * gold selection ring; `marker: false` leaves every tile plain. `ring`
    * picks its look: `skin` (absent) is the step cell's rounded amber skin,
    * `card` the sequence card's square border with its glow inward.
+   * `shadow` leaves a faint flat silhouette of the props where a round ends,
+   * under the live props. `flare` puts a gold outline round the props each
+   * time a round ends, growing and fading over half a second. `wayBack` draws
+   * a gold line under the row from the last step's tile back to the first as
+   * the first round ends, and brings it up again at every later round's end.
    */
   z
     .object({
@@ -162,6 +172,9 @@ export const LoopRunEventSchema = z.discriminatedUnion("kind", [
         .strict(),
       marker: z.boolean().optional(),
       ring: z.enum(["skin", "card"]).optional(),
+      shadow: z.boolean().optional(),
+      flare: z.boolean().optional(),
+      wayBack: z.boolean().optional(),
     })
     .strict(),
 ]);
@@ -228,6 +241,12 @@ export const LoopRunSettingsSchema = z
      * empty frame, and a revealed tile fades in without growing.
      */
     plainTiles: z.boolean().optional(),
+    /**
+     * A repeat in flight is the pictograph alone: grid, letter, arrows and
+     * props, with no tile ground and no edge, faded as one picture so it hands
+     * over to its landed tile without dimming. The reflection line draws over it.
+     */
+    bareCopies: z.boolean().optional(),
   })
   .strict();
 export type LoopRunSettings = z.infer<typeof LoopRunSettingsSchema>;
@@ -297,6 +316,8 @@ export interface LoopTilePlace {
 export interface LoopRunView {
   first: number;
   count: number;
+  /** The gap between tiles, as a share of a tile, once a view event has set one. */
+  gap?: number;
 }
 
 /** Share of the rect kept clear at each edge. */
@@ -346,12 +367,15 @@ function gridCell(
   change: LoopRunChange,
   shape: LoopRunShape,
   s: number,
-  look?: LoopRunPlaceLook
+  look?: LoopRunPlaceLook,
+  view?: LoopRunView
 ): { col: number; row: number; cols: number; rows: number; colGap: number; rowGap: number } {
   const pass = passOf(shape, s);
   const within = s % shape.seed;
-  if (layout === "rows")
-    return { col: within, row: pass, cols: shape.seed, rows: shape.passes, colGap: GAP, rowGap: GAP };
+  if (layout === "rows") {
+    const gap = view?.gap ?? GAP;
+    return { col: within, row: pass, cols: shape.seed, rows: shape.passes, colGap: gap, rowGap: gap };
+  }
   if (layout === "pairs") {
     // Rewound runs back up its column, so each step sits beside the one it undoes.
     const row = change === "rewound" && pass % 2 === 1 ? shape.seed - 1 - within : within;
@@ -375,7 +399,7 @@ export function loopTilePlace(
 ): LoopTilePlace {
   if (layout === "ring") return ringPlace(rect, shape.steps, ringDegrees(s, shape.steps));
   if (layout === "card") return cardPlace(rect, shape, s, look?.cardStart !== false);
-  const cell = gridCell(layout, change, shape, s, look);
+  const cell = gridCell(layout, change, shape, s, look, view);
   const shown = layout === "rows" && view ? view : { first: 0, count: cell.rows };
   const size = gridTile(rect, cell.cols, Math.max(1, shown.count), cell.colGap, cell.rowGap);
   const pitchX = size * (1 + cell.colGap);
@@ -456,7 +480,13 @@ function viewAt(settings: LoopRunSettings, shape: LoopRunShape, t: number): Loop
     const last = Math.max(event.rows[0], event.rows[1]);
     const next = { first, count: last - first + 1 };
     const u = ramp(t, event.at, event.at + event.duration);
-    view = { first: lerp(view.first, next.first, u), count: lerp(view.count, next.count, u) };
+    const gap = view.gap ?? event.gap;
+    view = {
+      first: lerp(view.first, next.first, u),
+      count: lerp(view.count, next.count, u),
+      // A view that sets no gap keeps the one before; the first gap set eases from the layout's own.
+      ...(gap !== undefined ? { gap: lerp(view.gap ?? GAP, event.gap ?? gap, u) } : {}),
+    };
   }
   return view;
 }
@@ -556,19 +586,56 @@ export interface LoopRingDraw {
 
 export type LoopRingLook = "skin" | "card";
 
+/**
+ * Where the stage's props stand: as `step`'s move leaves them `progress` of
+ * the way through it; step -1 is home. `continued` is a round after the
+ * first, whose first step starts where the last step left the props rather
+ * than at the start position.
+ */
+export interface LoopStagePose {
+  step: number;
+  progress: number;
+  continued: boolean;
+}
+
+/** One gold outline round the props where a round ends, `clearance` clip pixels clear of them. */
+export interface LoopFlareDraw {
+  pose: LoopStagePose;
+  clearance: number;
+  /** The outline's strength, 0 to 1, and its stroke width in clip pixels. */
+  strength: number;
+  width: number;
+  /** The clearance at which the props count as standing together, fixed for the flare's life. */
+  join: number;
+}
+
+/**
+ * The gold way back under the row: from the bottom centre of the last step's
+ * tile to the bottom centre of the first, in clip pixels. `unit` is 1/254 of a
+ * tile's side; `drawn` is how much of the path is drawn from the last tile, 0 to 1.
+ */
+export interface LoopWayBackDraw {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  unit: number;
+  drawn: number;
+  strength: number;
+}
+
 /** The LOOP played on its stage: grid and props, and the ring on the tile being played. */
 export interface LoopStageDraw extends LoopTilePlace {
   opacity: number;
   /** The strength the stage's big grid is drawn at, against the stage's own. */
   grid: number;
-  /**
-   * The props as `step`'s move leaves them `progress` of the way through it;
-   * step -1 is home. `continued` is a round after the first, whose first step
-   * starts where the last step left the props rather than at the start position.
-   */
-  props: { step: number; progress: number; continued: boolean };
+  props: LoopStagePose;
   /** The ring on the tile being played, and on the one before it while they cross-fade. */
   rings: LoopRingDraw[];
+  /** The props' silhouette where a round leaves them (`shadow`), drawn faint under the live props. */
+  shadow?: LoopStagePose | null;
+  /** The landing flares showing at `t` (`flare`). */
+  flares?: LoopFlareDraw[];
+  /** The way back under the row (`wayBack`), once it has begun. */
+  wayBack?: LoopWayBackDraw | null;
 }
 
 export interface LoopRunFrame {
@@ -592,6 +659,35 @@ const STAGE_FADE = 0.4;
 /** How long the ring takes to cross-fade on to the next tile, and to go after the last round. */
 const RING_SWAP = 0.12;
 const RING_FADE = 0.3;
+
+/**
+ * The landing flare (`flare`): each outline starts `FLARE_FROM_PX` clear of the
+ * props (pixels of a 1080-wide frame) and grows to `FLARE_TO_PX` over
+ * `FLARE_LIFE` seconds, easing out, while its strength falls linearly to 0.
+ * The second trails the first by `delay`.
+ */
+const FLARE_LIFE = 0.5;
+const FLARE_FROM_PX = 20;
+const FLARE_TO_PX = 50;
+const FLARE_OUTLINES = [
+  { delay: 0, strength: 0.7, widthPx: 5 },
+  { delay: 0.1, strength: 0.3, widthPx: 4 },
+] as const;
+
+/**
+ * The way back (`wayBack`): it draws on over the `WAY_DRAW` seconds that end
+ * at the first round's end, holds full for `WAY_HOLD`, settles to `WAY_REST`
+ * over `WAY_SETTLE`, and comes up over `WAY_RISE` before each later round's end.
+ */
+const WAY_DRAW = 0.4;
+const WAY_HOLD = 0.3;
+const WAY_SETTLE = 0.3;
+const WAY_RISE = 0.2;
+const WAY_REST = 0.35;
+/** A tile's side in the way back's units. */
+const WAY_TILE_UNITS = 254;
+/** Frame times land a hair either side of a round's end; this keeps the end's frame on the end. */
+const ROUND_EPSILON = 1e-6;
 
 /** How long the start position takes to come in once the card has settled. */
 const START_FADE = 0.5;
@@ -689,6 +785,8 @@ export function loopRunFrame(
   const plain = settings.plainTiles === true;
   const tiles: LoopTileDraw[] = [];
   const copies: LoopCopyDraw[] = [];
+  /** How far each tile has come in, before a rows view hides it. */
+  const arrived: number[] = [];
   for (let s = 0; s < shape.steps; s++) {
     const pass = passOf(shape, s);
     const place = placeAt(settings, shape, rect, state, view, s);
@@ -703,6 +801,7 @@ export function loopRunFrame(
     } else if (arrive) {
       opacity = ramp(t, arrive.end - 0.15, arrive.end + 0.05);
     }
+    arrived.push(opacity);
     // In rows, a row outside the rows in view waits unseen and comes in as the view grows to it.
     if (state.from === "rows" && state.to === "rows") opacity *= rowInView(view, pass);
     const { props, arrows, letter } = propsAt(settings, s, t);
@@ -757,14 +856,16 @@ export function loopRunFrame(
     });
   }
 
-  // Empty places wait in the ring and in pairs, and go once the tiles leave.
-  const slotsShown = Math.max(1 - awayFrom(state, shape, "ring"), 1 - awayFrom(state, shape, "pairs"));
+  // Empty places wait in the ring and in pairs, and go once the tiles leave. Plain
+  // tiles also wait in rows, row by row as the view shows them.
+  const inRows = plain && state.from === "rows" && state.to === "rows";
+  const slotsShown = inRows ? 1 : Math.max(1 - awayFrom(state, shape, "ring"), 1 - awayFrom(state, shape, "pairs"));
   const slots =
     slotsShown > 0
       ? Array.from({ length: shape.steps }, (_, s) => ({
           ...loopTilePlace(state.from === "ring" || state.from === "pairs" ? state.from : state.to, settings.change, shape, rect, s, view, settings),
-          opacity: slotsShown,
-          waiting: 1 - tiles[s]!.opacity,
+          opacity: inRows ? rowInView(view, passOf(shape, s)) : slotsShown,
+          waiting: 1 - arrived[s]!,
         }))
       : [];
 
@@ -883,6 +984,16 @@ function stageAt(
     if (u < 1) ring(tiles[(k + shape.steps - 1) % shape.steps], 1 - u);
     ring(tiles[k % shape.steps], u);
   }
+
+  // Where a round leaves the props. It is not the start position's pose: two
+  // props sharing a point are parted the other way round once the LOOP has
+  // gone round, so the shadow and the flare take the landed pose.
+  const landed: LoopStagePose = { step: shape.steps - 1, progress: 1, continued: total > shape.steps };
+  const roundEnds = Array.from({ length: rounds }, (_, r) => play.at + ((r + 1) * play.duration) / rounds);
+  const extras: Pick<LoopStageDraw, "shadow" | "flares" | "wayBack"> = {};
+  if (play.shadow) extras.shadow = per > 0 && t >= play.at - ROUND_EPSILON ? landed : null;
+  if (play.flare) extras.flares = per > 0 ? flaresAt(roundEnds, landed, clip.width / 1080, opacity, t) : [];
+  if (play.wayBack) extras.wayBack = per > 0 ? wayBackAt(roundEnds, tiles, shape, opacity, t) : null;
   return {
     x: clip.x + play.stage.x * clip.width,
     y: clip.y + play.stage.y * clip.height,
@@ -891,6 +1002,66 @@ function stageAt(
     grid: play.stage.grid ?? 1,
     props,
     rings,
+    ...extras,
+  };
+}
+
+/** The flare outlines showing at `t`: each round's end starts one set. `pixel` is a 1080-wide frame's pixel in clip pixels. */
+function flaresAt(
+  roundEnds: readonly number[],
+  pose: LoopStagePose,
+  pixel: number,
+  opacity: number,
+  t: number
+): LoopFlareDraw[] {
+  const flares: LoopFlareDraw[] = [];
+  for (const end of roundEnds)
+    for (const outline of FLARE_OUTLINES) {
+      const since = t - (end + outline.delay);
+      if (since < -ROUND_EPSILON || since >= FLARE_LIFE) continue;
+      const u = clamp01(since / FLARE_LIFE);
+      const grow = 1 - (1 - u) * (1 - u);
+      const strength = outline.strength * (1 - u) * opacity;
+      if (strength <= 0) continue;
+      flares.push({
+        pose,
+        clearance: lerp(FLARE_FROM_PX, FLARE_TO_PX, grow) * pixel,
+        strength,
+        width: outline.widthPx * pixel,
+        join: FLARE_FROM_PX * pixel,
+      });
+    }
+  return flares;
+}
+
+/** The way back at `t`: absent until it starts drawing on before the first round's end. */
+function wayBackAt(
+  roundEnds: readonly number[],
+  tiles: readonly LoopTileDraw[],
+  shape: LoopRunShape,
+  opacity: number,
+  t: number
+): LoopWayBackDraw | null {
+  const first = roundEnds[0];
+  const last = tiles[shape.steps - 1];
+  const head = tiles[0];
+  if (first === undefined || !last || !head || t < first - WAY_DRAW) return null;
+  const drawn = clamp01((t - (first - WAY_DRAW)) / WAY_DRAW);
+  // Full as it arrives, then settled; each later round's end brings it up again.
+  const settle = (end: number) => 1 - (1 - WAY_REST) * ramp(t, end + WAY_HOLD, end + WAY_HOLD + WAY_SETTLE);
+  let strength = t < first + ROUND_EPSILON ? 1 : settle(first);
+  for (const end of roundEnds.slice(1)) {
+    if (t < end - WAY_RISE) break;
+    const rise = ramp(t, end - WAY_RISE, end);
+    strength = t < end + ROUND_EPSILON ? lerp(WAY_REST, 1, rise) : settle(end);
+  }
+  const bottom = (tile: LoopTileDraw) => ({ x: tile.x, y: tile.y + tile.size / 2 });
+  return {
+    from: bottom(last),
+    to: bottom(head),
+    unit: last.size / WAY_TILE_UNITS,
+    drawn,
+    strength: strength * opacity,
   };
 }
 
@@ -1093,7 +1264,7 @@ export function loopRunPlanOf(
   item: LoopRunSettings & { id: string; start: number; duration: number; sequence: LoopRunSequenceSnapshot },
   role: string
 ): LoopRunPlan {
-  const { seed, change, layout, colour, events, badges, room, waitingGrids, lineReach, startAlways, cardStart, pairsGap, plainTiles } =
+  const { seed, change, layout, colour, events, badges, room, waitingGrids, lineReach, startAlways, cardStart, pairsGap, plainTiles, bareCopies } =
     item;
   return {
     itemId: item.id,
@@ -1115,6 +1286,7 @@ export function loopRunPlanOf(
       ...(cardStart !== undefined ? { cardStart } : {}),
       ...(pairsGap ? { pairsGap } : {}),
       ...(plainTiles !== undefined ? { plainTiles } : {}),
+      ...(bareCopies !== undefined ? { bareCopies } : {}),
     },
   };
 }

@@ -5,6 +5,7 @@ import {
   loopRunDefaultEvents,
   loopRunFrame,
   loopRunLength,
+  loopRunPlanOf,
   loopRunShape,
   loopRunTurnDegrees,
   loopTilePlace,
@@ -405,6 +406,105 @@ describe("loop run pass-3 settings", () => {
     expect(rows[1]!.x - rows[0]!.x).toBeCloseTo(rows[0]!.size * 1.08, 6);
   });
 
+  it("sets the rows' gap from a view, easing with it, and keeps 0.08 when no view sets one", () => {
+    // Build: two rows of 420 with 48 gaps, rows y 388 to 1276. Play: four rows of 230, no gap, x 32 to 492.
+    const h = 888 / 0.94;
+    const build = { top: (832 - h / 2) / 1920, bottom: (1920 - 832 - h / 2) / 1920, left: 0, right: 0 };
+    const w = 460 / 0.94;
+    const tall = 920 / 0.94;
+    const play = {
+      top: (848 - tall / 2) / 1920,
+      bottom: (1920 - 848 - tall / 2) / 1920,
+      left: (262 - w / 2) / 1080,
+      right: (1080 - 262 - w / 2) / 1080,
+    };
+    const run = settings({
+      change: "rotated",
+      layout: "rows",
+      room: build,
+      events: [
+        { kind: "view", at: 0, duration: 0, rows: [0, 1], gap: 48 / 420 },
+        { kind: "view", at: 2, duration: 1, rows: [1, 2] },
+        { kind: "view", at: 5, duration: 1, rows: [0, 3], gap: 0 },
+        { kind: "room", at: 5, duration: 1, room: play },
+      ],
+    });
+    const near = (got: number, want: number) => expect(got).toBeCloseTo(want, 6);
+    const first = loopRunFrame(run, 8, RECT, 1).tiles.map(edges);
+    near(first[0]!.left, 96);
+    near(first[1]!.right, 984);
+    near(first[1]!.left, 564);
+    near(first[0]!.top, 388);
+    near(first[2]!.top, 856);
+    near(first[2]!.bottom, 1276);
+    // A view with no gap keeps the gap before it: one row down, same pitch.
+    const moved = loopRunFrame(run, 8, RECT, 4).tiles.map(edges);
+    near(moved[2]!.top, 388);
+    near(moved[4]!.bottom, 1276);
+    near(moved[1]!.left - moved[0]!.right, 48);
+    const end = loopRunFrame(run, 8, RECT, 7).tiles;
+    const boxes = end.map(edges);
+    near(boxes[0]!.left, 32);
+    near(boxes[1]!.right, 492);
+    near(boxes[0]!.top, 388);
+    near(boxes[7]!.bottom, 1308);
+    near(boxes[1]!.left, boxes[0]!.right);
+    expect(end.every((tile) => tile.opacity === 1)).toBe(true);
+    // Halfway, the gap is between the two.
+    const half = loopRunFrame(run, 8, RECT, 5.5).tiles;
+    const gap = half[1]!.x - half[0]!.x - half[0]!.size;
+    expect(gap).toBeGreaterThan(0);
+    expect(gap / half[0]!.size).toBeLessThan(48 / 420);
+    // Without a gap on any view, rows keep their own.
+    const plainView = settings({ change: "rotated", layout: "rows", events: [{ kind: "view", at: 0, duration: 0, rows: [0, 1] }] });
+    const tiles = loopRunFrame(plainView, 8, RECT, 1).tiles;
+    expect(tiles[1]!.x - tiles[0]!.x).toBeCloseTo(tiles[0]!.size * 1.08, 6);
+  });
+
+  it("keeps plain tiles' empty frames waiting in rows, only for the rows in view", () => {
+    const events: LoopRunSettings["events"] = [
+      { kind: "view", at: 0, duration: 0, rows: [0, 1] },
+      { kind: "reveal", at: 0.3, duration: 0.5 },
+      { kind: "enter", at: 3, duration: 1.2 },
+    ];
+    const rows = (plainTiles?: boolean) =>
+      settings({ change: "rotated", layout: "rows", events, ...(plainTiles ? { plainTiles } : {}) });
+    expect(loopRunFrame(rows(), 8, RECT, 2).slots).toHaveLength(0);
+    const slots = loopRunFrame(rows(true), 8, RECT, 2).slots;
+    expect(slots).toHaveLength(8);
+    expect(slots[2]!.opacity).toBe(1);
+    expect(slots[2]!.waiting).toBe(1);
+    expect(slots[0]!.waiting).toBe(0);
+    expect(slots[4]!.opacity).toBe(0);
+    // The frame waits where its tile will land.
+    const landed = loopRunFrame(rows(true), 8, RECT, 5).tiles[2]!;
+    expect(slots[2]!.x).toBeCloseTo(landed.x, 6);
+    expect(slots[2]!.y).toBeCloseTo(landed.y, 6);
+    expect(loopRunFrame(rows(true), 8, RECT, 5).slots[2]!.waiting).toBe(0);
+  });
+
+  it("puts the gold ring on the tile being played in rows and in the ring", () => {
+    for (const layout of ["rows", "ring"] as const) {
+      const run = settings({
+        change: "rotated",
+        layout,
+        plainTiles: true,
+        events: [{ kind: "play", at: 2, duration: 10.4, rounds: 2, stage: { x: 0.5, y: 0.5, size: 0.3 }, ring: "card", flare: true }],
+      });
+      // 0.65 s a step: 2 + 0.65 * 5.5 is the middle of step 5.
+      const frame = loopRunFrame(run, 8, RECT, 2 + 0.65 * 5.5);
+      const tile = frame.tiles[5]!;
+      expect(frame.stage!.rings).toHaveLength(1);
+      const ring = frame.stage!.rings[0]!;
+      expect(ring.look).toBe("card");
+      expect(ring.x).toBeCloseTo(tile.x - tile.size / 2, 6);
+      expect(ring.y).toBeCloseTo(tile.y - tile.size / 2, 6);
+      expect(ring.width).toBeCloseTo(tile.size, 6);
+      // The first round ends at 7.2: the flare starts on it.
+      expect(loopRunFrame(run, 8, RECT, 7.2).stage!.flares!.length).toBeGreaterThan(0);
+    }
+  });
+
   it("gives plain tiles square corners, no outline and no grow as they are revealed", () => {
     const run = settings({ events, plainTiles: true });
     const appearing = loopRunFrame(run, 4, RECT, 0.9).tiles[0]!;
@@ -428,6 +528,90 @@ describe("loop run pass-3 settings", () => {
     expect(stage.grid).toBe(0.5);
     expect(stage.rings.length).toBeGreaterThan(0);
     expect(stage.rings.every((ring) => ring.look === "card")).toBe(true);
+  });
+});
+
+describe("loop run pass-4 settings", () => {
+  const STAGE = { x: 0.5, y: 0.5, size: 0.5 };
+  // Four steps, two rounds of 6 s from 6.6: the rounds end at 9.6 and 12.6.
+  const run = (extra: { shadow?: boolean; flare?: boolean; wayBack?: boolean } = {}) =>
+    settings({
+      layout: "card",
+      cardStart: false,
+      events: [{ kind: "play", at: 6.6, from: 6.3, duration: 6, rounds: 2, stage: STAGE, ring: "card", ...extra }],
+    });
+  const stageAt = (t: number, extra?: Parameters<typeof run>[0]) => loopRunFrame(run(extra), 4, RECT, t).stage!;
+
+  it("adds no shadow, flare or way back when none is asked for", () => {
+    for (const t of [6.4, 7, 9.6, 9.8, 12.6, 13.5]) {
+      const stage = stageAt(t);
+      expect("shadow" in stage).toBe(false);
+      expect("flares" in stage).toBe(false);
+      expect("wayBack" in stage).toBe(false);
+    }
+  });
+
+  it("carries the shadow in the pose a round leaves the props, from the play's start", () => {
+    expect(stageAt(6.5, { shadow: true }).shadow).toBeNull();
+    const landed = { step: 3, progress: 1, continued: true };
+    expect(stageAt(6.6, { shadow: true }).shadow).toEqual(landed);
+    expect(stageAt(8, { shadow: true }).shadow).toEqual(landed);
+    expect(stageAt(13.5, { shadow: true }).shadow).toEqual(landed);
+    // Where the second round leaves the props is where the shadow is.
+    expect(stageAt(13.5, { shadow: true }).props).toEqual(landed);
+  });
+
+  it("fires the flare at each round's end, the last included, and has it gone 0.6 s later", () => {
+    expect(stageAt(9.55, { flare: true }).flares).toEqual([]);
+    for (const end of [9.6, 12.6]) {
+      const flares = stageAt(end, { flare: true }).flares!;
+      expect(flares).toHaveLength(1);
+      expect(flares[0]!.strength).toBeCloseTo(0.7, 6);
+      expect(flares[0]!.clearance).toBeCloseTo(20, 6);
+      expect(flares[0]!.width).toBeCloseTo(5, 6);
+      expect(flares[0]!.pose).toEqual({ step: 3, progress: 1, continued: true });
+      const both = stageAt(end + 0.2, { flare: true }).flares!;
+      expect(both).toHaveLength(2);
+      expect(both[0]!.clearance).toBeGreaterThan(both[1]!.clearance);
+      expect(both[0]!.strength).toBeCloseTo(0.7 * 0.6, 6);
+      expect(both[1]!.strength).toBeCloseTo(0.3 * 0.8, 6);
+      expect(stageAt(end + 0.6, { flare: true }).flares).toEqual([]);
+    }
+    // It grows to 50 px clear of the props, on a 1080-wide frame.
+    expect(stageAt(9.6 + 0.4999, { flare: true }).flares![0]!.clearance).toBeCloseTo(50, 2);
+  });
+
+  it("draws the way back on as the first round ends, settles it, and brings it up at the next", () => {
+    expect(stageAt(9.19, { wayBack: true }).wayBack).toBeNull();
+    const half = stageAt(9.4, { wayBack: true }).wayBack!;
+    expect(half.drawn).toBeCloseTo(0.5, 6);
+    expect(half.strength).toBe(1);
+    const arrived = stageAt(9.6, { wayBack: true }).wayBack!;
+    expect(arrived.drawn).toBe(1);
+    expect(arrived.strength).toBe(1);
+    expect(stageAt(9.85, { wayBack: true }).wayBack!.strength).toBe(1);
+    expect(stageAt(11.6, { wayBack: true }).wayBack!.strength).toBeCloseTo(0.35, 6);
+    expect(stageAt(12.6, { wayBack: true }).wayBack!.strength).toBe(1);
+    expect(stageAt(13.5, { wayBack: true }).wayBack!.strength).toBeCloseTo(0.35, 6);
+  });
+
+  it("anchors the way back on the bottom centres of the last and the first tile", () => {
+    const frame = loopRunFrame(run({ wayBack: true }), 4, RECT, 10);
+    const [first, , , last] = frame.tiles;
+    const way = frame.stage!.wayBack!;
+    expect(way.from).toEqual({ x: last!.x, y: last!.y + last!.size / 2 });
+    expect(way.to).toEqual({ x: first!.x, y: first!.y + first!.size / 2 });
+    expect(way.unit).toBeCloseTo(last!.size / 254, 9);
+  });
+
+  it("keeps bareCopies in the compiled plan, and the frames as they were", () => {
+    const events = loopRunDefaultEvents("reflected", "pairs", 4, 2);
+    const item = { ...settings({ events, plainTiles: true, bareCopies: true }), id: "x", start: 0, duration: 9, sequence: {} as never };
+    expect(loopRunPlanOf(item, "overlay").settings.bareCopies).toBe(true);
+    const without = { ...item, bareCopies: undefined };
+    expect("bareCopies" in loopRunPlanOf(without, "overlay").settings).toBe(false);
+    for (const t of [3.5, 4.85, 4.9])
+      expect(loopRunFrame(item, 4, RECT, t)).toEqual(loopRunFrame(settings({ events, plainTiles: true }), 4, RECT, t));
   });
 });
 

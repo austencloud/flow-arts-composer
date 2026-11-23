@@ -14,6 +14,7 @@
   import GuideGridExplorer from "./GuideGridExplorer.svelte";
   import GuideStepStrip from "./GuideStepStrip.svelte";
   import SequenceShowcase from "./SequenceShowcase.svelte";
+  import { wordStackBeats, captionIsTimingNote } from "../_data/word-stack";
   import FigureCardRow, { type FigureCardExtras } from "./FigureCardRow.svelte";
   import Sentences from "../../_components/Sentences.svelte";
   import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
@@ -278,6 +279,11 @@
           {picTheme}
         >
           {#snippet text()}
+            {@const stacked =
+              item.variant === "compact" &&
+              !((scard.pool?.entries.length ?? 0) > 1) &&
+              wordStackBeats(scard.items) !== null}
+            {@const dropCaption = stacked && captionIsTimingNote(scard.caption)}
             {#if item.text.length}
               {#each item.text as tb, m (m)}
                 {#if tb.kind === "heading"}
@@ -296,14 +302,17 @@
                   />
                 {/if}
               {/each}
-              {#if item.keepCaption}
+              {#if item.keepCaption && !dropCaption}
                 <p class="flow-caption showcase-caption">{scard.caption}</p>
               {/if}
+            {:else if dropCaption}
+              <!-- The word screen's player carries the timing and direction
+                   mark; the caption line says nothing more. -->
             {:else if scard.caption}
               <!-- Authored captions already name the word ("EK - Exploding
                    Kitten") - showing the derived word above one doubles it. -->
               <p class="flow-caption showcase-caption">{scard.caption}</p>
-            {:else}
+            {:else if !stacked}
               <h3 class="flow-h3 showcase-h">{sseq.word}</h3>
             {/if}
           {/snippet}

@@ -5,6 +5,7 @@ import {
   displayTrajectory,
   STILL_HAND_DISPLAY_RADIUS,
 } from "../../src/lib/features/levels/poi-lab/domain/poi-swing-timing";
+import { trajectoryPosesAt } from "../../src/lib/shared/notation/qft/qft-trajectory";
 
 const pendulum = POI_REVERSAL_CANDIDATES.find(
   (candidate) => candidate.id === "poi-r0-dcw-s1-p2"
@@ -33,5 +34,20 @@ describe("poi swing timing", () => {
       (candidate) => candidate.trajectory.radius === 1
     )!.trajectory;
     expect(displayTrajectory(moving)).toBe(moving);
+  });
+
+  // Austen, 2026-11-22: the hand goes "up to the left part of the circle, and
+  // then down to the right part ... going down every single time", never the
+  // whole circle.
+  it("swings a still hand along the bottom of its circle, never over the top", () => {
+    const shown = displayTrajectory(pendulum);
+    const hands = Array.from(
+      { length: 401 },
+      (_, index) => trajectoryPosesAt(shown, (index / 400) * 8).hand
+    );
+    expect(Math.min(...hands.map((hand) => -hand.y))).toBeLessThan(-0.07);
+    expect(Math.max(...hands.map((hand) => -hand.y))).toBeLessThan(1e-9);
+    expect(Math.min(...hands.map((hand) => hand.x))).toBeLessThan(-0.07);
+    expect(Math.max(...hands.map((hand) => hand.x))).toBeGreaterThan(0.07);
   });
 });

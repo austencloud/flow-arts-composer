@@ -5,6 +5,8 @@ import { stripHtml } from "./flow-intro";
 import { GUIDE_CONTENT } from "./guide-content";
 import { hmGammaContent } from "./content/hm-gamma.content";
 import { negativeSpaceContent } from "./content/negative-space.content";
+import { lt1AbcGhiContent } from "./content/lt1-abc-ghi.content";
+import { lt1DjEkFlContent } from "./content/lt1-dj-ek-fl.content";
 import { staffMotionsContent } from "./content/staff-motions.content";
 import { screenRoom, type ScreenRoom } from "../../_components/fit/guide-screen-url";
 
@@ -461,5 +463,30 @@ describe.each([
       const sorted = (s: string) => [...s].sort().join("");
       expect(sorted(words(items)), slug).toBe(sorted(words(whole)));
     }
+  });
+});
+
+describe("pills that name words", () => {
+  const labels = (content: GuideBlock[], w: number, h: number) =>
+    flowScreens(
+      flowRenderItems(content, "", undefined, { room: screenRoom(w, h) })
+    ).map((s) => s.label);
+
+  it("names Alpha and Beta Words' first screen AAAA, like the BBBB that follows", () => {
+    expect(labels(lt1AbcGhiContent, 1440, 900)).toEqual([
+      "AAAA",
+      "BBBB",
+      "CCCC",
+      "GGGG",
+      "HHHH",
+      "IIII",
+    ]);
+  });
+  it("keeps the first word's name on its second phone screen", () => {
+    const phone = labels(lt1AbcGhiContent, 387, 775);
+    expect(phone.slice(0, 3)).toEqual(["AAAA", "AAAA", "BBBB"]);
+  });
+  it("leaves a page whose first screen shows letters, not a word, as it was", () => {
+    expect(labels(lt1DjEkFlContent, 1440, 900)[0]).toBe("Intro");
   });
 });

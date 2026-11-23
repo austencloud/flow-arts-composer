@@ -1,6 +1,8 @@
 <script lang="ts">
   import { s as t } from "../../strings.svelte.js";
   import ShapeMatrixDrill from "../../components/ShapeMatrixDrill.svelte";
+  import ShapeMatrixLoader from "./ShapeMatrixLoader.svelte";
+  import { createLoaderHandoff } from "../state/shape-matrix-loader-handoff.svelte.js";
   import type { ModeRealization } from "../../services/build-mode-realizations.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import {
@@ -20,6 +22,9 @@
   const { onrealizationAction, onshareRealization }: Props = $props();
   const state = getShapeMatrixAppContext();
   const host = getShapeEngineHostContext();
+  /* Built already: straight to the stage. Still building: the loading
+     drawing closes its stroke before the stage takes over. */
+  const loader = createLoaderHandoff(state.data !== null);
   // A mirror host traces the pick itself; the Composer's viewer, library and
   // share links are not there to open.
   const mirror = $derived(host.variant === "mirror");
@@ -36,7 +41,7 @@
 
 <aside class="detail-pane" aria-label={t("shape_engine_detail_aria")}>
   <div class="drill-stage">
-    {#if state.data}
+    {#if state.data && loader.done}
       <ShapeMatrixDrill
         pair={state.selectedPair}
         data={state.data}
@@ -74,7 +79,11 @@
         }}
       />
     {:else}
-      <p class="status">{t("shape_engine_building_matrix")}</p>
+      <ShapeMatrixLoader
+        variant="stage"
+        ready={state.data !== null}
+        onfinished={loader.finish}
+      />
     {/if}
   </div>
 </aside>
@@ -98,15 +107,6 @@
     overflow: hidden;
     background: var(--theme-panel-bg, #0a0f14);
     container: shape-matrix-drill / size;
-  }
-
-  .status {
-    display: grid;
-    place-content: center;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    font-size: var(--font-size-min, 0.875rem);
   }
 
   @container shape-matrix-app (max-width: 74.99rem) or (max-height: 41.99rem) {

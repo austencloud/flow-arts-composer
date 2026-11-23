@@ -45,6 +45,7 @@ with pre-prepared data for better performance.
   import { derivePropElementalTypeForStep } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PropType } from "../../prop/domain/enums/prop-type";
+  import { letterGlyphVisible } from "../domain/utils/hands-have-no-letter";
   import {
     type FanAppearance,
     fanAppearanceSignature,
@@ -392,8 +393,14 @@ with pre-prepared data for better performance.
     showGrid !== undefined ? showGrid : syncedVisibility.showGrid
   );
 
+  // A picture that draws hands has no letter (and no turn or float marks),
+  // whatever the caller or the visitor's settings ask for.
   const effectiveShowTKA = $derived(
-    showTKA !== undefined ? showTKA : syncedVisibility.tkaGlyph
+    letterGlyphVisible(
+      showTKA !== undefined ? showTKA : syncedVisibility.tkaGlyph,
+      effectiveLeftPropType,
+      effectiveRightPropType
+    )
   );
 
   // Reversals are an essential part of the notation — always shown unless an

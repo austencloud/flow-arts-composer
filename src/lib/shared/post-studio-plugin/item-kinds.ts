@@ -674,7 +674,7 @@ export type PostLoopFields = Pick<PostLoopItem, "sequence" | "seed" | "change" |
   Partial<
     Pick<
       PostLoopItem,
-      "badges" | "room" | "waitingGrids" | "lineReach" | "startAlways" | "cardStart" | "pairsGap" | "plainTiles"
+      "badges" | "room" | "waitingGrids" | "lineReach" | "startAlways" | "cardStart" | "pairsGap" | "plainTiles" | "bareCopies"
     >
   >;
 

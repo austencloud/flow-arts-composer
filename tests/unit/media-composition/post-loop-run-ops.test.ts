@@ -66,4 +66,13 @@ describe("words and LOOP runs added by command", () => {
     const next = applyPostProjectOps(added, [{ op: "item", item: id, patch: { loop } }], ctx);
     expect(overlays(next).find((item) => item.id === id)).toMatchObject(loop);
   });
+
+  it("keeps bare copies and the play's shadow, flare and way back from an item patch", () => {
+    const added = applyPostProjectOps(project([]), [{ op: "add-loop", steps, change: "reflected" }], ctx);
+    const id = overlays(added).find((item) => item.kind === "loop")!.id;
+    const play = { kind: "play", at: 1, duration: 2, stage: { x: 0.5, y: 0.5, size: 0.5 }, shadow: true, flare: true, wayBack: true };
+    const loop = { plainTiles: true, bareCopies: true, events: [play] };
+    const next = applyPostProjectOps(added, [{ op: "item", item: id, patch: { loop } }], ctx);
+    expect(overlays(next).find((item) => item.id === id)).toMatchObject(loop);
+  });
 });

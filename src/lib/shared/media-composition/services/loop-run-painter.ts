@@ -8,6 +8,7 @@ import {
 } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
 import { drawElementWithTransform } from "#lib/shared/render/services/canvas-2d-transform-helper.js";
 import type { RenderCanvas } from "#lib/shared/render/services/types.js";
+import { createRenderCanvas } from "#lib/shared/render/services/create-render-canvas.js";
 import { VIEWBOX_SIZE } from "#lib/shared/render/core/constants/viewbox.js";
 import { buildNotationCells, type NotationCell } from "#lib/shared/timeline/notation-cell.js";
 import { calculatePictographMotionPositions } from "#lib/shared/pictograph/prop/services/pictograph-motion-positioner.js";
@@ -18,14 +19,17 @@ import {
   loopRunFrame,
   loopRunTurnDegrees,
   type LoopCopyDraw,
+  type LoopFlareDraw,
   type LoopLineDraw,
   type LoopPropsDraw,
   type LoopRunPlan,
   type LoopStageDraw,
+  type LoopStagePose,
   type LoopTileDraw,
   type LoopTilePlace,
+  type LoopWayBackDraw,
 } from "#lib/shared/media-composition/domain/loop-run.js";
-import { paintSelectionRing } from "#lib/shared/media-composition/services/selection-ring.js";
+import { paintSelectionRing, selectionGold } from "#lib/shared/media-composition/services/selection-ring.js";
 import {
   nearestCachedSize,
   paintSizeBucket,
@@ -54,6 +58,17 @@ const EDGE_INK = "rgba(255, 255, 255, 0.16)";
 const PLAIN_EDGE_PX = 2;
 const PLAIN_EDGE_INK = "rgba(255, 255, 255, 0.13)";
 const MAX_CACHED_SIZES = 3;
+/**
+ * The home shadow (`shadow`): the props' silhouette in the big grid's grey
+ * (the stage picture's dot colour; the renderer has no constant for it) at
+ * this strength, flat, with no outline.
+ */
+const SHADOW_INK = "#e6e6ea";
+const SHADOW_ALPHA = 0.17;
+/** The way back at full strength: the card ring's border gold. */
+const WAY_BACK_ALPHA = 0.9;
+/** The flare's corners, as a share of its outline's shorter side. */
+const FLARE_CORNER = 0.4;
 
 interface PreparedCell {
   prepared: PreparedPictographData;
@@ -206,6 +221,25 @@ interface TileContent {
   flip?: number;
   /** 1 with rounded corners, 0 square. */
   corner?: number;
+  /** The pictograph alone: its grid, letter, arrows and props, with no tile ground. */
+  bare?: boolean;
+}
+
+/** The silhouette of the props in one pose, cached: it does not change while a pose holds. */
+interface ShadowRaster {
+  key: string;
+  canvas: RenderCanvas;
+  /** Its top left in the frame, in whole pixels, so the props land on it exactly. */
+  x: number;
+  y: number;
+}
+
+/** A box: a prop sprite's ink in its own view box's units, or a prop's ink on the stage. */
+interface InkBox {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
 }
 
 /**
@@ -217,6 +251,11 @@ class LoopRunPainter implements PostStudioLayerPainter {
   private drawing: LoopRunDrawing | null = null;
   private drawingKey = "";
   private drawingSequence: unknown = null;
+  private shadow: ShadowRaster | null = null;
+  private shadowDrawing: LoopRunDrawing | null = null;
+  /** A frame-sized canvas a bare copy is painted on whole, then faded on to the frame in one go. */
+  private group: RenderCanvas | null = null;
+  private readonly inks = new WeakMap<object, InkBox | null>();
 
   constructor(private readonly getPlan: () => LoopRunPlan | null) {}
 
@@ -294,10 +333,15 @@ class LoopRunPainter implements PostStudioLayerPainter {
       context.stroke();
       context.restore();
     });
-    if (scene.line) drawLine(context, scene.line, plan.settings.colour, 2 * pixel);
+    const bare = plan.settings.bareCopies === true;
+    if (scene.line && !bare) drawLine(context, scene.line, plan.settings.colour, 2 * pixel);
     if (scene.home) drawLine(context, scene.home, HOME_INK, 2 * pixel);
 
-    for (const tile of scene.tiles) this.drawTile(context, drawing, cache, tile, plan.settings.colour, pixel, plain);
+    // A bare copy landing on its tile carries the pictograph until it is gone; the tile
+    // shows only its box meanwhile, so the pictograph is never drawn twice over itself.
+    const landing = new Set(bare ? scene.copies.map((copy) => copy.to) : []);
+    for (const tile of scene.tiles)
+      this.drawTile(context, drawing, cache, tile, plan.settings.colour, pixel, plain, landing.has(tile.step));
     if (scene.start && scene.start.opacity > 0) {
       // Step -1 is the sequence's start position: its grid, its letter and its staffs at rest.
       const start = scene.start;
@@ -314,22 +358,28 @@ class LoopRunPainter implements PostStudioLayerPainter {
       else drawEdge(context, start, 1, pixel);
       context.restore();
     }
-    if (scene.stage) this.drawStage(context, drawing, cache, scene.stage);
+    if (scene.stage) this.drawStage(context, drawing, cache, scene.stage, pixel);
     for (const ghost of scene.ghosts) {
       context.save();
       context.globalAlpha *= ghost.opacity;
       this.drawProps(context, drawing, ghost, { step: ghost.step, progress: 1, opacity: 1 });
       context.restore();
     }
-    for (const copy of scene.copies) this.drawCopy(context, drawing, cache, copy, rect, plain ? pixel : null);
+    for (const copy of scene.copies) {
+      if (bare) this.drawBareCopy(context, drawing, cache, copy, rect, scene.tiles[copy.to]?.opacity ?? 0);
+      else this.drawCopy(context, drawing, cache, copy, rect, plain ? pixel : null);
+    }
+    // Bare copies cross the line with no box of their own, so the line draws over them.
+    if (scene.line && bare) drawLine(context, scene.line, plan.settings.colour, 2 * pixel);
     const badge = loopRunBadgeAt(plan.settings, seconds - plan.start);
     if (badge) drawBadge(context, rect, badge);
     context.restore();
   }
 
   /** The LOOP played: the grid and the props on the frame's own ground, and the app's gold ring on the tile being played. */
-  private drawStage(context: Context, drawing: LoopRunDrawing, cache: SizeCache, stage: LoopStageDraw) {
+  private drawStage(context: Context, drawing: LoopRunDrawing, cache: SizeCache, stage: LoopStageDraw, pixel: number) {
     for (const ring of stage.rings) paintSelectionRing(context, ring, ring.strength, ring.look);
+    if (stage.wayBack) drawWayBack(context, stage.wayBack);
     if (stage.opacity <= 0) return;
     const grid = cache.grid[0];
     context.save();
@@ -340,8 +390,174 @@ class LoopRunPainter implements PostStudioLayerPainter {
       context.drawImage(grid, stage.x - stage.size / 2, stage.y - stage.size / 2, stage.size, stage.size);
       context.restore();
     }
+    if (stage.shadow) this.drawShadow(context, drawing, stage, stage.shadow);
+    if (stage.flares?.length) {
+      // The flares carry the stage's strength in their own.
+      context.restore();
+      for (const flare of stage.flares) this.drawFlare(context, drawing, stage, flare, pixel);
+      context.save();
+      context.globalAlpha *= stage.opacity;
+    }
     this.drawProps(context, drawing, stage, { ...stage.props, opacity: 1 });
     context.restore();
+  }
+
+  /**
+   * The props' silhouette in `pose`: both drawn into one canvas exactly as
+   * `drawProps` draws them, tinted flat, then laid down once, so where they
+   * overlap the grey does not double.
+   */
+  private drawShadow(context: Context, drawing: LoopRunDrawing, stage: LoopTilePlace, pose: LoopStagePose) {
+    const raster = this.shadowRaster(drawing, stage, pose);
+    if (!raster) return;
+    context.save();
+    context.globalAlpha *= SHADOW_ALPHA;
+    context.drawImage(raster.canvas, raster.x, raster.y);
+    context.restore();
+  }
+
+  private shadowRaster(drawing: LoopRunDrawing, stage: LoopTilePlace, pose: LoopStagePose): ShadowRaster | null {
+    const key = `${pose.step}:${pose.progress}:${pose.continued}:${stage.x}:${stage.y}:${stage.size}`;
+    if (this.shadow?.key === key && this.shadowDrawing === drawing) return this.shadow;
+    if (!drawing.ready()) return null;
+    // The stage's square and a margin for props that reach past its outer points, in whole pixels.
+    const margin = Math.ceil(stage.size * 0.25);
+    const x = Math.floor(stage.x - stage.size / 2) - margin;
+    const y = Math.floor(stage.y - stage.size / 2) - margin;
+    const side = Math.ceil(stage.size) + 2 * margin + 1;
+    const canvas = createRenderCanvas(side, side);
+    const ink = canvas.getContext("2d") as Context | null;
+    if (!ink) return null;
+    this.drawProps(ink, drawing, { x: stage.x - x, y: stage.y - y, size: stage.size }, { ...pose, opacity: 1 });
+    ink.globalCompositeOperation = "source-in";
+    ink.fillStyle = SHADOW_INK;
+    ink.fillRect(0, 0, side, side);
+    this.shadow = { key, canvas, x, y };
+    this.shadowDrawing = drawing;
+    return this.shadow;
+  }
+
+  /**
+   * One flare: a rounded outline `clearance` clear of the props, round both
+   * together when they stand at one point and round each when they stand
+   * apart, squared to the props' own angle when they share one.
+   */
+  private drawFlare(
+    context: Context,
+    drawing: LoopRunDrawing,
+    stage: LoopTilePlace,
+    flare: LoopFlareDraw,
+    pixel: number
+  ) {
+    if (flare.strength <= 0) return;
+    const shape = this.propBoxes(drawing, stage, flare.pose);
+    if (!shape) return;
+    const boxes = joinBoxes(shape.boxes, 2 * flare.join);
+    context.save();
+    context.translate(stage.x, stage.y);
+    context.rotate((shape.angle * Math.PI) / 180);
+    context.strokeStyle = selectionGold(flare.strength);
+    context.lineWidth = Math.max(pixel, flare.width);
+    for (const box of boxes) {
+      const width = box.x1 - box.x0 + 2 * flare.clearance;
+      const height = box.y1 - box.y0 + 2 * flare.clearance;
+      context.beginPath();
+      context.roundRect(
+        box.x0 - flare.clearance,
+        box.y0 - flare.clearance,
+        width,
+        height,
+        FLARE_CORNER * Math.min(width, height)
+      );
+      context.stroke();
+    }
+    context.restore();
+  }
+
+  /**
+   * Each prop's ink as a box in a frame turned to `angle` about the stage's
+   * centre: the props' own angle when every prop sits square to it, else the
+   * frame's own axes.
+   */
+  private propBoxes(
+    drawing: LoopRunDrawing,
+    stage: LoopTilePlace,
+    pose: LoopStagePose
+  ): { angle: number; boxes: InkBox[] } | null {
+    const positions = drawing.positions(pose.step, pose.progress, pose.continued);
+    const sprites = drawing.ready()?.[pose.step + 1]?.sprites;
+    if (!positions || !sprites) return null;
+    const props: { position: PropPosition; sprite: PreparedPropSprite; ink: InkBox }[] = [];
+    for (const hand of [HandSide.LEFT, HandSide.RIGHT]) {
+      const position = positions[hand];
+      const sprite = sprites[hand];
+      const ink = sprite ? this.inkOf(sprite) : null;
+      if (position && sprite && ink) props.push({ position, sprite, ink });
+    }
+    if (props.length === 0) return null;
+    const first = props[0]!.position.rotation;
+    const square = props.every(({ position }) => {
+      const off = (((position.rotation - first) % 90) + 90) % 90;
+      return off < 0.5 || off > 89.5;
+    });
+    const angle = square ? first : 0;
+    const scale = stage.size / VIEWBOX_SIZE;
+    const left = stage.x - stage.size / 2;
+    const top = stage.y - stage.size / 2;
+    const turn = (-angle * Math.PI) / 180;
+    const boxes = props.map(({ position, sprite, ink }) => {
+      // The ink's corners where drawElementWithTransform puts them, then in the turned frame.
+      const a = (position.rotation * Math.PI) / 180;
+      const mirror = sprite.mirror ? -1 : 1;
+      const xs: number[] = [];
+      const ys: number[] = [];
+      const corners: [number, number][] = [
+        [ink.x0, ink.y0],
+        [ink.x1, ink.y0],
+        [ink.x0, ink.y1],
+        [ink.x1, ink.y1],
+      ];
+      for (const [u, v] of corners) {
+        const lx = (u - sprite.centerX) * scale * mirror;
+        const ly = (v - sprite.centerY) * scale;
+        const fx = left + position.x * scale + lx * Math.cos(a) - ly * Math.sin(a) - stage.x;
+        const fy = top + position.y * scale + lx * Math.sin(a) + ly * Math.cos(a) - stage.y;
+        xs.push(fx * Math.cos(turn) - fy * Math.sin(turn));
+        ys.push(fx * Math.sin(turn) + fy * Math.cos(turn));
+      }
+      return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+    });
+    return { angle, boxes };
+  }
+
+  /** Where a sprite has ink, in its view box's units, read once from its own pixels. */
+  private inkOf(sprite: PreparedPropSprite): InkBox | null {
+    const known = this.inks.get(sprite);
+    if (known !== undefined) return known;
+    const w = Math.max(1, Math.ceil(sprite.viewBoxWidth));
+    const h = Math.max(1, Math.ceil(sprite.viewBoxHeight));
+    const canvas = createRenderCanvas(w, h);
+    const context = canvas.getContext("2d") as Context | null;
+    let box: InkBox | null = null;
+    if (context) {
+      context.drawImage(sprite.img, 0, 0, sprite.viewBoxWidth, sprite.viewBoxHeight);
+      const { data } = context.getImageData(0, 0, w, h);
+      let x0 = w;
+      let y0 = h;
+      let x1 = -1;
+      let y1 = -1;
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++) {
+          if (data[(y * w + x) * 4 + 3]! < 8) continue;
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      box = x1 < 0 ? null : { x0, y0, x1: x1 + 1, y1: y1 + 1 };
+    }
+    this.inks.set(sprite, box);
+    return box;
   }
 
   private drawTile(
@@ -351,13 +567,23 @@ class LoopRunPainter implements PostStudioLayerPainter {
     tile: LoopTileDraw,
     colour: string,
     pixel: number,
-    plain: boolean
+    plain: boolean,
+    boxOnly = false
   ): void {
     if (tile.opacity <= 0) return;
     const place = { x: tile.x, y: tile.y, size: tile.size * tile.scale };
     context.save();
     context.globalAlpha *= tile.opacity;
-    this.drawContent(context, drawing, cache, place, tile);
+    if (boxOnly) {
+      context.save();
+      roundedSquare(context, place, tile.corner);
+      context.clip();
+      context.fillStyle = TILE_GROUND;
+      context.fillRect(place.x - place.size / 2, place.y - place.size / 2, place.size, place.size);
+      context.restore();
+    } else {
+      this.drawContent(context, drawing, cache, place, tile);
+    }
     if (plain) drawPlainEdge(context, place, pixel);
     else drawEdge(context, place, 1 - tile.corner, pixel);
     if (tile.outline > 0) {
@@ -423,6 +649,65 @@ class LoopRunPainter implements PostStudioLayerPainter {
     context.restore();
   }
 
+  /**
+   * A repeat in flight with no box (`bareCopies`): the pictograph alone,
+   * painted whole on its own canvas and faded on to the frame in one go, so
+   * as it fades over its landed twin the two never thin each other out. It
+   * stays whole once its tile starts showing (`landed`), since the tile shows
+   * only its box until the copy is gone.
+   */
+  private drawBareCopy(
+    context: Context,
+    drawing: LoopRunDrawing,
+    cache: SizeCache,
+    copy: LoopCopyDraw,
+    rect: PaintRect,
+    landed: number
+  ) {
+    const opacity = landed > 0 ? 1 : copy.opacity;
+    if (opacity <= 0) return;
+    const x = Math.floor(rect.x);
+    const y = Math.floor(rect.y);
+    const width = Math.ceil(rect.x + rect.width) - x;
+    const height = Math.ceil(rect.y + rect.height) - y;
+    if (!this.group || this.group.width !== width || this.group.height !== height)
+      this.group = createRenderCanvas(width, height);
+    const layer = this.group.getContext("2d") as Context | null;
+    if (!layer) return;
+    layer.setTransform(1, 0, 0, 1, 0, 0);
+    layer.clearRect(0, 0, width, height);
+    layer.translate(-x, -y);
+    const content = (step: number, turned: boolean): TileContent => ({
+      step,
+      letter: 1,
+      arrows: 1,
+      props: { step, progress: 1, opacity: 1 },
+      corner: 0,
+      bare: true,
+      ...(turned ? { turn: copy.turn, flip: copy.flip } : {}),
+    });
+    if (copy.wipe === null) {
+      this.drawContent(layer, drawing, cache, copy, content(copy.from, true));
+    } else {
+      layer.save();
+      layer.beginPath();
+      layer.rect(rect.x, rect.y, copy.wipe - rect.x, rect.height);
+      layer.clip();
+      this.drawContent(layer, drawing, cache, copy, content(copy.from, true));
+      layer.restore();
+      layer.save();
+      layer.beginPath();
+      layer.rect(copy.wipe, rect.y, rect.x + rect.width - copy.wipe, rect.height);
+      layer.clip();
+      this.drawContent(layer, drawing, cache, copy, content(copy.to, false));
+      layer.restore();
+    }
+    context.save();
+    context.globalAlpha *= opacity;
+    context.drawImage(this.group, x, y);
+    context.restore();
+  }
+
   private drawContent(
     context: Context,
     drawing: LoopRunDrawing,
@@ -438,9 +723,14 @@ class LoopRunPainter implements PostStudioLayerPainter {
     context.save();
     roundedSquare(context, place, content.corner ?? 1);
     context.clip();
-    context.fillStyle = TILE_GROUND;
-    context.fillRect(left, top, place.size, place.size);
-    context.drawImage(ground, left, top, place.size, place.size);
+    if (content.bare) {
+      const grid = cache.grid[cell];
+      if (grid) context.drawImage(grid, left, top, place.size, place.size);
+    } else {
+      context.fillStyle = TILE_GROUND;
+      context.fillRect(left, top, place.size, place.size);
+      context.drawImage(ground, left, top, place.size, place.size);
+    }
     const letter = cache.letter[cell];
     if (letter && content.letter > 0) {
       context.save();
@@ -544,6 +834,78 @@ function drawLine(context: Context, line: LoopLineDraw, colour: string, width: n
   context.lineTo(line.x1, line.y1);
   context.stroke();
   context.restore();
+}
+
+/**
+ * The way back: down from the last tile, left 30 units under the row with
+ * rounded corners, and up into the first tile with an open arrowhead, drawn
+ * on from the last tile as `drawn` goes from 0 to 1. Units are 1/254 of a tile.
+ */
+function drawWayBack(context: Context, way: LoopWayBackDraw): void {
+  if (way.drawn <= 0 || way.strength <= 0) return;
+  const u = way.unit;
+  const xL = way.from.x;
+  const xF = way.to.x;
+  const row = way.from.y;
+  const r = 16 * u;
+  const level = row + 30 * u;
+  const run = Math.max(0, xL - xF - 2 * r);
+  // Two lines, two quarter arcs and one more line.
+  const length = 8 * u + (Math.PI / 2) * r + run + (Math.PI / 2) * r + 2 * u;
+  context.save();
+  context.strokeStyle = selectionGold(WAY_BACK_ALPHA * way.strength);
+  context.lineWidth = 5 * u;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.beginPath();
+  context.moveTo(xL, row + 6 * u);
+  context.lineTo(xL, level - r);
+  context.arc(xL - r, level - r, r, 0, Math.PI / 2);
+  context.lineTo(xF + r, level);
+  context.arc(xF + r, level - r, r, Math.PI / 2, Math.PI);
+  context.lineTo(xF, row + 12 * u);
+  if (way.drawn < 1) {
+    context.setLineDash([length, length]);
+    context.lineDashOffset = length * (1 - way.drawn);
+  }
+  context.stroke();
+  // The arrowhead comes in over the last fifth.
+  const head = Math.min(1, Math.max(0, (way.drawn - 0.8) / 0.2));
+  if (head > 0) {
+    context.setLineDash([]);
+    context.globalAlpha *= head;
+    context.beginPath();
+    context.moveTo(xF - 14 * u, row + 20 * u);
+    context.lineTo(xF, row + 5 * u);
+    context.lineTo(xF + 14 * u, row + 20 * u);
+    context.stroke();
+  }
+  context.restore();
+}
+
+/** Boxes closer than `reach` merge into one, so props standing together get one outline. */
+function joinBoxes(boxes: readonly InkBox[], reach: number): InkBox[] {
+  const out = boxes.map((box) => ({ ...box }));
+  for (let merged = true; merged; ) {
+    merged = false;
+    for (let i = 0; i < out.length && !merged; i++)
+      for (let j = i + 1; j < out.length && !merged; j++) {
+        const a = out[i]!;
+        const b = out[j]!;
+        const gapX = Math.max(0, Math.max(a.x0, b.x0) - Math.min(a.x1, b.x1));
+        const gapY = Math.max(0, Math.max(a.y0, b.y0) - Math.min(a.y1, b.y1));
+        if (Math.hypot(gapX, gapY) > reach) continue;
+        out[i] = {
+          x0: Math.min(a.x0, b.x0),
+          y0: Math.min(a.y0, b.y0),
+          x1: Math.max(a.x1, b.x1),
+          y1: Math.max(a.y1, b.y1),
+        };
+        out.splice(j, 1);
+        merged = true;
+      }
+  }
+  return out;
 }
 
 export function createLoopRunPainter(getPlan: () => LoopRunPlan | null): PostStudioLayerPainter {

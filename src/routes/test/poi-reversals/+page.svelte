@@ -23,6 +23,9 @@
   import {
     createSwingTiming,
     displayTrajectory,
+    isStillHand,
+    STILL_HAND_DISPLAY_RADIUS,
+    STILL_HAND_RADIUS_RANGE,
   } from "#lib/features/levels/poi-lab/domain/poi-swing-timing.js";
   import { resolvePoiReversalSitting } from "#lib/features/levels/poi-lab/domain/poi-reversal-sittings.js";
   import { createPoiReversalReviewState } from "#lib/features/levels/poi-lab/state/poi-reversal-review-state.svelte.js";
@@ -59,19 +62,36 @@
   );
   const candidate = $derived(review.selection?.candidate ?? null);
   const selectionReason = $derived(review.selection?.reason ?? null);
+  // Once a sitting is done, its candidates can be watched again in order,
+  // each with the verdict he gave it.
+  let replayIndex = $state(0);
+  const replayCandidate = $derived(
+    !candidate && sitting ? (sitting.candidates[replayIndex] ?? null) : null
+  );
+  const replayObservation = $derived(
+    replayCandidate
+      ? [...review.observations]
+          .reverse()
+          .find(
+            (observation) => observation.candidate.id === replayCandidate.id
+          )
+      : undefined
+  );
+  const shown = $derived(candidate ?? replayCandidate);
   const increments = $derived(
-    candidate ? buildTrajectoryIncrements(candidate.trajectory) : []
+    shown ? buildTrajectoryIncrements(shown.trajectory) : []
   );
   // The stage draws a still hand with a hair of movement and plays at swing
   // speed; the step strip and the saved candidate keep the model's own path.
+  let stillSwing = $state<number>(STILL_HAND_DISPLAY_RADIUS);
   const stageTrajectory = $derived(
-    candidate ? displayTrajectory(candidate.trajectory) : null
+    shown ? displayTrajectory(shown.trajectory, stillSwing) : null
   );
   const swingRate = $derived(
     stageTrajectory ? createSwingTiming(stageTrajectory) : () => 1
   );
   const reversals = $derived(
-    candidate ? trajectoryReversals(candidate.trajectory) : []
+    shown ? trajectoryReversals(shown.trajectory) : []
   );
   const reversalSteps = $derived(
     new Set(reversals.map((reversal) => reversal.step))
@@ -98,7 +118,7 @@
   });
 
   $effect(() => {
-    const id = candidate?.id ?? "";
+    const id = shown?.id ?? "";
     if (id === previousCandidateId) return;
     previousCandidateId = id;
     cursor = 0;
@@ -244,6 +264,23 @@
 
 <svelte:window onkeydown={handleKeyboard} />
 
+{#snippet swingNote()}
+  {#if shown && isStillHand(shown.trajectory)}
+    <label class="tempo-note swing-size">
+      <span>Hand swing</span>
+      <input
+        type="range"
+        min={STILL_HAND_RADIUS_RANGE.min}
+        max={STILL_HAND_RADIUS_RANGE.max}
+        step="0.01"
+        bind:value={stillSwing}
+      />
+    </label>
+  {:else}
+    <span class="tempo-note">Speed follows the swing</span>
+  {/if}
+{/snippet}
+
 <main class="teacher-page">
   <header class="topbar">
     <div class="title-block">
@@ -328,7 +365,7 @@
             onStepFullBack={() => stepBy(-1)}
             onStepFullFwd={() => stepBy(1)}
           />
-          <span class="tempo-note">Speed follows the swing</span>
+          {@render swingNote()}
         </div>
 
         <div class="step-grid" aria-label="Trajectory steps">
@@ -542,6 +579,69 @@
         </div>
       </aside>
     </div>
+  {:else if sitting && replayCandidate && stageTrajectory}
+    <section class="replay" aria-labelledby="replay-heading">
+      <div class="motion-panel">
+        <header class="panel-heading">
+          <div>
+            <p class="panel-kicker">
+              Sitting {sitting.name} is done · watching {replayIndex + 1} of {sitting
+                .candidates.length}
+            </p>
+            <h2 id="replay-heading">
+              {replayObservation
+                ? replayObservation.verdict === "legal"
+                  ? "You called this legal"
+                  : "You called this illegal"
+                : "No verdict saved"}
+            </h2>
+          </div>
+          <code>{replayCandidate.id}</code>
+        </header>
+
+        <div class="stage-shell">
+          <QftStage
+            trajectory={stageTrajectory}
+            {increments}
+            {cursor}
+            extent={270}
+          />
+        </div>
+
+        <div class="transport-row">
+          <span class="step-counter">Step {activeStepIndex + 1} / 8</span>
+          <HorizontalTransportRow
+            isPlaying={playing}
+            onPlaybackToggle={() => (playing = !playing)}
+            onStepFullBack={() => stepBy(-1)}
+            onStepFullFwd={() => stepBy(1)}
+          />
+          {@render swingNote()}
+        </div>
+
+        <div class="replay-nav">
+          <button
+            type="button"
+            class="replay-button"
+            disabled={replayIndex === 0}
+            onclick={() => (replayIndex -= 1)}
+          >
+            Previous
+          </button>
+          <p class="replay-reason">
+            {replayObservation?.reason || " "}
+          </p>
+          <button
+            type="button"
+            class="replay-button"
+            disabled={replayIndex >= sitting.candidates.length - 1}
+            onclick={() => (replayIndex += 1)}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </section>
   {:else if sitting}
     <section class="empty-state">
       <h2>Sitting {sitting.name} is done</h2>
@@ -759,6 +859,18 @@
 
   .tempo-note {
     text-align: right;
+  }
+
+  .swing-size {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .swing-size input {
+    width: min(9rem, 100%);
+    accent-color: var(--teacher-accent, currentColor);
   }
 
   .step-grid {
@@ -1102,6 +1214,50 @@
     font-size: var(--font-size-compact, 0.75rem);
     line-height: 1.45;
     text-align: center;
+  }
+
+  .replay {
+    width: min(96vw, 60rem);
+    min-height: 0;
+    margin: 0 auto;
+    padding: 1rem 0;
+  }
+
+  .replay .motion-panel {
+    height: 100%;
+  }
+
+  .replay-nav {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1.2rem 1rem;
+    border-top: 1px solid var(--teacher-stroke);
+  }
+
+  .replay-reason {
+    margin: 0;
+    color: var(--teacher-muted);
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.45;
+    text-align: center;
+  }
+
+  .replay-button {
+    min-height: 2.25rem;
+    padding: 0 1rem;
+    border: 1px solid var(--teacher-stroke);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .replay-button:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
 
   .empty-state {

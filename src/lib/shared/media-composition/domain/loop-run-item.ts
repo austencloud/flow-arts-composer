@@ -49,6 +49,8 @@ export interface LoopRunInit {
   pairsGap?: LoopRunSettings["pairsGap"];
   /** One kind of tile: square, one faint hairline, empty frames for places not reached yet. */
   plainTiles?: boolean;
+  /** A repeat in flight is the pictograph alone, faded as one picture. */
+  bareCopies?: boolean;
   at?: number;
   duration?: number;
   box?: PostBox;
@@ -92,6 +94,7 @@ export function loopRunOverlaySpec(init: LoopRunInit): NewOverlaySpec {
     ...(init.cardStart !== undefined ? { cardStart: init.cardStart } : {}),
     ...(init.pairsGap ? { pairsGap: init.pairsGap } : {}),
     ...(init.plainTiles !== undefined ? { plainTiles: init.plainTiles } : {}),
+    ...(init.bareCopies !== undefined ? { bareCopies: init.bareCopies } : {}),
   });
   if (!parsed.success)
     throw new Error(`The LOOP run's play is not valid: ${parsed.error.issues.map((issue) => `${issue.path.join(".")} ${issue.message}`).join("; ")}`);

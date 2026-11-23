@@ -605,6 +605,27 @@ function cutForRoom(
   return out;
 }
 
+/**
+ * The word a sequence card shows: its steps' letters in order, when its
+ * caption names that very word ("AAAA: α→α Split-Same", "MPMP: γ→γ (Opp)"),
+ * else null. A caption that names something else ("One", "D · E · F") is not
+ * a word.
+ */
+function wordLabelOf(card: CardBlock): string | null {
+  const name = captionLabel(card.caption);
+  if (!name) return null;
+  const letters = card.items
+    .filter((it) => {
+      const n = (it as { stepNumber?: number | null }).stepNumber;
+      return typeof n === "number" && n > 0;
+    })
+    .map((it) => String((it as { letter?: string | null }).letter ?? ""))
+    .join("");
+  return letters.length > 1 && letters === name.replace(/\s+/g, "")
+    ? name
+    : null;
+}
+
 export type FlowScreen = {
   /** Indexes into the render items, in order. */
   items: number[];
@@ -632,9 +653,35 @@ export function flowScreens(
   });
   const figureKey = (it: FlowRenderItem) =>
     it.type === "showcase" ? it.card : isFigure(it) ? it.block : null;
+  // Pills named by their words (BBBB, CCCC, GGGG): the page's first screen,
+  // when it shows a word too, is named by that word, not by the phrase over
+  // it ("Same Direction" over AAAA, then BBBB: section 1 said the phrase and
+  // showed A, section 2 skipped to B, 2026-11-22). The phrase stays as the
+  // screen's heading.
+  const lists = [...groups.values()];
+  const firstFigure = lists[0]
+    ?.map((idx) => items[idx]!)
+    .map(figureKey)
+    .find((k) => k !== null);
+  const firstWord =
+    firstFigure && firstFigure.kind === "pictographGroup"
+      ? wordLabelOf(firstFigure)
+      : null;
+  const pillsAreWords =
+    firstWord !== null &&
+    lists.slice(1).some((group) => {
+      const all = group.map((idx) => items[idx]!);
+      const fig = all.map(figureKey).find((k) => k !== null);
+      return (
+        fig !== null &&
+        fig !== firstFigure &&
+        !all.some((it) => headingOf(it) !== null) &&
+        all.some((it) => captionLabel(captionOf(it)) !== null)
+      );
+    });
   let previous = introLabel;
   let previousFigure: unknown = null;
-  return [...groups.values()].map((group, n) => {
+  return lists.map((group, n) => {
     const all = group.map((idx) => items[idx]!);
     const figure = all.map(figureKey).find((k) => k !== null) ?? null;
     const heading = all.map(headingOf).find((h) => h !== null);
@@ -648,7 +695,9 @@ export function flowScreens(
     // label instead.
     const label =
       n === 0
-        ? (heading ?? introLabel)
+        ? pillsAreWords
+          ? firstWord!
+          : (heading ?? introLabel)
         : (heading ?? (goesOn ? previous : caption) ?? previous);
     previous = label;
     previousFigure = figure;

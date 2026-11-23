@@ -1,6 +1,5 @@
 import {
   trajectoryPosesAt,
-  trajectoryReversals,
   QFT_TRAJECTORY_STEPS,
   type QftTrajectory,
 } from "#lib/shared/notation/qft/qft-trajectory.js";
@@ -13,32 +12,48 @@ import {
  * anything and cannot make a path legal or illegal. It only re-times an
  * existing path so the head moves the way a swinging weight does: slowest at
  * its highest points, fastest at its lowest, by the energy rule
- * speed = sqrt(floor² + drop below the highest point). The momentum simulator
+ * speed = sqrt(floor² + drop below the highest point). For a weight on a
+ * string under gravity alone that rule is exact, so the turns ease the way a
+ * real pendulum's do; the floor only keeps the very top from freezing the
+ * picture. Austen asked for easing "that represent gravity and reality a
+ * little closer" (2026-11-22). The momentum simulator
  * that tried to decide legality was reverted on purpose; keep this a timing.
  */
 
 /** Hand radius drawn for a "still" hand: a real hand moves a hair. */
 export const STILL_HAND_DISPLAY_RADIUS = 0.08;
 
+/** The range the page offers for that swing; "as big as we want" (Austen). */
+export const STILL_HAND_RADIUS_RANGE = { min: 0.02, max: 0.6 } as const;
+
 const STILL_RADIUS = 0.01;
 
 /**
  * The path as the stage should draw it. A hand that is perfectly still in the
- * model gets a tiny circle, because "statically moving really wouldn't work.
- * Even just a hair of movement would be necessary" (Austen, 2026-11-22).
+ * model gets a hair of movement, because "statically moving really wouldn't
+ * work. Even just a hair of movement would be necessary" (Austen, 2026-11-22).
  *
- * Where that hair of movement sits is a drawing choice, not a ruling: the
- * small circle is phased so the hand points the same way as the poi at the
- * first turn, the relation of the hand-at-the-side extendulum he called legal
- * the same day.
+ * That movement swings, it does not circle. Of the pendulum he said the hand
+ * would "go up to the left part of the circle, and then down to the right part
+ * of the circle, and going down every single time. It wouldn't be doing this
+ * whole full circle approach for the hand path" (2026-11-22). So the hand
+ * rides the poi's own line on its small circle and turns back with it.
  */
-export function displayTrajectory(trajectory: QftTrajectory): QftTrajectory {
-  if (trajectory.radius >= STILL_RADIUS) return trajectory;
-  const turn = trajectoryReversals(trajectory)[0];
-  const handPhase = turn
-    ? turn.propPosition - trajectory.handDirection * (turn.step - 1)
-    : (trajectory.handPhase ?? 0);
-  return { ...trajectory, radius: STILL_HAND_DISPLAY_RADIUS, handPhase };
+export function displayTrajectory(
+  trajectory: QftTrajectory,
+  stillRadius: number = STILL_HAND_DISPLAY_RADIUS
+): QftTrajectory {
+  if (!isStillHand(trajectory)) return trajectory;
+  return {
+    ...trajectory,
+    radius: stillRadius,
+    handFollowsProp: true,
+  };
+}
+
+/** True when the model's hand does not move at all. */
+export function isStillHand(trajectory: QftTrajectory): boolean {
+  return trajectory.radius < STILL_RADIUS;
 }
 
 export interface SwingTimingOptions {
@@ -54,7 +69,7 @@ export interface SwingTimingOptions {
  */
 export function createSwingTiming(
   trajectory: QftTrajectory,
-  { samples = 480, floor = 0.18 }: SwingTimingOptions = {}
+  { samples = 960, floor = 0.04 }: SwingTimingOptions = {}
 ): (cursor: number) => number {
   const dc = QFT_TRAJECTORY_STEPS / samples;
   const poses = Array.from({ length: samples + 1 }, (_, index) =>
@@ -78,14 +93,14 @@ export function createSwingTiming(
     return swingSpeed / pathSpeed;
   });
 
-  // Scale so one cycle still takes eight step-times, keeping every stretch
-  // between a fifth and four times the even speed so nothing flashes past or
-  // stalls. A few passes settle the scale after clamping.
+  // Scale so one cycle still takes eight step-times. The bounds only catch a
+  // parked head or the very top; a real turn passes well inside them. A few
+  // passes settle the scale after clamping.
   let rates = raw;
   for (let pass = 0; pass < 6; pass += 1) {
     const period = rates.reduce((sum, rate) => sum + dc / rate, 0);
     const scale = period / QFT_TRAJECTORY_STEPS;
-    rates = rates.map((rate) => Math.min(4, Math.max(0.2, rate * scale)));
+    rates = rates.map((rate) => Math.min(6, Math.max(0.05, rate * scale)));
   }
 
   return (cursor: number) => {

@@ -9,6 +9,8 @@
   import { customizeSection } from "../state/shape-matrix-customize";
   import ShapeMatrixGridCorner from "./ShapeMatrixGridCorner.svelte";
   import ShapeMatrixRecipeStrip from "./ShapeMatrixRecipeStrip.svelte";
+  import ShapeMatrixLoader from "./ShapeMatrixLoader.svelte";
+  import { createLoaderHandoff } from "../state/shape-matrix-loader-handoff.svelte.js";
 
   interface Props {
     /** The shell owns navigation (and the compact tile-to-hero morph). */
@@ -26,6 +28,9 @@
   /* The customize workspace covers this pane on wide hosts (the shell mounts
      it over the pane, once for both surfaces); the grid underneath is not
      something to tab into while it does. */
+  /* A grid already built when the pane opens skips the loading drawing; one
+     still building lets the drawing finish its closing stroke first. */
+  const loader = createLoaderHandoff(state.data !== null);
   const workspaceOpen = $derived(
     customizeSection(state, animationState) !== null
   );
@@ -59,10 +64,12 @@
           >{t("shape_engine_try_again")}</button
         >
       </div>
-    {:else if !state.data}
-      <p class="status" aria-live="polite">
-        {t("shape_engine_building_matrix")}
-      </p>
+    {:else if !state.data || !loader.done}
+      <ShapeMatrixLoader
+        variant="grid"
+        ready={state.data !== null}
+        onfinished={loader.finish}
+      />
     {:else}
       <ShapeMatrixGrid
         data={state.data}

@@ -24,10 +24,14 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
   import { stripToSequence } from "../_data/guide-sequence-adapter";
+  import { wordStackBeats } from "../_data/word-stack";
+  import {
+    AnimationVisibilityStateManager,
+    getAnimationVisibilityManager,
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
@@ -213,6 +217,35 @@
     turns ? (turns.row.dimmed[turns.index] ?? false) : false
   );
 
+  // The word screen: a start pose plus four steps, in the compact shape, with
+  // no strip of its own and no pool, stacks the player over its four beats
+  // (the start pose is the player's own hold before it plays). Anything else
+  // keeps the band it had.
+  // A short phone shows the same word as a card; its row drops the Start tile
+  // the same way, so four beats get the width five did.
+  const cardBeats = $derived(
+    variant === "card" && !turns && !cues && !strip
+      ? (wordStackBeats(items) ?? items)
+      : items
+  );
+  const stackBeats = $derived(
+    variant === "compact" && !strip && !(pool && pool.length > 1)
+      ? wordStackBeats(items)
+      : null
+  );
+  // The word's timing and direction, as the pictograph system draws it (the
+  // element glyph, bottom right, the same size as the letter bottom left),
+  // replaces the small caption. The visitor's other display settings carry
+  // over. Made once, up front: a manager cannot be built while rendering.
+  const sharedVisibility = variant === "compact" ? getAnimationVisibilityManager() : null;
+  const stackVisibility = (() => {
+    if (!sharedVisibility) return undefined;
+    const m = new AnimationVisibilityStateManager({ ephemeral: true });
+    m.replaceAll({ ...sharedVisibility.snapshot(), elementalGlyph: true });
+    m.setMotionPolicySource(sharedVisibility);
+    return m;
+  })();
+
   const propType = $derived(render?.propType ?? PropType.HAND);
   // The text alternative names only what the strip draws: no letter when the
   // letter glyph is hidden.
@@ -257,6 +290,7 @@
   // less the canvas and the band's gap when they sit side by side.
   let showcaseW = $state(0);
   let compactCanvasW = $state(0);
+  let wordsH = $state(0);
   let bandEl: HTMLElement | undefined = $state();
   const stripRoom = $derived.by(() => {
     if (!bandEl || !showcaseW) return undefined;
@@ -392,7 +426,7 @@
         turns?.row.playingChange(turns.index, playing);
       }}
       hideTkaGlyph={!canvasLetter}
-      visibilityManagerOverride={visibility}
+      visibilityManagerOverride={visibility ?? (stackBeats ? stackVisibility : undefined)}
       onStepChange={handleStepChange}
     />
   {/if}
@@ -486,7 +520,14 @@
             />
           {/if}
         </div>
-        <GuideStepStrip {items} {numbered} {render} {picTheme} activeBeat={cardBeat} fill />
+        <GuideStepStrip
+          items={cardBeats}
+          {numbered}
+          {render}
+          {picTheme}
+          activeBeat={cardBeat}
+          fill
+        />
       </div>
     </div>
   {:else if variant === "pair"}
@@ -514,6 +555,29 @@
           />
         </div>
       {/if}
+    </div>
+  {:else if stackBeats}
+    <!-- The word screen: the player on top, its four beats in one row under
+         it. No Start tile (the player holds the start pose) and no caption
+         (the player's timing-and-direction mark). Any words the page wrote
+         for the screen sit over the player. -->
+    <div class="word-stack" style:--words-h="{wordsH ? wordsH + 8 : 0}px">
+      <div class="word-words" bind:clientHeight={wordsH}>
+        {@render text?.()}
+      </div>
+      <div class="canvas-box word-canvas" class:in-view={inView}>
+        {@render player()}
+      </div>
+      <div class="word-strip">
+        <GuideStepStrip
+          items={stackBeats}
+          {numbered}
+          {render}
+          {picTheme}
+          {activeBeat}
+          fill
+        />
+      </div>
     </div>
   {:else if variant === "compact"}
     <!-- One tight band: canvas | (label over strip). Hugs its content and
@@ -997,6 +1061,48 @@
     box-shadow: none;
     border-block-end: 1px solid
       color-mix(in oklab, var(--ink, #1a1a1a) 16%, transparent);
+  }
+
+  /* ── Word stack: the player on top, the four beats in one row under it.
+     The player is the biggest thing on the screen: a share of the fit box's
+     height (one size on every screen of a window), less the showcase's own
+     margins and the words' allowance, capped by the room across. The row
+     under it is as wide as the player, but never so narrow that a beat
+     draws under 88px (5.5rem), so on a short window the row stays at four
+     beats of 88px and the player takes what height is left. */
+  .word-stack {
+    --room: calc(var(--fit-area-h, 100vh) - 3.5rem - var(--words-h, 0px));
+    --stack-w: min(
+      calc(var(--room) - 5.5rem),
+      calc(var(--room) * 0.8),
+      100cqw,
+      calc(36rem * var(--fit, 1))
+    );
+    --strip-w: max(var(--stack-w), min(100cqw, 22rem));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .word-words {
+    width: 100%;
+  }
+  .word-words:empty {
+    display: none;
+  }
+  .word-stack .canvas-box.word-canvas {
+    flex: none;
+    width: var(--stack-w);
+    margin-inline: auto;
+  }
+  .word-strip {
+    --fill-corner: 12.5px;
+    width: var(--strip-w);
+    border-radius: 14px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--ink, #1a1a1a) 6%, transparent);
+    border: 1.5px solid
+      color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
   }
 
   /* ── Pair: text over two equal squares at every width. In a host grid the

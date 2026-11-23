@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import GuideShell from "./_components/GuideShell.svelte";
-  import HubHeroBuild from "./_components/HubHeroBuild.svelte";
+  import SequenceShowcase from "./level-1/_components/SequenceShowcase.svelte";
   import HubPictograph from "./_components/HubPictograph.svelte";
   import GuideScreens from "./_components/fit/GuideScreens.svelte";
   import { watchSmallScreen } from "./_components/fit/guide-screen-url";
@@ -12,7 +12,11 @@
   } from "./level-1/_data/guide-manifest";
   import { THE_GRID_ALPHA3 } from "./level-1/_data/the-grid-pictograph";
   import { aabbWordSteps } from "./level-1/_data/aabb-word";
-  import { bakeReversals } from "./level-1/_data/guide-sequence-adapter";
+  import {
+    bakeReversals,
+    stripToSequence,
+  } from "./level-1/_data/guide-sequence-adapter";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     EX_C,
     EX_S,
@@ -57,12 +61,26 @@
 
   // Show, then tell (2026-10-10): Level 1's three stages, each with a real
   // picture of what it teaches. The word is the Words page's own AABB.
-  const [, ...aabb] = aabbWordSteps(
+  const [aabbStart, ...aabb] = aabbWordSteps(
     "guide-hub-word",
     Orientation.IN,
     Orientation.IN
   );
   const word = bakeReversals(aabb);
+  // The first screen plays that same word with staves: the player holds the
+  // start position, plays and loops, and its four beats sit in one row under
+  // it, the way the Guide's word screens draw it (SequenceShowcase's word
+  // stack).
+  const heroItems = [aabbStart!, ...word];
+  const heroSequence = stripToSequence(heroItems as never, {
+    word: "AABB",
+    name: "AABB",
+  });
+  const heroRender = {
+    propType: PropType.STAFF,
+    showTKA: true,
+    showReversals: true,
+  };
   const levelOne = bodyPagesByGroup().map((bucket) => ({
     group: bucket.group,
     title: GROUP_TITLES[bucket.group],
@@ -74,6 +92,38 @@
   // the page and it never scrolls.
   // On a phone the section list runs across two screens, so it never pans.
   let small = $state(false);
+  let heroCopyH = $state(0);
+  // On a phone the four beats show only when each tile can be 88px or more
+  // (the Guide's floor for row pictographs) with the player at least as wide
+  // as the row. The player is as wide as its row and as tall as the height
+  // the words leave, so the row fits when that player is 4 x 88px plus the
+  // tiles' 4px frame. Measured on the page, not listed by device.
+  const TILE_MIN = 88;
+  let heroEl: HTMLElement | undefined = $state();
+  let heroRoom = $state({ w: 0, h: 0 });
+  let heroRow = $state(true);
+  function measureHeroRoom() {
+    if (!heroEl) return;
+    heroRoom = {
+      w: heroEl.clientWidth,
+      h: parseFloat(getComputedStyle(heroEl).getPropertyValue("--fit-area-h")) || 0,
+    };
+  }
+  $effect(() => {
+    if (!heroEl) return;
+    const box = heroEl.closest(".fit-content") ?? heroEl;
+    const ro = new ResizeObserver(measureHeroRoom);
+    ro.observe(box);
+    ro.observe(heroEl);
+    measureHeroRoom();
+    return () => ro.disconnect();
+  });
+  $effect(() => {
+    const gap = 0.6 * 16;
+    const phone = typeof window !== "undefined" && window.innerWidth < 768;
+    const rowPlayer = Math.min((heroRoom.h - heroCopyH - gap - 4) / 1.25, heroRoom.w);
+    heroRow = !phone || !heroRoom.h || rowPlayer >= TILE_MIN * 4 + 4;
+  });
   onMount(() => watchSmallScreen((v) => (small = v)));
   const SECTIONS_ON_FIRST_PHONE_SCREEN = 3;
   const screenLabels = $derived([
@@ -169,8 +219,14 @@
     >
       {#snippet screen(n)}
         {#if n === 0}
-          <section class="hero" aria-label={screenLabels[0]}>
-            <div class="hero-copy">
+          <section
+            class="hero"
+            class:no-row={!heroRow}
+            bind:this={heroEl}
+            aria-label={screenLabels[0]}
+            style:--copy-h="{heroCopyH}px"
+          >
+            <div class="hero-copy" bind:clientHeight={heroCopyH}>
               <p class="lead">{tDynamic("guide_hub_lead")}</p>
               <div class="intro-actions">
                 <a class="primary-action" href={firstLessonHref}>
@@ -183,7 +239,14 @@
               </div>
             </div>
             <div class="hero-art">
-              <HubHeroBuild />
+              <SequenceShowcase
+                sequence={heroSequence}
+                items={heroItems as never}
+                render={heroRender}
+                variant="compact"
+                picTheme="dark"
+                loop
+              />
             </div>
           </section>
         {:else if n === 1}
@@ -335,10 +398,9 @@
     margin-top: clamp(1rem, 3vh, 2rem);
   }
   .hero-art {
-    flex: 0 0 auto;
-    width: min(100%, calc(22rem * var(--fit, 1)));
-    border-radius: 16px;
-    overflow: hidden;
+    flex: 0 1 auto;
+    width: min(100%, calc(36rem * var(--fit, 1)));
+    min-width: 0;
   }
 
   .primary-action,
@@ -594,6 +656,98 @@
     .section-copy > span {
       font-size: 0.85rem;
       line-height: 1.3;
+    }
+  }
+
+  /* Phones (under 768px): the picture is the hero. The buttons share one
+     compact row, and the player takes every pixel of height the words leave,
+     with its four beats in a row exactly as wide as it is. Its bottom
+     progress line lies along the canvas edge instead of in a band of its
+     own. The laptop layout is untouched. */
+  @media (width < 768px) {
+    .hero {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 0.6rem;
+    }
+    .hero-copy {
+      flex: 0 0 auto;
+      align-items: center;
+    }
+    .lead {
+      text-align: center;
+    }
+    .intro-actions {
+      width: 100%;
+      flex-direction: row;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+    }
+    .primary-action,
+    .secondary-action {
+      flex: 1 1 0;
+      width: auto;
+      min-width: 0;
+      min-height: 2.25rem;
+      gap: 0.4rem;
+      padding: 0 0.5rem;
+      font-size: var(--font-size-compact);
+      white-space: nowrap;
+    }
+    .hero-art {
+      width: 100%;
+    }
+    .hero-art :global(.word-stack) {
+      --stack-w: min(
+        calc(
+          (var(--fit-area-h, 100vh) - var(--copy-h, 0px) - 1.3rem - 4px) / 1.25
+        ),
+        100cqw,
+        calc(36rem * var(--fit, 1))
+      );
+      --strip-w: var(--stack-w);
+    }
+    /* No room for four 88px beats: the row steps aside and the player takes
+       its height too. */
+    .hero.no-row .hero-art :global(.word-strip) {
+      display: none;
+    }
+    .hero.no-row .hero-art :global(.word-stack) {
+      --stack-w: min(
+        calc(var(--fit-area-h, 100vh) - var(--copy-h, 0px) - 0.6rem - 4px),
+        100cqw,
+        calc(36rem * var(--fit, 1))
+      );
+    }
+    .hero-art :global(.progress-slot) {
+      position: relative;
+      z-index: 4;
+      height: 0;
+    }
+    .hero-art :global(.progress-slot .progress-row) {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+      --playback-line-band: transparent;
+    }
+    .hero-art :global(.progress-slot .playback-line .line) {
+      top: auto;
+      bottom: 0;
+    }
+  }
+
+  /* The shortest phones: the sentences set tighter before the player gives
+     up any size. */
+  @media (width < 768px) and (height <= 700px) {
+    .hero {
+      gap: 0.4rem;
+    }
+    .lead {
+      font-size: var(--font-size-sm);
+      line-height: 1.3;
+    }
+    .intro-actions {
+      margin-top: 0.4rem;
     }
   }
 

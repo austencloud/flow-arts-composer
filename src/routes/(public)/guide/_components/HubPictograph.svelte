@@ -19,7 +19,9 @@
     showReversals = false,
   }: {
     pictographData: PictographData | StepData | undefined;
-    /** Draw both props as hands (the Grid and Placements pictures). */
+    /** Draw both props as hands (the Grid and Placements pictures). The
+     renderer draws no letter on a hands picture, so callers need not pass
+     `showTKA={false}`. */
     hands?: boolean;
     showTKA?: boolean;
     showReversals?: boolean;

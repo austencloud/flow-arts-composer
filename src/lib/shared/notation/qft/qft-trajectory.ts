@@ -36,6 +36,13 @@ export interface QftTrajectory {
   propRate: QftPropRateProfile;
   /** Where the prop begins, measured from the body compass. */
   propPhase: number;
+  /**
+   * Drawing only: the hand rides the poi's own line on its small circle and
+   * turns back with it, instead of going round. Used to show a nearly still
+   * hand under a pendulum, which swings along the bottom of its circle rather
+   * than circling (Austen, 2026-11-22).
+   */
+  handFollowsProp?: boolean;
 }
 
 /**
@@ -82,6 +89,8 @@ export function trajectoryHandIndexAt(
   trajectory: QftTrajectory,
   cursor: number
 ): number {
+  if (trajectory.handFollowsProp)
+    return trajectoryPropIndexAt(trajectory, cursor);
   return trajectory.handDirection * cursor + (trajectory.handPhase ?? 0);
 }
 
