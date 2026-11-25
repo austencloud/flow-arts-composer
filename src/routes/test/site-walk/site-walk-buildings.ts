@@ -24,7 +24,8 @@ import {
   type WallKind,
   type WindowRow,
 } from "./site-walk-around";
-import { seededRandom } from "./site-walk-plan";
+import { seededRandom, turned, type Pt } from "./site-walk-plan";
+import type { SiteFloor } from "./site-walk-floor";
 
 /** Metres one repeat of each wall picture covers (brick: sixteen courses). */
 export const WALL_TILE: Record<WallKind, number> = {
@@ -155,7 +156,10 @@ function addWindow(frame: FaceFrame, b: PartBuilders, u: number, width: number, 
   if (head - sill > 0.9) frame.slab(trim, u0, u1, (sill + head) / 2 - 0.015, (sill + head) / 2 + 0.015, 0, FRAME.depth * 0.7);
 }
 
-function addFace(part: RectPart, id: string, side: FaceSide, b: PartBuilders, own: FaceSpec | undefined): void {
+/** Where a point of a part's own frame lands on the plan. */
+const onPlan = (part: RectPart, local: V3): Pt => turned(part.centre, { x: local[0], z: local[2] }, part.turn);
+
+function addFace(part: RectPart, id: string, side: FaceSide, b: PartBuilders, own: FaceSpec | undefined, floor: SiteFloor | null): void {
   const frame = faceFrame(part, side);
   const L = frame.length;
   const H = part.height;
@@ -163,20 +167,22 @@ function addFace(part: RectPart, id: string, side: FaceSide, b: PartBuilders, ow
 
   if (own?.door) {
     const d = own.door;
-    const h = Math.min(d.h, H - 0.2);
+    // A door opens onto the floor in front of it: a platform's top where one meets the wall.
+    const sill = floor ? floor.highestNear(onPlan(part, frame.at(d.at, 0, 0.3))) : 0;
+    const h = Math.min(sill + d.h, H - 0.2);
     const u0 = d.at - d.w / 2;
     const u1 = d.at + d.w / 2;
     b.get(d.glass ? "glassDark" : "door").face(
-      [frame.at(u0, 0.05, FRAME.leaf), frame.at(u1, 0.05, FRAME.leaf), frame.at(u1, h, FRAME.leaf), frame.at(u0, h, FRAME.leaf)],
+      [frame.at(u0, sill + 0.05, FRAME.leaf), frame.at(u1, sill + 0.05, FRAME.leaf), frame.at(u1, h, FRAME.leaf), frame.at(u0, h, FRAME.leaf)],
       frame.outward,
     );
     const trim = b.get("trim");
-    frame.slab(trim, u0 - FRAME.width, u0, 0, h + FRAME.width, 0, FRAME.depth);
-    frame.slab(trim, u1, u1 + FRAME.width, 0, h + FRAME.width, 0, FRAME.depth);
+    frame.slab(trim, u0 - FRAME.width, u0, sill, h + FRAME.width, 0, FRAME.depth);
+    frame.slab(trim, u1, u1 + FRAME.width, sill, h + FRAME.width, 0, FRAME.depth);
     frame.slab(trim, u0, u1, h, h + FRAME.width, 0, FRAME.depth);
     // A small light on a solid door, and a handle.
-    if (d.glass) frame.slab(trim, d.at - 0.015, d.at + 0.015, 0.05, h, 0, FRAME.depth * 0.6);
-    else frame.slab(trim, u1 - 0.18, u1 - 0.12, 0.95, 1.1, FRAME.leaf, FRAME.leaf + 0.05);
+    if (d.glass) frame.slab(trim, d.at - 0.015, d.at + 0.015, sill + 0.05, h, 0, FRAME.depth * 0.6);
+    else frame.slab(trim, u1 - 0.18, u1 - 0.12, sill + 0.95, sill + 1.1, FRAME.leaf, FRAME.leaf + 0.05);
     keepClear.push({ from: u0 - FRAME.width, to: u1 + FRAME.width });
   }
   if (own?.garage) {
@@ -415,7 +421,7 @@ function gableTriangles(part: RectPart, b: PartBuilders): void {
   }
 }
 
-function buildRect(out: BuildingGeometries, id: string, part: RectPart): void {
+function buildRect(out: BuildingGeometries, id: string, part: RectPart, floor: SiteFloor | null): void {
   const b = new PartBuilders();
   const H = part.height;
   const tile = WALL_TILE[part.wall];
@@ -429,7 +435,7 @@ function buildRect(out: BuildingGeometries, id: string, part: RectPart): void {
       [L / tile, H / tile],
       [0, H / tile],
     ]);
-    addFace(part, id, side, b, part.faces[side]);
+    addFace(part, id, side, b, part.faces[side], floor);
   }
   gableTriangles(part, b);
   let shingles: BufferGeometry | null = null;
@@ -508,11 +514,12 @@ function collect(out: BuildingGeometries, b: PartBuilders, wallKind: WallKind, m
   if (shingles) out.roof.push(shingles.applyMatrix4(m));
 }
 
-export function buildingGeometries(building: BuildingShape): BuildingGeometries {
+/** With a floor, a door stands on the floor in front of it. */
+export function buildingGeometries(building: BuildingShape, floor: SiteFloor | null = null): BuildingGeometries {
   const out = emptyGeometries();
   building.parts.forEach((part, index) => {
     const id = `${building.id}:${index}`;
-    if (part.shape === "rect") buildRect(out, id, part);
+    if (part.shape === "rect") buildRect(out, id, part, floor);
     else buildPoly(out, part);
   });
   return out;

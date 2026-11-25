@@ -84,6 +84,7 @@ const ALL = [
   "fuse",
   "tunnel",
   "assemble",
+  "loop",
 ];
 const WITH_SCENES = ALL.filter((id) =>
   Object.hasOwn(METHOD_PREVIEW_SCENES, id)

@@ -148,9 +148,9 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
   },
   permutations: {
     h1: "LOOPs",
-    tagline: "Three common types of LOOPs are Mirrored, Rotated, and Swapped.",
+    tagline: "Three common types of LOOPs are Reflected, Rotated, and Swapped.",
     title: "LOOPs · Flow Arts Notation Guide",
-    description: "Three common types of LOOPs are Mirrored, Rotated, and Swapped.",
+    description: "Three common types of LOOPs are Reflected, Rotated, and Swapped.",
   },
   reversals: {
     h1: "Reversals",
@@ -180,7 +180,7 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
   "misc-permutations": {
     h1: "Type 1 LOOPs",
     tagline:
-      "In this example of DJII, the graphs in the second repetition (steps 5-8) mirror the graphs in the first repetition (steps 1-4), classifying it as a Mirrored LOOP.",
+      "In this example of DJII, the graphs in the second repetition (steps 5-8) reflect the graphs in the first repetition (steps 1-4), classifying it as a Reflected LOOP.",
     title: "Type 1 LOOPs · Flow Arts Notation Guide",
     description: "Type 1 LOOPs in The Kinetic Alphabet flow arts notation.",
   },

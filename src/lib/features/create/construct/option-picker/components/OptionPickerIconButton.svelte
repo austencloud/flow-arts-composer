@@ -6,18 +6,22 @@
   keep identical geometry without duplicating button behavior.
 -->
 <script lang="ts">
+  import { popIn } from "#lib/shared/transitions/motion.js";
   import type { HTMLButtonAttributes } from "svelte/elements";
 
   interface Props extends HTMLButtonAttributes {
     icon: string;
     active?: boolean;
     density?: "standard" | "compact";
+    /** A small dot: what this button opens is in use. */
+    inUse?: boolean;
   }
 
   let {
     icon,
     active = false,
     density = "standard",
+    inUse = false,
     type = "button",
     class: className,
     ...restProps
@@ -32,6 +36,9 @@
   class:compact={density === "compact"}
 >
   <i class="fas {icon}" aria-hidden="true"></i>
+  {#if inUse}
+    <span class="in-use" aria-hidden="true" transition:popIn></span>
+  {/if}
 </button>
 
 <style>
@@ -96,6 +103,16 @@
 
   .option-picker-icon-button i {
     font-size: 1rem;
+  }
+
+  .in-use {
+    position: absolute;
+    top: 0.375rem;
+    inset-inline-end: 0.375rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--theme-text, #fff);
   }
 
   @media (prefers-reduced-motion: reduce) {

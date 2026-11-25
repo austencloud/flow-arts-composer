@@ -188,7 +188,8 @@ Read it in detail. Does not touch the register unless asked.
 | content actions | ~14%. Event list may still be incomplete. |
 | bounce | ~51%. Very common, so it is weighted low on purpose. |
 
-Excluded from all results: localhost, `192.168.*`, `dev.tkaflowarts.com`,
+Excluded from all results: localhost, `192.168.*`, `dev.tkaflowarts.com`
+(retired 2026-11-24, must not be recreated; the filter only covers old data),
 Austen's two admin UIDs, and any `agent-*` identity (automation browsing
 production scored as a struggling user until it was filtered).
 

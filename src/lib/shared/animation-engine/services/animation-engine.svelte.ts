@@ -130,6 +130,8 @@ export interface AnimationEngineProps {
   mandalaVisibleOverride?: boolean;
   /** Per-canvas line width for the mandala guide (canvas pixels). */
   mandalaStrokeWidthOverride?: number;
+  /** A new value wipes the trail; see AnimatorCanvas. */
+  trailResetKey?: number;
   /** Tunnel per-prop rainbow spectrum. When true (default) each overlaid layer
    *  takes its own spectrum color; when false layers inherit the base/preset
    *  colors. Only meaningful when additionalLayers is non-empty. */

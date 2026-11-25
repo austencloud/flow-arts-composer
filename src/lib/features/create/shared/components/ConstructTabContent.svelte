@@ -41,6 +41,8 @@
     isFilterPanelOpen = false,
     onToggleContinuous = () => {},
     onStartPlacementSubmitted = () => {},
+    filterPredicate,
+    suppressStartHeading = false,
   } = $props<{
     shouldShowStartPlacementPicker: boolean;
     startPlacementState?: SimplifiedStartPlacementState | null;
@@ -62,6 +64,10 @@
       placement: PictographData,
       path: StartPlacementPath
     ) => void;
+    /** Narrows the options, as the LOOP tab does to show only closing steps. */
+    filterPredicate?: (option: PictographData) => boolean;
+    /** The tab around the pickers already says to choose a start. */
+    suppressStartHeading?: boolean;
   }>();
 </script>
 
@@ -97,7 +103,8 @@
               lockedGridMode={lockStartGridMode ? currentGridMode : undefined}
               validationMessage={startPlacementValidationMessage}
               onPlacementSubmitted={onStartPlacementSubmitted}
-              suppressHeading={constructTutorialState.isActive}
+              suppressHeading={suppressStartHeading ||
+                constructTutorialState.isActive}
               morphIntoWorkspace
             />
           {:else}
@@ -109,6 +116,7 @@
               {isSideBySideLayout}
               {isContinuousOnly}
               {onToggleContinuous}
+              {filterPredicate}
             />
           {/if}
         </Crossfade>

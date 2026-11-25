@@ -681,7 +681,7 @@ export function flowScreens(
     });
   let previous = introLabel;
   let previousFigure: unknown = null;
-  return lists.map((group, n) => {
+  const rows = lists.map((group, n) => {
     const all = group.map((idx) => items[idx]!);
     const figure = all.map(figureKey).find((k) => k !== null) ?? null;
     const heading = all.map(headingOf).find((h) => h !== null);
@@ -691,16 +691,36 @@ export function flowScreens(
     const goesOn = figure !== null && figure === previousFigure;
     // The first screen shares its room with the intro words, and the first
     // strip's own heading only arrives on the next screen, so its caption
-    // ("Start + steps 1–4") would name the whole opening. It takes the intro
+    // ("Start + steps 1 to 4") would name the whole opening. It takes the intro
     // label instead.
     const label =
       n === 0
-        ? pillsAreWords
-          ? firstWord!
-          : (heading ?? introLabel)
+        ? (heading ?? introLabel)
         : (heading ?? (goesOn ? previous : caption) ?? previous);
     previous = label;
     previousFigure = figure;
-    return { items: group, label };
+    return { items: group, label, figure, goesOn };
+  });
+  // No two pills share a name (2026-11-22). The first screen takes its word
+  // only when no other pill already has that word; otherwise it keeps its
+  // heading or intro label.
+  if (pillsAreWords && !rows.slice(1).some((r) => r.label === firstWord)) {
+    rows[0]!.label = firstWord!;
+  }
+  // A name a page already used gets the Guide's repeat suffix: the second
+  // pill with it reads "AABB (2)", the third "(3)". A screen that goes on with
+  // the figure before it is the same section and keeps that section's name.
+  const seen = new Map<string, number>();
+  let kept = "";
+  return rows.map((r, n) => {
+    let label = r.label;
+    if (n > 0 && r.goesOn) label = kept;
+    else {
+      const count = (seen.get(label) ?? 0) + 1;
+      seen.set(label, count);
+      if (count > 1) label = `${label} (${count})`;
+    }
+    kept = label;
+    return { items: r.items, label };
   });
 }

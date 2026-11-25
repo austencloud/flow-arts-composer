@@ -24,6 +24,7 @@
   import { effectCatalogLooks } from "./effect-catalog-looks";
   import {
     fitEffectCatalog,
+    fitEffectDock,
     fitEffectPicker,
     fitEffectPictures,
     fitEffectRoster,
@@ -354,7 +355,7 @@
   );
   // Both bounded and intrinsic sidebars use the same visual roster. Only a
   // bounded page can size the inactive catalog against the remaining height.
-  // The phone dock has no room for pictures: its tiles are one line each.
+  // The phone dock has an arrangement of its own (dockFit below).
   const pictureHost = $derived(!showPlayback && !children && !dock);
   const rosterWidth = $derived(
     Math.floor(
@@ -403,6 +404,26 @@
       : null
   );
 
+  // The phone dock: pictures wherever its height leaves one worth looking at.
+  // The panel is a size container there, so its height is the host's alone.
+  /** .sb-section's padding in the dock, the action row, and the gap over it. */
+  const DOCK_CHROME_Y = 6 * 2 + 36 + 6;
+  const DOCK_CHROME_X = 12 * 2;
+  const dockGridHeight = $derived(
+    dock ? Math.max(0, Math.floor(panelRect?.height ?? 0) - DOCK_CHROME_Y) : 0
+  );
+  const dockFit = $derived(
+    dock
+      ? fitEffectDock({
+          width: Math.floor(panelRect?.width ?? 0) - DOCK_CHROME_X,
+          height: dockGridHeight,
+          count: rosterCount,
+        })
+      : null
+  );
+  /** The arrangement of a grid whose rows share the height it is given. */
+  const gridFit = $derived(pageFit ?? dockFit);
+
   // The strip page of a host that never scrolls: one arrangement for both
   // states, from the box it was given, with Off as one more tile.
   let stripRect = $state<DOMRectReadOnly>();
@@ -420,8 +441,8 @@
    *  has names only. */
   const catalogLooks = $derived(
     (
-      page
-        ? pageFit
+      page || dock
+        ? gridFit
         : fitRoom
           ? pickerFit?.portrait
           : catalogFit
@@ -441,9 +462,9 @@
   );
   /** The pictures page paints the 6:5 picture for a box near that shape, and
    *  the 8:3 one (tile or card by width, as everywhere else) for a wide one. */
-  const paintedWidth = $derived(pageFit ? pageFit.pictureWidth : pictureWidth);
+  const paintedWidth = $derived(gridFit ? gridFit.pictureWidth : pictureWidth);
   const pictureFormat = $derived(
-    pageFit?.shape === "tall"
+    gridFit?.shape === "tall"
       ? ("tall" as const)
       : formatForPictureWidth(paintedWidth)
   );
@@ -794,6 +815,7 @@
       return;
     }
     onTuneHeading({
+      effectId: reg.meta.id,
       label: effectUiLabel(reg.meta.label),
       icon: reg.meta.icon,
       accent: effectInk(reg.meta.color, getThemeMode()),
@@ -1280,17 +1302,24 @@
                   </span>
                 </button>
               </div>{/if}
-            <EffectSelector
-              {activeEffect}
-              onSelect={handleSidebarEffectSelect}
-              onPrewarm={handleEffectPrewarm}
-              activeAction="tune"
-              {availableEffects}
-              {dock}
-              catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
-              portrait={catalogPortrait}
-              morphName={rosterMorphName}
-            />
+            <div
+              class="sb-roster"
+              class:sized={dockFit !== null}
+              style:height={dockFit ? `${dockGridHeight}px` : undefined}
+            >
+              <EffectSelector
+                {activeEffect}
+                onSelect={handleSidebarEffectSelect}
+                onPrewarm={handleEffectPrewarm}
+                activeAction="tune"
+                {availableEffects}
+                {dock}
+                pictures={dockFit}
+                catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
+                portrait={catalogPortrait}
+                morphName={rosterMorphName}
+              />
+            </div>
 
             {#if dock}
               {@const activeLabel =
@@ -1825,9 +1854,20 @@
     min-height: var(--min-touch-target, 44px);
   }
 
-  .sb-page-head :global(.panel-btn) {
+  /* The switch keeps its words on one line; a long translation of the reset
+     wraps inside what is left of the row. */
+  .sb-page-head :global(.setting-toggle) {
     flex: none;
+    width: auto;
+  }
+
+  .sb-page-head :global(.panel-btn) {
+    flex: 0 1 auto;
+    min-width: 0;
     font-size: var(--font-size-min, 14px);
+    line-height: 1.2;
+    white-space: normal;
+    text-wrap: balance;
   }
 
   .sb-page-grid {
@@ -1854,10 +1894,11 @@
   }
 
   /* ── Phone dock ──
-     Roster: 4 x 4 one-line tiles (162px) + 6px + the 36px action row, inside
-     6px of padding top and bottom = 216px, which a 215-217px body holds. From
-     a 300px body the tiles go to icon over name at 52px (EffectSelector).
-     The panel is a size container so those tiles can ask for its height. */
+     Roster: the 16 tiles + 6px + the 36px action row, inside 6px of padding
+     top and bottom. The tiles share the height as pictures from about a 250px
+     body (fitEffectDock); a shorter one takes 4 x 4 one-line tiles (162px),
+     216px in all, which a 215-217px body holds. The panel is a size container
+     so its height is never its own content's. */
   .effects-panel.dock {
     flex: 1 1 0;
     min-height: 0;
@@ -1873,6 +1914,18 @@
     gap: 6px;
   }
 
+  /* Out of the layout, except where the dock's pictures share a height. */
+  .sb-roster {
+    display: contents;
+  }
+
+  .sb-roster.sized {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
   .dock-actions {
     display: flex;
     align-items: stretch;
@@ -1886,6 +1939,9 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
+    /* The row's own height, not the app-wide button floor: a taller button
+       would hang out of the dock. */
+    min-height: 0;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
@@ -1922,11 +1978,12 @@
     color: var(--effect-color, var(--fx-accent));
   }
 
+  /* Long wording ("Настроить эффект Свечение") takes two lines, which the
+     row's 36px holds. On one line it made the whole page wider than the dock. */
   .dock-tune span {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.15;
+    text-wrap: balance;
   }
 
   .dock-tune:disabled {

@@ -155,7 +155,7 @@ describe("every pilot candidate adapts", () => {
 
 describe("loopLabel", () => {
   it("names the rotation slice for rotated entries, plain label otherwise", () => {
-    expect(loopLabel({ word: "x", loopType: "mirrored", prose: "", steps: [] })).toBe("Mirrored");
+    expect(loopLabel({ word: "x", loopType: "mirrored", prose: "", steps: [] })).toBe("Reflected");
     expect(loopLabel({ word: "x", loopType: "swapped", prose: "", steps: [] })).toBe("Swapped");
     expect(
       loopLabel({ word: "x", loopType: "rotated", period: "halved", prose: "", steps: [] }),
@@ -170,11 +170,11 @@ describe("loopLabel", () => {
       loopLabel({
         word: "x",
         loopType: "rotated_swapped",
-        label: "Swapped & Mirrored",
+        label: "Swapped & Reflected",
         prose: "",
         steps: [],
       }),
-    ).toBe("Swapped & Mirrored");
+    ).toBe("Swapped & Reflected");
   });
 });
 

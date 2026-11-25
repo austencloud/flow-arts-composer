@@ -5,6 +5,7 @@ import HandMotionsTopicPage from "./HandMotionsTopicPage.svelte";
 import PlacementsTopicPage from "./PlacementsTopicPage.svelte";
 import StaffPlacementsTopicPage from "./StaffPlacementsTopicPage.svelte";
 import Type1DualShiftsTopicPage from "./Type1DualShiftsTopicPage.svelte";
+import type { LessonThread } from "../../_components/fit/lesson-thread";
 
 export type TopicPageLink = { href: string; title: string } | null;
 
@@ -13,6 +14,8 @@ export type TopicFrame = {
   prevPage: TopicPageLink;
   nextPage: TopicPageLink;
   hubHref: string;
+  /** The page's place on its chapter's line. */
+  thread?: LessonThread | null;
 };
 
 /** Props every migrated Guide topic page receives from GuidePageHost. */

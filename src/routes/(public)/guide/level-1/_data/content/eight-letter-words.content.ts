@@ -111,7 +111,7 @@ const SEQS: SeqDef[] = [
     // continuous (V has no variation pairing these paths).
     key: "el-csnzvw",
     word: "CΣNZIΘUW",
-    tag: "Mirrored + Swapped LOOP",
+    tag: "Reflected + Swapped LOOP",
     startLetter: Letter.ALPHA,
     startLeft: SO_,
     startRight: N,
@@ -187,5 +187,5 @@ export const eightLetterWordsContent: GuideBlock[] = [
   { kind: "pictographGroup", items: strip(SEQS[0]!), flowCols: 4, card: true, render: RENDER, caption: "IIΩXKEΣY" },
   { kind: "prose", html: "(Rotated LOOP)" },
   { kind: "pictographGroup", items: strip(SEQS[1]!), flowCols: 4, card: true, render: RENDER, caption: "CΣNZIΘUW" },
-  { kind: "prose", html: "(Mirrored + Swapped LOOP)" },
+  { kind: "prose", html: "(Reflected + Swapped LOOP)" },
 ];

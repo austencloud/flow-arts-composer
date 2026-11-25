@@ -12,6 +12,7 @@
   import { onDestroy } from "svelte";
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
   import { createFuseState } from "./state/fuse-state.svelte";
   import { setFuseContext } from "./context/fuse-context";
@@ -38,13 +39,13 @@
     } catch (err) {
       const failure = err instanceof Error ? err : new Error(String(err));
       getErrorHandler().showUserError({
-        message: "Fuse couldn't start",
+        message: t("fuse_tab_start_failed"),
         technicalDetails: failure.message,
         error: failure,
         severity: "error",
         context: { module: "create", tab: "fuse", action: "initialize" },
       });
-      return { state: null, error: "Close Create and open it again." };
+      return { state: null, error: t("fuse_tab_start_hint") };
     }
   }
 
@@ -63,7 +64,7 @@
 
 {#if initError}
   <div class="fuse-error" role="alert">
-    <p>Fuse tab failed to load</p>
+    <p>{t("fuse_tab_failed_to_load")}</p>
     <p class="error-detail">{initError}</p>
   </div>
 {:else if fuseState}
@@ -72,7 +73,7 @@
   </div>
 {:else}
   <div class="fuse-error" role="status">
-    <p>Fuse tab initializing...</p>
+    <p>{t("fuse_tab_initializing")}</p>
   </div>
 {/if}
 

@@ -10,6 +10,10 @@
   the column down to the card's foot, equal in height, their icon, name and
   tail growing with them; the gaps grow from 8 px to 24 px.
 
+  Where the page counts its screens as they are opened (`viewed`,
+  2026-11-24), each wears a small ring, empty until it has been opened and
+  ticked from then on: in a tile's top corner, after a pill's name.
+
   Every screen wears its own colour (2026-11-02, Austen: style all six, not
   only the current one): a faint wash and a tinted border. The current one
   is tinted more strongly, never filled solid behind its name: a stronger
@@ -18,7 +22,9 @@
   (the text arrow sat low and small beside the glyphs). A row
   switches the screen as the pills did. On a narrow window the list folds
   back into one row of pills, names only, standing right above the card it
-  switches, panning inside itself and never starting on half a name.
+  switches, panning inside itself and never starting on half a name; it
+  is marked as scrolling its own figures, so a ring past the edge does not
+  count as the screen overflowing (GuideFitBox).
 -->
 <script lang="ts" module>
   export type ScreenListItem = {
@@ -36,17 +42,21 @@
 
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { revealInRow } from "../../_components/fit/reveal-in-row";
 
   let {
     items,
     current,
     go,
+    viewed,
     name,
   }: {
     items: ScreenListItem[];
     current: number;
     go: (index: number) => void;
+    /** The screens opened so far: each row shows whether it is one. */
+    viewed?: ReadonlySet<number>;
     /** Draws a row's name (index, whether it is the current row); the
         label as text when absent. */
     name?: Snippet<[number, boolean]>;
@@ -93,6 +103,7 @@
 
 <nav
   class="screen-list"
+  data-fit-self-scroll
   class:more-left={moreLeft}
   class:more-right={moreRight}
   aria-label="Parts of this page"
@@ -124,10 +135,22 @@
             class="arrow"
             viewBox="0 0 24 12"
             aria-hidden="true"
-            ><path d="M3 6h18" /><path d="M16 1.5 21 6l-5 4.5" />{#if tail.arrow === "↔"}<path
-                d="M8 1.5 3 6l5 4.5"
-              />{/if}</svg
+            ><path d="M3 6h18" /><path
+              d="M16 1.5 21 6l-5 4.5"
+            />{#if tail.arrow === "↔"}<path d="M8 1.5 3 6l5 4.5" />{/if}</svg
           ><span class="glyph" aria-hidden="true">{tail.to}</span></span
+        >
+      {/if}
+      {#if viewed}
+        {@const seen = viewed.has(n)}
+        <span class="mark" class:seen
+          ><svg viewBox="0 0 20 20" aria-hidden="true"
+            ><circle cx="10" cy="10" r="8.5" /><path
+              d="M5.8 10.4 8.8 13.4 14.4 7.2"
+              pathLength="1"
+            /></svg
+          >{#if seen}<span class="mark-word">{t("inbox_ui_seen")}</span
+            >{/if}</span
         >
       {/if}
     </button>
@@ -173,6 +196,7 @@
     );
   }
   .item {
+    position: relative;
     flex: 0 0 auto;
     display: flex;
     align-items: center;
@@ -231,6 +255,58 @@
     height: 1.5em;
     flex: none;
     object-fit: contain;
+  }
+  /* Viewed or not yet: an empty ring, then a tick drawn into it. */
+  .mark {
+    position: relative;
+    flex: none;
+    display: inline-grid;
+    width: 1.15em;
+    height: 1.15em;
+    margin-inline-start: -0.25rem;
+  }
+  .mark svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .mark circle {
+    fill: transparent;
+    stroke: color-mix(in srgb, var(--row) 55%, var(--ink, #1a1a1a) 25%);
+    stroke-width: 1.5;
+    transition: fill var(--duration-normal) var(--ease-standard, ease);
+  }
+  .mark path {
+    stroke: var(--ink, #1a1a1a);
+    stroke-width: 2.4;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    opacity: 0;
+    transition:
+      stroke-dashoffset var(--duration-emphasis) var(--ease-standard, ease),
+      opacity var(--duration-fast) var(--ease-standard, ease);
+  }
+  .mark.seen circle {
+    fill: color-mix(in srgb, var(--row) 40%, transparent);
+  }
+  .mark.seen path {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  .mark-word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mark :is(circle, path) {
+      transition: none;
+    }
   }
   /* Positions and arrow, quiet, under the name; wide tiles only. */
   .item .tail {
@@ -334,6 +410,14 @@
       width: clamp(1.5rem, 28cqh, 4.5rem);
       height: clamp(1.5rem, 28cqh, 4.5rem);
     }
+    .mark {
+      position: absolute;
+      top: clamp(0.35rem, 5cqh, 0.7rem);
+      right: clamp(0.35rem, 5cqh, 0.7rem);
+      width: clamp(1rem, 15cqh, 1.6rem);
+      height: clamp(1rem, 15cqh, 1.6rem);
+      margin: 0;
+    }
     .item.on {
       box-shadow: inset 3px 0 0 var(--row);
     }
@@ -353,6 +437,12 @@
     .icon {
       width: 1.5rem;
       height: 1.5rem;
+    }
+    /* The name's line runs to the corner there, so the ring stands beside
+       the tail. */
+    .mark {
+      top: auto;
+      bottom: 0.4rem;
     }
   }
 </style>

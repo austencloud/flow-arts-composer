@@ -1,7 +1,11 @@
 <script lang="ts">
   /**
-   * One hand and its prop: the hand path, the swept sector, the trail, the
-   * tether, the direction dart, and the prop's own compass.
+   * One hand's notation: the hand path, the swept sector, the direction dart,
+   * and the prop's own compass.
+   *
+   * The poi and its trail are not drawn here. The shared animation canvas
+   * under the stage draws the app's own poi and trail from the same poses, so
+   * this layer carries only what is QfT's to say.
    *
    * Split out of QftStage when the stage learned to draw a matrix cell, which
    * is two of these at once. The stage keeps what belongs to the picture as a
@@ -14,22 +18,18 @@
   import {
     pendulumIndexAt,
     pendulumPosesAt,
-    closedPathSteps,
     pointAt,
     posesAt,
     propIndexAt,
-    tracePath,
-    tracePendulum,
     PROP_LENGTH,
     type QftIncrement,
     type QftKnobs,
   } from "#lib/shared/notation/qft/qft-model.js";
   import {
-    traceTrajectory,
     trajectoryPosesAt,
     trajectoryPropIndexAt,
     type QftTrajectory,
-  } from "#lib/shared/notation/qft/qft-trajectory.js";
+  } from "@tka/shape-domain";
   import {
     ALL_LAYERS,
     type QftLayers,
@@ -45,12 +45,18 @@
     unit: number;
     pendulum?: boolean;
     layers?: QftLayers;
-    /** The trail, head and prop-compass colour for this hand. */
+    /** The sector and prop-compass colour for this hand. */
     color?: string;
     /** The direction dart's colour. Amber solo; the hand's own colour in a duet. */
     dartColor?: string;
     /** Disambiguates this figure's arrowhead marker from the other hand's. */
     uid?: string;
+    /**
+     * Which side of the canvas poi this pass draws. The ground (hand path,
+     * sector, prop compass, arm) goes under the poi; the marks that must stay
+     * readable over it (dart, lit prop number) go over. "all" draws both.
+     */
+    part?: "under" | "over" | "all";
   }
 
   let {
@@ -64,7 +70,11 @@
     color = "var(--theme-accent, #8b5cf6)",
     dartColor = "var(--semantic-warning, #fbbf24)",
     uid = "solo",
+    part = "all",
   }: Props = $props();
+
+  const under = $derived(part !== "over");
+  const over = $derived(part !== "under");
 
   const fallbackKnobs: QftKnobs = {
     radius: 1,
@@ -84,7 +94,6 @@
         : posesAt(resolvedKnobs, cursor)
   );
   const hand = $derived({ x: poses.hand.x * unit, y: poses.hand.y * unit });
-  const head = $derived({ x: poses.head.x * unit, y: poses.head.y * unit });
 
   /* A hand that swings with the poi travels an arc, not the whole circle. */
   const handArc = $derived.by(() => {
@@ -93,88 +102,6 @@
       const at = trajectoryPosesAt(trajectory, (index / 120) * 8).hand;
       return `${index === 0 ? "M" : "L"}${at.x * unit},${at.y * unit}`;
     }).join(" ");
-  });
-
-  const samples = $derived(
-    trajectory
-      ? traceTrajectory(trajectory)
-      : pendulum
-        ? tracePendulum()
-        : tracePath(resolvedKnobs)
-  );
-  const pathSteps = $derived(
-    trajectory || pendulum ? 8 : closedPathSteps(resolvedKnobs)
-  );
-
-  const trail = $derived(
-    samples
-      .map(
-        (p, i) =>
-          `${i === 0 ? "M" : "L"}${(p.x * unit).toFixed(2)},${(p.y * unit).toFixed(2)}`
-      )
-      .join(" ")
-  );
-
-  /**
-   * The trail's recency.
-   *
-   * A single evenly-lit path says what shape the prop draws but nothing about
-   * where it is in drawing it. A spinner does not see that — they see a bright
-   * afterimage just behind the head falling away into the older part of the
-   * stroke. So the shape stays, dimly, and a short band of light rides the head.
-   *
-   * The band is placed by arc length rather than by cursor fraction. The head
-   * does not move at a constant speed along its own path — an antispin flower
-   * crawls through the petal tips and races the middles — so lighting
-   * `cursor / 8` of the way along the stroke would leave the highlight visibly
-   * detached from the prop exactly where the shape is most interesting.
-   */
-  const arc = $derived.by(() => {
-    const cum = [0];
-    let total = 0;
-    for (let i = 1; i < samples.length; i += 1) {
-      const a = samples[i - 1] as { x: number; y: number };
-      const b = samples[i] as { x: number; y: number };
-      total += Math.hypot(b.x - a.x, b.y - a.y) * unit;
-      cum.push(total);
-    }
-    return { cum, total };
-  });
-
-  /** Distance along the stroke that the head has reached, in user units. */
-  const headDistance = $derived.by(() => {
-    const { cum } = arc;
-    const spans = cum.length - 1;
-    if (spans < 1) return 0;
-    const t = ((cursor % pathSteps) + pathSteps) % pathSteps;
-    const x = (t / pathSteps) * spans;
-    const i = Math.min(spans - 1, Math.floor(x));
-    const a = cum[i] as number;
-    const b = cum[i + 1] as number;
-    return a + (b - a) * (x - i);
-  });
-
-  /*
-   * Five bands rather than a gradient: SVG cannot run a gradient along an
-   * arbitrary path, and per-segment opacity over 240 samples would rebuild 240
-   * nodes every frame. Five dashes with a period of exactly the path length wrap
-   * around the closed stroke on their own, which is the whole trick.
-   */
-  const BANDS = 5;
-  /** Share of the whole stroke the afterimage covers. */
-  const BAND_SPAN = 0.28;
-
-  const bands = $derived.by(() => {
-    const { total } = arc;
-    if (total <= 0) return [];
-    const band = (total * BAND_SPAN) / BANDS;
-    return Array.from({ length: BANDS }, (_, k) => ({
-      k,
-      dash: `${band} ${Math.max(0.01, total - band)}`,
-      offset: -(headDistance - (k + 1) * band),
-      opacity: 0.9 * (1 - k / BANDS) ** 1.6,
-      width: 5 + 2.5 * (1 - k / BANDS),
-    }));
   });
 
   /**
@@ -318,8 +245,12 @@
     return wedge(start, indexAt(cursor) - start);
   });
 
+  const PROP_POINT_R = 21;
+  /** Where the lit number visibly ends: its radius plus half its white rim. */
+  const PROP_POINT_EDGE = PROP_POINT_R + 1;
+
   const HOME_BASE = [1, 2, 3, 4, 5, 6, 7, 8];
-  const markerId = $derived(`qft-dart-head-${uid}`);
+  const markerId = $derived(`qft-dart-head-${uid}-${part}`);
 </script>
 
 <g
@@ -340,14 +271,14 @@
     </marker>
   </defs>
 
-  {#if layers.handPath && handArc}
+  {#if under && layers.handPath && handArc}
     <path class="hand-path" d={handArc} fill="none" />
-  {:else if layers.handPath && radius > 0.01}
+  {:else if under && layers.handPath && radius > 0.01}
     <circle class="hand-path" cx="0" cy="0" r={radius * unit} />
   {/if}
 
-  <!-- Under the trail and the tether: this is ground, not a mark. -->
-  {#if layers.sector}
+  <!-- Under the canvas poi in the eye: this is ground, not a mark. -->
+  {#if under && layers.sector}
     {#if sectorFull}
       <path class="sector" d={sectorFull} />
     {/if}
@@ -356,26 +287,12 @@
     {/if}
   {/if}
 
-  {#if layers.trail}
-    <path class="trail" d={trail} />
-    {#each bands as b (b.k)}
-      <path
-        class="trail-recent"
-        d={trail}
-        stroke-dasharray={b.dash}
-        stroke-dashoffset={b.offset}
-        stroke-width={b.width}
-        opacity={b.opacity}
-      />
-    {/each}
-  {/if}
-
   <!-- The prop's own compass, projected from the hand. -->
-  {#if layers.propCompass}
+  {#if under && layers.propCompass}
     <circle class="hand-ring" cx={hand.x} cy={hand.y} r={PROP_LENGTH * unit} />
   {/if}
   {#each HOME_BASE as position (position)}
-    {#if layers.propCompass && row?.propDepart !== position}
+    {#if under && layers.propCompass && row?.propDepart !== position}
       {@const p = handLocalPoint(position)}
       <circle class="prop-tick" cx={p.x} cy={p.y} r="4" />
     {/if}
@@ -387,13 +304,11 @@
     an abstract slider value. Nothing to draw at radius 0 — the hand is the
     centre.
   -->
-  {#if layers.handPath && radius > 0.01 && !pendulum}
+  {#if under && layers.handPath && radius > 0.01 && !pendulum}
     <line class="arm" x1="0" y1="0" x2={hand.x} y2={hand.y} />
   {/if}
 
-  <line class="tether" x1={hand.x} y1={hand.y} x2={head.x} y2={head.y} />
-
-  {#if layers.dart && dart && dartLife > 0}
+  {#if over && layers.dart && dart && dartLife > 0}
     <line
       class="dart"
       x1={dart.x1}
@@ -404,18 +319,20 @@
       marker-end={`url(#${markerId})`}
     />
   {/if}
-  <circle class="hand" cx={hand.x} cy={hand.y} r="13" />
-  <circle class="head" cx={head.x} cy={head.y} r="22" />
 
   <!--
-    Drawn last. At an integer step this marker and the head coincide exactly,
-    which is the whole point — the lit number IS where the prop is. Drawing it
-    before the head would bury the label underneath it.
+    Drawn last. At an integer step this marker covers the poi's head and both
+    end at the same point, so the lit number IS where the prop is. Its outer
+    edge, not its middle, sits on the compass ring (Austen, 2026-11-23).
   -->
-  {#if layers.propCompass && row}
-    {@const p = handLocalPoint(row.propDepart)}
+  {#if over && layers.propCompass && row}
+    {@const offset = pointAt(
+      row.propDepart,
+      PROP_LENGTH * unit - PROP_POINT_EDGE
+    )}
+    {@const p = { x: hand.x + offset.x, y: hand.y + offset.y }}
     <g class="prop-point">
-      <circle cx={p.x} cy={p.y} r="21" />
+      <circle cx={p.x} cy={p.y} r={PROP_POINT_R} />
       <text x={p.x} y={p.y} dy="7">{row.propDepart}</text>
     </g>
   {/if}
@@ -436,24 +353,6 @@
   .sector-progress {
     fill: color-mix(in srgb, var(--figure-color) 34%, transparent);
     stroke: none;
-  }
-
-  /* The shape itself: always whole, always quiet. */
-  .trail {
-    fill: none;
-    stroke: var(--figure-color);
-    stroke-width: 4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    opacity: 0.22;
-  }
-
-  /* The afterimage riding the head. Butt caps so the bands abut without pips. */
-  .trail-recent {
-    fill: none;
-    stroke: var(--figure-color);
-    stroke-linecap: butt;
-    stroke-linejoin: round;
   }
 
   .hand-ring {
@@ -492,25 +391,9 @@
     stroke-dasharray: 5 6;
   }
 
-  .tether {
-    stroke: var(--semantic-text-primary, rgb(255 255 255 / 0.85));
-    stroke-width: 4;
-    stroke-linecap: round;
-  }
-
   .dart {
     stroke: var(--dart-color);
     stroke-width: 4;
     stroke-linecap: round;
-  }
-
-  .hand {
-    fill: var(--semantic-text-primary, rgb(255 255 255 / 0.85));
-  }
-
-  .head {
-    fill: var(--figure-color);
-    stroke: #fff;
-    stroke-width: 3;
   }
 </style>

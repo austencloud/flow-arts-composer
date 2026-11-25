@@ -449,7 +449,7 @@
     }
   }
 
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
+  @container shape-matrix-drill-compact ((min-width: 42rem) and (min-aspect-ratio: 5 / 6)) or ((min-width: 28rem) and (max-height: 26rem)) {
     .bridge-side {
       min-height: 3.1rem;
       gap: 0.35rem;
@@ -503,6 +503,65 @@
 
     .prop-side .bridge-role::after {
       content: "P";
+    }
+  }
+
+  /* A phone on its side: one slim line, and a phase choice is two icons, as
+     on a phone held upright. */
+  @container shape-matrix-drill-compact (min-width: 28rem) and (max-height: 26rem) {
+    .relationship-bridge {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 0.3rem;
+    }
+
+    .bridge-side {
+      grid-template-columns: auto auto minmax(0, 1fr);
+      gap: 0.3rem;
+      min-height: 2.25rem;
+      padding: 0.125rem 0.4rem;
+    }
+
+    .bridge-role {
+      grid-column: auto;
+    }
+
+    .bridge-side img {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .prop-result,
+    .result-choices :global(.relationship-choice) {
+      min-height: 2.25rem;
+    }
+
+    .result-choices {
+      gap: 0.3rem;
+    }
+
+    .result-choices :global(.relationship-choice .choice-icon) {
+      width: 1.4rem;
+      height: 1.4rem;
+    }
+
+    .result-choices :global(.relationship-choice .choice-copy) {
+      display: none;
+    }
+  }
+
+  /* The smallest of them: the element's name needs the role's width, and the
+     arrow already says which side is which. */
+  @container shape-matrix-drill-compact (28rem <= width < 34rem) and (max-height: 26rem) {
+    .relationship-bridge {
+      gap: 0.2rem;
+    }
+
+    .bridge-role {
+      display: none;
+    }
+
+    .bridge-side {
+      grid-template-columns: auto minmax(0, 1fr);
     }
   }
 </style>

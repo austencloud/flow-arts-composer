@@ -26,18 +26,50 @@ const CHROME =
 export const delay = (milliseconds) =>
   new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
 
+/** How long Chrome may take to answer on its DevTools port. */
+const REACH_TIMEOUT_MS = 30000;
+
 /**
  * Open a CDP session against `webSocketDebuggerUrl`. The returned `send`
  * resolves with the command result, or rejects with the protocol error.
- * See `cdpClient` for the options.
+ * See `cdpClient` for the options; `reachTimeoutMs` is how long the
+ * connection itself may take to open.
  */
-export async function connect(webSocketDebuggerUrl, options = {}) {
+export async function connect(
+  webSocketDebuggerUrl,
+  { reachTimeoutMs = REACH_TIMEOUT_MS, ...options } = {}
+) {
   const socket = new WebSocket(webSocketDebuggerUrl);
-  await new Promise((resolveConnection, rejectConnection) => {
-    socket.addEventListener("open", resolveConnection, { once: true });
-    socket.addEventListener("error", rejectConnection, { once: true });
-  });
+  let timer;
+  try {
+    await new Promise((resolveConnection, rejectConnection) => {
+      socket.addEventListener("open", resolveConnection, { once: true });
+      socket.addEventListener("error", rejectConnection, { once: true });
+      timer = setTimeout(
+        () =>
+          rejectConnection(
+            new Error(
+              `Chrome did not open its DevTools connection within ${reachTimeoutMs} ms.`
+            )
+          ),
+        reachTimeoutMs
+      );
+    });
+  } catch (cause) {
+    socket.close();
+    throw cause;
+  } finally {
+    clearTimeout(timer);
+  }
   return cdpClient(socket, options);
+}
+
+/** One of the JSON pages on Chrome's DevTools port. */
+async function devtoolsJson(port, page) {
+  const response = await fetch(`http://127.0.0.1:${port}/json/${page}`, {
+    signal: AbortSignal.timeout(REACH_TIMEOUT_MS),
+  });
+  return response.json();
 }
 
 /** `WebSocket.OPEN`. */
@@ -251,10 +283,7 @@ export async function navigate(client, url) {
 }
 
 async function browserEndpoint(port) {
-  const version = await fetch(`http://127.0.0.1:${port}/json/version`).then(
-    (response) => response.json()
-  );
-  return version.webSocketDebuggerUrl;
+  return (await devtoolsJson(port, "version")).webSocketDebuggerUrl;
 }
 
 /**
@@ -289,9 +318,7 @@ export async function openTab(
   const deadline = Date.now() + 10000;
   let target = null;
   while (!target && Date.now() < deadline) {
-    const list = await fetch(`http://127.0.0.1:${port}/json/list`).then(
-      (response) => response.json()
-    );
+    const list = await devtoolsJson(port, "list");
     target = list.find((candidate) => candidate.id === targetId) ?? null;
     if (!target) await delay(150);
   }

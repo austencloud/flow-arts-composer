@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
-  import { loopStartPickTarget } from "#lib/features/create/shared/services/choose-start-analyzer.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
   import FuseVtgPathPicker from "./FuseVtgPathPicker.svelte";
@@ -11,7 +11,6 @@
   import ChoreoCardContextMenuHost from "#lib/shared/sequence-viewer/components/choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import FuseLivePathGrid from "./FuseLivePathGrid.svelte";
-  import FuseSourceActionPopover from "./FuseSourceActionPopover.svelte";
   import CardInspectModal from "#lib/features/choreo-card/components/CardInspectModal.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { getSoloPropSaveOrchestrator } from "#lib/features/library/get-solo-prop-save-orchestrator.js";
@@ -25,7 +24,6 @@
     fuseTnDElement,
     fuseTnDModeLabel,
   } from "../domain/fuse-tnd-rule";
-  import type { FuseSourceAdjustment } from "../state/fuse-state.svelte";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import { resolveFusePictographMotionFrame } from "../services/fuse-pictograph-motion-frame";
   import { createCircularFuseSoloSequence } from "../services/fuse-solo-sequence";
@@ -42,11 +40,9 @@
     compactHero = false,
     toolbarOnly = false,
     stepCols = null,
-    onChooseFirstStep,
     onBuildPath,
-    firstStepPickerActive = false,
-    onFirstStepComplete,
-    onCancelFirstStep,
+    onEditPath,
+    onOpenSettings,
     onEditPairing,
   }: {
     side: FuseSide;
@@ -62,11 +58,11 @@
     // The stacked desktop solver coordinates this with its draggable seam.
     // A null value lets a full-height side card fit itself from its own stage.
     stepCols?: number | null;
-    onChooseFirstStep: (side: FuseSide) => void;
     onBuildPath: (side: FuseSide) => void;
-    firstStepPickerActive?: boolean;
-    onFirstStepComplete?: (side: FuseSide) => void;
-    onCancelFirstStep?: () => void;
+    /** Opens this hand's Edit path screen: changes to the path on screen. */
+    onEditPath: (side: FuseSide) => void;
+    /** Opens this hand's settings for new paths, the ones Regenerate uses. */
+    onOpenSettings: (side: FuseSide) => void;
     /** Opens the Pairing editor. The follower's footer is the obvious place to
      * click when you want to change the rule that built it, so when a host can
      * open that editor the footer becomes the button rather than dead text. */
@@ -75,7 +71,20 @@
 
   const { state: fuseState } = getFuseContext();
   const settings = getSettings();
+  // Regenerate and its gear wear the hand's colour. The shared button takes
+  // its fill from its accent, so the tint goes in as that accent; a style
+  // override from here loses to the button's own rule.
+  const REGENERATE_TINT =
+    "color-mix(in srgb, var(--source-color) 46%, var(--theme-card-bg, #161821))";
   const source = $derived(side === "left" ? fuseState.left : fuseState.right);
+  const leftSide = $derived(side === "left");
+  const sideWord = $derived(
+    t(side === "left" ? "fuse_side_left" : "fuse_side_right")
+  );
+  const sidePath = $derived(
+    t(side === "left" ? "fuse_side_left_path" : "fuse_side_right_path")
+  );
+  // The saved name and note stay English: they are stored with the LOOP.
   const label = $derived(side === "left" ? "Left" : "Right");
   const viewMode = $derived<BrowseViewMode>({
     subject: "props",
@@ -111,7 +120,11 @@
       side !== fuseState.previewDriverSide
   );
   const displaySequence = $derived.by(() => {
-    if (!isSymmetryFollower) return source.sequence;
+    // While a rule is being drafted the leader may be playing a path that is
+    // not in its deck yet: the one it had on screen when it took the lead.
+    const drafted =
+      fuseState.isPreviewingRelationship && fuseState.symmetryPreview !== null;
+    if (!isSymmetryFollower && !drafted) return source.sequence;
 
     const preview = fuseState.symmetryPreview;
     const solo =
@@ -127,8 +140,21 @@
   const followerModeLabel = $derived(fuseTnDModeLabel(followerMode));
   const followerElement = $derived(fuseTnDElement(followerMode));
   const followerTransformLabel = $derived(fuseRuleLabel(fuseState.previewRule));
-  const driverLabel = $derived(
-    fuseState.previewDriverSide === "left" ? "Left" : "Right"
+  const driverLeft = $derived(fuseState.previewDriverSide === "left");
+  // "Triangle of Left (Mirror)" in one string per leading hand.
+  const followerOf = $derived(
+    t(
+      driverLeft ? "fuse_card_follower_of_left" : "fuse_card_follower_of_right",
+      { mode: followerModeLabel, rule: followerTransformLabel }
+    )
+  );
+  const changeRuleAria = $derived(
+    t(
+      driverLeft
+        ? "fuse_card_change_rule_aria_left"
+        : "fuse_card_change_rule_aria_right",
+      { mode: followerModeLabel, rule: followerTransformLabel }
+    )
   );
 
   // The playing beat, mapped to a 0-based step index, so the card cell for the
@@ -301,7 +327,7 @@
     const solo =
       side === "left" ? sequence.leftSoloProp : sequence.rightSoloProp;
     if (!solo) {
-      showToast("This path is not ready to save yet", "info");
+      showToast(t("fuse_card_toast_not_ready"), "info");
       return;
     }
 
@@ -317,13 +343,17 @@
       });
       showToast(
         result.reusedExisting
-          ? "That one-hand LOOP is already saved"
-          : `${label} one-hand LOOP saved`,
+          ? t("fuse_card_toast_already_saved")
+          : t(
+              leftSide
+                ? "fuse_card_toast_saved_left"
+                : "fuse_card_toast_saved_right"
+            ),
         "success"
       );
     } catch (failure) {
       console.error(`[FuseSourceCard] Failed to save ${side} LOOP`, failure);
-      showToast("Couldn't save that one-hand LOOP. Try again.", "error");
+      showToast(t("fuse_card_toast_save_failed"), "error");
     } finally {
       isSavingLoop = false;
     }
@@ -339,10 +369,6 @@
     vtgOpen = true;
   }
 
-  function apply(adjustment: FuseSourceAdjustment): void {
-    void fuseState.adjustSource(side, adjustment);
-  }
-
   function viewChoreoCard(): void {
     if (!source.sequence) return;
     inspectedSequence = source.sequence;
@@ -354,20 +380,6 @@
     cardContextMenuHost?.openContextMenu(event.clientX, event.clientY);
   }
 
-  /**
-   * Choose Start: the tapped tile is the pose after that step, so the step
-   * after it becomes step 1. The last step's pose is already the LOOP start.
-   */
-  async function chooseInlineStartPose(stepIndex: number): Promise<void> {
-    if (!firstStepPickerActive) return;
-    const stepCount = displaySequence?.steps.length ?? 0;
-    const step = loopStartPickTarget(stepCount, stepIndex + 1);
-    if (step !== null) {
-      await fuseState.adjustSource(side, { kind: "first-step", step });
-    }
-    onFirstStepComplete?.(side);
-  }
-
   async function handleVtgSelect(
     sequence: SequenceData,
     label: string
@@ -377,28 +389,30 @@
 
   const sourceMenuItems = $derived([
     {
-      label: "Choose saved LOOP",
+      label: t("fuse_card_menu_choose_saved"),
       icon: "fas fa-book",
       action: () => void openLibraryPicker(),
     },
     {
-      label: "Choose a shape",
+      label: t("fuse_card_menu_choose_shape"),
       icon: "fas fa-fan",
       action: openVtgPicker,
     },
     {
-      label: "Build a custom path",
+      label: t("fuse_card_menu_build_custom"),
       icon: "fas fa-route",
       action: (): void => onBuildPath(side),
     },
     {
-      label: "View Choreo Card",
+      label: t("fuse_card_menu_view_card"),
       icon: "fas fa-id-card",
       action: viewChoreoCard,
       disabled: !source.sequence,
     },
     {
-      label: isSavingLoop ? "Saving to library..." : "Save to library",
+      label: isSavingLoop
+        ? t("fuse_card_menu_saving")
+        : t("fuse_card_menu_save"),
       icon: isSavingLoop ? "fas fa-spinner fa-spin" : "fas fa-bookmark",
       action: (): void => {
         void saveCurrentLoop();
@@ -406,11 +420,24 @@
       disabled: isSavingLoop || !source.sequence,
     },
   ]);
+  // Edit path leads the phone menu: a pencil beside it left too little of the
+  // card for the side's name in several languages.
   const compactSourceMenuItems = $derived([
+    {
+      label: t("fuse_card_edit_path"),
+      icon: "fas fa-pen",
+      action: (): void => onEditPath(side),
+      disabled: !source.sequence,
+    },
+    {
+      label: t("fuse_settings_new_paths_aria"),
+      icon: "fas fa-gear",
+      action: (): void => onOpenSettings(side),
+    },
     ...(source.canGoBack
       ? [
           {
-            label: "Previous path",
+            label: t("fuse_card_menu_previous"),
             icon: "fas fa-arrow-rotate-left",
             action: (): void => {
               fuseState.previous(side);
@@ -429,20 +456,19 @@
   class:compact-hero={compactHero}
   class:compact-toolbar={toolbarOnly}
   class:full-card={full}
-  class:first-step-picker={firstStepPickerActive}
-  aria-label="{label} path"
+  aria-label={sidePath}
   aria-busy={source.isLoading}
 >
   {#if toolbarOnly}
     <div class="compact-toolbar-identity">
       <span class="source-dot" aria-hidden="true"></span>
-      <strong>{label}</strong>
+      <strong>{sideWord}</strong>
       <span class="toolbar-step">{compactStepLabel}</span>
     </div>
   {:else if !compactHero}
     <h3 class="source-identity">
       <span class="source-dot" aria-hidden="true"></span>
-      {label} path
+      {sidePath}
     </h3>
   {/if}
 
@@ -453,7 +479,9 @@
     bind:this={stageEl}
     oncontextmenu={openCardContextMenu}
     role="group"
-    aria-label="{label} path notation"
+    aria-label={t(
+      leftSide ? "fuse_card_notation_left" : "fuse_card_notation_right"
+    )}
   >
     {#if compactHero && compactStep}
       <div class="compact-live-pictograph">
@@ -490,19 +518,20 @@
           includeStart={full}
           showMandala={full}
           {contextPlacement}
-          highlightedStepIndex={highlightIndex}
+          highlightedStepIndex={fuseState.waitingAtStart
+            ? null
+            : highlightIndex}
+          startHighlighted={fuseState.waitingAtStart}
+          onStepSeek={(stepIndex) => fuseState.seekToStep(stepIndex, stepCount)}
+          onStartSeek={() => fuseState.seekToStart()}
           leftPropType={settings.leftPropType}
           rightPropType={settings.rightPropType}
-          onStepClick={firstStepPickerActive
-            ? (stepIndex) => void chooseInlineStartPose(stepIndex)
-            : undefined}
-          posePicker={firstStepPickerActive}
         />
       </div>
     {:else if source.isLoading || isSymmetryFollower}
       <div class="notation-skeleton" aria-hidden="true"></div>
     {:else}
-      <p class="notation-empty">No notation to show.</p>
+      <p class="notation-empty">{t("fuse_card_no_notation")}</p>
     {/if}
 
     {#if compactHero && displaySequence}
@@ -528,28 +557,22 @@
         role={onEditPairing ? undefined : "status"}
         onclick={onEditPairing}
         style="--rule-accent: {followerElement.accentColor}"
-        title="{followerModeLabel} of {driverLabel} ({followerTransformLabel})"
-        aria-label={onEditPairing
-          ? `Change rule: ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
-          : `${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`}
+        title={followerOf}
+        aria-label={onEditPairing ? changeRuleAria : followerOf}
       >
         <img class="rule-icon" src={followerElement.iconPath} alt="" />
         {#if onEditPairing}
-          <span>Change rule</span>
+          <span>{t("fuse_card_change_rule")}</span>
         {/if}
       </svelte:element>
     {:else}
       <div class="compact-source-tools">
-        <FuseSourceActionPopover
-          {side}
-          compactTrigger={true}
-          disabled={sourceControlsDisabled || !source.sequence}
-          {onChooseFirstStep}
-        />
         <OverflowMenu
           items={compactSourceMenuItems}
           disabled={sourceControlsDisabled}
-          ariaLabel="{label} path options"
+          ariaLabel={t(
+            leftSide ? "fuse_card_options_left" : "fuse_card_options_right"
+          )}
           placement="bottom"
           align={side}
         />
@@ -566,41 +589,29 @@
       role={onEditPairing ? undefined : "status"}
       onclick={onEditPairing}
       style="--rule-accent: {followerElement.accentColor}"
-      aria-label={onEditPairing
-        ? `Change rule: ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
-        : undefined}
+      aria-label={onEditPairing ? changeRuleAria : undefined}
     >
       <span class="note-glyph">
         <img class="rule-icon" src={followerElement.iconPath} alt="" />
       </span>
       <span class="note-copy">
-        <span class="note-role">Rebuilt from {driverLabel}</span>
+        <span class="note-role"
+          >{t(
+            driverLeft ? "fuse_card_follows_left" : "fuse_card_follows_right"
+          )}</span
+        >
         <strong>{followerModeLabel}</strong>
         <span class="note-ops">{followerTransformLabel}</span>
       </span>
       {#if onEditPairing}
         <span class="note-edit">
-          Change rule
+          {t("fuse_card_change_rule")}
           <i class="fas fa-chevron-right" aria-hidden="true"></i>
         </span>
       {/if}
     </svelte:element>
   {:else if !compactHero}
-    {#if firstStepPickerActive}
-      <div class="first-step-toolbar" role="status" aria-live="polite">
-        <div>
-          <i class="fas fa-arrow-pointer" aria-hidden="true"></i>
-          <span
-            ><strong>Choose the start.</strong> Tap the pose above you want to start
-            from.</span
-          >
-        </div>
-        <PanelButton variant="secondary" onclick={onCancelFirstStep}>
-          Cancel
-        </PanelButton>
-      </div>
-    {:else}
-      <!-- Three weights in one row: Regenerate is the card's verb and the
+    <!-- Three weights in one row: Regenerate is the card's verb and the
            only filled button, Edit path is the deliberate second choice, and
            Previous and More are ways back and ways out, drawn quiet so they
            stop reading as four equal options. -->
@@ -612,45 +623,76 @@
             disabled={sourceControlsDisabled || !source.canGoBack}
             onclick={() => fuseState.previous(side)}
           >
-            Previous
+            {t("fuse_card_previous")}
           </PanelButton>
         </div>
-        <!-- The one button most people will press, and the only way to get a
-             new path without deciding anything first. It was the smallest thing
-             in the row — same ghost variant as its six neighbours and shorter
-             than all of them. Primary, and no shorter than what it sits with. -->
+        <!-- The one button most people will press: primary, and no shorter
+             than what it sits with. Its gear holds the settings this hand's
+             next new path is made from, joined to the button that uses them,
+             so they never read as a change to the path already on screen. -->
         <div class="shuffle-slot">
           <PanelButton
             variant="primary"
             fullWidth={true}
+            accentColor={REGENERATE_TINT}
             disabled={sourceControlsDisabled || !source.sequence}
             onclick={() => void fuseState.shuffle(side)}
           >
             <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-            Regenerate
+            {t("fuse_card_regenerate")}
+          </PanelButton>
+          <button
+            type="button"
+            class="regenerate-settings"
+            disabled={sourceControlsDisabled}
+            aria-label={t(
+              leftSide
+                ? "fuse_settings_title_left"
+                : "fuse_settings_title_right"
+            )}
+            title={t(
+              leftSide
+                ? "fuse_settings_title_left"
+                : "fuse_settings_title_right"
+            )}
+            onclick={() => onOpenSettings(side)}
+          >
+            <i class="fas fa-gear" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="edit-slot">
+          <PanelButton
+            variant="secondary"
+            fullWidth={true}
+            disabled={sourceControlsDisabled || !source.sequence}
+            ariaLabel={t(
+              leftSide ? "fuse_edit_title_left" : "fuse_edit_title_right"
+            )}
+            onclick={() => onEditPath(side)}
+          >
+            <i class="fas fa-pen" aria-hidden="true"></i>
+            {t("fuse_card_edit_path")}
           </PanelButton>
         </div>
-        <FuseSourceActionPopover
-          {side}
-          disabled={sourceControlsDisabled || !source.sequence}
-          {onChooseFirstStep}
-        />
         <div class="source-more quiet-action">
           <OverflowMenu
             items={sourceMenuItems}
             disabled={sourceControlsDisabled}
-            ariaLabel="More {label} path actions"
+            ariaLabel={t(
+              leftSide
+                ? "fuse_card_more_actions_left"
+                : "fuse_card_more_actions_right"
+            )}
             align="right"
             triggerPresentation="labelled"
           >
             {#snippet trigger()}
-              <span>More</span>
+              <span>{t("fuse_card_more")}</span>
               <i class="fas fa-chevron-down" aria-hidden="true"></i>
             {/snippet}
           </OverflowMenu>
         </div>
       </div>
-    {/if}
   {/if}
 </section>
 
@@ -692,7 +734,7 @@
   <FuseSoloLoopPicker
     open
     {side}
-    length={fuseState.appliedLength ?? 0}
+    length={source.recipe.requestedLength}
     onSelect={handleLibrarySelect}
     onClose={() => (pickerOpen = false)}
   />
@@ -753,12 +795,6 @@
     border-style: dashed;
   }
 
-  .source-card.first-step-picker {
-    border-color: color-mix(in srgb, var(--source-color) 72%, white);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--source-color) 35%, transparent),
-      0 0 28px color-mix(in srgb, var(--source-color) 18%, transparent);
-  }
 
   .notation-empty {
     display: grid;
@@ -953,38 +989,6 @@
     color: var(--theme-text, #fff);
   }
 
-  .first-step-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: var(--min-touch-target, 44px);
-    margin-top: auto;
-    padding: 6px 8px 6px 14px;
-    border: 1px solid
-      color-mix(in srgb, var(--source-color) 58%, var(--theme-stroke));
-    border-radius: var(--settings-radius-md, 14px);
-    background: color-mix(
-      in srgb,
-      var(--source-color) 12%,
-      var(--theme-panel-bg)
-    );
-  }
-
-  .first-step-toolbar > div {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    min-width: 0;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
-    font-size: var(--font-size-min, 14px);
-  }
-
-  .first-step-toolbar i,
-  .first-step-toolbar strong {
-    color: color-mix(in srgb, var(--source-color) 76%, white);
-  }
-
   /* Footer for the derived follower in symmetry mode. Occupies the same slot the
      action row would, at the touch-target height, so swapping in and out of
      symmetry doesn't resize the card. When the host can open the Pairing editor
@@ -1104,6 +1108,49 @@
      the most important control the smallest thing in the row. */
   .shuffle-slot {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--min-touch-target, 44px);
+  }
+
+  .shuffle-slot > :global(.panel-btn) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  .regenerate-settings {
+    display: grid;
+    place-items: center;
+    min-height: var(--min-touch-target, 44px);
+    border: 1px solid
+      color-mix(in srgb, var(--source-color) 78%, transparent);
+    border-start-end-radius: 8px;
+    border-end-end-radius: 8px;
+    color: var(--theme-text, #fff);
+    background: color-mix(
+      in srgb,
+      var(--source-color) 46%,
+      var(--theme-card-bg, #161821)
+    );
+    cursor: pointer;
+  }
+
+  /* Longhand in its own rule: replay serializes it whole (see
+     replay-css-shorthand.test.ts). Same cascade as before. */
+  .regenerate-settings {
+    border-left-color: color-mix(in srgb, black 30%, transparent);
+  }
+
+  .regenerate-settings:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .regenerate-settings:focus-visible {
+    outline: 2px solid var(--source-color);
+    outline-offset: 2px;
+  }
+
+  .edit-slot {
+    display: grid;
   }
 
   .shuffle-slot :global(.panel-btn) {
@@ -1150,6 +1197,14 @@
   }
 
   @media (hover: hover) and (pointer: fine) {
+    .regenerate-settings:hover:not(:disabled) {
+      background: color-mix(
+        in srgb,
+        var(--source-color) 58%,
+        var(--theme-card-bg, #161821)
+      );
+    }
+
     .shuffle-slot :global(.panel-btn:hover:not(:disabled)) {
       background: color-mix(
         in srgb,
@@ -1186,9 +1241,9 @@
 
   /* The phone toolbar form: 36px controls (layout law, Tap size) in a 40px
      card. At 360 wide each card is 159px: 2 border + 6 + 2 padding leaves 149,
-     the two buttons and their gap take 76, the 6px column gap keeps the label
-     clear of the first button, and the label ("Right" over "16 / 16") gets
-     the remaining 67px, which holds it with room to spare. */
+     the menu button takes 36 and the column gap 6, and the label ("Right" over
+     "16 / 16") gets the remaining 107px. At 344 it gets 99, which holds the
+     longest side name and its dot ("Izquierda", 74). */
   .source-card.compact-hero.compact-toolbar {
     --min-touch-target: var(--alt-touch-target, 36px);
     flex-direction: row;
@@ -1204,6 +1259,30 @@
      the toolbar's buttons went to 36px. */
   .compact-toolbar :global(.overflow-dropdown) {
     --min-touch-target: 48px;
+    width: max-content;
+    max-width: min(340px, calc(100vw - 32px));
+  }
+
+  /* Opens from the card's own edge, not the trigger's, so the menu has the
+     whole screen's width and its longest name stays on one line. */
+  .source-card.compact-toolbar {
+    position: relative;
+  }
+
+  .compact-toolbar :global(.overflow-menu) {
+    position: static;
+  }
+
+  /* A short phone has about 300px under the cards, and the menu can hold eight
+     rows. */
+  @media (max-height: 660px) {
+    .compact-toolbar :global(.overflow-dropdown) {
+      --min-touch-target: var(--alt-touch-target, 36px);
+    }
+
+    .compact-toolbar :global(.overflow-item) {
+      padding-block: 6px;
+    }
   }
 
   .compact-toolbar .notation-stage {
@@ -1221,7 +1300,8 @@
 
   .compact-toolbar-identity strong {
     min-width: 0;
-    overflow: hidden;
+    /* Sideways only: Arabic letters reach below this tight line. */
+    overflow-x: clip;
     font-size: var(--font-size-min, 14px);
     line-height: 1.05;
     text-overflow: ellipsis;
@@ -1326,12 +1406,6 @@
     }
   }
 
-  @container fuse (min-width: 600px) and (max-width: 1500px) {
-    .first-step-toolbar {
-      min-height: calc(var(--min-touch-target, 44px) * 2 + 8px);
-    }
-  }
-
   /* FuseLayout owns the full-card breakpoint and passes it as a prop. These
      mode styles follow that same decision so browser zoom cannot leave full
      markup with the compact card geometry. */
@@ -1390,6 +1464,52 @@
     }
   }
 
+  /* Switching which path leads swaps the two footers and nothing else, so the
+     note is as tall as the buttons it trades places with: two rows of them, or
+     one where they fit, with the rule's name and its mirror on one line. */
+  @container fuse (min-height: 780px) {
+    .follower-note {
+      min-height: calc(2 * var(--min-touch-target, 48px) + 8px);
+    }
+  }
+
+  @container fuse (max-height: 779.98px) {
+    .follower-note {
+      padding-block: 2px;
+    }
+
+    .note-copy {
+      grid-template-columns: minmax(0, auto) minmax(0, auto);
+      align-items: baseline;
+      column-gap: 8px;
+      row-gap: 0;
+      line-height: 1.25;
+    }
+
+    .note-role {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @container fuse-source (min-width: 520px) {
+    .follower-note {
+      min-height: var(--min-touch-target, 48px);
+      padding-block: 2px;
+    }
+
+    .note-copy {
+      grid-template-columns: minmax(0, auto) minmax(0, auto);
+      align-items: baseline;
+      column-gap: 8px;
+      row-gap: 0;
+      line-height: 1.25;
+    }
+
+    .note-role {
+      grid-column: 1 / -1;
+    }
+  }
+
   @container fuse (min-width: 1680px) and (min-height: 900px) {
     .source-actions :global(.panel-btn) {
       min-width: 0;
@@ -1424,8 +1544,7 @@
       grid-area: stage;
     }
 
-    .source-actions,
-    .first-step-toolbar {
+    .source-actions {
       grid-area: tail;
     }
 
@@ -1436,10 +1555,18 @@
       width: auto;
       max-width: 100%;
       min-width: 0;
+      /* The heading row it sits in is 10px shorter than the leader's heading
+         and buttons together, so the two pictures stay one size. */
+      height: 64px;
       min-height: 0;
       margin-top: 0;
-      padding: 5px 10px;
+      padding: 0 10px;
       font-size: 16px;
+    }
+
+    .note-copy {
+      grid-template-columns: minmax(0, 1fr);
+      line-height: 1.2;
     }
   }
 

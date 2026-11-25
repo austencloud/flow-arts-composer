@@ -298,7 +298,7 @@ describe("Avatar3D standing base wiring", () => {
   });
 
   it("leaves the leg pose to the animator when locomotion is enabled", () => {
-    expect(avatar3d).toContain("if (enableLocomotion || !skeletonService) return;");
+    expect(avatar3d).toContain("if (enableLocomotion || gait || !skeletonService) return;");
   });
 
   it("folds the stance lift into the grounding offset", () => {

@@ -141,7 +141,7 @@
     {
       // DJII ×2 - Mirrored LOOP from β (both S).
       key: "t1l-djii",
-      word: "DJII Mirrored",
+      word: "DJII Reflected",
       startLetter: Letter.BETA,
       startLeft: SO_,
       startRight: SO_,
@@ -181,7 +181,7 @@
       // KIEC ×2 - Swapped & Mirrored LOOP from α (blue W / red E); the second
       // half swaps the colors' pro/anti roles (compare steps 4 and 8's C).
       key: "t1l-kiec",
-      word: "KIEC Swapped & Mirrored",
+      word: "KIEC Swapped & Reflected",
       startLetter: Letter.ALPHA,
       startLeft: W,
       startRight: E,
@@ -265,8 +265,8 @@
       fs: 15,
       lh: 18,
       html:
-        "In this example of DJII, the graphs in the second repetition (steps 5-8) mirror the<br>" +
-        "graphs in the first repetition (steps 1-4), classifying it as a <em>Mirrored LOOP</em>.",
+        "In this example of DJII, the graphs in the second repetition (steps 5-8) reflect the<br>" +
+        "graphs in the first repetition (steps 1-4), classifying it as a <em>Reflected LOOP</em>.",
     },
     {
       y: 736.8,
@@ -274,7 +274,7 @@
       lh: 18,
       html:
         "In this example of KIEC, the colors are swapped in the second half,<br>" +
-        "so it is classified as a <em>Swapped & Mirrored LOOP</em>.",
+        "so it is classified as a <em>Swapped & Reflected LOOP</em>.",
     },
   ]);
 

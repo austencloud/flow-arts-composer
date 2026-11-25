@@ -26,13 +26,13 @@ export type PanelId =
  * - Filter is primarily for generator
  */
 const PANEL_TAB_SUPPORT: Record<PanelId, Set<string>> = {
-  animation: new Set(["construct", "assemble", "generate", "spell"]),
-  videoRecord: new Set(["construct", "assemble", "generate", "spell"]),
-  filter: new Set(["construct", "generate"]),
-  sequenceActions: new Set(["construct", "assemble", "generate"]),
-  cap: new Set(["construct", "assemble", "generate"]),
-  customize: new Set(["construct", "generate"]),
-  stepEditor: new Set(["construct", "assemble", "generate"]),
+  animation: new Set(["construct", "loop", "assemble", "generate", "spell"]),
+  videoRecord: new Set(["construct", "loop", "assemble", "generate", "spell"]),
+  filter: new Set(["construct", "loop", "generate"]),
+  sequenceActions: new Set(["construct", "loop", "assemble", "generate"]),
+  cap: new Set(["construct", "loop", "assemble", "generate"]),
+  customize: new Set(["construct", "loop", "generate"]),
+  stepEditor: new Set(["construct", "loop", "assemble", "generate"]),
 };
 
 /**

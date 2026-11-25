@@ -38,6 +38,7 @@ const CREATION_MODES: BuildModeId[] = [
   "shape-engine",
   "fuse",
   "tunnel",
+  "loop",
   // REMOVED: "spell" - unified into Generate tab (Feb 2026)
 ] as const;
 

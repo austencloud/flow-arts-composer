@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseMode } from "../state/fuse-state.svelte";
 
@@ -23,23 +24,22 @@
   const value = $derived(selectedMode ?? fuseState.mode);
 
   // No icons: SegmentedControl renders the icon in place of the label, and the
-  // two mode words carry the meaning here.
-  const modeOptions: {
-    value: FuseMode;
-    label: string;
-    ariaLabel: string;
-  }[] = [
+  // two mode words carry the meaning here. Fuse has its own words rather than
+  // the Tunnel's: several languages make them agree with "paths".
+  const modeOptions = $derived<
+    { value: FuseMode; label: string; ariaLabel: string }[]
+  >([
     {
       value: "shuffle",
-      label: "Separate",
-      ariaLabel: "Separate paths: edit Left and Right independently",
+      label: t("fuse_mode_separate"),
+      ariaLabel: t("fuse_mode_separate_aria"),
     },
     {
       value: "symmetry",
-      label: "Linked",
-      ariaLabel: "Linked paths: one path rebuilds the other",
+      label: t("fuse_mode_linked"),
+      ariaLabel: t("fuse_mode_linked_aria"),
     },
-  ];
+  ]);
 
   // Mode swaps rebuild the preview; keep it inert mid-load so a switch can't race
   // an in-flight length load or fuse.
@@ -55,7 +55,12 @@
   }
 </script>
 
-<div class="fuse-mode-bar" class:compact role="group" aria-label="Pairing mode">
+<div
+  class="fuse-mode-bar"
+  class:compact
+  role="group"
+  aria-label={t("fuse_mode_group")}
+>
   <SegmentedControl
     {options}
     {value}

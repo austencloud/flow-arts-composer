@@ -5,6 +5,7 @@
   Individual beat editing (turns, rotation) is handled by StepEditorPanel.
 -->
 <script lang="ts">
+  import { isConstructWorkbench } from "#lib/features/create/shared/services/construct-workbench.js";
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getExtensionFlowCoordinator } from "#lib/features/create/shared/get-extension-flow-coordinator.js";
   import { copyToClipboard } from "#lib/features/create/shared/services/sequence-json-exporter.js";
@@ -104,7 +105,7 @@
   const sequence = $derived.by(() => activeSequenceState.currentSequence);
   const hasSequence = $derived.by(() => activeSequenceState.hasSequence());
   const isInConstructTab = $derived(
-    navigationState.currentCreateMode === "construct"
+    isConstructWorkbench(navigationState.currentCreateMode)
   );
   const isSideBySideLayout = $derived(layout.shouldUseSideBySideLayout);
 

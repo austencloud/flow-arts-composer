@@ -58,7 +58,11 @@
     desktopColumns?: 2 | 3;
     /** Columns for the compact (non-panel) tiles. Four puts a four-action
         surface on one row. */
-    mobileColumns?: 3 | 4;
+    mobileColumns?: 3 | 4 | 8;
+    /** One grid, no section headings, for a surface whose secondary actions are
+        too few to fill a row of their own. Choose start, Rewind and Reset
+        follow the transforms. */
+    singleSection?: boolean;
     /** Other sequence surfaces provide only the callbacks that are valid in
         their context; absent callbacks remove those tiles. */
     secondarySectionLabel?: string;
@@ -117,6 +121,7 @@
     showRotationDegreesInLabel = false,
     desktopColumns = 2,
     mobileColumns = 3,
+    singleSection = false,
     secondarySectionLabel = t("create_transform_patterns"),
     shiftStartPlacement = "secondary",
     resetPlacement = "secondary",
@@ -157,12 +162,18 @@
   const hasPatternTools = $derived(
     !!(onTurnPattern || onRotationDirection || onDuration || onExtend)
   );
+  const startIsTransform = $derived(
+    singleSection || shiftStartPlacement === "transform"
+  );
+  const resetIsTransform = $derived(
+    singleSection || resetPlacement === "transform"
+  );
   const hasSecondaryActions = $derived(
     !!(
       hasPatternTools ||
-      (onShiftStart && shiftStartPlacement === "secondary") ||
-      onRewind ||
-      (onReset && resetPlacement === "secondary")
+      (onShiftStart && !startIsTransform) ||
+      (onRewind && !singleSection) ||
+      (onReset && !resetIsTransform)
     )
   );
   const hasEditActions = $derived(
@@ -175,17 +186,18 @@
       (onSwap ? 1 : 0) +
       (onInvert ? 1 : 0) +
       (onRotateCW && onRotateCCW ? 2 : 0) +
-      (onShiftStart && shiftStartPlacement === "transform" ? 1 : 0) +
-      (onReset && resetPlacement === "transform" ? 1 : 0)
+      (onShiftStart && startIsTransform ? 1 : 0) +
+      (onRewind && singleSection ? 1 : 0) +
+      (onReset && resetIsTransform ? 1 : 0)
   );
   const patternsCount = $derived(
     (onTurnPattern ? 1 : 0) +
       (onRotationDirection ? 1 : 0) +
       (onDuration ? 1 : 0) +
       (onExtend && canExtend ? 1 : 0) +
-      (onShiftStart && shiftStartPlacement === "secondary" ? 1 : 0) +
-      (onRewind ? 1 : 0) +
-      (onReset && resetPlacement === "secondary" ? 1 : 0)
+      (onShiftStart && !startIsTransform ? 1 : 0) +
+      (onRewind && !singleSection ? 1 : 0) +
+      (onReset && !resetIsTransform ? 1 : 0)
   );
   const gridCount = $derived(onGridJoin ? 1 : 0);
   const editCount = $derived(
@@ -343,6 +355,24 @@
     };
   });
 
+  // The two rotations are one choice in two directions, so they share a row.
+  // Where the tiles ahead of them would leave one alone at a row's end, the
+  // pair goes ahead of Invert.
+  const gridColumns = $derived(
+    toolbar
+      ? null
+      : (fit?.columns ?? (isDesktopPanel ? desktopColumns : mobileColumns))
+  );
+  const rotationBeforeInvert = $derived.by(() => {
+    if (gridColumns === null || !onInvert || !onRotateCW || !onRotateCCW) {
+      return false;
+    }
+    const ahead = 1 + (onFlip ? 1 : 0) + (onSwap ? 1 : 0);
+    const splitsAfter = (count: number) =>
+      count % gridColumns === gridColumns - 1;
+    return splitsAfter(ahead + 1) && !splitsAfter(ahead);
+  });
+
   const showsSection = (category: ActionCategory) =>
     fit?.mode !== "one" || activeCategory === category;
   const fitStyle = $derived(
@@ -386,6 +416,30 @@
   </button>
 {/snippet}
 
+{#snippet rewindButton(rewind: () => void)}
+  <button
+    class="grid-btn rewind"
+    class:help-active={helpMode}
+    class:locked={patternsLocked && !helpMode}
+    onclick={() => handleActionClick("rewind", rewind)}
+    disabled={disabled && !helpMode}
+    aria-label={helpMode
+      ? t("create_transform_learn_rewind")
+      : patternsLocked
+        ? t("create_transform_rewind_locked")
+        : t("create_transform_rewind_aria")}
+  >
+    {@render lockBadge()}
+    <div class="btn-icon">
+      <i class="fas fa-backward" aria-hidden="true"></i>
+    </div>
+    <div class="btn-text">
+      <span class="btn-label">{t("create_transform_rewind")}</span>
+      <span class="btn-desc">{t("create_transform_rewind_desc")}</span>
+    </div>
+  </button>
+{/snippet}
+
 {#snippet resetButton(reset: () => void)}
   <button
     class="grid-btn reset"
@@ -403,6 +457,110 @@
   </button>
 {/snippet}
 
+{#snippet invertButton()}
+  {#if onInvert}
+    <button
+      class="grid-btn invert"
+      class:help-active={helpMode}
+      onclick={() => handleActionClick("invert", onInvert)}
+      data-ghost={disabled || helpMode ? undefined : "safe"}
+      data-ghost-kind="transform"
+      data-ghost-label={t("create_transform_invert")}
+      disabled={disabled && !helpMode}
+      aria-label={helpMode
+        ? t("create_transform_learn_invert")
+        : t("create_transform_invert_aria")}
+    >
+      <div class="btn-icon">
+        <i class="fas fa-repeat" aria-hidden="true"></i>
+      </div>
+      <div class="btn-text">
+        <span class="btn-label">{t("create_transform_invert")}</span>
+        <span class="btn-desc">{t("create_transform_reverse_turns")}</span>
+      </div>
+    </button>
+  {/if}
+{/snippet}
+
+{#snippet rotationPair()}
+  {#if onRotateCW && onRotateCCW}
+    <div class="rotation-pair">
+      <button
+        class="grid-btn rotate-ccw"
+        title={toolbar
+          ? t("create_transform_rotate_left_title", {
+              degrees: rotationDegrees,
+            })
+          : undefined}
+        class:help-active={helpMode}
+        onclick={() => handleActionClick("rotate", onRotateCCW)}
+        data-ghost={disabled || helpMode ? undefined : "safe"}
+        data-ghost-kind="transform"
+        data-ghost-label={t("create_action_rotate_left_short")}
+        disabled={disabled && !helpMode}
+        aria-label={helpMode
+          ? t("create_transform_learn_rotate")
+          : t("create_transform_rotate_left_aria", {
+              subject: actionSubject,
+              degrees: rotationDegrees,
+            })}
+      >
+        <div class="btn-icon">
+          <i class="fas fa-rotate-left" aria-hidden="true"></i>
+        </div>
+        <div class="btn-text">
+          <span class="btn-label">
+            {showRotationDegreesInLabel
+              ? `${rotationDegrees}° L`
+              : t("create_transform_rotate_left")}
+          </span>
+          <span class="btn-desc"
+            >{t("create_transform_pivot_degrees", {
+              degrees: rotationDegrees,
+            })}</span
+          >
+        </div>
+      </button>
+      <button
+        class="grid-btn rotate-cw"
+        title={toolbar
+          ? t("create_transform_rotate_right_title", {
+              degrees: rotationDegrees,
+            })
+          : undefined}
+        class:help-active={helpMode}
+        onclick={() => handleActionClick("rotate", onRotateCW)}
+        data-ghost={disabled || helpMode ? undefined : "safe"}
+        data-ghost-kind="transform"
+        data-ghost-label={t("create_action_rotate_right_short")}
+        disabled={disabled && !helpMode}
+        aria-label={helpMode
+          ? t("create_transform_learn_rotate")
+          : t("create_transform_rotate_right_aria", {
+              subject: actionSubject,
+              degrees: rotationDegrees,
+            })}
+      >
+        <div class="btn-icon">
+          <i class="fas fa-rotate-right" aria-hidden="true"></i>
+        </div>
+        <div class="btn-text">
+          <span class="btn-label">
+            {showRotationDegreesInLabel
+              ? `${rotationDegrees}° R`
+              : t("create_transform_rotate_right")}
+          </span>
+          <span class="btn-desc"
+            >{t("create_transform_pivot_degrees", {
+              degrees: rotationDegrees,
+            })}</span
+          >
+        </div>
+      </button>
+    </div>
+  {/if}
+{/snippet}
+
 <div
   class="actions-container"
   class:disabled
@@ -415,6 +573,8 @@
   class:three-column={isDesktopPanel && desktopColumns === 3}
   class:mobile={!isDesktopPanel && !toolbar}
   class:four-column={!isDesktopPanel && !toolbar && mobileColumns === 4}
+  class:eight-column={!isDesktopPanel && !toolbar && mobileColumns === 8}
+  class:single-section={singleSection}
   class:toolbar
   class:compact={compactMode}
   class:help-mode={helpMode}
@@ -438,7 +598,9 @@
     <!-- TRANSFORM Section -->
     {#if showsSection("transform")}
       <section class="section transform-section">
-        <span class="section-label">{t("create_transform_heading")}</span>
+        {#if !singleSection}
+          <span class="section-label">{t("create_transform_heading")}</span>
+        {/if}
         <div class="section-grid">
           <button
             class="grid-btn mirror"
@@ -511,110 +673,20 @@
               </div>
             </button>
           {/if}
-          {#if onInvert}
-            <button
-              class="grid-btn invert"
-              class:help-active={helpMode}
-              onclick={() => handleActionClick("invert", onInvert)}
-              data-ghost={disabled || helpMode ? undefined : "safe"}
-              data-ghost-kind="transform"
-              data-ghost-label={t("create_transform_invert")}
-              disabled={disabled && !helpMode}
-              aria-label={helpMode
-                ? t("create_transform_learn_invert")
-                : t("create_transform_invert_aria")}
-            >
-              <div class="btn-icon">
-                <i class="fas fa-repeat" aria-hidden="true"></i>
-              </div>
-              <div class="btn-text">
-                <span class="btn-label">{t("create_transform_invert")}</span>
-                <span class="btn-desc"
-                  >{t("create_transform_reverse_turns")}</span
-                >
-              </div>
-            </button>
+          {#if rotationBeforeInvert}
+            {@render rotationPair()}
+            {@render invertButton()}
+          {:else}
+            {@render invertButton()}
+            {@render rotationPair()}
           {/if}
-          {#if onRotateCW && onRotateCCW}
-            <div class="rotation-pair">
-              <button
-                class="grid-btn rotate-ccw"
-                title={toolbar
-                  ? t("create_transform_rotate_left_title", {
-                      degrees: rotationDegrees,
-                    })
-                  : undefined}
-                class:help-active={helpMode}
-                onclick={() => handleActionClick("rotate", onRotateCCW)}
-                data-ghost={disabled || helpMode ? undefined : "safe"}
-                data-ghost-kind="transform"
-                data-ghost-label={t("create_action_rotate_left_short")}
-                disabled={disabled && !helpMode}
-                aria-label={helpMode
-                  ? t("create_transform_learn_rotate")
-                  : t("create_transform_rotate_left_aria", {
-                      subject: actionSubject,
-                      degrees: rotationDegrees,
-                    })}
-              >
-                <div class="btn-icon">
-                  <i class="fas fa-rotate-left" aria-hidden="true"></i>
-                </div>
-                <div class="btn-text">
-                  <span class="btn-label">
-                    {showRotationDegreesInLabel
-                      ? `${rotationDegrees}° L`
-                      : t("create_transform_rotate_left")}
-                  </span>
-                  <span class="btn-desc"
-                    >{t("create_transform_pivot_degrees", {
-                      degrees: rotationDegrees,
-                    })}</span
-                  >
-                </div>
-              </button>
-              <button
-                class="grid-btn rotate-cw"
-                title={toolbar
-                  ? t("create_transform_rotate_right_title", {
-                      degrees: rotationDegrees,
-                    })
-                  : undefined}
-                class:help-active={helpMode}
-                onclick={() => handleActionClick("rotate", onRotateCW)}
-                data-ghost={disabled || helpMode ? undefined : "safe"}
-                data-ghost-kind="transform"
-                data-ghost-label={t("create_action_rotate_right_short")}
-                disabled={disabled && !helpMode}
-                aria-label={helpMode
-                  ? t("create_transform_learn_rotate")
-                  : t("create_transform_rotate_right_aria", {
-                      subject: actionSubject,
-                      degrees: rotationDegrees,
-                    })}
-              >
-                <div class="btn-icon">
-                  <i class="fas fa-rotate-right" aria-hidden="true"></i>
-                </div>
-                <div class="btn-text">
-                  <span class="btn-label">
-                    {showRotationDegreesInLabel
-                      ? `${rotationDegrees}° R`
-                      : t("create_transform_rotate_right")}
-                  </span>
-                  <span class="btn-desc"
-                    >{t("create_transform_pivot_degrees", {
-                      degrees: rotationDegrees,
-                    })}</span
-                  >
-                </div>
-              </button>
-            </div>
-          {/if}
-          {#if onShiftStart && shiftStartPlacement === "transform"}
+          {#if onShiftStart && startIsTransform}
             {@render shiftStartButton()}
           {/if}
-          {#if onReset && resetPlacement === "transform"}
+          {#if onRewind && singleSection}
+            {@render rewindButton(onRewind)}
+          {/if}
+          {#if onReset && resetIsTransform}
             {@render resetButton(onReset)}
           {/if}
         </div>
@@ -746,34 +818,13 @@
               </div>
             </button>
           {/if}
-          {#if onShiftStart && shiftStartPlacement === "secondary"}
+          {#if onShiftStart && !startIsTransform}
             {@render shiftStartButton()}
           {/if}
-          {#if onRewind}
-            <button
-              class="grid-btn rewind"
-              class:help-active={helpMode}
-              class:locked={patternsLocked && !helpMode}
-              onclick={() => handleActionClick("rewind", onRewind)}
-              disabled={disabled && !helpMode}
-              aria-label={helpMode
-                ? t("create_transform_learn_rewind")
-                : patternsLocked
-                  ? t("create_transform_rewind_locked")
-                  : t("create_transform_rewind_aria")}
-            >
-              {@render lockBadge()}
-              <div class="btn-icon">
-                <i class="fas fa-backward" aria-hidden="true"></i>
-              </div>
-              <div class="btn-text">
-                <span class="btn-label">{t("create_transform_rewind")}</span>
-                <span class="btn-desc">{t("create_transform_rewind_desc")}</span
-                >
-              </div>
-            </button>
+          {#if onRewind && !singleSection}
+            {@render rewindButton(onRewind)}
           {/if}
-          {#if onReset && resetPlacement === "secondary"}
+          {#if onReset && !resetIsTransform}
             {@render resetButton(onReset)}
           {/if}
         </div>
@@ -1014,7 +1065,17 @@
     gap: 4px;
   }
   .actions-container.mobile.four-column .section-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .actions-container.mobile.eight-column .section-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+  /* The one grid takes the height its owner gives it. */
+  .actions-container.mobile.single-section > :global(.crossfade) {
+    flex: 1 1 auto;
+  }
+  .actions-container.mobile.single-section > :global(.crossfade > .layer) {
+    display: grid;
   }
 
   /* Desktop: horizontal layout (icon left, label right) for compact rows */
@@ -1126,6 +1187,20 @@
   }
   .actions-container.mobile .btn-label {
     font-size: var(--font-size-compact, 12px);
+  }
+  /* Four tiles across a phone leave the label the tile's whole width. A longer
+     language takes a second line instead of losing letters. */
+  .actions-container.mobile.single-section .grid-btn {
+    padding: 6px 1px;
+    gap: 2px;
+  }
+  .actions-container.mobile.single-section .btn-label {
+    hyphens: auto;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-align: center;
+    text-wrap: balance;
+    white-space: normal;
   }
 
   /* ===================================================================
@@ -1392,6 +1467,13 @@
     min-height: 0;
     height: var(--fit-box);
   }
+  /* The sections stand inside the crossfade, so the gap the fit counts between
+     them belongs to its layer. */
+  .actions-container.desktop.fitted > :global(.crossfade > .layer) {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
   .actions-container.desktop.fitted .section {
     gap: 6px;
   }
@@ -1403,6 +1485,15 @@
   .actions-container.desktop.fitted .section-grid {
     grid-template-columns: repeat(var(--fit-columns), 1fr);
     gap: 10px;
+  }
+  /* The fit counts a source-only section's rows like any other, by column.
+     Its free-flowing flex tiles wrap early in a narrow box and push the last
+     row out of the fitted height, so fitted keeps it on the column grid. */
+  .actions-container.desktop.fitted .source-section .section-grid {
+    display: grid;
+  }
+  .actions-container.desktop.fitted .source-section .grid-btn {
+    flex: none;
   }
   .actions-container.desktop.fitted .grid-btn {
     aspect-ratio: auto;

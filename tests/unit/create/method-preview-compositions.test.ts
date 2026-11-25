@@ -14,6 +14,8 @@ import {
   constructLayout,
   fuseLayout,
   generateLayout,
+  LOOP_PART_STEPS,
+  loopLayout,
   previewGap,
   shapeCellRect,
   shapeLayout,
@@ -346,6 +348,40 @@ describe("Assemble", () => {
   });
 });
 
+describe("LOOP", () => {
+  it("puts the repetition on its own row in a square", () => {
+    const cells = loopLayout("square", 144, 144);
+    expect(cells).toHaveLength(2 * LOOP_PART_STEPS);
+    expect(cells[0]!.y).toBe(cells[1]!.y);
+    expect(cells[2]!.y).toBeGreaterThan(cells[0]!.y);
+    expect(cells[2]!.x).toBe(cells[0]!.x);
+  });
+
+  it("stands the two pairs apart in a strip", () => {
+    const cells = loopLayout("strip", 146, 48);
+    const gap = (a: CellRect, b: CellRect) => b.x - (a.x + a.size);
+    expect(gap(cells[0]!, cells[1]!)).toBe(previewGap(146, 48));
+    expect(gap(cells[1]!, cells[2]!)).toBe(2 * previewGap(146, 48));
+    expect(gap(cells[2]!, cells[3]!)).toBe(previewGap(146, 48));
+  });
+
+  it("keeps all four inside any box", () => {
+    for (const shape of ["strip", "roomy", "square"] as const) {
+      for (let width = 60; width <= 820; width += 19) {
+        for (let height = 30; height <= 420; height += 17) {
+          for (const cell of loopLayout(shape, width, height)) {
+            expect(cell.size).toBeGreaterThan(0);
+            expect(cell.x).toBeGreaterThanOrEqual(0);
+            expect(cell.y).toBeGreaterThanOrEqual(0);
+            expect(cell.x + cell.size).toBeLessThanOrEqual(width);
+            expect(cell.y + cell.size).toBeLessThanOrEqual(height);
+          }
+        }
+      }
+    }
+  });
+});
+
 describe("an unsized box", () => {
   it("places nothing", () => {
     expect(constructLayout("strip", 0, 48)).toEqual([]);
@@ -354,5 +390,6 @@ describe("an unsized box", () => {
     expect(fuseLayout("strip", 0, 48)).toBeNull();
     expect(tunnelLayout("strip", 0, 48)).toBeNull();
     expect(assembleLayout("strip", 0, 48)).toBeNull();
+    expect(loopLayout("strip", 0, 48)).toEqual([]);
   });
 });

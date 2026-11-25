@@ -43,7 +43,8 @@
   import { computeKeyboardOpenFrame } from "#lib/shared/mobile/utils/keyboard-open-frame.js";
   import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
-  import { onMount } from "svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { onMount, untrack } from "svelte";
   import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { cardPresentationFromFooterSettings } from "#lib/shared/share/domain/models/card-presentation.js";
 
@@ -52,6 +53,8 @@
   const compositionManager = getImageCompositionManager();
 
   interface Props {
+    /** The sequence to save, when it is not the workspace's own. */
+    sequence?: SequenceData | null;
     /** The workspace word, so a solo save and the duplicate check name it. */
     word?: string;
     /** When true, shows context that saving is needed before sharing */
@@ -68,6 +71,7 @@
   }
 
   let {
+    sequence,
     word = "",
     showShareContext = false,
     screen = false,
@@ -123,6 +127,8 @@
         compositionManager.showNotes,
         compositionManager.customNotesText
       ),
+    // Decided once: a host either has its own sequence or saves the workspace's.
+    getSequence: untrack(() => sequence) ? () => sequence ?? null : undefined,
   });
 
   // The view is mounted only while the save mode is open, so the state sees

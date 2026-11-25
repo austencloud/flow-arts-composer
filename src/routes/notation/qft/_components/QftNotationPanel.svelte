@@ -3,6 +3,10 @@
   import { getQftAppContext } from "../_context/qft-app-context";
 
   const state = getQftAppContext();
+
+  /* A swing runs at its own speed, so each hand lights its own row. */
+  const leftStep = $derived(Math.floor(state.leftCursor) % 8);
+  const rightStep = $derived(Math.floor(state.rightCursor) % 8);
 </script>
 
 <section
@@ -17,7 +21,7 @@
     {#if state.handCount === "two"}<span class="hand-name">Left</span>{/if}
     <QftTable
       increments={state.leftIncrements}
-      activeStep={state.step}
+      activeStep={leftStep}
       compact={state.tableCompact}
     />
   </div>
@@ -27,7 +31,7 @@
       <span class="hand-name">Right</span>
       <QftTable
         increments={state.rightIncrements}
-        activeStep={state.step}
+        activeStep={rightStep}
         compact={state.tableCompact}
       />
     </div>

@@ -38,7 +38,7 @@ export const SCENE_ASSET_MANIFEST: Readonly<
   [BackgroundType.CELESTIAL]: [CELESTIAL_SHELL_URL],
   // `cosmic-stage.glb` (5 MB) is not listed: only CosmicStage.svelte names
   // it, and nothing mounts that component (2026-11-14).
-  [BackgroundType.COSMIC]: ["/models/cosmic/cosmic-reliquary.glb"],
+  [BackgroundType.COSMIC]: ["/models/cosmic/moon-outpost.glb"],
   [BackgroundType.EMBER]: [
     "/models/ember/ember-production-slice.glb",
     "/models/camping/tree-log.glb",

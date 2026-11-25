@@ -51,11 +51,13 @@ Uses organizer and sizer services for section grouping and sizing.
   import { tryGetCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import { selectOptionInteractionHintPresentation } from "../services/option-interaction-hint-presentation";
   import { selectOptionControlsPresentation } from "../services/option-controls-presentation";
+  import { optionSettingsLabel } from "../services/option-settings-label";
   import {
     CONSTRUCT_PHONE_MAX_WIDTH,
     isConstructPhoneTier,
     isConstructTypeRailTier,
   } from "../../services/construct-phone-split";
+  import { tryGetOptionControlsHostContext } from "../context/option-controls-host-context";
   import { tryGetTypeNavigationHostContext } from "../context/type-navigation-host-context";
   import {
     isAncestorResizing,
@@ -395,6 +397,9 @@ Uses organizer and sizer services for section grouping and sizing.
   const usesTypeRail = $derived(
     isTypeRailTier || !!typeNavigationHost?.preferRail()
   );
+  // A host may also keep the settings behind their button at any size.
+  const controlsHost = tryGetOptionControlsHostContext();
+  const tucked = $derived(!!controlsHost?.preferTucked());
 
   // These are evaluated when container is narrow (< 750px) OR in mobile stacked layout
 
@@ -402,6 +407,9 @@ Uses organizer and sizer services for section grouping and sizing.
   // Continuous options are typically 16 or fewer, fits nicely in 4x4
   const shouldUseCompact4x4 = $derived(() => {
     const isNarrowOrMobile = !shouldUseWideLayout || isMobileStackedLayout();
+    // Beside the workspace, tucked settings open under the type tabs. Keeping
+    // the tabs keeps the open tray where it is while Continuous is tried.
+    if (tucked && !isMobileStackedLayout()) return false;
     return isNarrowOrMobile && isContinuousOnly && options.length <= 16;
   });
 
@@ -412,8 +420,13 @@ Uses organizer and sizer services for section grouping and sizing.
     // - OR not using wide layout (container < 750px)
     // - AND not using compact 4x4 (continuous mode)
     // Fixed letter-type groups remain mounted even when a group is empty.
+    // - OR the settings are tucked away: the height that frees is for calm,
+    //   not for every type at once, until there is full width for them.
     const shouldSwipe =
-      isMobileStackedLayout() || !shouldUseWideLayout || !desktopHeightFits;
+      isMobileStackedLayout() ||
+      !shouldUseWideLayout ||
+      !desktopHeightFits ||
+      (tucked && containerWidth < FULL_INLINE_CONTROLS_WIDTH);
     return shouldSwipe && !shouldUseCompact4x4();
   });
 
@@ -442,6 +455,24 @@ Uses organizer and sizer services for section grouping and sizing.
       // could fit inline, then selecting Level 2 would replace the controls
       // with a disclosure button at the exact moment they are needed.
       canShowTurnRows: turnControlsEditable,
+      preferTucked: tucked,
+    })
+  );
+  // Out of sight, the settings still say when they are changing the list.
+  const controlsInUse = $derived(
+    (shouldShowFilterControl() && isContinuousOnly) ||
+      (turnControlsEditable &&
+        level > 1 &&
+        (leftTurns !== 0 || rightTurns !== 0))
+  );
+  const controlsLabel = $derived(
+    optionSettingsLabel({
+      showFilter: shouldShowFilterControl(),
+      isContinuousOnly,
+      showTurnControls: turnControlsEditable,
+      level,
+      leftTurns,
+      rightTurns,
     })
   );
   const useInlineControls = $derived(controlsPresentation === "inline");
@@ -771,6 +802,8 @@ Uses organizer and sizer services for section grouping and sizing.
       {#if useDisclosedCompactControls && !shouldUseSwipeLayout()}
         <div class="controls-corner">
           <OptionPickerControlsPopover
+            side={tucked && !isMobileStackedLayout() ? "bottom" : "top"}
+            inUse={tucked && controlsInUse}
             {optionAvailability}
             showFilter={shouldShowFilterControl()}
             showTurnControls={turnControlsEditable}
@@ -832,6 +865,9 @@ Uses organizer and sizer services for section grouping and sizing.
             onLetterTypeGroupSelected={notifyLetterTypeGroupSelected}
             settingsEnabled={useDisclosedCompactControls}
             settingsHasTurnRows={turnControlsEditable && level > 1}
+            tuckedSettings={tucked
+              ? { label: controlsLabel, inUse: controlsInUse }
+              : undefined}
             openIntoWorkspace={isMobileStackedLayout()}
             phoneTier={isPhoneTier || isTypeRailTier}
             typeRail={usesTypeRail}

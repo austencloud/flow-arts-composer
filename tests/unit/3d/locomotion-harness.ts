@@ -19,10 +19,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { expect } from "vitest";
-import { AnimationClip, Bone, Group, Object3D } from "three";
+import {
+  AnimationClip,
+  AnimationMixer,
+  Bone,
+  Group,
+  Object3D,
+  Quaternion,
+  Vector3,
+} from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import {
+  AnimationStateMachine,
   buildTwoBoneChain,
   ContactCurveCache,
   extractClipFootprint,
@@ -81,6 +90,23 @@ function resolveAssetRoot(): string {
 }
 
 const ASSET_ROOT = resolveAssetRoot();
+
+/**
+ * True when the 3D package in use carries the 2026-11-22 walking changes.
+ *
+ * The package is installed from a patch, and a task worktree measures an
+ * edited copy of it (`TKA_SCENE3D_SRC`) before that patch is rebuilt. The
+ * finish gate runs against whatever is installed, so a test that needs the new
+ * behaviour skips itself until the installed package has it. The marker is
+ * the first change a walking clip goes through: `extractClipFootprint` reading
+ * the source rig's Hips frame.
+ *
+ * `TKA_WALK_TESTS=all` runs them anyway, which is how they are watched failing
+ * against the package from before the change.
+ */
+export const editedScene3d =
+  String(extractClipFootprint).includes("readSourceHipsFrame") ||
+  process.env.TKA_WALK_TESTS === "all";
 
 const PACK = path.resolve(ASSET_ROOT, "static/animations/locomotion-pack");
 
@@ -290,6 +316,29 @@ export async function loadPackClips(): Promise<Map<string, AnimationClip>> {
 }
 
 /**
+ * The pack plus clips the app loads on request rather than up front, such as
+ * the grapevine, prepared the same way. A fresh map, so the shared pack the
+ * other suites count stays exactly the pack.
+ */
+export async function loadPackClipsWith(
+  keys: readonly string[]
+): Promise<Map<string, AnimationClip>> {
+  const all = new Map(await loadPackClips());
+  for (const key of keys) {
+    const file = SOURCE_CLIP_FILES[key];
+    if (!file) throw new Error(`no clip file for ${key}`);
+    const gltf = await parse(readGlb(path.join(PACK, file)).buffer);
+    const clip = gltf.animations[0];
+    if (!clip) throw new Error(`${file} has no animation`);
+    trimLeadingHold(clip);
+    const footprint = extractClipFootprint(gltf.scene, clip);
+    if (footprint) registerClipFootprint(clip, footprint);
+    all.set(key, clip);
+  }
+  return all;
+}
+
+/**
  * Every shipped character, not just the five the motion-quality suite spot
  * checks. A rig-intake contract has to see all of them or it is not an intake.
  */
@@ -389,6 +438,23 @@ export interface DriveRigOptions {
    * has the ground rotate under it the way the walk lab circle does.
    */
   turnRate?: number;
+  /**
+   * Travel direction in the character's own frame: +z ahead, +x their right.
+   * Defaults to straight ahead. The body keeps facing its heading whatever
+   * this says, so (1, 0) is a sidestep to the right, as in the walk lab.
+   */
+  direction?: { x: number; z: number };
+  /** Which clips a sideways direction plays; the animator defaults to sidestep. */
+  lateralGait?: "sidestep" | "grapevine";
+  /** Clips to load instead of the pack, from `loadPackClipsWith`. */
+  clipSet?: Map<string, AnimationClip>;
+  /** Uniform scale on the rig's root before the animator meets it. */
+  rigScale?: number;
+  /**
+   * Drive the animator through `AnimationStateMachine` and `setActiveState`,
+   * the way `Avatar3D` does, instead of calling `setLocomotion` alone.
+   */
+  throughStateMachine?: boolean;
 }
 
 export interface DriveRigResult {
@@ -398,6 +464,8 @@ export interface DriveRigResult {
   tiers: number[];
   /** Commanded speed on every recorded frame, for reading a sweep back. */
   speeds: number[];
+  /** Upper body and pelvis, read on the same frames as `frames`. */
+  posture: PostureFrame[];
 }
 
 /**
@@ -419,14 +487,21 @@ export async function driveRig({
   planting = false,
   onPlanter,
   turnRate = 0,
+  direction = { x: 0, z: 1 },
+  lateralGait,
+  clipSet,
+  rigScale = 1,
+  throughStateMachine = false,
 }: DriveRigOptions): Promise<DriveRigResult> {
   const rig = await parse(rigData(rigFile));
   const travel = new Group();
   travel.add(rig.scene);
+  if (rigScale !== 1) rig.scene.scale.multiplyScalar(rigScale);
+  const stateMachine = throughStateMachine ? new AnimationStateMachine() : null;
 
   const animator = new LocomotionAnimator();
   const seam = animator as unknown as ClipInjectionSeam;
-  const injected = new Map(clips);
+  const injected = new Map(clipSet ?? clips);
   for (const key of omitClips) injected.delete(key);
   seam.pendingClips = injected;
   seam.clipsLoaded = true;
@@ -455,12 +530,17 @@ export async function driveRig({
   const avatars = collectRiggedAvatars(travel);
   expect(avatars, "sampler found the rig leg chains").toHaveLength(1);
   const rigged = avatars[0]!;
+  const upper = postureBones(rig.scene);
 
   const dt = 1 / frameRate;
   const frames: GaitFrame[] = [];
   const tiers: number[] = [];
   const speeds: number[] = [];
+  const posture: PostureFrame[] = [];
   let heading = 0;
+  const dirLength = Math.hypot(direction.x, direction.z) || 1;
+  const dirX = direction.x / dirLength;
+  const dirZ = direction.z / dirLength;
 
   const total = Math.round((settleSeconds + seconds) * frameRate);
   for (let i = 0; i < total; i++) {
@@ -468,17 +548,45 @@ export async function driveRig({
     const speed = speedAt(Math.max(0, elapsed - settleSeconds));
     const moving = speed > 0.01;
 
-    animator.setLocomotion({
-      isMoving: moving,
-      speed,
-      moveDirection: { x: 0, z: 1 },
-    });
+    if (stateMachine) {
+      const out = stateMachine.update(
+        {
+          hasMovementInput: moving,
+          horizontalSpeed: speed,
+          verticalVelocity: 0,
+          isGrounded: true,
+          isCrouching: false,
+          isJumpRequested: false,
+          moveDirection: { x: dirX, z: dirZ },
+          facingAngle: heading,
+        },
+        dt
+      );
+      animator.setActiveState(out.state);
+      animator.setLocomotion({
+        isMoving: out.isMoving,
+        speed: out.animationSpeed,
+        moveDirection: out.moveDirection,
+        ...(lateralGait ? { lateralGait } : {}),
+      });
+    } else {
+      animator.setLocomotion({
+        isMoving: moving,
+        speed,
+        moveDirection: { x: dirX, z: dirZ },
+        ...(lateralGait ? { lateralGait } : {}),
+      });
+    }
     animator.update(dt);
 
     heading += turnRate * dt;
     travel.rotation.y = heading;
-    travel.position.x += speed * dt * Math.sin(heading);
-    travel.position.z += speed * dt * Math.cos(heading);
+    // Forward is (sin h, cos h) and the character's right is (-cos h, sin h),
+    // the convention `stepOf` and the gait analysis share.
+    const worldX = dirZ * Math.sin(heading) - dirX * Math.cos(heading);
+    const worldZ = dirZ * Math.cos(heading) + dirX * Math.sin(heading);
+    travel.position.x += speed * dt * worldX;
+    travel.position.z += speed * dt * worldZ;
     travel.updateMatrixWorld(true);
 
     if (planter) {
@@ -504,13 +612,373 @@ export async function driveRig({
 
     if (elapsed < settleSeconds) continue;
     frames.push(sampleRig(rigged, { t: elapsed - settleSeconds, dt }));
+    posture.push(samplePosture(upper, heading));
     tiers.push(animator.getGaitTier());
     speeds.push(speed);
   }
 
   animator.dispose();
-  return { frames, report: analyzeGait(frames), tiers, speeds };
+  return { frames, report: analyzeGait(frames), tiers, speeds, posture };
 }
+
+// ---------------------------------------------------------------------------
+// The source reference
+// ---------------------------------------------------------------------------
+
+/**
+ * Every pack clip worth measuring as authored, by the animator key the app
+ * loads it under. Each GLB carries the armature it was exported on, which is
+ * the rig the clip was authored for.
+ */
+export const SOURCE_CLIP_FILES: Record<string, string> = {
+  ...CLIP_FILES,
+  grapevineLeft: "grapevine-left.glb",
+  grapevineRight: "grapevine-right.glb",
+  sidestepLeft: "sidestep-left.glb",
+  sidestepRight: "sidestep-right.glb",
+};
+
+export interface DriveSourceOptions {
+  /** Animator key, as in `SOURCE_CLIP_FILES`. */
+  clip: string;
+  seconds: number;
+  frameRate?: number;
+  /**
+   * Playback rate, 1 being the clip as recorded. A rig asked for less than
+   * the clip's own speed plays it slower, so the source has to be read at the
+   * same rate for its numbers to be the ones the rig is held to: a foot
+   * skimming the floor for one frame at full speed skims it for two at half.
+   */
+  rate?: number;
+  /** Ground speed to play at, m/s; sets the rate from the clip's own travel. */
+  speed?: number;
+}
+
+/**
+ * Play a pack clip on the armature it was authored on, untouched: its own
+ * pelvis rotation, its own root travel, no retarget, no bake, no planter.
+ *
+ * This is what every target is measured against. The walk lab can only say
+ * how far the shipped walk is from the clip it started from if the clip is
+ * measured the same way.
+ *
+ * The raw export needs two things a shipped avatar does not. Its joints are
+ * plain nodes, because a GLB without a skinned mesh has no skin to make them
+ * bones, so they are flagged as bones for the sampler, which finds a rig by
+ * its bones. And a looping clip snaps its Hips back to the start of its travel
+ * at every wrap, so each completed loop moves the whole armature on by one
+ * loop's travel, which joins the laps into one continuous walk.
+ */
+export async function driveSourceClip({
+  clip: key,
+  seconds,
+  frameRate = 60,
+  rate: givenRate = 1,
+  speed,
+}: DriveSourceOptions): Promise<DriveRigResult> {
+  const file = SOURCE_CLIP_FILES[key];
+  if (!file) throw new Error(`no source clip for ${key}`);
+  const gltf = await parse(readGlb(path.join(PACK, file)).buffer);
+  const clip = gltf.animations[0];
+  if (!clip) throw new Error(`${file} has no animation`);
+  trimLeadingHold(clip);
+
+  gltf.scene.traverse((node) => {
+    if (/mixamorig/i.test(node.name)) (node as Bone).isBone = true;
+  });
+  // The Hips' parent is flagged too, so the sampler takes the scene node above
+  // it as the thing that travels and the loop seam can be hidden between them.
+  const findHips = boneFinder(gltf.scene);
+  const armature = findHips("Hips")!.parent!;
+  (armature as Bone).isBone = true;
+  const armatureRest = armature.position.clone();
+  const travel = new Group();
+  travel.add(gltf.scene);
+  const mixer = new AnimationMixer(gltf.scene);
+  mixer.clipAction(clip).play();
+
+  const avatars = collectRiggedAvatars(travel);
+  expect(avatars, `${file} has leg chains`).toHaveLength(1);
+  const rigged = avatars[0]!;
+  const upper = postureBones(gltf.scene);
+
+  // One loop's travel, read off the Hips at both ends of the clip.
+  const at = (time: number) => {
+    mixer.setTime(time);
+    travel.updateMatrixWorld(true);
+    return rigged.hips.getWorldPosition(new Vector3());
+  };
+  const loopTravel = at(clip.duration - 1e-4).sub(at(0));
+  loopTravel.y = 0;
+  const nativeSpeed = loopTravel.length() / clip.duration;
+  const rate =
+    speed !== undefined && nativeSpeed > 1e-4 ? speed / nativeSpeed : givenRate;
+
+  const dt = 1 / frameRate;
+  const frames: GaitFrame[] = [];
+  const posture: PostureFrame[] = [];
+  const total = Math.round(seconds * frameRate);
+  for (let i = 0; i < total; i++) {
+    const t = i * dt;
+    const laps = (t * rate) / clip.duration;
+    const loops = Math.floor(laps);
+    mixer.setTime(t * rate - loops * clip.duration);
+    // The scene moves on smoothly, the way a body travels; the armature under
+    // it is held back by however much of the current loop's travel the clip's
+    // own Hips have already covered, so the two together are continuous.
+    travel.position.copy(loopTravel).multiplyScalar(laps);
+    armature.position
+      .copy(loopTravel)
+      .multiplyScalar(loops - laps)
+      .add(armatureRest);
+    travel.updateMatrixWorld(true);
+    frames.push(sampleRig(rigged, { t, dt }));
+    posture.push(samplePosture(upper, 0));
+  }
+  mixer.stopAllAction();
+  return {
+    frames,
+    report: analyzeGait(frames),
+    tiers: [],
+    speeds: [],
+    posture,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Posture
+// ---------------------------------------------------------------------------
+
+type Point = { x: number; y: number; z: number };
+
+/** The upper-body joints the posture readings need, world space. */
+export interface PostureFrame {
+  /** The way the body is meant to face, radians; 0 faces +Z. */
+  heading: number;
+  hips: Point;
+  neck: Point;
+  leftHip: Point;
+  rightHip: Point;
+  leftShoulder: Point;
+  rightShoulder: Point;
+  leftWrist: Point;
+  rightWrist: Point;
+  /**
+   * Which way the head faces against the heading, degrees; + turns left.
+   * Read as the Head bone's world turn about the vertical away from its own
+   * bind pose, so it does not depend on which local axis a rig calls forward.
+   */
+  headYaw: number;
+}
+
+type PostureBones = {
+  [K in Exclude<keyof PostureFrame, "heading" | "headYaw">]: Object3D;
+} & {
+  head: Object3D;
+  /** The Head bone's world rotation in the bind pose, facing +Z. */
+  headRest: Quaternion;
+};
+
+function postureBones(root: Object3D): PostureBones {
+  const bone = boneFinder(root);
+  root.updateMatrixWorld(true);
+  const need = (suffix: string) => {
+    const hit = bone(suffix);
+    if (!hit) throw new Error(`rig has no ${suffix}`);
+    return hit;
+  };
+  return {
+    hips: need("Hips"),
+    neck: need("Neck"),
+    leftHip: need("LeftUpLeg"),
+    rightHip: need("RightUpLeg"),
+    // The arm bone's head is the shoulder joint; the Shoulder bone is the
+    // clavicle, which starts at the sternum.
+    leftShoulder: need("LeftArm"),
+    rightShoulder: need("RightArm"),
+    leftWrist: need("LeftHand"),
+    rightWrist: need("RightHand"),
+    head: need("Head"),
+    headRest: need("Head").getWorldQuaternion(new Quaternion()),
+  };
+}
+
+const postureTmp = new Vector3();
+function worldPoint(node: Object3D): Point {
+  node.getWorldPosition(postureTmp);
+  return { x: postureTmp.x, y: postureTmp.y, z: postureTmp.z };
+}
+
+const headTmp = new Quaternion();
+function headYawOf(bones: PostureBones, heading: number): number {
+  bones.head.getWorldQuaternion(headTmp);
+  // The turn from bind to now, world frame; its twist about the vertical.
+  headTmp.multiply(bones.headRest.clone().invert());
+  let yaw = 2 * Math.atan2(headTmp.y, headTmp.w) * DEG - heading * DEG;
+  yaw = ((((yaw + 180) % 360) + 360) % 360) - 180;
+  return yaw;
+}
+
+function samplePosture(bones: PostureBones, heading: number): PostureFrame {
+  return {
+    headYaw: headYawOf(bones, heading),
+    heading,
+    hips: worldPoint(bones.hips),
+    neck: worldPoint(bones.neck),
+    leftHip: worldPoint(bones.leftHip),
+    rightHip: worldPoint(bones.rightHip),
+    leftShoulder: worldPoint(bones.leftShoulder),
+    rightShoulder: worldPoint(bones.rightShoulder),
+    leftWrist: worldPoint(bones.leftWrist),
+    rightWrist: worldPoint(bones.rightWrist),
+  };
+}
+
+const DEG = 180 / Math.PI;
+
+/** Yaw of a left-to-right line against the heading, degrees; + turns left. */
+function lineYaw(left: Point, right: Point, heading: number): number {
+  const vx = right.x - left.x;
+  const vz = right.z - left.z;
+  const forward = vx * Math.sin(heading) + vz * Math.cos(heading);
+  const across = -vx * Math.cos(heading) + vz * Math.sin(heading);
+  return Math.atan2(forward, across) * DEG;
+}
+
+export interface PostureReport {
+  /** Mean trunk lean from vertical, Hips to Neck, degrees; + leans ahead. */
+  trunkLean: number;
+  /** Pelvis yaw against the heading, degrees: mean, and half peak-to-peak. */
+  pelvisTwistMean: number;
+  pelvisTwistAmplitude: number;
+  /** Pelvis roll, degrees, half its peak-to-peak. */
+  pelvisListAmplitude: number;
+  /** Shoulder-line yaw against the heading, mean, degrees. */
+  chestYaw: number;
+  /** Head yaw against the heading, mean, degrees. */
+  headYaw: number;
+  /** Stance knee flexion at mid-stance, mean over stances, degrees. */
+  midStanceKneeFlexion: number;
+  /**
+   * Ankle-to-ball pitch at touchdown less the same foot's pitch at
+   * mid-stance, degrees, mean over stances. Positive is the toes still up as
+   * the foot arrives, a heel strike; zero lands flat; negative is toe first.
+   */
+  touchdownFootPitch: number;
+  /** Highest either wrist got relative to its own shoulder, metres. */
+  wristOverShoulder: number;
+  /** Widest the ankles got apart across the heading, metres. */
+  widestAnkleSeparation: number;
+  /** Stances the knee and foot readings averaged. */
+  stanceCount: number;
+}
+
+function footPitch(foot: GaitFrame["left"]): number | null {
+  if (!foot.toe) return null;
+  const dy = foot.toe.y - foot.ankle.y;
+  const dh = Math.hypot(foot.toe.x - foot.ankle.x, foot.toe.z - foot.ankle.z);
+  return Math.atan2(dy, dh) * DEG;
+}
+
+/**
+ * The posture numbers the walk targets are written in, from one recording.
+ *
+ * Stances come from the gait report, so knee and foot readings are taken at
+ * the moments the analysis itself calls touchdown and mid-stance. A stance cut
+ * off by either end of the buffer is left out: its first frame is not a
+ * touchdown, it is the start of the recording.
+ */
+export function analyzePosture(
+  frames: readonly GaitFrame[],
+  posture: readonly PostureFrame[],
+  report: GaitReport
+): PostureReport {
+  const n = Math.min(frames.length, posture.length);
+  let lean = 0;
+  let twistSum = 0;
+  let twistLo = Infinity;
+  let twistHi = -Infinity;
+  let listLo = Infinity;
+  let listHi = -Infinity;
+  let chest = 0;
+  let head = 0;
+  let wrist = -Infinity;
+  let widest = 0;
+  for (let i = 0; i < n; i++) {
+    const p = posture[i]!;
+    const f = frames[i]!;
+    const sin = Math.sin(p.heading);
+    const cos = Math.cos(p.heading);
+
+    const vx = p.neck.x - p.hips.x;
+    const vz = p.neck.z - p.hips.z;
+    lean += Math.atan2(vx * sin + vz * cos, p.neck.y - p.hips.y) * DEG;
+
+    const twist = lineYaw(p.leftHip, p.rightHip, p.heading);
+    twistSum += twist;
+    twistLo = Math.min(twistLo, twist);
+    twistHi = Math.max(twistHi, twist);
+    const hipSpan = Math.hypot(
+      p.rightHip.x - p.leftHip.x,
+      p.rightHip.z - p.leftHip.z
+    );
+    const list = Math.atan2(p.rightHip.y - p.leftHip.y, hipSpan) * DEG;
+    listLo = Math.min(listLo, list);
+    listHi = Math.max(listHi, list);
+    chest += lineYaw(p.leftShoulder, p.rightShoulder, p.heading);
+    head += p.headYaw;
+
+    wrist = Math.max(
+      wrist,
+      p.leftWrist.y - p.leftShoulder.y,
+      p.rightWrist.y - p.rightShoulder.y
+    );
+    widest = Math.max(
+      widest,
+      Math.abs(
+        -(f.left.ankle.x - f.right.ankle.x) * cos +
+          (f.left.ankle.z - f.right.ankle.z) * sin
+      )
+    );
+  }
+
+  const first = frames[0]?.t ?? 0;
+  const last = frames[n - 1]?.t ?? 0;
+  const frameAt = (t: number) => {
+    const dt = frames[0]?.dt || 1 / 60;
+    const i = Math.round((t - first) / dt);
+    return frames[Math.min(n - 1, Math.max(0, i))]!;
+  };
+  let knee = 0;
+  let pitch = 0;
+  let counted = 0;
+  for (const stance of report.stances) {
+    if (stance.startT <= first || stance.endT >= last) continue;
+    const touch = frameAt(stance.startT)[stance.foot];
+    const mid = frameAt((stance.startT + stance.endT) / 2)[stance.foot];
+    const touchPitch = footPitch(touch);
+    const midPitch = footPitch(mid);
+    if (touchPitch === null || midPitch === null) continue;
+    knee += 180 - mid.kneeAngle;
+    pitch += touchPitch - midPitch;
+    counted += 1;
+  }
+
+  return {
+    trunkLean: n > 0 ? lean / n : 0,
+    pelvisTwistMean: n > 0 ? twistSum / n : 0,
+    pelvisTwistAmplitude: n > 0 ? (twistHi - twistLo) / 2 : 0,
+    pelvisListAmplitude: n > 0 ? (listHi - listLo) / 2 : 0,
+    chestYaw: n > 0 ? chest / n : 0,
+    headYaw: n > 0 ? head / n : 0,
+    midStanceKneeFlexion: counted > 0 ? knee / counted : 0,
+    touchdownFootPitch: counted > 0 ? pitch / counted : 0,
+    wristOverShoulder: Number.isFinite(wrist) ? wrist : 0,
+    widestAnkleSeparation: widest,
+    stanceCount: counted,
+  };
+}
+
 
 // ---------------------------------------------------------------------------
 // Static intake

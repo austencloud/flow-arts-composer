@@ -85,24 +85,32 @@ export const LOOP_TURN_INDEPENDENCE = {
 } as const;
 
 /**
- * Compositional notation replaces flat component bags.
+ * How a LOOP's name says the way it is built.
  *
- * `/` = applied simultaneously as one compound operation
- * `+` = applied sequentially (inner pattern, then outer transformation)
+ * `+` is at the same time. "then" is one after the other: the whole round,
+ * then the round again with the change.
  *
- * Example: `SWAPPED + MIRRORED/INVERTED`
- *   1. Take a SWAPPED inner pattern (seed doubled via hand-role swap)
- *   2. Apply MIRRORED and INVERTED simultaneously (mirror placements + flip pro/anti)
+ * The fixed-point tables below were written before 2026-11-24 and still use
+ * the old signs, where `/` was at once and `+` was one after the other.
  */
 export const LOOP_COMPOSITIONAL_NOTATION = {
-  simultaneousOperator: "/",
-  sequentialOperator: "+",
+  simultaneousOperator: "+",
+  sequentialOperator: "then",
+  half: "½",
+  quarter: "¼",
+  rules: [
+    "+ means at the same time. 'then' means one after the other: the whole round first, then the round again with the change.",
+    "A pass is the seed played once. A round is what the part before 'then' builds. With Rotated it is one full turn of the grid: two passes by halves, four by quarters.",
+    "½ is at every half of the round, ¼ at every quarter. In a name with Rotated, every part before 'then' carries its own fraction. Rotated alone is ½ Rotated or ¼ Rotated.",
+    "A part after 'then' happens once and carries no fraction. A name without Rotated carries none.",
+    "Rotated and Reflected never take a +. A turn and a reflection at the same time are another reflection.",
+  ],
   example: {
-    notation: "SWAPPED + MIRRORED/INVERTED",
-    step1: "Take a SWAPPED inner pattern (seed doubled via hand-role swap)",
-    step2: "Apply MIRRORED and INVERTED simultaneously to that block (mirror placements to opposite side + flip pro/anti)",
+    notation: "¼ Rotated + ½ Inverted, then Reflected",
+    step1: "Four passes, each a quarter turn on from the last. The third and fourth are inverted as well.",
+    step2: "Those four passes again, reflected. Eight passes in all.",
   },
-  whyItMatters: "The flat label {MIRRORED, SWAPPED, INVERTED} does not tell you which transformation came first or how the sequence was built. Compositional notation preserves the construction order.",
+  whyItMatters: "Two LOOPs made of the same parts can be different sequences. ¼ Rotated + ¼ Swapped is four passes, and the hands trade at every join. ¼ Rotated, then Swapped is eight passes: a whole round, then the round again with the hands traded.",
 } as const;
 
 /**

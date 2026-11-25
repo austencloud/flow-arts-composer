@@ -326,19 +326,26 @@ Turn assignment is a separate creative choice layered on top of the algebraic st
 
 ### Compositional Notation
 
-Instead of flat component bags like `{MIRRORED, SWAPPED, INVERTED}`, express LOOPs as ordered compositions:
+A flat set like `{Reflected, Swapped, Inverted}` leaves out how the LOOP is built. The name carries it:
 
-- `/` = applied **simultaneously** as one compound operation
-- `+` = applied **sequentially** (this pattern, then that transformation on top)
+- `+` = **at the same time**
+- `then` = **one after the other**: the whole round first, then the round again with the change
+- `½` = at every half of the round, `¼` = at every quarter
 
-Example: `SWAPPED + MIRRORED/INVERTED`
+A pass is the seed played once. A round is what the part before "then" builds. With Rotated it is one full turn of the grid: two passes by halves, four by quarters.
 
-This reads as a construction recipe:
+1. In a name with Rotated, every part before "then" carries its own fraction. Rotated alone is ½ Rotated or ¼ Rotated.
+2. A part after "then" happens once and carries no fraction. A name without Rotated carries none.
+3. Rotated and Reflected never take a `+`. A turn and a reflection at the same time are another reflection.
 
-1. Take a SWAPPED inner pattern (seed doubled via hand-role swap)
-2. Apply MIRRORED and INVERTED simultaneously to that block (mirror positions to opposite side + flip pro/anti)
+Example: `¼ Rotated + ½ Inverted, then Reflected`
 
-The flat label `{MIRRORED, SWAPPED, INVERTED}` doesn't tell you which transformation came first or how the sequence was built. The compositional notation preserves the construction order.
+1. Four passes, each a quarter turn on from the last. The third and fourth are inverted as well.
+2. Those four passes again, reflected. Eight passes in all.
+
+Two LOOPs made of the same parts can be different sequences. `¼ Rotated + ¼ Swapped` is four passes, and the hands trade at every join. `¼ Rotated, then Swapped` is eight passes: a whole round, then the round again with the hands traded.
+
+Until 2026-11-24 this document and the domain data wrote `/` for at once and `+` for one after the other. The example they used then is now "Swapped, then Reflected + Inverted".
 
 ### Direct Closure and Literal Outer Wrappers
 
@@ -374,13 +381,14 @@ path-transported construction.
 
 ### Future Work
 
-- Allow users to specify LOOP composition order (e.g., "SWAPPED + MIRRORED/INVERTED") rather than flat type
+- Allow users to specify LOOP composition order (e.g., "Swapped, then Reflected + Inverted") rather than flat type
 - Investigate whether every multi-component LOOP has a unique decomposition or allows multiple valid orderings
 
 ---
 
 ## Version History
 
+- **v2.2** (2026-11-25): LOOP names: `+` is at the same time, "then" is one after the other, ½ and ¼ say how often in the round; `/` is gone
 - **v2.1** (2026-07-25): Added four axis-independent reflections; corrected direct closure vs literal wrapped-block fixed points; standardized step terminology
 - **v2.0** (2026-02-19): Added ordered compositional notation, turn independence, and the original fixed-point analysis later corrected in v2.1
 - **v1.1** (2025-12-23): Added "modular" component for multi-motif independent transformations

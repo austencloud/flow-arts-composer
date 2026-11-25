@@ -27,8 +27,11 @@
     type HandCombinationId,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import { combinationMove } from "#lib/shared/guide-topics/combination-playback.svelte.js";
+  import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { orderQuizRounds } from "./hand-motions-quiz-order";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
@@ -44,8 +47,13 @@
     fitted?: boolean;
   }
 
-  let { answered, onAnswer, onMiss, onFinish, fitted = false }: Props =
-    $props();
+  let {
+    answered,
+    onAnswer,
+    onMiss,
+    onFinish,
+    fitted = false,
+  }: Props = $props();
 
   // Reading time for a right answer before the next picture.
   const HOLD_MS = 1600;
@@ -85,6 +93,26 @@
     ])
   );
 
+  // A hand that stays still gives the eye nothing to follow, so while the move
+  // plays a soft glow swells around it and fades out again. It is gone before
+  // the finished picture, so it never reads as part of the pictograph.
+  const POINTS = getPlacementGridPoints(GridMode.DIAMOND);
+  const PICTURE_SIZE = 950;
+  const CUE_RADIUS = 118;
+  const cueId = $props.id();
+  const stillHands = $derived.by(() => {
+    const demo = HAND_COMBINATIONS.find(({ id }) => id === current)?.demo;
+    if (!demo) return [];
+    return [HandSide.LEFT, HandSide.RIGHT].flatMap((side) => {
+      const move = demo[side];
+      const point = POINTS.find(({ location }) => location === move.from);
+      return move.move === "static" && point
+        ? [{ side, x: point.x, y: point.y }]
+        : [];
+    });
+  });
+  let cue = $state(0);
+
   // The picture asked about plays its move over and over until it is named;
   // once named it holds the finished picture. Reduced motion shows only the
   // finished picture.
@@ -96,11 +124,13 @@
       const elapsed = (now - startedAt) % (PLAY_MS + REST_MS);
       const linear = Math.min(1, elapsed / PLAY_MS);
       progress = 1 - Math.pow(1 - linear, 3);
+      cue = Math.sin(Math.PI * linear);
       frame = requestAnimationFrame(tick);
     });
     return () => {
       cancelAnimationFrame(frame);
       progress = null;
+      cue = 0;
     };
   });
   onDestroy(() => clearTimeout(holdTimer));
@@ -143,6 +173,7 @@
               {@const playing = progress !== null && move.start !== null}
               <div
                 class="mystery-picture"
+                data-round={current}
                 role="img"
                 aria-label={t("learn_motion_quiz_picture")}
               >
@@ -163,6 +194,38 @@
                   motionProgress={playing ? progress : null}
                   arrowOpacity={playing ? (progress ?? 1) : 1}
                 />
+                {#if playing && stillHands.length > 0}
+                  <svg
+                    class="still-cue"
+                    viewBox="0 0 {PICTURE_SIZE} {PICTURE_SIZE}"
+                    opacity={cue}
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <!-- Brightest at the hand and gone well before any
+                           edge shows: light, with no ring to read. -->
+                      {#each stillHands as still (still.side)}
+                        <radialGradient
+                          id="{cueId}-{still.side}"
+                          style:color={getMotionColor(still.side, "dark")}
+                        >
+                          <stop offset="0" stop-opacity="0.34" />
+                          <stop offset="0.35" stop-opacity="0.26" />
+                          <stop offset="0.7" stop-opacity="0.08" />
+                          <stop offset="1" stop-opacity="0" />
+                        </radialGradient>
+                      {/each}
+                    </defs>
+                    {#each stillHands as still (still.side)}
+                      <circle
+                        cx={still.x}
+                        cy={still.y}
+                        r={CUE_RADIUS}
+                        fill="url(#{cueId}-{still.side})"
+                      />
+                    {/each}
+                  </svg>
+                {/if}
               </div>
             {/if}
           {/if}
@@ -305,12 +368,25 @@
   }
 
   .mystery-picture {
+    position: relative;
     width: 100%;
     height: 100%;
     border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
     border-radius: 0.75rem;
     background: color-mix(in srgb, currentColor 5%, transparent);
     overflow: hidden;
+  }
+
+  .still-cue {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .still-cue stop {
+    stop-color: currentColor;
   }
 
   .mystery-check {

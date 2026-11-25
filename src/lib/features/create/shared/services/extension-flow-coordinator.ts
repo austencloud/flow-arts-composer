@@ -1,5 +1,5 @@
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
-import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
+import { loopOptionName } from "#lib/shared/components/loop-picker/loop-option-name.js";
 /**
  * Extension Flow Coordinator
  *
@@ -140,7 +140,7 @@ export class ExtensionFlowCoordinator {
         };
       }
 
-      const loopName = loopTypeLabel(loopType);
+      const loopName = loopOptionName(loopType);
       return {
         success: true,
         sequence: extendedSequence,

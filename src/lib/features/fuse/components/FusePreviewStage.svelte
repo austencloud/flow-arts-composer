@@ -1,16 +1,19 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import { onDestroy } from "svelte";
+  import { onDestroy, tick } from "svelte";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import FuseAnimationPreview from "./FuseAnimationPreview.svelte";
+  import FuseCustomizeDock from "./FuseCustomizeDock.svelte";
   import FuseMobileControls from "./FuseMobileControls.svelte";
   import FuseSourceCard from "./FuseSourceCard.svelte";
 
@@ -18,9 +21,13 @@
     onOpenViewer,
     onShare,
     onSave,
-    onChooseFirstStep,
     onBuildPath,
+    onEditPath,
+    onOpenSettings,
     onEditPairing,
+    onToggleCustomize,
+    customizeOpen = false,
+    customizeDocked = false,
     compact = false,
     sideControls = false,
     isSaving = false,
@@ -28,10 +35,17 @@
     onOpenViewer: () => Promise<void>;
     onShare: () => Promise<void>;
     onSave: () => Promise<void>;
-    onChooseFirstStep: (side: FuseSide) => void;
     onBuildPath: (side: FuseSide) => void;
+    onEditPath: (side: FuseSide) => void;
+    onOpenSettings: (side: FuseSide) => void;
     /** Opens the Pairing editor from the derived follower's badge. */
     onEditPairing?: () => void;
+    /** Opens Customize beside the result, or puts it away. */
+    onToggleCustomize?: () => void | Promise<void>;
+    customizeOpen?: boolean;
+    /** Customize is open with no room for the side column: it docks
+     *  under the result in place of its button row. */
+    customizeDocked?: boolean;
     compact?: boolean;
     /** Short landscape: the compact controls sit beside the result instead of
      * below it, so the result is not squeezed into a strip. */
@@ -42,22 +56,59 @@
   let tempoOpen = $state(false);
   let decompositionOverride = $state<boolean | null>(null);
 
-  // A wide frame track seats a Blue and a Red solo beside the result without
-  // shrinking it, so it opens disassembled: the room is there, and the solos
-  // are the two paths the result is made of. The threshold is the sizing
-  // math in FuseAnimationPreview (hero = 0.625 of the width less two gaps),
-  // the point where the hero still takes the full height. Disassemble and
-  // Reassemble override it either way until the stage remounts.
-  const SOLO_GAP_PX = 8;
-  let frameTrackWidth = $state(0);
-  let frameTrackHeight = $state(0);
-  const roomForSolos = $derived(
-    frameTrackHeight > 0 &&
-      frameTrackWidth >= 1.6 * frameTrackHeight + 2 * SOLO_GAP_PX
-  );
-  const previewDecomposed = $derived(
-    decompositionOverride ?? (compact || roomForSolos)
-  );
+  // The result opens disassembled at every size: the solos are the two paths
+  // it is made of. FuseAnimationPreview puts them where they cost the result
+  // the least. Disassemble and Reassemble override it until the stage remounts.
+  // The Customize dock takes the room the solos would use, so while it is up
+  // the result is drawn whole at the full height that is left.
+  const previewDecomposed = $derived(decompositionOverride ?? !customizeDocked);
+
+  // On a wide stage the dock goes beside the result or under it at its own
+  // drawer height, whichever leaves the bigger square result. Beside suits a
+  // stage stacked under the paths (wide and short); in a stage standing beside
+  // the paths it left the result 111px wide at 1333x1107. The stage's box is
+  // set by the workspace grid, not by the dock, so the choice cannot flip-flop.
+  // Beside, the dock takes only the width the square result cannot use, from
+  // 300 (its narrowest before) up to 440.
+  const DOCK_BESIDE_MIN_PX = 300;
+  const DOCK_BESIDE_MAX_PX = 440;
+  const DOCK_UNDER_PX = 360; // FuseCustomizeDock's tallest drawer height
+  const STAGE_GAP_PX = 14;
+  const STAGE_PAD_PX = 40; // the stage's padding on both sides, near enough
+  let stageWidth = $state(0);
+  let stageHeight = $state(0);
+  let headingHeight = $state(0);
+  const dockFit = $derived.by(() => {
+    const width = stageWidth - STAGE_PAD_PX;
+    const height = stageHeight - STAGE_PAD_PX - headingHeight - STAGE_GAP_PX;
+    const besideWidth = Math.round(
+      Math.min(
+        DOCK_BESIDE_MAX_PX,
+        Math.max(DOCK_BESIDE_MIN_PX, width - height - STAGE_GAP_PX)
+      )
+    );
+    const beside = Math.min(width - besideWidth - STAGE_GAP_PX, height);
+    const under = Math.min(width, height - DOCK_UNDER_PX - STAGE_GAP_PX);
+    return {
+      under: !compact && stageWidth > 0 && under > beside,
+      besideWidth,
+    };
+  });
+
+  let stageEl = $state<HTMLElement | null>(null);
+  // Done replaces the dock with the button row, so focus goes back to the
+  // Customize button that opened it.
+  function closeCustomizeDock(): void {
+    void Promise.resolve(onToggleCustomize?.())
+      .then(() => tick())
+      .then(() =>
+        stageEl
+          ?.querySelector<HTMLButtonElement>(
+            `button[aria-label="${CSS.escape(t("shape_engine_customize_aria"))}"]`
+          )
+          ?.focus({ preventScroll: true })
+      );
+  }
 
   // Disassemble and Reassemble resize the frame and the hero through CSS
   // transitions, but only for the length of that request. Left on, the same
@@ -80,49 +131,93 @@
   const leftName = $derived.by(() =>
     fuseState.left.sequence
       ? simplifyRepeatedWord(getSequenceDisplayName(fuseState.left.sequence))
-      : "Left path"
+      : t("fuse_side_left_path")
   );
   const rightName = $derived.by(() =>
     fuseState.right.sequence
       ? simplifyRepeatedWord(getSequenceDisplayName(fuseState.right.sequence))
-      : "Right path"
+      : t("fuse_side_right_path")
   );
   const previewDescription = $derived(
     fuseState.previewSequence && fuseState.appliedLength
-      ? `Combined preview of Left path ${leftName} and Right path ${rightName}, ${fuseState.appliedLength} steps at ${fuseState.bpm} BPM.`
-      : "Combined preview is loading."
+      ? t("fuse_preview_description", {
+          left: leftName,
+          right: rightName,
+          steps: fuseState.appliedLength,
+          bpm: fuseState.bpm,
+        })
+      : t("fuse_preview_loading_aria")
   );
   const previewRevision = $derived(
     fuseState.left.revision + fuseState.right.revision
   );
 </script>
 
+<!-- The result's word, drawn as the Sequence Viewer's header draws it. The box
+     keeps its height while there is no word to show. -->
+{#snippet stageWord(align: "center" | "start")}
+  <div class="stage-word">
+    <WordHeader
+      word={fuseState.previewWord}
+      presentation="chrome"
+      darkMode={true}
+      {align}
+    />
+  </div>
+{/snippet}
+
 <section
   class="preview-stage"
   class:compact
   class:side-controls={compact && sideControls}
+  class:customize-docked={customizeDocked}
+  class:dock-under={customizeDocked && dockFit.under}
+  style:--dock-beside-width={stageWidth > 0 ? `${dockFit.besideWidth}px` : null}
   class:decomposed={previewDecomposed}
   class:assembly-moving={assemblyMoving}
   data-fuse-layout-region="preview"
   aria-labelledby="fuse-preview-heading"
+  bind:this={stageEl}
+  bind:clientWidth={stageWidth}
+  bind:clientHeight={stageHeight}
 >
-  <header class="preview-heading">
-    <div>
-      <h3 id="fuse-preview-heading">Combined preview</h3>
+  <header class="preview-heading" bind:clientHeight={headingHeight}>
+    <div class="preview-title">
+      {#if !compact}
+        {@render stageWord("start")}
+      {/if}
+      <div class="preview-caption">
+        <h3 id="fuse-preview-heading">{t("fuse_preview_title")}</h3>
+        <span class="preview-meta">
+          {t("fuse_preview_meta", {
+            steps: fuseState.appliedLength ?? fuseState.requestedLength,
+            bpm: fuseState.bpm,
+          })}
+        </span>
+      </div>
     </div>
     <div class="preview-heading-tools">
-      <span class="preview-meta">
-        {fuseState.appliedLength ?? fuseState.requestedLength} steps · {fuseState.bpm}
-        BPM
-      </span>
+      {#if !compact && onToggleCustomize}
+        <div class="customize-control">
+          <PanelButton
+            variant="secondary"
+            ariaLabel={t("shape_engine_customize_aria")}
+            ariaPressed={customizeOpen}
+            onclick={onToggleCustomize}
+          >
+            <i class="fas fa-sliders" aria-hidden="true"></i>
+            {t("shape_engine_customize")}
+          </PanelButton>
+        </div>
+      {/if}
       {#if !compact}
         <div class="assembly-control">
           <PanelButton
             variant="secondary"
             disabled={!fuseState.previewSequence}
             ariaLabel={previewDecomposed
-              ? "Reassemble combined preview"
-              : "Disassemble combined preview"}
+              ? t("fuse_preview_reassemble_aria")
+              : t("fuse_preview_disassemble_aria")}
             onclick={toggleDecomposition}
           >
             <i
@@ -131,7 +226,9 @@
                 : 'fa-table-columns'}"
               aria-hidden="true"
             ></i>
-            {previewDecomposed ? "Reassemble" : "Disassemble"}
+            {previewDecomposed
+              ? t("fuse_preview_reassemble")
+              : t("fuse_preview_disassemble")}
           </PanelButton>
         </div>
       {/if}
@@ -139,31 +236,30 @@
   </header>
 
   {#if compact}
-    <div class="mobile-source-toolbar" aria-label="Source path controls">
+    <div class="mobile-source-toolbar" aria-label={t("fuse_preview_source_controls_aria")}>
       <FuseSourceCard
         side="left"
         compactHero={true}
         toolbarOnly={true}
-        {onChooseFirstStep}
         {onBuildPath}
+        {onEditPath}
+        {onOpenSettings}
         {onEditPairing}
       />
       <FuseSourceCard
         side="right"
         compactHero={true}
         toolbarOnly={true}
-        {onChooseFirstStep}
         {onBuildPath}
+        {onEditPath}
+        {onOpenSettings}
         {onEditPairing}
       />
+      {@render stageWord("center")}
     </div>
   {/if}
 
-  <div
-    class="frame-wrap"
-    bind:clientWidth={frameTrackWidth}
-    bind:clientHeight={frameTrackHeight}
-  >
+  <div class="frame-wrap">
     <div class="preview-frame" role="img" aria-label={previewDescription}>
       {#if fuseState.previewSequence}
         <FuseAnimationPreview
@@ -202,16 +298,26 @@
             onclick={() => void fuseState.retry()}
           >
             <i class="fas fa-arrow-rotate-right" aria-hidden="true"></i>
-            Retry
+            {t("fuse_action_retry")}
           </PanelButton>
         {/if}
       </div>
     {/if}
   </div>
 
-  {#if compact}
-    <FuseMobileControls {onOpenViewer} {onShare} {onSave} {isSaving} />
-  {:else}
+  {#if customizeDocked}
+    <FuseCustomizeDock onClose={closeCustomizeDock} />
+  {/if}
+  {#if compact && !customizeDocked}
+    <FuseMobileControls
+      {onOpenViewer}
+      {onShare}
+      {onSave}
+      {isSaving}
+      {onToggleCustomize}
+      {customizeOpen}
+    />
+  {:else if !compact}
     <p
       id="fuse-action-status"
       class="sr-only"
@@ -225,7 +331,7 @@
     <!-- Playback pauses/resumes by tapping the canvas (tapToToggle + hover
          badge on FuseAnimationPreview). No standalone transport button — the
          app-wide direction is canvas-tap for play/pause. -->
-    <div class="stage-controls">
+    <div class="stage-controls" hidden={customizeDocked}>
       <div class="bpm-compact">
         <Popover.Root bind:open={tempoOpen}>
           <Popover.Trigger>
@@ -235,10 +341,10 @@
                 class="tempo-trigger"
                 type="button"
                 disabled={!fuseState.previewSequence || fuseState.isFusing}
-                aria-label={`Set tempo, currently ${fuseState.bpm} BPM`}
+                aria-label={t("fuse_preview_tempo_aria", { bpm: fuseState.bpm })}
               >
                 <span class="tempo-value">{fuseState.bpm}</span>
-                <span class="tempo-unit">BPM</span>
+                <span class="tempo-unit">{t("fuse_preview_bpm_unit")}</span>
                 <i class="fas fa-chevron-up" aria-hidden="true"></i>
               </button>
             {/snippet}
@@ -261,11 +367,11 @@
         </Popover.Root>
       </div>
 
-      <div class="result-actions" aria-label="Combined sequence actions">
+      <div class="result-actions" aria-label={t("fuse_result_actions_aria")}>
         <div class="viewer-slot">
           <ActionButton
-            label="Open viewer"
-            busyLabel="Opening viewer..."
+            label={t("fuse_preview_open_viewer")}
+            busyLabel={t("fuse_preview_opening_viewer")}
             icon={fuseState.isFusing ? "fa-spinner fa-spin" : "fa-expand"}
             color="fuse"
             fullWidth={true}
@@ -287,7 +393,7 @@
               class="fas {isSaving ? 'fa-spinner fa-spin' : 'fa-bookmark'}"
               aria-hidden="true"
             ></i>
-            {isSaving ? "Saving..." : "Save result"}
+            {isSaving ? t("fuse_action_saving") : t("fuse_preview_save_result")}
           </PanelButton>
         </div>
         <div class="share-slot">
@@ -297,7 +403,7 @@
             disabled={!fuseState.canFuse}
             onclick={() => void onShare()}
           >
-            Share
+            {t("fuse_action_share")}
           </PanelButton>
         </div>
       </div>
@@ -406,12 +512,176 @@
     align-content: center;
   }
 
+  /* The Customize dock changes how the result looks, so the result gets the
+     room the paths' own row takes until Done. */
+  .compact.customize-docked .mobile-source-toolbar {
+    display: none;
+  }
+
+  /* The dock needs about 215px of height under its header. Beside a short
+     landscape result it takes the full height, and a wider column for four
+     tiles across. */
+  .preview-stage.side-controls.customize-docked {
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 44cqw, 400px);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "frame controls";
+  }
+
+  .side-controls :global(.customize-dock) {
+    grid-area: controls;
+    height: 100%;
+  }
+
+  /* A stacked desktop stage (paths above, preview below) is wide and short:
+     under the result the dock left it a 72px square at 1029x1172. Beside it,
+     the result keeps the stage's height and the dock gets the same height,
+     with the tempo, viewer, save and share row away until Done. A stage
+     standing beside the paths is tall instead, and there the dock stays under
+     the result (dock-under, chosen in the script by the bigger result). */
+  .preview-stage.customize-docked:not(.compact, .dock-under) {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--dock-beside-width, clamp(300px, 42cqw, 440px));
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "heading heading"
+      "frame dock";
+  }
+
+  .preview-stage.customize-docked:not(.compact, .dock-under) .preview-heading {
+    grid-area: heading;
+  }
+
+  .preview-stage.customize-docked:not(.compact, .dock-under) .frame-wrap {
+    grid-area: frame;
+    min-height: 0;
+  }
+
+  .preview-stage.customize-docked:not(.compact, .dock-under)
+    :global(.customize-dock) {
+    grid-area: dock;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* While Customize docks or undocks (FuseLayout's toggleCustomize), the page
+     snaps to its new arrangement under its moving layers: the frame and the
+     result glide to their new boxes, the solos and a phone's path row fade out
+     or in, and on a phone the button row and the dock trade one slot, the dock
+     rising out of the row like a drawer. Only one of the two is ever rendered,
+     so they share a name. On a wide stage the dock opens beside the result
+     instead, so it fades in there and the tempo row under the result is not
+     part of it. */
+  :global(html.fuse-customize-motion) .preview-frame {
+    view-transition-name: fuse-customize-frame;
+  }
+
+  :global(html.fuse-customize-motion)
+    .preview-stage
+    :global(.fuse-animation-preview > .preview-unit > .canvas-wrap) {
+    view-transition-name: fuse-customize-hero;
+  }
+
+  :global(html.fuse-customize-motion) .preview-stage :global(.split-canvases) {
+    view-transition-name: fuse-customize-solos;
+  }
+
+  :global(html.fuse-customize-motion) .mobile-source-toolbar {
+    view-transition-name: fuse-customize-paths;
+  }
+
+  :global(html.fuse-customize-motion) .preview-stage :global(.mobile-controls),
+  :global(html.fuse-customize-motion) .preview-stage :global(.customize-dock) {
+    view-transition-name: fuse-customize-slot;
+  }
+
+  :global(
+    html.fuse-customize-motion::view-transition-group(fuse-customize-frame)
+  ),
+  :global(
+    html.fuse-customize-motion::view-transition-group(fuse-customize-hero)
+  ),
+  :global(
+    html.fuse-customize-motion::view-transition-group(fuse-customize-solos)
+  ),
+  :global(
+    html.fuse-customize-motion::view-transition-group(fuse-customize-slot)
+  ) {
+    animation-duration: var(--duration-emphasis);
+    animation-timing-function: var(--ease-in-out);
+  }
+
+  /* The frame is an empty box once its contents have their own layers, so it
+     stretches to its new size rather than keeping its old height. */
+  :global(
+    html.fuse-customize-motion::view-transition-old(fuse-customize-frame)
+  ),
+  :global(
+    html.fuse-customize-motion::view-transition-new(fuse-customize-frame)
+  ) {
+    height: 100%;
+    object-fit: fill;
+    animation-duration: var(--duration-emphasis);
+  }
+
+  /* The slot keeps both pictures at their own size, pinned to its bottom edge
+     and cut to its box, so the dock is uncovered from the button row upward
+     instead of being squashed into the row's height. */
+  :global(
+    html.fuse-customize-motion::view-transition-image-pair(fuse-customize-slot)
+  ) {
+    overflow: clip;
+  }
+
+  :global(html.fuse-customize-motion::view-transition-old(fuse-customize-slot)),
+  :global(
+    html.fuse-customize-motion::view-transition-new(fuse-customize-slot)
+  ) {
+    inset-block: auto 0;
+    animation-duration: var(--duration-emphasis);
+  }
+
+  .stage-controls[hidden] {
+    display: none;
+  }
+
   .mobile-source-toolbar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     flex: 0 0 auto;
-    gap: var(--settings-spacing-sm, 8px);
+    gap: 4px var(--settings-spacing-sm, 8px);
     min-width: 0;
+  }
+
+  /* On a phone held upright the word has a line of its own under the two
+     paths. Where there is room it stands between them and costs no height. */
+  .mobile-source-toolbar .stage-word {
+    --word-size: 24px;
+    grid-column: 1 / -1;
+  }
+
+  @container fuse-preview (min-width: 600px) {
+    .mobile-source-toolbar {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .mobile-source-toolbar > :global(.source-card:last-of-type) {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .mobile-source-toolbar .stage-word {
+      --word-size: 28px;
+      grid-column: 2;
+      grid-row: 1;
+    }
+  }
+
+  .stage-word {
+    min-width: 0;
+    height: var(--word-size, 28px);
   }
 
   .mobile-source-toolbar :global(.source-card) {
@@ -430,8 +700,31 @@
     min-width: 0;
   }
 
-  .preview-heading > div {
+  /* Two lines, the word over what the panel is and how long it runs, in the
+     height of the buttons beside them. */
+  .preview-title {
+    --word-size: 26px;
+    display: grid;
+    gap: 4px;
+    flex: 1 1 0;
     min-width: 0;
+  }
+
+  @container fuse-preview (min-width: 1200px) {
+    .preview-title {
+      --word-size: 36px;
+    }
+  }
+
+  /* One line. The length and tempo drop out of it when the panel's name leaves
+     them no room. */
+  .preview-caption {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--settings-spacing-sm, 10px);
+    height: 18px;
+    overflow: hidden;
+    line-height: 18px;
   }
 
   .preview-heading-tools {
@@ -441,10 +734,12 @@
     gap: var(--settings-spacing-sm, 10px);
   }
 
+  .customize-control,
   .assembly-control {
     flex: 0 0 auto;
   }
 
+  .customize-control :global(.panel-btn),
   .assembly-control :global(.panel-btn) {
     min-height: var(--min-touch-target, 44px);
     padding: 8px 14px;
@@ -458,6 +753,7 @@
      how the preview is drawn and Share opens the share sheet without the
      viewer, so both sit in the quiet tier: no fill, faint outline, dimmer
      words. */
+  .customize-control :global(.panel-btn),
   .assembly-control :global(.panel-btn),
   .share-slot :global(.panel-btn) {
     border-color: color-mix(in srgb, var(--theme-stroke) 60%, transparent);
@@ -465,6 +761,7 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
   }
 
+  .customize-control :global(.panel-btn:hover:not(:disabled)),
   .assembly-control :global(.panel-btn:hover:not(:disabled)),
   .share-slot :global(.panel-btn:hover:not(:disabled)) {
     border-color: var(--theme-stroke);
@@ -472,21 +769,28 @@
     color: var(--theme-text, #fff);
   }
 
+  /* While Customize is open beside the result, its button stays lit
+     so it reads as the way to put the panel away. */
+  .customize-control :global(.panel-btn[aria-pressed="true"]) {
+    border-color: color-mix(in srgb, var(--theme-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--theme-accent) 14%, transparent);
+    color: var(--theme-text, #fff);
+  }
+
   .preview-heading h3 {
     color: var(--theme-text, #fff);
-    font-size: 1rem;
-    font-weight: 750;
+    font-size: var(--font-size-min, 14px);
+    font-weight: 700;
+    line-height: inherit;
+    white-space: nowrap;
   }
 
   .preview-meta {
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
     font-size: var(--font-size-compact, 12px);
-    font-weight: 700;
-  }
-
-  .preview-meta {
-    flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    white-space: nowrap;
   }
 
   /* The frame track is the size container FuseAnimationPreview measures, in
@@ -592,9 +896,13 @@
     transform: translateX(12%);
   }
 
+  /* Above the preview's canvases (z-index 1), so the outline closes all the
+     way round. Invisible at rest: reduced motion shows no outline at all. */
   .preview-flash {
     position: absolute;
+    z-index: 2;
     inset: 3px;
+    opacity: 0;
     pointer-events: none;
     border: 2px solid
       color-mix(in srgb, var(--semantic-warning, #f97316) 72%, white);
@@ -658,16 +966,6 @@
   /* A narrow result pane gives the next step its own row, then keeps tempo,
      save, and sharing equally readable beneath it. */
   @container fuse-preview (max-width: 620px) {
-    .preview-heading {
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .preview-heading-tools {
-      width: 100%;
-      justify-content: space-between;
-    }
-
     .stage-controls {
       grid-template-columns: 110px repeat(2, minmax(0, 1fr));
       grid-template-areas:

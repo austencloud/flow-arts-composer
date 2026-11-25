@@ -7,11 +7,21 @@
     onchange,
     onHelp = null,
     allowedOrientations = null,
+    size = "sm",
+    fit = false,
+    labels = {},
+    ariaLabel,
   }: {
     value: Orientation;
     onchange: (orientation: Orientation) => void;
     onHelp?: (() => void) | null;
     allowedOrientations?: readonly Orientation[] | null;
+    size?: "sm" | "phone";
+    /** Share the host's width by word length instead of scrolling sideways. */
+    fit?: boolean;
+    /** The host's translated words, where it has them. */
+    labels?: Partial<Record<Orientation, string>>;
+    ariaLabel?: string;
   } = $props();
 
   const RADIAL_OPTIONS: { value: Orientation; label: string }[] = [
@@ -32,18 +42,35 @@
   ];
   const isCenterOrientation = $derived(String(value).startsWith("center"));
   const options = $derived(
-    (isCenterOrientation ? CENTER_OPTIONS : RADIAL_OPTIONS).filter(
-      (option) =>
-        allowedOrientations === null ||
-        allowedOrientations.includes(option.value)
-    )
+    (isCenterOrientation ? CENTER_OPTIONS : RADIAL_OPTIONS)
+      .filter(
+        (option) =>
+          allowedOrientations === null ||
+          allowedOrientations.includes(option.value)
+      )
+      .map((option) => ({
+        ...option,
+        label: labels[option.value] ?? option.label,
+      }))
   );
 </script>
 
 <div class="orientation-picker">
-  <div class="segments">
-    <div class="segments-inner" class:center-options={isCenterOrientation}>
-      <SegmentedControl {options} {value} {onchange} size="sm" color="accent" />
+  <div class="segments" class:fit>
+    <div
+      class="segments-inner"
+      class:fit
+      class:center-options={isCenterOrientation}
+    >
+      <SegmentedControl
+        {options}
+        {value}
+        {onchange}
+        {size}
+        density={fit ? "tight" : "standard"}
+        color="accent"
+        {ariaLabel}
+      />
     </div>
   </div>
   {#if onHelp}
@@ -82,6 +109,21 @@
     min-width: 400px;
   }
 
+  .segments.fit {
+    overflow-x: visible;
+  }
+
+  .segments-inner.fit {
+    min-width: 0;
+  }
+
+  /* Each name takes the width its words need, on two lines when they run out. */
+  .segments-inner.fit :global(.segment) {
+    flex: 1 1 auto;
+    min-width: min-content;
+    line-height: 1.15;
+  }
+
   .help-button {
     display: inline-flex;
     align-items: center;
@@ -109,7 +151,7 @@
   }
 
   @container tool-panel (max-width: 420px) {
-    .segments-inner:not(.center-options) {
+    .segments-inner:not(.center-options, .fit) {
       min-width: 224px;
     }
   }

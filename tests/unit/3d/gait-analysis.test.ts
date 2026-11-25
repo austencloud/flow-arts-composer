@@ -258,6 +258,43 @@ describe("gait analysis", () => {
     expect(skatingReport.slipRatio).toBeGreaterThan(0.05);
   });
 
+  it("charges a foot rolling over its planted ball no slip", () => {
+    // A heel coming up turns the foot about its ball, which carries the ankle
+    // forward along the floor as well as up: 8 cm of lift on a 15 cm foot is
+    // 2.3 cm of ankle travel, and none of it is the foot sliding. Slip follows
+    // whichever of heel and ball is holding still.
+    const FOOT = 0.15;
+    const roll = (f: FootFrame): FootFrame => {
+      if (!f.toe) return f;
+      const lift = f.ankle.y - f.toe.y;
+      if (lift <= 0 || lift >= FOOT) return f;
+      return {
+        ...f,
+        ankle: { ...f.ankle, z: f.toe.z - Math.sqrt(FOOT * FOOT - lift * lift) },
+      };
+    };
+    const rolling = syntheticWalk({
+      steps: 4,
+      stepLength: 0.7,
+      framesPerStance: 24,
+      heelLift: 0.08,
+    }).map((f) => ({ ...f, left: roll(f.left), right: roll(f.right) }));
+    const report = analyzeGait(rolling);
+    expect(report.stances.length).toBeGreaterThanOrEqual(3);
+    expect(report.peakHeelLift).toBeGreaterThan(0.05);
+    expect(report.peakSlip).toBeLessThan(0.002);
+
+    // And a foot that slides while it rolls is still charged the slide.
+    const sliding = syntheticWalk({
+      steps: 4,
+      stepLength: 0.7,
+      framesPerStance: 24,
+      heelLift: 0.08,
+      slipPerFrame: 0.003,
+    }).map((f) => ({ ...f, left: roll(f.left), right: roll(f.right) }));
+    expect(analyzeGait(sliding).peakSlip).toBeGreaterThan(0.05);
+  });
+
   it("measures step length between alternating footfalls", () => {
     const frames = syntheticWalk({
       steps: 6,
@@ -609,6 +646,25 @@ describe("gait analysis", () => {
     // A foot turning around at the end of its swing is the fastest thing a
     // leg does honestly, and the threshold has to clear it with room to spare
     // or every stride would read as a fault.
+    expect(found.peak).toBeLessThan(DEFAULT_THRESHOLDS.joltAccel / 2);
+  });
+
+  it("does not call a dropped render frame a teleport", () => {
+    // The lab samples once per rendered frame, and a browser skips one now
+    // and then. The skipped frame's motion lands in a 33 ms step; read with
+    // the next 17 ms step's dt, an honest swing looked like a jump (the
+    // walk lab's run, 2026-11-22: 1,025 m/s2 on a gap and nothing else).
+    // A running stride: long steps, quick swings, so the skipped frame
+    // carries a foot moving several metres a second.
+    const frames = smoothWalk(4, 1.2, 20);
+    expect(findJolts(frames, DEFAULT_THRESHOLDS).peak).toBeLessThan(
+      DEFAULT_THRESHOLDS.joltAccel / 2
+    );
+    const at = 30;
+    frames.splice(at, 1);
+    frames[at]!.dt = frames[at]!.t - frames[at - 1]!.t;
+    const found = findJolts(frames, DEFAULT_THRESHOLDS);
+    expect(found.jolts).toEqual([]);
     expect(found.peak).toBeLessThan(DEFAULT_THRESHOLDS.joltAccel / 2);
   });
 

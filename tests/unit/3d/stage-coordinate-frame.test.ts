@@ -9,6 +9,7 @@ import {
   getStageCoordinateFrame,
   isRenderable3DEnvironment,
 } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import { MOON_APRON_HEIGHT } from "#lib/shared/3d/environments/worlds/cosmic/moon-outpost-layout.js";
 import { createBlossomStageTransform } from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime.js";
 
 const BACKGROUNDS = [
@@ -45,6 +46,16 @@ describe("stage coordinate frame", () => {
     expect(withStage.environmentYOffset).toBeCloseTo(-1.95);
     expect(withoutStage.environmentYOffset).toBeCloseTo(-0.95);
     expect(withStage.performerAnchorY).toBe(withoutStage.performerAnchorY);
+  });
+
+  it("puts the Moon's landing pad top under the performers' soles", () => {
+    // The pad is the Moon's performer surface; a stale platform height floats
+    // the cast above it and detaches their sun shadows from their feet.
+    for (const stageEnabled of [false, true]) {
+      expect(getNativeStageSurfaceY(BackgroundType.COSMIC, stageEnabled)).toBe(
+        MOON_APRON_HEIGHT
+      );
+    }
   });
 
   it("aligns Autumn's authored deck top with the canonical performer anchor", () => {

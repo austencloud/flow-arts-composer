@@ -18,6 +18,8 @@
  * 45° increments are a supported result rather than a broken one.
  */
 
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+
 /** Reflection applied after the rotation. One axis at a time. */
 export type FuseReflection = "none" | "mirror" | "flip";
 
@@ -40,7 +42,12 @@ export interface FuseRotationOption {
 
 /** Every rotation the transform layer accepts, in order around the circle. */
 export const FUSE_ROTATIONS: readonly FuseRotationOption[] = [
-  { steps: 0, label: "None" },
+  {
+    steps: 0,
+    get label() {
+      return t("fuse_none");
+    },
+  },
   { steps: 1, label: "45°" },
   { steps: 2, label: "90°" },
   { steps: 3, label: "135°" },
@@ -57,9 +64,34 @@ export interface FuseReflectionOption {
 }
 
 export const FUSE_REFLECTIONS: readonly FuseReflectionOption[] = [
-  { value: "none", label: "None", description: "No reflection" },
-  { value: "mirror", label: "Mirror", description: "Reflect left and right" },
-  { value: "flip", label: "Flip", description: "Reflect top and bottom" },
+  // Getters, so the words follow the language when they are read.
+  {
+    value: "none",
+    get label() {
+      return t("fuse_none");
+    },
+    get description() {
+      return t("fuse_rule_no_reflection");
+    },
+  },
+  {
+    value: "mirror",
+    get label() {
+      return t("fuse_rule_mirror");
+    },
+    get description() {
+      return t("fuse_rule_reflect_left_right");
+    },
+  },
+  {
+    value: "flip",
+    get label() {
+      return t("fuse_rule_flip");
+    },
+    get description() {
+      return t("fuse_rule_reflect_top_bottom");
+    },
+  },
 ];
 
 export const IDENTITY_RULE: FuseRule = {
@@ -113,15 +145,29 @@ export function isIdentityRule(rule: FuseRule): boolean {
 export function fuseRuleLabel(rule: FuseRule): string {
   const parts: string[] = [];
   if (rule.rotationSteps > 0) {
-    parts.push(`Rotate ${rule.rotationSteps * 45}°`);
+    parts.push(t("fuse_rule_rotate", { degrees: rule.rotationSteps * 45 }));
   }
-  if (rule.reflect === "mirror") parts.push("Mirror");
-  if (rule.reflect === "flip") parts.push("Flip");
-  if (rule.invert) parts.push("Invert");
-  if (rule.rewind) parts.push("Rewind");
+  if (rule.reflect === "mirror") parts.push(t("fuse_rule_mirror"));
+  if (rule.reflect === "flip") parts.push(t("fuse_rule_flip"));
+  if (rule.invert) parts.push(t("fuse_rule_invert"));
+  if (rule.rewind) parts.push(t("fuse_rule_rewind"));
   // No operation at all means the follower repeats the driver exactly. That is
   // a real choice, so it gets a real name rather than an empty string.
-  return parts.length > 0 ? parts.join(" + ") : "Copy";
+  return parts.length > 0 ? parts.join(" + ") : t("fuse_rule_copy");
+}
+
+/**
+ * The rule that rebuilds the leader from its follower: the same pair, named
+ * from the other hand. Switching which hand leads uses it, so nothing on screen
+ * changes. A reflection undoes itself whatever rotation came before it, and so
+ * do invert and rewind; a plain rotation turns back the way it came.
+ */
+export function inverseFuseRule(rule: FuseRule): FuseRule {
+  return createFuseRule({
+    ...rule,
+    rotationSteps:
+      rule.reflect === "none" ? -rule.rotationSteps : rule.rotationSteps,
+  });
 }
 
 /** The nine ids this replaced, so a persisted one still restores its rule. */

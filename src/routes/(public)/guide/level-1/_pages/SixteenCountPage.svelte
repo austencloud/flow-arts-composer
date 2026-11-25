@@ -288,7 +288,7 @@
       lh: 17,
       left: 8,
       width: 176,
-      html: "<em>(Rotated + Mirrored + Swapped LOOP)</em>",
+      html: "<em>(Rotated + Reflected + Swapped LOOP)</em>",
     },
   ]);
 

@@ -160,7 +160,13 @@ export async function resolvePostSequence(
   sequenceId: string
 ): Promise<SequenceData | null> {
   const cached = cachedPostSequence(sequenceId);
-  if (cached) return cached;
+  if (cached) {
+    // A share-code snapshot saved before its letters were worked out.
+    if (!isScannableShortCode(sequenceId) || hasLetters(cached)) return cached;
+    const lettered = await withLetters(cached);
+    cachePostSequence(lettered);
+    return lettered;
+  }
   // Independent Studio aliases only exist in account/local snapshots. Sending
   // one to the public gallery cannot find it and can surface a global error
   // while a library card is loading in the background.
@@ -181,9 +187,27 @@ async function shortCodeSequence(code: string): Promise<SequenceData | null> {
     await import("#lib/shared/qr/get-short-code-manager.js");
   const resolved = await getShortCodeManager().resolveShortCode(code);
   if (!resolved?.steps?.length) return null;
-  const sequence = { ...resolved, id: code };
+  const sequence = await withLetters({ ...resolved, id: code });
   cachePostSequence(sequence);
   return sequence;
+}
+
+function hasLetters(sequence: SequenceData): boolean {
+  return !!sequence.word || sequence.steps.some((step) => !!step.letter);
+}
+
+/**
+ * A decoded share code carries the motions only: no letter on any step, no
+ * word, and "Shared Sequence" as its name. Work the letters out the way the
+ * tunnel and scan pages do, so the post's name and lit letter have something
+ * to show.
+ */
+async function withLetters(sequence: SequenceData): Promise<SequenceData> {
+  const [{ hydrateSequence }, { loopDetector }] = await Promise.all([
+    import("#lib/shared/navigation/services/sequence-hydrator.js"),
+    import("#lib/features/create/generate/circular/services/loop-detector.js"),
+  ]);
+  return hydrateSequence(sequence, { loopDetector });
 }
 
 /** Read a saved source snapshot without consulting the public sequence gallery. */

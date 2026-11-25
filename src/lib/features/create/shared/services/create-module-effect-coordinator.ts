@@ -1,3 +1,4 @@
+import { isConstructWorkbench } from "./construct-workbench";
 /**
  * create-module-effect-coordinator.ts
  *
@@ -165,7 +166,7 @@ export function setupEffects(config: CreateModuleEffectConfig): () => void {
       createAutoEditPanelEffect({
         CreateModuleState: createModuleState,
         panelState,
-        shouldAutoOpen: () => navigationState.activeTab !== "construct",
+        shouldAutoOpen: () => !isConstructWorkbench(navigationState.activeTab),
       })
     );
 
@@ -174,7 +175,7 @@ export function setupEffects(config: CreateModuleEffectConfig): () => void {
       createAutoStepEditorEffect({
         CreateModuleState: createModuleState,
         panelState,
-        shouldAutoOpen: () => navigationState.activeTab !== "construct",
+        shouldAutoOpen: () => !isConstructWorkbench(navigationState.activeTab),
       })
     );
 

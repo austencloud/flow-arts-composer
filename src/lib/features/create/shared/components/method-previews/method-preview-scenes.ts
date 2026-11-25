@@ -46,6 +46,7 @@ export const METHOD_PREVIEW_SCENES: Readonly<
   fuse: () => import("./FuseScene.svelte"),
   tunnel: () => import("./TunnelScene.svelte"),
   assemble: () => import("./AssembleScene.svelte"),
+  loop: () => import("./LoopScene.svelte"),
 };
 
 /**

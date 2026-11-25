@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onDestroy, tick, untrack } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { growFade, motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { startMorph } from "#lib/shared/transitions/results-morph.js";
   import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import {
     BREAKPOINTS,
@@ -27,6 +29,12 @@
     resolveBalancedFuseWorkspaceSplit,
     resolveFuseWingWorkspace,
   } from "../services/fuse-workspace-split";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import {
+    getEffectsConfigContext,
+    setEffectsConfigContext,
+  } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseSettingsDestination } from "../domain/fuse-recipe-destination";
   import { fuseRecipePanel } from "../state/fuse-recipe-panel.svelte";
@@ -36,7 +44,7 @@
   import FuseRecipeColumn from "./FuseRecipeColumn.svelte";
   import FuseSettingsDrawer from "./FuseSettingsDrawer.svelte";
   import FuseSourceCard from "./FuseSourceCard.svelte";
-  import FuseFirstStepPanel from "./FuseFirstStepPanel.svelte";
+  import FuseEditPathScreen from "./FuseEditPathScreen.svelte";
   import FusePathBuilderDialog from "./FusePathBuilderDialog.svelte";
   import FuseWorkspaceHeader from "./FuseWorkspaceHeader.svelte";
   import FuseLinkedRulePanel from "./FuseLinkedRulePanel.svelte";
@@ -44,6 +52,15 @@
 
   const { state: fuseState } = getFuseContext();
   const settings = getSettings();
+  // The effects the combined preview wears are the person's own, the same
+  // state Construct's player and the viewer use, so a look chosen here
+  // follows them out of Fuse. The preview canvases and Customize both
+  // read it from this context.
+  setEffectsConfigContext(
+    getEffectsConfigContext() ??
+      getAnimationVisibilityManager().effectsConfigState ??
+      createEffectsConfigState()
+  );
   let containerElement = $state<HTMLDivElement | null>(null);
   let compact = $state(true);
   let landscapeSplit = $state(false);
@@ -55,15 +72,15 @@
   // or resized-into `pairing` destination there is retired.
   $effect(() => {
     if (fuseRecipePanel.destination !== "pairing") return;
+    if (fuseRecipePanel.content !== "recipe") return;
     if (compact && fuseState.mode === "symmetry") return;
     untrack(() => {
       fuseRecipePanel.destination = null;
       fuseRecipePanel.open = false;
     });
   });
-  let actionSide = $state<FuseSide | null>(null);
-  let firstStepOpen = $state(false);
-  let inlineFirstStepSide = $state<FuseSide | null>(null);
+  // The hand whose Edit path screen is open, or null for the workspace.
+  let editSide = $state<FuseSide | null>(null);
   let pathBuilderOpen = $state(false);
   let pathBuilderSide = $state<FuseSide | null>(null);
   let isSavingResult = $state(false);
@@ -110,6 +127,7 @@
   const CARD_CHROME_V = 96; // card vertical chrome: padding + the Back/Shuffle row
   const PREVIEW_CHROME_V = 190; // matches FusePreviewStage's square frame cap
   const PREVIEW_HPAD = 48; // maximum desktop stage padding, both sides
+  const PREVIEW_ROWS_V = 140; // the stage's heading and controls, with their gaps
   const TALL_PORTRAIT_SPLIT_WIDTH = 520;
   const TALL_PORTRAIT_NARROW_MIN_HEIGHT = 1480;
   const TALL_PORTRAIT_SPLIT_MIN_HEIGHT = 1280;
@@ -167,14 +185,14 @@
   // workspace has padding, and gating on the wider number let three columns
   // open into a grid ~40px too narrow to seat them. Every column landed on its
   // hard floor and the row still overflowed.
-  const recipeColumn = $derived(
+  const recipeColumnFits = $derived(
     fullCard &&
-      fuseRecipePanel.open &&
       fitsFuseRecipeColumn(
         workspaceGridWidth || containerWidth,
         RECIPE_COLUMN_FIT
       )
   );
+  const recipeColumn = $derived(fuseRecipePanel.open && recipeColumnFits);
   // What the three columns are worth to each other. Each states the width it
   // wants and the width it can survive on, and any shortfall is shared between
   // all three rather than dropped on whichever one has no floor of its own —
@@ -234,16 +252,28 @@
   const recipeTargetWidth = $derived(openColumnWidths.recipe);
   const recipeColumnWidth = $derived(recipeColumn ? recipeTargetWidth : 0);
 
-  const previewIdealWidth = () =>
+  // The result opens disassembled, its two solos in a column beside it at a
+  // third of its size (FuseAnimationPreview), so it is four thirds as wide as
+  // it is tall.
+  const SPLIT_RESULT_ASPECT = 4 / 3;
+  const previewIdealWidth = (aspect = SPLIT_RESULT_ASPECT) =>
     Math.max(
       WING_PREVIEW_FLOOR,
-      containerHeight - PREVIEW_CHROME_V + PREVIEW_HPAD
+      (containerHeight - PREVIEW_CHROME_V) * aspect + PREVIEW_HPAD
+    );
+  // The width past which the result, already at its full height, gains nothing.
+  const previewFrameHeight = () =>
+    (contentH || containerHeight) - PREVIEW_ROWS_V;
+  const previewFullWidth = () =>
+    Math.max(
+      WING_PREVIEW_FLOOR,
+      previewFrameHeight() * SPLIT_RESULT_ASPECT + PREVIEW_HPAD
     );
   const wingLayout = $derived(
     resolveFuseWingWorkspace({
       availableWidth: workspaceGridWidth || containerWidth,
       availableHeight: containerHeight,
-      previewIdealWidth: previewIdealWidth(),
+      previewIdealWidth: Math.min(previewIdealWidth(), previewFullWidth()),
       sourceFloor: WING_SOURCE_FLOOR,
       sourceCap: WING_SOURCE_CAP,
       previewFloor: WING_PREVIEW_FLOOR,
@@ -367,9 +397,14 @@
     closeRecipe();
   }
 
-  // requested length shows before the load settles so the seam is right away.
+  // The cards size their cells for the longer of the two hands, so both
+  // paths fit the same grid. The settings' lengths stand in before a pair
+  // has loaded, so the seam is right away.
   const stepCount = $derived(
-    fuseState.appliedLength ?? fuseState.requestedLength
+    Math.max(
+      fuseState.left.length ?? fuseState.recipes.left.length,
+      fuseState.right.length ?? fuseState.recipes.right.length
+    )
   );
 
   // Pictograph cell size for one card at a given path-column width and step
@@ -446,7 +481,7 @@
     Math.round(Math.min(maxLeft(), Math.max(minLeft(), px)));
 
   // Default seam: jointly solve each source-card arrangement and the preview's
-  // height-capped square. Both sides receive the same proportion of their ideal
+  // height-capped result. Both sides receive the same proportion of their ideal
   // width before the usability floors apply, so resizing never privileges one
   // pane merely because it was scored first.
   //
@@ -461,16 +496,27 @@
       minLeft(),
       Math.min(maxLeft(), splitAvailableWidth() - columnWidths.canvas)
     );
+  //
+  // Where the result would come out taller than it is wide, its solos go beneath
+  // it and it has no use for more than the square, so the paths keep the rest.
   function optimalSplit(): number {
-    return resolveBalancedFuseWorkspaceSplit({
-      availableWidth: splitAvailableWidth(),
-      cardBoxHeight: cardBoxH,
-      stepCount,
-      previewIdealWidth: previewIdealWidth(),
-      minLeft: minLeft(),
-      maxLeft: defaultMaxLeft(),
-      cardHorizontalChrome: CARD_HPAD,
-    }).splitPx;
+    const solve = (idealWidth: number) =>
+      resolveBalancedFuseWorkspaceSplit({
+        availableWidth: splitAvailableWidth(),
+        cardBoxHeight: cardBoxH,
+        stepCount,
+        previewIdealWidth: idealWidth,
+        minLeft: minLeft(),
+        maxLeft: defaultMaxLeft(),
+        cardHorizontalChrome: CARD_HPAD,
+      }).splitPx;
+    const split = solve(previewIdealWidth());
+    const previewWidth = splitAvailableWidth() - split;
+    if (previewWidth - PREVIEW_HPAD < previewFrameHeight())
+      return solve(previewIdealWidth(1));
+    return clampSplit(
+      Math.max(split, splitAvailableWidth() - previewFullWidth())
+    );
   }
 
   // Resolve the seam whenever the layout changes and the user isn't dragging:
@@ -641,7 +687,7 @@
       openSequenceViewer(sequence, {
         source: "fuse",
         returnPath: "/app/create",
-        returnLabel: "Fuse",
+        returnLabel: t("fuse_layout_return_label"),
         initialBpm: fuseState.bpm,
       });
     } catch (failure) {
@@ -690,42 +736,45 @@
         notes: "Created in Fuse",
         analyticsSource: "fuse",
       });
-      showToast("Fused LOOP saved to your library", "success");
+      showToast(t("fuse_layout_toast_saved"), "success");
     } catch (failure) {
       if (
         failure instanceof LibraryError &&
         failure.code === "ALREADY_EXISTS"
       ) {
-        showToast("That fused LOOP is already in your library", "info");
+        showToast(t("fuse_layout_toast_already_saved"), "info");
         return;
       }
       console.error("[FuseLayout] Failed to save fused LOOP", failure);
       const message =
         failure instanceof Error
           ? failure.message
-          : "Couldn't save the fused LOOP";
+          : t("fuse_layout_toast_save_failed");
       showToast(message, "error");
     } finally {
       isSavingResult = false;
     }
   }
 
-  function openFirstStep(side: FuseSide): void {
-    if (compact) {
-      actionSide = side;
-      firstStepOpen = true;
-      return;
-    }
-    inlineFirstStepSide = side;
+  // The control that opened the edit screen gets focus back when it closes,
+  // once the workspace is no longer inert.
+  let editReturnFocus: HTMLElement | null = null;
+
+  function openEditPath(side: FuseSide): void {
+    editReturnFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    editSide = side;
   }
 
-  function closeFirstStep(): void {
-    firstStepOpen = false;
-    actionSide = null;
-  }
-
-  function closeInlineFirstStep(): void {
-    inlineFirstStepSide = null;
+  function closeEditPath(): void {
+    editSide = null;
+    const target = editReturnFocus;
+    editReturnFocus = null;
+    void tick().then(() => {
+      if (target?.isConnected) target.focus();
+    });
   }
 
   function openPathBuilder(side: FuseSide): void {
@@ -738,18 +787,60 @@
     pathBuilderSide = null;
   }
 
-  function openSettings(destination: FuseSettingsDestination): void {
+  function openSettings(
+    destination: FuseSettingsDestination,
+    side?: FuseSide
+  ): void {
+    if (side) fuseRecipePanel.side = side;
+    fuseRecipePanel.content = "recipe";
     fuseRecipePanel.destination = destination;
     fuseRecipePanel.open = true;
   }
 
-  // The header trigger is the one door to the recipe, so it is also the way
-  // back out. Opening always lands on the list rather than resuming whichever
-  // editor was last open — the door is labelled "Fuse recipe", and it should
-  // give you the recipe.
-  function toggleRecipe(): void {
-    if (fuseRecipePanel.open) closeRecipe();
-    else openSettings(null);
+  // On a wide workspace Customize opens in the hand settings' column, in
+  // place of them. Where that column does not fit it docks under the result
+  // instead of arriving as a sheet over it, so the result stays in view while
+  // it is changed. Pressed again while it is showing, the button puts it away.
+  const customizeOpen = $derived(
+    fuseRecipePanel.open && fuseRecipePanel.content === "customize"
+  );
+  // Where Customize has no column it docks inside the preview stage, and the
+  // stage recomposes: the solos give way, the result grows and the button row
+  // becomes the dock. A view transition carries the result, its frame and that
+  // slot from one arrangement to the other (names in FusePreviewStage), the
+  // way the Browse filter pane moves. The column has its own width transition.
+  // Resolves once the new arrangement is in the page, so focus can follow it.
+  function toggleCustomize(): Promise<void> {
+    const docking = customizeOpen ? !recipeColumn : !recipeColumnFits;
+    const apply = () => {
+      if (customizeOpen) {
+        fuseRecipePanel.open = false;
+        return;
+      }
+      fuseRecipePanel.content = "customize";
+      fuseRecipePanel.open = true;
+    };
+    if (!docking || typeof document === "undefined") {
+      apply();
+      return Promise.resolve();
+    }
+    const root = document.documentElement;
+    root.classList.add("fuse-customize-motion");
+    const transition = startMorph(apply);
+    if (!transition) {
+      root.classList.remove("fuse-customize-motion");
+      return Promise.resolve();
+    }
+    void transition.finished
+      .catch(() => {})
+      .finally(() => root.classList.remove("fuse-customize-motion"));
+    return transition.updateCallbackDone.catch(() => {});
+  }
+
+  // Each hand's gear opens that hand's settings for new paths, on the list,
+  // so the panel always says whose settings these are before anything else.
+  function openHandSettings(side: FuseSide): void {
+    openSettings(null, side);
   }
 
   function changeMode(mode: FuseMode): void {
@@ -761,6 +852,7 @@
   <div
     class="fuse-workspace themed-scrollbar"
     bind:this={workspaceEl}
+    inert={editSide !== null}
     class:compact-workspace={compact}
     class:short-landscape-workspace={shortLandscape}
     class:tall-portrait-workspace={tallPortrait}
@@ -780,12 +872,7 @@
       fuseState.isFusing}
   >
     <div class="fuse-header-region">
-      <FuseWorkspaceHeader
-        recipeOpen={fuseRecipePanel.open}
-        flatRecipeRail={wideWorkspace}
-        onOpenRecipe={toggleRecipe}
-        onModeChange={changeMode}
-      />
+      <FuseWorkspaceHeader onModeChange={changeMode} />
       {#if fuseState.mode === "symmetry"}
         <!-- A phone has no room for the open rule panel: there the rule is
              one summary row that drills into the rule editor. -->
@@ -801,7 +888,6 @@
     {#if recipeMounted && fullCard}
       <FuseRecipeColumn
         bind:destination={fuseRecipePanel.destination}
-        singleDestination={wideWorkspace}
         onClose={closeRecipe}
       />
     {/if}
@@ -810,32 +896,28 @@
         side="left"
         full={true}
         stepCols={wingWorkspace ? null : stepCols}
-        onChooseFirstStep={openFirstStep}
         onBuildPath={openPathBuilder}
-        firstStepPickerActive={inlineFirstStepSide === "left"}
-        onFirstStepComplete={closeInlineFirstStep}
-        onCancelFirstStep={closeInlineFirstStep}
+        onEditPath={openEditPath}
+        onOpenSettings={openHandSettings}
       />
       <FuseSourceCard
         side="right"
         full={true}
         stepCols={wingWorkspace ? null : stepCols}
-        onChooseFirstStep={openFirstStep}
         onBuildPath={openPathBuilder}
-        firstStepPickerActive={inlineFirstStepSide === "right"}
-        onFirstStepComplete={closeInlineFirstStep}
-        onCancelFirstStep={closeInlineFirstStep}
+        onEditPath={openEditPath}
+        onOpenSettings={openHandSettings}
       />
       <div
         class="split-handle"
         role="slider"
         tabindex="0"
-        aria-label="Resize path panel"
+        aria-label={t("fuse_layout_resize_aria")}
         aria-orientation="vertical"
         aria-valuemin={minLeft()}
         aria-valuemax={maxLeft()}
         aria-valuenow={splitPx ?? 0}
-        aria-valuetext={`${splitPx ?? 0} pixels for source paths`}
+        aria-valuetext={t("fuse_layout_resize_value", { pixels: splitPx ?? 0 })}
         onpointerdown={onSplitDown}
         onpointermove={onSplitMove}
         onpointerup={onSplitUp}
@@ -857,40 +939,32 @@
         <FuseSourceCard
           side="left"
           full={false}
-          onChooseFirstStep={openFirstStep}
           onBuildPath={openPathBuilder}
-          firstStepPickerActive={inlineFirstStepSide === "left"}
-          onFirstStepComplete={closeInlineFirstStep}
-          onCancelFirstStep={closeInlineFirstStep}
+          onEditPath={openEditPath}
+          onOpenSettings={openHandSettings}
         />
         <FuseSourceCard
           side="right"
           full={false}
-          onChooseFirstStep={openFirstStep}
           onBuildPath={openPathBuilder}
-          firstStepPickerActive={inlineFirstStepSide === "right"}
-          onFirstStepComplete={closeInlineFirstStep}
-          onCancelFirstStep={closeInlineFirstStep}
+          onEditPath={openEditPath}
+          onOpenSettings={openHandSettings}
         />
       </div>
     {:else if !compact}
       <FuseSourceCard
         side="left"
         full={false}
-        onChooseFirstStep={openFirstStep}
         onBuildPath={openPathBuilder}
-        firstStepPickerActive={inlineFirstStepSide === "left"}
-        onFirstStepComplete={closeInlineFirstStep}
-        onCancelFirstStep={closeInlineFirstStep}
+        onEditPath={openEditPath}
+        onOpenSettings={openHandSettings}
       />
       <FuseSourceCard
         side="right"
         full={false}
-        onChooseFirstStep={openFirstStep}
         onBuildPath={openPathBuilder}
-        firstStepPickerActive={inlineFirstStepSide === "right"}
-        onFirstStepComplete={closeInlineFirstStep}
-        onCancelFirstStep={closeInlineFirstStep}
+        onEditPath={openEditPath}
+        onOpenSettings={openHandSettings}
       />
     {/if}
     <FusePreviewStage
@@ -898,23 +972,32 @@
       onShare={handleShare}
       onSave={handleSaveResult}
       isSaving={isSavingResult}
-      onChooseFirstStep={openFirstStep}
       onBuildPath={openPathBuilder}
+      onEditPath={openEditPath}
+      onOpenSettings={openHandSettings}
+      onToggleCustomize={toggleCustomize}
+      {customizeOpen}
+      customizeDocked={customizeOpen && !recipeColumn}
       {compact}
       sideControls={shortLandscape}
     />
   </div>
 
   <FuseSettingsDrawer
-    isOpen={fuseRecipePanel.open && !recipeColumn}
+    isOpen={fuseRecipePanel.open &&
+      fuseRecipePanel.content === "recipe" &&
+      !recipeColumn &&
+      editSide === null}
     bind:destination={fuseRecipePanel.destination}
     onDismiss={dismissDrawer}
   />
-  <FuseFirstStepPanel
-    bind:isOpen={firstStepOpen}
-    side={actionSide}
-    onClose={closeFirstStep}
-  />
+  {#if editSide}
+    <FuseEditPathScreen
+      side={editSide}
+      onClose={closeEditPath}
+      onBuildPath={openPathBuilder}
+    />
+  {/if}
   <FusePathBuilderDialog
     bind:isOpen={pathBuilderOpen}
     side={pathBuilderSide}
@@ -933,6 +1016,8 @@
   .fuse-container {
     --min-touch-target: 48px;
     container: fuse / size;
+    /* The Edit path screen covers the workspace from inside this box. */
+    position: relative;
     width: 100%;
     height: 100%;
     min-width: 0;

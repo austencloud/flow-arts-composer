@@ -9,6 +9,7 @@ import {
   isModuleAccessible,
   isTabAccessible,
 } from "../guest-access-config";
+import { isTabInDevelopment } from "../models/feature-flag";
 
 describe("guest Settings access", () => {
   it("allows device settings and sign-in before sign-in", () => {
@@ -49,11 +50,13 @@ describe("guest Settings access", () => {
 describe("guest Create access", () => {
   // Opening a method is never a toll. Limits live at the action (save past
   // the cap, publish, export), so every creation method opens for a guest,
-  // including any method added later.
+  // including any method added later, once it is out of development.
   it.each(
-    CREATE_TABS.filter((tab) => tab.metadata?.isCreationMethod === true).map(
-      (tab) => tab.id
-    )
+    CREATE_TABS.filter(
+      (tab) =>
+        tab.metadata?.isCreationMethod === true &&
+        !isTabInDevelopment("create", tab.id)
+    ).map((tab) => tab.id)
   )("opens %s before sign-in", (tab) => {
     expect(isTabAccessible("create", tab, "guest")).toBe(true);
   });

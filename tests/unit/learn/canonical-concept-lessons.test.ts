@@ -470,8 +470,8 @@ describe("canonical concept lesson composition", () => {
     expect(stage).toContain("visibilityManagerOverride={lessonVisibility}");
     expect(stage).not.toContain("disableContextMenu");
     expect(stage).toContain('id: "performance"');
-    expect(stage).toContain('id: "animation"');
-    expect(stage).toContain('id: "card"');
+    expect(stage).toContain('id: "stage"');
+    expect(stage).toContain("includeStartPlacement={false}");
     expect(content).toContain("LEARNING_LETTERS_DECK_WORDS");
     expect(content).toContain("video: null");
     expect(content).toContain("explanation: null");

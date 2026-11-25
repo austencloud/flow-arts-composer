@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import { getFuseContext } from "../context/fuse-context";
@@ -8,11 +9,16 @@
     onShare,
     onSave,
     isSaving = false,
+    onToggleCustomize,
+    customizeOpen = false,
   }: {
     onOpenViewer: () => Promise<void>;
     onShare: () => Promise<void>;
     onSave: () => Promise<void>;
     isSaving?: boolean;
+    /** Opens Customize in place of the controls, or puts it away. */
+    onToggleCustomize?: () => void;
+    customizeOpen?: boolean;
   } = $props();
   const { state: fuseState } = getFuseContext();
 
@@ -39,13 +45,13 @@
     fuseState.pendingSide !== null ||
     fuseState.isFusing}
 >
-  <div class="action-row" role="group" aria-label="Fuse actions">
+  <div class="action-row" role="group" aria-label={t("fuse_mobile_actions_aria")}>
     <div class="shuffle-control blue-shuffle">
       <PanelButton
         variant="secondary"
         fullWidth={true}
         disabled={leftDisabled}
-        ariaLabel="Generate another left-hand LOOP"
+        ariaLabel={t("fuse_mobile_new_left_aria")}
         onclick={() => void fuseState.shuffle("left")}
       >
         <i
@@ -54,14 +60,16 @@
             : 'fa-wand-magic-sparkles'}"
           aria-hidden="true"
         ></i>
-        <span class="shuffle-verb">New</span> Left
+        <span class="shuffle-full">{t("fuse_mobile_new_left")}</span><span
+          class="shuffle-short">{t("fuse_side_left")}</span
+        >
       </PanelButton>
     </div>
 
     <div class="viewer-control">
       <ActionButton
-        label="Open combined sequence viewer"
-        busyLabel="Opening combined sequence"
+        label={t("fuse_mobile_open_viewer")}
+        busyLabel={t("fuse_mobile_opening")}
         icon={fuseState.isFusing ? "fa-spinner fa-spin" : "fa-expand"}
         color="fuse"
         ariaDisabled={!fuseState.canFuse}
@@ -76,7 +84,7 @@
         variant="secondary"
         fullWidth={true}
         disabled={rightDisabled}
-        ariaLabel="Generate another right-hand LOOP"
+        ariaLabel={t("fuse_mobile_new_right_aria")}
         onclick={() => void fuseState.shuffle("right")}
       >
         <i
@@ -85,19 +93,38 @@
             : 'fa-wand-magic-sparkles'}"
           aria-hidden="true"
         ></i>
-        <span class="shuffle-verb">New</span> Right
+        <span class="shuffle-full">{t("fuse_mobile_new_right")}</span><span
+          class="shuffle-short">{t("fuse_side_right")}</span
+        >
       </PanelButton>
     </div>
   </div>
 
-  <div class="result-row" role="group" aria-label="Combined sequence actions">
+  <div
+    class="result-row"
+    class:with-customize={!!onToggleCustomize}
+    role="group"
+    aria-label={t("fuse_result_actions_aria")}
+  >
+    {#if onToggleCustomize}
+      <PanelButton
+        variant="secondary"
+        fullWidth={true}
+        ariaLabel={t("shape_engine_customize_aria")}
+        ariaPressed={customizeOpen}
+        onclick={onToggleCustomize}
+      >
+        <i class="fas fa-sliders" aria-hidden="true"></i>
+        {t("shape_engine_customize")}
+      </PanelButton>
+    {/if}
     <PanelButton
       variant="secondary"
       fullWidth={true}
       disabled={!fuseState.canFuse}
       onclick={() => void onShare()}
     >
-      Share
+      {t("fuse_action_share")}
     </PanelButton>
     <PanelButton
       variant="secondary"
@@ -111,7 +138,7 @@
         class="fas {isSaving ? 'fa-spinner fa-spin' : 'fa-bookmark'}"
         aria-hidden="true"
       ></i>
-      {isSaving ? "Saving..." : "Save"}
+      {isSaving ? t("fuse_action_saving") : t("fuse_action_save")}
     </PanelButton>
   </div>
 
@@ -125,7 +152,7 @@
           onclick={() => void fuseState.retry()}
         >
           <i class="fas fa-arrow-rotate-right" aria-hidden="true"></i>
-          Retry
+          {t("fuse_action_retry")}
         </PanelButton>
       {/if}
     </div>
@@ -150,6 +177,7 @@
     --viewer-size: 44px;
     container: fuse-controls / inline-size;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     flex: 0 0 auto;
     gap: var(--settings-spacing-sm, 8px);
   }
@@ -165,6 +193,24 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--settings-spacing-sm, 8px);
+  }
+
+  /* Equal while every name fits; a longer one takes the width it needs from
+     the other two. */
+  .result-row.with-customize {
+    grid-template-columns: repeat(3, minmax(max-content, 1fr));
+    gap: 6px;
+  }
+
+  .result-row.with-customize :global(.panel-btn) {
+    gap: 5px;
+    padding-inline: 5px;
+    white-space: nowrap;
+  }
+
+  .result-row :global(.panel-btn[aria-pressed="true"]) {
+    border-color: color-mix(in srgb, var(--theme-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--theme-accent) 14%, transparent);
   }
 
   .result-row :global(.panel-btn) {
@@ -331,15 +377,27 @@
   /* The controls' own width decides, not the tab's: in a short landscape slot
      they sit in a side column that can be narrower than a phone, and at 200%
      zoom "New Right" overflowed its button there. */
+  .shuffle-short {
+    display: none;
+  }
+
   @container fuse-controls (max-width: 300px) {
-    .shuffle-verb {
+    .shuffle-full {
       display: none;
+    }
+
+    .shuffle-short {
+      display: inline;
     }
   }
 
   @container fuse (max-width: 360px) {
-    .shuffle-verb {
+    .shuffle-full {
       display: none;
+    }
+
+    .shuffle-short {
+      display: inline;
     }
 
     .action-row {

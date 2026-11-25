@@ -49,8 +49,8 @@ export const SITE_SIZES = {
   canopyStandDistance: 1.5,
   /** Thickness of a fence or wall for walking into. */
   colliderThickness: 0.12,
-  /** The most the body steps up on its own: low enough that a crate or the safety station is a wall. */
-  walkStepHeight: 0.2,
+  /** The most the body steps up on its own: a stair riser, still low enough that a crate or the safety station is a wall. */
+  walkStepHeight: 0.25,
   guestSpacing: 0.8,
 } as const;
 
@@ -102,6 +102,14 @@ export interface Stand {
   yaw: number;
 }
 
+/** Plan things by kind, as indexes into the world's lists of that kind. */
+export interface PlanThings {
+  fences: ReadonlySet<number>;
+  patios: ReadonlySet<number>;
+  buildings: ReadonlySet<number>;
+  boxes: ReadonlySet<number>;
+}
+
 export interface SiteWalkWorld {
   title: string;
   lot: Pt[] | null;
@@ -122,6 +130,12 @@ export interface SiteWalkWorld {
   candles: Pt[];
   /** Kinds that were skipped, once each, in the order first met. */
   notDrawn: string[];
+  /**
+   * Each kept fence, patio, building and box's plan id, beside the list of
+   * that kind ("" when the plan gives none), so the surroundings file can name
+   * one.
+   */
+  ids: { fences: string[]; patios: string[]; buildings: string[]; boxes: string[] };
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   stands: {
     start: Stand;
@@ -377,9 +391,11 @@ export function readSitePlan(raw: unknown): SitePlanRead {
   const candles: Pt[] = [];
   const streetLines: Pt[][] = [];
   const canopyRaw: { rect: RectShape; open: CanopySide | null }[] = [];
+  const ids: SiteWalkWorld["ids"] = { fences: [], patios: [], buildings: [], boxes: [] };
 
   for (const thing of things) {
     const kind = thing.kind;
+    const id = typeof thing.id === "string" ? thing.id : "";
     switch (kind) {
       case "lot": {
         const pts = readPoints(thing.points, 3);
@@ -403,7 +419,13 @@ export function readSitePlan(raw: unknown): SitePlanRead {
       case "building": {
         const pts = readPoints(thing.points, 3);
         if (!pts) skip(kind);
-        else (kind === "patio" ? patios : buildings).push(pts);
+        else if (kind === "patio") {
+          patios.push(pts);
+          ids.patios.push(id);
+        } else {
+          buildings.push(pts);
+          ids.buildings.push(id);
+        }
         break;
       }
       case "fence":
@@ -412,7 +434,10 @@ export function readSitePlan(raw: unknown): SitePlanRead {
       case "street": {
         const pts = readPoints(thing.points, 2);
         if (!pts) skip(kind);
-        else if (kind === "fence") fences.push(pts);
+        else if (kind === "fence") {
+          fences.push(pts);
+          ids.fences.push(id);
+        }
         else if (kind === "perimeter") perimeters.push(pts);
         else if (kind === "wires") wires.push(pts);
         else streetLines.push(pts);
@@ -440,7 +465,10 @@ export function readSitePlan(raw: unknown): SitePlanRead {
       case "box": {
         const rect = readRect(thing);
         if (!rect) skip(kind);
-        else boxes.push(rect);
+        else {
+          boxes.push(rect);
+          ids.boxes.push(id);
+        }
         break;
       }
       default:
@@ -555,6 +583,7 @@ export function readSitePlan(raw: unknown): SitePlanRead {
       doors,
       candles,
       notDrawn,
+      ids,
       bounds,
       stands: {
         start,
@@ -570,6 +599,8 @@ export function readSitePlan(raw: unknown): SitePlanRead {
 
 export interface GuestFigure {
   x: number;
+  /** The height of the floor the figure stands on, metres; 0 or left out is the flat ground. */
+  y?: number;
   z: number;
   /** Camera-style yaw, which is also the figure's three.js rotation.y (0 faces +z). */
   yaw: number;
@@ -594,15 +625,22 @@ export function seededRandom(seed: number): () => number {
 }
 
 /**
- * Standing guests: inside the area, never closer than the spacing, denser at
- * the front (nearest the stage) and thinner toward the back. A first pass
- * thins the back on purpose; if that leaves the crowd short, a second pass
- * fills the gaps evenly before the count is given up as capped.
+ * Standing guests: inside the area, never closer than the spacing, at one
+ * even density over the whole area. Spots are drawn uniformly, so a part of
+ * the area holds guests in proportion to its size until the area fills.
+ * `keep` turns a spot down (a stair, an edge to keep clear of); `floor` gives
+ * the height a guest stands at.
  */
 export function placeGuests(
   area: readonly Pt[],
   count: number,
-  options: { seed: number; facing: Pt | null; minSpacing?: number },
+  options: {
+    seed: number;
+    facing: Pt | null;
+    minSpacing?: number;
+    keep?: (p: Pt) => boolean;
+    floor?: (p: Pt) => number;
+  },
 ): GuestCrowd {
   const spacing = options.minSpacing ?? SITE_SIZES.guestSpacing;
   const ring = [...area];
@@ -613,44 +651,32 @@ export function placeGuests(
   const minZ = Math.min(...zs);
   const maxZ = Math.max(...zs);
   const random = seededRandom(options.seed);
-
   const reference = options.facing;
-  // Depth is how far back from the stage a spot is, along the line from the
-  // stage to the middle of the area, so a wide area still thins front to back.
-  const middle = centroidOf(area);
-  const lineLength = reference ? Math.hypot(middle.x - reference.x, middle.z - reference.z) : 0;
-  const dirX = reference && lineLength > 1e-9 ? (middle.x - reference.x) / lineLength : 0;
-  const dirZ = reference && lineLength > 1e-9 ? (middle.z - reference.z) / lineLength : 0;
-  const depthOf = (p: Pt) => (reference ? (p.x - reference.x) * dirX + (p.z - reference.z) * dirZ : 0);
-  const depths = area.map(depthOf);
-  const near = reference ? Math.min(...depths) : 0;
-  const far = reference ? Math.max(...depths) : 0;
-  const keepChance = (p: Pt): number => {
-    if (!reference || far - near < 1e-6) return 1;
-    const t = Math.min(1, Math.max(0, (depthOf(p) - near) / (far - near)));
-    return 1 - 0.7 * t;
-  };
 
   const placed: GuestFigure[] = [];
-  const tryPlace = (thin: boolean): void => {
+  const tries = count * 260 + 6000;
+  for (let i = 0; i < tries && placed.length < count; i++) {
     const p = {
       x: minX + random() * (maxX - minX),
       z: minZ + random() * (maxZ - minZ),
     };
-    if (!insidePolygon(p, ring)) return;
-    if (thin && random() > keepChance(p)) return;
-    for (const other of placed) if (Math.hypot(other.x - p.x, other.z - p.z) < spacing) return;
+    if (!insidePolygon(p, ring)) continue;
+    if (options.keep && !options.keep(p)) continue;
+    let clear = true;
+    for (const other of placed) {
+      if (Math.hypot(other.x - p.x, other.z - p.z) < spacing) {
+        clear = false;
+        break;
+      }
+    }
+    if (!clear) continue;
     placed.push({
       x: p.x,
+      y: options.floor ? options.floor(p) : 0,
       z: p.z,
       yaw: reference ? yawToward(p, reference) : 0,
     });
-  };
-
-  const firstPass = count * 60 + 2000;
-  for (let i = 0; i < firstPass && placed.length < count; i++) tryPlace(true);
-  const secondPass = count * 200 + 4000;
-  for (let i = 0; i < secondPass && placed.length < count; i++) tryPlace(false);
+  }
 
   return { figures: placed, capped: placed.length < count };
 }
@@ -793,10 +819,13 @@ export function along(line: readonly Pt[], spacing: number): Pt[] {
  * canopy legs, the pole, the safety station, each building edge, each box and
  * the rope's posts. The rope itself is not here: you can duck it.
  */
-export function siteColliders(world: SiteWalkWorld, options: { fenceHeight?: number } = {}): BoxCollider[] {
+export function siteColliders(world: SiteWalkWorld, options: { fenceHeight?: number; hidden?: PlanThings } = {}): BoxCollider[] {
   const out: BoxCollider[] = [];
   const fenceHeight = options.fenceHeight ?? SITE_SIZES.fenceHeight;
-  for (const line of world.fences) {
+  const hidden = options.hidden;
+  for (const [index, line] of world.fences.entries()) {
+    // A thing the surroundings file stands up itself brings its own collider.
+    if (hidden?.fences.has(index)) continue;
     for (let i = 0; i + 1 < line.length; i++) {
       const box = wallBox(line[i]!, line[i + 1]!, fenceHeight);
       if (box) out.push(box);
@@ -812,13 +841,15 @@ export function siteColliders(world: SiteWalkWorld, options: { fenceHeight?: num
   for (const canopy of world.canopies) for (const corner of canopy.corners) out.push(postBox(corner, 0.1, SITE_SIZES.eaveHeight));
   for (const p of world.poles) out.push(postBox(p, 0.26, SITE_SIZES.poleHeight));
   for (const p of world.safeties) out.push(postBox(p, SITE_SIZES.safetySize, SITE_SIZES.safetySize));
-  for (const ring of world.buildings) {
+  for (const [index, ring] of world.buildings.entries()) {
+    if (hidden?.buildings.has(index)) continue;
     for (let i = 0; i < ring.length; i++) {
       const box = wallBox(ring[i]!, ring[(i + 1) % ring.length]!, SITE_SIZES.buildingHeight);
       if (box) out.push(box);
     }
   }
-  for (const rect of world.boxes) {
+  for (const [index, rect] of world.boxes.entries()) {
+    if (hidden?.boxes.has(index)) continue;
     out.push({
       x: rect.centre.x,
       y: SITE_SIZES.boxHeight / 2,

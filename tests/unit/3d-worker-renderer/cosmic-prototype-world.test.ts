@@ -8,6 +8,8 @@ vi.mock(
   () => ({ createCosmicEnvironmentWorld: factory })
 );
 
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import { MOON_APRON_HEIGHT } from "#lib/shared/3d/environments/worlds/cosmic/moon-outpost-layout.js";
 import { getWorkerEnvironmentCamera } from "#lib/shared/3d/worker-renderer/domain/worker-environment-camera.js";
 import { createCosmicPrototypeWorld } from "#lib/shared/3d/worker-renderer/worlds/cosmic-prototype-world.js";
 
@@ -21,6 +23,7 @@ describe("createCosmicPrototypeWorld", () => {
     const fog = new FogExp2("#080818", 0.008);
     const update = vi.fn();
     const setGroundY = vi.fn();
+    const setStageBounds = vi.fn();
     const dispose = vi.fn();
     factory.mockImplementation(async (options) => {
       options.onAssetProgress(0.6);
@@ -30,6 +33,7 @@ describe("createCosmicPrototypeWorld", () => {
         audienceReady: Promise.resolve(),
         update,
         setGroundY,
+        setStageBounds,
         dispose,
       };
     });
@@ -40,13 +44,20 @@ describe("createCosmicPrototypeWorld", () => {
       renderer,
       camera,
       requestId: 3,
-      performers: [{ groundY: -1.25 } as never],
+      performers: [{ groundY: -1.25, position: [0, -1.25, 0] } as never],
       reportProgress,
     });
 
     expect(factory).toHaveBeenCalledWith(
-      expect.objectContaining({ renderer, groundY: -1.25, stageRadius: 3 })
+      expect.objectContaining({
+        renderer,
+        // Lifted so the pad top meets the performers' soles on the deck.
+        groundY: expect.closeTo(-1.25 + CANONICAL_PERFORMER_ANCHOR_Y - MOON_APRON_HEIGHT, 6),
+        stageRadius: 3,
+        motionScale: 1,
+      })
     );
+    expect(setStageBounds).toHaveBeenCalledOnce();
     expect(world.environment).toBe("cosmic");
     expect(world.useViewerBaseLighting).toBe(false);
     expect(world.scene.children).toContain(root);
@@ -56,8 +67,17 @@ describe("createCosmicPrototypeWorld", () => {
 
     world.update(0.25, 2);
     expect(update).toHaveBeenCalledWith(0.25, 2, camera);
-    world.setPerformers?.([{ groundY: 1.5 } as never]);
-    expect(setGroundY).toHaveBeenCalledWith(1.5);
+    const cast = [-3, -1, 1, 3].map(
+      (x) => ({ groundY: 1.5, position: [x, 1.5, 0] }) as never
+    );
+    world.setPerformers?.(cast);
+    const [[liftedGroundY]] = setGroundY.mock.calls.slice(-1) as [[number]];
+    expect(liftedGroundY + MOON_APRON_HEIGHT).toBeCloseTo(1.5 + CANONICAL_PERFORMER_ANCHOR_Y, 6);
+    // A wider cast asks the world for a larger pad.
+    const [firstRadius] = setStageBounds.mock.calls[0] as [number, number];
+    const [castRadius, castGrowth] = setStageBounds.mock.calls[1] as [number, number];
+    expect(castRadius).toBeGreaterThan(firstRadius);
+    expect(castGrowth).toBeGreaterThan(0);
 
     world.dispose();
     expect(dispose).toHaveBeenCalledOnce();
@@ -86,6 +106,7 @@ describe("createCosmicPrototypeWorld", () => {
         audienceReady: new Promise<void>(() => undefined),
         update: vi.fn(),
         setGroundY: vi.fn(),
+        setStageBounds: vi.fn(),
         dispose: vi.fn(),
       };
     });

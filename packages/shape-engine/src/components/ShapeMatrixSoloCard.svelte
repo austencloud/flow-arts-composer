@@ -529,7 +529,7 @@
   /* The side column: a tall card, whose height is the row's to give. The picker
      is the one flexible zone and takes all of it, a column of tiles per hand,
      so the tiles are as big as the column allows. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
+  @container shape-matrix-drill-compact ((min-width: 42rem) and (min-aspect-ratio: 5 / 6)) or ((min-width: 28rem) and (max-height: 26rem)) {
     .solo-card {
       container-type: size;
       display: flex;

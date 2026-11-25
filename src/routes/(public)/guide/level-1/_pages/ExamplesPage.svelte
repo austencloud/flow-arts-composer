@@ -98,7 +98,7 @@
     {
       // Mirrored LOOP: reversals after steps 1 and 5 (flags on 2 and 6).
       key: "ex-v2",
-      word: "AABB ×2 Mirrored LOOP",
+      word: "AABB ×2 Reflected LOOP",
       x: 252,
       rowYs: [288.9, 378.8],
       steps: [
@@ -216,12 +216,12 @@
     {
       y: 352, fs: 14.5, lh: 17.4, left: 8, width: 232,
       html:
-        "This will put our left hand on top after step 4, so we’ll repeat the sequence again mirrored (with a " +
+        "This will put our left hand on top after step 4, so we’ll repeat the sequence again reflected (with a " +
         "reversal after step 5) to return to our original home position.",
     },
     {
       y: 470, fs: 14.5, lh: 17.4, left: 8, width: 232,
-      html: "This is a <em>Mirrored LOOP</em>.",
+      html: "This is a <em>Reflected LOOP</em>.",
     },
     {
       y: 545, fs: 15, lh: 18,

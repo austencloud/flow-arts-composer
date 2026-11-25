@@ -227,4 +227,60 @@ describe("fitTimelineRows", () => {
     expect(fit?.rows).toHaveLength(2);
     expect(fit!.unitSize).toBeGreaterThan(94);
   });
+
+  describe("with a LOOP's repetitions", () => {
+    const indices = (rows: { steps: { stepIndex: number }[] }[]) =>
+      rows.map((row) => row.steps.map((step) => step.stepIndex));
+
+    it("gives each repetition its own row", () => {
+      const fit = fitTimelineRows({
+        ...FOLD,
+        containerHeight: 900,
+        steps: steps(6),
+        beatsPerRow: 4,
+        partLength: 3,
+      });
+      expect(indices(fit!.rows)).toEqual([
+        [0, 1, 2],
+        [3, 4, 5],
+      ]);
+      expect(fit!.rows.map((row) => row.rowIndex)).toEqual([0, 1]);
+    });
+
+    it("never lets one row hold two repetitions when a repetition wraps", () => {
+      expect(
+        indices(
+          calculateWorkbenchTimelineRows({
+            steps: steps(10),
+            beatsPerRow: 4,
+            hasStart: true,
+            sizingWidth: 1200,
+            isNarrow: false,
+            partLength: 5,
+          })
+        )
+      ).toEqual([[0, 1, 2, 3], [4], [5, 6, 7, 8], [9]]);
+    });
+
+    it("keeps repetitions apart when a phone packs rows by time", () => {
+      const held = [
+        { duration: 4 },
+        { duration: 1 },
+        { duration: 4 },
+        { duration: 1 },
+      ];
+      expect(
+        indices(
+          calculateWorkbenchTimelineRows({
+            steps: held,
+            beatsPerRow: 4,
+            hasStart: true,
+            sizingWidth: 240,
+            isNarrow: true,
+            partLength: 2,
+          })
+        )
+      ).toEqual([[0], [1], [2], [3]]);
+    });
+  });
 });

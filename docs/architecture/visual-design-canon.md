@@ -540,6 +540,13 @@ pictures. The hand dots keep their corners and size on a picture tile, beside
 the picture. Austen's pick, 2026-11-18 ("B, pictures"), over icon tiles with
 the playing picture at full size.
 
+The same holds wherever the app shows an effect, not only in this list: its
+painted picture stands for it in tiles, headings and inspectors. The flat icon
+is for a spot too tiny for any picture to read, such as Fuse's dock at 360x591.
+Austen, 2026-11-23, on Fuse: "stick purely with the 3D effect and get rid of
+this version of showing the effects unless absolutely necessary and teeny tiny
+contexts."
+
 ### Application shell
 
 The persistent navigation rail is narrow and stable. The active background can

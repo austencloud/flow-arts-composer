@@ -280,11 +280,20 @@ describe("shape matrix mandala continuity", () => {
     const matrixPane = read("app/components/ShapeMatrixMatrixPane.svelte");
     const theoryPane = read("app/components/ShapeMatrixTheoryPane.svelte");
     // Wide hosts: the grid's corner cell owns Surprise and both axis values;
-    // the strip above the grid takes over only on compact hosts.
+    // the strip above the grid takes over on upright compact hosts. On a
+    // phone held sideways the app's bar stands as a column beside the grid
+    // and carries the dice and the turn button itself, so no strip repeats
+    // them (Austen's pick, 2026-11-24).
     expect(matrixPane).toContain('<ShapeMatrixGridCorner surface="level"');
     expect(theoryPane).toContain("<ShapeMatrixGridCorner");
     expect(matrixPane).toMatch(
-      /\{#if state\.compact\}\s*<ShapeMatrixRecipeStrip/
+      /\{#if state\.compact && !state\.sideways\}\s*<ShapeMatrixRecipeStrip/
+    );
+    expect(theoryPane).toMatch(
+      /\{#if appState\.compact && !appState\.sideways\}\s*<ShapeMatrixRecipeStrip/
+    );
+    expect(shell).toMatch(
+      /\{#if appState\.activeView === "detail" \|\| appState\.sideways\}\s*\{@render compactSurpriseAction\(\)\}/
     );
     const corner = read("app/components/ShapeMatrixGridCorner.svelte");
     expect(corner).toContain('<ShapeMatrixAxisStepper hand="left"');
@@ -317,10 +326,8 @@ describe("shape matrix mandala continuity", () => {
       "appState.setTurnFor(hand, turn, { stayOnDetail: true })"
     );
     // Surprise lives with the grid; the header shows a dice only while a
-    // compact detail view has hidden the bar.
-    expect(shell).toMatch(
-      /activeView === "detail"\}\s*\{@render compactSurpriseAction\(\)\}/
-    );
+    // compact detail view has hidden the bar, or sideways, where the header
+    // is the column beside the grid (asserted above).
     expect(shell).toContain("runMandalaMorph");
   });
 

@@ -10,7 +10,11 @@
 
   const rows = [
     { keys: ["W", "A", "S", "D"], does: "Move" },
-    { keys: ["Shift"], does: "Run" },
+    { keys: ["Shift"], does: "Run, also in a crouch" },
+    { keys: ["Space"], does: "Jump" },
+    { keys: ["C"], does: "Crouch, or slide from a run" },
+    { keys: ["Q"], does: "Roll" },
+    { keys: ["1", "2", "3", "4", "5"], does: "Wave, point, clap, cheer, bow" },
     { keys: ["V"], does: "View" },
     { keys: ["Escape"], does: "Free the mouse" },
   ];

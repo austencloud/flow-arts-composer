@@ -118,7 +118,7 @@
       gap: 0.3rem;
     }
   }
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
+  @container shape-matrix-drill-compact ((min-width: 42rem) and (min-aspect-ratio: 5 / 6)) or ((min-width: 28rem) and (max-height: 26rem)) {
     .chip-row {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -136,6 +136,25 @@
         3cqh,
         1.1rem
       );
+    }
+  }
+  /* A phone on its side: three rows of two fill the height the column has
+     left, and the icons are sized from it. */
+  @container shape-matrix-drill-compact (min-width: 28rem) and (max-height: 26rem) {
+    .chip-row {
+      grid-auto-rows: minmax(0, 1fr);
+      gap: 0.35rem;
+      height: 100%;
+      min-height: 0;
+      container-type: size;
+      --choice-icon-size: clamp(1.4rem, 21cqh, 1.75rem);
+    }
+  }
+  /* The smallest of them: icon only, so three to a row. */
+  @container shape-matrix-drill-compact (28rem <= width < 34rem) and (max-height: 26rem) {
+    .chip-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      --choice-icon-size: clamp(1.6rem, 30cqh, 2.4rem);
     }
   }
 </style>

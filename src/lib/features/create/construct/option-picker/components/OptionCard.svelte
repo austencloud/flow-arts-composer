@@ -11,6 +11,8 @@ Receives pre-calculated data, just renders it.
   import OptionCardContent from "./OptionCardContent.svelte";
   import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
   import { tryGetOptionAuditionContext } from "../context/option-audition-context";
+  import { tryGetOptionMarkContext } from "../context/option-mark-context";
+  import OptionMark from "./OptionMark.svelte";
   import { createHoldToAuditionAttachment } from "../services/hold-to-audition";
   import { noteArrivalOrigin } from "#lib/features/create/shared/workspace-panel/sequence-display/services/arrival-origin.js";
 
@@ -36,6 +38,8 @@ Receives pre-calculated data, just renders it.
 
   const borderColors = $derived(getLetterBorderColors(pictograph.letter));
   const auditionContext = tryGetOptionAuditionContext();
+  const marks = tryGetOptionMarkContext();
+  const mark = $derived(marks?.isMarked(pictograph) ? marks.mark : null);
   const holdToAudition = createHoldToAuditionAttachment({
     isDisabled: () => disabled || !auditionContext,
     onStart: () => auditionContext?.start(pictograph) ?? false,
@@ -81,14 +85,15 @@ Receives pre-calculated data, just renders it.
   data-ghost="safe"
   data-ghost-kind="option"
   data-ghost-label={pictograph.letter}
-  aria-label={t("create_option_add_preview", {
+  aria-label={`${t("create_option_add_preview", {
     letter: pictograph.letter ?? "",
-  })}
+  })}${mark ? ` ${mark.label}.` : ""}`}
   aria-keyshortcuts="Shift+Space"
   title={t("create_ui_tap_to_add_hold_to_preview")}
   {@attach holdToAudition}
 >
   <OptionCardContent {pictograph} {leftReversal} {rightReversal} />
+  <OptionMark {mark} />
 </button>
 
 <PictographContextMenuHost bind:this={contextMenuHost} />

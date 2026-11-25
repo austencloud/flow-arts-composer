@@ -15,6 +15,7 @@
 -->
 <script lang="ts">
   import { MediaQuery } from "svelte/reactivity";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
@@ -84,8 +85,8 @@
   const driverOptions = $derived(
     (
       [
-        { value: "left", label: "Left", tone: "blue" },
-        { value: "right", label: "Right", tone: "red" },
+        { value: "left", label: t("fuse_side_left"), tone: "blue" },
+        { value: "right", label: t("fuse_side_right"), tone: "red" },
       ] as {
         value: FuseSide;
         label: string;
@@ -97,8 +98,8 @@
   const offsetOptions = $derived(
     (
       [
-        { value: "cw", label: "90° clockwise" },
-        { value: "ccw", label: "90° counterclockwise" },
+        { value: "cw", label: t("fuse_picker_offset_cw") },
+        { value: "ccw", label: t("fuse_picker_offset_ccw") },
       ] as { value: FuseQuarterOffset; label: string }[]
     ).map((option) => ({ ...option, disabled }))
   );
@@ -113,14 +114,15 @@
     toggle: () => void;
   };
 
-  const followerLabel = $derived(selectedDriver === "left" ? "Right" : "Left");
-  const driverLabel = $derived(selectedDriver === "left" ? "Left" : "Right");
+  // Left and Right are named whole in each sentence, so a language can order
+  // and inflect them as it needs; the two variants are two keys.
+  const leftLeads = $derived(selectedDriver === "left");
 
   const operations = $derived<Operation[]>([
     {
       id: "invert",
-      label: "Invert",
-      detail: "Swaps pro and anti on every beat",
+      label: t("fuse_rule_invert"),
+      detail: t("fuse_picker_invert_detail"),
       color: fuseComponentColor(LOOPComponent.INVERTED),
       glyph: new Set([LOOPComponent.INVERTED]),
       active: selection.invert,
@@ -129,8 +131,8 @@
     },
     {
       id: "rewind",
-      label: "Rewind",
-      detail: `${followerLabel} plays ${driverLabel} backwards, last beat first`,
+      label: t("fuse_rule_rewind"),
+      detail: t(leftLeads ? "fuse_picker_rewind_detail_left_leads" : "fuse_picker_rewind_detail_right_leads"),
       color: fuseComponentColor(LOOPComponent.REWOUND),
       glyph: new Set([LOOPComponent.REWOUND]),
       active: selection.rewind,
@@ -146,19 +148,19 @@
       [
         {
           value: "together",
-          label: `Together timing for ${followerLabel} and ${driverLabel}`,
+          label: t(leftLeads ? "fuse_picker_together_left_leads" : "fuse_picker_together_right_leads"),
         },
         {
           value: "split",
-          label: `Split timing between ${followerLabel} and ${driverLabel}`,
+          label: t(leftLeads ? "fuse_picker_split_left_leads" : "fuse_picker_split_right_leads"),
         },
         {
           value: "quarter-cw",
-          label: `Quarter clockwise — rotate ${followerLabel}'s path 90° clockwise`,
+          label: t(leftLeads ? "fuse_picker_quarter_cw_left_leads" : "fuse_picker_quarter_cw_right_leads"),
         },
         {
           value: "quarter-ccw",
-          label: `Quarter counterclockwise — rotate ${followerLabel}'s path 90° counterclockwise`,
+          label: t(leftLeads ? "fuse_picker_quarter_ccw_left_leads" : "fuse_picker_quarter_ccw_right_leads"),
         },
       ] as { value: FuseTiming; label: string }[]
     ).map((option) => ({ ...option, disabled }))
@@ -168,11 +170,11 @@
       [
         {
           value: "same",
-          label: `${followerLabel} moves in the same direction as ${driverLabel}`,
+          label: t(leftLeads ? "fuse_picker_same_left_leads" : "fuse_picker_same_right_leads"),
         },
         {
           value: "opposite",
-          label: `${followerLabel} moves in the opposite direction from ${driverLabel}`,
+          label: t(leftLeads ? "fuse_picker_opposite_left_leads" : "fuse_picker_opposite_right_leads"),
         },
       ] as { value: FuseDirection; label: string }[]
     ).map((option) => ({ ...option, disabled }))
@@ -213,20 +215,21 @@
 </script>
 
 <div class="transform-picker" class:inline class:phone-form={phoneForm}>
-  <!-- Named for what it does to both paths, not for the one it leaves alone.
-       "Path you will edit" read as a view toggle, so switching it looked like
-       the workspace had swapped to a different fuse: it is a source-of-truth
-       switch, and the path that stops leading stops being shown. Neither
-       sequence is lost — each side keeps its own in its pool, and the one that
-       leads is the one on screen — but the control has to say that changing it
-       replaces the other path rather than just moving the cursor. -->
-  <div class="field" role="group" aria-label="Which path leads">
+  <!-- Switching never changes what is on screen: the path that takes the lead
+       keeps the one it is showing, and the rule is turned round to match. What
+       changes is which of the two a later edit starts from, so the help says
+       that, and says that switching is safe. -->
+  <div class="field" role="group" aria-label={t("fuse_picker_which_leads")}>
     <div class="field-heading">
       {#if !inline}<span class="step-number">1</span>{/if}
       <div>
-        <span class="field-label">Which path leads</span>
+        <span class="field-label">{t("fuse_picker_which_leads")}</span>
         <span class="field-help" class:inline-help={inline}>
-          {driverLabel} keeps its own path; {followerLabel} is rebuilt from it
+          {t(
+            leftLeads
+              ? "fuse_picker_driver_help_left_leads"
+              : "fuse_picker_driver_help_right_leads"
+          )}
         </span>
       </div>
     </div>
@@ -246,17 +249,27 @@
         <span class="step-number">2</span>
         <div>
           <span class="field-label"
-            >How {followerLabel} relates to {driverLabel}</span
+            >{t(
+              leftLeads
+                ? "fuse_picker_relates_left_leads"
+                : "fuse_picker_relates_right_leads"
+            )}</span
           >
           <span class="field-help" class:inline-help={inline}>
-            Every change previews a new {followerLabel} path
+            {t(
+              leftLeads
+                ? "fuse_picker_preview_new_left_leads"
+                : "fuse_picker_preview_new_right_leads"
+            )}
           </span>
         </div>
       </div>{/if}
 
     {#if inline}
       <div class="axis timing-axis">
-        <span class="axis-label" id="fuse-timing-label">Timing</span>
+        <span class="axis-label" id="fuse-timing-label"
+          >{t("fuse_picker_timing")}</span
+        >
         <SegmentedControl
           options={timingOptions}
           value={axes.timing}
@@ -264,13 +277,17 @@
           color="accent"
           size="md"
           semantics="radiogroup"
-          ariaLabel={`${followerLabel} timing relative to ${driverLabel}`}
+          ariaLabel={t(
+            leftLeads
+              ? "fuse_picker_timing_aria_left_leads"
+              : "fuse_picker_timing_aria_right_leads"
+          )}
         >
           {#snippet optionContent(timing: FuseTiming)}
-            {#if timing === "together"}Together
-            {:else if timing === "split"}Split
+            {#if timing === "together"}{t("fuse_picker_timing_together")}
+            {:else if timing === "split"}{t("fuse_picker_timing_split")}
             {:else}<span class="quarter-choice"
-                ><span>Quarter</span><span aria-hidden="true"
+                ><span>{t("fuse_picker_timing_quarter")}</span><span aria-hidden="true"
                   >{timing === "quarter-cw" ? "↻" : "↺"}</span
                 ></span
               >{/if}
@@ -278,7 +295,9 @@
         </SegmentedControl>
       </div>
       <div class="axis direction-axis">
-        <span class="axis-label" id="fuse-direction-label">Direction</span>
+        <span class="axis-label" id="fuse-direction-label"
+          >{t("fuse_picker_direction")}</span
+        >
         <SegmentedControl
           options={directionOptions}
           value={axes.direction}
@@ -286,16 +305,23 @@
           color="accent"
           size="md"
           semantics="radiogroup"
-          ariaLabel={`${followerLabel} direction relative to ${driverLabel}`}
+          ariaLabel={t(
+            leftLeads
+              ? "fuse_picker_direction_aria_left_leads"
+              : "fuse_picker_direction_aria_right_leads"
+          )}
         >
           {#snippet optionContent(direction: FuseDirection)}
-            {direction === "same" ? "Same" : "Opposite"}
+            {direction === "same"
+              ? t("fuse_picker_direction_same")
+              : t("fuse_picker_direction_opposite")}
           {/snippet}
         </SegmentedControl>
       </div>
     {:else}
       <div class="axis mode-axis">
-        <span class="axis-label" id="fuse-mode-label">Timing and direction</span
+        <span class="axis-label" id="fuse-mode-label"
+          >{t("fuse_picker_timing_and_direction")}</span
         >
         <FuseTnDModePicker
           selected={selection.mode}
@@ -309,7 +335,11 @@
     {#if showOffset && !inline}
       <div class="axis offset-axis" transition:growFade={{ axis: "y" }}>
         <span class="axis-label" id="fuse-offset-label"
-          >Rotate {followerLabel}'s path</span
+          >{t(
+            leftLeads
+              ? "fuse_picker_rotate_path_left_leads"
+              : "fuse_picker_rotate_path_right_leads"
+          )}</span
         >
         <SegmentedControl
           options={offsetOptions}
@@ -325,7 +355,9 @@
                 >{offset === "cw" ? "↻" : "↺"}</span
               >
               <span
-                >90° {offset === "cw" ? "clockwise" : "counterclockwise"}</span
+                >{offset === "cw"
+                  ? t("fuse_picker_offset_cw")
+                  : t("fuse_picker_offset_ccw")}</span
               >
             </span>
           {/snippet}
@@ -335,7 +367,9 @@
 
     <!-- Each modifier is independent of the timing and direction selection. -->
     <div class="axis operations-axis">
-      <span class="axis-label" id="fuse-operations-label">Options</span>
+      <span class="axis-label" id="fuse-operations-label"
+        >{t("fuse_picker_options")}</span
+      >
       <div
         class="operation-list"
         role="group"
@@ -808,7 +842,8 @@
   }
 
   /* The phone form, which has to fit a 360 x 591 window without a scroll:
-     step 1 is one 44px row (its heading beside a 36px Left / Right switch),
+     step 1 is one 44px row (its heading, on two lines if it has to be, beside
+     a 36px Left / Right switch as wide as its two names),
      the six modes are 36px chips (TnDModeGrid size sm), the Quarter rotation
      and the two options are 36px, and the gaps between groups tighten. The
      card stops growing into spare height, so the chips stay 36px and the
@@ -831,23 +866,46 @@
     gap: 8px;
   }
 
-  .phone-form .field-heading {
-    flex: 0 0 auto;
+  .phone-form .field > .field-heading {
+    flex: 1 1 0;
+    gap: 8px;
   }
 
-  .phone-form .field-label {
-    white-space: nowrap;
+  .phone-form .step-number {
+    width: 24px;
+    height: 24px;
   }
 
+  .phone-form .field .field-label {
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  /* Never narrower than its two names side by side: the question beside it
+     wraps instead, so neither runs out of its box. */
   .phone-form .driver-control {
-    flex: 1 1 auto;
-    width: auto;
+    flex: 0 0 auto;
+    width: max-content;
+  }
+
+  .phone-form .driver-control :global(.segment) {
+    padding-inline: 7px;
   }
 
   .phone-form .driver-control :global(.segment),
   .phone-form .offset-axis :global(.segment) {
     min-height: var(--alt-touch-target, 36px);
     padding-block: 0;
+  }
+
+  /* A two-line direction stays inside the 36px the one-line one takes. */
+  .phone-form .offset-option {
+    gap: 6px;
+    line-height: 1.2;
+  }
+
+  .phone-form .offset-arrow {
+    font-size: var(--font-size-xl, 1.25rem);
   }
 
   .phone-form .axis {
@@ -863,14 +921,29 @@
     line-height: 1.25;
   }
 
+  /* Two to a row where both names fit on one line, else one to a row. */
+  .phone-form .operation-list {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
   .phone-form .operation-toggle {
+    flex: 1 1 40%;
     gap: 8px;
+    min-width: max-content;
     min-height: var(--alt-touch-target, 36px);
     padding: 0 10px;
+    white-space: nowrap;
   }
 
   .phone-form .operation-note {
     margin: 0 2px;
+  }
+
+  @media (max-height: 620px) {
+    .phone-form {
+      gap: 6px;
+    }
   }
 
   @media (min-width: 2600px) and (min-height: 1400px) {

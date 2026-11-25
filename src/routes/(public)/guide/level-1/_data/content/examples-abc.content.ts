@@ -68,7 +68,7 @@ const SEQS: SeqDef[] = [
   {
     // Mirrored LOOP: reversals after steps 1 and 5 (flags on 2 and 6).
     key: "ex-v2",
-    word: "AABB ×2 Mirrored LOOP",
+    word: "AABB ×2 Reflected LOOP",
     steps: [
       st(A, false, SO_, W, N, E, [IN, IN]),
       st(A, false, W, SO_, E, N, [IN, IN], true),
@@ -181,12 +181,12 @@ export const examplesAbcContent: GuideBlock[] = [
   {
     kind: "prose",
     html:
-      "This will put our left hand on top after step 4, so we’ll repeat the sequence again mirrored (with a " +
+      "This will put our left hand on top after step 4, so we’ll repeat the sequence again reflected (with a " +
       "reversal after step 5) to return to our original home position.",
   },
   {
     kind: "prose",
-    html: "This is a <em>Mirrored LOOP</em>.",
+    html: "This is a <em>Reflected LOOP</em>.",
   },
   {
     kind: "pictographGroup",

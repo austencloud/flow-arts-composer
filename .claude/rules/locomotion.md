@@ -7,6 +7,10 @@ paths:
 
 # Locomotion Ownership and Evidence (ENFORCED)
 
+Body motion comes from Mixamo clips: read
+`.claude/rules/body-motion-from-clips.md` first. It wins over anything below
+that suggests making motion in code.
+
 Read `docs/architecture/locomotion-research-canon.md` before changing walking,
 gait timing, exact steps, starts, stops, turns, pivots, sidesteps, crossover,
 grapevine, foot contacts, IK, retargeting, terrain locomotion, or motion matching.

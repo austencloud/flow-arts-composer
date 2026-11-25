@@ -150,6 +150,8 @@ export interface PolyPart extends PartBase {
 export type BuildingPart = RectPart | PolyPart;
 export interface BuildingShape {
   id: string;
+  /** The plan's building this one stands in for: the plan's plain block is then not drawn. */
+  of: string | null;
   parts: BuildingPart[];
 }
 
@@ -173,10 +175,45 @@ export interface StarSpec {
   every: number;
 }
 export interface RailingShape {
+  /** Its line; empty until `of` is looked up in the plan (`siteFloor` does that). */
   points: Pt[];
+  /**
+   * A plan fence or box this railing stands in for: it runs along that fence's
+   * line or that box's long middle, and the plan's own fence or box is not drawn.
+   */
+  of: string | null;
   height: number;
   collide: boolean;
   stars: StarSpec | null;
+  /** Width of a heavier post at each end and wherever two stretches meet, metres; null for plain posts. */
+  endPost: number | null;
+}
+
+/**
+ * A raised area: a platform, a stair tread. Most name a plan patio by id,
+ * whose outline is the top; one the plan does not reach (past the lot's edge)
+ * gives its own outline instead.
+ */
+export interface RaisedSpec {
+  /** The plan patio's id, or null for an area with its own outline. */
+  of: string | null;
+  /** Its own outline, when it names no plan thing. */
+  points: Pt[] | null;
+  /** Height of the top above the flat ground, metres. */
+  height: number;
+  /** Whether guests may stand on it. */
+  guests: boolean;
+}
+
+/**
+ * The lawn's heights on a square grid: row r lies at plan y = origin.z + r *
+ * spacing, column c at x = origin.x + c * spacing. Metres, above the flat
+ * ground. Outside the grid the ground is flat.
+ */
+export interface GroundGrid {
+  origin: Pt;
+  spacing: number;
+  rows: number[][];
 }
 export interface TreeShape {
   at: Pt;
@@ -224,6 +261,8 @@ export interface SiteSurroundings {
   wires: WireShape[];
   lamps: LampShape[];
   cars: CarShape[];
+  raised: RaisedSpec[];
+  groundHeights: GroundGrid | null;
   /** Kinds, keys and values that were skipped, once each, in the order first met. */
   notDrawn: string[];
 }
@@ -248,6 +287,8 @@ const TOP_KEYS = new Set([
   "wires",
   "lamps",
   "cars",
+  "raised",
+  "groundHeights",
 ]);
 const PART_KEYS = new Set(["shape", "at", "w", "d", "turn", "points", "heightFt", "wall", "windows", "roof", "faces"]);
 const FACE_KEYS = new Set(["windows", "windowWFt", "sillFt", "headFt", "lit", "door", "garage", "emblem"]);
@@ -403,6 +444,7 @@ export function readSurroundings(raw: unknown): SurroundingsRead {
   list("buildings").forEach((thing, index) => {
     if (!Array.isArray(thing.parts)) return skip("building");
     const id = typeof thing.id === "string" && thing.id ? thing.id : `building-${index + 1}`;
+    const of = typeof thing.of === "string" && thing.of ? thing.of : null;
     const parts: BuildingPart[] = [];
     for (const part of thing.parts) {
       if (!isObject(part)) {
@@ -412,13 +454,14 @@ export function readSurroundings(raw: unknown): SurroundingsRead {
       const read = readPart(part, skip, colourOf);
       if (read) parts.push(read);
     }
-    if (parts.length) buildings.push({ id, parts });
+    if (parts.length) buildings.push({ id, of, parts });
     else skip("building");
   });
 
   const railings: RailingShape[] = [];
   for (const thing of list("railings")) {
-    const points = lineOf(thing, "railing");
+    const of = typeof thing.of === "string" && thing.of ? thing.of : null;
+    const points = of && thing.points === undefined ? [] : lineOf(thing, "railing");
     if (!points) continue;
     let stars: StarSpec | null = null;
     if (isObject(thing.stars)) {
@@ -434,10 +477,29 @@ export function readSurroundings(raw: unknown): SurroundingsRead {
     }
     railings.push({
       points,
+      of,
       height: sizeFt(thing.heightFt, SURROUND_SIZES.railingHeight),
       collide: thing.collide !== false,
       stars,
+      endPost: finite(thing.endPostFt) && thing.endPostFt > 0 ? ft(thing.endPostFt) : null,
     });
+  }
+
+  const raised: RaisedSpec[] = [];
+  for (const thing of list("raised")) {
+    const of = typeof thing.of === "string" && thing.of ? thing.of : null;
+    const points = of ? null : readPoints(thing.points, 3);
+    if ((!of && !points) || !finite(thing.heightFt) || thing.heightFt < 0) {
+      skip("raised");
+      continue;
+    }
+    raised.push({ of, points, height: ft(thing.heightFt), guests: thing.guests === true });
+  }
+
+  let groundHeights: GroundGrid | null = null;
+  if (raw.groundHeights !== undefined) {
+    groundHeights = readGrid(raw.groundHeights);
+    if (!groundHeights) skip("groundHeights");
   }
 
   const trees: TreeShape[] = [];
@@ -529,9 +591,26 @@ export function readSurroundings(raw: unknown): SurroundingsRead {
       wires,
       lamps,
       cars,
+      raised,
+      groundHeights,
       notDrawn,
     },
   };
+}
+
+/** A ground grid, or null when any part of it is missing or not a number. */
+function readGrid(v: unknown): GroundGrid | null {
+  if (!isObject(v)) return null;
+  const origin = readPoint(v.originFt);
+  if (!origin || !finite(v.spacingFt) || v.spacingFt <= 0 || !Array.isArray(v.rowsFt) || v.rowsFt.length < 2) return null;
+  const width = Array.isArray(v.rowsFt[0]) ? v.rowsFt[0].length : 0;
+  if (width < 2) return null;
+  const rows: number[][] = [];
+  for (const row of v.rowsFt) {
+    if (!Array.isArray(row) || row.length !== width || !row.every(finite)) return null;
+    rows.push(row.map((h: number) => ft(h)));
+  }
+  return { origin, spacing: ft(v.spacingFt), rows };
 }
 
 function readPart(

@@ -32,7 +32,10 @@ export function getNativeStageSurfaceY(
     case BackgroundType.BLOSSOM:
       return STAGE.STAGE_DECK_HEIGHT;
     case BackgroundType.COSMIC:
-      return 0.4;
+      // The Moon outpost's landing pad top (its flattened apron, authored just
+      // under the regolith's zero). The old 0.4 platform left the performer
+      // half a metre above the pad and its sun shadow detached from the feet.
+      return -0.02;
     case BackgroundType.WINTER:
       return 0.45;
     case BackgroundType.OCEAN:

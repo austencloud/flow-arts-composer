@@ -13,12 +13,9 @@ const glyphOverlay = readSource(
 );
 
 describe("Fuse preview elemental glyph", () => {
-  it("enables the canonical animator glyph in an isolated Fuse scope", () => {
-    expect(fusePreview).toContain("new AnimationVisibilityStateManager({");
-    expect(fusePreview).toContain(
-      'fuseVisibility.setVisibility("elementalGlyph", true)'
-    );
-    expect(fusePreview).toContain("visibilityManagerOverride={fuseVisibility}");
+  it("draws the canvas from Fuse's own display choices", () => {
+    expect(fusePreview).toContain("const fuseDisplay = getFuseDisplay();");
+    expect(fusePreview).toContain("visibilityManagerOverride={fuseDisplay}");
   });
 
   it("allows geometry-derived elements before fused letter lookup finishes", () => {

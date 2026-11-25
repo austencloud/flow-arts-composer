@@ -7,7 +7,7 @@
     buildTrajectoryIncrements,
     trajectoryPropRateAt,
     trajectoryReversals,
-  } from "#lib/shared/notation/qft/qft-trajectory.js";
+  } from "@tka/shape-domain";
   import HorizontalTransportRow from "#lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
   import type { PositionValue } from "#lib/shared/notation/qft/qft-model.js";
   import seed from "#lib/features/levels/poi-lab/data/poi-reversal-observations.json";

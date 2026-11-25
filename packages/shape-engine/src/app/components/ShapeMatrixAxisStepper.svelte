@@ -20,6 +20,7 @@
   import { DURATION } from "@austencloud/motion";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
+  import ShapeMatrixPropInks from "./ShapeMatrixPropInks.svelte";
 
   interface Props {
     hand: "left" | "right";
@@ -162,20 +163,22 @@
                     level: appState.level,
                   })}
                 </span>
-                <SegmentedControl
-                  options={choices}
-                  value={turnValueToKey(turn)}
-                  onchange={choose}
-                  {columns}
-                  size="md"
-                  density={columns ? "standard" : "tight"}
-                  color={hand === "left" ? "blue" : "red"}
-                  semantics="radiogroup"
-                  ariaLabel={t("shape_engine_axis_unit", {
-                    axis: axisName,
-                    unit,
-                  })}
-                />
+                <ShapeMatrixPropInks>
+                  <SegmentedControl
+                    options={choices}
+                    value={turnValueToKey(turn)}
+                    onchange={choose}
+                    {columns}
+                    size="md"
+                    density={columns ? "standard" : "tight"}
+                    color={hand === "left" ? "blue" : "red"}
+                    semantics="radiogroup"
+                    ariaLabel={t("shape_engine_axis_unit", {
+                      axis: axisName,
+                      unit,
+                    })}
+                  />
+                </ShapeMatrixPropInks>
               </div>
             {/if}
           </div>

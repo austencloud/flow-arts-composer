@@ -15,8 +15,15 @@
     LOOP_REVIEW_OPTIONS,
   } from "./loop-picker-review-fixtures";
 
-  const { swapped, inverted, swappedInverted, rewound, rotated, mirrored } =
-    LOOP_REVIEW_OPTIONS;
+  const {
+    swapped,
+    inverted,
+    swappedInverted,
+    rewound,
+    rotated,
+    mirrored,
+    flipped,
+  } = LOOP_REVIEW_OPTIONS;
 
   const cases: Array<{
     title: string;
@@ -44,6 +51,11 @@
       repeat: { count: 8 },
     },
     { title: "Two options only", options: [inverted, rewound], repeat: null },
+    {
+      title: "Both reflections together (one name, the line underneath)",
+      options: [mirrored, flipped, rewound],
+      repeat: null,
+    },
   ];
 
   // The picker centers its choice shelf in the real drawer, so the frame keeps

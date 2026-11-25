@@ -14,8 +14,13 @@ import {
 
 /** How long Chrome may leave one command unanswered, as in capture.mjs. */
 const COMMAND_TIMEOUT_MS = 60000;
+/** How long a whole render may take; `--limit` sets another. */
+export const RENDER_LIMIT_MINUTES = 60;
 /** A desktop window, so the editor lays out as it does on a computer. */
 const EDITOR_WINDOW = { width: 1600, height: 1000, deviceScaleFactor: 1 };
+
+/** Whether the dev server never answered, as against refusing. */
+const unanswered = (cause) => cause?.code === "BRIDGE_TIMEOUT";
 
 /**
  * The origin a browser should open. [::1] and 127.0.0.1 are other sites to a
@@ -61,7 +66,12 @@ export async function openFeatureEditor({
     // A render draws on animation frames, which only a page in front gets.
     await tab.send("Page.bringToFront").catch(() => {});
     for (const deadline = now() + waitMs; ; await sleep(500)) {
-      const opened = (await listSessions()).find(
+      // A server still building the editor's page can leave one unanswered.
+      const sessions = await listSessions().catch((cause) => {
+        if (!unanswered(cause)) throw cause;
+        return [];
+      });
+      const opened = sessions.find(
         (session) => session.featureSlug === feature && !before.has(session.id)
       );
       if (opened) return { sessionId: opened.id, close };
@@ -78,7 +88,10 @@ export async function openFeatureEditor({
 
 /**
  * Queues a render in an open editor and follows it until the editor saves
- * the file. `log` gets a line for each 10% step.
+ * the file. `log` gets a line for each 10% step. It gives up on a render that
+ * has not moved for `stallMs`, and on any render after `limitMs`. One status
+ * request the dev server never answers counts as no movement, not a failure:
+ * the server may only have been reloading.
  */
 export async function renderInEditor({
   request,
@@ -87,9 +100,12 @@ export async function renderInEditor({
   log = () => {},
   pollMs = 1000,
   stallMs = 180000,
+  limitMs = RENDER_LIMIT_MINUTES * 60000,
   now = Date.now,
   sleep = delay,
 }) {
+  const carriesOn =
+    "If that tab stays open, the render carries on there; press Cancel in it to stop the render.";
   const { renderId } = await request(
     "POST",
     {},
@@ -98,9 +114,22 @@ export async function renderInEditor({
   let line = "";
   let last = "";
   let movedAt = now();
+  const startedAt = movedAt;
   for (;;) {
     await sleep(pollMs);
-    const job = await request("GET", { sessionId, renderId });
+    const job = await request("GET", { sessionId, renderId }).catch((cause) => {
+      if (!unanswered(cause)) throw cause;
+      return null;
+    });
+    if (!job) {
+      const silent = Math.round((now() - movedAt) / 1000);
+      if (now() - movedAt > stallMs)
+        throw new Error(
+          `The dev server has not answered for ${silent} s (${line || "waiting for the editor"}). Is it stuck, or did it restart? Render again once it answers.`
+        );
+      log(`no answer from the dev server for ${silent} s, still waiting`);
+      continue;
+    }
     if (job.state === "completed")
       return { file: job.file, path: job.path, bytes: job.bytes };
     if (job.state === "failed")
@@ -112,9 +141,13 @@ export async function renderInEditor({
       movedAt = now();
     } else if (now() - movedAt > stallMs) {
       throw new Error(
-        `The render has not moved for ${Math.round(stallMs / 1000)} s (${line}). Is the editor's tab in front? If that tab stays open, the render carries on there; press Cancel in it to stop the render.`
+        `The render has not moved for ${Math.round(stallMs / 1000)} s (${line}). Is the editor's tab in front? ${carriesOn}`
       );
     }
+    if (now() - startedAt > limitMs)
+      throw new Error(
+        `The render was still going after ${Math.round(limitMs / 60000)} min (${line}). Give it longer with --limit MINUTES. ${carriesOn}`
+      );
     const next =
       job.state === "queued"
         ? "waiting for the editor"
@@ -140,6 +173,7 @@ export async function renderFeature({
   origin,
   log = () => {},
   pollMs,
+  limitMs,
   openEditor = openFeatureEditor,
   findFeature = async () => {},
 }) {
@@ -152,7 +186,7 @@ export async function renderFeature({
       `${holding.length} editors have ${feature} open. Close all but one, then try again.`
     );
   const follow = (sessionId) =>
-    renderInEditor({ request, sessionId, name, log, pollMs });
+    renderInEditor({ request, sessionId, name, log, pollMs, limitMs });
   if (holding[0]) return follow(holding[0].id);
   // A misspelled name would otherwise wait for an editor that never opens.
   await findFeature(feature);

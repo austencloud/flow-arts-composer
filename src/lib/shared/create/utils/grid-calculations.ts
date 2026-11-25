@@ -813,9 +813,14 @@ export function calculateWorkbenchTimelineRows(params: {
   /** Host width minus the edge reserve on both sides. */
   sizingWidth: number;
   isNarrow: boolean;
+  /** Steps in one repetition of a LOOP; each repetition starts its own row. */
+  partLength?: number | null;
 }): TimelineRow[] {
-  const { steps, beatsPerRow, hasStart, sizingWidth, isNarrow } = params;
-  const byBeats = calculateTimelineRowsByBeatCount(steps, beatsPerRow);
+  const { steps, beatsPerRow, hasStart, sizingWidth, isNarrow, partLength } =
+    params;
+  const byBeats = rowsPerPart(steps, partLength, (part) =>
+    calculateTimelineRowsByBeatCount(part, beatsPerRow)
+  );
   if (!isNarrow || sizingWidth <= 0) return byBeats;
 
   const unit = calculateTimelineUnitSize(
@@ -826,7 +831,36 @@ export function calculateWorkbenchTimelineRows(params: {
   if (unit >= TIMELINE_TOUCH_FLOOR) return byBeats;
   // The start column rides in the first row without taking a beat, as it does
   // in the beat-count rows.
-  return calculateTimelineRows(steps, Math.max(1, beatsPerRow), false);
+  return rowsPerPart(steps, partLength, (part) =>
+    calculateTimelineRows(part, Math.max(1, beatsPerRow), false)
+  );
+}
+
+/**
+ * Lays out each repetition of a LOOP on its own, so no row holds the end of one
+ * repetition and the beginning of the next. Without a part length the whole
+ * list is one part.
+ */
+function rowsPerPart(
+  steps: readonly { duration?: number }[],
+  partLength: number | null | undefined,
+  layOut: (part: readonly { duration?: number }[]) => TimelineRow[]
+): TimelineRow[] {
+  if (!partLength || partLength >= steps.length) return layOut(steps);
+  const rows: TimelineRow[] = [];
+  for (let from = 0; from < steps.length; from += partLength) {
+    for (const row of layOut(steps.slice(from, from + partLength))) {
+      rows.push({
+        rowIndex: rows.length,
+        totalDuration: row.totalDuration,
+        steps: row.steps.map((step) => ({
+          ...step,
+          stepIndex: step.stepIndex + from,
+        })),
+      });
+    }
+  }
+  return rows;
 }
 
 /**
@@ -867,6 +901,8 @@ export function fitTimelineRows(params: {
    *  the cell size, so there is no floor, and longer rows are tried even on a
    *  narrow host. */
   shrinkToFit?: boolean;
+  /** Steps in one repetition of a LOOP; each repetition starts its own row. */
+  partLength?: number | null;
 }): { beatsPerRow: number; rows: TimelineRow[]; unitSize: number } | null {
   const {
     steps,
@@ -877,6 +913,7 @@ export function fitTimelineRows(params: {
     hasStart,
     isNarrow,
     shrinkToFit = false,
+    partLength = null,
   } = params;
   if (containerHeight <= 0 || sizingWidth <= 0 || beatsPerRow <= 0) {
     return null;
@@ -906,6 +943,7 @@ export function fitTimelineRows(params: {
       hasStart,
       sizingWidth,
       isNarrow: isNarrow && !shrinkToFit,
+      partLength,
     });
     const rowCount = Math.max(rows.length, start);
     if (rowCount === 0) continue;

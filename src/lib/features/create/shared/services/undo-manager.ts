@@ -111,6 +111,7 @@ const CREATE_MODES: ReadonlySet<string> = new Set([
   "shape-engine",
   "fuse",
   "tunnel",
+  "loop",
   "one-handed",
   "guided",
   "spell",

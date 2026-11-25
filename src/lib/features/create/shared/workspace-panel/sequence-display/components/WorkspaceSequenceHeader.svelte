@@ -91,6 +91,9 @@
 
 <style>
   .workspace-sequence-header {
+    /* Its side columns stand under Undo/Redo on the left and Save on the
+       right, which keep those corners in every language. */
+    direction: ltr;
     container-type: inline-size;
     flex: 0 0 auto;
     padding: 8px 12px 0;

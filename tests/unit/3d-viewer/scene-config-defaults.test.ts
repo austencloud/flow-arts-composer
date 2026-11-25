@@ -37,6 +37,8 @@ const factories = {
 };
 
 const expectedHashes: Record<keyof typeof factories, string> = {
+  // Re-baselined 2026-11-24: cosmic night only, for the Moon outpost (black
+  // sky #000000 / #010102 / #020203 and fog density 0: there is no air).
   // Re-baselined 2026-10-31: winter only, for the mountain pass (lighter sky
   // mid band #344e68 -> #4a6b92 and the new mountainHaze colour).
   // Re-baselined 2026-09-07: blossom and celestial were rebuilt after the
@@ -61,7 +63,7 @@ const expectedHashes: Record<keyof typeof factories, string> = {
   createDefaultCosmicAuroraConfig:
     "0bd38acd71a42d1944bcdf0d61b9998b5bbed1800bc4f5cc0fe7e30a6d5763b4",
   createDefaultCosmicNightConfig:
-    "36a5c5c124f80ad24e50ac7e5926ac5ca37df95f18c16dd30ae0278aed72f50c",
+    "0ac3ef94b7b1018428917bb75d9bb5d493d047cfea2564e1e1c5115bc0039f39",
   // Re-baselined 2026-08-30 by the four-lane field-audit fix queue (river
   // drape/source/terminus, plume rebuild, upcountry detail reach, sky depth).
   // Re-baselined 2026-09-02 for the plume coverage lift that finally made the

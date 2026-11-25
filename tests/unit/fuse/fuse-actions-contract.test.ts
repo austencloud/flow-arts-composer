@@ -26,74 +26,85 @@ describe("Fuse sequence actions contract", () => {
   });
 
   it("composes the canonical transform grid instead of owning another action list", () => {
-    const popover = read(
-      "src/lib/features/fuse/components/FuseSourceActionPopover.svelte"
+    const screen = read(
+      "src/lib/features/fuse/components/FuseEditPathScreen.svelte"
     );
     const createPanel = read(
       "src/lib/features/create/shared/components/sequence-actions/SequenceActionsPanel.svelte"
     );
 
-    expect(popover).toContain(
+    expect(screen).toContain(
       'import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte"'
     );
     expect(createPanel).toContain(
       'import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte"'
     );
-    expect(popover).toContain("<SequenceTransformActions");
-    expect(popover).toContain("rotationDegrees={45}");
-    expect(popover).toContain("showRotationDegreesInLabel={true}");
-    expect(popover).toContain('shiftStartPlacement="transform"');
-    expect(popover).not.toContain("onRewind=");
-    expect(popover).not.toContain("onSwap=");
-    expect(popover).not.toContain("onDuration=");
+    expect(screen).toContain("<SequenceTransformActions");
+    expect(screen).toContain("rotationDegrees={45}");
+    // The tiles carry the same words as Construct's sequence actions.
+    expect(screen).not.toContain("showRotationDegreesInLabel");
+    expect(screen).toContain('kind: "rewind"');
+    // Swapping hands, changing timing or rewriting turns can break the LOOP
+    // seam or the pair, so those Construct actions stay out of Fuse.
+    expect(screen).not.toContain("onSwap=");
+    expect(screen).not.toContain("onDuration=");
+    expect(screen).not.toContain("onTurnPattern=");
+    expect(screen).not.toContain("onRotationDirection=");
   });
 
-  it("uses the visible source card as the desktop first-step picker", () => {
+  it("edits the path on a screen of its own, start picker included", () => {
     const layout = read("src/lib/features/fuse/components/FuseLayout.svelte");
     const card = read("src/lib/features/fuse/components/FuseSourceCard.svelte");
+    const screen = read(
+      "src/lib/features/fuse/components/FuseEditPathScreen.svelte"
+    );
 
-    expect(layout).toContain("inlineFirstStepSide");
-    expect(layout).toContain("firstStepPickerActive={inlineFirstStepSide");
-    expect(card).toContain("<FuseSourceActionPopover");
-    expect(card).toContain("onStepClick={firstStepPickerActive");
-    expect(card).toContain('kind: "first-step"');
+    expect(layout).toContain("<FuseEditPathScreen");
+    expect(layout).toContain("inert={editSide !== null}");
+    expect(card).toContain("onEditPath(side)");
+    expect(screen).toContain("onStepClick={picking");
+    expect(screen).toContain('kind: "first-step"');
   });
 
   it("keeps phone source actions compact and opens the canonical card viewer", () => {
     const card = read("src/lib/features/fuse/components/FuseSourceCard.svelte");
-    const popover = read(
-      "src/lib/features/fuse/components/FuseSourceActionPopover.svelte"
-    );
 
-    expect(card).toContain('label: "View Choreo Card"');
+    expect(card).toContain(`label: t("fuse_card_menu_view_card")`);
     expect(card).toContain("<CardInspectModal");
     expect(card).toContain('presentation="live"');
     expect(card).toContain("browseViewMode={viewMode}");
-    expect(card).toContain("compactTrigger={true}");
-    expect(popover).toContain("compactTrigger?: boolean");
+    expect(card).not.toContain("compact-edit-trigger");
 
     const compactMenu = card.slice(
       card.indexOf("const compactSourceMenuItems"),
       card.indexOf("</script>")
     );
+    expect(compactMenu).toContain(`label: t("fuse_card_edit_path")`);
+    expect(compactMenu).toContain(`label: t("fuse_settings_new_paths_aria")`);
     expect(compactMenu).not.toContain('label: "Regenerate path"');
     expect(compactMenu).not.toContain('label: "Mirror path"');
     expect(compactMenu).not.toContain('label: "Choose first step"');
   });
 
-  it("gives desktop sources one primary action and discloses rare actions", () => {
+  it("joins each hand's settings for new paths to its Regenerate", () => {
     const card = read("src/lib/features/fuse/components/FuseSourceCard.svelte");
+    const regenerate = card.slice(
+      card.indexOf('<div class="shuffle-slot">'),
+      card.indexOf('<div class="edit-slot">')
+    );
 
     expect(card).toContain('<div class="source-actions">');
-    expect(card).toContain("Regenerate");
-    expect(card).toContain("<FuseSourceActionPopover");
+    expect(regenerate).toContain("fuse_card_regenerate");
+    expect(regenerate).toContain('class="regenerate-settings"');
+    expect(regenerate).toContain("fuse_settings_title_left");
+    expect(regenerate).toContain("onOpenSettings(side)");
     expect(card).toContain("items={sourceMenuItems}");
     expect(card).toContain('triggerPresentation="labelled"');
-    expect(card).toContain("<span>More</span>");
-    expect(card).toContain('label: "Choose saved LOOP"');
-    expect(card).toContain('label: "Choose a shape"');
-    expect(card).toContain('label: "Build a custom path"');
-    expect(card).toContain('"Save to library"');
+    expect(card).toContain(`<span>{t("fuse_card_more")}</span>`);
+    expect(card).toContain(`label: t("fuse_card_menu_choose_saved")`);
+    expect(card).toContain(`label: t("fuse_card_menu_choose_shape")`);
+    expect(card).toContain(`label: t("fuse_card_menu_build_custom")`);
+    expect(card).toContain("fuse_card_menu_save");
   });
 
   it("keeps the live source grid inside the canonical Choreo Card contract", () => {
@@ -130,7 +141,21 @@ describe("Fuse sequence actions contract", () => {
     expect(preview).toContain("@container fuse-preview (max-width: 620px)");
     expect(preview).toContain('"viewer viewer viewer"');
     expect(preview).toContain('"tempo save share"');
-    expect(preview).toContain('label="Open viewer"');
+    expect(preview).toContain(`label={t("fuse_preview_open_viewer")}`);
     expect(preview).toContain('variant="secondary"');
+  });
+
+  // A fixed tip-effect map on the preview wins over the person's effects
+  // state, so the Effects panel would change nothing on screen while every
+  // control in it still looked like it worked.
+  it("draws the effects the shared effects state holds, not a fixed map", () => {
+    const layout = read("src/lib/features/fuse/components/FuseLayout.svelte");
+    const preview = read(
+      "src/lib/features/fuse/components/FuseAnimationPreview.svelte"
+    );
+
+    expect(layout).toContain("setEffectsConfigContext(");
+    expect(preview).toContain("{effectsConfigState}");
+    expect(preview).not.toMatch(/tipEffectMap=/);
   });
 });

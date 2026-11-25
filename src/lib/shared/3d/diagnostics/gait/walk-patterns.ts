@@ -256,6 +256,37 @@ function shuttleLegs(speed: number): Leg[] {
   ];
 }
 
+/** Metres of the straight steady walk: 22 s at 1.8 m/s, 10 s at run speed. */
+const STRAIGHT_RUN = 40;
+
+/**
+ * One long straight walk, for every steady number.
+ *
+ * The other patterns are built around seams, curves and turns, and a reading
+ * taken through any of them is a reading of that instead of the gait. This
+ * backs up half the run, walks the whole of it forwards, and backs up to the
+ * start again, never turning, so the forward leg outlasts the probe's 15 s
+ * buffer at walking speed and the camera follows it off the lit ground.
+ */
+const straight: WalkPattern = {
+  id: "straight",
+  label: "Long straight walk",
+  hunts: "the steady gait itself, away from every seam, curve and turn",
+  period: (speed) => totalSeconds(straightLegs(speed)),
+  tick: (t, speed) => runLegs(straightLegs(speed), t),
+};
+
+function straightLegs(speed: number): Leg[] {
+  return [
+    pauseLeg(0, "standing"),
+    travelLeg(speed, STRAIGHT_RUN / 2, 0, BEHIND, "backing up"),
+    pauseLeg(0, "settling"),
+    travelLeg(speed, STRAIGHT_RUN, 0, AHEAD, "walking straight"),
+    pauseLeg(0, "arriving"),
+    travelLeg(speed, STRAIGHT_RUN / 2, 0, BEHIND, "backing home"),
+  ];
+}
+
 /** Out forwards, back backwards, never turning. */
 const reverse: WalkPattern = {
   id: "reverse",
@@ -539,6 +570,7 @@ const pivot: WalkPattern = {
 
 export const WALK_PATTERNS: readonly WalkPattern[] = [
   shuttle,
+  straight,
   reverse,
   sidestep,
   grapevine,

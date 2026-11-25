@@ -2,7 +2,7 @@ import {
   trajectoryPosesAt,
   QFT_TRAJECTORY_STEPS,
   type QftTrajectory,
-} from "#lib/shared/notation/qft/qft-trajectory.js";
+} from "@tka/shape-domain";
 
 /**
  * Swing-shaped playback for the poi reversal teacher.

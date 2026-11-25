@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { trajectoryReversals } from "../../src/lib/shared/notation/qft/qft-trajectory";
+import { trajectoryReversals } from "@tka/shape-domain";
 import {
   generatePoiReversalCandidates,
   selectNextPoiReversalCandidate,

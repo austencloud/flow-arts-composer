@@ -101,7 +101,12 @@ const TESTER_MODULES: ModuleId[] = ["choreo"];
  * regardless of the parent module's role.
  * Format: "moduleId:tabId"
  */
-const ADMIN_ONLY_TABS: string[] = [];
+const ADMIN_ONLY_TABS: string[] = ["create:loop"];
+
+/** Whether a tab is still being built, and so held back from visitors. */
+export function isTabInDevelopment(moduleId: string, tabId: string): boolean {
+  return ADMIN_ONLY_TABS.includes(`${moduleId}:${tabId}`);
+}
 
 /**
  * Get the default role for a feature
@@ -133,7 +138,9 @@ export function getDefaultFeatureRole(
   // Check if this tab is explicitly admin-only (in development)
   if (featureId.startsWith("tab:")) {
     const tabKey = featureId.replace("tab:", "");
-    if (ADMIN_ONLY_TABS.includes(tabKey)) {
+    // On a development server it opens for everyone, so it can be tried while
+    // nobody can sign in.
+    if (ADMIN_ONLY_TABS.includes(tabKey) && !import.meta.env?.DEV) {
       return "admin";
     }
     // Otherwise inherit parent module role

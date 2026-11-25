@@ -105,6 +105,7 @@ Read only the row that matches the task. Do not scan `.claude/rules/` generally.
 | 3D environment design, art revisions, or scene review             | `src/lib/shared/3d/AGENTS.md`, `docs/architecture/scene-design-brief.md`                                                           |
 | New shared component, service, utility, or behavior               | `.claude/rules/never-hand-roll.md`; search `docs/architecture/canonical-capabilities.md` with `rg` instead of reading it wholesale |
 | TKA facts, pictographs, or sequence generation                    | `mcp-server/AGENTS.md`                                                                                                             |
+| Any body motion (walk, jump, crouch, sit, gesture, idle, crowd)   | `.claude/rules/body-motion-from-clips.md`: Mixamo clips, not hand-made motion                                                      |
 | Locomotion, gait, feet, retargeting, terrain traversal            | `src/lib/shared/3d/AGENTS.md`, `docs/architecture/locomotion-research-canon.md`                                                    |
 | Firestore query or index changes                                  | `.claude/rules/firestore-cost-discipline.md`                                                                                       |
 | Marketing, UI, or documentation copy                              | `docs/reference/ai-writing-guide.md`                                                                                               |

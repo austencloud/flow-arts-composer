@@ -34,6 +34,7 @@
     "fuse",
     "tunnel",
     "assemble",
+    "loop",
   ];
   const methods = ORDER.flatMap((id) =>
     CREATE_TABS.filter((tab) => tab.id === id)

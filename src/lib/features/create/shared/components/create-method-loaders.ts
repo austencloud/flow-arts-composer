@@ -26,6 +26,7 @@ export const CREATE_METHOD_PANEL_LOADERS: Readonly<
   assemble: () => import("../../assemble/components/AssembleToolPanel.svelte"),
   fuse: () => import("#lib/features/fuse/FuseTab.svelte"),
   tunnel: () => import("../../tunnel/TunnelTab.svelte"),
+  loop: () => import("../../loop/LoopTab.svelte"),
   "shape-engine": () => import("../../shape-engine/ShapeEngineTab.svelte"),
 };
 

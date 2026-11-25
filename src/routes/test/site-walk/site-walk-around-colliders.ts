@@ -2,18 +2,21 @@
  * What the surroundings stop you with, as the same boxes the plan's own solid
  * things use (`BoxCollider`). A rect building is one box over its footprint; a
  * poly building is a thin wall on each edge (a hollow outline cannot be one
- * box); each solid railing run is a wall; a car is one box turned with it; a
+ * box); each solid railing run is a wall from the floor it stands on to its
+ * top, so one on a platform's edge stops you on the grass below too; a car is one box turned with it; a
  * tree trunk, a pole and a lamp post are narrow posts.
  */
 
 import { postBox, wallBox, type BoxCollider } from "./site-walk-plan";
 import { SURROUND_SIZES, type SiteSurroundings } from "./site-walk-around";
 import { trunkWidth } from "./site-walk-trees";
+import { floorAlong, standingSpan, type SiteFloor } from "./site-walk-floor";
 
 /** A poly building's wall: thicker than a fence, so a fast body cannot slip through a corner. */
 const POLY_WALL = 0.4;
 
-export function surroundingColliders(around: SiteSurroundings): BoxCollider[] {
+/** With a floor, railings follow it and their plan `of` lines; without one, the railings' own lines on flat ground. */
+export function surroundingColliders(around: SiteSurroundings, floor: SiteFloor | null = null): BoxCollider[] {
   const out: BoxCollider[] = [];
   for (const building of around.buildings) {
     for (const part of building.parts) {
@@ -35,11 +38,19 @@ export function surroundingColliders(around: SiteSurroundings): BoxCollider[] {
       }
     }
   }
-  for (const railing of around.railings) {
+  for (const railing of floor ? floor.railings : around.railings) {
     if (!railing.collide) continue;
+    const stretches = floor ? floorAlong(floor, railing.points, SURROUND_SIZES.ironPostSpacing).stretches : null;
     for (let i = 0; i + 1 < railing.points.length; i++) {
       const box = wallBox(railing.points[i]!, railing.points[i + 1]!, railing.height);
-      if (box) out.push(box);
+      if (!box) continue;
+      const stretch = stretches?.[i];
+      if (stretch) {
+        const span = standingSpan(stretch.low, stretch.high, railing.height);
+        box.y = span.y;
+        box.h = span.h;
+      }
+      out.push(box);
     }
   }
   for (const car of around.cars) {

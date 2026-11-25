@@ -282,6 +282,32 @@ export const AAAA_CCW: SequenceData = makeLoop("fx-aaaa", "AAAA", [
 ]);
 
 /**
+ * AABB — the Guide's teaching word (`aabbWordSteps` on the Words page): A A
+ * forward around the clockwise loop, then B B back the way they came.
+ *
+ *   1 A alpha1>alpha3 left pro cw s>w in>in   right pro cw n>e in>in
+ *   2 A alpha3>alpha5 left pro cw w>n in>in   right pro cw e>s in>in
+ *   3 B alpha5>alpha3 left anti cw n>w in>out right anti cw s>e in>out
+ *   4 B alpha3>alpha1 left anti cw w>s out>in right anti cw e>n out>in
+ *
+ * Pro keeps each staff's orientation; anti flips it on step 3 and flips it back
+ * on step 4, so the loop closes on the orientations it opened with. Staffs in
+ * the wall plane never need the arms to pass through each other here, which is
+ * why labs open on this word and not on AAAA (Austen, 2026-11-24).
+ *
+ * Deliberately NOT in `ALL_FIXTURE_LOOPS`: the staff-grip lab, the contact
+ * scoreboard and the prop-continuity corpus sweep that list, and their frame
+ * budgets were set without this word. Import it by name.
+ */
+// prettier-ignore
+export const AABB_CW: SequenceData = makeLoop("fx-aabb", "AABB", [
+  makeStep(1, Letter.A, ALPHA1, ALPHA3, pro(CW, S, W, IN, IN), pro(CW, N, E, IN, IN)),
+  makeStep(2, Letter.A, ALPHA3, ALPHA5, pro(CW, W, N, IN, IN), pro(CW, E, S, IN, IN)),
+  makeStep(3, Letter.B, ALPHA5, ALPHA3, anti(CW, N, W, IN, OUT), anti(CW, S, E, IN, OUT)),
+  makeStep(4, Letter.B, ALPHA3, ALPHA1, anti(CW, W, S, OUT, IN), anti(CW, E, N, OUT, IN)),
+]);
+
+/**
  * FALG — Austen's 8-beat mirrored card, transcribed verbatim:
  *   1 F beta5>alpha3  left anti ccw s>w in>out   right pro ccw s>e in>in
  *   2 A alpha3>alpha1 left pro ccw w>s out>out   right pro ccw e>n in>in

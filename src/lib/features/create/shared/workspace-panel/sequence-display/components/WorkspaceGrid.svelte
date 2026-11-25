@@ -115,6 +115,7 @@
     sequenceWord = "",
     arrivalRequest = null,
     edgePadding = 16,
+    waiting = null,
     scrollContainerRef = $bindable(),
   }: {
     steps: ReadonlyArray<StepData> | StepData[];
@@ -170,11 +171,64 @@
     sequenceWord?: string;
     arrivalRequest?: PictographArrivalRequest | null;
     edgePadding?: number;
+    /**
+     * Steps from this index on are a LOOP's repeat waiting to be made: places
+     * to fill, not steps of the sequence. Nothing about them can be pressed.
+     */
+    waiting?: {
+      from: number;
+      ready: boolean;
+      color: string;
+      ink: string;
+      icon: string;
+      label: string;
+      times: number;
+    } | null;
     scrollContainerRef?: HTMLElement;
   } = $props();
 
+  const isWaiting = (stepIndex: number) =>
+    waiting !== null && stepIndex >= waiting.from;
+
+  // The row that holds the start of the waiting repeat. A repeat of one step
+  // shares the first row, which has no place for the label.
+  const waitingRowIndex = $derived(
+    waiting
+      ? timelineRows.findIndex(
+          (row) => row.steps[0]?.stepIndex === waiting.from
+        )
+      : -1
+  );
+
+  // Making the LOOP turns the waiting places into steps. They keep their cells
+  // and come up to full strength one after another, and any further repetition
+  // fades in behind them.
+  const REPEAT_STAGGER_MS = 55;
+  const REPEAT_SETTLE_MS = 600;
+  let madeFrom = $state<number | null>(null);
+  let lastWaiting: { from: number; ready: boolean } | null = null;
+  $effect.pre(() => {
+    const now = waiting;
+    const count = steps.length;
+    const before = lastWaiting;
+    lastWaiting = now ? { from: now.from, ready: now.ready } : null;
+    if (now || !before?.ready || count < before.from * 2) return;
+    madeFrom = before.from;
+    const timer = setTimeout(
+      () => (madeFrom = null),
+      (count - before.from) * REPEAT_STAGGER_MS + REPEAT_SETTLE_MS
+    );
+    return () => clearTimeout(timer);
+  });
+  const isRepeatMember = (stepIndex: number) =>
+    isWaiting(stepIndex) || (madeFrom !== null && stepIndex >= madeFrom);
+  const repeatDelay = (stepIndex: number) =>
+    madeFrom !== null && !waiting
+      ? `${(stepIndex - madeFrom) * REPEAT_STAGGER_MS}ms`
+      : "0ms";
+
   function isArrivalDestination(stepIndex: number): boolean {
-    return arrivalRequest?.stepIndex === stepIndex;
+    return !isWaiting(stepIndex) && arrivalRequest?.stepIndex === stepIndex;
   }
 
   function isArrivalDestinationHidden(stepIndex: number): boolean {
@@ -185,6 +239,7 @@
   // deletion through removingStepIndices. Both mean the same thing to the cell:
   // play your exit, you are about to leave the layout.
   function isStepLeaving(stepIndex: number): boolean {
+    if (isWaiting(stepIndex)) return false;
     return (
       removingStepIndices.has(stepIndex) || removingStepIndex === stepIndex
     );
@@ -351,12 +406,14 @@
 
   /** A gated cell stays out of sight until its content has reported in. */
   function isAwaitingReveal(key: number): boolean {
-    return isGatedReveal && !armedRevealDelays.has(key);
+    return isGatedReveal && !isWaiting(key) && !armedRevealDelays.has(key);
   }
 
   function isStepCascading(stepIndex: number): boolean {
     return (
-      displayState.shouldBeatAnimate(stepIndex) && !isAwaitingReveal(stepIndex)
+      !isWaiting(stepIndex) &&
+      displayState.shouldBeatAnimate(stepIndex) &&
+      !isAwaitingReveal(stepIndex)
     );
   }
 
@@ -724,6 +781,14 @@
     if (!isTimelineMode) return [];
     const rowCount = timelineRows.length;
     if (rowCount < 2 || steps.length === 0) return [];
+    // A mandala is drawn from the whole sequence, which a waiting repeat is
+    // not part of yet.
+    if (waiting) {
+      return Array.from({ length: rowCount - 1 }, (_, index) => ({
+        index: index + 1,
+        show: null,
+      }));
+    }
     const { placements } = getMandalaPlacements({
       stepCount: steps.length,
       cols: gridLayout.totalColumns,
@@ -881,6 +946,16 @@
   ]);
 </script>
 
+{#snippet repeatLabel(repeat: NonNullable<typeof waiting>)}
+  <span class="repeat-sign">
+    <i class="fas {repeat.icon}" aria-hidden="true"></i>
+    {#if repeat.times > 1}
+      <span class="repeat-times">×{repeat.times}</span>
+    {/if}
+  </span>
+  <span class="repeat-word">{repeat.label}</span>
+{/snippet}
+
 {#snippet mandalaArtwork(show: MandalaShow)}
   <SequenceMandala
     sequence={{ steps }}
@@ -921,6 +996,7 @@
     style:--wave-band-delay="{displayState.animationTiming.waveBandDelay}ms"
     style:--step-entrance-duration="{displayState.animationTiming
       .entranceDuration}ms"
+    style:--waiting-color={waiting?.color}
   >
     {#if isTimelineMode}
       <!-- ===== Timeline layout: start column + flexbox rows ===== -->
@@ -983,6 +1059,7 @@
                    the entrance gesture being cancelled along with it. -->
               <div
                 class="timeline-cell mandala-slot"
+                class:repeat-mandala={madeFrom !== null}
                 class:cascading={isMandalaCascading(cell.index)}
                 class:awaiting-reveal={isMandalaAwaiting(cell.index)}
                 data-layout-mandala-key={`timeline-start:${cell.index}`}
@@ -1023,6 +1100,17 @@
               ></div>
             {/if}
           {/each}
+          {#if waiting && waitingRowIndex > 0}
+            <div
+              class="repeat-lead"
+              aria-hidden="true"
+              style:--lead-row={waitingRowIndex}
+              style:color={waiting.ink}
+              transition:opaqueFade={{ duration: DURATION.fast }}
+            >
+              {@render repeatLabel(waiting)}
+            </div>
+          {/if}
         </div>
       {/if}
 
@@ -1038,6 +1126,7 @@
                 stepIndex,
                 duration
               )}
+              {@const isWaitingCell = isWaiting(stepIndex)}
               <div
                 class="timeline-cell step-container"
                 class:cascading={isStepCascading(stepIndex)}
@@ -1047,25 +1136,33 @@
                 class:arrival-destination-hidden={isArrivalDestinationHidden(
                   stepIndex
                 )}
-                class:hidden-for-sequential={displayState.shouldBeatBeHidden(
-                  stepIndex
-                )}
-                class:cell-selected={selectedStepNumber === step.stepNumber}
-                class:cell-practice={practiceStepNumber === step.stepNumber}
-                data-step-index={stepIndex}
-                data-step-number={step.stepNumber}
+                class:hidden-for-sequential={!isWaitingCell &&
+                  displayState.shouldBeatBeHidden(stepIndex)}
+                class:cell-selected={!isWaitingCell &&
+                  selectedStepNumber === step.stepNumber}
+                class:cell-practice={!isWaitingCell &&
+                  practiceStepNumber === step.stepNumber}
+                class:repeat-member={isRepeatMember(stepIndex)}
+                class:waiting={isWaitingCell}
+                class:ready={isWaitingCell && waiting?.ready}
+                data-step-index={isWaitingCell ? undefined : stepIndex}
+                data-step-number={isWaitingCell ? undefined : step.stepNumber}
                 data-history-step-identity={identity}
                 data-arrival-destination-state={isArrivalDestination(stepIndex)
                   ? isArrivalDestinationHidden(stepIndex)
                     ? "hidden"
                     : "ready"
                   : undefined}
-                aria-hidden={isArrivalDestinationHidden(stepIndex)
+                aria-hidden={isWaitingCell ||
+                isArrivalDestinationHidden(stepIndex)
                   ? "true"
                   : undefined}
-                inert={isArrivalDestinationHidden(stepIndex)}
+                inert={isWaitingCell || isArrivalDestinationHidden(stepIndex)}
                 style:--duration-multiplier={effectiveDuration}
                 style:--reveal-delay={revealDelayFor(stepIndex, waveBand)}
+                style:--repeat-delay={isRepeatMember(stepIndex)
+                  ? repeatDelay(stepIndex)
+                  : undefined}
                 in:opaqueFade={{
                   duration: getHistoryMembershipDuration(identity),
                   dimmedBy: DIMMED_CELL_CLASSES,
@@ -1075,7 +1172,13 @@
                   dimmedBy: DIMMED_CELL_CLASSES,
                 }}
               >
-                {#if isAwaitingReveal(stepIndex)}
+                {#if isWaitingCell && step.isBlank}
+                  {#if waiting && stepIndex === waiting.from && waitingRowIndex < 1}
+                    <span class="waiting-mark" style:color={waiting.ink}>
+                      {@render repeatLabel(waiting)}
+                    </span>
+                  {/if}
+                {:else if isAwaitingReveal(stepIndex)}
                   <div
                     class="pictograph-loading"
                     aria-label={t("create_ui_loading_pictograph")}
@@ -1083,40 +1186,43 @@
                     <PanelSpinner size={6} />
                   </div>
                 {/if}
-                <div
-                  class="history-layout-shell"
-                  inert={isAwaitingReveal(stepIndex)}
-                >
-                  <StepCell
-                    {step}
-                    index={stepIndex}
-                    transitionKey={identity}
-                    onClick={(mods) => onStepClick?.(step.stepNumber, mods)}
-                    onDelete={() => onStepDelete?.(step.stepNumber)}
-                    onLongPress={() => onStepLongPress?.(step.stepNumber)}
-                    shouldAnimate={isStepCascading(stepIndex)}
-                    isSelected={selectedStepNumber === step.stepNumber}
-                    autoFocusOnSelection={autoFocusSelectedStep}
-                    isPracticeStep={practiceStepNumber === step.stepNumber}
-                    {activeMode}
-                    highlightStyle={highlightedSteps?.get(step.stepNumber) ??
-                      null}
-                    {musicalPosition}
-                    isTimelineMode={true}
-                    widthMultiplier={effectiveDuration}
-                    animationEpoch={displayState.animationEpoch}
-                    {leftPropTypeOverride}
-                    {rightPropTypeOverride}
-                    {fanAppearanceOverride}
-                    {leftBuugengFlippedOverride}
-                    {rightBuugengFlippedOverride}
-                    {leftColorOverride}
-                    {rightColorOverride}
-                    poseOnly={posePicker}
-                    onContentReady={() => noteContentReady(stepIndex, waveBand)}
-                  />
-                </div>
-                {#if onDurationChange && selectedStepNumber === step.stepNumber}
+                {#if !(isWaitingCell && step.isBlank)}
+                  <div
+                    class="history-layout-shell"
+                    inert={isAwaitingReveal(stepIndex)}
+                  >
+                    <StepCell
+                      {step}
+                      index={stepIndex}
+                      transitionKey={identity}
+                      onClick={(mods) => onStepClick?.(step.stepNumber, mods)}
+                      onDelete={() => onStepDelete?.(step.stepNumber)}
+                      onLongPress={() => onStepLongPress?.(step.stepNumber)}
+                      shouldAnimate={isStepCascading(stepIndex)}
+                      isSelected={selectedStepNumber === step.stepNumber}
+                      autoFocusOnSelection={autoFocusSelectedStep}
+                      isPracticeStep={practiceStepNumber === step.stepNumber}
+                      {activeMode}
+                      highlightStyle={highlightedSteps?.get(step.stepNumber) ??
+                        null}
+                      {musicalPosition}
+                      isTimelineMode={true}
+                      widthMultiplier={effectiveDuration}
+                      animationEpoch={displayState.animationEpoch}
+                      {leftPropTypeOverride}
+                      {rightPropTypeOverride}
+                      {fanAppearanceOverride}
+                      {leftBuugengFlippedOverride}
+                      {rightBuugengFlippedOverride}
+                      {leftColorOverride}
+                      {rightColorOverride}
+                      poseOnly={posePicker}
+                      onContentReady={() =>
+                        noteContentReady(stepIndex, waveBand)}
+                    />
+                  </div>
+                {/if}
+                {#if onDurationChange && !isWaitingCell && selectedStepNumber === step.stepNumber}
                   <DurationResizeHandle
                     currentDuration={duration}
                     onDragStart={() =>
@@ -1303,6 +1409,8 @@
 
 <style>
   .scroll-wrapper {
+    /* Steps read left to right in every language, Arabic included. */
+    direction: ltr;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
@@ -1542,6 +1650,7 @@
   }
 
   .timeline-start-column {
+    position: relative;
     width: var(--cell-size);
     flex-shrink: 0;
     display: flex;
@@ -1578,6 +1687,155 @@
   .timeline-start-column .timeline-cell {
     height: var(--cell-size);
     width: 100%;
+  }
+
+  /* ===== A LOOP's waiting repeat =====
+     The block already has the shape the finished LOOP will have: a place for
+     each step of the repeat, then the repeat itself, faint, once it is known.
+     Making it brings the same cells up to full strength, so nothing moves. */
+  .timeline-cell.waiting {
+    background: var(--dm-pictograph-bg, #0a0a0f);
+    pointer-events: none;
+  }
+
+  .timeline-cell.waiting > .history-layout-shell {
+    background: transparent;
+    opacity: 0.5;
+  }
+
+  .timeline-cell.repeat-member {
+    transition: background-color var(--duration-dramatic) var(--ease-out) var(--repeat-delay, 0ms);
+  }
+
+  .timeline-cell.repeat-member > .history-layout-shell {
+    transition: opacity var(--duration-dramatic) var(--ease-out) var(--repeat-delay, 0ms);
+  }
+
+  .timeline-cell.repeat-member::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    z-index: 2;
+    border: 1px dashed
+      color-mix(in oklab, var(--theme-text, #fff) 34%, transparent);
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity var(--duration-dramatic) var(--ease-out) var(--repeat-delay, 0ms),
+      inset var(--duration-dramatic) var(--ease-out),
+      border-radius var(--duration-dramatic) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .timeline-cell.waiting::before {
+    opacity: 1;
+  }
+
+  /* At the edge, so it goes round the step's number and letter. */
+  .timeline-cell.waiting.ready::before {
+    inset: 1px;
+    border-style: solid;
+    border-color: var(--waiting-color);
+    border-radius: 4px;
+  }
+
+  .waiting-mark,
+  .repeat-lead {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    overflow: hidden;
+    container-type: inline-size;
+    pointer-events: none;
+  }
+
+  .repeat-lead {
+    position: absolute;
+    left: 0;
+    top: calc(var(--lead-row) * var(--cell-size));
+    z-index: 2;
+  }
+
+  .repeat-sign {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+    font-size: var(--font-size-base, 16px);
+    line-height: 1.15;
+  }
+
+  .repeat-times {
+    font-size: 75%;
+    font-weight: 600;
+  }
+
+  .repeat-word {
+    max-width: 100%;
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  /* The cell's own width, so a bigger place carries a bigger word. */
+  @container (min-width: 5.5rem) {
+    .repeat-sign {
+      font-size: var(--font-size-2xl, 24px);
+    }
+
+    .repeat-word {
+      font-size: var(--font-size-min, 14px);
+    }
+  }
+
+  @container (min-width: 8rem) {
+    .repeat-sign {
+      font-size: var(--font-size-3xl, 30px);
+    }
+
+    .repeat-word {
+      font-size: var(--font-size-base, 16px);
+    }
+  }
+
+  .mandala-slot.repeat-mandala > .mandala-cell {
+    transition: opacity var(--duration-dramatic) var(--ease-out);
+  }
+
+  @starting-style {
+    .timeline-cell.repeat-member > .history-layout-shell {
+      opacity: 0;
+    }
+
+    .timeline-cell.waiting:not(.ready)::before {
+      opacity: 0;
+    }
+
+    .timeline-cell.waiting.ready::before {
+      border-color: color-mix(
+        in oklab,
+        var(--theme-text, #fff) 34%,
+        transparent
+      );
+    }
+
+    .mandala-slot.repeat-mandala > .mandala-cell {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .timeline-cell.repeat-member,
+    .timeline-cell.repeat-member::before,
+    .timeline-cell.repeat-member > .history-layout-shell,
+    .mandala-slot.repeat-mandala > .mandala-cell {
+      transition: none;
+    }
   }
 
   /* ===== Guide strip look =====

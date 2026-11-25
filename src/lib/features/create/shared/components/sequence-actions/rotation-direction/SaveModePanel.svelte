@@ -150,6 +150,8 @@
   }
 
   .preview-grid {
+    /* Steps read left to right in every language, Arabic included. */
+    direction: ltr;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
     gap: 6px;

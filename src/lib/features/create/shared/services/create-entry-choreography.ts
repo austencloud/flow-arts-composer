@@ -755,6 +755,15 @@ const LANDINGS: Readonly<Record<string, Landing>> = {
     order: beatAfter(".preview-stage"),
     spread: DURATION.instant,
   },
+  // The name on top, then where the hands start, dealt left to right; a first
+  // visit has the welcome in its place.
+  loop: {
+    pieces:
+      ".builder .first, .builder .top, .builder .start > h2, .builder .start > .groups, .builder .start .tile, .builder .view",
+    order: across,
+    spread: STAGGER.relaxed * 2,
+    deal: ".builder .start .tile",
+  },
   // The grid and dock leave together; the rings pop out of the grid's middle
   // as it lands, and the hint comes in with them.
   assemble: {

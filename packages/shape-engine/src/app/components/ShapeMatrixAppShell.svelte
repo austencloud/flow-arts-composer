@@ -9,6 +9,8 @@
   } from "../../services/shape-matrix-artwork";
   import { s as t } from "../../strings.svelte.js";
   import { tick, untrack } from "svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { propInkStyle } from "../state/prop-inks.js";
   import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
@@ -509,7 +511,9 @@
 {/snippet}
 
 <!-- "Surprise me" lives in the recipe bar above the grid. The header keeps a
-     dice only while a compact detail view has hidden that bar. -->
+     dice only while a compact detail view has hidden that bar, and on a
+     phone held sideways, where the header is the column beside the grid and
+     there is no recipe bar. -->
 {#snippet compactSurpriseAction()}
   <button
     type="button"
@@ -566,12 +570,17 @@
 <main
   class="shape-app"
   bind:this={appElement}
+  style={propInkStyle(getSettings().primaryPropColors)}
   class:focus-mode={focusMode}
   data-shape-matrix-app
   data-shape-engine={variant}
   data-level={appState.level}
   class:mirror
   class:compact-detail={appState.compact && appState.activeView === "detail"}
+  class:side-bar={appState.compact &&
+    appState.sideways &&
+    appState.activeView === "matrix" &&
+    !focusMode}
   class:theory
 >
   <header class="topbar" inert={focusMode} aria-hidden={focusMode}>
@@ -605,12 +614,15 @@
         {/if}
         <!-- The compact value editor keeps the grid as the hero. Matrix opens
              its level and turns; Theory names ratio editing directly and
-             opens both axis ratios together. -->
+             opens both axis ratios together. On its side the switch is a
+             stack in the grid's column and a row in the detail page's bar,
+             and the turn button changes width: sliding one shape into the
+             other showed both at once, so there they fade with the page. -->
         <div
           class="bar-slot"
           use:claimedViewTransitionName={{
             name: SHAPE_MATRIX_BAR_SURFACE_NAME,
-            enabled: appState.mandalaHandoff,
+            enabled: appState.mandalaHandoff && !appState.sideways,
           }}
         >
           <ShapeMatrixSurfaceControl compact />
@@ -619,7 +631,7 @@
           class="bar-slot"
           use:claimedViewTransitionName={{
             name: SHAPE_MATRIX_BAR_TURNS_NAME,
-            enabled: appState.mandalaHandoff,
+            enabled: appState.mandalaHandoff && !appState.sideways,
           }}
         >
           <ShapeMatrixTurnPopover
@@ -688,7 +700,10 @@
         {@render backAction()}
       {/if}
       {#if appState.compact}
-        {#if appState.activeView === "detail"}
+        <!-- On its side the grid has no recipe strip, so the dice stays in
+             the bar on both pages and rides the flight across; Detail then
+             has nothing to turn into. -->
+        {#if appState.activeView === "detail" || appState.sideways}
           {@render compactSurpriseAction()}
         {/if}
         {#if appState.activeView === "matrix" && hasPair}
@@ -697,7 +712,7 @@
             class="top-action compact-detail-action"
             use:claimedViewTransitionName={{
               name: SHAPE_MATRIX_BAR_SWAP_NAME,
-              enabled: appState.mandalaHandoff,
+              enabled: appState.mandalaHandoff && !appState.sideways,
             }}
             onclick={showDetail}
             transition:flightGrowFade={topSwapMotion()}
@@ -1345,11 +1360,15 @@
     .compact-context > strong {
       display: none;
     }
+  }
 
-    /* The back button drops its word for the same reason, and it has one more:
-       the surface control sitting right beside it already says Matrix or
-       Theory, so the word was printed twice. Theory is where the row actually
-       ran out of width, because two ratios are wider than two turn values. */
+  /* The back button drops its word for the same reason, and it has one more:
+     the surface control sitting right beside it already says Matrix or
+     Theory, so the word was printed twice. Theory is where the row actually
+     ran out of width, because two ratios are wider than two turn values. The
+     second bound is a small phone on its side, where the app's rail leaves the
+     row a little wider than an upright phone's. */
+  @container shape-matrix-app (max-width: 30rem) or ((max-width: 40rem) and (max-height: 30rem)) {
     .back-to-matrix {
       padding-inline: 0.6rem;
     }
@@ -1369,6 +1388,124 @@
     .shape-app:not(.compact-detail) .topbar {
       padding-block: 0.3rem;
     }
+  }
+
+  /* A phone on its side, at the grid. A bar across the top took a fifth of
+     the height and left the grid at its smallest tiles, scrolling, beside two
+     empty thirds of the screen. Here the bar stands up as a column at the
+     left and the grid gets the whole height (Austen chose this, 2026-11-24).
+     The title, the surface switch and the turn button stack at its top; the
+     dice, Detail and About sit at its foot. The detail page keeps its bar
+     across the top, and the flight between the two carries the named bar
+     pieces from one place to the other. */
+  .shape-app.side-bar {
+    grid-template-columns: clamp(11.5rem, 30cqw, 14rem) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "bar work";
+  }
+
+  .shape-app.side-bar.mirror {
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "bar work"
+      "bar credit";
+  }
+
+  .shape-app.side-bar .topbar {
+    grid-area: bar;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    min-height: 0;
+    padding: 0.55rem 0.5rem;
+    /* scrolls: only in a window shorter than the fullscreen prompt's 300px floor, so every control stays in reach */
+    overflow-y: auto;
+    border-right: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.11));
+    border-bottom: 0;
+  }
+
+  .shape-app.side-bar .workspace {
+    grid-area: work;
+  }
+
+  .shape-app.side-bar .attribution {
+    grid-area: credit;
+  }
+
+  .shape-app.side-bar .compact-context {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .shape-app.side-bar .compact-context > strong {
+    padding: 0.15rem 0.3rem 0;
+  }
+
+  .shape-app.side-bar .bar-slot > :global(*) {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Levels and Ratios stand one above the other, each the column's full
+     width. Side by side each got under five rem, and the long words for
+     Ratios (Соотношения, Proporciones, Verhältnisse) were cut off at the
+     smallest phone. The turn button has the column's width; its name keeps
+     the 14px words a person needs and wraps onto a second line rather than
+     run past its edge (Wren measured it still fits at 300px tall). */
+  .shape-app.side-bar .bar-slot :global(.ui-segments) {
+    flex-direction: column;
+  }
+
+  .shape-app.side-bar .bar-slot :global(.ui-segments .segment) {
+    min-width: 0;
+    min-height: var(--alt-touch-target, 36px);
+    justify-content: flex-start;
+    padding-inline: 0.65rem;
+  }
+
+  .shape-app.side-bar .bar-slot :global(.mode-copy) {
+    text-align: start;
+  }
+
+  .shape-app.side-bar .bar-slot :global(.turn-trigger) {
+    min-height: var(--alt-touch-target, 36px);
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .shape-app.side-bar .bar-slot :global(.trigger-action) {
+    text-align: start;
+    text-wrap: balance;
+  }
+
+  /* Detail takes the foot's whole last row, nearest the thumb, and the
+     small square buttons share the row above it. One row for all of them
+     ran out of width in some languages and dropped About onto a line of
+     its own. */
+  .shape-app.side-bar .top-actions {
+    flex-wrap: wrap;
+    min-width: 0;
+    margin-top: auto;
+    justify-content: flex-start;
+    gap: 0.4rem;
+  }
+
+  /* The column's controls take a phone's size (layout law: 36px), so it
+     fits a phone on its side with the browser's address bar showing, about
+     270px tall, without scrolling. */
+  .shape-app.side-bar .top-action {
+    min-width: var(--alt-touch-target, 36px);
+    min-height: var(--alt-touch-target, 36px);
+    padding-block: 0.3rem;
+  }
+
+  .shape-app.side-bar .compact-detail-action {
+    flex: 1 0 100%;
+    order: 1;
+    max-width: none;
   }
 
   /* While the tile-to-hero morph runs, the panes must land in place at once:

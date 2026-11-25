@@ -11,7 +11,6 @@
 </script>
 
 <script lang="ts">
-  import type { Snippet } from "svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import GuideScreens from "../../_components/fit/GuideScreens.svelte";
   import type { TopicFrame } from "./topic-pages";
@@ -24,8 +23,9 @@
     labels,
     screen,
     steadyHead = false,
-    beforeTitle,
     bodyHead = false,
+    threadName,
+    anyOrder,
     navLabel,
   }: {
     title: string;
@@ -33,12 +33,15 @@
     lessonHref: string | null;
     frame?: TopicFrame;
     labels: string[];
-    screen: Snippet<[number, (index: number) => void]>;
+    screen: GuideScreensProps["screen"];
     /** Keep the header the same on every screen (GuideScreens). */
     steadyHead?: boolean;
-    /** The page's own head, title and list (GuideScreens). */
-    beforeTitle?: GuideScreensProps["beforeTitle"];
+    /** The page's own title and list (GuideScreens). */
     bodyHead?: boolean;
+    /** The lesson's name on each screen (GuideScreens). */
+    threadName?: GuideScreensProps["threadName"];
+    /** The screens may be opened in any order (GuideScreens). */
+    anyOrder?: string;
     navLabel?: GuideScreensProps["navLabel"];
   } = $props();
 </script>
@@ -54,8 +57,10 @@
     lead={lessonHref ? lessonLink : undefined}
     {screen}
     {steadyHead}
-    {beforeTitle}
     {bodyHead}
+    thread={frame?.thread ?? null}
+    {threadName}
+    {anyOrder}
     {navLabel}
   />
 </div>

@@ -58,7 +58,7 @@ async function readScreens(container: HTMLElement): Promise<{
 }
 
 describe("Hand Motions topic page", () => {
-  it("plays the map, the two hands and the quiz in place, with no links out", async () => {
+  it("plays the map, the two hands and the quiz in place, then opens the run of six", async () => {
     const screen = render(HandMotionsTopicPage, {
       darkMode: false,
       kicker: "Level 1",
@@ -67,11 +67,13 @@ describe("Hand Motions topic page", () => {
     });
     const { labels, screens, links } = await readScreens(screen.container);
     expect(labels.slice(0, 2)).toEqual(["Three moves", "The map"]);
-    expect(labels.slice(-2)).toEqual(["Two hands", "Quiz"]);
+    expect(labels.slice(-3)).toEqual(["Two hands", "Quiz", "Up next"]);
     expect(screens[1]).toContain("Pick a point to move the hand.");
-    expect(screens.at(-2)).toContain("Move the blue hand, then the red hand.");
-    expect(screens.at(-1)).toContain("Which one is this?");
-    expect(links).toEqual([]);
+    expect(screens.at(-3)).toContain("Move the blue hand, then the red hand.");
+    expect(screens.at(-2)).toContain("Which one is this?");
+    // The last screen opens the run of six; it is the page's one link out.
+    expect(screens.at(-1)).toContain("Start with Dual-Shift");
+    expect(links).toEqual(["/guide/level-1/hm-type1"]);
     expect(screen.container.textContent).not.toContain(
       "Learn this interactively"
     );
@@ -87,6 +89,7 @@ describe("Hand Motions topic page", () => {
     const { labels, screens, links } = await readScreens(screen.container);
     expect(labels).not.toContain("Two hands");
     expect(labels).not.toContain("Quiz");
+    expect(labels).not.toContain("Up next");
     expect(screens[1]).toContain("Pick a point to move the hand.");
     expect(links).toEqual([]);
   });

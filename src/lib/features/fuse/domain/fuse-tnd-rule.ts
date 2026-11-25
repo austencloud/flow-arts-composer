@@ -17,7 +17,6 @@
  */
 import {
   MODE_FAMILY_ID,
-  MODE_LABEL,
   MODE_ORDER,
   type VtgMode,
 } from "@tka/shape-domain";
@@ -25,6 +24,7 @@ import {
   TND_BY_FAMILY,
   type TnDElement,
 } from "#lib/features/choreo-card/domain/tnd-element.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { createFuseRule, type FuseRule } from "./fuse-rule";
 
 export type FuseTnDMode = VtgMode;
@@ -94,9 +94,38 @@ export function withFuseTnDAxes(
 
 /** "Together, opposite" — the words the panel and the rail read. */
 export function fuseTnDModeLabel(mode: FuseTnDMode): string {
-  const [timing, direction] = MODE_LABEL[mode].split(" · ");
-  const fullDirection = direction === "Opp" ? "opposite" : "same";
-  return `${timing}, ${fullDirection}`;
+  switch (mode) {
+    case "TS":
+      return t("fuse_rule_mode_ts");
+    case "TO":
+      return t("fuse_rule_mode_to");
+    case "SS":
+      return t("fuse_rule_mode_ss");
+    case "SO":
+      return t("fuse_rule_mode_so");
+    case "QS":
+      return t("fuse_rule_mode_qs");
+    case "QO":
+      return t("fuse_rule_mode_qo");
+  }
+}
+
+/** "About together, opposite" — a rule whose Rewind breaks on some beat. */
+export function fuseTnDAboutLabel(mode: FuseTnDMode): string {
+  switch (mode) {
+    case "TS":
+      return t("fuse_rule_about_ts");
+    case "TO":
+      return t("fuse_rule_about_to");
+    case "SS":
+      return t("fuse_rule_about_ss");
+    case "SO":
+      return t("fuse_rule_about_so");
+    case "QS":
+      return t("fuse_rule_about_qs");
+    case "QO":
+      return t("fuse_rule_about_qo");
+  }
 }
 
 /**

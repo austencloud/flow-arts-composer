@@ -76,6 +76,7 @@ Supports letter highlighting during animation playback.
     visible = true,
     darkMode = false,
     presentation = "canvas",
+    align = "center",
     activeStepNumber = null,
     difficultyLevel = null,
     loopComponents = null,
@@ -91,6 +92,8 @@ Supports letter highlighting during animation playback.
     visible?: boolean;
     darkMode?: boolean;
     presentation?: "canvas" | "chrome";
+    /** Where a word with room to spare sits in its line. */
+    align?: "center" | "start";
     activeStepNumber?: number | null;
     difficultyLevel?: number | null;
     loopComponents?: Set<LOOPComponent> | null;
@@ -509,6 +512,7 @@ Supports letter highlighting during animation playback.
     class="word-header"
     class:dark-mode={darkMode}
     class:chrome={presentation === "chrome"}
+    class:align-start={align === "start"}
     data-controlled="true"
     bind:clientWidth={headerWidth}
     out:opaqueFade={{ duration: DURATION.normal, easing: cubicOut }}
@@ -852,7 +856,8 @@ Supports letter highlighting during animation playback.
   .word-header.chrome.dark-mode {
     --badge-size: clamp(24px, 7cqw, 34px);
     --badge-font: clamp(12px, 4cqw, 18px);
-    min-height: 28px;
+    /* A host short of height lowers --word-size (Fuse on a phone). */
+    min-height: var(--word-size, 28px);
     background: transparent;
     border-bottom: 0;
   }
@@ -860,9 +865,13 @@ Supports letter highlighting during animation playback.
   .word-header.chrome .word-text {
     padding: 0;
     font-size: min(
-      clamp(18px, 40cqw, 28px),
+      clamp(18px, 40cqw, var(--word-size, 28px)),
       calc(var(--word-room) / max(var(--word-em, 1), 1))
     );
+  }
+
+  .word-header.align-start .word-text {
+    justify-content: flex-start;
   }
 
   .word-header.chrome .pattern-glyph {

@@ -257,12 +257,13 @@ const LUNAR_TEXTURES = {
 
 export function createDefaultCosmicNightConfig(): CosmicSceneConfig {
   return {
+    // Space seen from the Moon: black, and no air for fog.
     sky: {
-      topColor: "#050510",
-      midColor: "#0d0d2a",
-      bottomColor: "#1a1040",
+      topColor: "#000000",
+      midColor: "#010102",
+      bottomColor: "#020203",
     },
-    fog: { color: "#080818", density: 0.008 },
+    fog: { color: "#000000", density: 0 },
     ground: {
       color: "#1a1a2e",
       size: 60,

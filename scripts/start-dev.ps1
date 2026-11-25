@@ -1,20 +1,13 @@
-# Unified dev server startup
-# - Starts the Vite dev server (background), waits until it actually serves,
-#   THEN starts the Cloudflare tunnel (dev.tkaflowarts.com).
+# Dev server startup (Vite only, local, https://[::1]:5173/).
+#
+# NOTE: the public dev address (dev.tkaflowarts.com) and its Cloudflare tunnel
+# were retired on 2026-11-24. Do not add a tunnel back to this script. Exposing
+# a dev server needs a login in front of it and Austen's explicit yes.
+#
 # - Verifies installed dependency manifests and imports before Vite starts. A
 #   broken install is rebuilt from the frozen lockfile and rechecked first.
-# - Restores the machine-local mkcert certificate pair before Vite starts. The
-#   tunnel always targets HTTPS, so allowing Vite to silently fall back to HTTP
-#   would leave a connected tunnel returning 502s.
-# - Ordering matters: cloudflared connects to Cloudflare's edge in ~1s, but Vite
-#   on a project this size takes much longer to boot. If the tunnel comes up
-#   first, dev.tkaflowarts.com returns 502 Bad Gateway for the whole cold-boot
-#   window (edge connected, origin not yet answering). Gating the tunnel on a
-#   real 200 from the origin closes that window.
-# - The script supervises Vite and the public tunnel independently. If
-#   cloudflared exits or stops serving while Vite is healthy, only the tunnel
-#   is recycled with bounded backoff. A dead tunnel can no longer leave the
-#   Agent Hub process looking healthy indefinitely.
+# - Restores the machine-local mkcert certificate pair before Vite starts, so
+#   Vite never silently falls back to HTTP.
 # - Process existence is not treated as origin health. If Vite stops serving
 #   while its pnpm/cmd wrapper remains alive, the launcher exits after three
 #   failed probes so pm2 can rebuild the complete process tree.
@@ -23,14 +16,7 @@
 #   tree, so without the watch every restart left an orphaned Vite holding
 #   :5173 and the next boot killed whichever server was actually healthy. When
 #   the shim disappears, the launcher stops itself and its finally block tears
-#   down Vite and the tunnel.
-#
-# Tunnel credentials (one-time setup on a new machine), first match wins:
-#   1. Token file:  %USERPROFILE%\.cloudflared\tka-dev.token
-#      (paste the tunnel token from Cloudflare Zero Trust -> Networks -> Tunnels,
-#       or run `cloudflared tunnel token tka-dev` on a logged-in machine)
-#   2. Origin cert: %USERPROFILE%\.cloudflared\cert.pem  (from `cloudflared tunnel login`)
-# If neither exists the tunnel is skipped with a warning and Vite starts anyway.
+#   down Vite.
 
 try { $Host.UI.RawUI.WindowTitle = "TKA Dev Server" } catch { }
 
@@ -72,7 +58,7 @@ function Test-SupervisorAlive {
     if ($supervisorPid -le 0) { return $true }
     $alive = $null -ne (Get-Process -Id $supervisorPid -ErrorAction SilentlyContinue)
     if (-not $alive) {
-        Write-Status "pm2 shim (PID $supervisorPid) is gone - this launcher is orphaned; shutting down its Vite and tunnel."
+        Write-Status "pm2 shim (PID $supervisorPid) is gone - this launcher is orphaned; shutting down its Vite."
     }
     return $alive
 }
@@ -93,81 +79,16 @@ function Get-HttpStatus {
     return & curl.exe @curlArguments
 }
 
-function Test-Http200 {
-    param(
-        [string]$Url,
-        [bool]$SkipCertificateCheck = $false,
-        [int]$TimeoutSec = 8
-    )
-
-    return (Get-HttpStatus $Url $SkipCertificateCheck $TimeoutSec) -eq "200"
-}
-
 # Vite answers this Accept header itself with a 204 before any page renders,
 # which separates a live server that is still rendering from a dead one.
 function Test-VitePing([string]$Url) {
     return (Get-HttpStatus $Url $true 5 "text/x-vite-ping") -eq "204"
 }
 
-function Get-TkaDevTunnelToken {
-    param([string]$TokenFile)
-
-    if (-not (Test-Path -LiteralPath $TokenFile)) { return $null }
-    return (Get-Content -LiteralPath $TokenFile -Raw).Trim()
-}
-
-# True when a cloudflared command line runs this tunnel, by name or by its
-# token. Other tunnels on this machine (dev2, dev3, tka-mcp) never match.
-function Test-TkaDevTunnelCommand {
-    param([string]$CommandLine, [string]$Token)
-
-    if (-not $CommandLine) { return $false }
-    $isNamedTunnel = $CommandLine -match '(?i)(?:^|\s)run\s+tka-dev(?:\s|$)'
-    $usesManagedToken = $Token -and $CommandLine.Contains($Token)
-    return [bool]($isNamedTunnel -or $usesManagedToken)
-}
-
-# The Windows service named Cloudflared runs the remotely managed tka-mcp
-# tunnel, which carries mcp.tkaflowarts.com to the Flow Arts Knowledge MCP
-# server (mcp-server/deploy/README.md). It must stay running. Refuse to launch
-# only when that service runs this tunnel instead. PathName holds a tunnel
-# token, so never print it.
-function Test-CompetingCloudflaredService {
-    param([string]$TokenFile)
-
-    $service = Get-CimInstance Win32_Service -Filter "Name = 'Cloudflared'" -ErrorAction SilentlyContinue
-    if (-not $service -or $service.State -ne "Running") { return $false }
-
-    return Test-TkaDevTunnelCommand $service.PathName (Get-TkaDevTunnelToken $TokenFile)
-}
-
-# A previous launcher or an ad-hoc tunnel command can leave a connector alive
-# after its owner exits. Cloudflare will keep routing requests through every
-# registered connector, so even one stale process can make otherwise healthy
-# requests fail intermittently. Match only this tunnel, never dev2/dev3.
-function Get-StaleTkaTunnelProcesses {
-    param([string]$TokenFile)
-
-    $token = Get-TkaDevTunnelToken $TokenFile
-    return @(Get-CimInstance Win32_Process -Filter "Name = 'cloudflared.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { Test-TkaDevTunnelCommand $_.CommandLine $token })
-}
-
-function Clear-StaleTkaTunnelProcesses {
-    param([string]$TokenFile)
-
-    $staleProcesses = @(Get-StaleTkaTunnelProcesses $TokenFile)
-    foreach ($process in $staleProcesses) {
-        Write-Status "Stopping stale tka-dev tunnel connector PID $($process.ProcessId) before managed startup."
-        Stop-ProcessTree $process.ProcessId
-    }
-    if ($staleProcesses.Count -gt 0) { Start-Sleep -Seconds 1 }
-}
-
 # Stop-Process on the cmd wrapper leaves the pnpm/node grandchildren alive
 # (it is not a tree kill), and an orphaned vite holding :5173 pushes the next
 # boot to :5174 because `pnpm run dev` has no --strictPort — which silently
-# breaks the tunnel and every localhost:5173 consumer. taskkill /T takes the
+# breaks every localhost:5173 consumer. taskkill /T takes the
 # whole tree down.
 function Stop-ProcessTree($processId) {
     if ($processId) {
@@ -287,7 +208,7 @@ function Ensure-DevHttpsCertificate($RepoRoot) {
 
     $mkcert = Join-Path $RepoRoot ".tools\mkcert.exe"
     if (-not (Test-Path -LiteralPath $mkcert)) {
-        throw "Dev HTTPS certificate is missing and $mkcert is unavailable. Vite was not started because the Cloudflare tunnel requires HTTPS."
+        throw "Dev HTTPS certificate is missing and $mkcert is unavailable. Vite was not started because the dev server requires HTTPS."
     }
 
     New-Item -ItemType Directory -Force -Path $certificateDirectory | Out-Null
@@ -297,53 +218,10 @@ function Ensure-DevHttpsCertificate($RepoRoot) {
     if (($LASTEXITCODE -ne 0) -or
         (-not (Test-Path -LiteralPath $certificatePath)) -or
         (-not (Test-Path -LiteralPath $keyPath))) {
-        throw "Dev HTTPS certificate generation failed. Vite was not started because the Cloudflare tunnel requires HTTPS."
+        throw "Dev HTTPS certificate generation failed. Vite was not started because the dev server requires HTTPS."
     }
 
     Write-Status "Dev HTTPS certificate restored."
-}
-
-function Start-TkaTunnel {
-    param(
-        [string]$Cloudflared,
-        [string]$TokenFile,
-        [string]$CertFile
-    )
-
-    if (Test-Path -LiteralPath $TokenFile) {
-        $token = (Get-Content -LiteralPath $TokenFile -Raw).Trim()
-        if (-not $token) {
-            throw "The tka-dev tunnel token file is empty."
-        }
-
-        # Flag order matters. These configure the tunnel command and must
-        # precede the run subcommand. After `run`, ingress flags parse but never
-        # reach the ingress builder. HTTP/2 is deliberate: cloudflared's own
-        # connectivity precheck selects it for this host, while QUIC connections
-        # have remained registered during repeated public request timeouts.
-        return Start-Process -FilePath $Cloudflared -ArgumentList `
-            "tunnel", "--protocol", "http2", "--url", "https://localhost:5173", "--no-tls-verify", `
-            "run", "--token", $token -NoNewWindow -PassThru
-    }
-
-    if (Test-Path -LiteralPath $CertFile) {
-        # Named-tunnel ingress and origin TLS settings live in
-        # %USERPROFILE%\.cloudflared\config.yml.
-        return Start-Process -FilePath $Cloudflared -ArgumentList `
-            "tunnel", "--protocol", "http2", "run", "tka-dev" -NoNewWindow -PassThru
-    }
-
-    return $null
-}
-
-function Register-TunnelExitCleanup($Process) {
-    if (-not $Process) { return }
-
-    # Kill the current tunnel if this window closes without reaching finally.
-    # Restarted tunnel children each receive their own exit cleanup registration.
-    $null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
-        Get-Process -Id $event.MessageData -ErrorAction SilentlyContinue | Stop-Process -Force
-    } -MessageData $Process.Id
 }
 
 # Main execution
@@ -353,33 +231,10 @@ Write-Line "     TKA Development Server"
 Write-Line "========================================"
 Write-Line ""
 
-# --- Resolve cloudflared + credentials (tunnel starts later, after Vite is up) -
-$cloudflared = $null
-# Only a real .exe works with Start-Process. Get-Command can resolve to the npm
-# shim (cloudflared.ps1, an ExternalScript) which Start-Process rejects with
-# "%1 is not a valid Win32 application." Take an Application whose source ends in
-# .exe; otherwise fall back to the known install path.
-$cmd = Get-Command cloudflared -CommandType Application -ErrorAction SilentlyContinue |
-    Where-Object { $_.Source -like "*.exe" } | Select-Object -First 1
-if ($cmd) { $cloudflared = $cmd.Source }
-elseif (Test-Path "C:\Program Files (x86)\cloudflared\cloudflared.exe") {
-    $cloudflared = "C:\Program Files (x86)\cloudflared\cloudflared.exe"
-}
+Write-Line "Local only: no public tunnel (retired 2026-11-24)."
+Write-Line ""
 
-$tokenFile = Join-Path $env:USERPROFILE ".cloudflared\tka-dev.token"
-$certFile = Join-Path $env:USERPROFILE ".cloudflared\cert.pem"
-$tunnelProc = $null
-$hasTunnelCredentials = (Test-Path -LiteralPath $tokenFile) -or (Test-Path -LiteralPath $certFile)
-$manageTunnel = $cloudflared -and $hasTunnelCredentials
-
-if ($manageTunnel -and (Test-CompetingCloudflaredService $tokenFile)) {
-    throw "The Windows Cloudflared service runs the tka-dev tunnel and would create a second tka-dev connector. Stop and disable that service before starting the Agent Hub dev server."
-}
-if ($manageTunnel) {
-    Clear-StaleTkaTunnelProcesses $tokenFile
-}
-
-# --- Start Vite first, in the background, so we can wait for it -----------------
+# --- Start Vite in the background so we can supervise it -----------------
 # cmd.exe /c wraps pnpm (a .cmd/.ps1 shim Start-Process can't launch directly)
 # and stays alive for the life of the dev server. -NoNewWindow streams Vite logs
 # into this console and keeps node in this process tree, so console Ctrl+C and
@@ -401,67 +256,29 @@ $viteProc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "pnpm run dev"
     -WorkingDirectory $repoRoot -NoNewWindow -PassThru
 
 try {
-    # --- Wait for Vite to actually serve, THEN bring up the tunnel -------------
-    if (-not $cloudflared) {
-        Write-Status "cloudflared not found - skipping tunnel. Install: winget install Cloudflare.cloudflared"
-    } elseif ($hasTunnelCredentials) {
-        Write-Status "Waiting for Vite on https://localhost:5173 before opening the tunnel..."
-        if (Wait-ForOrigin) {
-            Write-Status "Vite is serving - starting Cloudflare tunnel (dev.tkaflowarts.com)."
-        } else {
-            Write-Status "Vite not ready after 180s - starting tunnel anyway (may 502 until Vite is up)."
-        }
-
-        try {
-            $tunnelProc = Start-TkaTunnel $cloudflared $tokenFile $certFile
-        } catch {
-            Write-Status "Cloudflare tunnel could not start: $($_.Exception.Message)"
-            $tunnelProc = $null
-        }
-
-        if ($tunnelProc) {
-            Register-TunnelExitCleanup $tunnelProc
-            Write-Status "Tunnel connector started; verifying https://dev.tkaflowarts.com in the background."
-        }
+    # A cold Vite boot can take longer than three 30 s probes. Wait for the
+    # first real 200 before supervising so a slow start is not mistaken for a
+    # dead server.
+    Write-Status "Waiting for Vite on https://localhost:5173..."
+    if (Wait-ForOrigin) {
+        Write-Status "Vite is serving."
     } else {
-        Write-Status "No tunnel credentials - dev.tkaflowarts.com will NOT be live."
-        Write-Status "  One-time fix: run 'cloudflared tunnel login', then restart."
-        Write-Status "  (Or save the tunnel token to $tokenFile)"
+        Write-Status "Vite not ready after 180s - supervising anyway."
     }
 
-    # Supervise Vite and the tunnel separately. Process existence is not enough:
-    # cloudflared can stay connected while the public route hangs. Three failed
-    # public probes recycle only cloudflared, preserving the healthy Vite server.
+    # Supervise Vite. Process existence is not enough: the origin must answer.
     $originUrl = "https://[::1]:5173/"
     $nextHealthProbeAt = Get-Date
     $originFailureCount = 0
     $originBusySince = $null
-    $publicFailureCount = 0
-    $tunnelRestartCount = 0
     while ($viteProc -and -not $viteProc.HasExited) {
         if (-not (Test-SupervisorAlive)) { break }
-        if ($manageTunnel -and ((-not $tunnelProc) -or $tunnelProc.HasExited)) {
-            $exitCode = if ($tunnelProc) { $tunnelProc.ExitCode } else { "not started" }
-            $tunnelRestartCount += 1
-            $restartDelaySec = [Math]::Min(30, [Math]::Pow(2, [Math]::Min(4, $tunnelRestartCount)))
-            Write-Status "Cloudflare tunnel unavailable (code $exitCode); restarting in $restartDelaySec seconds while Vite stays online."
-            Start-Sleep -Seconds $restartDelaySec
-            try {
-                $tunnelProc = Start-TkaTunnel $cloudflared $tokenFile $certFile
-                Register-TunnelExitCleanup $tunnelProc
-            } catch {
-                Write-Status "Cloudflare tunnel restart failed: $($_.Exception.Message)"
-                $tunnelProc = $null
-            }
-            $publicFailureCount = 0
-            $nextHealthProbeAt = (Get-Date).AddSeconds(10)
-        } elseif ((Get-Date) -ge $nextHealthProbeAt) {
+        if ((Get-Date) -ge $nextHealthProbeAt) {
             $originStatus = Get-HttpStatus $originUrl $true
             if ($originStatus -ne "200" -and (Test-SvelteKitGeneratedStateError $originUrl $true)) {
                 throw "SvelteKit's generated root route proxy is unavailable. Exiting so pm2 can repair the generated state and restart the dev stack."
             } elseif ($originStatus -ne "200" -and (Test-VitePing $originUrl)) {
                 $originFailureCount = 0
-                $publicFailureCount = 0
                 if ($originStatus -eq "000") {
                     # An eight-second page probe can time out while browsers
                     # successfully render and load modules. A responsive Vite
@@ -480,7 +297,6 @@ try {
                 }
             } elseif ($originStatus -ne "200") {
                 $originFailureCount += 1
-                $publicFailureCount = 0
                 Write-Status "Local Vite origin probe failed ($originFailureCount/3)."
                 if ($originFailureCount -ge 3) {
                     throw "Local Vite origin remained unavailable across three probes. Exiting so pm2 can restart the complete dev stack."
@@ -491,25 +307,6 @@ try {
                 }
                 $originFailureCount = 0
                 $originBusySince = $null
-
-                if ($tunnelProc) {
-                    if (Test-Http200 "https://dev.tkaflowarts.com/") {
-                        if ($publicFailureCount -gt 0) {
-                            Write-Status "Public tunnel recovered: https://dev.tkaflowarts.com"
-                        } elseif ($tunnelRestartCount -eq 0) {
-                            Write-Status "Tunnel verified: https://dev.tkaflowarts.com"
-                        }
-                        $publicFailureCount = 0
-                        $tunnelRestartCount = 0
-                    } else {
-                        $publicFailureCount += 1
-                        Write-Status "Public tunnel probe failed ($publicFailureCount/3); local Vite remains healthy."
-                        if ($publicFailureCount -ge 3) {
-                            Write-Status "Public tunnel is not serving - recycling cloudflared without stopping Vite."
-                            Stop-ProcessTree $tunnelProc.Id
-                        }
-                    }
-                }
             }
             $nextHealthProbeAt = (Get-Date).AddSeconds(30)
         }
@@ -517,9 +314,6 @@ try {
     }
 } finally {
     Write-Status "Shutting down..."
-    if ($tunnelProc -and -not $tunnelProc.HasExited) {
-        Stop-ProcessTree $tunnelProc.Id
-    }
     if ($viteProc -and -not $viteProc.HasExited) {
         Stop-ProcessTree $viteProc.Id
     }

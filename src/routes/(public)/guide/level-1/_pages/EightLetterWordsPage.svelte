@@ -174,7 +174,7 @@
       // 2026-07-13 after Austen caught the discontinuity.
       key: "el-csnzvw",
       word: "CΣNZIΘUW",
-      tag: "Mirrored + Swapped LOOP",
+      tag: "Reflected + Swapped LOOP",
       rowY: 448,
       startLetter: Letter.ALPHA,
       startLeft: SO_,
@@ -247,7 +247,7 @@
   const RULES = [84, 436];
   const LABELS = [
     { word: "IIΩXKEΣY", tag: "Rotated LOOP", y: 210 },
-    { word: "CΣNZIΘUW", tag: "Mirrored + Swapped LOOP", y: 562 },
+    { word: "CΣNZIΘUW", tag: "Reflected + Swapped LOOP", y: 562 },
   ];
 
   // ── Text (LOOP facelift) ────────────────────────────────────────────────────

@@ -547,16 +547,23 @@ This is why one LOOP type renders at two lengths (mirrored+swapped as 4 OR 8): t
 
 ### Compositional Notation
 
-Instead of flat component bags like {MIRRORED, SWAPPED, INVERTED}, express LOOPs as ordered compositions:
+A flat set like {Reflected, Swapped, Inverted} leaves out how the LOOP is built. The name carries it:
 
-- \`/\` = applied **simultaneously** as one compound operation
-- \`+\` = applied **sequentially** (inner pattern, then outer transformation on top)
+- \`+\` = **at the same time**
+- \`then\` = **one after the other**: the whole round first, then the round again with the change
+- \`½\` = at every half of the round, \`¼\` = at every quarter
 
-Example: \`SWAPPED + MIRRORED/INVERTED\`
-1. Take a SWAPPED inner pattern (seed doubled via hand-role swap)
-2. Apply MIRRORED and INVERTED simultaneously (mirror placements + flip pro/anti)
+A pass is the seed played once. A round is what the part before "then" builds. With Rotated it is one full turn of the grid: two passes by halves, four by quarters.
 
-The flat label {MIRRORED, SWAPPED, INVERTED} doesn't tell you which transformation came first. The compositional notation preserves construction order.
+1. In a name with Rotated, every part before "then" carries its own fraction. Rotated alone is ½ Rotated or ¼ Rotated.
+2. A part after "then" happens once and carries no fraction. A name without Rotated carries none.
+3. Rotated and Reflected never take a \`+\`. A turn and a reflection at the same time are another reflection.
+
+Example: \`¼ Rotated + ½ Inverted, then Reflected\`
+1. Four passes, each a quarter turn on from the last. The third and fourth are inverted as well.
+2. Those four passes again, reflected. Eight passes in all.
+
+Two LOOPs made of the same parts can be different sequences. \`¼ Rotated + ¼ Swapped\` is four passes, and the hands trade at every join. \`¼ Rotated, then Swapped\` is eight passes: a whole round, then the round again with the hands traded.
 
 ### Direct Closure and Wrapped Blocks
 

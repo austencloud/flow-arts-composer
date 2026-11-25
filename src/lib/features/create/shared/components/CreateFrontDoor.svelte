@@ -41,6 +41,7 @@
     ["shape-engine", 2],
     ["fuse", 3],
     ["tunnel", 4],
+    ["loop", 6],
     ["assemble", 5],
   ]);
 
@@ -142,10 +143,7 @@
     previewHoldTaken = true;
     if (sceneOrder().length === 0 || !bootScreenCovers()) return;
     warmMethodPreviewScenes(sceneOrder());
-    releasePreviewHold = holdBootScreen(
-      "create-previews",
-      FIRST_VIEW_WAIT_MS
-    );
+    releasePreviewHold = holdBootScreen("create-previews", FIRST_VIEW_WAIT_MS);
     cancelLeavingReveal = runAfterBootScreen(() => reveal.revealNow());
   }
 
@@ -656,6 +654,24 @@
     }
   }
 
+  /* Seven methods at tablet width: Construct on its own row, then two rows of
+     three, so the board keeps its three rows and never scrolls. */
+  @container create-entry (min-width: 620px) and (max-width: 1199px) {
+    .method-index[data-method-count="7"] {
+      --preview-side: clamp(48px, 9cqi, 80px);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      row-gap: 10px;
+    }
+
+    .method-index[data-method-count="7"] .method-description {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      overflow: hidden;
+    }
+  }
+
   @container create-entry (max-width: 619px) {
     .two-methods .method-index {
       --preview-side: clamp(48px, 16cqi, 74px);
@@ -805,8 +821,15 @@
       grid-column: span 6;
     }
 
-    .method-index[data-method-count="6"] .method-item:not(.primary-method) {
+    .method-index[data-method-count="6"] .method-item:not(.primary-method),
+    .method-index[data-method-count="7"] .method-item:not(.primary-method) {
       grid-column: span 3;
+    }
+
+    /* Seven methods make a row of three and a row of four. */
+    .method-index[data-method-count="7"]
+      .method-item.method-item.method-item:nth-child(-n + 3) {
+      grid-column: span 4;
     }
 
     .method-card {
@@ -1029,6 +1052,26 @@
     .method-index[data-method-count="5"]
       .method-item.method-item:nth-child(n + 4) {
       grid-column: span 3;
+    }
+
+    /* Seven still make two rows: three, then four. */
+    .method-index[data-method-count="7"] {
+      --preview-side: clamp(36px, 11cqh, 48px);
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .method-index[data-method-count="7"] .method-card.method-card {
+      column-gap: 8px;
+      padding-inline: 8px;
+    }
+
+    .method-index[data-method-count="7"] .method-item.method-item.method-item {
+      grid-column: span 3;
+    }
+
+    .method-index[data-method-count="7"]
+      .method-item.method-item.method-item:nth-child(-n + 3) {
+      grid-column: span 4;
     }
 
     .method-index .method-item.method-item:only-child {

@@ -22,6 +22,8 @@
   import { DURATION } from "@austencloud/motion";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ShapeMatrixValueScroller from "./ShapeMatrixValueScroller.svelte";
+  import ShapeMatrixPropInks from "./ShapeMatrixPropInks.svelte";
+  import { propInkStyle } from "../state/prop-inks.js";
 
   type Hand = "left" | "right" | "left-back";
 
@@ -148,11 +150,7 @@
     {@const unit =
       labelMode === "ratios" ? t("shape_engine_ratio") : t("shape_engine_turn")}
     {#if layout === "inline"}
-      <div
-        class="turn-values"
-        style:--dm-motion-blue={primaryPropColors?.left}
-        style:--dm-motion-red={primaryPropColors?.right}
-      >
+      <div class="turn-values" style={propInkStyle(primaryPropColors)}>
         <span class="hand-label">{axis.label}</span>
         <SegmentedControl
           options={optionsFor(axis.side)}
@@ -214,8 +212,6 @@
                   <section
                     {...props}
                     class="turn-popover"
-                    style:--dm-motion-blue={primaryPropColors?.left}
-                    style:--dm-motion-red={primaryPropColors?.right}
                     transition:flyFade={{ y: -6, duration: DURATION.normal }}
                     aria-label={t("shape_engine_choose_axis_unit", {
                       axis: axis.label,
@@ -225,6 +221,7 @@
                           : t("shape_engine_turn"),
                     })}
                   >
+                    <ShapeMatrixPropInks colors={primaryPropColors ?? null}>
                     <ShapeMatrixValueScroller
                       label={t("shape_engine_axis_unit", {
                         axis: axis.label,
@@ -246,6 +243,7 @@
                             : t("shape_engine_turn"),
                       })}
                     />
+                    </ShapeMatrixPropInks>
                   </section>
                 {/if}
               </div>

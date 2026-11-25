@@ -49,7 +49,16 @@ export function flat(points: readonly Pt[], y: number, tile?: number): BufferGeo
   const uv = new Float32Array(points.length * 2);
   if (tile) points.forEach((p, i) => uv.set([p.x / tile, p.z / tile], i * 2));
   g.setAttribute("uv", new Float32BufferAttribute(uv, 2));
-  g.setIndex(triangles.flat());
+  // x and z read as a page have their up side facing the ground, so each triangle is turned over
+  // to face the sky. A double-sided material lights the far side of one that faces away, which
+  // had the sun under the lawn.
+  const up = triangles.flatMap(([a, b, c]) => {
+    const p = points[a!]!;
+    const q = points[b!]!;
+    const r = points[c!]!;
+    return (q.z - p.z) * (r.x - p.x) - (q.x - p.x) * (r.z - p.z) >= 0 ? [a!, b!, c!] : [a!, c!, b!];
+  });
+  g.setIndex(up);
   return g;
 }
 

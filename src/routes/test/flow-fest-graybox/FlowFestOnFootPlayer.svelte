@@ -18,6 +18,10 @@
     Character3D,
     type CharacterId,
   } from "#lib/shared/3d/domain/character-model.js";
+  import type {
+    LocomotionGaitClock,
+    TerminalStepPlan,
+  } from "@austencloud/scene-3d";
 
   interface Props {
     /** Physics body centre, which sits `bodyCentreAboveGroundMeters` up. */
@@ -34,6 +38,12 @@
     isCrouching?: boolean;
     isGrounded?: boolean;
     verticalVelocity?: number;
+    /** A person's step rate for the speed, and no second speed easing. */
+    naturalGait?: boolean;
+    /** Two braking steps to stand still on, from the host's stop planner. */
+    terminalStepPlan?: TerminalStepPlan | null;
+    /** The walk's footfall clock, after each animation update. */
+    onGaitClock?: (clock: LocomotionGaitClock) => void;
   }
 
   const props: Props = $props();
@@ -70,4 +80,7 @@
   enableLocomotion={true}
   enableFootPlanting={true}
   enableRootMotion={false}
+  naturalGait={props.naturalGait ?? false}
+  terminalStepPlan={props.terminalStepPlan ?? null}
+  onGaitClock={props.onGaitClock}
 />

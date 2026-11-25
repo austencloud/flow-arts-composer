@@ -269,6 +269,8 @@
   }
 
   .sequences-comparison {
+    /* Steps and the arrow read left to right in every language. */
+    direction: ltr;
     display: flex;
     gap: 12px;
     align-items: center;

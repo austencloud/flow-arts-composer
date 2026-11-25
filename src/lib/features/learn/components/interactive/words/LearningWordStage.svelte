@@ -35,6 +35,41 @@
   let stageWidth = $state(
     typeof window === "undefined" ? 900 : window.innerWidth
   );
+
+  // The card sits under the animation and takes only the height its beats
+  // need. Four beats go in one row while each can stay at 88px or more; any
+  // narrower and they wrap to two rows of two instead of shrinking.
+  const BEAT_MIN_PX = 88;
+  const CARD_PAD_PX = 24;
+  const CARD_HEADING_PX = 43;
+  let cardWidth = $state(0);
+  const beatCount = $derived(sequence.steps?.length ?? 0);
+  const cardColumns = $derived(
+    beatCount === 0 || beatCount > 4
+      ? null
+      : cardWidth >= beatCount * BEAT_MIN_PX + CARD_PAD_PX + 8
+        ? beatCount
+        : Math.ceil(beatCount / 2)
+  );
+  const cardRows = $derived(
+    cardColumns ? Math.ceil(beatCount / cardColumns) : 1
+  );
+  // The animation is the biggest thing in the column, so the card's row may
+  // take about a sixth of the column's height at most (never under 88px a
+  // beat). Stacked on a phone the column has no box of its own and no cap.
+  let columnHeight = $state(0);
+  const cardCell = $derived.by(() => {
+    if (!cardColumns) return null;
+    const byWidth = (cardWidth - CARD_PAD_PX) / cardColumns;
+    const byHeight =
+      columnHeight > 0 ? columnHeight * 0.17 : Number.POSITIVE_INFINITY;
+    return Math.floor(Math.max(BEAT_MIN_PX, Math.min(byWidth, byHeight)));
+  });
+  const cardHeight = $derived(
+    cardCell && cardColumns
+      ? CARD_HEADING_PX + CARD_PAD_PX + cardCell * cardRows
+      : null
+  );
 </script>
 
 <div class="learning-word-stage" bind:clientWidth={stageWidth}>
@@ -119,18 +154,27 @@
     <section
       class="studio-pane card-pane"
       aria-label={tDynamic("learn_word_stage_choreo_card")}
+      bind:clientWidth={cardWidth}
+      style:height={cardHeight ? `${cardHeight}px` : undefined}
     >
       <header class="pane-heading">
         <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
         <span>{tDynamic("learn_word_stage_choreo_card")}</span>
       </header>
       <div class="pane-body card-body">
+        <div
+          class="card-fit"
+          style:width={cardCell && cardColumns
+            ? `${cardCell * cardColumns}px`
+            : undefined}
+        >
         <ChoreoCard
           {sequence}
           showWord={false}
           showStepNumbers
           showDifficultyLevel={false}
-          includeStartPlacement
+          includeStartPlacement={false}
+          columnCount={cardColumns}
           showNotes={false}
           showLoopGlyph={false}
           showQRCode={false}
@@ -139,8 +183,16 @@
           leftPropType={PropType.STAFF}
           rightPropType={PropType.STAFF}
         />
+        </div>
       </div>
     </section>
+  {/snippet}
+
+  {#snippet stageColumn()}
+    <div class="stage-column" bind:clientHeight={columnHeight}>
+      {@render animationPane()}
+      {@render cardPane()}
+    </div>
   {/snippet}
 
   <div class="studio-body">
@@ -157,18 +209,10 @@
           resizeLabel: tDynamic("learn_word_stage_resize_video_animation"),
         },
         {
-          id: "animation",
-          content: animationPane,
-          defaultSize: 1.35,
+          id: "stage",
+          content: stageColumn,
+          defaultSize: 2.17,
           minSize: 360,
-          resizeLabel: tDynamic("learn_word_stage_resize_animation_card"),
-        },
-        {
-          id: "card",
-          content: cardPane,
-          defaultSize: 0.82,
-          minSize: 260,
-          resizable: false,
         },
       ]}
     />
@@ -213,6 +257,19 @@
 
   .studio-body :global(.panel-group) {
     height: 100%;
+  }
+
+  .stage-column {
+    display: grid;
+    grid-template-rows: minmax(14rem, 1fr) auto;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .stage-column .card-pane {
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .studio-pane {
@@ -267,6 +324,12 @@
   .card-body {
     padding: clamp(0.55rem, 0.9cqw, 1rem);
     background: color-mix(in srgb, var(--theme-panel-bg) 82%, transparent);
+  }
+
+  .card-fit {
+    width: 100%;
+    height: 100%;
+    margin-inline: auto;
   }
 
   .empty-state {
@@ -337,11 +400,25 @@
     .studio-body {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(2, minmax(19rem, 1fr));
-      grid-template-areas:
-        "video animation"
-        "card animation";
+      grid-template-rows: minmax(34rem, 1fr);
       overflow-y: auto;
+    }
+  }
+
+  /* One column: video, then the animation, then the card under it. The
+     stage column steps aside so its two panes become rows of the body. */
+  @container learning-word-stage (max-width: 760px) {
+    .studio-body {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 13rem min(100cqw, 26rem) auto;
+      grid-template-areas:
+        "video"
+        "animation"
+        "card";
+    }
+
+    .stage-column {
+      display: contents;
     }
 
     .video-pane {
@@ -355,28 +432,9 @@
     .card-pane {
       grid-area: card;
     }
-  }
 
-  @container learning-word-stage (max-width: 760px) {
-    .studio-body {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: 10.5rem 24rem 31rem;
-      grid-template-areas:
-        "video"
-        "animation"
-        "card";
-    }
-
-    .video-pane {
-      min-height: 15rem;
-    }
-
-    .animation-pane {
-      min-height: 24rem;
-    }
-
-    .card-pane {
-      min-height: 31rem;
+    .stage-column .card-pane {
+      border-top: 0;
     }
 
     .empty-state {

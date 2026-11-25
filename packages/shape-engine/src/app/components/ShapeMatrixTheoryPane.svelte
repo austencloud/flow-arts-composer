@@ -9,6 +9,7 @@
   import {
     theoryCellArtworkSrc,
     theoryHeaderArtworkSrc,
+    theoryTilePaths,
   } from "../../services/theory-matrix-artwork.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
@@ -64,6 +65,24 @@
     right: appState.data?.reach.right ?? MANDALA_STANDARD_TIP_DX,
   });
   const scale = $derived(appState.data?.clubTipDx ?? MANDALA_STANDARD_TIP_DX);
+
+  /* The first fill draws on, as the Matrix grid's does: a pane that opens
+     while the app is still loading draws each tile on once the page is
+     shown; one that opens later shows the pictures at once. The draw-in
+     reveals the same paths the stills are painted from. */
+  // svelte-ignore state_referenced_locally
+  const coldStart = appState.data === null;
+  const drawGeometry = {
+    header: (flower: TheoryFlower, hand: "left" | "right") => ({
+      paths: theoryTilePaths(flower, hand, reach[hand]),
+      tipDx: scale,
+    }),
+    cell: (left: TheoryFlower, right: TheoryFlower) => ({
+      left: theoryTilePaths(left, "left", reach.left),
+      right: theoryTilePaths(right, "right", reach.right),
+      tipDx: scale,
+    }),
+  };
 </script>
 
 {#snippet cornerGuide()}
@@ -77,13 +96,15 @@
 <section
   class="theory-pane"
   class:compact={appState.compact}
+  class:sideways={appState.sideways}
   use:claimedViewTransitionName={{
     name: SHAPE_MATRIX_PANE_NAME,
     enabled: gridShowing && appState.mandalaHandoff,
   }}
   aria-label={t("shape_engine_theory_matrix_aria")}
 >
-  {#if appState.compact}
+  <!-- On its side the app's bar column holds the dice and both ratios. -->
+  {#if appState.compact && !appState.sideways}
     <ShapeMatrixRecipeStrip surface="theory" onsurprise={surprise} />
   {/if}
   <div class="theory-stage" inert={workspaceOpen} aria-hidden={workspaceOpen}>
@@ -106,6 +127,9 @@
         )}
       paintCell={(left, right, sizePx, painter) =>
         theoryCellArtworkSrc(left, right, reach, scale, sizePx, painter)}
+      drawIn={coldStart}
+      onScreen={appState.surface === "theory"}
+      {drawGeometry}
       emphasizedAxis={emphasis}
       corner={cornerGuide}
       revealToken={appState.revealToken}
@@ -133,6 +157,10 @@
   /* Compact hosts add the recipe strip above the grid. */
   .theory-pane.compact {
     grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .theory-pane.compact.sideways {
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .theory-stage {

@@ -5,6 +5,8 @@ interface OptionControlsPresentationInput {
   fullInlineEligible: boolean;
   containerHeight: number;
   canShowTurnRows: boolean;
+  /** The surface around the picker wants the settings behind their button. */
+  preferTucked?: boolean;
 }
 
 // The compact 4×4 grid remains usable at 320px tall. Everything above that is
@@ -29,8 +31,10 @@ export function selectOptionControlsPresentation({
   fullInlineEligible,
   containerHeight,
   canShowTurnRows,
+  preferTucked = false,
 }: OptionControlsPresentationInput): OptionControlsPresentation {
   if (!hasControls) return "hidden";
+  if (preferTucked) return "disclosed";
   if (fullInlineEligible) return "inline";
 
   return containerHeight >= minimumInlineControlsHeight(canShowTurnRows)

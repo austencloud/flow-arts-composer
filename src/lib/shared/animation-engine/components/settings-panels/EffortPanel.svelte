@@ -286,8 +286,8 @@
   /* Phone dock, about 336 x 200-295px. Two rows of four share the height
      (about 98px at a 215px body, 113px at 245, capped at 120 and centred
      above that), so the curve gets everything the name leaves. A tile is
-     about 74px inside; "Anticipation" at 12px is right at that width, so a
-     name may break onto a second line rather than truncate. The portrait
+     66-74px inside; "Anticipation" at 12px needs 68px, so a name runs through
+     the tile's own 2px padding before it breaks onto a second line. The portrait
      flip of `.room` is left out: the dock is always wider than tall. */
   .effort-panel.dock {
     container: effort-panel / size;
@@ -303,6 +303,15 @@
     align-content: center;
     gap: 4px;
   }
+  /* A dock beside the player is as tall as it is (a tablet), not the strip
+     under it: two wide tiles a row share that height. */
+  @container effort-panel (min-height: 22rem) {
+    .dock .effort-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: none;
+      grid-auto-rows: minmax(0, 1fr);
+    }
+  }
   .dock .effort-btn {
     min-height: 0;
     padding: 4px 2px;
@@ -317,7 +326,8 @@
   }
   .dock .effort-label {
     flex: none;
-    max-width: 100%;
+    max-width: calc(100% + 4px);
+    margin-inline: -2px;
     line-height: 1.1;
     text-align: center;
     hyphens: auto;

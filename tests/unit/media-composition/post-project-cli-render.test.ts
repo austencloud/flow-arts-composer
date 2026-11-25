@@ -21,13 +21,17 @@ let statuses: Record<string, unknown>[];
 let posts: { path: string; body: Record<string, unknown> }[];
 /** The project on disk. */
 let disk: Record<string, unknown>;
+/** Whether the dev server has stopped answering. */
+let silent: boolean;
 
 beforeEach(async () => {
   editorOpen = true;
+  silent = false;
   statuses = [];
   posts = [];
   disk = { audio: "takes", tracks: [] };
   server = http.createServer((request, response) => {
+    if (silent) return;
     let text = "";
     request.on("data", (chunk) => (text += chunk));
     request.on("end", () => {
@@ -83,6 +87,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  server.closeAllConnections();
   await new Promise((resolve) => server.close(resolve));
 });
 
@@ -91,7 +96,13 @@ async function cli(...args: string[]) {
     const { stdout, stderr } = await run(
       process.execPath,
       [CLI, ...args, "--url", url],
-      { env: { ...process.env, TKA_RENDER_POLL_MS: "10" } }
+      {
+        env: {
+          ...process.env,
+          TKA_RENDER_POLL_MS: "10",
+          TKA_REQUEST_TIMEOUT_MS: "3000",
+        },
+      }
     );
     return { code: 0, stdout, stderr };
   } catch (cause) {
@@ -147,6 +158,25 @@ describe("render", () => {
     expect(result.code).toBe(1);
     expect(result.stderr).toContain("The render was cancelled.");
     expect(posts[0]!.body).toEqual({ kind: "render", sessionId: "editor-1" });
+  });
+
+  it("stops when the dev server never answers", async () => {
+    silent = true;
+    const { code, stderr } = await cli("render", "--feature", "promo");
+    expect(code).toBe(1);
+    expect(stderr).toContain("went unanswered for 3 s");
+  });
+
+  it("refuses a limit that is not minutes", async () => {
+    const { code, stderr } = await cli(
+      "render",
+      "--feature",
+      "promo",
+      "--limit",
+      "soon"
+    );
+    expect(code).toBe(1);
+    expect(stderr).toContain("--limit needs minutes");
   });
 
   it("says how to open the editor when none has it", async () => {

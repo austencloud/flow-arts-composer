@@ -6,25 +6,35 @@ import {
   allLayersOn,
   type QftLayers,
 } from "#lib/shared/notation/qft/qft-layers.js";
-import { GUIDE_MOVES } from "#lib/shared/notation/qft/qft-guide.js";
+import { QFT_PRESETS } from "#lib/shared/notation/qft/qft-presets.js";
+import {
+  readHandRelations,
+  createRoundClock,
+  realPace,
+  DEFAULT_POI_LENGTH,
+  buildTrajectoryIncrements,
+  type QftTrajectory,
+  type VtgMode,
+} from "@tka/shape-domain";
 import {
   activeHandsAreValid,
   buildActiveHands,
+  minHandRadius,
+  resolveSessionHand,
   selectedFlowerIndex,
   selectedPresetId,
   validOriginPhases,
   validVtgModes,
 } from "#lib/shared/notation/qft/qft-app-selection.js";
 import {
-  buildTrajectoryIncrements,
-  type QftTrajectory,
-} from "#lib/shared/notation/qft/qft-trajectory.js";
-import type {
-  QftHandCount,
-  QftSession,
-  QftSessionHand,
+  MAX_POI_LENGTH,
+  MAX_SPEED,
+  MIN_POI_LENGTH,
+  MIN_SPEED,
+  type QftHandCount,
+  type QftSession,
+  type QftSessionHand,
 } from "#lib/shared/notation/qft/qft-session.js";
-import type { VtgMode } from "@tka/shape-domain";
 
 export interface QftAppStateDeps {
   loadSession: () => QftSession | null;
@@ -41,13 +51,16 @@ const DEFAULT_RIGHT: QftSessionHand = {
   radius: 1,
 };
 
-const STEP_MS = 1100;
+const MAX_FRAME_MS = 400;
 const RAMP_MS = 380;
 const SCRUB_MS = 340;
+/** How long a swing takes to come back up to speed after stepping. */
+const SWING_RETURN_MS = 2400;
 const ONE_HAND_DOCK_TABS = new Set([
   "shape",
   "presets",
   "start",
+  "speed",
   "table",
   "layers",
 ]);
@@ -55,6 +68,7 @@ const TWO_HAND_DOCK_TABS = new Set([
   "left",
   "right",
   "timing",
+  "speed",
   "table",
   "layers",
 ]);
@@ -87,7 +101,9 @@ export function createQftAppState(deps: QftAppStateDeps) {
   let entered = $state(restored?.entered ?? false);
   let handCount = $state<QftHandCount>(restored?.handCount ?? "two");
   let left = $state<QftSessionHand>(copyHand(restored?.left ?? DEFAULT_LEFT));
-  let right = $state<QftSessionHand>(copyHand(restored?.right ?? DEFAULT_RIGHT));
+  let right = $state<QftSessionHand>(
+    copyHand(restored?.right ?? DEFAULT_RIGHT)
+  );
   let originPhase = $state(restored?.originPhase ?? 0);
   let vtgMode = $state<VtgMode>(restored?.vtgMode ?? "SS");
   let layers = $state<QftLayers>({ ...(restored?.layers ?? ALL_LAYERS) });
@@ -97,8 +113,14 @@ export function createQftAppState(deps: QftAppStateDeps) {
   let dockTab = $state<string | null>(null);
 
   let cursor = $state(restored?.cursor ?? 0);
+  let speed = $state(restored?.speed ?? 1);
+  let poiLength = $state(restored?.poiLength ?? DEFAULT_POI_LENGTH);
   let playing = $state(restored?.playing ?? true);
   let animating = $state(false);
+  /* 1 plays swings at gravity's speed; 0 rests every hand on the notation. */
+  let swing = $state(1);
+  let swingFrom = 1;
+  /* Steps a second; eased, so a new move never jerks to its speed. */
   let velocity = 0;
   let scrubbing = false;
   let scrubFrom = 0;
@@ -112,7 +134,25 @@ export function createQftAppState(deps: QftAppStateDeps) {
   const position = $derived(((cursor % 8) + 8) % 8);
   const step = $derived(Math.floor(position) % 8);
   const hands = $derived(
-    buildActiveHands(handCount, left, right, vtgMode, originPhase)
+    buildActiveHands(handCount, left, right, vtgMode, originPhase) ?? {
+      left: resolveSessionHand(left),
+      right: handCount === "two" ? resolveSessionHand(right) : undefined,
+    }
+  );
+  const pace = $derived(realPace(hands, poiLength));
+  const roundSeconds = $derived(pace.seconds / speed);
+  const leftClock = $derived(
+    createRoundClock(hands.left, roundSeconds, poiLength)
+  );
+  const rightClock = $derived(
+    hands.right ? createRoundClock(hands.right, roundSeconds, poiLength) : null
+  );
+  const swung = (clock: (time: number) => number) =>
+    (((position + (clock(position) - position) * swing) % 8) + 8) % 8;
+  const leftCursor = $derived(swung(leftClock));
+  const rightCursor = $derived(rightClock ? swung(rightClock) : position);
+  const handRelations = $derived(
+    hands.right ? readHandRelations(hands.left, hands.right) : []
   );
   const leftIncrements = $derived(buildTrajectoryIncrements(hands.left));
   const rightIncrements = $derived(
@@ -121,7 +161,7 @@ export function createQftAppState(deps: QftAppStateDeps) {
   const allowedOrigins = $derived(
     validOriginPhases(handCount, left, right, vtgMode)
   );
-  const allowedModes = $derived(validVtgModes(left, right, originPhase));
+  const allowedModes = $derived(validVtgModes(left, right));
   const allStageLayersOn = $derived(allLayersOn(layers));
 
   function normalizeConfiguration(): void {
@@ -133,10 +173,15 @@ export function createQftAppState(deps: QftAppStateDeps) {
       return;
     }
 
-    const nextModes = validVtgModes(left, right, 0);
+    const nextModes = validVtgModes(left, right);
     vtgMode = nextModes.includes(vtgMode) ? vtgMode : (nextModes[0] ?? "TS");
     originPhase = validOriginPhases(handCount, left, right, vtgMode)[0] ?? 0;
   }
+
+  /* A session saved under an older rule can hold a swing that is now refused. */
+  left.radius = Math.max(minHandRadius(left), left.radius);
+  right.radius = Math.max(minHandRadius(right), right.radius);
+  normalizeConfiguration();
 
   function setHandCount(next: QftHandCount): void {
     handCount = next;
@@ -156,7 +201,7 @@ export function createQftAppState(deps: QftAppStateDeps) {
   }
 
   function selectPreset(hand: "left" | "right", id: string): void {
-    const move = GUIDE_MOVES.find((candidate) => candidate.id === id);
+    const move = QFT_PRESETS.find((candidate) => candidate.id === id);
     if (!move) return;
     const next: QftSessionHand = {
       source: { kind: "preset", id },
@@ -168,7 +213,8 @@ export function createQftAppState(deps: QftAppStateDeps) {
   }
 
   function setRadius(hand: "left" | "right", radius: number): void {
-    const nextRadius = Math.max(0, Math.min(1.5, radius));
+    const current = hand === "left" ? left : right;
+    const nextRadius = Math.max(minHandRadius(current), Math.min(1.5, radius));
     if (hand === "left") left = { ...left, radius: nextRadius };
     else right = { ...right, radius: nextRadius };
   }
@@ -178,7 +224,18 @@ export function createQftAppState(deps: QftAppStateDeps) {
   }
 
   function setVtgMode(next: VtgMode): void {
-    if (allowedModes.includes(next)) vtgMode = next;
+    if (!allowedModes.includes(next)) return;
+    vtgMode = next;
+    /* A swing can only begin this way from some places; move there. */
+    normalizeConfiguration();
+  }
+
+  function setSpeed(next: number): void {
+    speed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, next));
+  }
+
+  function setPoiLength(next: number): void {
+    poiLength = Math.max(MIN_POI_LENGTH, Math.min(MAX_POI_LENGTH, next));
   }
 
   function toggleLayer(key: keyof QftLayers): void {
@@ -205,6 +262,7 @@ export function createQftAppState(deps: QftAppStateDeps) {
 
     if (reducedMotion()) {
       cursor = target;
+      swing = 0;
       scrubbing = false;
       return;
     }
@@ -212,6 +270,7 @@ export function createQftAppState(deps: QftAppStateDeps) {
     scrubFrom = cursor;
     scrubTo = target;
     scrubStart = performance.now();
+    swingFrom = swing;
     scrubbing = true;
     animating = true;
   }
@@ -229,6 +288,8 @@ export function createQftAppState(deps: QftAppStateDeps) {
       originPhase,
       vtgMode,
       cursor: position,
+      speed,
+      poiLength,
       playing,
       layers: { ...layers },
     };
@@ -265,7 +326,18 @@ export function createQftAppState(deps: QftAppStateDeps) {
   });
 
   $effect(() => {
-    void [entered, handCount, left, right, originPhase, vtgMode, playing, layers];
+    void [
+      entered,
+      handCount,
+      left,
+      right,
+      originPhase,
+      vtgMode,
+      speed,
+      poiLength,
+      playing,
+      layers,
+    ];
     deps.saveSession(untrack(snapshot));
   });
 
@@ -296,25 +368,28 @@ export function createQftAppState(deps: QftAppStateDeps) {
     let frame = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      const delta = Math.min(64, now - last);
+      /* Only a long pause is cut short: a busy computer must not slow the poi. */
+      const delta = Math.min(MAX_FRAME_MS, now - last);
       last = now;
 
       if (scrubbing) {
         const progress = Math.min(1, (now - scrubStart) / SCRUB_MS);
         cursor = scrubFrom + (scrubTo - scrubFrom) * easeOut(progress);
+        swing = swingFrom * (1 - easeOut(progress));
         if (progress >= 1) {
           cursor = scrubTo;
           scrubbing = false;
         }
       } else {
-        const targetVelocity = playing ? 1 : 0;
+        const targetVelocity = playing ? 8 / roundSeconds : 0;
         velocity += (targetVelocity - velocity) * Math.min(1, delta / RAMP_MS);
         if (velocity < 0.001 && !playing) {
           velocity = 0;
           animating = false;
           return;
         }
-        cursor += (velocity * delta) / STEP_MS;
+        cursor += (velocity * delta) / 1000;
+        if (playing) swing = Math.min(1, swing + delta / SWING_RETURN_MS);
       }
 
       frame = requestAnimationFrame(tick);
@@ -379,6 +454,28 @@ export function createQftAppState(deps: QftAppStateDeps) {
     get step() {
       return step;
     },
+    get leftCursor() {
+      return leftCursor;
+    },
+    get rightCursor() {
+      return rightCursor;
+    },
+    get handRelations() {
+      return handRelations;
+    },
+    get speed() {
+      return speed;
+    },
+    get poiLength() {
+      return poiLength;
+    },
+    /** The slowest real speed of these hands, and who needs it. */
+    get pace() {
+      return pace;
+    },
+    get roundSeconds() {
+      return roundSeconds;
+    },
     get playing() {
       return playing;
     },
@@ -418,6 +515,8 @@ export function createQftAppState(deps: QftAppStateDeps) {
     setRadius,
     setOriginPhase,
     setVtgMode,
+    setSpeed,
+    setPoiLength,
     toggleLayer,
     toggleAllLayers,
     toggleDockTab,

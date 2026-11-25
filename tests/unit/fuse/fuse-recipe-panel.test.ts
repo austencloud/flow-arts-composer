@@ -49,17 +49,54 @@ describe("fuseRecipePanel", () => {
 
   it("writes every change back", async () => {
     const panel = await loadPanel();
-    panel.destination = "grid";
+    panel.destination = "start";
     panel.open = true;
     expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "{}")).toEqual({
       open: true,
-      destination: "grid",
+      content: "recipe",
+      destination: "start",
+      side: "left",
+      section: "effects",
     });
 
+    panel.side = "right";
+    panel.section = "display";
     panel.open = false;
     expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "{}")).toEqual({
       open: false,
-      destination: "grid",
+      content: "recipe",
+      destination: "start",
+      side: "right",
+      section: "display",
     });
+  });
+
+  it("brings back whose settings were open", async () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ open: true, destination: "start", side: "right" })
+    );
+    const panel = await loadPanel();
+    expect(panel.side).toBe("right");
+  });
+
+  // Customize shares the hand-settings column, so a reload has to bring back
+  // which of the two was open, and anything else falls back to hand settings.
+  it("brings back Customize and its page, and only a content it knows", async () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ open: true, content: "customize", section: "display" })
+    );
+    const panel = await loadPanel();
+    expect(panel.content).toBe("customize");
+    expect(panel.section).toBe("display");
+
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ open: true, content: "mystery", section: "mystery" })
+    );
+    const unknown = await loadPanel();
+    expect(unknown.content).toBe("recipe");
+    expect(unknown.section).toBe("effects");
   });
 });

@@ -50,16 +50,16 @@ describe("TnDModeGrid", () => {
     const { container } = render(TnDModeGrid, {
       selected: null,
       disabledModes: ["QS"],
-      reasons: { QS: "Not compatible with a Reflection LOOP" },
+      reasons: { QS: "Not compatible with a Reflected LOOP" },
       ariaLabel: "Hand timing and direction",
       onpick: vi.fn(),
     });
 
     const qs = chip(container, "QS");
     expect(qs.disabled).toBe(true);
-    expect(qs.title).toBe("Not compatible with a Reflection LOOP");
+    expect(qs.title).toBe("Not compatible with a Reflected LOOP");
     expect(qs.getAttribute("aria-label")).toBe(
-      "Quarter Same, Sun (QS), Not compatible with a Reflection LOOP"
+      "Quarter Same, Sun (QS), Not compatible with a Reflected LOOP"
     );
     expect(chip(container, "QO").disabled).toBe(false);
     expect(chip(container, "QO").title).toBe("");

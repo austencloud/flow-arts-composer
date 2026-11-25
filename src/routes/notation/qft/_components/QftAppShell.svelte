@@ -10,6 +10,7 @@
   import QftNotationPanel from "./QftNotationPanel.svelte";
   import QftPresetControls from "./QftPresetControls.svelte";
   import QftRelationshipControls from "./QftRelationshipControls.svelte";
+  import QftSpeedControls from "./QftSpeedControls.svelte";
   import QftTransport from "./QftTransport.svelte";
   import QftWorkbench from "./QftWorkbench.svelte";
 
@@ -24,6 +25,7 @@
     { id: "shape", label: "Shape", icon: "fa-shapes" },
     { id: "presets", label: "Presets", icon: "fa-book-open" },
     { id: "start", label: "Start", icon: "fa-location-dot" },
+    { id: "speed", label: "Speed", icon: "fa-gauge-high" },
     { id: "table", label: "Table", icon: "fa-table-list" },
     { id: "layers", label: "Layers", icon: "fa-layer-group" },
   ];
@@ -32,6 +34,7 @@
     { id: "left", label: "Left", accentColor: "var(--prop-blue, #3575e2)" },
     { id: "right", label: "Right", accentColor: "var(--prop-red, #ed1c24)" },
     { id: "timing", label: "Timing", icon: "fa-arrows-left-right" },
+    { id: "speed", label: "Speed", icon: "fa-gauge-high" },
     { id: "table", label: "Table", icon: "fa-table-list" },
     { id: "layers", label: "Layers", icon: "fa-layer-group" },
   ];
@@ -53,6 +56,8 @@
       <QftHandControls hand="right" tone="red" />
     {:else if state.dockTab === "start" || state.dockTab === "timing"}
       <QftRelationshipControls />
+    {:else if state.dockTab === "speed"}
+      <QftSpeedControls />
     {:else if state.dockTab === "table"}
       <QftNotationPanel />
     {:else if state.dockTab === "layers"}
@@ -110,7 +115,7 @@
         activeTab={state.dockTab}
         onTabSelect={state.toggleDockTab}
         tray={dockTray}
-        trayMaxHeight="40vh"
+        trayMaxHeight="42vh"
       />
       <QftTransport compact />
     </div>
@@ -118,6 +123,7 @@
     <footer class="footer">
       <div class="footer-layers"><QftLayerControls showReset={false} /></div>
       <QftTransport />
+      <div class="footer-speed"><QftSpeedControls part="speed" /></div>
     </footer>
   {/if}
 </div>
@@ -226,6 +232,11 @@
     grid-column: 1;
     min-width: 0;
     container-type: inline-size;
+  }
+
+  .footer-speed {
+    grid-column: 3;
+    min-width: 0;
   }
 
   .footer :global(.transport) {

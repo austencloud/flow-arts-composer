@@ -1,0 +1,406 @@
+{
+  "start": {
+    "isStartPlacement": true,
+    "id": "loop-preview-start",
+    "letter": "α",
+    "startPlacement": "alpha7",
+    "endPlacement": "alpha7",
+    "motions": {
+      "left": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "turns": 0,
+        "startOrientation": "in",
+        "endOrientation": "in",
+        "isVisible": true,
+        "propType": "staff",
+        "arrowLocation": "e",
+        "hand": "left",
+        "gridMode": "diamond",
+        "arrowPlacementData": {
+          "positionX": 0,
+          "positionY": 0,
+          "rotationAngle": 0,
+          "coordinates": null,
+          "svgCenter": null,
+          "svgMirrored": false,
+          "manualAdjustmentX": 0,
+          "manualAdjustmentY": 0
+        },
+        "propPlacementData": {
+          "positionX": 0,
+          "positionY": 0,
+          "rotationAngle": 0,
+          "coordinates": null,
+          "svgCenter": null
+        },
+        "handPath": null,
+        "skewSteps": null,
+        "skewDir": null
+      },
+      "right": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "w",
+        "endLocation": "w",
+        "turns": 0,
+        "startOrientation": "in",
+        "endOrientation": "in",
+        "isVisible": true,
+        "propType": "staff",
+        "arrowLocation": "w",
+        "hand": "right",
+        "gridMode": "diamond",
+        "arrowPlacementData": {
+          "positionX": 0,
+          "positionY": 0,
+          "rotationAngle": 0,
+          "coordinates": null,
+          "svgCenter": null,
+          "svgMirrored": false,
+          "manualAdjustmentX": 0,
+          "manualAdjustmentY": 0
+        },
+        "propPlacementData": {
+          "positionX": 0,
+          "positionY": 0,
+          "rotationAngle": 0,
+          "coordinates": null,
+          "svgCenter": null
+        },
+        "handPath": null,
+        "skewSteps": null,
+        "skewDir": null
+      }
+    },
+    "gridPlacement": "alpha7"
+  },
+  "steps": [
+    {
+      "id": "loop-preview-step-1",
+      "letter": "Σ",
+      "startPlacement": "alpha7",
+      "endPlacement": "gamma7",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "left",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "right",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        }
+      },
+      "stepNumber": 1,
+      "duration": 1,
+      "leftReversal": false,
+      "rightReversal": false,
+      "isBlank": false
+    },
+    {
+      "id": "loop-preview-step-2",
+      "letter": "W",
+      "startPlacement": "gamma7",
+      "endPlacement": "alpha1",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "left",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "right",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        }
+      },
+      "stepNumber": 2,
+      "duration": 1,
+      "leftReversal": false,
+      "rightReversal": false,
+      "isBlank": false
+    },
+    {
+      "id": "loop-preview-step-3",
+      "letter": "Σ",
+      "startPlacement": "alpha1",
+      "endPlacement": "gamma1",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "left",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "right",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        }
+      },
+      "stepNumber": 3,
+      "duration": 1,
+      "leftReversal": false,
+      "rightReversal": false,
+      "isBlank": false
+    },
+    {
+      "id": "loop-preview-step-4",
+      "letter": "W",
+      "startPlacement": "gamma1",
+      "endPlacement": "alpha3",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "left",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "hand": "right",
+          "gridMode": "diamond",
+          "arrowPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null,
+            "svgMirrored": false,
+            "manualAdjustmentX": 0,
+            "manualAdjustmentY": 0
+          },
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0,
+            "coordinates": null,
+            "svgCenter": null
+          },
+          "handPath": null,
+          "skewSteps": null,
+          "skewDir": null
+        }
+      },
+      "stepNumber": 4,
+      "duration": 1,
+      "leftReversal": false,
+      "rightReversal": false,
+      "isBlank": false
+    }
+  ]
+}

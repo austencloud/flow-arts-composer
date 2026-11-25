@@ -29,6 +29,7 @@
   import type { GuideChapterData } from "../../level-1/_data/guide-types";
   import turnsData from "../_data/turns.json";
   import doubleTurnsData from "../_data/double-turns.json";
+  import { level2Thread } from "../_data/lesson-line";
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import type { Level2TopicPage } from "../_data/level2-topic-routes";
   import { LEVEL2_TOPIC_SECTIONS } from "../_data/level2-topic-sections";
@@ -136,6 +137,7 @@
       title={localizedLevel2Topic(meta, "h1")}
       {kicker}
       {labels}
+      thread={level2Thread(meta.slug)}
       cutKey={tighter}
       onoverflow={() => {
         if (tighter < MAX_TIGHTER) tighter += 1;

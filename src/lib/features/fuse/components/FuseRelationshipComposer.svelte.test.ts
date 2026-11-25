@@ -5,11 +5,13 @@ import { createFuseRule } from "../domain/fuse-rule";
 import type { FuseState } from "../state/fuse-state.svelte";
 import FuseRelationshipComposerTestHarness from "./FuseRelationshipComposerTestHarness.svelte";
 
-function relationshipState(): FuseState {
+function relationshipState(
+  rule = createFuseRule({ reflect: "mirror" })
+): FuseState {
   return {
     mode: "symmetry",
     driverSide: "left",
-    rule: createFuseRule({ reflect: "mirror" }),
+    rule,
     isLoadingLength: false,
     pendingSide: null,
     isFusing: false,
@@ -81,6 +83,18 @@ describe("FuseRelationshipComposer", () => {
     expect(state.cancelRelationshipPreview).toHaveBeenCalled();
   });
 
+  it("turns the rule round when the other path takes the lead", async () => {
+    const state = relationshipState(createFuseRule({ rotationSteps: 2 }));
+    render(FuseRelationshipComposerTestHarness, { state });
+
+    await page.getByRole("button", { name: "Right" }).click();
+
+    expect(state.previewRelationship).toHaveBeenLastCalledWith(
+      "right",
+      createFuseRule({ rotationSteps: 6 })
+    );
+  });
+
   it("shows the offset pair only for quarter modes", async () => {
     const state = relationshipState();
     render(FuseRelationshipComposerTestHarness, { state });
@@ -94,9 +108,7 @@ describe("FuseRelationshipComposer", () => {
       .element(page.getByRole("button", { name: "90° clockwise" }))
       .toBeVisible();
 
-    await page
-      .getByRole("button", { name: "90° counterclockwise" })
-      .click();
+    await page.getByRole("button", { name: "90° counterclockwise" }).click();
     expect(state.previewRelationship).toHaveBeenLastCalledWith(
       "left",
       createFuseRule({ rotationSteps: 6, reflect: "mirror" })

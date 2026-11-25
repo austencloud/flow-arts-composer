@@ -13,16 +13,18 @@
   One screen at a time (2026-10-24 fit pass): the chart, the map, the
   combinations two, three or six to a screen by window size, then the two
   hands and the quiz. The figures grow with the window (--fit); the page
-  never scrolls. Read inside the lesson (no lesson id), the page leaves out
-  the two hands and the quiz, which the lesson around it already plays.
+  never scrolls. The last screen says what comes next: the six combinations,
+  a page each, how long each one is, and one button to begin (Austen,
+  2026-11-23: the quiz ran straight into Dual-Shift's page "before they know
+  what they're in for"). Finishing the quiz opens it. Read inside the lesson (no lesson id), the page leaves out
+  the two hands, the quiz and that screen, which the lesson around it
+  already plays.
 -->
 <script lang="ts">
   import Sentences from "../../_components/Sentences.svelte";
   import { browser } from "$app/env";
   import { onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
-  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import HandMotionsMapStage from "#lib/features/learn/components/interactive/motions/HandMotionsMapStage.svelte";
   import HandPairsStage from "#lib/features/learn/components/interactive/motions/HandPairsStage.svelte";
@@ -44,6 +46,9 @@
     type HandMove,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import TopicScreens from "./TopicScreens.svelte";
+  import { combinationScreens } from "./combination-pages";
+  import { dualShiftScreens } from "./dual-shift-screens";
+  import { runFrame } from "./hand-type-switcher";
   import type { TopicPageProps } from "./topic-pages";
 
   let { darkMode, kicker, frame, lessonId }: TopicPageProps = $props();
@@ -52,9 +57,8 @@
   let mapMoves = $state<Partial<Record<HandMove, ComboHand>>>({});
   let pairsFound = $state<Partial<Record<HandCombinationId, HandPair>>>({});
   let quizAnswered = $state<HandCombinationId[]>([]);
-  /** The quiz stays up until its last answer has had its moment. */
-  let quizOpen = $state(true);
-  /** Each practice round is a new quiz, its six asked in a new order. */
+  /** A finished quiz starts over in a new order for a reader who comes
+   *  back to it. */
   let quizRound = $state(0);
 
   function foundMove(made: ComboHand): void {
@@ -66,10 +70,9 @@
   function answeredQuiz(id: HandCombinationId): void {
     if (!quizAnswered.includes(id)) quizAnswered = [...quizAnswered, id];
   }
-  function practiceAgain(): void {
+  function resetQuiz(): void {
     quizAnswered = [];
     quizRound += 1;
-    quizOpen = true;
   }
 
   /**
@@ -102,6 +105,8 @@
   const playScreens = $derived(lessonId !== null);
   const pairsScreen = $derived(LEAD_SCREENS + groups.length);
   const quizScreen = $derived(pairsScreen + 1);
+  const nextScreen = $derived(quizScreen + 1);
+  const pageFrame = $derived(runFrame(frame, (c) => t(c.name)));
   const labels = $derived([
     "Three moves",
     "The map",
@@ -110,12 +115,26 @@
         ? "Combinations"
         : g.map((c) => t(c.name)).join(", ")
     ),
-    ...(playScreens ? ["Two hands", "Quiz"] : []),
+    ...(playScreens ? ["Two hands", "Quiz", "Up next"] : []),
   ]);
   /** Each card opens its combination's own page or screen. */
   const cellHref = (id: HandCombinationId) => {
     const combination = HAND_COMBINATIONS.find((c) => c.id === id);
     return combination ? localHref(combination.webHref) : null;
+  };
+  /** How many screens each combination takes in the run ahead. */
+  const FIRST = HAND_COMBINATIONS[0]!;
+  const screenCount = (id: HandCombinationId): number => {
+    if (id === "dual-shift") return dualShiftScreens(String).views.length;
+    const slug = HAND_COMBINATIONS.find((c) => c.id === id)!.guideSlug;
+    return combinationScreens(slug, t).filter((s) => s.combination.id === id)
+      .length;
+  };
+  const screensText = (id: HandCombinationId): string => {
+    const count = screenCount(id);
+    return count === 1
+      ? t("guide_topic_run_screen")
+      : t("guide_topic_run_screens", { count });
   };
   const ids = (g: (typeof HAND_COMBINATIONS)[number][]): HandCombinationId[] =>
     g.map((c) => c.id);
@@ -125,10 +144,10 @@
   title={handMotionsTopicText("title")}
   {kicker}
   lessonHref={null}
-  {frame}
+  frame={pageFrame}
   {labels}
 >
-  {#snippet screen(n)}
+  {#snippet screen(n, go)}
     <div class="hand-motions-topic">
       {#if n === 0}
         <p class="lede">{t("guide_topic_hand_motions_three")}</p>
@@ -145,11 +164,7 @@
                  gate), so they render in the browser only, as on the
                  Dual-Shifts page. -->
             {#if browser}
-              <HandMotionsMapStage
-                found={mapMoves}
-                onFind={foundMove}
-                fitted
-              />
+              <HandMotionsMapStage found={mapMoves} onFind={foundMove} fitted />
             {/if}
           </div>
         </section>
@@ -168,43 +183,45 @@
         </section>
       {:else if playScreens && n === quizScreen}
         <section class="stage" aria-labelledby="hand-quiz-heading">
-          <Crossfade key={quizOpen} duration={DURATION.emphasis} animateHeight>
-            {#if quizOpen}
-              <div class="stage">
-                <h2 id="hand-quiz-heading">{t("learn_motion_quiz_prompt")}</h2>
-                <div class="figure play" class:dark={darkMode}>
-                  {#if browser}
-                    {#key quizRound}
-                      <HandMotionsQuizStage
-                        answered={quizAnswered}
-                        onAnswer={answeredQuiz}
-                        onFinish={() => (quizOpen = false)}
-                        fitted
-                      />
-                    {/key}
-                  {/if}
-                </div>
-              </div>
-            {:else}
-              <div class="stage">
-                <div class="board all" class:dark={darkMode} style:--per-row={6}>
-                  <HandCombinationBoard
-                    showDescriptions
-                    {darkMode}
-                    printMode={!darkMode}
-                    {cellHref}
-                    label={handMotionsTopicText("combinationsLead")}
-                  />
-                </div>
-                <p class="again">
-                  <PanelButton variant="secondary" onclick={practiceAgain}>
-                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-                    <span>{t("learn_ui_practice_again")}</span>
-                  </PanelButton>
-                </p>
-              </div>
+          <h2 id="hand-quiz-heading">{t("learn_motion_quiz_prompt")}</h2>
+          <div class="figure play" class:dark={darkMode}>
+            {#if browser}
+              {#key quizRound}
+                <HandMotionsQuizStage
+                  answered={quizAnswered}
+                  onAnswer={answeredQuiz}
+                  onFinish={() => {
+                    go(nextScreen);
+                    resetQuiz();
+                  }}
+                  fitted
+                />
+              {/key}
             {/if}
-          </Crossfade>
+          </div>
+        </section>
+      {:else if playScreens && n === nextScreen}
+        <section class="stage next" aria-labelledby="run-heading">
+          <h2 id="run-heading">{t("guide_topic_run_heading")}</h2>
+          <p class="lead">{t("guide_topic_run_line")}</p>
+          <div class="board run" class:dark={darkMode} bind:this={board}>
+            <HandCombinationBoard
+              {darkMode}
+              printMode={!darkMode}
+              numbered
+              captions={screensText}
+              cellProgress={playback.cellProgress}
+              onCellPlay={playback.replay}
+              {cellHref}
+              label={handMotionsTopicText("combinationsLead")}
+            />
+          </div>
+          <p class="start">
+            <PanelButton variant="primary" href={localHref(FIRST.webHref)}>
+              <span>{t("guide_topic_run_start", { name: t(FIRST.name) })}</span>
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </PanelButton>
+          </p>
         </section>
       {:else if groups[n - LEAD_SCREENS]}
         {@const group = groups[n - LEAD_SCREENS]!}
@@ -303,11 +320,6 @@
     justify-items: center;
     width: 100%;
   }
-  /* The quiz and its finished board swap in one crossfade, which spans the
-     screen so the board keeps its width. */
-  .stage > :global(.crossfade) {
-    justify-self: stretch;
-  }
   .play {
     width: 100%;
     /* The map sizes to this page's fit box (its `fitted` prop reads
@@ -366,10 +378,68 @@
     font-weight: 700;
   }
 
-  /* Practice again, centred under the finished board. */
-  .again {
-    display: flex;
-    justify-content: center;
+  /* What comes next: the six in running order with their lengths, one row
+     where the window has the width. */
+  .hand-motions-topic .next h2 {
+    font-size: clamp(1.4rem, 3cqw, 2.1rem);
+  }
+  .next {
+    --theme-text: var(--ink, #1a1a1a);
+    --theme-accent: #e8590c;
+  }
+  .next .start {
     margin: 0;
+  }
+  .board.run {
+    --board-wide-columns: 6;
+    width: min(100%, max(19rem, calc(9rem * 6 * var(--fit, 1))));
+  }
+  /* A phone keeps two rows of three, so all six and the button stay on one
+     screen. A short one drops the line and the button: the footer's Next
+     already says Dual-Shift. */
+  @media (max-width: 480px) {
+    .next {
+      gap: 0.6rem;
+    }
+    .next .lead {
+      line-height: 1.35;
+    }
+    .board.run {
+      width: 100%;
+    }
+    .board.run :global(.combination-board) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.35rem;
+    }
+    .board.run :global(.cell) {
+      padding: 0.3rem;
+      gap: 0.3rem;
+    }
+    .board.run :global(.label) {
+      gap: 0.2rem;
+    }
+    .board.run :global(.name) {
+      font-size: 1rem;
+    }
+  }
+  @media (max-width: 480px) and (max-height: 700px) {
+    .next .lead,
+    .next .start {
+      display: none;
+    }
+    .hand-motions-topic .next h2 {
+      font-size: 1.2rem;
+    }
+    .board.run :global(.art) {
+      width: 5.5rem;
+      margin-inline: auto;
+    }
+    .board.run :global(.cell) {
+      padding-block: 0.2rem;
+      gap: 0.15rem;
+    }
+    .board.run :global(.label) {
+      gap: 0.1rem;
+    }
   }
 </style>

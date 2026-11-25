@@ -302,6 +302,13 @@
     pointer-events: none;
   }
 
+  /* A lesson's box stands for it from the first paint (GuideScreens). */
+  :global(.guide-layout:has(.guide-screens.threaded))
+    .mobile-menu-btn:not(.open) {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .guide-drawer {
     display: none;
   }
@@ -387,7 +394,9 @@
       white-space: nowrap;
     }
     /* Sideways the button keeps its icon whatever the pills do. */
-    :global(html:has(.guide-screens)) .mobile-menu-btn.boxed:not(.tucked) {
+    :global(html:has(.guide-screens)) .mobile-menu-btn.boxed:not(.tucked),
+    :global(html .guide-layout:has(.guide-screens.threaded))
+      .mobile-menu-btn:not(.open):not(.tucked) {
       visibility: visible;
       pointer-events: auto;
     }

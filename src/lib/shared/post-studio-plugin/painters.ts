@@ -13,7 +13,7 @@ import type {
 } from "@austencloud/video-editor/render";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
-import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
 import { createBeatCarouselPainter } from "#lib/shared/media-composition/services/beat-carousel-painter.js";
@@ -139,10 +139,12 @@ export function createTkaPainters(
             latest?.compiled.titles.find((entry) => entry.itemId === itemId) ??
             null,
           {
+            // The word only, never the name: a TKA name draws in its
+            // letters, so a sequence with none ("Shared Sequence") draws none.
             word: () => {
               const sequence = deps.getSequence();
               return simplifyRepeatedWord(
-                sequence.word || deriveWord(sequence)
+                sequence.word || deriveWordFromBeats(sequence.steps)
               );
             },
             // The letter of each move, which the lit letter follows.

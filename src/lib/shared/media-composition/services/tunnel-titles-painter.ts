@@ -131,7 +131,8 @@ class TunnelTitlesPainter implements PostStudioLayerPainter {
     try {
       if (word) await textRenderer.preloadGlyphImagesForWord(word);
     } catch {
-      // Without its glyphs the name paints in the header's own text face.
+      // Without its glyphs the name does not paint: TKA letters never draw
+      // in a text face.
     }
   }
 
@@ -177,15 +178,15 @@ class TunnelTitlesPainter implements PostStudioLayerPainter {
     context.save();
     context.lineJoin = "round";
 
-    if (look.name.opacity > 0 && word && glyphHeight > 0) {
+    const glyphs =
+      look.name.opacity > 0 && word && glyphHeight > 0
+        ? textRenderer.buildGlyphMap(word)
+        : null;
+    if (glyphs && glyphs.size > 0) {
       const band = glyphHeight / HEADER_GLYPH_SHARE;
-      const glyphs = textRenderer.buildGlyphMap(word);
       const top =
         layout.nameCenterY - band / 2 - look.name.rise * layout.risePx;
-      const edges =
-        lighting && glyphs.size > 0
-          ? letterEdges(letters, glyphs, width, band)
-          : null;
+      const edges = lighting ? letterEdges(letters, glyphs, width, band) : null;
       const drawName = () =>
         renderHeader(context as CanvasRenderingContext2D, {
           canvasWidth: width,
@@ -195,7 +196,7 @@ class TunnelTitlesPainter implements PostStudioLayerPainter {
           darkMode: true,
           backgroundColor: "transparent",
           borderColor: "transparent",
-          ...(glyphs.size > 0 ? { glyphImages: glyphs } : {}),
+          glyphImages: glyphs,
         });
       context.save();
       context.globalAlpha *= look.name.opacity;

@@ -25,6 +25,7 @@ import {
 import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
 import {
   deriveWordFromBeats,
+  deriveWordStatusFromSteps,
   getSequenceDisplayName,
 } from "#lib/shared/foundation/services/word-deriver.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
@@ -69,6 +70,7 @@ import {
   fuseRuleKey,
   fuseRuleLabel,
   fuseRulesEqual,
+  inverseFuseRule,
   parseFuseRule,
   type FuseRule,
 } from "../domain/fuse-rule";
@@ -80,6 +82,7 @@ import {
   resolveFuseRule,
   type FuseTnDSelection,
 } from "../domain/fuse-tnd-rule";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { fusedDisplayName, fuseSequences } from "../services/sequence-fuser";
 import { createCircularFuseSoloSequence } from "../services/fuse-solo-sequence";
 import {
@@ -90,6 +93,8 @@ import {
 } from "./fuse-shuffle-pool.svelte";
 import { normalizeLegacyHandPair } from "@tka/tka-types";
 import { DEFAULT_GENERATION_STYLE } from "#lib/shared/create/domain/generation-style.js";
+import { announcePictographEdit } from "#lib/shared/pictograph/shared/state/pictograph-edit-motion.svelte.js";
+import type { PictographEdit } from "#lib/shared/pictograph/shared/services/pictograph-edit-travel.js";
 
 const STORAGE_KEY = "fuse-tab-state";
 const STYLE_DEFAULTS_VERSION = 1;
@@ -97,9 +102,80 @@ const DEFAULT_BPM = 60;
 // Persist the live playback step at most this often while the clock runs, so a
 // remount can resume near where playback was without writing on every frame.
 const STEP_PERSIST_INTERVAL_MS = 1000;
+// A tapped Start waits at its pose this long before it plays, as a tapped Start
+// does in the Sequence Viewer (playback-controller's startHoldTimer).
+const START_HOLD_MS = 700;
 
 export const FUSE_LENGTHS = [2, 4, 8, 12, 16, 24, 32] as const;
 export type FuseLength = (typeof FUSE_LENGTHS)[number];
+
+/** The longest fused result Fuse builds. Each hand keeps its own length and the
+ * pair runs until both line up again, the least common multiple of the two.
+ * The longest pair the length list allows (12 with 32, or 24 with 32) needs 96
+ * steps, so nothing the recipes can ask for is ever cut short. */
+export const FUSE_MAX_FUSED_STEPS = 96;
+
+function greatestCommonDivisor(a: number, b: number): number {
+  return b === 0 ? a : greatestCommonDivisor(b, a % b);
+}
+
+/** How many steps the fused result runs for a pair of hand lengths. */
+export function fusedLengthFor(left: number, right: number): number {
+  if (left <= 0 || right <= 0) return Math.max(left, right, 0);
+  return (left / greatestCommonDivisor(left, right)) * right;
+}
+
+function isFuseLength(value: unknown): value is FuseLength {
+  return FUSE_LENGTHS.includes(value as FuseLength);
+}
+
+/**
+ * One hand's settings for making a new path. They shape the next Regenerate on
+ * that hand only; the path already on screen never changes when they do.
+ * Changing the current path is a transform (adjustSource), not a setting.
+ */
+export interface FuseHandRecipe {
+  length: FuseLength;
+  level: TurnLevel;
+  maxTurnIntensity: number;
+  gridMode: GridMode;
+  constraintPreset: SoloLoopGenerationRecipe["constraintPreset"];
+  handPathMode: SoloLoopGenerationRecipe["handPathMode"];
+  motionTypeFilter: SoloLoopGenerationRecipe["motionTypeFilter"];
+  startLocation: GridLocation | null;
+  startOrientation: Orientation | null;
+  traversalDirection: SoloLoopTraversalDirection | null;
+}
+
+/** The reactive view of one hand's recipe the settings editors bind to. Field
+ * names match the editors' long-standing reads so one editor serves either hand. */
+export interface FuseHandRecipeControls {
+  readonly side: FuseSide;
+  readonly requestedLength: FuseLength;
+  readonly generationLevel: TurnLevel;
+  readonly maxTurnIntensity: number;
+  readonly gridMode: GridMode;
+  readonly constraintPreset: SoloLoopGenerationRecipe["constraintPreset"];
+  readonly handPathMode: SoloLoopGenerationRecipe["handPathMode"];
+  readonly motionTypeFilter: SoloLoopGenerationRecipe["motionTypeFilter"];
+  readonly startLocation: GridLocation | null;
+  readonly startOrientation: Orientation | null;
+  readonly traversalDirection: SoloLoopTraversalDirection | null;
+  setLength(value: FuseLength): void;
+  setGenerationLevel(value: number): void;
+  setMaxTurnIntensity(value: number): void;
+  setGridMode(value: GridMode): void;
+  setConstraintPreset(
+    value: SoloLoopGenerationRecipe["constraintPreset"]
+  ): void;
+  setHandPathMode(value: SoloLoopGenerationRecipe["handPathMode"]): void;
+  setMotionTypeFilter(
+    value: SoloLoopGenerationRecipe["motionTypeFilter"]
+  ): void;
+  setStartLocation(value: GridLocation | null): void;
+  setStartOrientation(value: Orientation | null): void;
+  setTraversalDirection(value: SoloLoopTraversalDirection | null): void;
+}
 
 /** Top-of-tab Fuse mode. `shuffle` = two independent paths (the original
  * behavior); `symmetry` = one driver path with the follower derived from it via
@@ -168,8 +244,34 @@ export type FuseSourceAdjustment =
   | { kind: "mirror" }
   | { kind: "flip" }
   | { kind: "invert" }
+  | { kind: "rewind" }
   | { kind: "first-step"; step: number }
   | { kind: "reset" };
+
+/** The motion each transform draws, as Construct announces it. Rewind, a new
+ * start and Reset have no single motion of their own, so the drawings travel
+ * from where they stood. */
+function pictographEditFor(
+  adjustment: FuseSourceAdjustment
+): PictographEdit | null {
+  switch (adjustment.kind) {
+    case "rotate":
+      return {
+        kind: "rotate",
+        direction:
+          adjustment.rotationSteps > 0 ? "clockwise" : "counterclockwise",
+        steps: Math.abs(adjustment.rotationSteps),
+      };
+    case "mirror":
+      return { kind: "reflect", axis: "vertical" };
+    case "flip":
+      return { kind: "reflect", axis: "horizontal" };
+    case "invert":
+      return { kind: "spin" };
+    default:
+      return null;
+  }
+}
 
 /** The injected side's solo path serialized for a self-contained restore — no
  * library round-trip or producer dependency needed to rebuild it after HMR. */
@@ -201,15 +303,102 @@ interface PersistedFuseState {
   mode?: FuseMode;
   driverSide?: FuseSide;
   rule?: FuseRule;
-  gridMode?: GridMode;
-  generationLevel?: TurnLevel;
-  maxTurnIntensity?: number;
-  constraintPreset?: SoloLoopGenerationRecipe["constraintPreset"];
-  handPathMode?: SoloLoopGenerationRecipe["handPathMode"];
-  motionTypeFilter?: SoloLoopGenerationRecipe["motionTypeFilter"];
-  startLocation?: GridLocation | null;
-  startOrientation?: Orientation | null;
-  traversalDirection?: SoloLoopTraversalDirection | null;
+  /** Each hand's settings for its next new path. A store written before the
+   * hands had their own settings held one shared set at the top level; reading
+   * it gives both hands that set. */
+  recipes?: Record<FuseSide, FuseHandRecipe>;
+}
+
+const DEFAULT_HAND_RECIPE: FuseHandRecipe = {
+  length: 8,
+  level: DEFAULT_SOLO_LOOP_RECIPE.level,
+  maxTurnIntensity: DEFAULT_SOLO_LOOP_RECIPE.maxTurnIntensity,
+  gridMode: DEFAULT_SOLO_LOOP_RECIPE.gridMode,
+  constraintPreset: DEFAULT_SOLO_LOOP_RECIPE.constraintPreset,
+  handPathMode: DEFAULT_SOLO_LOOP_RECIPE.handPathMode,
+  motionTypeFilter: DEFAULT_SOLO_LOOP_RECIPE.motionTypeFilter,
+  startLocation: DEFAULT_SOLO_LOOP_RECIPE.startLocation,
+  startOrientation: DEFAULT_SOLO_LOOP_RECIPE.startOrientation,
+  traversalDirection: DEFAULT_SOLO_LOOP_RECIPE.traversalDirection,
+};
+
+/**
+ * Read one recipe out of a stored record, keeping each field only when it is
+ * still valid and falling back to `base` field by field. The same reader serves
+ * the legacy shared recipe at the top of the store and each hand's own recipe.
+ */
+function parseHandRecipe(
+  record: Record<string, unknown>,
+  base: FuseHandRecipe,
+  { migrateLegacyStyle = false }: { migrateLegacyStyle?: boolean } = {}
+): FuseHandRecipe {
+  const recipe: FuseHandRecipe = { ...base };
+  if (isFuseLength(record.length)) recipe.length = record.length;
+  if (isFuseGridMode(record.gridMode)) recipe.gridMode = record.gridMode;
+  const storedLevel = record.level ?? record.generationLevel;
+  if (typeof storedLevel === "number" && Number.isFinite(storedLevel)) {
+    recipe.level = asTurnLevel(clampToAvailableLevel(storedLevel));
+  }
+  recipe.maxTurnIntensity = clampMaxTurnIntensity(
+    typeof record.maxTurnIntensity === "number" &&
+      Number.isFinite(record.maxTurnIntensity)
+      ? record.maxTurnIntensity
+      : recipe.maxTurnIntensity,
+    recipe.level
+  );
+  // Fuse originally persisted Mixed/Mixed/Mixed as its untouched style while
+  // Generate correctly began at Smooth/Mixed/Mixed. Migrate only that exact
+  // legacy baseline (including stores that predate the two secondary keys),
+  // so an explicitly customized Hands or Dashes choice keeps its Prop value.
+  const hasLegacyUntouchedStyle =
+    migrateLegacyStyle &&
+    record.styleDefaultsVersion === undefined &&
+    record.constraintPreset === "mixed" &&
+    (record.handPathMode === undefined || record.handPathMode === "mixed") &&
+    (record.motionTypeFilter === undefined || record.motionTypeFilter === null);
+  if (hasLegacyUntouchedStyle) {
+    recipe.constraintPreset = DEFAULT_GENERATION_STYLE.constraintPreset;
+  } else if (isContinuityPreference(record.constraintPreset)) {
+    recipe.constraintPreset = record.constraintPreset;
+  }
+  if (isContinuityPreference(record.handPathMode)) {
+    recipe.handPathMode = record.handPathMode;
+  }
+  if (isMotionTypeFilter(record.motionTypeFilter)) {
+    recipe.motionTypeFilter = record.motionTypeFilter;
+  }
+  if (
+    record.startLocation === null ||
+    isFuseStartLocation(record.startLocation, recipe.gridMode)
+  ) {
+    recipe.startLocation = record.startLocation as GridLocation | null;
+  } else if (
+    recipe.startLocation !== null &&
+    !isFuseStartLocation(recipe.startLocation, recipe.gridMode)
+  ) {
+    recipe.startLocation = null;
+  }
+  if (
+    record.startOrientation === null ||
+    (typeof record.startOrientation === "string" &&
+      startOrientationsForLevel(recipe.level).includes(
+        record.startOrientation as Orientation
+      ))
+  ) {
+    recipe.startOrientation = record.startOrientation as Orientation | null;
+  } else if (
+    recipe.startOrientation !== null &&
+    !startOrientationsForLevel(recipe.level).includes(recipe.startOrientation)
+  ) {
+    recipe.startOrientation = null;
+  }
+  if (
+    record.traversalDirection === null ||
+    isSoloTraversalDirection(record.traversalDirection)
+  ) {
+    recipe.traversalDirection = record.traversalDirection;
+  }
+  return recipe;
 }
 
 export const FUSE_DIAMOND_START_LOCATIONS = [
@@ -268,7 +457,6 @@ function isSoloTraversalDirection(
 interface FuseRestoreRequest {
   left?: FusePersistedSelection;
   right?: FusePersistedSelection;
-  length?: number;
   currentStep?: number;
 }
 
@@ -372,77 +560,43 @@ function readPersistedState(): PersistedFuseState {
     if (storedRule) {
       result.rule = storedRule;
     }
-    if (isFuseGridMode(record.gridMode)) {
-      result.gridMode = record.gridMode;
-    }
-    if (
-      typeof record.generationLevel === "number" &&
-      Number.isFinite(record.generationLevel)
-    ) {
-      result.generationLevel = asTurnLevel(
-        clampToAvailableLevel(record.generationLevel)
-      );
-    }
-    if (
-      typeof record.maxTurnIntensity === "number" &&
-      Number.isFinite(record.maxTurnIntensity)
-    ) {
-      result.maxTurnIntensity = clampMaxTurnIntensity(
-        record.maxTurnIntensity,
-        result.generationLevel ?? DEFAULT_SOLO_LOOP_RECIPE.level
-      );
-    }
-    // Fuse originally persisted Mixed/Mixed/Mixed as its untouched style while
-    // Generate correctly began at Smooth/Mixed/Mixed. Migrate only that exact
-    // legacy baseline (including stores that predate the two secondary keys),
-    // so an explicitly customized Hands or Dashes choice keeps its Prop value.
-    const hasLegacyUntouchedStyle =
-      record.styleDefaultsVersion === undefined &&
-      record.constraintPreset === "mixed" &&
-      (record.handPathMode === undefined || record.handPathMode === "mixed") &&
-      (record.motionTypeFilter === undefined ||
-        record.motionTypeFilter === null);
-    if (hasLegacyUntouchedStyle) {
-      result.constraintPreset = DEFAULT_GENERATION_STYLE.constraintPreset;
-    } else if (isContinuityPreference(record.constraintPreset)) {
-      result.constraintPreset = record.constraintPreset;
-    }
-    if (isContinuityPreference(record.handPathMode)) {
-      result.handPathMode = record.handPathMode;
-    }
-    if (isMotionTypeFilter(record.motionTypeFilter)) {
-      result.motionTypeFilter = record.motionTypeFilter;
-    }
     if (
       typeof record.styleDefaultsVersion === "number" &&
       Number.isFinite(record.styleDefaultsVersion)
     ) {
       result.styleDefaultsVersion = record.styleDefaultsVersion;
     }
-    const persistedGridMode =
-      result.gridMode ?? DEFAULT_SOLO_LOOP_RECIPE.gridMode;
-    if (
-      record.startLocation === null ||
-      isFuseStartLocation(record.startLocation, persistedGridMode)
-    ) {
-      result.startLocation = record.startLocation;
-    }
-    const persistedLevel =
-      result.generationLevel ?? DEFAULT_SOLO_LOOP_RECIPE.level;
-    if (
-      record.startOrientation === null ||
-      (typeof record.startOrientation === "string" &&
-        startOrientationsForLevel(persistedLevel).includes(
-          record.startOrientation as Orientation
-        ))
-    ) {
-      result.startOrientation = record.startOrientation as Orientation | null;
-    }
-    if (
-      record.traversalDirection === null ||
-      isSoloTraversalDirection(record.traversalDirection)
-    ) {
-      result.traversalDirection = record.traversalDirection;
+    // The shared recipe a store held before each hand had its own: both hands
+    // start from it, so an existing device keeps the settings it had.
+    const legacyRecipe = parseHandRecipe(record, DEFAULT_HAND_RECIPE, {
+      migrateLegacyStyle: true,
+    });
+    const storedRecipes =
+      record.recipes && typeof record.recipes === "object"
+        ? (record.recipes as Record<string, unknown>)
+        : {};
+    const handRecipe = (side: FuseSide): FuseHandRecipe => {
+      const stored = storedRecipes[side];
+      return stored && typeof stored === "object"
+        ? parseHandRecipe(stored as Record<string, unknown>, legacyRecipe)
+        : { ...legacyRecipe };
+    };
+    const recipeKeys = [
+      "recipes",
+      "length",
+      "gridMode",
+      "level",
+      "generationLevel",
+      "maxTurnIntensity",
+      "constraintPreset",
+      "handPathMode",
+      "motionTypeFilter",
+      "startLocation",
+      "startOrientation",
+      "traversalDirection",
+    ];
+    if (recipeKeys.some((key) => key in record)) {
+      result.recipes = { left: handRecipe("left"), right: handRecipe("right") };
     }
     const left = parsePersistedSelection(handPair.left);
     if (left) result.left = left;
@@ -515,14 +669,28 @@ function sourceReadyMessage(
   sequence: SequenceData,
   restored: boolean
 ): string {
-  const label = side === "left" ? "Left" : "Right";
+  const left = side === "left";
   const name = simplifyRepeatedWord(getSequenceDisplayName(sequence)).trim();
   if (!name) {
-    return restored ? `${label} path restored.` : `${label} path is ready.`;
+    if (restored) {
+      return t(
+        left ? "fuse_status_left_restored" : "fuse_status_right_restored"
+      );
+    }
+    return t(left ? "fuse_status_left_ready" : "fuse_status_right_ready");
   }
-  return restored
-    ? `${label} path ${name} restored.`
-    : `${label} path ${name} is ready.`;
+  if (restored) {
+    return t(
+      left
+        ? "fuse_status_left_named_restored"
+        : "fuse_status_right_named_restored",
+      { name }
+    );
+  }
+  return t(
+    left ? "fuse_status_left_named_ready" : "fuse_status_right_named_ready",
+    { name }
+  );
 }
 
 export function createFuseState({
@@ -549,45 +717,28 @@ export function createFuseState({
     random,
   });
 
-  let requestedLength = $state<FuseLength>(initialLength);
-  let appliedLength = $state<FuseLength | null>(null);
+  // Each hand's settings for its next new path. A device with no stored recipe
+  // starts both hands at `initialLength`.
+  let recipes = $state<Record<FuseSide, FuseHandRecipe>>(
+    persisted.recipes ?? {
+      left: { ...DEFAULT_HAND_RECIPE, length: initialLength },
+      right: { ...DEFAULT_HAND_RECIPE, length: initialLength },
+    }
+  );
+  // How long the fused result runs once both hands are loaded: the least
+  // common multiple of the two hands' own lengths. Null while a pair loads.
+  let appliedLength = $state<number | null>(null);
   let bpm = $state(normalizeBpm(persisted.bpm));
-  let gridMode = $state<GridMode>(
-    persisted.gridMode ?? DEFAULT_SOLO_LOOP_RECIPE.gridMode
-  );
-  let generationLevel = $state<TurnLevel>(
-    persisted.generationLevel ?? DEFAULT_SOLO_LOOP_RECIPE.level
-  );
-  let maxTurnIntensity = $state(
-    clampMaxTurnIntensity(
-      persisted.maxTurnIntensity ?? DEFAULT_SOLO_LOOP_RECIPE.maxTurnIntensity,
-      generationLevel
-    )
-  );
-  let constraintPreset = $state<SoloLoopGenerationRecipe["constraintPreset"]>(
-    persisted.constraintPreset ?? DEFAULT_SOLO_LOOP_RECIPE.constraintPreset
-  );
-  let handPathMode = $state<SoloLoopGenerationRecipe["handPathMode"]>(
-    persisted.handPathMode ?? DEFAULT_SOLO_LOOP_RECIPE.handPathMode
-  );
-  let motionTypeFilter = $state<SoloLoopGenerationRecipe["motionTypeFilter"]>(
-    persisted.motionTypeFilter ?? DEFAULT_SOLO_LOOP_RECIPE.motionTypeFilter
-  );
-  let startLocation = $state<GridLocation | null>(
-    persisted.startLocation ?? DEFAULT_SOLO_LOOP_RECIPE.startLocation
-  );
-  let startOrientation = $state<Orientation | null>(
-    persisted.startOrientation ?? DEFAULT_SOLO_LOOP_RECIPE.startOrientation
-  );
-  let traversalDirection = $state<SoloLoopTraversalDirection | null>(
-    persisted.traversalDirection ?? DEFAULT_SOLO_LOOP_RECIPE.traversalDirection
-  );
   let previewSequence = $state<SequenceData | null>(null);
+  // The result's word. A new result's motion arrives before its letters, and
+  // the last word stays until the new one is whole, so the heading goes from
+  // word to word. Null while a step has no letter.
+  let previewWord = $state<string | null>(null);
   let isLoadingLength = $state(false);
   let pendingSide = $state<FuseSide | null>(null);
   let isFusing = $state(false);
   let error = $state<FuseErrorState | null>(null);
-  let readyMessage = $state("Both paths are ready.");
+  let readyMessage = $state(t("fuse_status_both_ready"));
 
   let catalog: SequenceData[] | null = null;
   let catalogPromise: Promise<SequenceData[]> | null = null;
@@ -641,13 +792,15 @@ export function createFuseState({
   }
 
   async function generateSource(
-    side: FuseSide,
-    length: FuseLength
+    side: FuseSide
   ): Promise<{ sequence: SequenceData; origin: SourceOrigin }> {
     if (!generateSoloLoop) {
       throw new Error("The solo LOOP generator is unavailable");
     }
-    const generated = await generateSoloLoop(length, generationRecipe());
+    const generated = await generateSoloLoop(
+      recipes[side].length,
+      generationRecipe(side)
+    );
     return {
       sequence: createCircularFuseSoloSequence(side, generated.solo),
       origin: {
@@ -696,10 +849,16 @@ export function createFuseState({
   // follower card reads these instead of the committed values, so picking a
   // rule rebuilds the follower's steps in place rather than only the fused
   // canvas. Cancel restores both halves of the baseline.
+  // `source` is the path the drafted leader plays when that is not its own
+  // deck's: a hand takes the lead with the path it already has on screen.
   let relationshipDraft = $state<{
     driver: FuseSide;
     transform: FuseRule;
+    source: SequenceData | null;
   } | null>(null);
+  let relationshipRequest = 0;
+  let relationshipApplying = false;
+  let activeDerive: Promise<void> | null = null;
   let relationshipPreviewBaseline: {
     preview: SequenceData | null;
     symmetry: SequenceData | null;
@@ -714,6 +873,8 @@ export function createFuseState({
   let clockFrame: number | null = null;
   let lastClockTimestamp: number | null = null;
   let lastStepPersistAt: number | null = null;
+  let startHoldTimer: ReturnType<typeof setTimeout> | null = null;
+  let waitingAtStart = $state(false);
 
   function poolFor(side: FuseSide): FuseShufflePool {
     return side === "left" ? leftPool : rightPool;
@@ -745,10 +906,27 @@ export function createFuseState({
     }
   }
 
+  /** Steps in one hand's solo path. */
+  function soloLength(solo: SoloPropData): number {
+    return solo.steps.length;
+  }
+
+  /** How long a pair of hand sources fuses to, or null when either is missing
+   * its one-hand path. */
+  function pairLength(left: SequenceData, right: SequenceData): number | null {
+    if (!left.leftSoloProp || !right.rightSoloProp) return null;
+    return fusedLengthFor(
+      soloLength(left.leftSoloProp),
+      soloLength(right.rightSoloProp)
+    );
+  }
+
+  /** Fuse two hand sources. Each hand keeps its own length; the result runs for
+   * the least common multiple of the two, which always fits under
+   * FUSE_MAX_FUSED_STEPS for lengths the recipes can ask for. */
   function createPreview(
     left: SequenceData,
-    right: SequenceData,
-    length: FuseLength
+    right: SequenceData
   ): SequenceData {
     if (!left.leftSoloProp || !right.rightSoloProp) {
       throw new Error(
@@ -756,8 +934,14 @@ export function createFuseState({
       );
     }
 
+    const length = pairLength(left, right)!;
+    if (length > FUSE_MAX_FUSED_STEPS) {
+      throw new Error(
+        `The two paths would fuse to ${length} steps, past the ${FUSE_MAX_FUSED_STEPS}-step limit`
+      );
+    }
     const preview = fuseSequences(left.leftSoloProp, right.rightSoloProp, {
-      maxSteps: length,
+      maxSteps: FUSE_MAX_FUSED_STEPS,
     });
     if (preview.steps.length !== length) {
       throw new Error(
@@ -765,6 +949,12 @@ export function createFuseState({
       );
     }
     return preview;
+  }
+
+  /** The sequence's word, or null while any of its steps has no letter. */
+  function wholeWord(sequence: SequenceData): string | null {
+    const status = deriveWordStatusFromSteps(sequence.steps);
+    return status.complete && status.word ? status.word : null;
   }
 
   /**
@@ -779,6 +969,8 @@ export function createFuseState({
   ): void {
     const generation = ++previewLetterGeneration;
     previewSequence = preview;
+    previewWord = wholeWord(preview) ?? previewWord;
+    appliedLength = preview.steps.length;
     if (syncSymmetry) symmetryPreview = preview;
     const derivation = deriveLetters(preview);
     activePreviewLetterDerivation = { generation, promise: derivation };
@@ -788,11 +980,13 @@ export function createFuseState({
         const derived = await derivation;
         if (disposed || generation !== previewLetterGeneration) return;
         previewSequence = derived;
+        previewWord = wholeWord(derived);
         if (syncSymmetry) symmetryPreview = derived;
       } catch (derivationError) {
         if (disposed || generation !== previewLetterGeneration) return;
+        previewWord = null;
         reportUnexpected(
-          "Couldn't identify the live fused letter.",
+          t("fuse_error_live_letter"),
           derivationError,
           "derive-preview-letters"
         );
@@ -805,26 +999,18 @@ export function createFuseState({
   }
 
   /**
-   * The pool sequence committed for an injected side must have exactly `length`
-   * steps (canFuseNow checks it) and carry the length-tiled solo (so a later
-   * counterpart shuffle re-derives from the full-length path, not the shorter
-   * source). Project that tiled solo through the canonical adapter instead of
-   * copying the paired preview steps back into a one-hand source. Source
-   * identity fields remain stable for display and persistence.
+   * The pool sequence committed for an injected side: the side's own solo
+   * projected through the canonical adapter, at the solo's own length. Each hand
+   * keeps its length; the fuser tiles the pair to their common multiple, so a
+   * source is never stretched to match its partner. Source identity fields stay
+   * stable for display and persistence.
    */
-  function lengthMatchedInjectedSide(
+  function projectInjectedSide(
     side: FuseSide,
     injected: SequenceData,
-    preview: SequenceData,
-    length: FuseLength
+    solo: SoloPropData
   ): SequenceData {
-    const tiledSolo =
-      side === "left" ? preview.leftSoloProp : preview.rightSoloProp;
-    if (!tiledSolo) {
-      throw new Error(`The ${side} preview is missing its solo path`);
-    }
-
-    const projected = createCircularFuseSoloSequence(side, tiledSolo);
+    const projected = createCircularFuseSoloSequence(side, solo);
     return {
       ...injected,
       ...projected,
@@ -841,9 +1027,9 @@ export function createFuseState({
         ...injected.metadata,
         ...projected.metadata,
       },
-      sequenceLength: length,
-      leftSoloProp: side === "left" ? tiledSolo : undefined,
-      rightSoloProp: side === "right" ? tiledSolo : undefined,
+      sequenceLength: soloLength(solo),
+      leftSoloProp: side === "left" ? solo : undefined,
+      rightSoloProp: side === "right" ? solo : undefined,
       stepPairings: undefined,
       leftPathHash: side === "left" ? projected.leftPathHash : undefined,
       rightPathHash: side === "right" ? projected.rightPathHash : undefined,
@@ -859,15 +1045,16 @@ export function createFuseState({
   function commitRestoredSide(
     side: FuseSide,
     selection: FusePersistedSelection,
-    rebuilt: SequenceData,
-    preview: SequenceData,
-    length: FuseLength
+    rebuilt: SequenceData
   ): SequenceData {
     if (selection.origin && selection.solo) {
       const solo =
         side === "left" ? rebuilt.leftSoloProp : rebuilt.rightSoloProp;
-      if (solo) setInjectedOrigin(side, selection.origin, solo);
-      return lengthMatchedInjectedSide(side, rebuilt, preview, length);
+      if (solo) {
+        setInjectedOrigin(side, selection.origin, solo);
+        return projectInjectedSide(side, rebuilt, solo);
+      }
+      return rebuilt;
     }
     clearInjectedOrigin(side);
     return rebuilt;
@@ -899,6 +1086,21 @@ export function createFuseState({
     return !disposed && generation === sideGeneration(side);
   }
 
+  /** How long the playing preview should run. Separate: the common multiple
+   * of the two hands. Linked: the leading hand's own length, since the
+   * follower is rebuilt from it step for step. */
+  function expectedPreviewLength(
+    left: SequenceData,
+    right: SequenceData
+  ): number | null {
+    if (mode === "symmetry") {
+      const driverSolo =
+        driverSide === "left" ? left.leftSoloProp : right.rightSoloProp;
+      return driverSolo ? soloLength(driverSolo) : null;
+    }
+    return pairLength(left, right);
+  }
+
   function canFuseNow(): boolean {
     const leftSequence = leftPool.sequence;
     const rightSequence = rightPool.sequence;
@@ -909,9 +1111,9 @@ export function createFuseState({
       !!rightSequence?.rightSoloProp &&
       !!preview &&
       appliedLength !== null &&
-      leftSequence.steps.length === appliedLength &&
-      rightSequence.steps.length === appliedLength &&
       preview.steps.length === appliedLength &&
+      preview.steps.length ===
+        expectedPreviewLength(leftSequence, rightSequence) &&
       !isLoadingLength &&
       pendingSide === null &&
       !isFusing &&
@@ -921,16 +1123,19 @@ export function createFuseState({
   }
 
   function statusMessage(): string {
-    if (isFusing) return "Building the fused sequence...";
-    if (isLoadingLength) return `Loading ${requestedLength}-step paths...`;
+    if (isFusing) return t("fuse_status_building");
+    if (isLoadingLength) return t("fuse_status_loading_two");
     if (pendingSide) {
-      const label = pendingSide === "left" ? "Left" : "Right";
-      return `Loading another ${label} path...`;
+      return t(
+        pendingSide === "left"
+          ? "fuse_status_loading_left"
+          : "fuse_status_loading_right"
+      );
     }
-    if (isDeriving) return "Previewing the linked path...";
+    if (isDeriving) return t("fuse_status_previewing_linked");
     if (error) return error.message;
     if (canFuseNow()) return readyMessage;
-    return "Choose a length to load two paths.";
+    return t("fuse_status_generate_each");
   }
 
   function serializeSolo(solo: SoloPropData): PersistedSolo {
@@ -960,14 +1165,15 @@ export function createFuseState({
 
   function persistSelection(
     leftSequence: SequenceData,
-    rightSequence: SequenceData,
-    length: FuseLength
+    rightSequence: SequenceData
   ): void {
     // Merge into the current store so writing the pair never drops bpm or the
     // persisted step. Each side carries its injected origin when it has one.
+    // The pair's combined length is not stored: each restored hand brings its
+    // own length back with its path.
+    const { length: _staleLength, ...rest } = persisted;
     persisted = {
-      ...persisted,
-      length,
+      ...rest,
       left: persistedSelectionFor("left", leftSequence),
       right: persistedSelectionFor("right", rightSequence),
     };
@@ -986,113 +1192,155 @@ export function createFuseState({
     writePersistedState(persisted);
   }
 
-  function generationRecipe(): SoloLoopGenerationRecipe {
+  function generationRecipe(side: FuseSide): SoloLoopGenerationRecipe {
+    const recipe = recipes[side];
     return {
-      gridMode,
-      level: generationLevel,
-      maxTurnIntensity: generationLevel === 1 ? 0 : maxTurnIntensity,
-      constraintPreset,
-      handPathMode,
-      motionTypeFilter,
-      startLocation,
-      startOrientation,
-      traversalDirection,
+      gridMode: recipe.gridMode,
+      level: recipe.level,
+      maxTurnIntensity: recipe.level === 1 ? 0 : recipe.maxTurnIntensity,
+      constraintPreset: recipe.constraintPreset,
+      handPathMode: recipe.handPathMode,
+      motionTypeFilter: recipe.motionTypeFilter,
+      startLocation: recipe.startLocation,
+      startOrientation: recipe.startOrientation,
+      traversalDirection: recipe.traversalDirection,
     };
   }
 
-  function persistGenerationRecipe(): void {
+  function persistRecipes(): void {
     persisted = {
       ...persisted,
-      gridMode,
-      generationLevel,
-      maxTurnIntensity,
-      constraintPreset,
-      handPathMode,
-      motionTypeFilter,
-      startLocation,
-      startOrientation,
-      traversalDirection,
+      recipes: {
+        left: { ...recipes.left },
+        right: { ...recipes.right },
+      },
     };
     writePersistedState(persisted);
   }
 
-  function setGenerationLevel(value: number): void {
+  /** Change one hand's settings for its next new path. Never touches the path
+   * on screen: Regenerate is what applies them. */
+  function updateRecipe(side: FuseSide, patch: Partial<FuseHandRecipe>): void {
+    recipes[side] = { ...recipes[side], ...patch };
+    persistRecipes();
+  }
+
+  function setRecipeLength(side: FuseSide, value: FuseLength): void {
+    if (!isFuseLength(value)) return;
+    updateRecipe(side, { length: value });
+  }
+
+  function setGenerationLevel(side: FuseSide, value: number): void {
     const nextLevel = asTurnLevel(value);
-    generationLevel = nextLevel;
-    maxTurnIntensity = clampMaxTurnIntensity(maxTurnIntensity, nextLevel);
-    if (
-      startOrientation !== null &&
-      !startOrientationsForLevel(nextLevel).includes(startOrientation)
-    ) {
-      startOrientation = null;
-    }
-    persistGenerationRecipe();
+    const current = recipes[side];
+    updateRecipe(side, {
+      level: nextLevel,
+      maxTurnIntensity: clampMaxTurnIntensity(
+        current.maxTurnIntensity,
+        nextLevel
+      ),
+      startOrientation:
+        current.startOrientation !== null &&
+        !startOrientationsForLevel(nextLevel).includes(current.startOrientation)
+          ? null
+          : current.startOrientation,
+    });
   }
 
-  function setMaxTurnIntensity(value: number): void {
-    if (generationLevel === 1) return;
-    const allowed = maxTurnIntensitiesForLevel(generationLevel);
-    if (!allowed.includes(value)) return;
-    maxTurnIntensity = value;
-    persistGenerationRecipe();
+  function setMaxTurnIntensity(side: FuseSide, value: number): void {
+    const level = recipes[side].level;
+    if (level === 1) return;
+    if (!maxTurnIntensitiesForLevel(level).includes(value)) return;
+    updateRecipe(side, { maxTurnIntensity: value });
   }
 
-  function setConstraintPreset(
-    value: SoloLoopGenerationRecipe["constraintPreset"]
-  ): void {
-    constraintPreset = value;
-    persistGenerationRecipe();
-  }
-
-  function setHandPathMode(
-    value: SoloLoopGenerationRecipe["handPathMode"]
-  ): void {
-    handPathMode = value;
-    persistGenerationRecipe();
-  }
-
-  function setMotionTypeFilter(
-    value: SoloLoopGenerationRecipe["motionTypeFilter"]
-  ): void {
-    motionTypeFilter = value;
-    persistGenerationRecipe();
-  }
-
-  function setGridMode(value: GridMode): void {
+  function setGridMode(side: FuseSide, value: GridMode): void {
     if (!isFuseGridMode(value)) return;
-    gridMode = value;
-    if (
-      startLocation !== null &&
-      !isFuseStartLocation(startLocation, gridMode)
-    ) {
-      startLocation = null;
+    const current = recipes[side];
+    updateRecipe(side, {
+      gridMode: value,
+      startLocation:
+        current.startLocation !== null &&
+        !isFuseStartLocation(current.startLocation, value)
+          ? null
+          : current.startLocation,
+    });
+  }
+
+  function setStartLocation(side: FuseSide, value: GridLocation | null): void {
+    if (value !== null && !isFuseStartLocation(value, recipes[side].gridMode)) {
+      return;
     }
-    persistGenerationRecipe();
+    updateRecipe(side, { startLocation: value });
   }
 
-  function setStartLocation(value: GridLocation | null): void {
-    if (value !== null && !isFuseStartLocation(value, gridMode)) return;
-    startLocation = value;
-    persistGenerationRecipe();
-  }
-
-  function setStartOrientation(value: Orientation | null): void {
+  function setStartOrientation(
+    side: FuseSide,
+    value: Orientation | null
+  ): void {
     if (
       value !== null &&
-      !startOrientationsForLevel(generationLevel).includes(value)
+      !startOrientationsForLevel(recipes[side].level).includes(value)
     ) {
       return;
     }
-    startOrientation = value;
-    persistGenerationRecipe();
+    updateRecipe(side, { startOrientation: value });
   }
 
-  function setTraversalDirection(
-    value: SoloLoopTraversalDirection | null
-  ): void {
-    traversalDirection = value;
-    persistGenerationRecipe();
+  /** The reactive controls one hand's settings editor binds to. */
+  function createRecipeControls(side: FuseSide): FuseHandRecipeControls {
+    return {
+      side,
+      get requestedLength() {
+        return recipes[side].length;
+      },
+      get generationLevel() {
+        return recipes[side].level;
+      },
+      get maxTurnIntensity() {
+        return recipes[side].maxTurnIntensity;
+      },
+      get gridMode() {
+        return recipes[side].gridMode;
+      },
+      get constraintPreset() {
+        return recipes[side].constraintPreset;
+      },
+      get handPathMode() {
+        return recipes[side].handPathMode;
+      },
+      get motionTypeFilter() {
+        return recipes[side].motionTypeFilter;
+      },
+      get startLocation() {
+        return recipes[side].startLocation;
+      },
+      get startOrientation() {
+        return recipes[side].startOrientation;
+      },
+      get traversalDirection() {
+        return recipes[side].traversalDirection;
+      },
+      setLength: (value) => setRecipeLength(side, value),
+      setGenerationLevel: (value) => setGenerationLevel(side, value),
+      setMaxTurnIntensity: (value) => setMaxTurnIntensity(side, value),
+      setGridMode: (value) => setGridMode(side, value),
+      setConstraintPreset: (value) =>
+        updateRecipe(side, { constraintPreset: value }),
+      setHandPathMode: (value) => updateRecipe(side, { handPathMode: value }),
+      setMotionTypeFilter: (value) =>
+        updateRecipe(side, { motionTypeFilter: value }),
+      setStartLocation: (value) => setStartLocation(side, value),
+      setStartOrientation: (value) => setStartOrientation(side, value),
+      setTraversalDirection: (value) =>
+        updateRecipe(side, { traversalDirection: value }),
+    };
   }
+
+  const recipeControls: Record<FuseSide, FuseHandRecipeControls> = {
+    left: createRecipeControls("left"),
+    right: createRecipeControls("right"),
+  };
 
   /** Rebuild an injected side from its persisted solo alone — self-contained,
    * so a picked/built path survives HMR without the browse pool or a producer.
@@ -1118,8 +1366,7 @@ export function createFuseState({
 
   async function hydrateRestoredSide(
     side: FuseSide,
-    selection: FusePersistedSelection,
-    length: FuseLength
+    selection: FusePersistedSelection
   ): Promise<SequenceData | null> {
     // An injected source (library / VTG / custom) restores from its serialized
     // solo, self-contained — no browse hydrate needed.
@@ -1139,6 +1386,8 @@ export function createFuseState({
     }
     if (!hydrated) return null;
 
+    // A library side restores only at the length its hand currently asks for.
+    const length = recipes[side].length;
     const matchesLength =
       hydrated.steps.length === length || hydrated.sequenceLength === length;
     const hasSideData =
@@ -1148,12 +1397,11 @@ export function createFuseState({
 
   async function hydrateRestoredPair(
     leftSelection: FusePersistedSelection,
-    rightSelection: FusePersistedSelection,
-    length: FuseLength
+    rightSelection: FusePersistedSelection
   ): Promise<{ left: SequenceData; right: SequenceData } | null> {
     const [left, right] = await Promise.all([
-      hydrateRestoredSide("left", leftSelection, length),
-      hydrateRestoredSide("right", rightSelection, length),
+      hydrateRestoredSide("left", leftSelection),
+      hydrateRestoredSide("right", rightSelection),
     ]);
     return left && right ? { left, right } : null;
   }
@@ -1175,7 +1423,14 @@ export function createFuseState({
     clockFrame = requestAnimationFrame(tickClock);
   }
 
+  function clearStartHold(): void {
+    if (startHoldTimer !== null) clearTimeout(startHoldTimer);
+    startHoldTimer = null;
+    waitingAtStart = false;
+  }
+
   function startClock(): void {
+    clearStartHold();
     if (
       clockRunning ||
       !previewSequence ||
@@ -1189,6 +1444,7 @@ export function createFuseState({
   }
 
   function stopClock(): void {
+    clearStartHold();
     clockRunning = false;
     if (clockFrame !== null && typeof cancelAnimationFrame !== "undefined") {
       cancelAnimationFrame(clockFrame);
@@ -1209,28 +1465,55 @@ export function createFuseState({
     } else startClock();
   }
 
-  async function setLength(
-    length: FuseLength,
-    restore?: FuseRestoreRequest
-  ): Promise<void> {
+  /**
+   * Take both hands and the result to one step of a path that is `pathSteps`
+   * long, keeping the moment within the step and whether the clock was running.
+   * A path shorter than the result repeats, and the step lands in the repeat
+   * already playing.
+   */
+  function seekToStep(stepIndex: number, pathSteps: number): void {
+    if (!previewSequence || stepIndex < 0 || stepIndex >= pathSteps) return;
+    const wholeStep = Math.floor(currentStep);
+    const pass = Math.floor(wholeStep / pathSteps);
+    currentStep = pass * pathSteps + stepIndex + (currentStep - wholeStep);
+    clearStartHold();
+    persistStep();
+  }
+
+  /** Park at the starting position, hold a moment, then play. */
+  function seekToStart(): void {
+    if (!previewSequence) return;
+    stopClock();
+    currentStep = 0;
+    persistStep();
+    waitingAtStart = true;
+    startHoldTimer = setTimeout(startClock, START_HOLD_MS);
+  }
+
+  /**
+   * Load a fresh pair: each hand gets a new path from its own settings, at its
+   * own length. A mount-time restore request brings back the exact two paths
+   * that were on screen instead.
+   */
+  async function loadPair(restore?: FuseRestoreRequest): Promise<void> {
     const generation = ++lengthGeneration;
     leftGeneration += 1;
     rightGeneration += 1;
     buildGeneration += 1;
-    requestedLength = length;
     appliedLength = null;
     isLoadingLength = true;
     pendingSide = null;
     isFusing = false;
     error = null;
-    readyMessage = "Both paths are ready.";
+    readyMessage = t("fuse_status_both_ready");
     previewLetterGeneration += 1;
     activePreviewLetterDerivation = null;
     previewSequence = null;
-    leftPool.reset([], length);
-    rightPool.reset([], length);
-    // A length change reloads from the random pool; drop any injected origins.
-    // The restore path below re-sets them for a side it rehydrates as injected.
+    previewWord = null;
+    leftPool.reset([], recipes.left.length);
+    rightPool.reset([], recipes.right.length);
+    // A fresh pair loads new paths; drop any injected origins. The restore path
+    // below re-sets them for a side it rehydrates as injected.
     leftOrigin = null;
     rightOrigin = null;
     currentStep = 0;
@@ -1244,58 +1527,51 @@ export function createFuseState({
         const sequences = await getCatalog();
         if (!isCurrentLengthGeneration(generation)) return;
 
-        leftPool.reset(sequences, length);
-        rightPool.reset(sequences, length);
+        leftPool.reset(sequences, recipes.left.length);
+        rightPool.reset(sequences, recipes.right.length);
         if (leftPool.poolSize === 0 || rightPool.poolSize === 0) {
+          const missing: FuseSide = leftPool.poolSize === 0 ? "left" : "right";
           error = {
             kind: "empty",
-            message: `No ${length}-step paths are available. Choose another length.`,
+            message: t(
+              missing === "left"
+                ? "fuse_error_no_paths_left"
+                : "fuse_error_no_paths_right",
+              { length: recipes[missing].length }
+            ),
           };
           return;
         }
       }
 
-      // Mount-time restore: when the requested length matches the persisted one
-      // and a persisted pair exists, hydrate those exact two sources instead of
-      // landing on a fresh random pick. A deliberate length change passes no
-      // restore request and always loads fresh. Any miss (hydrate returns null,
-      // wrong length, missing side data, or the preview can't be built) falls
-      // through to the random path below.
-      if (restore?.length === length && restore.left && restore.right) {
+      // Mount-time restore: hydrate the two persisted sources instead of
+      // landing on a fresh pick. Any miss (hydrate returns null, wrong length,
+      // missing side data, or the preview can't be built) falls through to the
+      // fresh path below.
+      if (restore?.left && restore.right) {
         const restoredPair = await hydrateRestoredPair(
           restore.left,
-          restore.right,
-          length
+          restore.right
         );
         if (!isCurrentLengthGeneration(generation)) return;
 
         if (restoredPair) {
           try {
-            const preview = createPreview(
-              restoredPair.left,
-              restoredPair.right,
-              length
-            );
-            if (!isCurrentLengthGeneration(generation)) return;
-
-            // Re-establish per-side injected origins and length-match an
-            // injected side (its rebuilt sequence carries only the solo, so
-            // canFuseNow needs the tiled preview steps). A shuffled side commits
-            // its full library sequence unchanged.
+            // Re-establish per-side injected origins. An injected side's
+            // rebuilt sequence carries only its solo, so it is projected at its
+            // own length; a shuffled side commits its library sequence as is.
             const leftRestored = commitRestoredSide(
               "left",
               restore.left,
-              restoredPair.left,
-              preview,
-              length
+              restoredPair.left
             );
             const rightRestored = commitRestoredSide(
               "right",
               restore.right,
-              restoredPair.right,
-              preview,
-              length
+              restoredPair.right
             );
+            const preview = createPreview(leftRestored, rightRestored);
+            if (!isCurrentLengthGeneration(generation)) return;
 
             leftPool.commitRestored(leftRestored);
             rightPool.commitRestored(rightRestored);
@@ -1306,9 +1582,8 @@ export function createFuseState({
               setBaseSolo("right", rightRestored.rightSoloProp);
             }
             publishPreview(preview);
-            appliedLength = length;
             hasLoadedPair = true;
-            persistSelection(leftRestored, rightRestored, length);
+            persistSelection(leftRestored, rightRestored);
             // The Fuse clock is a local rAF accumulator (see tickClock); its
             // step value is just this `currentStep` state, so assigning it here
             // IS the seek — FuseAnimationPreview's reactive effect re-derives the
@@ -1330,20 +1605,20 @@ export function createFuseState({
           } catch {
             if (!isCurrentLengthGeneration(generation)) return;
             // Restore is best-effort: if the persisted sources can no longer
-            // form a valid preview, fall through to a fresh random pair.
+            // form a valid preview, fall through to a fresh pair.
           }
         }
       }
 
       const [leftCandidate, rightCandidate] = generateSoloLoop
         ? await Promise.all([
-            generateSource("left", length).then((generated) => ({
+            generateSource("left").then((generated) => ({
               sequence: generated.sequence,
               poolPosition: 0,
               nextCursor: 0,
               origin: generated.origin,
             })),
-            generateSource("right", length).then((generated) => ({
+            generateSource("right").then((generated) => ({
               sequence: generated.sequence,
               poolPosition: 0,
               nextCursor: 0,
@@ -1354,17 +1629,22 @@ export function createFuseState({
       if (!isCurrentLengthGeneration(generation)) return;
 
       if (!leftCandidate || !rightCandidate) {
+        const missing: FuseSide = leftCandidate ? "right" : "left";
         error = {
           kind: "empty",
-          message: `No ${length}-step paths are available. Choose another length.`,
+          message: t(
+            missing === "left"
+              ? "fuse_error_no_paths_left"
+              : "fuse_error_no_paths_right",
+            { length: recipes[missing].length }
+          ),
         };
         return;
       }
 
       const preview = createPreview(
         leftCandidate.sequence,
-        rightCandidate.sequence,
-        length
+        rightCandidate.sequence
       );
       if (!isCurrentLengthGeneration(generation)) return;
 
@@ -1397,9 +1677,8 @@ export function createFuseState({
         }
       }
       publishPreview(preview);
-      appliedLength = length;
       hasLoadedPair = true;
-      persistSelection(leftCandidate.sequence, rightCandidate.sequence, length);
+      persistSelection(leftCandidate.sequence, rightCandidate.sequence);
       if (!generateSoloLoop) {
         // The legacy browse deck can hydrate its next candidate ahead of time.
         leftPool.prefetchNext();
@@ -1412,8 +1691,8 @@ export function createFuseState({
       error = {
         kind: "catalog",
         message: generateSoloLoop
-          ? "Couldn't generate one-hand LOOPs. Try again."
-          : "Couldn't load paths. Try again.",
+          ? t("fuse_error_generate_failed")
+          : t("fuse_error_load_failed"),
       };
       reportUnexpected(error.message, loadError, "load-paths");
     } finally {
@@ -1421,14 +1700,25 @@ export function createFuseState({
     }
   }
 
+  /** Set both hands to one length and load a fresh pair at it. Kept for
+   * callers that think in one shared length; the hand settings are the owner. */
+  async function setLength(length: FuseLength): Promise<void> {
+    if (!isFuseLength(length)) return;
+    recipes = {
+      left: { ...recipes.left, length },
+      right: { ...recipes.right, length },
+    };
+    persistRecipes();
+    await loadPair();
+  }
+
   function initialize(): Promise<void> {
     // Only the mount-time load restores a persisted pair. Snapshot the persisted
-    // fields by value now (setLength resets currentStep before it reads them, so
+    // fields by value now (loadPair resets currentStep before it reads them, so
     // passing them as an argument protects them from that reset).
-    return (initialLoadPromise ??= setLength(requestedLength, {
+    return (initialLoadPromise ??= loadPair({
       left: persisted.left,
       right: persisted.right,
-      length: persisted.length,
       currentStep: persisted.currentStep,
     }));
   }
@@ -1452,7 +1742,7 @@ export function createFuseState({
 
     try {
       const candidate = generateSoloLoop
-        ? await generateSource(side, appliedLength).then((generated) => ({
+        ? await generateSource(side).then((generated) => ({
             sequence: generated.sequence,
             poolPosition: 0,
             nextCursor: 0,
@@ -1462,11 +1752,14 @@ export function createFuseState({
       if (!isCurrentSideGeneration(side, generation)) return;
 
       if (!candidate || !counterpart.sequence) {
-        const label = side === "left" ? "Left" : "Right";
         error = {
           kind: "candidate",
           side,
-          message: `Couldn't load another ${label} path. Try again.`,
+          message: t(
+            side === "left"
+              ? "fuse_error_another_left"
+              : "fuse_error_another_right"
+          ),
         };
         return;
       }
@@ -1474,7 +1767,7 @@ export function createFuseState({
       const left = side === "left" ? candidate.sequence : counterpart.sequence;
       const right =
         side === "right" ? candidate.sequence : counterpart.sequence;
-      const preview = createPreview(left, right, appliedLength);
+      const preview = createPreview(left, right);
       if (!isCurrentSideGeneration(side, generation)) return;
 
       pool.commit(candidate, false);
@@ -1497,7 +1790,7 @@ export function createFuseState({
       // until the derive lands).
       if (!(mode === "symmetry" && side === driverSide))
         publishPreview(preview);
-      persistSelection(left, right, appliedLength);
+      persistSelection(left, right);
       if (!generateSoloLoop) pool.prefetchNext();
       // Shuffling changes one path at the beat already on screen. Resetting the
       // shared beat here made both props jump back to the start of the loop.
@@ -1507,11 +1800,14 @@ export function createFuseState({
       if (mode === "symmetry" && side === driverSide) void deriveFollower();
     } catch (shuffleError) {
       if (!isCurrentSideGeneration(side, generation)) return;
-      const label = side === "left" ? "Left" : "Right";
       error = {
         kind: "candidate",
         side,
-        message: `Couldn't load another ${label} path. Try again.`,
+        message: t(
+          side === "left"
+            ? "fuse_error_another_left"
+            : "fuse_error_another_right"
+        ),
       };
       reportUnexpected(error.message, shuffleError, `shuffle-${side}`);
     } finally {
@@ -1545,7 +1841,8 @@ export function createFuseState({
       return;
     }
 
-    const length = appliedLength;
+    // A VTG path closes at the length this hand's settings ask for.
+    const length = recipes[side].length;
     const counterpart = otherPool(side);
     const counterpartSeq = counterpart.sequence;
     if (!counterpartSeq) return;
@@ -1593,15 +1890,13 @@ export function createFuseState({
 
       const leftSeq = side === "left" ? injected : counterpartSeq;
       const rightSeq = side === "right" ? injected : counterpartSeq;
-      const preview = createPreview(leftSeq, rightSeq, length);
+      const committed = projectInjectedSide(side, injected, solo);
+      const preview = createPreview(
+        side === "left" ? committed : leftSeq,
+        side === "right" ? committed : rightSeq
+      );
       if (!isCurrentSideGeneration(side, generation)) return;
 
-      const committed = lengthMatchedInjectedSide(
-        side,
-        injected,
-        preview,
-        length
-      );
       pool.commitRestored(committed);
       // Record the origin before persisting so the injected solo is written.
       setInjectedOrigin(side, effectiveOrigin, solo);
@@ -1612,17 +1907,18 @@ export function createFuseState({
         publishPreview(preview);
       const leftForPersist = side === "left" ? committed : counterpartSeq;
       const rightForPersist = side === "right" ? committed : counterpartSeq;
-      persistSelection(leftForPersist, rightForPersist, length);
+      persistSelection(leftForPersist, rightForPersist);
       readyMessage = sourceReadyMessage(side, committed, false);
       // A newly injected driver source re-derives the symmetry follower.
       if (mode === "symmetry" && side === driverSide) void deriveFollower();
     } catch (sourceError) {
       if (!isCurrentSideGeneration(side, generation)) return;
-      const label = side === "left" ? "Left" : "Right";
       error = {
         kind: "candidate",
         side,
-        message: `Couldn't use that ${label} path. Generate another path and try again.`,
+        message: t(
+          side === "left" ? "fuse_error_use_left" : "fuse_error_use_right"
+        ),
       };
       reportUnexpected(error.message, sourceError, `set-source-${side}`);
     } finally {
@@ -1684,6 +1980,9 @@ export function createFuseState({
         case "invert":
           transformed = await invertSequence(transformed, side);
           break;
+        case "rewind":
+          transformed = await rewindSequence(transformed, side);
+          break;
         case "first-step":
           transformed = shiftStartPlacement(transformed, adjustment.step);
           break;
@@ -1702,13 +2001,10 @@ export function createFuseState({
       const injected = createCircularFuseSoloSequence(side, solo);
       const leftSequence = side === "left" ? injected : counterpart;
       const rightSequence = side === "right" ? injected : counterpart;
-      const preview = createPreview(leftSequence, rightSequence, appliedLength);
-      const committed = lengthMatchedInjectedSide(
-        side,
-        injected,
-        preview,
-        appliedLength
-      );
+      const preview = createPreview(leftSequence, rightSequence);
+      const committed = projectInjectedSide(side, injected, solo);
+      const edit = pictographEditFor(adjustment);
+      if (edit) announcePictographEdit(edit);
       poolFor(side).commit(
         { sequence: committed, poolPosition: 0, nextCursor: 0 },
         false
@@ -1730,15 +2026,21 @@ export function createFuseState({
       }
       const leftForPersist = side === "left" ? committed : counterpart;
       const rightForPersist = side === "right" ? committed : counterpart;
-      persistSelection(leftForPersist, rightForPersist, appliedLength);
-      readyMessage = `${side === "left" ? "Left" : "Right"} LOOP adjusted.`;
+      persistSelection(leftForPersist, rightForPersist);
+      readyMessage = t(
+        side === "left"
+          ? "fuse_status_left_adjusted"
+          : "fuse_status_right_adjusted"
+      );
       if (mode === "symmetry" && side === driverSide) void deriveFollower();
     } catch (adjustmentError) {
       if (!isCurrentSideGeneration(side, generation)) return;
       error = {
         kind: "candidate",
         side,
-        message: `Couldn't adjust the ${side === "left" ? "Left" : "Right"} LOOP. Try another transform.`,
+        message: t(
+          side === "left" ? "fuse_error_adjust_left" : "fuse_error_adjust_right"
+        ),
       };
       reportUnexpected(error.message, adjustmentError, `adjust-${side}`);
     } finally {
@@ -1819,17 +2121,116 @@ export function createFuseState({
   }
 
   function symmetryReadyMessage(): string {
-    const followerLabel = driverSide === "left" ? "Right" : "Left";
-    const driverLabel = driverSide === "left" ? "Left" : "Right";
-    return `${followerLabel} follows ${driverLabel} (${fuseRuleLabel(rule)}).`;
+    return t(
+      driverSide === "left"
+        ? "fuse_status_left_leads_follows"
+        : "fuse_status_right_leads_follows",
+      { rule: fuseRuleLabel(rule) }
+    );
+  }
+
+  function soloOf(
+    sequence: SequenceData | null | undefined,
+    side: FuseSide
+  ): SoloPropData | undefined {
+    return side === "left" ? sequence?.leftSoloProp : sequence?.rightSoloProp;
+  }
+
+  function sameSolo(a: SoloPropData, b: SoloPropData): boolean {
+    return (
+      JSON.stringify(serializeSolo(a)) === JSON.stringify(serializeSolo(b))
+    );
+  }
+
+  /** The relationship on screen: the editor's draft, or the applied one. Null
+   * while the two paths are separate. */
+  function shownRelationship() {
+    if (relationshipDraft) return relationshipDraft;
+    return mode === "symmetry"
+      ? { driver: driverSide, transform: rule, source: null }
+      : null;
+  }
+
+  /**
+   * The path a hand leads with, when that is not its own deck's. Taking the lead
+   * never swaps the path a person is looking at: the hand keeps the one on
+   * screen, which until now was rebuilt from the other hand. Null means its own
+   * deck already holds it.
+   */
+  function leadSourceFor(side: FuseSide): SequenceData | null {
+    const shown = shownRelationship();
+    if (!shown) return null;
+    if (shown.driver === side) return shown.source;
+    const solo = soloOf(symmetryPreview, side);
+    if (!solo) return null;
+    const own = soloOf(poolFor(side).sequence, side);
+    if (own && sameSolo(own, solo)) return null;
+    return projectInjectedSide(
+      side,
+      createCircularFuseSoloSequence(side, solo),
+      solo
+    );
+  }
+
+  /** Put a hand's on-screen path into its deck as the path it leads with. Its
+   * earlier path stays one Previous away. */
+  function commitLeadSource(side: FuseSide, source: SequenceData | null): void {
+    const solo = soloOf(source, side);
+    if (!source || !solo) return;
+    poolFor(side).commit(
+      { sequence: source, poolPosition: 0, nextCursor: 0 },
+      false,
+      { announce: false }
+    );
+    setInjectedOrigin(
+      side,
+      {
+        kind: "adjusted",
+        label: `Built from the ${side === "left" ? "Right" : "Left"} path`,
+      },
+      solo
+    );
+    setBaseSolo(side, solo);
+    const left = leftPool.sequence;
+    const right = rightPool.sequence;
+    if (left && right) persistSelection(left, right);
+  }
+
+  /** Going Separate keeps both paths as they are on screen: a path that was
+   * built from the other hand becomes that hand's own, and its earlier path
+   * stays one Previous away. Must run while the relationship is still shown. */
+  function keepShownPaths(): void {
+    const sources = (["left", "right"] as const).map(
+      (side) => [side, leadSourceFor(side)] as const
+    );
+    for (const [side, source] of sources) commitLeadSource(side, source);
+  }
+
+  /** Run a relationship change once no follower is being rebuilt, so it always
+   * starts from a pair that is really on screen. A later change wins. Runs at
+   * once when nothing is being rebuilt. */
+  async function whenSettled(
+    change: () => void,
+    { applying = false }: { applying?: boolean } = {}
+  ): Promise<void> {
+    const request = ++relationshipRequest;
+    relationshipApplying = applying;
+    let waitedFor: Promise<void> | null = null;
+    while (isDeriving && activeDerive && activeDerive !== waitedFor) {
+      waitedFor = activeDerive;
+      await waitedFor;
+      if (disposed || request !== relationshipRequest) return;
+    }
+    relationshipApplying = false;
+    change();
   }
 
   async function createRelationshipPreview(
     nextDriver: FuseSide,
     nextRule: FuseRule,
-    length: FuseLength
+    source: SequenceData | null = null
   ): Promise<SequenceData | null> {
-    const driverSequence = poolFor(nextDriver).sequence;
+    const driverSequence = source ?? poolFor(nextDriver).sequence;
     const driverSolo =
       nextDriver === "left"
         ? driverSequence?.leftSoloProp
@@ -1843,7 +2244,10 @@ export function createFuseState({
     );
     const leftSolo = nextDriver === "left" ? driverSolo : followerSolo;
     const rightSolo = nextDriver === "left" ? followerSolo : driverSolo;
-    const preview = fuseSequences(leftSolo, rightSolo, { maxSteps: length });
+    const length = soloLength(driverSolo);
+    const preview = fuseSequences(leftSolo, rightSolo, {
+      maxSteps: FUSE_MAX_FUSED_STEPS,
+    });
     if (preview.steps.length !== length) {
       throw new Error(
         "The linked path did not preserve the selected sequence length"
@@ -1858,13 +2262,18 @@ export function createFuseState({
    * card's rendered sequence and the live preview. A generation guard drops a
    * stale derive if the driver, transform, or mode changed while it awaited.
    */
-  async function deriveFollower(): Promise<void> {
+  function deriveFollower(): Promise<void> {
+    const derive = rebuildFollower();
+    activeDerive = derive;
+    return derive;
+  }
+
+  async function rebuildFollower(): Promise<void> {
     if (disposed || mode !== "symmetry" || appliedLength === null) return;
-    const length = appliedLength;
     const generation = ++symmetryGeneration;
     isDeriving = true;
     try {
-      const preview = await createRelationshipPreview(driverSide, rule, length);
+      const preview = await createRelationshipPreview(driverSide, rule);
       if (!preview) return;
       if (
         disposed ||
@@ -1889,8 +2298,7 @@ export function createFuseState({
       if (disposed || generation !== symmetryGeneration) return;
       error = {
         kind: "derivation",
-        message:
-          "Couldn't derive the symmetric path. Generate another driver and try again.",
+        message: t("fuse_error_derive_symmetric"),
       };
       reportUnexpected(error.message, deriveError, "derive-symmetry");
     } finally {
@@ -1908,9 +2316,21 @@ export function createFuseState({
     nextDriver: FuseSide,
     nextRule: FuseRule
   ): Promise<void> {
+    let preview: Promise<void> | null = null;
+    await whenSettled(() => {
+      preview = rebuildRelationshipPreview(nextDriver, nextRule);
+      activeDerive = preview;
+    });
+    await preview;
+  }
+
+  async function rebuildRelationshipPreview(
+    nextDriver: FuseSide,
+    nextRule: FuseRule
+  ): Promise<void> {
     if (disposed || appliedLength === null) return;
-    const length = appliedLength;
     const key = `${nextDriver}:${fuseRuleKey(nextRule)}`;
+    const source = leadSourceFor(nextDriver);
     if (relationshipDraftKey === null) {
       relationshipPreviewBaseline = {
         preview: previewSequence,
@@ -1918,7 +2338,7 @@ export function createFuseState({
       };
     }
     relationshipDraftKey = key;
-    relationshipDraft = { driver: nextDriver, transform: nextRule };
+    relationshipDraft = { driver: nextDriver, transform: nextRule, source };
     const generation = ++symmetryGeneration;
     isDeriving = true;
 
@@ -1926,7 +2346,7 @@ export function createFuseState({
       const preview = await createRelationshipPreview(
         nextDriver,
         nextRule,
-        length
+        source
       );
       if (
         !preview ||
@@ -1939,11 +2359,12 @@ export function createFuseState({
       // syncSymmetry so the follower card re-renders its steps from this draft.
       publishPreview(preview, { syncSymmetry: true });
       error = null;
-      const driverLabel = nextDriver === "left" ? "Left" : "Right";
-      const followerLabel = nextDriver === "left" ? "Right" : "Left";
-      readyMessage = `Previewing ${driverLabel} → ${fuseRuleLabel(
-        nextRule
-      )} → ${followerLabel}.`;
+      readyMessage = t(
+        nextDriver === "left"
+          ? "fuse_status_previewing_left_leads"
+          : "fuse_status_previewing_right_leads",
+        { rule: fuseRuleLabel(nextRule) }
+      );
     } catch (previewError) {
       if (
         disposed ||
@@ -1954,8 +2375,7 @@ export function createFuseState({
       }
       error = {
         kind: "derivation",
-        message:
-          "Couldn't preview that relationship. Choose another transform and try again.",
+        message: t("fuse_error_preview_relationship"),
       };
       reportUnexpected(error.message, previewError, "preview-relationship");
     } finally {
@@ -1964,6 +2384,9 @@ export function createFuseState({
   }
 
   function cancelRelationshipPreview(): void {
+    if (relationshipApplying) return;
+    // A change still waiting for its turn is dropped with the draft.
+    relationshipRequest += 1;
     if (relationshipDraftKey === null) return;
     const baseline = relationshipPreviewBaseline;
     relationshipDraftKey = null;
@@ -1978,7 +2401,9 @@ export function createFuseState({
       symmetryPreview = baseline.symmetry;
       error = null;
       readyMessage =
-        mode === "symmetry" ? symmetryReadyMessage() : "Both paths are ready.";
+        mode === "symmetry"
+          ? symmetryReadyMessage()
+          : t("fuse_status_both_ready");
       return;
     }
     if (mode === "symmetry") void deriveFollower();
@@ -1993,9 +2418,9 @@ export function createFuseState({
     const rightSequence = rightPool.sequence;
     if (!leftSequence || !rightSequence || appliedLength === null) return;
     try {
-      publishPreview(createPreview(leftSequence, rightSequence, appliedLength));
+      publishPreview(createPreview(leftSequence, rightSequence));
       error = null;
-      readyMessage = "Both paths are ready.";
+      readyMessage = t("fuse_status_both_ready");
     } catch (restoreError) {
       reportPreviewFailure(restoreError);
     }
@@ -2003,6 +2428,7 @@ export function createFuseState({
 
   function setMode(next: FuseMode): void {
     if (next === mode) return;
+    if (next !== "symmetry") keepShownPaths();
     relationshipDraftKey = null;
     relationshipDraft = null;
     relationshipPreviewBaseline = null;
@@ -2025,31 +2451,48 @@ export function createFuseState({
    * keeps its draft local, so the result does not flicker through a temporary
    * driver or transform while the user is still deciding. */
   function setRelationship(nextDriver: FuseSide, nextRule: FuseRule): void {
-    relationshipDraftKey = null;
-    relationshipDraft = null;
-    relationshipPreviewBaseline = null;
-    const changed =
-      mode !== "symmetry" ||
-      driverSide !== nextDriver ||
-      !fuseRulesEqual(rule, nextRule);
-    if (!changed) {
+    const apply = (): void => {
+      const source = leadSourceFor(nextDriver);
+      relationshipDraftKey = null;
+      relationshipDraft = null;
+      relationshipPreviewBaseline = null;
+      commitLeadSource(nextDriver, source);
+      const changed =
+        mode !== "symmetry" ||
+        driverSide !== nextDriver ||
+        !fuseRulesEqual(rule, nextRule);
+      if (changed) {
+        driverSide = nextDriver;
+        rule = nextRule;
+        ruleAdjusted = false;
+        mode = "symmetry";
+        persistModeState();
+      }
       void deriveFollower();
-      return;
-    }
-
-    driverSide = nextDriver;
-    rule = nextRule;
-    ruleAdjusted = false;
-    mode = "symmetry";
-    persistModeState();
-    void deriveFollower();
+    };
+    void whenSettled(apply, { applying: true });
   }
 
+  /**
+   * Hand the lead to the other path. Both paths stay exactly as they are on
+   * screen: the new leader keeps the path it was showing, and the rule turns
+   * round so it still describes the same pair. What changes is which hand a new
+   * path, an edit or a rule change starts from.
+   */
   function setDriver(side: FuseSide): void {
-    if (side === driverSide) return;
-    driverSide = side;
-    persistModeState();
-    if (mode === "symmetry") void deriveFollower();
+    const handOver = (): void => {
+      if (side === driverSide) return;
+      if (mode === "symmetry") {
+        commitLeadSource(side, leadSourceFor(side));
+        rule = inverseFuseRule(rule);
+      }
+      driverSide = side;
+      persistModeState();
+      if (mode !== "symmetry") return;
+      if (symmetryPreview) readyMessage = symmetryReadyMessage();
+      else void deriveFollower();
+    };
+    void whenSettled(handOver);
   }
 
   function setRule(nextRule: FuseRule): void {
@@ -2081,7 +2524,7 @@ export function createFuseState({
         side === "left" ? previousEntry.sequence : counterpart.sequence;
       const right =
         side === "right" ? previousEntry.sequence : counterpart.sequence;
-      const preview = createPreview(left, right, appliedLength);
+      const preview = createPreview(left, right);
       pool.commitPrevious();
       const previousSolo =
         side === "left"
@@ -2093,7 +2536,7 @@ export function createFuseState({
       }
       if (!(mode === "symmetry" && side === driverSide))
         publishPreview(preview);
-      persistSelection(left, right, appliedLength);
+      persistSelection(left, right);
       // Back uses the same in-place swap as Shuffle, so playback stays on beat.
       error = null;
       readyMessage = sourceReadyMessage(side, previousEntry.sequence, true);
@@ -2101,8 +2544,7 @@ export function createFuseState({
     } catch (previewError) {
       error = {
         kind: "preview",
-        message:
-          "Couldn't build the combined preview. Generate another path and try again.",
+        message: t("fuse_error_combined_preview"),
       };
       reportUnexpected(error.message, previewError, `previous-${side}`);
     }
@@ -2114,7 +2556,7 @@ export function createFuseState({
       await shuffle(error.side);
       return;
     }
-    await setLength(requestedLength);
+    await loadPair();
   }
 
   async function buildFusedSequence(): Promise<SequenceData | null> {
@@ -2140,8 +2582,7 @@ export function createFuseState({
         (step) => !step.letter
       ).length;
       if (missingLetters > 0) {
-        const message =
-          "Couldn't identify every fused step. Generate another path and try again.";
+        const message = t("fuse_error_identify_steps");
         error = { kind: "derivation", message };
         reportUnexpected(
           message,
@@ -2171,8 +2612,7 @@ export function createFuseState({
       };
     } catch (deriveError) {
       if (disposed || generation !== buildGeneration) return null;
-      const message =
-        "Couldn't identify every fused step. Generate another path and try again.";
+      const message = t("fuse_error_identify_steps");
       error = { kind: "derivation", message };
       reportUnexpected(message, deriveError, "derive-fused-word");
       return null;
@@ -2183,15 +2623,14 @@ export function createFuseState({
 
   function reportPreviewFailure(technicalError: unknown): void {
     if (!previewSequence || error?.kind === "preview") return;
-    const message =
-      "Couldn't build the combined preview. Generate another path and try again.";
+    const message = t("fuse_error_combined_preview");
     error = { kind: "preview", message };
     stopClock();
     reportUnexpected(message, technicalError, "initialize-preview");
   }
 
   function reportViewerFailure(technicalError: unknown): void {
-    const message = "Couldn't open the fused sequence. Try again.";
+    const message = t("fuse_error_open_fused");
     error = { kind: "viewer", message };
     reportUnexpected(message, technicalError, "open-viewer");
   }
@@ -2246,6 +2685,16 @@ export function createFuseState({
       get nextSequence() {
         return pool.nextSequence;
       },
+      /** Steps in this hand's own path, or null while it loads. */
+      get length() {
+        const solo =
+          side === "left"
+            ? pool.sequence?.leftSoloProp
+            : pool.sequence?.rightSoloProp;
+        return solo ? soloLength(solo) : null;
+      },
+      /** This hand's settings for its next new path. */
+      recipe: recipeControls[side],
     };
   }
 
@@ -2253,8 +2702,10 @@ export function createFuseState({
   const right = sourceState("right", rightPool);
 
   return {
+    /** How long the next fresh pair would run: the common multiple of the
+     * lengths the two hands' settings ask for. */
     get requestedLength() {
-      return requestedLength;
+      return fusedLengthFor(recipes.left.length, recipes.right.length);
     },
     get appliedLength() {
       return appliedLength;
@@ -2262,32 +2713,11 @@ export function createFuseState({
     get bpm() {
       return bpm;
     },
-    get gridMode() {
-      return gridMode;
+    get recipes(): Readonly<Record<FuseSide, Readonly<FuseHandRecipe>>> {
+      return recipes;
     },
-    get generationLevel() {
-      return generationLevel;
-    },
-    get maxTurnIntensity() {
-      return maxTurnIntensity;
-    },
-    get constraintPreset() {
-      return constraintPreset;
-    },
-    get handPathMode() {
-      return handPathMode;
-    },
-    get motionTypeFilter() {
-      return motionTypeFilter;
-    },
-    get startLocation() {
-      return startLocation;
-    },
-    get startOrientation() {
-      return startOrientation;
-    },
-    get traversalDirection() {
-      return traversalDirection;
+    recipeFor(side: FuseSide): FuseHandRecipeControls {
+      return recipeControls[side];
     },
     get currentStep() {
       return currentStep;
@@ -2295,8 +2725,15 @@ export function createFuseState({
     get clockRunning() {
       return clockRunning;
     },
+    /** A tapped Start is holding its pose before it plays. */
+    get waitingAtStart() {
+      return waitingAtStart;
+    },
     get previewSequence() {
       return previewSequence;
+    },
+    get previewWord() {
+      return previewWord;
     },
     get isLoadingLength() {
       return isLoadingLength;
@@ -2364,6 +2801,7 @@ export function createFuseState({
     left,
     right,
     initialize,
+    loadPair: () => loadPair(),
     setLength,
     shuffle,
     setSource,
@@ -2380,18 +2818,11 @@ export function createFuseState({
     reportPreviewFailure,
     reportViewerFailure,
     setBpm,
-    setGenerationLevel,
-    setMaxTurnIntensity,
-    setConstraintPreset,
-    setHandPathMode,
-    setMotionTypeFilter,
-    setGridMode,
-    setStartLocation,
-    setStartOrientation,
-    setTraversalDirection,
     startClock,
     stopClock,
     toggleClock,
+    seekToStep,
+    seekToStart,
     handleDocumentVisibility,
     dispose,
   };

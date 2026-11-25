@@ -12,6 +12,7 @@ import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factor
 import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
 import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 
 export type BuiltFusePathFailure =
@@ -92,21 +93,26 @@ export function buildFusePathSource({
     return {
       ok: false,
       reason: "empty",
-      message: "Choose a start point, then build the first step.",
+      message: t("fuse_builder_msg_empty"),
     };
   }
   if (steps.length < expectedLength) {
     return {
       ok: false,
       reason: "incomplete",
-      message: `${expectedLength - steps.length} ${expectedLength - steps.length === 1 ? "step" : "steps"} left.`,
+      message: t(
+        expectedLength - steps.length === 1
+          ? "fuse_builder_msg_steps_left_one"
+          : "fuse_builder_msg_steps_left_other",
+        { count: expectedLength - steps.length }
+      ),
     };
   }
   if (steps.length > expectedLength) {
     return {
       ok: false,
       reason: "too-long",
-      message: `This path is longer than the selected ${expectedLength} steps.`,
+      message: t("fuse_builder_msg_too_long", { count: expectedLength }),
     };
   }
 
@@ -116,15 +122,14 @@ export function buildFusePathSource({
     return {
       ok: false,
       reason: "open-location",
-      message: "The last step must return to the starting point.",
+      message: t("fuse_builder_msg_open_location"),
     };
   }
   if (last.endOrientation !== first.startOrientation) {
     return {
       ok: false,
       reason: "open-orientation",
-      message:
-        "The last step reaches the start point with the wrong orientation. Undo it and change its direction or turns.",
+      message: t("fuse_builder_msg_open_orientation"),
     };
   }
 
@@ -142,8 +147,7 @@ export function buildFusePathSource({
     return {
       ok: false,
       reason: "open-orientation",
-      message:
-        "This path does not close cleanly yet. Undo the last step and return to the starting pose.",
+      message: t("fuse_builder_msg_not_closed"),
     };
   }
 

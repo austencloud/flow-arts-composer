@@ -34,6 +34,8 @@ Renders a section with:
   import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
   import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
   import { tryGetOptionAuditionContext } from "../../context/option-audition-context";
+  import { tryGetOptionMarkContext } from "../../context/option-mark-context";
+  import OptionMark from "../../components/OptionMark.svelte";
   import { createHoldToAuditionAttachment } from "../../services/hold-to-audition";
   import DoubleFloatOptionRows from "../../components/DoubleFloatOptionRows.svelte";
   import {
@@ -112,6 +114,7 @@ Renders a section with:
   let hapticService: HapticFeedback | null = null;
   const reversalDetector: ReversalDetector = _reversalDetector;
   const auditionContext = tryGetOptionAuditionContext();
+  const marks = tryGetOptionMarkContext();
   // Cards arrive from the landed start cell while the sheet opens.
   const sheet = tryGetOptionSheetOpeningContext();
 
@@ -467,6 +470,7 @@ Renders a section with:
     >
       {#each displayedItems() as pictograph, index (index)}
         {@const borderColors = getLetterBorderColors(pictograph.letter)}
+        {@const mark = marks?.isMarked(pictograph) ? marks.mark : null}
         <button
           class="pictograph-option"
           class:continuation={continuationIndex === index}
@@ -486,9 +490,9 @@ Renders a section with:
           data-option-index={index}
           data-ghost="safe"
           data-ghost-kind="option"
-          aria-label={t("create_option_add_preview", {
+          aria-label={`${t("create_option_add_preview", {
             letter: pictograph.letter ?? t("create_option_movement"),
-          })}
+          })}${mark ? ` ${mark.label}.` : ""}`}
           aria-keyshortcuts="Shift+Space"
           title={t("create_ui_tap_to_add_hold_to_preview")}
           {@attach holdToAudition}
@@ -499,6 +503,7 @@ Renders a section with:
             leftReversal={pictograph.leftReversal || false}
             rightReversal={pictograph.rightReversal || false}
           />
+          <OptionMark {mark} />
         </button>
       {/each}
     </div>

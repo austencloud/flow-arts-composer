@@ -509,7 +509,7 @@
               enabled: morphingFrames,
             }}
           >
-            <div class="pair-keys">
+            <div class="pair-keys" class:solo={solo !== null}>
               {#if solo}
                 {@const soloName = theorySoloFlowerName(pair[solo])}
                 <strong
@@ -1027,6 +1027,18 @@
     }
   }
 
+  @keyframes solo-keys-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pair-keys.solo {
+      animation: none !important;
+    }
+  }
+
   @container shape-matrix-app (max-width: 74.99rem) or (max-height: 41.99rem) {
     /* Same second name as the Matrix drill, so the side composition below
        and the chip rows switch on compact hosts only. */
@@ -1034,6 +1046,14 @@
       border: 0;
       border-radius: 0;
       container-name: shape-matrix-drill shape-matrix-drill-compact;
+    }
+  }
+
+  /* A phone on its side: the stage's frame gives its padding back to it, as
+     the Matrix drill's does. */
+  @container shape-matrix-app (max-height: 30rem) {
+    .theory-detail {
+      padding: 0.4rem;
     }
   }
 
@@ -1049,7 +1069,7 @@
      element rail and the dock move beside the animation instead of eating
      the top third of the screen. The row is already two columns wide here on
      its own, which is what the rail was sized for. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
+  @container shape-matrix-drill-compact ((min-width: 42rem) and (min-aspect-ratio: 5 / 6)) or ((min-width: 28rem) and (max-height: 26rem)) {
     .detail-body {
       grid-template-columns: clamp(15rem, 33%, 18rem) minmax(0, 1fr);
       grid-template-rows: auto minmax(0, 1fr) auto;
@@ -1088,15 +1108,13 @@
     }
   }
 
-  /* A short landscape phone has no height for a stacked side column: the
-     modes keep it and the dock goes under the animation. */
   /* In the side column the dock is too narrow for its one-row labels, so
      ControlDock drops them and leaves four bare icons, with empty column above
      them in portrait. The column has the height for a 2x2 grid of labeled
-     buttons instead. Only this tier: the short-wide tier puts the dock under
-     the hero, and phone and desktop never answer to the compact name. The
+     buttons instead. Only this tier: a phone on its side keeps one slim row,
+     and phone and desktop never answer to the compact name. The
      root class lifts these over ControlDock's own .compact label rule. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 24.01rem) {
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 26.01rem) {
     .theory-detail .animation-controls :global(.dock .cat-bar) {
       padding: 0;
       background: none;
@@ -1122,17 +1140,132 @@
     }
   }
 
-  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 24rem) {
+  /* A phone on its side, in the Matrix drill's own shape: the animation gets
+     the whole height, and the column ends in the dock and the question, one
+     slim row each. The flow's wrappers step aside so the question can join
+     the column; the stage has no floor, so nothing is pushed out of view. */
+  @container shape-matrix-drill-compact (min-width: 28rem) and (max-height: 26rem) {
     .detail-body {
-      grid-template-columns: clamp(13rem, 30%, 17rem) minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-columns: clamp(13rem, 42.5%, 18rem) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
       grid-template-areas:
-        "modes media"
-        "modes controls";
+        "modes heading"
+        "modes stage"
+        "controls stage"
+        "question stage";
+      column-gap: 0.5rem;
+      row-gap: 0.35rem;
+    }
+
+    .media-stage,
+    .detail-flow {
+      display: contents;
     }
 
     .mode-picker {
-      align-self: center;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 0.35rem;
+      min-height: 0;
+    }
+
+    .pair-heading {
+      grid-area: heading;
+    }
+
+    .empty {
+      grid-area: 1 / 2 / -1 / 3;
+    }
+
+    .stage-frame {
+      grid-area: stage;
+      min-height: 0;
+    }
+
+    .stage-window {
+      min-height: 0;
+    }
+
+    .boundary-disclosure {
+      grid-area: question;
+      position: relative;
+      /* Over the dock, which stands at 10, so the answer can cover it. */
+      z-index: 11;
+    }
+
+    .boundary-disclosure :global(.panel-btn) {
+      min-height: 2.125rem;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.8125rem;
+      line-height: 1.15;
+      text-align: start;
+    }
+
+    /* Opened, the answer stands over the column instead of squeezing it. */
+    .boundary-note {
+      position: absolute;
+      inset-inline: 0;
+      bottom: calc(100% + 0.35rem);
+      max-height: 75cqh;
+      padding: 0.5rem 0.65rem;
+      overflow: auto;
+      border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
+      border-radius: 12px;
+      background: var(--surface-panel-opaque, #101721);
+    }
+
+    /* One hand has no pairing, so its ratio and its flower's name take the
+       column the pickers leave, in the place of the Matrix drill's solo card.
+       They come in once the pickers have cleared it. */
+    .pair-heading {
+      flex-wrap: nowrap;
+    }
+
+    .pair-keys.solo {
+      position: absolute;
+      inset-block: 0 5.75rem;
+      inset-inline-start: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      width: clamp(13rem, 42.5%, 18rem);
+      font-size: 1.75rem;
+      text-align: center;
+      animation: solo-keys-in var(--duration-normal) var(--ease-out)
+        var(--duration-emphasis) backwards;
+    }
+
+    .pair-keys.solo .solo-name {
+      font-size: var(--font-size-lg, 1.125rem);
+    }
+
+    .pair-heading:has(.pair-keys.solo) {
+      justify-content: flex-end;
+    }
+
+    /* One row of tabs, as in the Matrix drill's short column. */
+    .theory-detail .animation-controls :global(.mobile-export) {
+      border-top: none;
+    }
+    .theory-detail .animation-controls :global(.dock .cat-bar) {
+      flex-wrap: nowrap;
+      padding: 0;
+      background: none;
+      backdrop-filter: none;
+      border-top: none;
+    }
+    .theory-detail .animation-controls :global(.dock .cat-scroll) {
+      display: flex;
+      gap: 0.35rem;
+    }
+    .theory-detail .animation-controls :global(.dock .row-break),
+    .theory-detail .animation-controls :global(.dock .two-rows .cat-label) {
+      display: none;
+    }
+    .theory-detail .animation-controls :global(.dock .dock-btn.cat) {
+      flex: 1 1 0;
+      min-height: 2.5rem;
+      padding: 0.125rem;
     }
   }
 </style>

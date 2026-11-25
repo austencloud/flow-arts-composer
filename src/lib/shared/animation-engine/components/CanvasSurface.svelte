@@ -114,6 +114,7 @@ captureEffectDiagnostics to the context menu.
     showNonRadialPoints = true,
     mandalaVisibleOverride = undefined,
     mandalaStrokeWidthOverride = undefined,
+    trailResetKey = undefined,
     fireConfig = undefined,
     ledConfig = undefined,
     tipEffectMap: cellTipEffectMap = undefined,
@@ -194,6 +195,7 @@ captureEffectDiagnostics to the context menu.
     showNonRadialPoints?: boolean;
     mandalaVisibleOverride?: boolean;
     mandalaStrokeWidthOverride?: number;
+    trailResetKey?: number;
     fireConfig?: Partial<FireOverlayConfig>;
     ledConfig?: Partial<LedOverlayConfig>;
     tipEffectMap?: TipEffectMap;
@@ -560,6 +562,7 @@ captureEffectDiagnostics to the context menu.
       showNonRadialPoints,
       mandalaVisibleOverride,
       mandalaStrokeWidthOverride,
+      trailResetKey,
     };
     untrack(() => {
       if (currentFireConfig) {

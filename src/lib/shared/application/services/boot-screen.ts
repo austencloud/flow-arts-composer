@@ -72,6 +72,36 @@ export function runAfterBootScreen(go: () => void): () => void {
   return () => observer.disconnect();
 }
 
+/** How clear the leaving screen is once what is behind it can be followed. */
+const LIFTED_OPACITY = 0.5;
+
+/**
+ * Runs `go` once what the boot screen covered can be seen: half way through
+ * its fade, or at once when there is no screen. For motion the visitor is
+ * meant to watch: `runAfterBootScreen` runs at the start of the fade, up to
+ * 600 ms earlier. It reads the fade itself, so a late or a skipped one keeps
+ * its own time. The returned cancel stops a pending `go`.
+ */
+export function runOnceBootScreenLifts(go: () => void): () => void {
+  let frame = 0;
+  const stopWaiting = runAfterBootScreen(() => {
+    const look = (): void => {
+      const screen = document.getElementById(BOOT_SCREEN_ID);
+      const covering =
+        screen !== null &&
+        screen.style.display !== "none" &&
+        Number(getComputedStyle(screen).opacity) > LIFTED_OPACITY;
+      if (covering) frame = requestAnimationFrame(look);
+      else go();
+    };
+    look();
+  });
+  return () => {
+    stopWaiting();
+    cancelAnimationFrame(frame);
+  };
+}
+
 /**
  * How long after `ready` Create's own first-view holds may keep the screen
  * up. Its panel and beat grid arrive behind the screen as one finished view,

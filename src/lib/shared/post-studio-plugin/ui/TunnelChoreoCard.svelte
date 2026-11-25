@@ -28,6 +28,7 @@
     sequence,
     sourceSequence,
     followers,
+    qrUrl,
     leftPropType,
     rightPropType,
     ...cardProps
@@ -46,6 +47,8 @@
     /** The stored sequence behind `sequence`; the QR names its code. */
     sourceSequence: SequenceData | null;
     followers: readonly PostFollower[];
+    /** A saved link for the QR (the card clip's own); else it is looked up. */
+    qrUrl?: string;
   } = $props();
 
   const beatsBehind = $derived(
@@ -80,7 +83,7 @@
     const front = sourceSequence;
     const follower = followers.length === 1 ? followers[0] : undefined;
     tunnelQrUrl = null;
-    if (!front || !follower) return;
+    if (qrUrl || !front || !follower) return;
     let live = true;
     void performerSequence(front, follower)
       .then((back) => findPartnerTunnelUrl(front, back))
@@ -156,6 +159,6 @@
   cellOverlay={tunnelOverlay}
   showMandala
   {mandalaFills}
-  showQRCode={!!tunnelQrUrl}
-  qrUrl={tunnelQrUrl ?? undefined}
+  showQRCode={!!(qrUrl || tunnelQrUrl)}
+  qrUrl={qrUrl || (tunnelQrUrl ?? undefined)}
 />

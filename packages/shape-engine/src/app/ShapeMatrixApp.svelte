@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { holdBootScreen } from "#lib/shared/application/services/boot-screen.js";
   import { loadShapeMatrix } from "../services/shape-matrix-flowers.js";
   import { SHAPE_MATRIX_DEFAULT_PROP } from "../services/prop-pair.js";
 
@@ -12,6 +13,7 @@
     type ShapeMatrixPropSource,
   } from "./state/shape-matrix-app-state.svelte";
   import { followPropSource } from "./state/follow-prop-source.svelte";
+  import { defaultShapeMatrixPair } from "./state/shape-matrix-default-pair";
   import {
     DEFAULT_ELEMENT_ICONS,
     setShapeEngineHostContext,
@@ -27,6 +29,7 @@
   } from "../strings.svelte.js";
   import { DEFAULT_THEORY_RATIO } from "@tka/shape-domain";
   import {
+    clampMatrixTurnToLevel,
     SHAPE_MATRIX_DEFAULT_LEVEL,
     SHAPE_MATRIX_DEFAULT_TURN,
   } from "@tka/shape-domain";
@@ -106,7 +109,10 @@
     labelMode: "turns",
     leftPropType: propSource?.left ?? SHAPE_MATRIX_DEFAULT_PROP,
     rightPropType: propSource?.right ?? SHAPE_MATRIX_DEFAULT_PROP,
-    pair: null,
+    pair: defaultShapeMatrixPair(
+      SHAPE_MATRIX_DEFAULT_TURN,
+      SHAPE_MATRIX_DEFAULT_TURN
+    ),
     mode: null,
     propMode: null,
     solo: null,
@@ -125,12 +131,33 @@
   );
   setShapeMatrixAppContext(state);
 
+  /* The opening screen lifts onto a grid that can draw itself, not an empty
+     one. The hold has the opening screen's usual time limit. */
+  const releaseOpening = holdBootScreen("shape-engine-paths");
+  $effect(() => {
+    if (state.data !== null || state.loadError) releaseOpening();
+  });
+
   onMount(() => {
     // A host's own saved state wins over the starting point it hands in.
     const restored =
       persistence?.restore() ?? (initial ? { ...defaults, ...initial } : null);
+    // A saved state that names no crossing opens on the default one, as a
+    // first visit does: the stage is playing from the first moment.
     if (restored)
-      state.restoreState(restored, { keepPropPair: propSource !== undefined });
+      state.restoreState(
+        restored.pair
+          ? restored
+          : {
+              ...restored,
+              pair: defaultShapeMatrixPair(
+                clampMatrixTurnToLevel(restored.leftTurn, restored.level),
+                clampMatrixTurnToLevel(restored.rightTurn, restored.level)
+              ),
+              solo: null,
+            },
+        { keepPropPair: propSource !== undefined }
+      );
 
     // The compact seam is the shell stylesheet's `(width < 75rem) or
     // (height < 42rem)` container query. Measuring in rem here, not fixed
@@ -141,6 +168,10 @@
         parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const compact = width < 75 * rem || height < 42 * rem;
       state.setCompact(compact);
+      const sideways = width > 30 * rem && height < 30 * rem && width > height;
+      state.setSideways(sideways);
+      // Upright, or on its side: inside the short side tier's bounds.
+      state.setShortPhone(width <= 30 * rem ? height < 42 * rem : sideways);
     };
     const bounds = host.getBoundingClientRect();
     applyLayout(bounds.width, bounds.height);
@@ -155,6 +186,7 @@
 
     return () => {
       observer.disconnect();
+      releaseOpening();
       // An orphaned load resolving after this tab closes would otherwise
       // still write its snapshot and its pair into settings.
       state.dispose();

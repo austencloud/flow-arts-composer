@@ -34,6 +34,10 @@
   `cellHref` makes each found cell a link, the whole cell its target (the
   Guide links each combination to its own page or screen, 2026-10-31).
 
+  `captions` puts a short line of the host's under each name, and `numbered`
+  numbers the cells in record order (the Guide's page that opens the run of
+  six).
+
   A host can set `--board-wide-columns` (6 by default) for a wide board.
 -->
 <script lang="ts">
@@ -64,6 +68,8 @@
     missed?: ReadonlySet<HandCombinationId> | null;
     only?: readonly HandCombinationId[] | null;
     cellHref?: ((id: HandCombinationId) => string | null) | null;
+    captions?: ((id: HandCombinationId) => string) | null;
+    numbered?: boolean;
   }
 
   let {
@@ -82,10 +88,13 @@
     missed = null,
     only = null,
     cellHref = null,
+    captions = null,
+    numbered = false,
   }: Props = $props();
 
-  const cells = HAND_COMBINATIONS.map((combination) => ({
+  const cells = HAND_COMBINATIONS.map((combination, at) => ({
     combination,
+    number: at + 1,
     ...combinationMove(combination),
     tones: LETTER_TYPE_COLORS[combination.letterType],
   }));
@@ -97,11 +106,11 @@
 <div class="board-frame">
   <ul
     class="combination-board"
-    class:described={showDescriptions}
+    class:described={showDescriptions || captions !== null}
     class:names-only-narrow={namesOnlyWhenNarrow}
     aria-label={label}
   >
-    {#each shown as { combination, data, start, step, tones } (combination.id)}
+    {#each shown as { combination, number, data, start, step, tones } (combination.id)}
       {@const isFound = found === null || found.has(combination.id)}
       {@const hintable = !isFound && !!onHint}
       {@const href = isFound ? (cellHref?.(combination.id) ?? null) : null}
@@ -152,12 +161,18 @@
           </div>
         </div>
         <div class="label" data-combination-label={combination.id}>
-          <span class="name">{plainTopicText(combination.name)}</span>
+          <span class="name"
+            >{#if numbered}<span class="number">{number}</span>
+            {/if}{plainTopicText(combination.name)}</span
+          >
           <span class="bar" aria-hidden="true"></span>
           {#if showDescriptions}
             <span class="description"
               >{plainTopicText(combination.description)}</span
             >
+          {/if}
+          {#if captions}
+            <span class="description">{captions(combination.id)}</span>
           {/if}
         </div>
         <i
@@ -362,6 +377,11 @@
     line-height: 1.2;
     opacity: 0.45;
     transition: opacity var(--transition-normal);
+  }
+
+  .number {
+    margin-right: 0.15em;
+    opacity: 0.6;
   }
 
   .found .name {

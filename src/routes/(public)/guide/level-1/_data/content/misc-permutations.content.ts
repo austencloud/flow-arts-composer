@@ -75,7 +75,7 @@ const LOOPS: LoopDef[] = [
   {
     // DJII ×2 - Mirrored LOOP from β (both S).
     key: "t1l-djii",
-    word: "DJII Mirrored",
+    word: "DJII Reflected",
     startLetter: Letter.BETA,
     startLeft: SO_,
     startRight: SO_,
@@ -112,7 +112,7 @@ const LOOPS: LoopDef[] = [
     // KIEC ×2 - Swapped & Mirrored LOOP from α (blue W / red E); the second
     // half swaps the colors' pro/anti roles (compare steps 4 and 8's C).
     key: "t1l-kiec",
-    word: "KIEC Swapped & Mirrored",
+    word: "KIEC Swapped & Reflected",
     startLetter: Letter.ALPHA,
     startLeft: W,
     startRight: E,
@@ -194,9 +194,9 @@ export const miscPermutationsContent: GuideBlock[] = [
       entries: [
         {
           word: "DJII",
-          loopLabel: "Mirrored",
+          loopLabel: "Reflected",
           proseHtml:
-            "In this example of DJII, the graphs in the second repetition (steps 5-8) mirror the graphs in the first repetition (steps 1-4), classifying it as a Mirrored LOOP.",
+            "In this example of DJII, the graphs in the second repetition (steps 5-8) reflect the graphs in the first repetition (steps 1-4), classifying it as a Reflected LOOP.",
           items: djiiStrip,
         },
         ...mirroredPool,
@@ -237,9 +237,9 @@ export const miscPermutationsContent: GuideBlock[] = [
       entries: [
         {
           word: "KIEC",
-          loopLabel: "Swapped & Mirrored",
+          loopLabel: "Swapped & Reflected",
           proseHtml:
-            "In this example of KIEC, the colors are swapped in the second half, so it is classified as a Swapped & Mirrored LOOP.",
+            "In this example of KIEC, the colors are swapped in the second half, so it is classified as a Swapped & Reflected LOOP.",
           items: kiecStrip,
         },
         ...mirroredSwappedPool,

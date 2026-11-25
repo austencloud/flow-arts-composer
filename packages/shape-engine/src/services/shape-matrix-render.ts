@@ -139,6 +139,23 @@ export function createCellRevealFrame(
   );
 }
 
+/** renderHeader's progressive twin: the same flower, fit and ink, drawn on. */
+export function createHeaderRevealFrame(
+  canvas: HTMLCanvasElement,
+  paths: MandalaPaths,
+  hand: "left" | "right",
+  sizePx: number,
+  tipDx: number,
+  options: ShapeMatrixPaintOptions = {}
+): MandalaGuideRevealFrame | null {
+  return createMandalaGuideRevealFrame(
+    canvas,
+    paths,
+    shapeMatrixGuideOptions(hand, sizePx, tipDx, "extent", options),
+    options.deps
+  );
+}
+
 /** A single axis-header flower, filling its box like the cells. */
 export function renderHeader(
   paths: MandalaPaths,

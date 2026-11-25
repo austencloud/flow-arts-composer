@@ -78,4 +78,20 @@ describe("Construct option controls presentation", () => {
       })
     ).toBe("hidden");
   });
+
+  it("keeps the controls behind their button for a host that asks, however much room there is", () => {
+    const roomy = {
+      fullInlineEligible: true,
+      containerHeight: 1200,
+      canShowTurnRows: true,
+      preferTucked: true,
+    };
+
+    expect(
+      selectOptionControlsPresentation({ ...roomy, hasControls: true })
+    ).toBe("disclosed");
+    expect(
+      selectOptionControlsPresentation({ ...roomy, hasControls: false })
+    ).toBe("hidden");
+  });
 });

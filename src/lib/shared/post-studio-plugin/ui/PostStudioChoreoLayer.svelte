@@ -285,6 +285,7 @@
       {sequence}
       sourceSequence={tunnelSource}
       {followers}
+      {qrUrl}
       {highlightedStepIndex}
       showHighlight={highlightedStepIndex !== null}
       visibilityOverrides={cardRenderOptions?.visibilityOverrides}

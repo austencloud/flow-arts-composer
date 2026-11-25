@@ -659,6 +659,8 @@
   /* The row the fit sizes. Its font size is the button's times the fit
      scale; every piece inside is in em, so all of it follows. */
   .word-fit-row {
+    /* A word spells itself left to right in every language. */
+    direction: ltr;
     display: inline-flex;
     flex: none;
     align-items: center;
@@ -683,6 +685,7 @@
   }
 
   .word-ruler {
+    direction: ltr;
     position: absolute;
     top: 0;
     left: 0;

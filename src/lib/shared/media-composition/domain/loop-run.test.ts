@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   LoopRunSettingsSchema,
+  loopLightCoverage,
   loopRunBadgeAt,
   loopRunDefaultEvents,
   loopRunFrame,
@@ -13,6 +14,7 @@ import {
   type LoopRunSettings,
 } from "./loop-run";
 import { engineStepsOf, sequenceFromEngineSteps } from "./loop-run-sequence";
+import { loopLightPoints, loopLightShares, type LoopLightSampler } from "./loop-run-light";
 
 const RECT = { x: 0, y: 0, width: 1080, height: 1920 };
 
@@ -612,6 +614,224 @@ describe("loop run pass-4 settings", () => {
     expect("bareCopies" in loopRunPlanOf(without, "overlay").settings).toBe(false);
     for (const t of [3.5, 4.85, 4.9])
       expect(loopRunFrame(item, 4, RECT, t)).toEqual(loopRunFrame(settings({ events, plainTiles: true }), 4, RECT, t));
+  });
+});
+
+describe("loop run pass-6 canvas stage", () => {
+  const STAGE = { x: 0.5, y: 0.5, size: 1240 / 1080 };
+  const MOVE = { at: 9.8, duration: 0.8, x: 0.5, y: 1125 / 1920, size: 1137 / 1080 };
+  // The mandala pilot's timeline: the seed half, the drop, the reflected half, then four whole rounds.
+  const mandala = settings({
+    layout: "card",
+    cardStart: false,
+    plainTiles: true,
+    events: [
+      { kind: "play", at: 0.5, from: 0, duration: 2, rounds: 1, steps: [0, 1], stage: STAGE, canvas: true, light: true, marker: false },
+      {
+        kind: "play",
+        at: 3.8,
+        duration: 2,
+        rounds: 1,
+        steps: [2, 3],
+        stage: STAGE,
+        canvas: true,
+        light: true,
+        marker: false,
+        ghost: { at: 3, duration: 0.8 },
+        line: { at: 3, duration: 0.8 },
+      },
+      {
+        kind: "play",
+        at: 5.8,
+        duration: 8,
+        rounds: 4,
+        stage: STAGE,
+        canvas: true,
+        light: true,
+        comet: true,
+        flare: true,
+        ring: "card",
+        ringFrom: 12.6,
+        move: MOVE,
+      },
+      { kind: "reveal", at: 10.6, duration: 2, steps: [0, 1, 2, 3], style: "fold" },
+    ],
+  });
+  const frameAt = (t: number) => loopRunFrame(mandala, 4, RECT, t);
+  const canvasAt = (t: number) => frameAt(t).stage!.canvas!;
+
+  it("leaves a play with none of the new settings as it was: no canvas, no fold", () => {
+    const old = settings({
+      layout: "card",
+      cardStart: false,
+      events: [
+        { kind: "play", at: 6.6, from: 6.3, duration: 6, rounds: 2, stage: { x: 0.5, y: 0.5, size: 0.5 }, ring: "card" },
+        { kind: "reveal", at: 0.8, duration: 2 },
+      ],
+    });
+    for (const t of [0.5, 1.2, 6.4, 7, 9.6, 12.6, 13.5]) {
+      const frame = loopRunFrame(old, 4, RECT, t);
+      expect("canvas" in (frame.stage ?? {})).toBe(false);
+      for (const tile of frame.tiles) expect("fold" in tile).toBe(false);
+      const off = loopRunFrame({ ...old, events: old.events.map((e) => (e.kind === "play" ? { ...e, canvas: false } : e)) }, 4, RECT, t);
+      expect(off).toEqual(frame);
+    }
+  });
+
+  it("plays only its range of steps, and the next play carries straight on from it", () => {
+    expect(frameAt(1).stage!.props).toEqual({ step: 0, progress: 0.5, continued: false });
+    expect(frameAt(2).stage!.props).toEqual({ step: 1, progress: 0.5, continued: false });
+    // Between the halves the props hold where the seed half left them, at full strength.
+    const held = frameAt(3.2).stage!;
+    expect(held.props).toEqual({ step: 1, progress: 1, continued: false });
+    expect(held.opacity).toBe(1);
+    expect(frameAt(3.9).stage!.opacity).toBe(1);
+    expect(frameAt(4.3).stage!.props).toEqual({ step: 2, progress: 0.5, continued: false });
+    expect(frameAt(5.3).stage!.props).toEqual({ step: 3, progress: 0.5, continued: false });
+    // The whole LOOP: four steps a round, half a second each; the second round starts from the first's end.
+    expect(frameAt(6.8).stage!.props).toEqual({ step: 2, progress: 0, continued: false });
+    const second = frameAt(7.9).stage!.props;
+    expect(second.step).toBe(0);
+    expect(second.progress).toBeCloseTo(0.2, 9);
+    expect(second.continued).toBe(true);
+  });
+
+  it("turns the ghost over across the drop, holds it faint, and drops each stretch as its twin is drawn", () => {
+    expect(canvasAt(2.9).ghost).toBeNull();
+    expect(canvasAt(3).ghost!.flip).toBeCloseTo(1, 9);
+    expect(canvasAt(3.4).ghost!.flip).toBeCloseTo(0, 9);
+    expect(canvasAt(3.8).ghost!.flip).toBeCloseTo(-1, 9);
+    expect(canvasAt(3.2).ghost!.flip).toBeCloseTo(Math.cos(Math.PI * 0.125), 9);
+    for (const t of [3, 3.4, 4.8]) {
+      expect(canvasAt(t).ghost!.opacity).toBe(0.35);
+      expect(canvasAt(t).ghost!.turn).toBe(0);
+    }
+    expect(canvasAt(3.4).ghost!.strokes).toEqual([
+      [
+        { step: 0, from: 0, to: 1 },
+        { step: 1, from: 0, to: 1 },
+      ],
+    ]);
+    // Halfway through step 2's move, half of step 0's ghost is drawn over and gone.
+    expect(canvasAt(4.3).ghost!.strokes).toEqual([
+      [{ step: 0, from: 0.5, to: 1 }, { step: 1, from: 0, to: 1 }],
+    ]);
+    expect(canvasAt(4.8).ghost!.strokes).toEqual([[{ step: 1, from: 0, to: 1 }]]);
+    expect(canvasAt(5.8).ghost).toBeNull();
+  });
+
+  it("draws the mirror line down through the centre over the drop and fades it once the reflected half ends", () => {
+    const reach = ((1.55 * 300) / 950) * 1240;
+    expect(canvasAt(2.9).mirror).toBeNull();
+    const half = canvasAt(3.4).mirror!;
+    expect(half.x0).toBeCloseTo(540, 9);
+    expect(half.x1).toBeCloseTo(540, 9);
+    expect(half.y0).toBeCloseTo(960 - reach, 6);
+    expect(half.y1).toBeCloseTo(960, 6);
+    expect(half.opacity).toBe(1);
+    const whole = canvasAt(3.8).mirror!;
+    expect(whole.y1).toBeCloseTo(960 + reach, 6);
+    expect(canvasAt(5.8).mirror!.opacity).toBe(1);
+    expect(canvasAt(6.05).mirror!.opacity).toBeCloseTo(0.5, 6);
+    expect(canvasAt(6.3).mirror).toBeNull();
+  });
+
+  it("glides the stage from (540, 960) at 1240 to (540, 1125) at 1137, easing", () => {
+    const at = (t: number) => {
+      const { x, y, size } = frameAt(t).stage!;
+      return { x, y, size };
+    };
+    for (const t of [5.8, 9.8]) {
+      expect(at(t).x).toBeCloseTo(540, 6);
+      expect(at(t).y).toBeCloseTo(960, 6);
+      expect(at(t).size).toBeCloseTo(1240, 6);
+    }
+    expect(at(10.2).y).toBeCloseTo(1042.5, 6);
+    expect(at(10.2).size).toBeCloseTo(1188.5, 6);
+    // A quarter of the way in, the eased glide has gone an eighth of the way.
+    expect(at(10).y).toBeCloseTo(960 + 165 * 0.125, 6);
+    for (const t of [10.6, 12]) {
+      expect(at(t).x).toBeCloseTo(540, 6);
+      expect(at(t).y).toBeCloseTo(1125, 6);
+      expect(at(t).size).toBeCloseTo(1137, 6);
+    }
+  });
+
+  it("folds each card tile open from a line on its own half-second beat", () => {
+    const fold = (t: number, s: number) => frameAt(t).tiles[s]!;
+    expect(fold(10.5, 0).opacity).toBe(0);
+    expect(fold(10.6, 0).fold).toBe(0.02);
+    for (let s = 0; s < 4; s++) {
+      const start = 10.6 + 0.5 * s;
+      expect(fold(start, s).fold).toBe(0.02);
+      expect(fold(start, s).opacity).toBe(0);
+      expect(fold(start + 0.125, s).fold).toBeCloseTo(0.125, 9);
+      expect(fold(start + 0.25, s).fold).toBeCloseTo(0.5, 9);
+      expect(fold(start + 0.25, s).opacity).toBeCloseTo(0.5, 9);
+      expect(fold(start + 0.5, s).fold).toBe(1);
+      expect(fold(start + 0.5, s).scale).toBe(1);
+    }
+    // The card row stays put while its tiles fold in.
+    expect(fold(11, 1).x).toBe(fold(12.6, 1).x);
+  });
+
+  it("holds the card ring back until 12.6, then steps it with the play", () => {
+    expect(frameAt(12.5).stage!.rings).toEqual([]);
+    expect(frameAt(12.7).stage!.rings.reduce((sum, ring) => sum + ring.strength, 0)).toBeCloseTo(0.5, 6);
+    expect(frameAt(12.85).stage!.rings.reduce((sum, ring) => sum + ring.strength, 0)).toBeCloseTo(1, 6);
+  });
+
+  it("flares at each whole round's end", () => {
+    for (const end of [7.8, 9.8, 11.8, 13.8]) expect(frameAt(end).stage!.flares).toHaveLength(1);
+    expect(frameAt(7.7).stage!.flares).toEqual([]);
+  });
+
+  it("keeps the light drawn so far, and puts the comet on the newest stretch while the whole LOOP plays", () => {
+    expect(loopLightCoverage(mandala, 4, 0.4)).toEqual([0, 0, 0, 0]);
+    expect(loopLightCoverage(mandala, 4, 2)).toEqual([1, 0.5, 0, 0]);
+    expect(loopLightCoverage(mandala, 4, 3.5)).toEqual([1, 1, 0, 0]);
+    const five = loopLightCoverage(mandala, 4, 5);
+    expect(five.slice(0, 3)).toEqual([1, 1, 1]);
+    expect(five[3]).toBeCloseTo(0.2, 9);
+    expect(loopLightCoverage(mandala, 4, 9)).toEqual([1, 1, 1, 1]);
+    expect(canvasAt(5).light).toHaveLength(1);
+    expect(canvasAt(5).comet).toBeNull();
+    // At 9.0 the props are 6.4 steps in: the comet is the last 0.9 of a step's moves behind them.
+    const comet = canvasAt(9).comet!;
+    expect(comet).toHaveLength(2);
+    expect(comet[0]!.step).toBe(1);
+    expect(comet[0]!.from).toBeCloseTo(0.5, 9);
+    expect(comet[0]!.to).toBe(1);
+    expect(comet[1]!.step).toBe(2);
+    expect(comet[1]!.from).toBe(0);
+    expect(comet[1]!.to).toBeCloseTo(0.4, 9);
+    expect(canvasAt(13.9).comet).toBeNull();
+    expect(canvasAt(13.9).light).toEqual([[0, 1, 2, 3].map((step) => ({ step, from: 0, to: 1 }))]);
+  });
+
+  it("gives the same light points for a moment whatever moment was asked before", () => {
+    const sample: LoopLightSampler = (step, progress) => [
+      { prop: 0, tip: 0, x: 100 * (step + progress), y: 10 },
+      { prop: 0, tip: 1, x: 10, y: 100 * (step + progress) },
+      { prop: 1, tip: 1, x: 50 * (step + progress), y: 50 * (step + progress) },
+    ];
+    const pointsAt = (t: number) => {
+      const canvas = canvasAt(t);
+      return {
+        light: loopLightPoints(canvas.light, sample),
+        comet: canvas.comet ? loopLightPoints([canvas.comet], sample) : null,
+        ghost: canvas.ghost ? loopLightPoints(canvas.ghost.strokes, sample) : null,
+      };
+    };
+    const inOrder = [2, 5, 9].map((t) => JSON.stringify(pointsAt(t)));
+    pointsAt(13.5);
+    pointsAt(0.7);
+    const outOfOrder = [9, 2, 5].map((t) => JSON.stringify(pointsAt(t)));
+    expect(outOfOrder).toEqual([inOrder[2], inOrder[0], inOrder[1]]);
+    // A stroke runs on unbroken across steps: one sample where a step's end meets the next one's start.
+    const whole = loopLightPoints([[0, 1].map((step) => ({ step, from: 0, to: 1 }))], sample, undefined, 4);
+    expect(whole.left.filter((p) => p.tipIndex === 0).map((p) => p.x)).toEqual([0, 25, 50, 75, 100, 125, 150, 175, 200]);
+    expect(loopLightShares(0.3, 0.6, 4)).toEqual([0.3, 0.5, 0.6]);
   });
 });
 

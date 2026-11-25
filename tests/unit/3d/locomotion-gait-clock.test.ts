@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AnimationClip, VectorKeyframeTrack } from "three";
 
 import { LocomotionAnimator } from "@austencloud/scene-3d";
+import { editedScene3d } from "./locomotion-harness";
 
 interface GaitClockHarness {
   gaits: {
@@ -88,7 +89,13 @@ function animatorWithOneSecondGait(): {
 }
 
 describe("locomotion gait clock", () => {
-  it("keeps authored grapevine weight transfer without enabling it for raw strafes", () => {
+  // Until 2026-11-22 the grapevine alone kept its pelvis's lateral channel
+  // here, because on an even rail its legs crossed under a body that never
+  // moved over them. Every walking clip now gets its surge and sway from the
+  // contact bake instead (locomotion-pelvis-surge.test.ts), so the remap
+  // drops the channel for all of them, and a clip with no footprint to bake
+  // from stays on the rail whichever gait it is.
+  it("leaves lateral travel to the contact bake for every lateral gait", () => {
     const rawClip = () =>
       new AnimationClip("raw-lateral", 1, [
         new VectorKeyframeTrack(
@@ -112,8 +119,10 @@ describe("locomotion gait clock", () => {
     const grapevine = prepare("grapevineLeft");
     const strafe = prepare("strafeLeft");
 
-    expect(grapevine[3]).toBeCloseTo(5 / (296 / 3), 6);
+    if (editedScene3d) expect(grapevine[3]).toBe(0);
     expect(strafe[3]).toBe(0);
+    // The pelvis still rises and falls: only the horizontal channel goes.
+    expect(Math.abs(strafe[4]!)).toBeGreaterThan(0);
   });
 
   it("routes grapevine intent to its authored clips without replacing sidestep", () => {

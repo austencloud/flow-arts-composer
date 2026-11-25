@@ -7,10 +7,7 @@ import {
   saveQftSession,
   type QftSession,
 } from "../../src/lib/shared/notation/qft/qft-session";
-import {
-  trajectoryPropIndexAt,
-  trajectoryReversals,
-} from "../../src/lib/shared/notation/qft/qft-trajectory";
+import { trajectoryPropIndexAt, trajectoryReversals } from "@tka/shape-domain";
 import { ALL_LAYERS } from "../../src/lib/shared/notation/qft/qft-layers";
 
 beforeEach(() => {
@@ -31,6 +28,8 @@ describe("QfT session persistence", () => {
       originPhase: 4,
       vtgMode: "SO",
       cursor: 3.5,
+      speed: 0.5,
+      poiLength: 0.75,
       playing: false,
       layers: ALL_LAYERS,
     };

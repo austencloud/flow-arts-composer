@@ -6,15 +6,15 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
 Each axis is a SegmentedControl radio group: the selected option carries the
 control's sliding indicator, so the choice reads at a glance, and arrow keys
 move between options. The untouched option of each axis is marked "Default"
-under its name. Fuse's other recipe fields use the same control, so its Style
-section now matches them.
+under its name.
 
-Two arrangements. `list` (default, Fuse and the Style screen): from 36rem of
+Three arrangements. `list` (default, the Style screen): from 36rem of
 panel width each axis lays out as a row, name and hint on the left and the
 control on the right; narrower, the hint sits above the control. `columns`
 (the Customize overview's Style tile): from 42rem the three axes stand side by
 side, name over control over hint; narrower, it falls back to the stacked
-list.
+list. `rows` (Fuse's settings for new paths): three ChoiceRows laid straight
+into the host's form, which decides how much each row says.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -29,6 +29,7 @@ list.
     GENERATION_DASH_OPTIONS,
     GENERATION_STYLE_OPTIONS,
   } from "#lib/shared/create/domain/generation-style-display.js";
+  import ChoiceRow from "#lib/shared/ui/components/ChoiceRow.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
@@ -41,6 +42,7 @@ list.
     onHandsChange,
     onDashesChange,
     arrangement = "list",
+    row = { arrangement: "beside", showHint: false, phone: false },
   }: {
     constraintPreset: GenerationStyleAxis;
     handPathMode: GenerationStyleAxis;
@@ -57,7 +59,13 @@ list.
     onHandsChange: (v: GenerationStyleAxis) => void;
     onDashesChange: (v: GenerationDashChoice) => void;
     /** `columns` puts the three axes side by side when there is room. */
-    arrangement?: "list" | "columns";
+    arrangement?: "list" | "columns" | "rows";
+    /** How the host lays out each of its rows. `rows` only. */
+    row?: {
+      arrangement: "beside" | "above";
+      showHint: boolean;
+      phone: boolean;
+    };
   } = $props();
 
   const uid = $props.id();
@@ -91,6 +99,13 @@ list.
     value: string
   ): string {
     return options.find((o) => o.value === value)?.label ?? value;
+  }
+
+  function hintOf(
+    options: readonly { value: string; hint: string }[],
+    value: string
+  ): string {
+    return options.find((o) => o.value === value)?.hint ?? "";
   }
 
   function handleProps(v: GenerationStyleAxis) {
@@ -149,51 +164,85 @@ list.
   </span>
 {/snippet}
 
-<div class="style-panel" class:columns={arrangement === "columns"}>
-  <div class="style-axes">
-    <section class="style-axis">
-      <span class="axis-name" id="{uid}-props">{t("create_ui_props")}</span>
-      {@render hint(GENERATION_STYLE_OPTIONS, constraintPreset)}
-      <SegmentedControl
-        options={styleOptions}
-        value={constraintPreset}
-        onchange={handleProps}
-        color="accent"
-        semantics="radiogroup"
-        ariaLabelledby="{uid}-props"
-        optionContent={propsOption}
-      />
-    </section>
+{#if arrangement === "rows"}
+  <!-- The Default marker needs the taller segment a row with a hint has. -->
+  <ChoiceRow
+    {...row}
+    label={t("create_ui_props")}
+    hint={hintOf(GENERATION_STYLE_OPTIONS, constraintPreset)}
+    hints={GENERATION_STYLE_OPTIONS.map((o) => o.hint)}
+    options={styleOptions}
+    value={constraintPreset}
+    onchange={handleProps}
+    optionContent={row.showHint ? propsOption : undefined}
+  />
+  <ChoiceRow
+    {...row}
+    label={t("create_ui_hands")}
+    hint={hintOf(GENERATION_STYLE_OPTIONS, handPathMode)}
+    hints={GENERATION_STYLE_OPTIONS.map((o) => o.hint)}
+    options={styleOptions}
+    value={handPathMode}
+    onchange={handleHands}
+    optionContent={row.showHint ? handsOption : undefined}
+  />
+  <ChoiceRow
+    {...row}
+    label={t("create_ui_dashes")}
+    hint={hintOf(GENERATION_DASH_OPTIONS, currentDashValue)}
+    hints={GENERATION_DASH_OPTIONS.map((o) => o.hint)}
+    options={dashOptions}
+    value={currentDashValue}
+    onchange={handleDashes}
+    optionContent={row.showHint ? dashesOption : undefined}
+  />
+{:else}
+  <div class="style-panel" class:columns={arrangement === "columns"}>
+    <div class="style-axes">
+      <section class="style-axis">
+        <span class="axis-name" id="{uid}-props">{t("create_ui_props")}</span>
+        {@render hint(GENERATION_STYLE_OPTIONS, constraintPreset)}
+        <SegmentedControl
+          options={styleOptions}
+          value={constraintPreset}
+          onchange={handleProps}
+          color="accent"
+          semantics="radiogroup"
+          ariaLabelledby="{uid}-props"
+          optionContent={propsOption}
+        />
+      </section>
 
-    <section class="style-axis">
-      <span class="axis-name" id="{uid}-hands">{t("create_ui_hands")}</span>
-      {@render hint(GENERATION_STYLE_OPTIONS, handPathMode)}
-      <SegmentedControl
-        options={styleOptions}
-        value={handPathMode}
-        onchange={handleHands}
-        color="accent"
-        semantics="radiogroup"
-        ariaLabelledby="{uid}-hands"
-        optionContent={handsOption}
-      />
-    </section>
+      <section class="style-axis">
+        <span class="axis-name" id="{uid}-hands">{t("create_ui_hands")}</span>
+        {@render hint(GENERATION_STYLE_OPTIONS, handPathMode)}
+        <SegmentedControl
+          options={styleOptions}
+          value={handPathMode}
+          onchange={handleHands}
+          color="accent"
+          semantics="radiogroup"
+          ariaLabelledby="{uid}-hands"
+          optionContent={handsOption}
+        />
+      </section>
 
-    <section class="style-axis">
-      <span class="axis-name" id="{uid}-dashes">{t("create_ui_dashes")}</span>
-      {@render hint(GENERATION_DASH_OPTIONS, currentDashValue)}
-      <SegmentedControl
-        options={dashOptions}
-        value={currentDashValue}
-        onchange={handleDashes}
-        color="accent"
-        semantics="radiogroup"
-        ariaLabelledby="{uid}-dashes"
-        optionContent={dashesOption}
-      />
-    </section>
+      <section class="style-axis">
+        <span class="axis-name" id="{uid}-dashes">{t("create_ui_dashes")}</span>
+        {@render hint(GENERATION_DASH_OPTIONS, currentDashValue)}
+        <SegmentedControl
+          options={dashOptions}
+          value={currentDashValue}
+          onchange={handleDashes}
+          color="accent"
+          semantics="radiogroup"
+          ariaLabelledby="{uid}-dashes"
+          optionContent={dashesOption}
+        />
+      </section>
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   /* The outer box is the container the layout asks about; the inner one is

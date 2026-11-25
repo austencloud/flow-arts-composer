@@ -13,9 +13,16 @@
   pills sized to their words at the two edges, All guides centred
   (2026-10-31).
 
-  A page may add a row above its title (the hand combinations' switcher)
-  and draw the Back and Next names itself (in a combination's colours). A
-  page may also draw its title and its list of screens inside its screens
+  A lesson of a chapter (`thread`, 2026-11-23, Austen: the lessons are one
+  continuous flow, "A, one line") has neither pills nor box count: one thin
+  line across the whole chapter stands over the title, a piece per lesson,
+  filling screen by screen and carrying on from page to page. Where the
+  Contents button shows (phones, tablets, touch screens) the box takes its
+  place with the lesson's name, the line right under it, and the title steps
+  aside, since the box says it.
+
+  A page may draw the Back and Next names itself (in a combination's
+  colours). A page may also draw its title and its list of screens inside its screens
   (`bodyHead`, the hand combinations' run, 2026-11-01): the frame's title
   then stays for screen readers only, the frame draws no pill row, and each
   screen gets the frame's `go` to switch screens from its own list. Such a
@@ -24,6 +31,11 @@
   mounted instead of crossfading the whole screen, records the screen in
   the URL without a history step, and centres the screen in the body. Every
   other page keeps the plain defaults.
+
+  A page whose screens may be opened in any order (`anyOrder`, 2026-11-24,
+  Austen on the six Dual-Shift modes) counts the screens opened: its line
+  fills by how many have been viewed, so it never runs back, Next leads to
+  one not viewed yet until there is none, and Back never counts a new one.
 
   Which screen shows is URL state (`?screen=2`), so a link opens on the right
   screen and the phone's Back steps back one screen.
@@ -64,11 +76,15 @@
   // frame comes from a client-side navigation, never from the server's
   // first paint.
   let visitStarted = false;
+  // Where the last page left its chapter's line, so the next page's line
+  // moves on from there.
+  let lastLine: { chapter: string; position: number } | null = null;
 </script>
 
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { onMount, tick, untrack } from "svelte";
+  import { SvelteSet } from "svelte/reactivity";
   import { browser } from "$app/env";
   import { afterNavigate } from "$app/navigation";
   import { holdPageReady } from "@austencloud/motion";
@@ -81,10 +97,21 @@
   import GuideFitBox from "./GuideFitBox.svelte";
   import GuideLoadingMandala from "./GuideLoadingMandala.svelte";
   import {
+    pieceFill,
+    threadPosition,
+    type LessonThread,
+  } from "./lesson-thread";
+  import {
     followScreen,
     readScreenParam,
     SCREEN_PARAM,
   } from "./guide-screen-url";
+  import {
+    nextUnviewed,
+    previousViewed,
+    readViewed,
+    saveViewed,
+  } from "./viewed-screens";
 
   type PageLink = { href: string; title: string } | null;
   /** Where Back or Next leads: another screen of this page, or a page. */
@@ -107,8 +134,10 @@
     screen,
     lead,
     steadyHead = false,
-    beforeTitle,
     bodyHead = false,
+    thread = null,
+    threadName,
+    anyOrder,
     navLabel,
     onoverflow,
     cutKey,
@@ -134,20 +163,26 @@
         itself has none. */
     hubHref?: string;
     hubLabel?: string;
-    /** Draws one screen; `go` switches to another (a page's own list). */
-    screen: Snippet<[number, (index: number) => void]>;
+    /** Draws one screen; `go` switches to another (a page's own list), and
+        `viewed` holds the screens opened so far on an any-order page. */
+    screen: Snippet<[number, (index: number) => void, ReadonlySet<number>]>;
     /** Drawn above the first screen's content (lesson links). */
     lead?: Snippet;
     /** The header stays the same on every screen, so every screen gets the
         same room: for a page whose screens draw one figure at one size. */
     steadyHead?: boolean;
-    /** A row between the kicker and the title, the same on every screen;
-        `go` switches screens from it (the switcher's chips on a page that
-        holds several of them). */
-    beforeTitle?: Snippet<[number, (index: number) => void]>;
     /** The page draws its title and its list of screens inside each screen:
         the frame's title stays for screen readers, and no pill row. */
     bodyHead?: boolean;
+    /** The page's place on its chapter's line: the line shows in place of
+        the pills. */
+    thread?: LessonThread | null;
+    /** The name the box shows on a screen, where it is not the title (a
+        page that teaches several combinations). */
+    threadName?: (index: number) => string;
+    /** The screens may be opened in any order: the name their viewed ones
+        are kept under for the visit. */
+    anyOrder?: string;
     /** Draws a Back or Next name; plain text when absent. */
     navLabel?: Snippet<[NavTarget]>;
     /** A screen will not fit at the smallest scale: the page can cut smaller. */
@@ -205,6 +240,22 @@
   // moves `index`, and a page's screen snippet reads its own list at that
   // number: past the end it drew nothing.
   const shown = $derived(Math.min(index, last));
+
+  // An any-order page's screens opened this visit. The one showing is always
+  // among them, the server's first paint included.
+  const opened = new SvelteSet<number>();
+  function restoreViewed(): void {
+    if (anyOrder) for (const n of readViewed(anyOrder)) opened.add(n);
+  }
+  if (linkedIn) restoreViewed();
+  const viewed = $derived<ReadonlySet<number>>(
+    new Set([...opened, shown].filter((n) => n <= last))
+  );
+  $effect(() => {
+    if (!anyOrder || !live) return;
+    opened.add(shown);
+    saveViewed(anyOrder, opened);
+  });
 
   function read(): void {
     index = Math.min(readScreenParam(window.location.search), last);
@@ -269,11 +320,34 @@
   // The shell lists this page's screens in its drawer, and its Contents
   // button steps aside while the box stands for it.
   $effect(() => {
-    if (!chrome || count < 2 || bodyHead) return;
+    if (!chrome || count < 2 || (bodyHead && !thread)) return;
     chrome.setScreens({ title, labels, index: shown, go: goTo });
     return () => chrome.setScreens(null);
   });
-  const showsBox = $derived(boxed && live && count > 1 && !bodyHead);
+  const showsBox = $derived(
+    thread ? true : boxed && live && count > 1 && !bodyHead
+  );
+  const boxName = $derived(threadName?.(shown) ?? title);
+
+  // The line starts where the last page of this chapter left it, then moves.
+  const linePosition = $derived(
+    thread
+      ? threadPosition(thread, anyOrder ? viewed.size - 1 : shown, count)
+      : 0
+  );
+  const carried = untrack(() =>
+    browser && visitStarted && thread && lastLine?.chapter === thread.chapter
+      ? lastLine.position
+      : null
+  );
+  let lineMoved = $state(carried === null);
+  const drawnPosition = $derived(
+    lineMoved ? linePosition : (carried ?? linePosition)
+  );
+  $effect(() => {
+    if (thread && live)
+      lastLine = { chapter: thread.chapter, position: linePosition };
+  });
   $effect(() => {
     if (!chrome) return;
     chrome.setBoxed(showsBox);
@@ -289,7 +363,11 @@
   onMount(() => {
     visitStarted = true;
     const fallback = setTimeout(release, 1000);
+    const lineFrame = requestAnimationFrame(() =>
+      requestAnimationFrame(() => (lineMoved = true))
+    );
     read();
+    restoreViewed();
     live = true;
     // The page's own onMount runs after this one and may recut for the
     // window; that recut lands before the tick resolves.
@@ -297,6 +375,7 @@
     window.addEventListener("popstate", onPopState);
     return () => {
       clearTimeout(fallback);
+      cancelAnimationFrame(lineFrame);
       release();
       window.removeEventListener("popstate", onPopState);
     };
@@ -334,8 +413,7 @@
       // The same cut drawn again (a new list, the same screens) stays put:
       // a topic split over two phone screens would land on the first.
       if (was && cut?.[index]?.join() === was.join()) return;
-      const next =
-        ownCut && onUrl && was && cut ? followScreen(was, cut) : -1;
+      const next = ownCut && onUrl && was && cut ? followScreen(was, cut) : -1;
       if (next < 0) return read();
       if (next === index) return;
       index = next;
@@ -349,21 +427,39 @@
     });
   });
 
+  const prevScreen = $derived(
+    anyOrder ? previousViewed(viewed, index) : index > 0 ? index - 1 : null
+  );
+  const nextScreen = $derived(
+    anyOrder
+      ? nextUnviewed(viewed, index, count)
+      : index < last
+        ? index + 1
+        : null
+  );
   const prevTarget = $derived<NavTarget | null>(
-    index > 0
-      ? { kind: "screen", index: index - 1, text: labels[index - 1] ?? "" }
+    prevScreen !== null
+      ? { kind: "screen", index: prevScreen, text: labels[prevScreen] ?? "" }
       : prevPage
         ? { kind: "page", href: prevPage.href, text: prevPage.title }
         : null
   );
   const nextTarget = $derived<NavTarget | null>(
-    index < last
-      ? { kind: "screen", index: index + 1, text: labels[index + 1] ?? "" }
+    nextScreen !== null
+      ? { kind: "screen", index: nextScreen, text: labels[nextScreen] ?? "" }
       : nextPage
         ? { kind: "page", href: nextPage.href, text: nextPage.title }
         : null
   );
 </script>
+
+<!-- The Contents list icon, inline so it does not wait for the icon font. -->
+{#snippet listIcon(name: string)}
+  <svg class={name} viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M5.5 4h8M5.5 8h8M5.5 12h8" />
+    <path class="dots" d="M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
+  </svg>
+{/snippet}
 
 {#snippet stepName(target: NavTarget)}
   <span class="step-title"
@@ -380,18 +476,56 @@
   class:live
   class:steady={steadyHead}
   class:body-head={bodyHead}
+  class:threaded={thread !== null}
   class:later={live && index > 0 && !steadyHead}
 >
   <header class="head">
+    {#if thread}
+      <!-- Where the reader is in the chapter; the contents list says it in
+           words. -->
+      <div class="line" aria-hidden="true">
+        {#each thread.lengths as length, n (n)}
+          <span class="piece" style:flex-grow={length}
+            ><span
+              class="filled"
+              style:transform="scaleX({pieceFill(drawnPosition, n)})"
+            ></span></span
+          >
+        {/each}
+      </div>
+    {/if}
     <div class="titles">
       {#if kicker}<p class="kicker">{kicker}</p>{/if}
-      {#if beforeTitle}<div class="before-title">
-          {@render beforeTitle(shown, goTo)}
-        </div>{/if}
-      <h1 class="title" class:unseen={bodyHead} id={titleId}>{#if titleContent}{@render titleContent()}{:else}{title}{/if}</h1>
+      <h1 class="title" class:unseen={bodyHead} id={titleId}>
+        {#if titleContent}{@render titleContent()}{:else}{title}{/if}
+      </h1>
       {#if subtitle}<p class="subtitle">{subtitle}</p>{/if}
     </div>
-    {#if count > 1 && !bodyHead}
+    {#if thread}
+      {#if chrome}
+        <div class="thread-box">
+          <button
+            type="button"
+            class="screen-box"
+            aria-label={t("guide_screens_box_label", {
+              name: boxName,
+              n: shown + 1,
+              total: count,
+            })}
+            aria-expanded={chrome.contentsOpen}
+            aria-controls="guide-drawer"
+            onclick={(event) => chrome.openContents(event.currentTarget)}
+          >
+            {@render listIcon("box-icon")}
+            <span class="box-name">
+              <Crossfade key={boxName} duration={DURATION.fast}>
+                {boxName}
+              </Crossfade>
+            </span>
+          </button>
+        </div>
+      {/if}
+    {:else if count > 1 && !bodyHead}
       <!-- The pills and the box share one cell, both always laid out, so
            the row is the same height whichever shows. -->
       <div
@@ -401,7 +535,11 @@
           ? undefined
           : `${contentsClear}px`}
       >
-        <nav class="pills" aria-label={t("guide_screens_parts")} bind:this={pillRow}>
+        <nav
+          class="pills"
+          aria-label={t("guide_screens_parts")}
+          bind:this={pillRow}
+        >
           {#each labels as label, n (n)}
             <button
               type="button"
@@ -426,11 +564,7 @@
             aria-controls="guide-drawer"
             onclick={(event) => chrome.openContents(event.currentTarget)}
           >
-            <!-- Inline, so it does not wait for the icon font. -->
-            <svg class="box-icon" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M5.5 4h8M5.5 8h8M5.5 12h8" />
-              <path class="dots" d="M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
-            </svg>
+            {@render listIcon("box-icon")}
             <span class="box-name">
               <Crossfade key={shown} duration={DURATION.fast}>
                 {labels[shown] ?? ""}
@@ -455,7 +589,7 @@
       <!-- The page's screen stays mounted; it crossfades its own card and
            words, and its title and list hold still. -->
       <GuideFitBox onready={ready}>
-        {@render screen(shown, goTo)}
+        {@render screen(shown, goTo, viewed)}
       </GuideFitBox>
     {:else if live}
       <Crossfade
@@ -475,7 +609,7 @@
           min={floors?.[shown]}
         >
           {#if shown === 0 && lead}<div class="lead">{@render lead()}</div>{/if}
-          {@render screen(shown, goTo)}
+          {@render screen(shown, goTo, viewed)}
         </GuideFitBox>
       </Crossfade>
     {/if}
@@ -505,14 +639,15 @@
       >
         <div class="first-content">
           {#if lead}<div class="lead">{@render lead()}</div>{/if}
-          {@render screen(0, goTo)}
+          {@render screen(0, goTo, viewed)}
         </div>
       </div>
       {#if !live && count > 1}
         <div class="rest">
           {#each labels.slice(1) as _, n (n)}{@render screen(
               n + 1,
-              goTo
+              goTo,
+              viewed
             )}{/each}
         </div>
       {/if}
@@ -526,7 +661,7 @@
         type="button"
         class="step prev"
         aria-label={t("guide_screens_back_to", { name: prevTarget.text })}
-        onclick={() => go(index - 1)}
+        onclick={() => go(prevTarget.index)}
       >
         <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
         {@render stepName(prevTarget)}
@@ -544,21 +679,17 @@
       <span class="step-spacer"></span>
     {/if}
     {#if hubHref}<a class="hub" href={hubHref}
-        ><!-- The Contents list icon, inline so it does not wait for the icon
-             font. On a narrow row it stands alone; the words stay its name. -->
-        <svg class="hub-icon" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M5.5 4h8M5.5 8h8M5.5 12h8" />
-          <path class="dots" d="M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
-        </svg><span class="hub-words">{hubLabel ?? t("guide_nav_all_guides")}</span></a
-      >{:else}<span
-        class="step-spacer"
-      ></span>{/if}
+        ><!-- On a narrow row the icon stands alone; the words stay its name. -->
+        {@render listIcon("hub-icon")}<span class="hub-words"
+          >{hubLabel ?? t("guide_nav_all_guides")}</span
+        ></a
+      >{:else}<span class="step-spacer"></span>{/if}
     {#if nextTarget?.kind === "screen"}
       <button
         type="button"
         class="step next"
         aria-label={t("guide_screens_next_to", { name: nextTarget.text })}
-        onclick={() => go(index + 1)}
+        onclick={() => go(nextTarget.index)}
       >
         {@render stepName(nextTarget)}
         <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
@@ -668,6 +799,48 @@
     line-height: 1.3;
     color: var(--ink-dim, #555);
     text-wrap: balance;
+  }
+
+  /* The chapter's line: a piece per lesson, as long as the lesson. */
+  .line {
+    display: flex;
+    gap: 5px;
+    width: min(100%, 56rem);
+    margin: 0 auto 0.35rem;
+  }
+  .piece {
+    flex: 1 1 0;
+    min-width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--ink, #1a1a1a) 20%, transparent);
+  }
+  .filled {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #e8590c;
+    transform-origin: left;
+    transition: transform var(--duration-emphasis) var(--ease-standard, ease);
+  }
+  :global([dir="rtl"]) .filled {
+    transform-origin: right;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .filled {
+      transition: none;
+    }
+  }
+  /* The box stands for the Contents button, where that button shows. */
+  .thread-box {
+    display: none;
+    justify-items: center;
+    min-width: 0;
+  }
+  /* Thin top and bottom, so a two-line name keeps the box's one height. */
+  .thread-box .screen-box {
+    padding-block: 0.15rem;
   }
 
   /* The pills and the box stacked in one cell. */
@@ -789,11 +962,6 @@
     background: #e8590c;
     border-color: transparent;
     color: #fff;
-  }
-  .before-title {
-    width: 100%;
-    min-width: 0;
-    margin: 0.35rem 0 0.15rem;
   }
   .pill-n {
     display: inline-grid;
@@ -1030,19 +1198,33 @@
     .kicker {
       display: none;
     }
-    /* A page that draws its own title (the hand combinations' run): its
-       switcher row shares the Contents pill's line, as the screen pills
-       do, and the title comes with the screen. A row of its own cost the
-       Fold's inner screen and a phone the 50 px their card needed
-       (2026-11-03). */
+    /* A page that draws its own title (the hand combinations' run): the
+       title comes with the screen. */
     .body-head .head {
       padding-top: 1rem;
       gap: 0.3rem;
     }
-    .body-head .before-title {
-      width: auto;
-      justify-self: stretch;
-      margin: 0 0 0 10rem;
+    /* A lesson: the box with its name where the Contents button was, the
+       chapter's line under it; the box says the title. */
+    .threaded .head {
+      gap: 0.6rem;
+      padding-top: 0.75rem;
+    }
+    .thread-box {
+      display: grid;
+      order: -2;
+    }
+    .line {
+      order: -1;
+      margin-bottom: 0;
+    }
+    .threaded .title {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
   }
   /* A short window (a phone, the Fold inner screen in landscape) spends its
@@ -1094,6 +1276,14 @@
       justify-content: flex-start;
     }
   }
+  /* A short phone: the box and the line take no more than the old chip row
+     did, so the screen under them keeps its height. */
+  @media (max-width: 480px) and (max-height: 800px) {
+    .threaded .head {
+      padding-top: 0.35rem;
+      gap: 0.35rem;
+    }
+  }
 
   /* A phone held sideways (the Fold's cover on its side, about 340px tall
      with the browser bar). The site header steps aside
@@ -1115,7 +1305,8 @@
     }
     .head,
     .head:not(:has(.pills)),
-    .body-head .head {
+    .body-head .head,
+    .threaded .head {
       grid-area: head;
       display: flex;
       align-items: center;
@@ -1137,11 +1328,35 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    /* A page that draws its own title: its switcher takes the title's
-       place in the row. */
-    .before-title,
-    .body-head .before-title {
-      margin: 0;
+    /* A lesson: its title, whether the frame or the page draws it, then the
+       line over the rest of the row. */
+    .threaded .title,
+    .threaded .title.unseen {
+      position: static;
+      width: auto;
+      height: auto;
+      clip-path: none;
+      /* A long name takes a second line; it is never cut. */
+      font-size: 1.2rem;
+      line-height: 1.1;
+      white-space: normal;
+      overflow: visible;
+      text-wrap: balance;
+    }
+    .thread-box {
+      display: none;
+    }
+    .line {
+      order: 0;
+      flex: 1 1 0;
+      width: auto;
+      min-width: 4rem;
+      max-width: 20rem;
+      margin: 0 0 0 auto;
+    }
+    .threaded .titles {
+      order: -1;
+      min-width: 0;
     }
     /* Sideways the Contents button keeps its icon; where the pills do not
        fit they are simply not shown. */

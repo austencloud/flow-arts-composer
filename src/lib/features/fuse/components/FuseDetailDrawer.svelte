@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
@@ -20,9 +21,14 @@
   const { state: fuseState } = getFuseContext();
   const settings = getSettings();
   const source = $derived(side === "left" ? fuseState.left : fuseState.right);
-  const label = $derived(side === "left" ? "Left" : "Right");
   const title = $derived(
-    kind === "help" ? "How Fuse works" : `${label} notation`
+    kind === "help"
+      ? t("fuse_drawer_help_title")
+      : t(
+          side === "left"
+            ? "fuse_drawer_notation_left"
+            : "fuse_drawer_notation_right"
+        )
   );
   const viewMode = $derived<BrowseViewMode>({
     subject: "props",
@@ -56,12 +62,12 @@
   <div class="detail-shell">
     <header class="detail-header">
       <div>
-        <p class="detail-kicker">Fuse</p>
+        <p class="detail-kicker">{t("fuse_drawer_kicker")}</p>
         <h2 id="fuse-detail-title">{title}</h2>
       </div>
       <PanelButton variant="secondary" onclick={close}>
         <i class="fas fa-xmark" aria-hidden="true"></i>
-        Close
+        {t("fuse_action_close")}
       </PanelButton>
     </header>
 
@@ -70,22 +76,22 @@
         <section class="help-step">
           <span class="step-number" aria-hidden="true">1</span>
           <div>
-            <h3>Set the length</h3>
-            <p>Both one-hand LOOPs use the same step count.</p>
+            <h3>{t("fuse_drawer_step_length_title")}</h3>
+            <p>{t("fuse_drawer_step_length_text")}</p>
           </div>
         </section>
         <section class="help-step">
           <span class="step-number" aria-hidden="true">2</span>
           <div>
-            <h3>Shape either LOOP</h3>
-            <p>Generate, choose, or adjust each source independently.</p>
+            <h3>{t("fuse_drawer_step_shape_title")}</h3>
+            <p>{t("fuse_drawer_step_shape_text")}</p>
           </div>
         </section>
         <section class="help-step">
           <span class="step-number" aria-hidden="true">3</span>
           <div>
-            <h3>Fuse and open</h3>
-            <p>The result opens in the sequence viewer.</p>
+            <h3>{t("fuse_drawer_step_open_title")}</h3>
+            <p>{t("fuse_drawer_step_open_text")}</p>
           </div>
         </section>
       </div>
@@ -109,7 +115,7 @@
         />
       </div>
     {:else}
-      <p class="drawer-empty">This path is still loading.</p>
+      <p class="drawer-empty">{t("fuse_drawer_loading")}</p>
     {/if}
   </div>
 </Drawer>

@@ -4,7 +4,6 @@ import { LOOPComponent } from "#lib/features/create/generate/shared/domain/const
 import {
   buildLoopOverlayModel,
   normalizeReflectionSelection,
-  REFLECTION_AXIS_DETAILS,
   type LoopRhythmValue,
 } from "#lib/features/create/generate/components/cards/loop-expanded-overlay-model.js";
 
@@ -67,18 +66,16 @@ describe("LOOP expanded overlay model", () => {
     expect(result.configurableComponents).toContain(LOOPComponent.ROTATED);
   });
 
-  it("gives a mirrored pick its normal Apply label with nothing locked", () => {
+  it("gives a reflected pick its normal Apply label with nothing locked", () => {
     const result = model(new Set([LOOPComponent.MIRRORED]), {
       isMultiSelectMode: true,
     });
 
     expect(result.isImplemented).toBe(true);
-    expect(result.buttonText).toBe(
-      REFLECTION_AXIS_DETAILS["north-south"].applyLabel
-    );
+    expect(result.buttonText).toBe("Apply Reflected");
   });
 
-  it("uses the selected reflection axis and inversion mode in live copy", () => {
+  it("names every axis Reflected and uses the inversion mode in live copy", () => {
     const reflection = model(new Set([LOOPComponent.MIRRORED]), {
       isMultiSelectMode: true,
       rhythm: {
@@ -94,7 +91,7 @@ describe("LOOP expanded overlay model", () => {
       },
     });
 
-    expect(reflection.buttonText).toBe("Apply Flipped");
+    expect(reflection.buttonText).toBe("Apply Reflected");
     expect(inversion.inversionCaption).toBe(
       "Same hand placements — props flip spin direction every quarter."
     );

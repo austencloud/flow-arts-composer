@@ -91,6 +91,18 @@ describe("trees", () => {
     expect(growBareTree(1, 10, 8, 150).branches.length).toBeLessThan(growBareTree(1, 10, 8).branches.length);
   });
 
+  it("leaves no twig hanging in the air when it thins a tree", () => {
+    const place = (p: readonly number[]) => p.map((n) => n.toFixed(6)).join();
+    for (let seed = 1; seed <= 20; seed++) {
+      const held = new Set<string>();
+      for (const b of growBareTree(seed, 12, 9, 400).branches) {
+        if (held.size) expect(held.has(place(b.a))).toBe(true);
+        held.add(place(b.a));
+        held.add(place(b.b));
+      }
+    }
+  });
+
   it("builds an evergreen", () => {
     const tree = around({
       trees: [{ at: [0, 0], kind: "evergreen", heightFt: 30 }],

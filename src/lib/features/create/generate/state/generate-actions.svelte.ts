@@ -117,7 +117,10 @@ export function spellRelaxedText(relaxed: SpellRelaxation): string {
 export function spellLoopNotAppliedText(loopType: LOOPType): string {
   return LOOP_TYPE_LABELS[loopType]
     ? t("generator_spell_loop_not_applied_named", {
-        name: loopTypeLabel(loopType),
+        // FLIPPED is the saved alias of Reflected on the horizontal line.
+        name: loopTypeLabel(
+          loopType === LOOPType.FLIPPED ? LOOPType.MIRRORED : loopType
+        ),
       })
     : t("generator_spell_loop_not_applied");
 }

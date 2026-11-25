@@ -6,6 +6,8 @@ import { GUIDE_CONTENT } from "./guide-content";
 import { hmGammaContent } from "./content/hm-gamma.content";
 import { negativeSpaceContent } from "./content/negative-space.content";
 import { lt1AbcGhiContent } from "./content/lt1-abc-ghi.content";
+import { wordsContent } from "./content/words.content";
+import { lt1GammaWordsContent } from "./content/lt1-gamma-words.content";
 import { lt1DjEkFlContent } from "./content/lt1-dj-ek-fl.content";
 import { staffMotionsContent } from "./content/staff-motions.content";
 import { screenRoom, type ScreenRoom } from "../../_components/fit/guide-screen-url";
@@ -488,5 +490,24 @@ describe("pills that name words", () => {
   });
   it("leaves a page whose first screen shows letters, not a word, as it was", () => {
     expect(labels(lt1DjEkFlContent, 1440, 900)[0]).toBe("Intro");
+  });
+  it("never gives two sections of a page one name", () => {
+    for (const [content, w, h] of [
+      [wordsContent, 1440, 900],
+      [wordsContent, 1100, 1100],
+      [lt1GammaWordsContent, 1440, 900],
+      [lt1AbcGhiContent, 1440, 900],
+      [lt1DjEkFlContent, 1440, 900],
+    ] as const) {
+      const l = labels(content as GuideBlock[], w, h);
+      expect(new Set(l).size).toBe(l.length);
+    }
+  });
+  it("keeps Intro on the Words page and numbers its second AABB screen", () => {
+    expect(labels(wordsContent, 1440, 900)).toEqual([
+      "Intro",
+      "AABB",
+      "AABB (2)",
+    ]);
   });
 });

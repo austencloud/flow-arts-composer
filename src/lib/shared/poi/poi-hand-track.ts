@@ -2,6 +2,9 @@ import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/mot
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { calculateMotionEndpoints } from "#lib/shared/animation-engine/services/endpoint-calculator.js";
 import { lerpAngle } from "#lib/shared/animation-engine/services/angle-calculator.js";
+import { DEFAULT_POI_LENGTH, GRAVITY } from "@tka/shape-domain";
+
+export { GRAVITY };
 
 /**
  * Where a hand has to go for its poi to follow one hand's beats. The poi head
@@ -33,7 +36,7 @@ export interface PoiStringOptions {
 }
 
 export const DEFAULT_POI_STRING_OPTIONS: PoiStringOptions = {
-  stringLength: 0.6,
+  stringLength: DEFAULT_POI_LENGTH,
   handRadius: 0.6,
   bpm: 180,
   gravity: true,
@@ -42,7 +45,6 @@ export const DEFAULT_POI_STRING_OPTIONS: PoiStringOptions = {
 };
 
 export const POI_SAMPLES_PER_BEAT = 120;
-export const GRAVITY = 9.81;
 
 /**
  * One hand's solve as flat arrays, one entry per sample, in the plane's

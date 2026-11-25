@@ -29,6 +29,7 @@ import {
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -247,6 +248,140 @@ describe("addTunnelHook", () => {
     expect(anim.start).toBe(0);
     expect(anim.duration).toBe(10);
     expect(anim).toMatchObject({ box: POST_BOX.bottom });
+  });
+});
+
+describe("what opens with the animation", () => {
+  const name = (fields: object) => ({
+    id: "name",
+    kind: "titles",
+    start: 0,
+    duration: 10,
+    box: { ...POST_BOX.full },
+    opacity: 1,
+    fadeIn: 0,
+    fadeOut: 0,
+    anchor: { itemId: "v1", offset: 0 },
+    fill: false,
+    leave: "stay",
+    lit: { from: 1, to: 6 },
+    quiet: { from: 2, to: 4 },
+    keyframes: {
+      box: [
+        { t: 0, value: { ...POST_BOX.full }, easing: "hold" },
+        { t: 3, value: { ...POST_BOX.top }, easing: "hold" },
+      ],
+    },
+    ...fields,
+  });
+  const withName = (fields: object = {}) => {
+    const base = withAnimation();
+    return finishProject({
+      ...base,
+      tracks: [
+        ...base.tracks,
+        {
+          id: "words",
+          hidden: false,
+          locked: false,
+          items: [name(fields)] as never,
+        },
+      ],
+    });
+  };
+  const find = (p: ReturnType<typeof withAnimation>, id: string) =>
+    p.tracks.flatMap((track) => track.items).find((item) => item.id === id)!;
+
+  it("keeps the name at the start, in step with the footage it was set on", () => {
+    const added = addTunnelHook(withName(), ctx, { seconds: 5 })!.project;
+    expect(PostProjectSchema.safeParse(added).success).toBe(true);
+    const kept = find(added, "name");
+    expect(kept).toMatchObject({
+      start: 0,
+      duration: 15,
+      lit: { from: 6, to: 11 },
+      quiet: { from: 7, to: 9 },
+    });
+    expect(kept.keyframes!.box!.map((key) => key.t)).toEqual([5, 8]);
+  });
+
+  it("gives a name shorter than the intro the words' own share of it", () => {
+    const added = addTunnelHook(
+      withName({ duration: 2, lit: undefined, quiet: undefined }),
+      ctx,
+      { seconds: 5 }
+    )!.project;
+    const kept = find(added, "name");
+    expect(kept.start).toBe(0);
+    expect(kept.duration).toBeCloseTo(openingTitlesSpan(added)!.duration, 6);
+    expect(itemEnd(kept)).toBeLessThan(5);
+    expect(kept.keyframes!.box!.map((key) => key.t)).toEqual([0, 3]);
+    // It is the tunnel's own, so nothing about it moves when the tunnel goes.
+    const without = find(removeTunnelHook(added, ctx), "name");
+    expect(without.start).toBe(0);
+    expect(without.duration).toBeCloseTo(kept.duration, 6);
+    expect(without.keyframes!.box!.map((key) => key.t)).toEqual([0, 3]);
+  });
+
+  it("moves a name that starts later, as it does everything else", () => {
+    const added = addTunnelHook(
+      withName({ start: 2, duration: 4, anchor: { itemId: "v1", offset: 2 } }),
+      ctx,
+      { seconds: 5 }
+    )!.project;
+    expect(find(added, "name")).toMatchObject({
+      start: 7,
+      duration: 4,
+      lit: { from: 1, to: 6 },
+    });
+  });
+
+  it("brings the name back as it was when the hook goes", () => {
+    const before = withName();
+    const added = addTunnelHook(before, ctx, { seconds: 5 })!.project;
+    expect(find(removeTunnelHook(added, ctx), "name")).toEqual(
+      find(before, "name")
+    );
+  });
+
+  it("keeps the name in step when the opening is taken off and put back longer", () => {
+    const first = addTunnelHook(withName(), ctx, { seconds: 3 })!.project;
+    const again = addTunnelHook(removeTunnelHook(first, ctx), ctx, {
+      seconds: 5,
+    })!.project;
+    expect(find(again, "name")).toMatchObject({
+      start: 0,
+      duration: 15,
+      lit: { from: 6, to: 11 },
+    });
+  });
+
+  it("keeps the animation's own split and bar on the footage they were set on", () => {
+    const base = withAnimation();
+    const before = {
+      ...base,
+      tracks: base.tracks.map((track) => ({
+        ...track,
+        items: track.items.map((item) =>
+          item.id === "anim"
+            ? ({
+                ...item,
+                split: { openAt: 2, openSeconds: 1, closeAt: 6 },
+                barFill: { emptyAt: 1, fullAt: 8 },
+              } as typeof item)
+            : item
+        ),
+      })),
+    };
+    const added = addTunnelHook(before, ctx, { seconds: 5 })!.project;
+    expect(find(added, "anim")).toMatchObject({
+      split: { openAt: 7, closeAt: 11 },
+      barFill: { emptyAt: 6, fullAt: 13 },
+    });
+    expect(find(removeTunnelHook(added, ctx), "anim")).toMatchObject({
+      split: { openAt: 2, closeAt: 6 },
+      barFill: { emptyAt: 1, fullAt: 8 },
+    });
   });
 });
 
@@ -604,6 +739,27 @@ describe("tunnel hook lined up with its footage", () => {
     );
     return { ...base, timings: { a: timing } };
   }
+  /** The same post with its clip cut from `sourceIn` of the take. */
+  const opening = (
+    p: ReturnType<typeof timed>,
+    sourceIn: number,
+    sourceOut = 40
+  ) => ({
+    ...p,
+    tracks: p.tracks.map((track) => ({
+      ...track,
+      items: track.items.map((item) =>
+        item.id === "v1"
+          ? ({
+              ...item,
+              sourceIn,
+              sourceOut,
+              duration: sourceOut - sourceIn,
+            } as typeof item)
+          : item
+      ),
+    })),
+  });
   const clip = (p: ReturnType<typeof timed>) =>
     p.tracks[0]!.items.find((item) => item.id === "v1") as PostVideoItem;
   /** Media time showing at post `seconds`. */
@@ -665,12 +821,66 @@ describe("tunnel hook lined up with its footage", () => {
     expect(takePositionAt(resolved, mediaAt(footage, cue))).toBeCloseTo(16, 4);
   });
 
-  it("leaves an untimed take alone", () => {
-    const untimed = { ...timed(9.6), timings: {} };
-    const added = addTunnelHook(untimed, ctx, { seconds: 5 })!;
-    expect(findTunnelHook(added.project)!.tunnelHook!.backdrop).toBeUndefined();
-    expect(clip(added.project).start).toBe(5);
+  it("puts the footage behind an untimed take's intro, ending where it did", () => {
+    const before = { ...timed(9.6), timings: {} };
+    const added = addTunnelHook(before, ctx, { seconds: 5 })!;
+    const hook = findTunnelHook(added.project)!;
+    const footage = clip(added.project as typeof before);
+    expect(PostProjectSchema.safeParse(added.project).success).toBe(true);
+    expect(hook.tunnelHook).toMatchObject({ seconds: 5, backdrop: true });
+    expect(hook.start).toBe(0);
+    expect(footage.start).toBe(0);
+    for (const seconds of [5, 9, 20, 30]) {
+      expect(mediaAt(footage, seconds)).toBeCloseTo(
+        mediaAt(clip(before), seconds - 5),
+        6
+      );
+    }
+    const caption = added.project.tracks
+      .flatMap((track) => track.items)
+      .find((item) => item.id === "caption")!;
+    expect(caption.start).toBeCloseTo(8, 6);
     expect(lineUpTunnelHook(added.project, ctx)).toBe(added.project);
+    expect(spans(removeTunnelHook(added.project, ctx), 0)).toEqual(
+      spans(before, 0)
+    );
+  });
+
+  it("puts the footage behind a take whose moves were never checked", () => {
+    const { movesKey: _unchecked, ...unchecked } = timing;
+    const added = addTunnelHook(
+      { ...timed(9.6), timings: { a: unchecked } },
+      ctx,
+      { seconds: 5 }
+    )!;
+    expect(findTunnelHook(added.project)!.tunnelHook).toMatchObject({
+      seconds: 5,
+      backdrop: true,
+    });
+  });
+
+  it("puts the footage behind an intro no pass start can reach", () => {
+    // Cut from 3 s to 5 s of the take: the pass at 1 s would leave half a
+    // second of intro, and the next one is past the cut.
+    const early = opening(timed(9.6), 3, 5);
+    const added = addTunnelHook(early, ctx, { seconds: 2.5 })!;
+    expect(findTunnelHook(added.project)!.tunnelHook).toMatchObject({
+      seconds: 2.5,
+      backdrop: true,
+    });
+    expect(clip(added.project as typeof early).sourceIn).toBeCloseTo(0.5, 6);
+  });
+
+  it("opens no longer than the footage it has, when no length is asked for", () => {
+    const untimed = { ...timed(9.6), timings: {} };
+    const from = (sourceIn: number) =>
+      findTunnelHook(addTunnelHook(opening(untimed, sourceIn), ctx)!.project)!
+        .tunnelHook!;
+    expect(from(3)).toMatchObject({ seconds: 3, backdrop: true });
+    expect(from(20)).toMatchObject({ seconds: 5, backdrop: true });
+    // Too little footage for a tunnel: the length stands, with nothing behind it.
+    expect(from(0.5).seconds).toBe(5);
+    expect(from(0.5).backdrop).toBeUndefined();
   });
 
   it("lands the tunnel and the footage together on the opening pose", () => {

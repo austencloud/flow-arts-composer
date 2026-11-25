@@ -57,6 +57,7 @@ export function canShowStepEditorDrawer(
 /** Build tabs whose sequences have steps to edit. */
 export const STEP_EDITOR_TABS: ReadonlySet<string> = new Set([
   "construct",
+  "loop",
   "assemble",
   "generate",
   "spell",

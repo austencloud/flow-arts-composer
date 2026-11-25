@@ -527,6 +527,22 @@
         featureFlagService.canAccessTab("create", tab.id)
     );
   });
+
+  // A method that is not out yet has no card on the board, and its address
+  // leads to the board. This waits for the role, which reads as a visitor's
+  // until it loads.
+  $effect(() => {
+    if (!featureFlagService.isInitialized) return;
+    if (navigationState.isCreateFrontDoorOpen) return;
+    const method = navigationState.activeTab;
+    const isMethod = CREATE_TABS.some(
+      (tab) => tab.id === method && tab.metadata?.isCreationMethod === true
+    );
+    if (!isMethod) return;
+    if (releasedCreateMethods.some((tab) => tab.id === method)) return;
+    untrack(() => navigationState.openCreateFrontDoor());
+  });
+
   const lastUsedCreateMode = $derived(
     navigationState.hasRememberedCreateMode
       ? navigationState.currentCreateMode

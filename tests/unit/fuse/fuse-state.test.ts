@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFuseState,
+  type FuseState,
   type FuseStateDeps,
 } from "#lib/features/fuse/state/fuse-state.svelte.js";
 import { createFuseRule } from "#lib/features/fuse/domain/fuse-rule.js";
@@ -248,26 +249,27 @@ describe("Fuse state", () => {
     );
   });
 
-  it("uses one persisted generation recipe for both Regenerate buttons", async () => {
+  it("gives each hand its own settings for its next Regenerate", async () => {
     const generator = createSoloGenerator();
     const state = createState(createLoader([]), {
       generateSoloLoop: generator,
     });
     await state.initialize();
 
-    state.setGenerationLevel(3);
-    state.setMaxTurnIntensity(0.5);
-    state.setConstraintPreset("smooth");
-    state.setHandPathMode("choppy");
-    state.setMotionTypeFilter("prefer-dash");
-    state.setGridMode(GridMode.BOX);
-    state.setStartLocation(GridLocation.SOUTHWEST);
-    state.setStartOrientation(Orientation.CLOCK);
-    state.setTraversalDirection("counterclockwise");
+    const left = state.recipeFor("left");
+    left.setGenerationLevel(3);
+    left.setMaxTurnIntensity(0.5);
+    left.setConstraintPreset("smooth");
+    left.setHandPathMode("choppy");
+    left.setMotionTypeFilter("prefer-dash");
+    left.setGridMode(GridMode.BOX);
+    left.setStartLocation(GridLocation.SOUTHWEST);
+    left.setStartOrientation(Orientation.CLOCK);
+    left.setTraversalDirection("counterclockwise");
+    // Settings for new paths never touch the paths on screen.
     expect(generator).toHaveBeenCalledTimes(2);
 
-    await state.shuffle("right");
-
+    await state.shuffle("left");
     expect(generator).toHaveBeenLastCalledWith(8, {
       gridMode: GridMode.BOX,
       level: 3,
@@ -279,26 +281,60 @@ describe("Fuse state", () => {
       startOrientation: Orientation.CLOCK,
       traversalDirection: "counterclockwise",
     });
-    expect(state.generationLevel).toBe(3);
-    expect(state.maxTurnIntensity).toBe(0.5);
 
-    state.setGenerationLevel(2);
-    expect(state.maxTurnIntensity).toBe(1);
-    expect(state.startOrientation).toBeNull();
-    expect(generator).toHaveBeenCalledTimes(3);
+    // The right hand kept its own settings.
+    await state.shuffle("right");
+    const rightRecipe = generator.mock.lastCall?.[1];
+    expect(rightRecipe?.level).toBe(state.recipeFor("right").generationLevel);
+    expect(rightRecipe?.level).not.toBe(3);
+    expect(rightRecipe?.gridMode).not.toBe(GridMode.BOX);
+
+    // Lowering the level clamps what that level cannot reach.
+    left.setGenerationLevel(2);
+    expect(state.recipeFor("left").maxTurnIntensity).toBe(1);
+    expect(state.recipeFor("left").startOrientation).toBeNull();
+    expect(generator).toHaveBeenCalledTimes(4);
 
     const restored = createState(createLoader([]), {
       generateSoloLoop: createSoloGenerator(),
     });
-    expect(restored.generationLevel).toBe(2);
-    expect(restored.maxTurnIntensity).toBe(1);
-    expect(restored.constraintPreset).toBe("smooth");
-    expect(restored.handPathMode).toBe("choppy");
-    expect(restored.motionTypeFilter).toBe("prefer-dash");
-    expect(restored.gridMode).toBe(GridMode.BOX);
-    expect(restored.startLocation).toBe(GridLocation.SOUTHWEST);
-    expect(restored.startOrientation).toBeNull();
-    expect(restored.traversalDirection).toBe("counterclockwise");
+    const restoredLeft = restored.recipeFor("left");
+    expect(restoredLeft.generationLevel).toBe(2);
+    expect(restoredLeft.maxTurnIntensity).toBe(1);
+    expect(restoredLeft.constraintPreset).toBe("smooth");
+    expect(restoredLeft.handPathMode).toBe("choppy");
+    expect(restoredLeft.motionTypeFilter).toBe("prefer-dash");
+    expect(restoredLeft.gridMode).toBe(GridMode.BOX);
+    expect(restoredLeft.startLocation).toBe(GridLocation.SOUTHWEST);
+    expect(restoredLeft.startOrientation).toBeNull();
+    expect(restoredLeft.traversalDirection).toBe("counterclockwise");
+    expect(restored.recipeFor("right").gridMode).not.toBe(GridMode.BOX);
+    state.dispose();
+    restored.dispose();
+  });
+
+  it("lets the hands run different lengths and plays them for their common multiple", async () => {
+    const generator = createSoloGenerator();
+    const state = createState(createLoader([]), {
+      generateSoloLoop: generator,
+    });
+    await state.initialize();
+
+    state.recipeFor("right").setLength(12);
+    expect(state.recipeFor("right").requestedLength).toBe(12);
+    // A new length waits for that hand's Regenerate.
+    expect(state.right.length).toBe(8);
+    expect(state.appliedLength).toBe(8);
+
+    await state.shuffle("right");
+
+    expect(generator).toHaveBeenLastCalledWith(12, expect.any(Object));
+    expect(state.left.length).toBe(8);
+    expect(state.right.length).toBe(12);
+    expect(state.previewSequence?.steps).toHaveLength(24);
+    expect(state.appliedLength).toBe(24);
+    expect(state.requestedLength).toBe(24);
+    state.dispose();
   });
 
   it("migrates only the untouched legacy Fuse style to the shared default", () => {
@@ -312,22 +348,22 @@ describe("Fuse state", () => {
     );
 
     const migrated = createState(createLoader([]));
-    expect(migrated.constraintPreset).toBe("smooth");
-    expect(migrated.handPathMode).toBe("mixed");
-    expect(migrated.motionTypeFilter).toBeNull();
+    for (const side of ["left", "right"] as const) {
+      expect(migrated.recipeFor(side).constraintPreset).toBe("smooth");
+      expect(migrated.recipeFor(side).handPathMode).toBe("mixed");
+      expect(migrated.recipeFor(side).motionTypeFilter).toBeNull();
+    }
 
     // Once a person deliberately chooses Mixed, the persisted schema marker
     // keeps that choice from being mistaken for the retired Fuse baseline.
-    migrated.setConstraintPreset("mixed");
-    expect(JSON.parse(localStorage.getItem("fuse-tab-state") ?? "{}")).toEqual(
-      expect.objectContaining({
-        styleDefaultsVersion: 1,
-        constraintPreset: "mixed",
-      })
-    );
+    migrated.recipeFor("left").setConstraintPreset("mixed");
+    const stored = JSON.parse(localStorage.getItem("fuse-tab-state") ?? "{}");
+    expect(stored.styleDefaultsVersion).toBe(1);
+    expect(stored.recipes.left.constraintPreset).toBe("mixed");
 
     const restored = createState(createLoader([]));
-    expect(restored.constraintPreset).toBe("mixed");
+    expect(restored.recipeFor("left").constraintPreset).toBe("mixed");
+    expect(restored.recipeFor("right").constraintPreset).toBe("smooth");
     migrated.dispose();
     restored.dispose();
   });
@@ -343,8 +379,8 @@ describe("Fuse state", () => {
     );
 
     const state = createState(createLoader([]));
-    expect(state.constraintPreset).toBe("mixed");
-    expect(state.handPathMode).toBe("choppy");
+    expect(state.recipeFor("left").constraintPreset).toBe("mixed");
+    expect(state.recipeFor("right").handPathMode).toBe("choppy");
     state.dispose();
   });
 
@@ -352,14 +388,16 @@ describe("Fuse state", () => {
     const state = createState(createLoader([]), {
       generateSoloLoop: createSoloGenerator(),
     });
+    const left = state.recipeFor("left");
 
-    state.setStartLocation(GridLocation.SOUTH);
-    state.setGridMode(GridMode.BOX);
+    left.setStartLocation(GridLocation.SOUTH);
+    left.setGridMode(GridMode.BOX);
 
-    expect(state.gridMode).toBe(GridMode.BOX);
-    expect(state.startLocation).toBeNull();
-    state.setStartLocation(GridLocation.NORTHEAST);
-    expect(state.startLocation).toBe(GridLocation.NORTHEAST);
+    expect(state.recipeFor("left").gridMode).toBe(GridMode.BOX);
+    expect(state.recipeFor("left").startLocation).toBeNull();
+    left.setStartLocation(GridLocation.NORTHEAST);
+    expect(state.recipeFor("left").startLocation).toBe(GridLocation.NORTHEAST);
+    state.dispose();
   });
 
   it("chooses a new first step on one LOOP without changing its partner", async () => {
@@ -589,7 +627,7 @@ describe("Fuse state", () => {
     expect(state.previewSequence).toBeNull();
     expect(state.error?.kind).toBe("empty");
     expect(state.statusMessage).toBe(
-      "No 12-step paths are available. Choose another length."
+      "No 12-step paths are available for the left hand. Choose another length."
     );
   });
 
@@ -839,6 +877,201 @@ describe("Fuse state", () => {
     }
   });
 
+  describe("a step tapped on a path card", () => {
+    /** Two paths, the right one as long as asked, with the clock running or not. */
+    async function openPaths(rightLength: 8 | 12 = 8, playing = false) {
+      vi.stubGlobal(
+        "requestAnimationFrame",
+        vi.fn(() => 1)
+      );
+      vi.stubGlobal("cancelAnimationFrame", vi.fn());
+      const state = createState(createLoader([]), {
+        generateSoloLoop: createSoloGenerator(),
+      });
+      await state.initialize();
+      if (rightLength !== 8) {
+        state.recipeFor("right").setLength(rightLength);
+        await state.shuffle("right");
+      }
+      if (playing) state.startClock();
+      return state;
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    });
+
+    it("stays paused on that step, or keeps playing from it", async () => {
+      const paused = await openPaths();
+      paused.seekToStep(5, 8);
+      expect(paused.currentStep).toBe(5);
+      expect(paused.clockRunning).toBe(false);
+      paused.dispose();
+
+      const playing = await openPaths(8, true);
+      playing.seekToStep(5, 8);
+      expect(playing.currentStep).toBe(5);
+      expect(playing.clockRunning).toBe(true);
+      playing.dispose();
+    });
+
+    it("keeps the moment within the step", async () => {
+      let frame: FrameRequestCallback | null = null;
+      vi.stubGlobal(
+        "requestAnimationFrame",
+        vi.fn((callback: FrameRequestCallback) => {
+          frame = callback;
+          return 1;
+        })
+      );
+      vi.stubGlobal("cancelAnimationFrame", vi.fn());
+      const state = createState(createLoader([]), {
+        generateSoloLoop: createSoloGenerator(),
+      });
+      await state.initialize();
+      state.startClock();
+      frame!(1_000);
+      frame!(2_250);
+      expect(state.currentStep).toBeCloseTo(1.25);
+
+      state.seekToStep(6, 8);
+      expect(state.currentStep).toBeCloseTo(6.25);
+      state.dispose();
+    });
+
+    it("lands in the repeat a shorter path is already in", async () => {
+      const state = await openPaths(12);
+      expect(state.previewSequence?.steps).toHaveLength(24);
+
+      // Step 5 of the result: the eight is in its first repeat.
+      state.seekToStep(4, 12);
+      state.seekToStep(1, 8);
+      expect(state.currentStep).toBe(1);
+
+      // Step 18: the eight is in its third, the twelve in its second.
+      state.seekToStep(17, 24);
+      state.seekToStep(1, 8);
+      expect(state.currentStep).toBe(17);
+      state.seekToStep(3, 12);
+      expect(state.currentStep).toBe(15);
+      state.dispose();
+    });
+
+    it("ignores a step its path does not have", async () => {
+      const state = await openPaths();
+      state.seekToStep(3, 8);
+      state.seekToStep(8, 8);
+      state.seekToStep(-1, 8);
+      expect(state.currentStep).toBe(3);
+      state.dispose();
+    });
+
+    it("waits at Start, then plays", async () => {
+      const state = await openPaths(8, true);
+      state.seekToStep(5, 8);
+      vi.useFakeTimers();
+
+      state.seekToStart();
+      expect(state.currentStep).toBe(0);
+      expect(state.clockRunning).toBe(false);
+      expect(state.waitingAtStart).toBe(true);
+      vi.advanceTimersByTime(699);
+      expect(state.clockRunning).toBe(false);
+      vi.advanceTimersByTime(1);
+      expect(state.clockRunning).toBe(true);
+      expect(state.waitingAtStart).toBe(false);
+      state.dispose();
+    });
+
+    it.each<[string, (state: FuseState) => void]>([
+      ["a tapped step", (state) => state.seekToStep(2, 8)],
+      ["a pause", (state) => state.stopClock()],
+      ["leaving the tab", (state) => state.dispose()],
+    ])(
+      "does not play after %s cuts the wait short",
+      async (_name, interrupt) => {
+        const state = await openPaths();
+        vi.useFakeTimers();
+        state.seekToStart();
+        interrupt(state);
+        expect(state.waitingAtStart).toBe(false);
+        vi.advanceTimersByTime(2_000);
+        expect(state.clockRunning).toBe(false);
+        state.dispose();
+      }
+    );
+  });
+
+  describe("the result's word", () => {
+    it("shows once every step has its letter", async () => {
+      const letters = deferred<SequenceData>();
+      let published: SequenceData | null = null;
+      const state = createState(createLoader([]), {
+        generateSoloLoop: createSoloGenerator(),
+        deriveLetters: (sequence) => {
+          published = sequence;
+          return letters.promise;
+        },
+      });
+      await state.initialize();
+      expect(state.previewWord).toBeNull();
+
+      letters.resolve(letterEveryStep(published!));
+      await vi.waitFor(() => expect(state.previewWord).toBe("AAAAAAAA"));
+      state.dispose();
+    });
+
+    it("keeps the last word until the new one is whole", async () => {
+      let pending: ReturnType<typeof deferred<SequenceData>> | null = null;
+      let published: SequenceData | null = null;
+      const state = createState(createLoader([]), {
+        generateSoloLoop: createSoloGenerator(),
+        deriveLetters: async (sequence) => {
+          published = sequence;
+          return pending ? pending.promise : letterEveryStep(sequence);
+        },
+      });
+      await state.initialize();
+      await vi.waitFor(() => expect(state.previewWord).toBe("AAAAAAAA"));
+
+      const next = deferred<SequenceData>();
+      pending = next;
+      await state.shuffle("left");
+      expect(state.previewWord).toBe("AAAAAAAA");
+
+      const lettered = letterEveryStep(published!);
+      const letter = "B" as StepData["letter"];
+      next.resolve({
+        ...lettered,
+        steps: lettered.steps.map((step) => ({ ...step, letter })),
+      });
+      await vi.waitFor(() => expect(state.previewWord).toBe("BBBBBBBB"));
+      state.dispose();
+    });
+
+    it("is empty while a step has no letter", async () => {
+      const state = createState(createLoader([]), {
+        generateSoloLoop: createSoloGenerator(),
+        deriveLetters: async (sequence) => {
+          const lettered = letterEveryStep(sequence);
+          return {
+            ...lettered,
+            steps: lettered.steps.map((step, index) =>
+              index === 3 ? { ...step, letter: null } : step
+            ),
+          };
+        },
+      });
+      await state.initialize();
+      await vi.waitFor(() =>
+        expect(state.previewSequence?.steps[0]?.letter).toBe("A")
+      );
+      expect(state.previewWord).toBeNull();
+      state.dispose();
+    });
+  });
+
   it("keeps the primary action unavailable during a source replacement", async () => {
     const first = makeSequence("first", 8);
     const second = metadataOnly(makeSequence("second", 8));
@@ -1010,10 +1243,17 @@ describe("Fuse state", () => {
     it("classifies the committed rule", () => {
       localStorage.setItem(
         "fuse-tab-state",
-        JSON.stringify({ mode: "symmetry", rule: createFuseRule({ reflect: "mirror" }) })
+        JSON.stringify({
+          mode: "symmetry",
+          rule: createFuseRule({ reflect: "mirror" }),
+        })
       );
       const state = createState(createLoader([]));
-      expect(state.tndSelection).toMatchObject({ mode: "TO", invert: false, rewind: false });
+      expect(state.tndSelection).toMatchObject({
+        mode: "TO",
+        invert: false,
+        rewind: false,
+      });
       expect(state.ruleAdjusted).toBe(false);
     });
 
@@ -1026,19 +1266,24 @@ describe("Fuse state", () => {
         })
       );
       const state = createState(createLoader([]));
-      expect(state.rule).toEqual(createFuseRule({ rotationSteps: 2, reflect: "mirror" }));
-      expect(state.tndSelection.mode).toBe("QO");
-      expect(state.ruleAdjusted).toBe(true);
-      expect(JSON.parse(localStorage.getItem("fuse-tab-state") ?? "{}").rule).toEqual(
+      expect(state.rule).toEqual(
         createFuseRule({ rotationSteps: 2, reflect: "mirror" })
       );
+      expect(state.tndSelection.mode).toBe("QO");
+      expect(state.ruleAdjusted).toBe(true);
+      expect(
+        JSON.parse(localStorage.getItem("fuse-tab-state") ?? "{}").rule
+      ).toEqual(createFuseRule({ rotationSteps: 2, reflect: "mirror" }));
 
       state.setRule(createFuseRule({ reflect: "flip" }));
       expect(state.ruleAdjusted).toBe(false);
     });
 
     it("has no check outside Linked mode", () => {
-      localStorage.setItem("fuse-tab-state", JSON.stringify({ mode: "shuffle" }));
+      localStorage.setItem(
+        "fuse-tab-state",
+        JSON.stringify({ mode: "shuffle" })
+      );
       const state = createState(createLoader([]));
       expect(state.tndCheck).toBeNull();
     });

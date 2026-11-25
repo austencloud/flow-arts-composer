@@ -5,11 +5,12 @@ import {
   parseLoopComponents,
   formatLOOPTypeForDisplay,
 } from "#lib/shared/create/services/loop-type-utils.js";
+import type { ReflectionAxis } from "@tka/sequence-engine/loop";
 import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 const LABELS = {
   [LOOPComponent.ROTATED]: "generator_loop_rotated",
-  [LOOPComponent.MIRRORED]: "create_deep_reflection",
+  [LOOPComponent.MIRRORED]: "generator_loop_reflected",
   [LOOPComponent.FLIPPED]: "generator_loop_flipped",
   [LOOPComponent.SWAPPED]: "generator_loop_swapped",
   [LOOPComponent.INVERTED]: "generator_loop_inverted",
@@ -33,6 +34,13 @@ export function loopComponentLabel(component: LOOPComponent): string {
 export function loopComponentDescription(component: LOOPComponent): string {
   const key = DESCRIPTIONS[component as keyof typeof DESCRIPTIONS];
   return key ? t(key) : component;
+}
+
+/** Names the line a Reflected LOOP reflects across; the type keeps one name. */
+export function reflectionAxisName(axis: ReflectionAxis): string {
+  if (axis === "north-south") return t("create_deep_axis_vertical");
+  if (axis === "east-west") return t("create_deep_axis_horizontal");
+  return t("create_deep_diagonal");
 }
 
 export function loopTypeLabel(

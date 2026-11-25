@@ -26,7 +26,7 @@
     getCharacterModelPath,
   } from "#lib/shared/3d/domain/character-model.js";
   import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
-  import { ALL_FIXTURE_LOOPS } from "#lib/shared/combination/domain/demo-fixtures.js";
+  import { AABB_CW } from "#lib/shared/combination/domain/demo-fixtures.js";
   import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import { createPlaybackControllerFactory } from "#lib/shared/animation-engine/create-playback-controller-factory.js";
   import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
@@ -112,9 +112,9 @@
     { key: "face", label: "Face variation", low: "None", high: "Bold" },
   ] as const;
 
-  const initialSequence = ALL_FIXTURE_LOOPS.find(
-    ([id]) => id === "AAAA_CCW"
-  )![1];
+  // Opens on AABB. The all-A word needs the arms to pass through each other
+  // with staffs in the wall plane (Austen, 2026-11-24).
+  const initialSequence = AABB_CW;
   const viewer = createViewer3DState({
     renderMode: "3d",
     environmentId: SceneEnvironmentId.FOREST,

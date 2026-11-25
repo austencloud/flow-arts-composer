@@ -1,6 +1,9 @@
 <script lang="ts">
   import QftFlowerPicker from "#lib/shared/notation/qft/components/QftFlowerPicker.svelte";
-  import { QFT_FLOWERS } from "#lib/shared/notation/qft/qft-app-selection.js";
+  import {
+    minHandRadius,
+    QFT_FLOWERS,
+  } from "#lib/shared/notation/qft/qft-app-selection.js";
   import { getQftAppContext } from "../_context/qft-app-context";
   import QftPresetControls from "./QftPresetControls.svelte";
 
@@ -50,7 +53,7 @@
     <input
       id={`qft-radius-${hand}`}
       type="range"
-      min="0"
+      min={minHandRadius(selection)}
       max="1.5"
       step="0.05"
       value={selection.radius}

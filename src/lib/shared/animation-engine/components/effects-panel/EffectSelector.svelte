@@ -49,8 +49,9 @@
     /** Off as the grid's first tile, for a host whose box holds nothing else.
      *  It takes up whatever the last row leaves empty, so no hole remains. */
     onOff?: () => void;
-    /** A phone dock under the player: four one-line tiles across, icon beside
-     *  name, 36px tall. Ignores `catalog`. */
+    /** A phone dock under the player. With `pictures` each tile is its picture
+     *  over a 12px name; without (no room for them) it is one line, icon
+     *  beside name, 36px tall, four across. Ignores `catalog`. */
     dock?: boolean;
     /** Which effect each prop wears, for a host that sets them apart. `null`
      *  while the two wear the same one (the lit tile is named "both props");
@@ -155,10 +156,11 @@
     class:catalog={showCatalog}
     class:fill={showCatalog && catalog?.fill}
     class:picture-grid={pictureGrid}
+    class:dock-pictures={dock && pictureGrid}
     style:--fx-picture-cols={pictureGrid ? pictures?.cols : undefined}
     style:--fx-picture-rows={pictureGrid ? pictures?.rows : undefined}
     style:--fx-picture-gap={pictureGrid ? `${pictures?.gap}px` : undefined}
-    class:dock
+    class:dock={dock && !pictureGrid}
     class:fixed-tile={!!catalog?.tile}
     data-orientation={catalog?.orientation}
     style:--fx-cols={catalog?.cols}
@@ -390,10 +392,11 @@
   }
 
   /* ── Phone dock ──
-     4 x 36px rows with 6px gaps = 162px. The active tile keeps its tint and
-     full ink border; the tune badge goes, since the Tune button under the
-     grid names the active effect. A body of 300px or more has the room for
-     icon over name, at 52px (the panel is the size container). */
+     4 x 36px rows with 6px gaps = 162px, the icon over the name: side by side
+     the two are wider than a phone's tile in Italian and Russian. The active
+     tile keeps its tint and full ink border; the tune badge goes, since the
+     Tune button under the grid names the active effect. A body of 300px or
+     more has the room for 52px rows (the panel is the size container). */
   .effect-selector.dock {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-rows: var(--alt-touch-target, 36px);
@@ -402,9 +405,8 @@
 
   .effect-selector.dock .effect-btn {
     min-height: 0;
-    flex-direction: row;
-    gap: 5px;
-    padding: 0 4px;
+    gap: 3px;
+    padding: 0 2px;
     border-radius: 8px;
   }
 
@@ -423,7 +425,6 @@
     }
 
     .effect-selector.dock .effect-btn {
-      flex-direction: column;
       gap: 4px;
     }
   }
@@ -761,5 +762,32 @@
     border-width: 2px;
     padding: 4px;
     background: color-mix(in srgb, var(--effect-color) 16%, transparent);
+  }
+
+  /* In a phone dock: the same tile, tighter (DOCK_PICTURE_TILE). The name
+     takes the tile's whole inner width, past the padding, as it does in the
+     tray above. */
+  .dock-pictures .effect-btn {
+    gap: 2px;
+    padding: 2px;
+    border-radius: 9px;
+  }
+
+  .dock-pictures .effect-btn.active {
+    padding: 1.5px;
+  }
+
+  .dock-pictures .effect-portrait.page-picture {
+    border-radius: 6px;
+  }
+
+  .dock-pictures .effect-label {
+    align-self: stretch;
+    max-width: none;
+    height: 16px;
+    line-height: 16px;
+    margin-inline: -1px;
+    font-size: var(--font-size-compact, 12px);
+    text-align: center;
   }
 </style>

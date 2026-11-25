@@ -2,16 +2,17 @@
 
 import { normalizeLayers, type QftLayers } from "./qft-layers";
 import { GUIDE_MOVES } from "./qft-guide";
+import { QFT_PRESETS } from "./qft-presets";
 import {
+  DEFAULT_POI_LENGTH,
+  createExtendulumTrajectory,
   createPendulumTrajectory,
   trajectoryFromKnobs,
   type QftTrajectory,
-} from "./qft-trajectory";
-import type { Spin } from "./qft-model";
-import {
   MODE_ORDER,
   type VtgMode,
 } from "@tka/shape-domain";
+import type { Spin } from "./qft-model";
 import { normalizeLegacyHandPair } from "@tka/tka-types";
 
 export const QFT_SESSION_KEY = "qft:session:v3";
@@ -20,7 +21,11 @@ export const QFT_LEGACY_SESSION_KEY = "qft:session:v2";
 const AXIS_LENGTH = 12;
 const MAX_RADIUS = 1.5;
 const MAX_RATE = 8;
-const GUIDE_IDS = new Set(GUIDE_MOVES.map(({ id }) => id));
+export const MIN_SPEED = 0.1;
+export const MAX_SPEED = 2;
+export const MIN_POI_LENGTH = 0.3;
+export const MAX_POI_LENGTH = 1;
+const PRESET_IDS = new Set(QFT_PRESETS.map(({ id }) => id));
 
 export type QftHandCount = "one" | "two";
 
@@ -39,11 +44,15 @@ export interface QftSession {
   handCount: QftHandCount;
   left: QftSessionHand;
   right: QftSessionHand;
-  /** Whole-app rotation in compass eighths. */
+  /** Where the left hand starts, in compass eighths from the top. */
   originPhase: number;
   vtgMode: VtgMode;
   /** Continuous position in the eight-step cycle. */
   cursor: number;
+  /** Playing speed, as a share of the slowest real speed. */
+  speed: number;
+  /** Hand to the far end of the poi, in metres. */
+  poiLength: number;
   playing: boolean;
   layers: QftLayers;
 }
@@ -105,6 +114,7 @@ function readTrajectory(value: unknown): QftTrajectory | null {
     handDirection: raw.handDirection,
     propRate: [rate0, rate1, rate2, rate3, rate4, rate5, rate6, rate7],
     propPhase: normalizedPhase(raw.propPhase),
+    ...(raw.handFollowsProp === true ? { handFollowsProp: true } : {}),
   };
 }
 
@@ -119,7 +129,7 @@ function readSource(value: unknown, fallback: QftHandSource): QftHandSource {
     };
   }
 
-  if (raw.kind === "preset" && GUIDE_IDS.has(String(raw.id))) {
+  if (raw.kind === "preset" && PRESET_IDS.has(String(raw.id))) {
     return { kind: "preset", id: String(raw.id) };
   }
 
@@ -155,6 +165,13 @@ function readV3(raw: unknown): QftSession | null {
       ? (session.vtgMode as VtgMode)
       : "SS",
     cursor: num(session.cursor, 0, 8, 0),
+    speed: num(session.speed, MIN_SPEED, MAX_SPEED, 1),
+    poiLength: num(
+      session.poiLength,
+      MIN_POI_LENGTH,
+      MAX_POI_LENGTH,
+      DEFAULT_POI_LENGTH
+    ),
     playing: session.playing !== false,
     layers: normalizeLayers(session.layers),
   };
@@ -166,7 +183,14 @@ function legacyInstrumentSource(
   const spins: Spin[] = ["inspin", "antispin"];
   const radius = num(session.radius, 0, MAX_RADIUS, 1);
   if (session.pendulum === true) {
-    return { kind: "custom", trajectory: createPendulumTrajectory(radius) };
+    /* The old radius knob sent the hand all the way round. */
+    return {
+      kind: "custom",
+      trajectory:
+        radius > 0
+          ? createExtendulumTrajectory(radius)
+          : createPendulumTrajectory(),
+    };
   }
 
   const spin = spins.includes(session.spin as Spin)
@@ -223,6 +247,8 @@ function readV2(raw: unknown): QftSession | null {
       ? (session.vtgMode as VtgMode)
       : "SS",
     cursor: num(session.cursor, 0, 8, 0),
+    speed: 1,
+    poiLength: DEFAULT_POI_LENGTH,
     playing: session.playing !== false,
     layers: normalizeLayers(session.layers),
   };

@@ -189,6 +189,122 @@ The owners have deliberately different jobs:
     before the mixer runs. Both measured and fixed 2026-09-06; the seam and
     single-frame contracts live in the same test file as item 10.
 
+12. **The pelvis a clip was authored with** is carried onto every rig by
+    `LocomotionAnimator` (`convertHipsRotation`). Until 2026-11-22 the Hips
+    rotation keys were dropped and every rig walked on an upright pelvis held
+    still: no trunk lean, twist or list, and a run leaning 2 to 4 degrees
+    against the source's 25. The keys cannot be copied raw: the pack's walks
+    are exported under an armature turned a quarter turn about X, so a raw
+    key lays an upright rig on its back. `extractClipFootprint` now reads the
+    source Hips rest rotation and its parent's (`getSourceHipsFrame`) while
+    the source rig is in memory, and the animator applies each key as a
+    change from that rest, in the character's frame, on the target's own
+    rest. Forward, backward and run cycles lose only their mean yaw, a few
+    degrees of standing turn that would walk the body off its heading.
+    Strafes and grapevines keep only `SIDESTEP_PELVIS_TURN_DEG` (20) of their
+    mean turn toward travel. The source's own sidestep is a diagonal walk: its
+    pelvis faces 69 degrees and its chest 46 degrees off the audience, and a
+    performer on stage sidesteps facing out. With 20 kept, the spine's own
+    twist leaves the shoulders within about 2 degrees of ahead on every rig;
+    the neck takes the same correction back so the head keeps the clip's
+    look, and `ContactRetargeter` hangs the foot goals off the clip's hip
+    swing and points the feet with the turned pelvis, so planted feet slip no
+    more than the source's (2026-11-22 fix pass; run 1 kept the whole twist
+    and the on-screen check turned it down as walking on a diagonal). Terminal
+    stops get the same conversion through `shared-gltf-cache`, with no yaw
+    removed. Contract in `tests/unit/3d/locomotion-pelvis-rotation.test.ts`,
+    which also holds the idle arms of ch01, ch12 and ch44 within 1.5 degrees
+    of the clip: against the upright pelvis the arm-clearance bake swung them
+    3.4 to 3.5 degrees out. The walk's lean is held to the clip's as a change
+    from each rig's own standing lean (within 1 degree), not as an absolute
+    angle: Remy stands 3.4 degrees further back than the clip because of its
+    skeleton, and its walk adds 7.4 degrees against the clip's 7.2.
+
+    The same pass moved three measurements off the feet and onto the source:
+    - `ContactRetargeter` writes the clip's pelvis surge and sway about its
+      even travel (`getFootprintPelvisSurge`, scaled to the rig's legs) into
+      the baked hips. That made three lateral corrections unnecessary, and
+      they are gone: 140 goal-smoothing passes and a 1.25 minimum leg-order
+      share for strafes, and pelvis-sway preservation for the grapevine.
+      Measured on x-bot, ch01 and ch12; without them the grapevine reads
+      better, not worse.
+    - The foot carries the source foot's pitch away from flat
+      (`getFootprintRestPitch`), not the source's raw ankle-to-ball line. A
+      ch01 foot lies flat at 31 degrees where the source's stands at 39, and
+      aimed along the source line it landed toe-first (touchdown pitch -5.7
+      degrees); it now lands heel first on every rig.
+    - `nativeSpeed` is one loop of pelvis travel (`getFootprintLoopTravel`)
+      times the rig's leg length over the clip's duration. The ankles read the
+      walk 9% slow (1.517 against 1.671 m/s on x-bot) and the run 30% slow
+      (3.099 against 4.409),
+      because an ankle rolls forward over the heel and ball and a run has
+      flight. The walk/run band in item 8 moved with it, from 1.745-2.479 to
+      1.922-3.527 m/s on x-bot.
+
+    Measured against the source clip played on its own rig at the same rate
+    (`driveSource` in the test harness; a lateral clip has stride authority 0
+    and plays at speed over native, and below native its trailing toe skims
+    the contact band longer, so a source read at native speed is the wrong
+    reference). Contract in `tests/unit/3d/locomotion-contact-fidelity.test.ts`.
+    Two of the run's targets disagree with the source and were left to the
+    source: mid-stance knee flexion (the pack's walk holds 23 degrees, not
+    under 15) and knee jerk (the source walk reads 4,096 and 27 twitches a second at the
+    same rate; the rigs read at or below it).
+
+    **Free hands** rest half curled with the thumb in (`IDLE_POSE` in
+    `staff-grip-poses.ts`). `Avatar3D` gives a hand without a prop
+    `GripType.IDLE`; a prop hand is SQUARE, and its relaxed grip still eases
+    toward the old open pose, now `GRIP_RELAXATION_TARGET` in
+    `FingerAnimator`. Contract in
+    `tests/unit/3d-animation/idle-hand-relaxed.test.ts`, whose prop-hand
+    values were recorded from the package before the change.
+
+13. **Walking rebuild, run 2 (2026-11-22): plan and what it found.** The plan
+    was distance-matched starts and stops, stride warping within 15%, turns
+    in place from authored turn clips with their root yaw warped to the angle,
+    a settle into the breathing idle, and a true sidestep clip, all in
+    `LocomotionAnimator` so `Avatar3D` and the worker both get them. What the
+    run established, in order:
+    - **The page and the harness play the same clip.** The half-height swing
+      seen on the Walk Lab came from the preview on 5294 serving a stale
+      transform of the edit package. Once it reloaded, the page's prepared
+      forward clip had key values identical to the harness's, and the page's
+      forward slip read 1.1 cm against the harness's 1 cm. `driveRig` now
+      takes `rigScale` (the page scales ch01 by 1.08) and
+      `throughStateMachine` (drive through `AnimationStateMachine` and
+      `setActiveState`, as `Avatar3D` does) for that comparison.
+    - **The lab's slip readout is inflated by walking backward.** The
+      `straight` pattern backs 20 m, walks 40 m forward and backs home. Per
+      stance, forward slips about 1 cm; backward slips 28 to 93 cm on the
+      page and 30 to 65 cm in the harness on ch01 and x-bot, and the source
+      clip itself reads 0.48 m mean. The whole-buffer readout (18 to 69 cm)
+      is mostly those backward stances. Cause of the backward slip not found.
+    - **A true sidestep exists in the Mixamo archive:** "Side Step"
+      (`locomotion-pack/SIDESTEP.md`). It faces front and the feet never pass,
+      but its closing foot skims 3 cm off the floor, so the build lifts it.
+      Wired as the strafe it meets the facing and crossing contracts on every
+      rig, but it is a wide, crouched shuffle authored at 0.55 m/s: driven at
+      1.0 m/s its stance slip rises to 0.21 to 0.27 m on x-bot, ch01, ch12 and
+      ch44 (the diagonal strafe: 0.07 to 0.29) with 15 twitches a second, and
+      its 12 cm pelvis dip breaks `STRAFE_DROP`. It is committed as an asset
+      and not wired; the speed range a sidestep should cover, and what takes
+      over above it, is a product decision.
+    - **No archive walk straightens the stance knee.** By the repository's own
+      `midStanceKneeFlexion`, "Standard Walk" reads 28 degrees at the source
+      against the shipped forward clip's 23, and slips 0.2 m on rigs.
+      "Walking", "Walk" and "Walking (5)" measured no better in Blender.
+    - **A free stop cannot be fixed in the animator alone.** Carrying the legs
+      to the next passing pose after release (tried and reverted) raised the
+      ground slide after an instant stop from 0.3 to 0.9 m to 0.5 to 1.4 m,
+      because the root has already stopped and the planted foot is ahead of
+      it. With the root braking over 0.6 s, both versions show a one-frame
+      ankle jump of 0.26 to 0.34 m as speed reaches zero. Inference, not yet
+      checked: below about 0.1 m/s `updateGaitSplit` squeezes the stride to
+      under a tenth (rate floor 0.35, `strideScale = r / rate`), and release
+      stops updating `commandedSpeed`, so the pose snaps when the walk weight
+      hands over. The next step is a stop clip played against the root's
+      remaining distance, with the movement owner braking over that step.
+
 The governing TKA designs are:
 
 - `docs/superpowers/specs/2026-08-27-exact-step-locomotion-design.md`
@@ -663,7 +779,35 @@ construction, and no retuning of one makes it see this class of defect. The
 harness compounded it: it stopped at the animator, and foot IK is where a leg is
 finally posed, so the suite could not have observed the defect even had a metric
 existed. Both are addressed under Anatomical validity above; the blindness
-itself is pinned by an assertion so the claim cannot go stale silently.
+itself was pinned by an assertion so the claim could not go stale silently. It
+went stale on 2026-11-22: once the planter solves a leg only through its
+stance (next section), slip, knee jerk, peak jolt and duty factor respond
+indirectly to a folded hinge. The anatomy rows are still the detector.
+
+### Shortening a stride about the pelvis keeps the walk's pose
+
+Rejected 2026-11-22 (walking run 3), by switching layers off one at a time
+against the raw `walk-forward.glb` on a bare X Bot, same camera and phase.
+
+The crouched walk at 1.4 m/s was the stride/cadence split plus the planter,
+not the clip. `updateGaitSplit` gave the walk a stride of `sqrt(speed /
+native)` (0.89 at 1.4 m/s, the clip being native at about 1.67 m/s on X Bot),
+and `FootPlanter.strideWarp` applied it by pulling every foot toward the pelvis
+while the pelvis kept the clip's height. A leg reaches a nearer foot from the
+same hip height only by bending, so the stance knee bottomed at 20 degrees
+where the clip straightens to 10 (mean 32 against 25). The planter's reach
+clamp then eased every target about 4 mm short of the clip's own extension,
+worth several more degrees near a straight knee. Remap, hips conversion, pelvis
+drop, leg bake, the arm bake and `AvatarAnimator` each moved the pose by under
+3 degrees; the arms followed the clip throughout. The site walk's pinned arms
+and lunge were a separate fault: it fed `moveDirection` z -1, which plays the
+walk-backward clip.
+
+Now the stride is held at 1 down to 0.7 of native and cadence alone matches
+the speed, and the reach clamp is hard at the clip's extension. Measured on X
+Bot at 1.4 m/s: knee 11.5 to 43 degrees, mean 26.5, against the clip's 10 to
+43.6, mean 25.3; slip 0.3 to 1.6 cm a step. The price is a cadence about 16
+percent below the clip's own, about 98 steps a minute where a person at 1.4 m/s takes about 110.
 
 | Assumption                                               | Why it is rejected                                                                                                                                                                      |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -675,6 +819,7 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 | A scripted root can keep its speed through a stop        | The stop clip decelerates before its terminal plant. A root that does not follow its distance curve drags the declared stance feet across the floor.                                    |
 | A sidecar's source travel fits every rig                 | Retargeting keeps rotations, so ground covered grows with the leg. Remy covers twice the capture's 0.78 m; scaling against the sidecar planted its feet up to 0.79 m off.               |
 | A stop can borrow the walk's pelvis dip                  | The walks carry their dip inside the baked clip, so the borrowed residual is about zero and the stop's bent-knee settle hung 4 to 5 cm over the floor.                                  |
+| A shortened stride keeps the walk's pose                 | Pulling the feet toward a pelvis held at the clip's height needs a bent knee: 11% shorter held the stance knee at 20 degrees, the clip's at 10. Cadence carries the speed.              |
 | Scaling a stride about the pelvis keeps a stop's stance  | A stop's last feet settle ahead of the pelvis, so any scale other than 1 moves the settled stance by that offset times the scale's excess.                                              |
 | Rotating the root under the avatar is a turn             | A believable turn selects support, places a foot, transfers weight, and rotates through an authored or data-covered window.                                                             |
 | Negative leg order is always collision                   | Intentional front and back crossovers reverse left/right foot order. Collision requires geometry and continuity evidence.                                                               |

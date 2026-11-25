@@ -69,7 +69,7 @@ describe("buildTnDCardDisplay", () => {
       handRelationship: "QS",
       propRelationship: "free",
       matchHandTurns: false,
-      blockedHandModes: { QS: "Not compatible with a Reflection LOOP" },
+      blockedHandModes: { QS: "Not compatible with a Reflected LOOP" },
     });
 
     expect(display.handBlocked).toBe(true);

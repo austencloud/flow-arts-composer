@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildTrajectoryIncrements,
+  createExtendulumTrajectory,
   createPendulumTrajectory,
   hasValidReversalPositions,
   traceTrajectory,
@@ -12,7 +13,8 @@ import {
   trajectoryReversals,
   withTrajectoryPhase,
   type QftTrajectory,
-} from "../../src/lib/shared/notation/qft/qft-trajectory";
+} from "@tka/shape-domain";
+import { generatePoiReversalCandidates } from "../../src/lib/features/levels/poi-lab/domain/poi-reversal-candidates";
 import {
   buildIncrements,
   type QftKnobs,
@@ -103,12 +105,42 @@ describe("QFT per-step trajectory", () => {
     expect(trajectoryPosesAt(rotated, 0).hand.x).toBeCloseTo(1, 10);
   });
 
-  it("accepts horizontal reversals and rejects quarter-turned reversals", () => {
-    expect(hasValidReversalPositions(swing)).toBe(true);
-    expect(hasValidReversalPositions(withTrajectoryPhase(swing, 4))).toBe(true);
-    expect(hasValidReversalPositions(withTrajectoryPhase(swing, 2))).toBe(
+  // Austen, sitting 1 (2026-11-22): a poi turns level and pointing out.
+  it("accepts pendulum turns and rejects every other turn", () => {
+    const outAtSide = { ...swing, handPhase: 2 };
+    expect(hasValidReversalPositions(outAtSide)).toBe(true);
+    // Turned over: level and pointing out, but swinging across the top.
+    expect(hasValidReversalPositions(withTrajectoryPhase(outAtSide, 4))).toBe(
       false
     );
+    expect(hasValidReversalPositions({ ...swing, radius: 0 })).toBe(true);
+    // Quarter-turned: out at the top and bottom.
+    expect(hasValidReversalPositions(withTrajectoryPhase(outAtSide, 2))).toBe(
+      false
+    );
+    // Level, but sideways to a hand at the top (#4) or pointing in (#6).
+    expect(hasValidReversalPositions(swing)).toBe(false);
+    expect(hasValidReversalPositions({ ...swing, handPhase: 6 })).toBe(false);
+    // Still hand, pointing down (#10).
+    expect(
+      hasValidReversalPositions(withTrajectoryPhase({ ...swing, radius: 0 }, 2))
+    ).toBe(false);
+  });
+
+  it("accepts both turns he judged legal, as they were shown to him", () => {
+    const shown = new Map(
+      generatePoiReversalCandidates().map((c) => [c.id, c.trajectory])
+    );
+    for (const id of ["poi-r0-dcw-s1-p2", "poi-r1-dcw-s3-p2"]) {
+      const trajectory = shown.get(id);
+      expect(trajectory, id).toBeDefined();
+      expect(hasValidReversalPositions(trajectory!), id).toBe(true);
+    }
+  });
+
+  it("builds the extendulum with the hand at the side at both turns", () => {
+    const extendulum = createExtendulumTrajectory(1);
+    expect(hasValidReversalPositions(extendulum)).toBe(true);
   });
 });
 
@@ -136,7 +168,7 @@ describe("QFT scalar-to-trajectory bridge", () => {
 
   it("uses one rate profile for pendulum and extendulum notation", () => {
     const pendulum = createPendulumTrajectory(0);
-    const extendulum = createPendulumTrajectory(1);
+    const extendulum = createExtendulumTrajectory(1);
     const pendulumRows = buildTrajectoryIncrements(pendulum);
     const extendulumRows = buildTrajectoryIncrements(extendulum);
 

@@ -111,7 +111,7 @@ describe("loopBlocksHandMode and handModesBlockedByLoop", () => {
 
   it("lists QS with a reason under a reflection or swap and nothing otherwise", () => {
     expect(handModesBlockedByLoop(LOOPType.MIRRORED)).toEqual({
-      QS: "Not compatible with a Reflection LOOP",
+      QS: "Not compatible with a Reflected LOOP",
     });
     expect(handModesBlockedByLoop(LOOPType.SWAPPED)).toEqual({
       QS: "Not compatible with a Swapped LOOP",

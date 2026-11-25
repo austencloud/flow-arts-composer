@@ -40,6 +40,8 @@ import { buildingGeometries } from "./site-walk-buildings";
 import { carParts, ironFenceParts, lampPostParts, poolSquare, streetLightHead, streetLightParts } from "./site-walk-furniture";
 import { LAYER, flat, poleParts, wireSpan } from "./site-walk-mesh-parts";
 import type { Pt, SiteWalkWorld } from "./site-walk-plan";
+import { floorAlong, siteFloor, type SiteFloor } from "./site-walk-floor";
+import { drape, liftOnto, risenBounds } from "./site-walk-raised";
 import { asphaltMaps, paverMaps, TILE } from "./site-walk-textures";
 import { bareTreeGeometry, evergreenGeometry } from "./site-walk-trees";
 
@@ -74,7 +76,7 @@ interface Slot {
 
 const hexLinear = (hex: string) => new Color(hex);
 
-export function buildAroundMeshes(around: SiteSurroundings, world: SiteWalkWorld): AroundMeshes {
+export function buildAroundMeshes(around: SiteSurroundings, world: SiteWalkWorld, floor: SiteFloor = siteFloor(world, around)): AroundMeshes {
   const slots: Slot[] = [];
   const materials: MeshStandardMaterial[] = [];
   const slot = (
@@ -262,9 +264,12 @@ export function buildAroundMeshes(around: SiteSurroundings, world: SiteWalkWorld
     stripBetween(offsetLine(w.points, w.width / 2), offsetLine(w.points, -w.width / 2), FLAT.walk, AROUND_TILE.walk, b);
     add(walk, b.build());
   }
+  // Patches lie on the lawn, so they follow its heights where it rises.
+  const risen = risenBounds(floor);
+  const onLawn = (g: BufferGeometry | null) => (g && risen ? drape(g, floor.groundAt, 0.6, risen) : g);
   for (const patch of around.patches) {
     const { s, tile } = surfaces[patch.surface];
-    add(s, flat(patch.points, FLAT.patch, tile));
+    add(s, onLawn(flat(patch.points, FLAT.patch, tile)));
   }
   for (const line of around.kerbs) kerbAlong(line);
 
@@ -345,7 +350,7 @@ export function buildAroundMeshes(around: SiteSurroundings, world: SiteWalkWorld
     glow: 0.25,
   });
   for (const building of around.buildings) {
-    const g = buildingGeometries(building);
+    const g = buildingGeometries(building, floor);
     for (const [kind, list] of Object.entries(g.walls) as [WallKind, BufferGeometry[]][]) addAll(wallSlot(kind), list);
     addAll(roof, g.roof);
     addAll(roofTop, g.roofTop);
@@ -376,7 +381,11 @@ export function buildAroundMeshes(around: SiteSurroundings, world: SiteWalkWorld
     glow: 0.3,
     cast: true,
   });
-  for (const r of around.railings) addAll(iron, ironFenceParts(r.points, r.height, r.stars));
+  // Railings stand on the floor, post by post, so one along a platform's edge runs down its steps.
+  for (const r of floor.railings) {
+    const base = floorAlong(floor, r.points, SURROUND_SIZES.ironPostSpacing);
+    for (const g of ironFenceParts(r.points, r.height, r.stars, r.endPost)) add(iron, liftOnto(g, base.at));
+  }
 
   // ---------------------------------------------------------------- poles, wires, lamps
   const wood = slot("#5a4733", {
@@ -520,6 +529,15 @@ export function buildAroundMeshes(around: SiteSurroundings, world: SiteWalkWorld
   let meshes = 0;
   for (const s of slots) {
     if (!s.parts.length) continue;
+    // A patch laid over the lawn's heights comes back unindexed; the rest of its slot follows suit to merge.
+    if (s.parts.some((g) => !g.index) && s.parts.some((g) => g.index)) {
+      s.parts = s.parts.map((g) => {
+        if (!g.index) return g;
+        const plain = g.toNonIndexed();
+        g.dispose();
+        return plain;
+      });
+    }
     const merged = mergeGeometries(s.parts, false);
     for (const g of s.parts) g.dispose();
     if (!merged) continue;

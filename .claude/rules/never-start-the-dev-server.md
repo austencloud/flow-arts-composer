@@ -1,14 +1,15 @@
 # Port 5173 Dev Server
 
 Port 5173 is the project dev server. pm2 supervises it as `tka-dev`, which runs
-`scripts/start-dev.ps1` (Vite plus the `tka-dev` Cloudflare tunnel).
+`scripts/start-dev.ps1` (Vite only). The public dev address and its tunnel
+were retired on 2026-11-24 and must not be recreated.
 
 - When 5173 is down or stuck, restart it yourself with `pm2 restart tka-dev`.
   Do not ask first; say in one line what you found and that you restarted it.
   Stuck means the port is listening but requests hang or the page never loads.
 - Restart only through pm2. Do not run `npm run dev`, a bare `vite`, or
   `scripts/start-dev.ps1` on 5173, and do not kill the port holder. A
-  hand-started server lacks the tunnel and fights pm2 for the port.
+  hand-started server fights pm2 for the port.
 - Diagnose before restarting. The server binds IPv6 and uses HTTPS/2. Probe it
   with `curl.exe -k -g "https://[::1]:5173/"`; an IPv4 localhost failure is not
   proof that it is down. After a restart, probe again until it answers.

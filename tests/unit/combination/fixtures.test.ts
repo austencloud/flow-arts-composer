@@ -18,7 +18,7 @@ import { deriveMotionType } from "#lib/shared/render/core/calculations/orientati
 import { getAllLetterVariants } from "../../helpers/real-pictograph-loader";
 import {
   AAAA_CCW,
-  ALL_FIXTURE_LOOPS,
+  AABB_CW,
   ALL_FIXTURE_STEPS,
   FALG,
   GGGG_CW,
@@ -29,6 +29,7 @@ import {
   PHI_STEP,
   PSI_STEP,
   seamsOf,
+  VERIFIED_LOOPS,
 } from "./fixtures";
 import { loadPictographDatasetForTests } from "./pictograph-dataset";
 
@@ -95,6 +96,17 @@ describe("combination fixtures", () => {
     assertClosedLoop(AAAA_CCW);
   });
 
+  it("AABB is a closed 4-step loop whose staffs come back as they started", () => {
+    assertClosedLoop(AABB_CW);
+    expect(AABB_CW.steps.map((s) => s.letter)).toEqual(["A", "A", "B", "B"]);
+    for (const hand of COLORS) {
+      const first = AABB_CW.steps[0]!.motions[hand];
+      const last = AABB_CW.steps[3]!.motions[hand];
+      expect(last.endOrientation).toBe(first.startOrientation);
+      expect(last.endLocation).toBe(first.startLocation);
+    }
+  });
+
   it("GHGH (Austen's fused example) is closed and alternates letters", () => {
     expect(GHGH.steps.map((s) => s.letter)).toEqual(["G", "H", "G", "H"]);
     for (let i = 1; i < GHGH.steps.length; i++) {
@@ -139,7 +151,7 @@ describe("combination fixtures", () => {
     // The mapper is canon. A fixture's transcribed placement label is correct
     // only if it equals the placement computed from that step's own motion
     // locations — otherwise the label is the bug, not the function.
-    expect(ALL_FIXTURE_STEPS.length).toBe(32);
+    expect(ALL_FIXTURE_STEPS.length).toBe(36);
     for (const { name, step } of ALL_FIXTURE_STEPS) {
       const { left, right } = step.motions;
       expect(`${name} start=${step.startPlacement}`).toBe(
@@ -176,7 +188,7 @@ describe("combination fixtures", () => {
   });
 
   it("every fixture sequence's start placement matches its first step's seam", () => {
-    for (const [name, seq] of ALL_FIXTURE_LOOPS) {
+    for (const [name, seq] of VERIFIED_LOOPS) {
       const first = seq.steps[0]!;
       expect(seq.startPlacement?.startPlacement, name).toBe(first.startPlacement);
       expect(seq.startPlacement?.endPlacement, name).toBe(first.startPlacement);
@@ -205,7 +217,7 @@ describe("combination fixtures", () => {
             `${s.motions[c].startOrientation}>${s.motions[c].endOrientation}`
         ).join(",")
       );
-    for (const [name, seq] of ALL_FIXTURE_LOOPS) {
+    for (const [name, seq] of VERIFIED_LOOPS) {
       expect(chainOf(recalculateAllOrientations(seq)), `${name}`).toEqual(
         chainOf(seq)
       );
@@ -301,7 +313,7 @@ describe("combination fixtures vs the diamond dataframe", () => {
       )
     ).toBe("G");
 
-    expect(rowsByLetter.size).toBe(7); // G H A F L Φ Ψ
+    expect(rowsByLetter.size).toBe(8); // G H A B F L Φ Ψ
     for (const [letter, rows] of rowsByLetter) {
       expect(rows.size, `${letter} variants`).toBeGreaterThan(0);
     }

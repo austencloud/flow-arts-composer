@@ -17,7 +17,7 @@ import {
   createPendulumTrajectory,
   trajectoryFromKnobs,
   type QftTrajectory,
-} from "./qft-trajectory";
+} from "@tka/shape-domain";
 
 export interface GuideMove {
   id: string;

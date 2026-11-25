@@ -372,13 +372,39 @@
   }
 
   /* Short but wide (a phone held sideways): the row has room for the words
-     beside the icon, and a lone ring with a letter says too little. */
+     beside the icon, and a lone ring with a letter says too little. Words too
+     long for the row wrap onto a second row the tile does not show, so a mode
+     name is either whole or left to the icon, never cut mid-letter. The strut
+     keeps the first row as tall as the tile, so the second starts below it. */
   @container tnd-card (max-height: 96px) and (min-width: 240px) {
+    .tnd-tile {
+      --row-gap: clamp(3px, 2cqw, 8px);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      align-content: flex-start;
+      justify-content: center;
+      gap: 0 var(--row-gap);
+      padding-block: 0;
+    }
+
+    .tnd-tile::before {
+      content: "";
+      width: 0;
+      height: 100%;
+      margin-inline-end: calc(-1 * var(--row-gap));
+    }
+
+    .tile-icon-slot {
+      width: clamp(16px, min(62cqh, 12cqw), 52px);
+      height: clamp(16px, min(62cqh, 12cqw), 52px);
+    }
+
     .tile-words {
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      line-clamp: 1;
-      overflow-wrap: normal;
+      display: block;
+      flex: none;
+      max-width: none;
+      white-space: nowrap;
       text-align: start;
     }
   }

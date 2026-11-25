@@ -49,6 +49,13 @@ const OPEN_LAPS = new Set(["ramp"]);
  */
 const TIME_BASED = new Set(["zigzag", "compass", "ramp", "pivot"]);
 
+/**
+ * Patterns built to hold one gait long enough to measure it. They leave the
+ * lit six metres on purpose (the camera follows), so they are held to the
+ * 60 m floor instead: 28 m from the middle keeps the body on it.
+ */
+const LONG_RUNS = new Set(["straight"]);
+
 describe("walk patterns", () => {
   it("names every pattern once", () => {
     const ids = WALK_PATTERNS.map((p) => p.id);
@@ -72,7 +79,7 @@ describe("walk patterns", () => {
         // pattern that leaves it has the character walking out of the picture
         // mid-measurement, which reads as the rig failing rather than as the
         // schedule being wrong.
-        expect(walked.far).toBeLessThan(6);
+        expect(walked.far).toBeLessThan(LONG_RUNS.has(pattern.id) ? 28 : 6);
 
         if (!OPEN_LAPS.has(pattern.id)) {
           // Ending anywhere but the start means every lap drifts, and after a
@@ -99,6 +106,43 @@ describe("walk patterns", () => {
         expect(Math.abs(fast.far - slow.far)).toBeLessThan(0.6);
         expect(fast.travelled).toBeCloseTo(slow.travelled, 1);
       }
+    }
+  });
+
+  it("holds one straight steady walk long enough to fill the probe", () => {
+    // Every steady number is read on this one. A gait probe holds 15 s, and a
+    // reading taken on a curve, a turn or a seam is a reading of those, so the
+    // straight leg has to outlast the buffer at the fastest walking speed the
+    // targets name, with facing and direction never changing along it.
+    const pattern = walkPattern("straight");
+    expect(pattern.id).toBe("straight");
+    for (const speed of [1.0, 1.4, 1.8]) {
+      const dt = 1 / 60;
+      let run = 0;
+      let longest = 0;
+      let first: { facing: number; x: number; z: number } | null = null;
+      let bent = false;
+      for (let t = 0; t < pattern.period(speed); t += dt) {
+        const tick = pattern.tick(t, speed);
+        if (tick.isMoving && tick.rate === 1 && tick.direction.z > 0) {
+          first ??= { facing: tick.facing, ...tick.direction };
+          if (
+            tick.facing !== first.facing ||
+            tick.direction.x !== first.x ||
+            tick.direction.z !== first.z ||
+            tick.turnRequest
+          ) {
+            bent = true;
+          }
+          run += dt;
+          longest = Math.max(longest, run);
+        } else {
+          run = 0;
+          first = null;
+        }
+      }
+      expect(bent).toBe(false);
+      expect(longest).toBeGreaterThan(15);
     }
   });
 

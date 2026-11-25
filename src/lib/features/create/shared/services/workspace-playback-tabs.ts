@@ -1,3 +1,5 @@
+import { isConstructWorkbench } from "./construct-workbench";
+
 /**
  * The Create tabs whose Play runs the quick preview in place of the card.
  * Assemble's Play opens the full viewer instead, and Fuse, Tunnel and Shape
@@ -5,5 +7,5 @@
  * nowhere to go once the save view closes.
  */
 export function playsInWorkspace(tab: string | null | undefined): boolean {
-  return tab === "construct" || tab === "generate";
+  return isConstructWorkbench(tab) || tab === "generate";
 }

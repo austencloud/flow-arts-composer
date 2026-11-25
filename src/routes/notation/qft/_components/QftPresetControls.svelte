@@ -1,6 +1,6 @@
 <script lang="ts">
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { GUIDE_MOVES } from "#lib/shared/notation/qft/qft-guide.js";
+  import { QFT_PRESETS } from "#lib/shared/notation/qft/qft-presets.js";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   let {
@@ -27,7 +27,7 @@
 <section class="presets" aria-label={`${hand} hand presets`}>
   <span class="label">Canonical moves</span>
   <div class="preset-grid">
-    {#each GUIDE_MOVES as move (move.id)}
+    {#each QFT_PRESETS as move (move.id)}
       <FilterChipBase
         label={move.title}
         mode="toggle"
@@ -56,18 +56,12 @@
 
   .preset-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.4rem;
   }
 
   .preset-grid :global(.filter-chip) {
     width: 100%;
     justify-content: center;
-  }
-
-  @container (min-width: 34rem) {
-    .preset-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
   }
 </style>

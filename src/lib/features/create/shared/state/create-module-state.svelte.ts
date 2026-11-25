@@ -106,6 +106,8 @@ export function createCreateModuleState(
    */
   function getSequenceStateForTab(tab: BuildModeId): SequenceState {
     switch (tab) {
+      // The LOOP tab works on Construct's own sequence.
+      case "loop":
       case "construct": {
         const ctor = _constructorTabState as {
           sequenceState?: SequenceState;
@@ -152,6 +154,7 @@ export function createCreateModuleState(
     "shape-engine",
     "fuse",
     "tunnel",
+    "loop",
   ];
   const urlTab = navigationState.activeTab as BuildModeId;
   if (urlTab && VALID_CREATE_TABS.includes(urlTab)) {
@@ -255,6 +258,7 @@ export function createCreateModuleState(
   function getActiveTabUndoController(): UndoController | null {
     const activeTab = navigationState.activeTab as BuildModeId;
     switch (activeTab) {
+      case "loop":
       case "construct": {
         return _constructorTabState?.undoController ?? null;
       }

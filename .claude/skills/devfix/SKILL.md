@@ -1,59 +1,51 @@
 ---
-description: Use when local dev infrastructure is broken — dev.tkaflowarts.com shows 502/503, the dev server won't serve, https/certificate errors, the Cloudflare tunnel is down, the Claude launcher or right-click context menu broke, or "fix my dev environment". Encodes the known failure modes so they're diagnosed in minutes, not rediscovered.
-argument-hint: "[symptom, e.g. 'dev.tkaflowarts.com 502']"
+description: Use when local dev infrastructure is broken — the dev server won't serve, https/certificate errors, the Claude launcher or right-click context menu broke, or "fix my dev environment". Encodes the known failure modes so they're diagnosed in minutes, not rediscovered.
+argument-hint: "[symptom, e.g. 'localhost:5173 not serving']"
 ---
 
 # Fix Dev Infrastructure
 
 **Args:** `$ARGUMENTS`
 
-The stack: Vite serves **HTTPS/2** on `:5173` (mkcert certs in `.cert/`),
-cloudflared runs the locally-managed `tka-dev` tunnel exposing it as
-`https://dev.tkaflowarts.com`. `scripts/start-dev.ps1` orchestrates both and
-its header comments are the canonical doc — read it before theorizing.
+The stack: Vite serves **HTTPS/2** on `:5173` (mkcert certs in `.cert/`).
+`scripts/start-dev.ps1` launches and supervises it and its header comments are
+the canonical doc — read it before theorizing.
+
+**The public dev address (`dev.tkaflowarts.com`) and its Cloudflare tunnel were
+retired on 2026-11-24. Do not repair, recreate, or probe them, and do not add a
+tunnel back to the launcher.** Exposing a dev server needs a login in front and
+Austen's explicit yes.
 
 **Restart `:5173` with `pm2 restart tka-dev`.** pm2 supervises the server as
-`tka-dev` and restarts the tunnel with it. When the server is down or stuck,
+`tka-dev` and restarts the launcher with it. When the server is down or stuck,
 diagnose, then restart it yourself without asking. Never start it by
 `npm run dev`, a bare `vite`, or a hand-run `scripts/start-dev.ps1`, and never
-kill the port holder: those lack the tunnel and fight pm2 for the port. See
+kill the port holder: those fight pm2 for the port. See
 `.claude/rules/never-start-the-dev-server.md`.
 
 Diagnose with `curl -k -g 'https://[::1]:5173/'` — `dev` is `vite --host ::`
 (IPv6), so plain `localhost` resolves to IPv4 and returns `000` on a healthy
 server.
 
-## First: split the fault domain
+## First: check the local server
 
 ```bash
-curl -k -s -o /dev/null -w "%{http_code}" --max-time 5 https://localhost:5173/
-curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://dev.tkaflowarts.com/
+curl -k -s -o /dev/null -g -w "%{http_code}" --max-time 5 'https://[::1]:5173/'
 ```
 
-| local | tunnel | Meaning                                                                                                                                                                                                                  |
-| ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 000   | 502    | Vite isn't serving — run `pm2 restart tka-dev`                                                                                                                                                                           |
-| 200   | 502    | Tunnel connected before Vite finished cold boot (the race `start-dev.ps1` now gates against), or cloudflared died — run `pm2 restart tka-dev`                                                                            |
-| 200   | 503    | Token-based tunnel run missing `--url` — locally-managed tunnels get **no ingress rules** with a token; every request 503s. `start-dev.ps1` passes `--url https://localhost:5173`; a hand-started tunnel probably didn't |
-| 200   | 200    | Nothing wrong with the stack — the bug is elsewhere                                                                                                                                                                      |
+`000` means Vite isn't serving: run `pm2 restart tka-dev`. `200` means the
+server is fine and the bug is elsewhere.
 
 ## Known failure modes
 
 - **`http://` anywhere → ERR_EMPTY_RESPONSE.** The dev server is HTTPS/h2
   only. Every localhost URL, curl, and link is `https://`.
-- **Tunnel origin TLS:** cloudflared can't read the Windows trust store for
-  the mkcert CA → runs need `--no-tls-verify` (script handles it).
-- **Tunnel credentials:** `%USERPROFILE%\.cloudflared\tka-dev.token` (or
-  `cert.pem` from `cloudflared tunnel login`). Missing both → script skips the
-  tunnel with a warning; dev.tkaflowarts.com stays dead. Refresh a token via
-  `cloudflared tunnel token tka-dev` on a logged-in machine.
 - **allowedHosts:** Vite only answers for hosts in `vite.config.ts`
-  `server.allowedHosts` (includes `dev.tkaflowarts.com`). A new hostname needs
-  adding there.
+  `server.allowedHosts`. A new hostname needs adding there.
 - **`Cannot find module` during initialization:** run
   `pnpm run verify:workspace-install` as a read-only diagnosis. A package
   directory can exist while its files are missing, and a normal `pnpm install`
-  may still report "Already up to date." `scripts/start-dev.ps1` now checks all
+  may still report "Already up to date." `scripts/start-dev.ps1` checks all
   declared package manifests plus the boot-critical imports before Vite starts.
   When the check fails it force-rebuilds from the frozen lockfile, rebuilds the
   workspace packages, verifies again, and gives Vite one clean optimizer pass.
@@ -70,5 +62,5 @@ curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://dev.tkaflowarts.com
 
 ## After any fix
 
-Prove it: rerun both curls and show the codes, or have Austen confirm the
+Prove it: rerun the curl and show the code, or have Austen confirm the
 page loads. Config-only changes still follow `verification-protocol.md`.

@@ -75,6 +75,41 @@ describe("scripted post edits", () => {
     ).toThrow(/no opening tunnel/);
   });
 
+  it("opens the tunnel on the animation it is told to, not the first lane's", () => {
+    const canvas = (id: string) =>
+      overlay(id, "animation", {
+        start: 0,
+        duration: 10,
+        box: { ...POST_BOX.bottom },
+        anchor: { itemId: "v1", offset: 0 },
+        fill: true,
+      } as Partial<PostAnimationItem>);
+    const twoCanvases = project(
+      [video("v1", { start: 0, duration: 10, pinnedStart: true })],
+      [[canvas("anim")], [canvas("whole")]]
+    );
+    expect(
+      findTunnelHook(
+        applyPostProjectOps(twoCanvases, [{ op: "add-hook" }], ctx)
+      )?.id
+    ).toBe("anim");
+    expect(
+      findTunnelHook(
+        applyPostProjectOps(
+          twoCanvases,
+          [{ op: "add-hook", item: "whole" }],
+          ctx
+        )
+      )?.id
+    ).toBe("whole");
+    expect(() =>
+      applyPostProjectOps(twoCanvases, [{ op: "add-hook", item: "v1" }], ctx)
+    ).toThrow(/not one animation/);
+    expect(() =>
+      applyPostProjectOps(twoCanvases, [{ op: "add-hook", item: "nope" }], ctx)
+    ).toThrow(/No item "nope"/);
+  });
+
   it("will not add a second hook", () => {
     const withHook = applyPostProjectOps(post(), [{ op: "add-hook" }], ctx);
     expect(() =>

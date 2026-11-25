@@ -19,6 +19,7 @@
   // Tabs that support the Sequence Actions Panel
   const SUPPORTED_TABS = new Set([
     "construct",
+    "loop",
     "assemble",
     "generate",
     "spell",

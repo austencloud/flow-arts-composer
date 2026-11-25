@@ -494,7 +494,7 @@ describe("dev launcher install guard", () => {
 
     expect(launcher).toContain('Join-Path $RepoRoot ".tools\\mkcert.exe"');
     expect(launcher).toContain(
-      "Vite was not started because the Cloudflare tunnel requires HTTPS."
+      "Vite was not started because the dev server requires HTTPS."
     );
     expect(certificateGuardIndex).toBeGreaterThan(-1);
     expect(viteStartIndex).toBeGreaterThan(certificateGuardIndex);
@@ -558,46 +558,17 @@ describe("dev launcher install guard", () => {
     expect(launcher).toContain('$env:TKA_FORCE_VITE_DEPS = "1"');
   });
 
-  it("places local-ingress flags before the tunnel run subcommand", () => {
-    expect(launcher).toMatch(
-      /"tunnel",\s*"--protocol",\s*"http2",\s*"--url",\s*"https:\/\/localhost:5173",\s*"--no-tls-verify",\s*`?\s*\n?\s*"run",\s*"--token"/
-    );
-  });
+  it("never starts or supervises a public tunnel again", () => {
+    // The public dev address and its tunnel were retired on 2026-11-24.
+    const code = launcher
+      .split("\n")
+      .filter(
+        (line) =>
+          !/^\s*#/.test(line) && !line.includes("Local only: no public tunnel")
+      )
+      .join("\n");
 
-  it("pins both tunnel credential modes to the verified HTTP/2 transport", () => {
-    const protocolSelections = launcher.match(/"--protocol",\s*"http2"/g);
-
-    expect(protocolSelections).toHaveLength(2);
-  });
-
-  it("refuses to launch only when the Windows tunnel service runs tka-dev", () => {
-    const guard =
-      launcher.match(
-        /function Test-CompetingCloudflaredService \{[\s\S]*?\n\}/
-      )?.[0] ?? "";
-
-    // That service carries mcp.tkaflowarts.com for the MCP server, so running
-    // alone must not block the launcher. Only the tka-dev identity check can.
-    expect(guard).toContain("Get-CimInstance Win32_Service");
-    expect(guard).toContain("Test-TkaDevTunnelCommand $service.PathName");
-    expect(guard).not.toContain("Get-Service");
-    expect(launcher).toContain("(Test-CompetingCloudflaredService $tokenFile)");
-    expect(launcher).toContain("would create a second tka-dev connector");
-  });
-
-  it("removes stale connectors for this tunnel before Vite starts", () => {
-    const cleanupIndex = launcher.indexOf(
-      "Clear-StaleTkaTunnelProcesses $tokenFile"
-    );
-    const viteStartIndex = launcher.indexOf(
-      'Write-Status "Starting Vite dev server..."'
-    );
-
-    expect(launcher).toContain("Get-StaleTkaTunnelProcesses");
-    expect(launcher).toContain("Get-CimInstance Win32_Process");
-    expect(launcher).toContain("run\\s+tka-dev");
-    expect(cleanupIndex).toBeGreaterThan(-1);
-    expect(viteStartIndex).toBeGreaterThan(cleanupIndex);
+    expect(code).not.toMatch(/cloudflared|tunnel|Start-TkaTunnel|--token/i);
   });
 
   it("lets pm2 rebuild a false-healthy wrapper when the origin stays dead", () => {
@@ -606,10 +577,18 @@ describe("dev launcher install guard", () => {
     expect(launcher).toContain(
       "Exiting so pm2 can restart the complete dev stack."
     );
-    expect(launcher).toContain("elseif ((Get-Date) -ge $nextHealthProbeAt)");
-    expect(launcher).not.toContain(
-      "elseif ($tunnelProc -and (Get-Date) -ge $nextPublicProbeAt)"
-    );
+    expect(launcher).toContain("if ((Get-Date) -ge $nextHealthProbeAt)");
+  });
+
+  it("waits for the first 200 from Vite before supervising it", () => {
+    // A cold boot can outlast three 30 s probes; supervising at once would
+    // exit the launcher and send pm2 into a restart loop.
+    const waitIndex = launcher.indexOf("if (Wait-ForOrigin)");
+    const loopIndex = launcher.indexOf("while ($viteProc -and");
+
+    expect(launcher).toContain("[int]$TimeoutSec = 180");
+    expect(waitIndex).toBeGreaterThan(-1);
+    expect(loopIndex).toBeGreaterThan(waitIndex);
   });
 
   it("waits out a slow render while Vite still answers its ping", () => {
@@ -665,10 +644,8 @@ $cases = @(
 )
 $results = foreach ($case in $cases) {
     $originFailureCount = $case.failures
-    $publicFailureCount = 2
     $originBusySince = if ($case.age) { (Get-Date).AddSeconds(-$case.age) } else { $null }
     $originUrl = 'synthetic'
-    $tunnelProc = $null
     $script:pingCalled = $false
     $failure = ''
     try { . $probe } catch { $failure = $_.Exception.Message }
@@ -703,16 +680,6 @@ $results | ConvertTo-Json -Compress
       });
     }
   );
-
-  it("supervises public tunnel health without restarting Vite", () => {
-    expect(launcher).toContain('Test-Http200 "https://dev.tkaflowarts.com/"');
-    expect(launcher).toContain("$publicFailureCount -ge 3");
-    expect(launcher).toContain("recycling cloudflared without stopping Vite");
-    expect(launcher).toContain("$tunnelProc.HasExited");
-    expect(launcher).toContain("Start-TkaTunnel");
-    expect(launcher).toContain("$manageTunnel -and ((-not $tunnelProc)");
-    expect(launcher).toContain("while Vite stays online");
-  });
 
   it("tears its own tree down once the pm2 shim is gone", () => {
     // pm2 on Windows kills only the shim; the launcher must notice and stop

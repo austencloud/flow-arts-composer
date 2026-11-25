@@ -176,7 +176,13 @@ export function createFuseShufflePool({
       });
   }
 
-  function commit(candidate: StagedFuseCandidate, resetHistory: boolean): void {
+  /** `announce: false` is for a path that is already on screen, so the new-path
+   * flash does not play for it. */
+  function commit(
+    candidate: StagedFuseCandidate,
+    resetHistory: boolean,
+    { announce = true }: { announce?: boolean } = {}
+  ): void {
     nextCursor = candidate.nextCursor;
     currentItem = candidate.sequence;
     currentPosition = candidate.poolPosition;
@@ -201,7 +207,7 @@ export function createFuseShufflePool({
       historyIndex = history.length - 1;
     }
 
-    revision += 1;
+    if (announce) revision += 1;
   }
 
   function peekPrevious(): FuseHistoryEntry | null {

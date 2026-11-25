@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   FUSE_LIVE_GRID_GAP,
+  fuseEditColumnHoldsSections,
   fitsFuseRecipeColumn,
   fitsFuseTallPortraitWorkspace,
   fuseRecipeColumnFloor,
   getBestFuseStepColumns,
   getFittedFuseCellSize,
   resolveBalancedFuseWorkspaceSplit,
+  resolveFuseBuilderArrangement,
+  resolveFuseEditArrangement,
+  resolveFuseEditGrid,
   resolveFuseSideCardGrid,
   resolveFuseWingWorkspace,
 } from "#lib/features/fuse/services/fuse-workspace-split.js";
@@ -309,8 +313,95 @@ describe("Fuse wide-workbench side card grid", () => {
     const columns =
       grid.stepColumns + (grid.contextPlacement === "row" ? 0 : 1);
 
-    expect(grid.cellSize).toBe(
-      getFittedFuseCellSize(780, 1790, columns, rows)
-    );
+    expect(grid.cellSize).toBe(getFittedFuseCellSize(780, 1790, columns, rows));
+  });
+});
+
+describe("Fuse edit path grid", () => {
+  // Austen, 2026-11-23: an eight-step path showed three across. Start takes a
+  // row of its own above rows of four, the way a Choreo Card reads.
+  it("puts Start above rows of four", () => {
+    expect(resolveFuseEditGrid(1400, 900, 8)).toMatchObject({
+      stepColumns: 4,
+      contextPlacement: "row",
+    });
+    expect(resolveFuseEditGrid(1400, 900, 12)).toMatchObject({
+      stepColumns: 4,
+      contextPlacement: "row",
+    });
+    expect(resolveFuseEditGrid(380, 560, 8)).toMatchObject({
+      stepColumns: 4,
+      contextPlacement: "row",
+    });
+  });
+
+  it("goes eight across only for a long path that gains by it", () => {
+    expect(resolveFuseEditGrid(1400, 700, 32).stepColumns).toBe(8);
+    expect(resolveFuseEditGrid(380, 900, 32).stepColumns).toBe(4);
+  });
+
+  it("never leaves a short last row where a whole one exists", () => {
+    for (const steps of [2, 3, 4, 6, 8, 9, 10, 12, 16, 24, 32]) {
+      for (const [width, height] of [
+        [1400, 900],
+        [900, 900],
+        [700, 320],
+        [380, 560],
+      ] as const) {
+        const { stepColumns, cellSize } = resolveFuseEditGrid(
+          width,
+          height,
+          steps
+        );
+        expect(steps % stepColumns).toBe(0);
+        expect(cellSize).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+describe("Fuse edit screen arrangement", () => {
+  it("puts the tiles beside the path only where the screen is wider than tall", () => {
+    expect(resolveFuseEditArrangement(1380, 880)).toBe("beside");
+    expect(resolveFuseEditArrangement(840, 400)).toBe("beside");
+    expect(resolveFuseEditArrangement(720, 390)).toBe("beside");
+  });
+
+  it("stacks an upright tablet and an open Fold, with the tiles in one row", () => {
+    expect(resolveFuseEditArrangement(820, 1110)).toBe("stacked");
+    expect(resolveFuseEditArrangement(707, 710)).toBe("stacked");
+  });
+
+  it("stacks a phone with the tiles in two rows", () => {
+    expect(resolveFuseEditArrangement(360, 590)).toBe("phone");
+    expect(resolveFuseEditArrangement(412, 860)).toBe("phone");
+  });
+
+  it("keeps the two headed sections only where all three tile rows fit", () => {
+    expect(fuseEditColumnHoldsSections(301, 455)).toBe(true);
+    expect(fuseEditColumnHoldsSections(301, 175)).toBe(false);
+    expect(fuseEditColumnHoldsSections(280, 340)).toBe(false);
+  });
+});
+
+describe("Build path arrangement", () => {
+  // Each size is the screen's own box, as measured inside its sheet or window.
+  it("puts the controls under the grid when the box is upright", () => {
+    expect(resolveFuseBuilderArrangement(325, 487)).toBe("stacked"); // 360x591 phone
+    expect(resolveFuseBuilderArrangement(377, 574)).toBe("stacked"); // 412x915 phone
+    expect(resolveFuseBuilderArrangement(672, 552)).toBe("stacked"); // unfolded Fold
+    expect(resolveFuseBuilderArrangement(785, 899)).toBe("stacked"); // upright tablet
+    expect(resolveFuseBuilderArrangement(446, 643)).toBe("stacked"); // side panel
+  });
+
+  it("puts the controls beside the grid on a phone held sideways", () => {
+    expect(resolveFuseBuilderArrangement(881, 332)).toBe("beside");
+    expect(resolveFuseBuilderArrangement(606, 256)).toBe("beside");
+  });
+
+  it("keeps the whole prompt on screen in a desktop window tall enough for it", () => {
+    expect(resolveFuseBuilderArrangement(1114, 612)).toBe("roomy");
+    expect(resolveFuseBuilderArrangement(1258, 714)).toBe("roomy");
+    expect(resolveFuseBuilderArrangement(1258, 500)).toBe("beside");
   });
 });

@@ -254,7 +254,7 @@ export async function captureCardLayer(
 
   const cardElement = layerElement.querySelector<HTMLElement>(".choreo-layer");
   if (!cardElement) throw new Error("Choreo card export surface is missing");
-  await waitForChoreoCardQr(cardElement);
+  await waitForChoreoCardReady(cardElement);
   // The QR's caption draws in the brand serif, which a canvas only has once
   // it is loaded.
   if (cardElement.dataset.cardEnding) await loadBrandSerif();
@@ -303,27 +303,36 @@ export async function waitForTunnelHookArtwork(
 }
 
 /**
- * Wait until a card has its QR code drawn. A card mounts on the frame it first
- * shows and mints its code a moment later, and the render keeps one capture
- * per beat, so capturing early showed a mandala in the QR cell for the whole
- * card.
+ * Wait until a card is drawn: its loading state gone and its QR code in. A
+ * card mounts on the frame it first shows, and the render keeps one capture
+ * per beat, so capturing early kept the loading state (a dark card with a
+ * spinner) or a mandala in the QR cell for the whole card. A card with no QR
+ * has nothing pending there, so its loading state is what it waits for.
  */
-export async function waitForChoreoCardQr(
+export async function waitForChoreoCardReady(
   cardElement: HTMLElement,
   timeoutMs = 10_000
 ): Promise<void> {
-  const pending = () =>
+  const qrPending = () =>
     cardElement.querySelector('[data-qr-pending="true"]') !== null;
-  if (!pending()) return;
+  // The loading state stays in the page while it fades off the card.
+  const loading = () =>
+    cardElement.querySelector('[aria-busy="true"], .loading-placeholder') !==
+    null;
+  if (!loading() && !qrPending()) return;
   const deadline = performance.now() + timeoutMs;
-  while (pending()) {
+  while (loading() || qrPending()) {
     if (performance.now() > deadline)
-      throw new Error("The card's QR code was not ready to render.");
+      throw new Error(
+        loading()
+          ? "The card was still loading when it was due to render."
+          : "The card's QR code was not ready to render."
+      );
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => resolve())
     );
   }
-  // The code fades in; capture it once it has landed.
+  // The card and its code fade in; capture them once they have landed.
   await Promise.allSettled(
     [...cardElement.querySelectorAll("img")].map((image) => image.decode())
   );

@@ -11,11 +11,11 @@
   import { flyFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import {
-    formatTurnValue,
-    type TurnLevel,
-    type TurnValue,
+  import type {
+    TurnLevel,
+    TurnValue,
   } from "#lib/shared/create/services/level-turn-values.js";
+  import { optionSettingsLabel } from "../services/option-settings-label";
   import OptionPickerHeader from "./OptionPickerHeader.svelte";
   import OptionPickerIconButton from "./OptionPickerIconButton.svelte";
 
@@ -37,6 +37,10 @@
     onRightRotationChange: (dir: RotationDirection) => void;
     open?: boolean;
     triggerDensity?: "standard" | "compact";
+    /** A picker beside the workspace has nothing above it to open over. */
+    side?: "top" | "bottom";
+    /** The settings are changing the list. */
+    inUse?: boolean;
   }
 
   let {
@@ -57,27 +61,20 @@
     onRightRotationChange,
     open = $bindable(false),
     triggerDensity = "standard",
+    side = "top",
+    inUse = false,
   }: Props = $props();
 
-  const modeLabel = $derived(
-    isContinuousOnly ? t("create_option_continuous") : t("create_option_all")
+  const triggerLabel = $derived(
+    optionSettingsLabel({
+      showFilter,
+      isContinuousOnly,
+      showTurnControls,
+      level,
+      leftTurns,
+      rightTurns,
+    })
   );
-  const leftTurnLabel = $derived(formatTurnValue(leftTurns));
-  const rightTurnLabel = $derived(formatTurnValue(rightTurns));
-
-  const triggerLabel = $derived.by(() => {
-    const details = [t("create_ui_option_settings")];
-    if (showFilter)
-      details.push(t("create_deep_showing_mode", { mode: modeLabel }));
-    if (showTurnControls) {
-      details.push(t("create_deep_level_number", { level }));
-      details.push(t("create_deep_left_turns_value", { turns: leftTurnLabel }));
-      details.push(
-        t("create_deep_right_turns_value", { turns: rightTurnLabel })
-      );
-    }
-    return details.join(". ");
-  });
 </script>
 
 <Popover.Root bind:open>
@@ -88,6 +85,7 @@
         icon="fa-sliders"
         density={triggerDensity}
         active={open}
+        {inUse}
         aria-label={triggerLabel}
         title={t("create_ui_option_settings")}
       />
@@ -101,7 +99,7 @@
     />
 
     <Popover.Content
-      side="top"
+      {side}
       align="start"
       sideOffset={6}
       avoidCollisions={true}
@@ -116,7 +114,10 @@
               class="controls-popover themed-scrollbar"
               role="dialog"
               aria-label={t("create_ui_option_settings")}
-              transition:flyFade={{ y: 8, duration: DURATION.normal }}
+              transition:flyFade={{
+                y: side === "top" ? 8 : -8,
+                duration: DURATION.normal,
+              }}
             >
               <!-- Visible close: the trigger toggle / Escape / backdrop tap all
                    dismiss, but none is discoverable. An ✕ top-right is the

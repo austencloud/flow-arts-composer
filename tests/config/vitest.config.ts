@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 import { workspaceResolvePlugins } from "../../scripts/lib/workspace-resolution.mjs";
+import { scene3dSourceAliases } from "../../scripts/lib/scene3d-source.mjs";
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -164,5 +165,8 @@ export default defineConfig({
     // One copy of each, as in vite.config.ts: @austencloud/video-editor
     // shares the app's svelte, mediabunny, zod and dexie.
     dedupe: ["svelte", "mediabunny", "zod", "dexie"],
+    // TKA_SCENE3D_SRC runs an edited copy of @austencloud/scene-3d; empty
+    // when unset. See scripts/lib/scene3d-source.mjs.
+    alias: scene3dSourceAliases(),
   },
 });

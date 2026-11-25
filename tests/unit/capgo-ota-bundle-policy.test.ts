@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   OTA_BUNDLE_BUDGET_BYTES,
+  OTA_EMPTY_FILE_PLACEHOLDER,
+  findMissingNamedCodeFiles,
+  planEmptyFileHandling,
   selectOtaBundleFiles,
 } from "../../scripts/lib/capgo-ota-bundle-policy.mjs";
 
@@ -116,5 +119,78 @@ describe("Capgo over-the-air bundle policy", () => {
       "sounds/Fantasy Library/chime.mp3",
     ]);
     expect(result.keep).toEqual(["_app/lab.js"]);
+  });
+
+  // Capgo drops 0-byte files; the phone then 404s on a chunk it imports.
+  describe("empty files", () => {
+    it("fills empty code files, reports other empty files, leaves the rest", () => {
+      const plan = planEmptyFileHandling(
+        new Map([
+          ["_app/immutable/chunks/Empty1.js", 0],
+          ["_app/immutable/entry/start.mjs", 0],
+          ["_app/immutable/assets/empty.css", 0],
+          ["sounds/click.mp3", 0],
+          ["_app/immutable/chunks/Real.js", 120],
+          ["images/hero.webp", 9],
+        ])
+      );
+
+      expect(plan.fill).toEqual([
+        "_app/immutable/chunks/Empty1.js",
+        "_app/immutable/entry/start.mjs",
+        "_app/immutable/assets/empty.css",
+      ]);
+      expect(plan.dropped).toEqual(["sounds/click.mp3"]);
+    });
+
+    it("uses a placeholder that is not empty and is a comment", () => {
+      expect(OTA_EMPTY_FILE_PLACEHOLDER.length).toBeGreaterThan(0);
+      expect(OTA_EMPTY_FILE_PLACEHOLDER.startsWith("/*")).toBe(true);
+      expect(OTA_EMPTY_FILE_PLACEHOLDER.trimEnd().endsWith("*/")).toBe(true);
+    });
+
+    it("flags a named _app code file that is not staged or still empty", () => {
+      const files = {
+        "_app/immutable/entry/app.js":
+          'import"../chunks/Named.js";import"../chunks/Gone.js"',
+        "_app/immutable/chunks/Named.js": "",
+        "_app/immutable/chunks/Gone.js": "x",
+        "_app/immutable/chunks/with space/Hidden.js": "x",
+        "_app/immutable/chunks/Unnamed.js": "",
+      };
+      const { references } = select(files);
+      // Hidden.js is named by other built code, but its path has a space, so
+      // it never reaches the staged folder.
+      references.fileNames.add("Hidden.js");
+      const staged = new Map([
+        ["_app/immutable/entry/app.js", 60],
+        ["_app/immutable/chunks/Named.js", 0],
+        ["_app/immutable/chunks/Gone.js", 1],
+        ["_app/immutable/chunks/Unnamed.js", 0],
+      ]);
+
+      expect(
+        findMissingNamedCodeFiles(Object.keys(files), staged, references)
+      ).toEqual([
+        "_app/immutable/chunks/Named.js",
+        "_app/immutable/chunks/with space/Hidden.js",
+      ]);
+    });
+
+    it("passes once the named empty file has been filled", () => {
+      const files = {
+        "_app/immutable/entry/app.js": 'import"../chunks/Named.js"',
+        "_app/immutable/chunks/Named.js": "",
+      };
+      const { references } = select(files);
+      const staged = new Map([
+        ["_app/immutable/entry/app.js", 30],
+        ["_app/immutable/chunks/Named.js", OTA_EMPTY_FILE_PLACEHOLDER.length],
+      ]);
+
+      expect(
+        findMissingNamedCodeFiles(Object.keys(files), staged, references)
+      ).toEqual([]);
+    });
   });
 });

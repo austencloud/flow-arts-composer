@@ -153,6 +153,8 @@ export type MusicOpPatch = Omit<
 export type PostProjectOp =
   | {
       op: "add-hook";
+      /** The animation that opens on the tunnel; the first in lane order if left out. */
+      item?: string;
       seconds?: number;
       fold?: number;
       mirror?: boolean;
@@ -684,8 +686,21 @@ function applyOp(
         if (speed) hook.speed = speed;
         else delete hook.speed;
       }
+      let itemId: string | undefined;
+      if (op.item !== undefined) {
+        const ids = itemIds(project, op.item);
+        const named = project.tracks
+          .flatMap((track) => track.items)
+          .find((item) => item.id === ids[0]);
+        if (ids.length !== 1 || named?.kind !== "animation")
+          throw new Error(
+            `"${op.item}" is not one animation; the opening tunnel opens on one.`
+          );
+        itemId = named.id;
+      }
       const result = addTunnelHook(project, ctx, {
         ...(op.seconds !== undefined ? { seconds: op.seconds } : {}),
+        ...(itemId !== undefined ? { itemId } : {}),
         hook,
       });
       if (!result)

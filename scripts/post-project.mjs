@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
-import http from "node:http";
-import https from "node:https";
 import path from "node:path";
 import { alignTake, mediaPathFromUrl } from "./feature-video/align-take.mjs";
+import {
+  REQUEST_TIMEOUT_MS,
+  bridgeRequest,
+} from "./feature-video/bridge-request.mjs";
 import { buildCometMap, writeCometMap } from "./feature-video/comet-map.mjs";
 import { cometSettings } from "./feature-video/comet-settings.mjs";
 import {
@@ -19,7 +21,11 @@ import {
 } from "./feature-video/capture-files.mjs";
 import { importTake, probeMedia } from "./feature-video/media-import.mjs";
 import { importMusic } from "./feature-video/music-import.mjs";
-import { browserOrigin, renderFeature } from "./feature-video/render.mjs";
+import {
+  RENDER_LIMIT_MINUTES,
+  browserOrigin,
+  renderFeature,
+} from "./feature-video/render.mjs";
 import {
   parseStillTimes,
   writeContactSheet,
@@ -81,72 +87,29 @@ function roomOption(value) {
   return { top, bottom: bottom ?? 0 };
 }
 
-async function request(method, query = {}, body, route = BRIDGE) {
+/** How long one request may go unanswered; a test sets its own. */
+const requestTimeoutMs =
+  Number(process.env.TKA_REQUEST_TIMEOUT_MS) || REQUEST_TIMEOUT_MS;
+/** Copying a project's media is the one request that takes real work. */
+const DUPLICATE_TIMEOUT_MS = 15 * 60000;
+
+function request(
+  method,
+  query = {},
+  body,
+  route = BRIDGE,
+  timeoutMs = requestTimeoutMs
+) {
   const url = new URL(route, base);
   for (const [key, value] of Object.entries(query))
     if (value !== undefined) url.searchParams.set(key, value);
-  const encoded = body === undefined ? undefined : JSON.stringify(body);
-  const transport = url.protocol === "https:" ? https : http;
-  const response = await new Promise((resolve, reject) => {
-    const req = transport.request(
-      url,
-      {
-        method,
-        headers: {
-          Accept: "application/json",
-          Origin: base.origin,
-          ...(encoded
-            ? {
-                "Content-Type": "application/json",
-                "Content-Length": Buffer.byteLength(encoded),
-              }
-            : {}),
-        },
-        // The dev server uses a local self-signed certificate. This exception is scoped to this request.
-        ...(url.protocol === "https:" ? { rejectUnauthorized: false } : {}),
-      },
-      (res) => {
-        let text = "";
-        res.setEncoding("utf8");
-        res.on("data", (chunk) => {
-          text += chunk;
-        });
-        res.on("end", () => {
-          const status = res.statusCode ?? 500;
-          let value;
-          try {
-            value = JSON.parse(text);
-          } catch {
-            reject(
-              Object.assign(
-                new Error(
-                  `${url.pathname} answered ${status} without JSON. Is this the dev server, and does it have this route?`
-                ),
-                { status }
-              )
-            );
-            return;
-          }
-          if (status >= 400)
-            reject(
-              Object.assign(
-                new Error(value.message ?? value.error ?? `HTTP ${status}`),
-                { status }
-              )
-            );
-          else resolve(value);
-        });
-      }
-    );
-    req.on("error", reject);
-    req.end(encoded);
-  });
-  return response;
+  return bridgeRequest(url, { method, body, timeoutMs });
 }
 
 const EDIT_COMMANDS = {
   "add-hook": () => ({
     op: "add-hook",
+    ...(option("item") ? { item: option("item") } : {}),
     ...number("seconds"),
     ...number("fold"),
     ...(flag("mirror") ? { mirror: option("mirror") !== "false" } : {}),
@@ -864,9 +827,15 @@ try {
   } else if (command === "render") {
     const feature = required("feature");
     const name = option("name");
+    const limit = option("limit");
+    const limitMinutes =
+      limit === undefined ? RENDER_LIMIT_MINUTES : Number(limit);
+    if (!(limitMinutes > 0))
+      throw new Error("--limit needs minutes, such as --limit 90.");
     result = await renderFeature({
       request,
       feature,
+      limitMs: limitMinutes * 60000,
       ...(name ? { name: /\.mp4$/i.test(name) ? name : `${name}.mp4` } : {}),
       open: flag("open"),
       origin: browserOrigin(base),
@@ -953,7 +922,8 @@ try {
         ...(option("title") ? { title: option("title") } : {}),
         ...(flag("share-media") ? { shareMedia: true } : {}),
       },
-      featureRoute(positional(0, "the feature video to copy"), "duplicate")
+      featureRoute(positional(0, "the feature video to copy"), "duplicate"),
+      DUPLICATE_TIMEOUT_MS
     );
   } else if (command === "read") {
     if (!option("session")) throw new Error("read requires --session.");
@@ -995,9 +965,9 @@ try {
       `Usage: post-project.mjs <command> [--url loopback-url] [--session ID | --sequence ID | --feature SLUG]
   list                         open editors
   show [--json]                items of the open post
-  add-hook [--seconds 5] [--fold 8] [--mirror] [--speed ease-out]
+  add-hook [--item ID] [--seconds 5] [--fold 8] [--mirror] [--speed ease-out]   --item: the animation that opens on it (default: the first in lane order); footage plays behind it when the take has some before its cut, and a name at its start stays there
   remove-hook
-  line-up-hook                 end the tunnel on the footage's opening pose, footage behind it
+  line-up-hook                 end the tunnel on the footage's opening pose when the take is timed, footage behind it either way
   add-titles [--spoken "how to say it"] [--at T]   name titles clip, over the opening tunnel when there is one
   add-flash [--at T] [--strength 0.22] [--fade 0.4] [--marks true|false]   a 3 s flash clip; its start is the hit
   add-credit [--at T] [--lead "made with"] [--duration 4]   the ready-made Flow Arts Composer credit; --lead "" for the wordmark alone
@@ -1040,7 +1010,7 @@ Feature videos, folders on the dev server's computer:
   align-take --place ITEM | --take ID   where a take sits in the music, from its camera sound; --place puts the clip in time with it
   sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
   loudness <render.mp4> [--feature SLUG]   loudness and true peak; with --feature, the music level that reaches -14 LUFS
-  render --feature SLUG [--name NAME] [--open]   renders in the editor that has it open, into exports/; --open opens one in a private headless Chrome
+  render --feature SLUG [--name NAME] [--open] [--limit 60]   renders in the editor that has it open, into exports/; --open opens one in a private headless Chrome; --limit is the most minutes it may take
   stills <render.mp4> --at 0,4,6.5   a still at each time, in stills/ beside the render
   contact-sheet <render.mp4> [--columns 10]   one frame a second on one sheet, in stills/ beside the render
   release-media <render.mp4> [--poster T] [--gif-size 440] [--gif-fps 10] [--gif-colors 64]   the email's looping GIF and the JPG poster (default: mid-clip) beside the render; warns past 4 MB

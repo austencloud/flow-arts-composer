@@ -3,13 +3,14 @@
     type QftHand as QftStageHand,
   } from "#lib/shared/notation/qft/components/QftStage.svelte";
   import { QFT_FLOWERS } from "#lib/shared/notation/qft/qft-app-selection.js";
-  import { GUIDE_MOVES } from "#lib/shared/notation/qft/qft-guide.js";
+  import { QFT_PRESETS } from "#lib/shared/notation/qft/qft-presets.js";
   import { ratioLabel } from "@tka/shape-domain";
-  import { MODE_LABEL } from "@tka/shape-domain";
   import { getQftAppContext } from "../_context/qft-app-context";
   import QftHandControls from "./QftHandControls.svelte";
+  import QftHandRelation from "./QftHandRelation.svelte";
   import QftNotationPanel from "./QftNotationPanel.svelte";
   import QftRelationshipControls from "./QftRelationshipControls.svelte";
+  import QftSpeedControls from "./QftSpeedControls.svelte";
 
   const state = getQftAppContext();
 
@@ -18,7 +19,7 @@
     const source = selection.source;
     if (source.kind === "preset") {
       return (
-        GUIDE_MOVES.find(({ id }) => id === source.id)?.title ??
+        QFT_PRESETS.find(({ id }) => id === source.id)?.title ??
         "Canonical move"
       );
     }
@@ -35,7 +36,7 @@
   const detail = $derived(
     state.handCount === "one"
       ? `radius ${state.left.radius.toFixed(2)} prop lengths`
-      : `${MODE_LABEL[state.vtgMode]} · blue radius ${state.left.radius.toFixed(2)} · red radius ${state.right.radius.toFixed(2)}`
+      : `blue radius ${state.left.radius.toFixed(2)} · red radius ${state.right.radius.toFixed(2)}`
   );
 
   const stageHands = $derived<QftStageHand[]>(
@@ -65,13 +66,17 @@
 <main class="workbench">
   <section class="stage-panel" aria-label="Live QfT stage">
     <header class="stage-header">
-      <h1>{title}</h1>
-      <p>{detail}</p>
+      <div class="names" class:duet={state.handCount === "two"}>
+        <h1>{title}</h1>
+        <p>{detail}</p>
+      </div>
+      {#if state.handCount === "two"}<QftHandRelation />{/if}
     </header>
     <div class="stage-box">
       <QftStage
         hands={stageHands}
         cursor={state.position}
+        cursors={[state.leftCursor, state.rightCursor]}
         layers={state.layers}
         fit
       />
@@ -89,6 +94,7 @@
         </div>
       {/if}
       <QftRelationshipControls />
+      <QftSpeedControls part="poi" />
       <QftNotationPanel />
     </aside>
   {/if}
@@ -120,11 +126,17 @@
   }
 
   .stage-header {
-    display: grid;
-    align-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     min-height: 4.25rem;
     padding: 0.65rem 1rem;
     border-bottom: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
+  }
+
+  .names {
+    min-width: 0;
   }
 
   h1,
@@ -209,9 +221,16 @@
       padding: 0.45rem;
     }
 
+    /* The title keeps its whole line; the radii are in each hand's tray. */
     .stage-header {
+      flex-wrap: wrap;
+      gap: 0.1rem 0.75rem;
       min-height: 3.5rem;
-      padding: 0.45rem 0.75rem;
+      padding: 0.35rem 0.75rem;
+    }
+
+    .names.duet p {
+      display: none;
     }
 
     .stage-box {

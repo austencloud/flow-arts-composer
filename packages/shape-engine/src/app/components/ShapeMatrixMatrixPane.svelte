@@ -9,8 +9,6 @@
   import { customizeSection } from "../state/shape-matrix-customize";
   import ShapeMatrixGridCorner from "./ShapeMatrixGridCorner.svelte";
   import ShapeMatrixRecipeStrip from "./ShapeMatrixRecipeStrip.svelte";
-  import ShapeMatrixLoader from "./ShapeMatrixLoader.svelte";
-  import { createLoaderHandoff } from "../state/shape-matrix-loader-handoff.svelte.js";
 
   interface Props {
     /** The shell owns navigation (and the compact tile-to-hero morph). */
@@ -28,9 +26,12 @@
   /* The customize workspace covers this pane on wide hosts (the shell mounts
      it over the pane, once for both surfaces); the grid underneath is not
      something to tab into while it does. */
-  /* A grid already built when the pane opens skips the loading drawing; one
-     still building lets the drawing finish its closing stroke first. */
-  const loader = createLoaderHandoff(state.data !== null);
+  /* The grid is on screen from the first frame: its axis is pure, so the
+     table, headers and frames lay out before the paths exist. A pane that
+     opens before the paths have loaded draws each tile on as they arrive;
+     one that opens on a built grid shows the pictures at once. */
+  // svelte-ignore state_referenced_locally
+  const coldStart = state.data === null;
   const workspaceOpen = $derived(
     customizeSection(state, animationState) !== null
   );
@@ -43,6 +44,7 @@
 <section
   class="matrix-pane"
   class:compact={state.compact}
+  class:sideways={state.sideways}
   use:claimedViewTransitionName={{
     name: SHAPE_MATRIX_PANE_NAME,
     enabled:
@@ -53,10 +55,17 @@
   }}
   aria-label={t("shape_engine_matrix_aria")}
 >
-  {#if state.compact}
+  <!-- On its side the app's bar becomes a column that carries the dice and
+       already reads both values, so the strip would only repeat them. -->
+  {#if state.compact && !state.sideways}
     <ShapeMatrixRecipeStrip surface="level" onsurprise={surprise} />
   {/if}
-  <div class="matrix-stage" inert={workspaceOpen} aria-hidden={workspaceOpen}>
+  <div
+    class="matrix-stage"
+    inert={workspaceOpen}
+    aria-hidden={workspaceOpen}
+    aria-busy={state.data === null}
+  >
     {#if state.loadError}
       <div class="status error" role="alert">
         <p>{t("shape_engine_matrix_failed")}</p>
@@ -64,15 +73,11 @@
           >{t("shape_engine_try_again")}</button
         >
       </div>
-    {:else if !state.data || !loader.done}
-      <ShapeMatrixLoader
-        variant="grid"
-        ready={state.data !== null}
-        onfinished={loader.finish}
-      />
     {:else}
       <ShapeMatrixGrid
-        data={state.data}
+        data={state.data ?? undefined}
+        drawIn={coldStart}
+        onScreen={state.surface === "matrix"}
         rowAxis={state.rowAxis}
         colAxis={state.colAxis}
         maxCellPx={320}
@@ -109,6 +114,10 @@
   /* Compact hosts add the recipe strip above the grid. */
   .matrix-pane.compact {
     grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .matrix-pane.compact.sideways {
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .status button {

@@ -28,9 +28,12 @@
  * their eighth significant figure, which is the arithmetic taking a different
  * route to the same answer.
  *
- * `the report is blind without the anatomy rows` below pins all of that, so
+ * `the anatomy rows are the ones that read the fault` below pinned all of that, so
  * the day one of those rows does start responding, this stops claiming a
- * blindness it no longer has.
+ * blindness it no longer has. That day came with walking run 3 (2026-11-22):
+ * the planter now solves a leg only through its stance, so slip, knee jerk
+ * and peak jolt respond indirectly to a folded hinge. The table above is the
+ * measurement from before it; the anatomy rows remain the detector.
  *
  * ## Where the bands came from
  *
@@ -41,13 +44,16 @@
  *
  * ## The floor, stated rather than implied
  *
- * The fault response is close to linear, about 0.88 degrees of reading per
- * degree of hinge error at a walk and 0.72 at a run, on a baseline that is
- * itself around 10. So a 20 degree miscalibration is caught at a walk and a 30
- * degree one anywhere, while a 10 degree one is inside the spread between
- * healthy characters and this layer will not see it. That is what the static
- * contract is for: it reads the axis directly, where 10 degrees is enormous.
- * Neither layer covers the other's range, and both are cheap.
+ * The fault response is close to linear. Since walking run 3 (2026-11-22) the
+ * planter no longer stretches or shortens the stride at ordinary speeds, so it
+ * solves a leg only while that foot is planted rather than through the whole
+ * cycle, and a wrong hinge bends the knee for only part of each step. The
+ * response is about 0.53 degrees of reading per degree of hinge error at a
+ * walk and 0.33 at a run, on a baseline around 10 at a walk and 6.5 at a run
+ * (it was 0.92 and 0.72). So a 30 degree miscalibration is caught at a walk,
+ * the sideways offset row catches 30 degrees at a run, and a 10 or 20 degree
+ * one is left to the static contract, which reads the axis directly. Neither
+ * layer covers the other's range, and both are cheap.
  */
 
 import { Vector3 } from "three";
@@ -132,9 +138,7 @@ function runRig(rig: string, hingeTiltDeg = 0) {
 }
 
 const rowsOf = (report: GaitReport, maneuver: GaitManeuverProfile) =>
-  new Map(
-    verdictRows(report, "gait", maneuver).map((row) => [row.name, row])
-  );
+  new Map(verdictRows(report, "gait", maneuver).map((row) => [row.name, row]));
 
 const anatomyOf = (report: GaitReport, maneuver: GaitManeuverProfile) => {
   const rows = rowsOf(report, maneuver);
@@ -167,30 +171,35 @@ describe.skipIf(!present)("locomotion anatomy", () => {
           // zero on a healthy pipeline by construction. It fires when
           // something starts translating a joint or stretching a chain toward
           // a target it cannot reach, which has no other signature here.
-          expect(report.anatomy.worstSegmentDrift, `${id} ${maneuver} drift`)
-            .toBeLessThan(0.01);
+          expect(
+            report.anatomy.worstSegmentDrift,
+            `${id} ${maneuver} drift`
+          ).toBeLessThan(0.01);
         }
       }, 180_000);
     }
   });
 
   describe("the check responds to a knee that is actually wrong", () => {
-    it("fails a hinge turned 45 degrees, at both speeds", async () => {
-      for (const [maneuver, drive] of [
-        ["walk", walkRig],
-        ["run", runRig],
+    it("fails a badly turned hinge at both speeds", async () => {
+      // A run plants each foot for a shorter share of the cycle, so the same
+      // hinge error reads weaker there: 45 degrees at a walk reads 35, and a
+      // run needs the 84 degree fold to read 34.
+      for (const [maneuver, drive, tilt] of [
+        ["walk", walkRig, 45],
+        ["run", runRig, 84],
       ] as const) {
-        const { report } = await drive(avatar("ch01"), 45);
+        const { report } = await drive(avatar("ch01"), tilt);
         const plane = rowsOf(report, maneuver).get("Knee bend plane")!;
         expect(plane.verdict, `${maneuver}: ${describeRow(plane)}`).toBe("bad");
       }
     }, 180_000);
 
-    it("still fails at 20 degrees on a walk, which is the floor", async () => {
-      // Named rather than merely asserted: below roughly this the fault sits
-      // inside the spread between healthy characters, and the static contract
-      // is the layer that covers it.
-      const { report } = await walkRig(avatar("ch01"), 20);
+    it("still fails at 35 degrees on a walk, near the floor", async () => {
+      // Named rather than merely asserted: below roughly 30 degrees the fault
+      // reads as a warning at most, and the static contract is the layer that
+      // covers it.
+      const { report } = await walkRig(avatar("ch01"), 35);
       const plane = rowsOf(report, "walk").get("Knee bend plane")!;
       expect(plane.verdict, describeRow(plane)).toBe("bad");
     }, 120_000);
@@ -206,7 +215,7 @@ describe.skipIf(!present)("locomotion anatomy", () => {
     }, 120_000);
   });
 
-  it("the report is blind to the fault without the anatomy rows", async () => {
+  it("the anatomy rows are the ones that read the fault", async () => {
     const healthy = await runRig(avatar("ch01"));
     const folded = await runRig(avatar("ch01"), 84);
 
@@ -215,29 +224,19 @@ describe.skipIf(!present)("locomotion anatomy", () => {
       healthy.report.anatomy.worstMeanPlaneTilt * 3
     );
 
-    // And invisible to every row that existed before them. This is the
-    // measurement that justifies the layer: if one of these ever starts
-    // moving, the claim in this file's header is stale and should be rewritten
-    // rather than have this test relaxed.
-    //
-    // Relative rather than absolute, because these quantities span centimetres
-    // to five-figure degrees per second squared and a tolerance that means
-    // "unchanged" for one would demand eleven significant figures of another.
-    // A part in a million is still four orders of magnitude below any real
-    // response -- the anatomy row moved by a factor of eight over the same
-    // input.
-    for (const [name, value] of [
-      ["mean slip", (r: GaitReport) => r.meanSlip],
-      ["peak slip", (r: GaitReport) => r.peakSlip],
-      ["knee jerk", (r: GaitReport) => r.kneeJerkRms],
-      ["peak jolt", (r: GaitReport) => r.peakJolt],
-      ["cadence", (r: GaitReport) => r.cadence],
-      ["duty factor", (r: GaitReport) => r.dutyFactor],
-    ] as const) {
-      const before = value(healthy.report);
-      const after = value(folded.report);
-      const relative = Math.abs(after - before) / Math.max(1e-9, Math.abs(before));
-      expect(relative, `${name} moved: ${before} -> ${after}`).toBeLessThan(1e-6);
-    }
+    // Until walking run 3 (2026-11-22) this test pinned every older row as
+    // blind to the fault. The planter then stopped stretching and shortening
+    // the stride at ordinary speeds, so it solves a leg only through that
+    // foot's stance, and a turned hinge now reaches the older rows indirectly:
+    // the foot lands a few millimetres off (slip), the knee changes plane as
+    // the solve takes hold and lets go (knee jerk, peak jolt), and the foot's
+    // height through stance shifts the contact reading (duty factor). Those
+    // rows respond, but none of them names the knee, and the healthy walk
+    // they describe is unchanged. Only the clock is still untouched.
+    const before = healthy.report.cadence;
+    const after = folded.report.cadence;
+    const relative =
+      Math.abs(after - before) / Math.max(1e-9, Math.abs(before));
+    expect(relative, `cadence moved: ${before} -> ${after}`).toBeLessThan(1e-5);
   }, 180_000);
 });

@@ -1,7 +1,7 @@
 {
   "name": "@tka/shape-domain",
   "version": "0.1.0",
-  "description": "Shape Engine rules: the flower axis, the six timing-and-direction elements and the pictograph letter lookup. Framework-free.",
+  "description": "Shape Engine rules: the flower axis, the six timing-and-direction elements and the pictograph letter lookup, plus the poi layer: hand paths and how fast a real string lets them spin. Framework-free.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

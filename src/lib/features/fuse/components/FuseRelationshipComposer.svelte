@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { untrack } from "svelte";
+  import { onDestroy } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getFuseContext } from "../context/fuse-context";
   import {
     fuseRuleLabel,
     fuseRulesEqual,
+    inverseFuseRule,
     type FuseRule,
   } from "../domain/fuse-rule";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
@@ -12,6 +14,7 @@
   import {
     classifyFuseRule,
     DEFAULT_TND_SELECTION,
+    fuseTnDAboutLabel,
     fuseTnDElement,
     fuseTnDModeLabel,
   } from "../domain/fuse-tnd-rule";
@@ -54,29 +57,32 @@
     if (!draftCheck) return null;
     if (rewindBreaksAt === null) {
       return {
-        text: "Timing and direction still hold on every beat.",
+        text: t("fuse_rule_rewind_holds"),
         breaks: false,
       };
     }
     const beats = fuseState.previewSequence?.steps.length ?? 0;
-    const follower = draftDriver === "left" ? "Right" : "Left";
-    const leader = draftDriver === "left" ? "Left" : "Right";
     const pairedBeat = beats + 1 - rewindBreaksAt;
     return {
-      text: `Rewind pairs ${follower}'s beat ${rewindBreaksAt} with ${leader}'s beat ${pairedBeat}. They don't line up, so ${draftModeLabel} breaks at beat ${rewindBreaksAt}.`,
+      text: t(
+        draftDriver === "left"
+          ? "fuse_rule_rewind_breaks_left_leads"
+          : "fuse_rule_rewind_breaks_right_leads",
+        { beat: rewindBreaksAt, paired: pairedBeat, mode: draftModeLabel }
+      ),
       breaks: true,
     };
   });
   const resultModeLabel = $derived(
     rewindBreaksAt === null
       ? draftModeLabel
-      : `About ${draftModeLabel.toLowerCase()}`
+      : fuseTnDAboutLabel(draftSelection.mode)
   );
   const draftDriverLabel = $derived(
-    draftDriver === "left" ? "Left path" : "Right path"
+    t(draftDriver === "left" ? "fuse_side_left_path" : "fuse_side_right_path")
   );
   const draftFollowerLabel = $derived(
-    draftDriver === "left" ? "Right path" : "Left path"
+    t(draftDriver === "left" ? "fuse_side_right_path" : "fuse_side_left_path")
   );
   const busy = $derived(
     fuseState.isLoadingLength ||
@@ -85,35 +91,23 @@
   );
 
   // Opening the editor on the relationship that is already applied has nothing
-  // to preview: the canvas is showing it. Deriving it anyway costs a full
-  // rebuild of the follower path, and it lands in the same frames as the panel's
-  // open animation, which is where it was eating the motion.
-  const matchesApplied = (side: FuseSide, next: FuseRule) =>
-    fuseState.mode === "symmetry" &&
-    fuseState.driverSide === side &&
-    fuseRulesEqual(fuseState.rule, next);
-
-  $effect(() => {
-    const driver = draftDriver;
-    const rule = draftRule;
-
-    untrack(() => {
-      if (matchesApplied(driver, rule)) return;
-      void fuseState.previewRelationship(driver, rule);
-    });
-
-    return () => {
-      untrack(() => fuseState.cancelRelationshipPreview());
-    };
-  });
-
+  // to preview: the canvas is showing it. Only a choice starts a preview, and
+  // each one builds on the pair on screen, so a hand that takes the lead keeps
+  // the path it is showing.
   function chooseDriver(side: FuseSide): void {
+    if (side === draftDriver) return;
     draftDriver = side;
+    draftRule = inverseFuseRule(draftRule);
+    void fuseState.previewRelationship(draftDriver, draftRule);
   }
 
   function chooseRule(rule: FuseRule): void {
+    if (fuseRulesEqual(rule, draftRule)) return;
     draftRule = rule;
+    void fuseState.previewRelationship(draftDriver, draftRule);
   }
+
+  onDestroy(() => fuseState.cancelRelationshipPreview());
 
   function cancel(): void {
     fuseState.cancelRelationshipPreview();
@@ -138,7 +132,7 @@
        this editor. Reaching it at all means the paths are linked, so the editor
        is only the rule that links them. -->
   <h3 id="pairing-editor-title" class="pairing-title">
-    Choose how the two paths relate
+    {t("fuse_rule_composer_title")}
   </h3>
 
   <FuseTransformPicker
@@ -150,14 +144,14 @@
   />
 
   {#if fuseState.ruleAdjusted}
-    <p class="rule-note" role="status">Rule adjusted to the nearest timing.</p>
+    <p class="rule-note" role="status">{t("fuse_rule_adjusted_note")}</p>
   {/if}
 
   <div class="relationship-commit">
     <!-- Named Result, not Preview: it states what applying this does, and the
          canvas behind the editor is already showing the live preview. -->
     <div class="result" aria-live="polite">
-      <span class="result-label">Result</span>
+      <span class="result-label">{t("fuse_rule_result")}</span>
       <!-- The chain labels each node with what happens to it, so a sentence
            above it would say the same thing a second time. -->
       <div class="result-chain">
@@ -165,10 +159,8 @@
           <span class="node-dot" aria-hidden="true"></span>
           <span class="node-copy">
             <!-- "Leads", echoing the control in step 1, and the pair reads
-                 Leads / Rebuilds in one voice. "You edit" named the same path
-                 from the other end and left the chain saying what the user
-                 does beside what the app does. -->
-            <span class="node-role">Leads</span>
+                 Leads / Follows in one voice. -->
+            <span class="node-role">{t("fuse_rule_leads")}</span>
             <strong>{draftDriverLabel}</strong>
           </span>
         </span>
@@ -179,7 +171,7 @@
         >
           <img class="rule-icon" src={draftElement.iconPath} alt="" />
           <span class="node-copy">
-            <span class="node-role">Rule</span>
+            <span class="node-role">{t("fuse_rule_name")}</span>
             <strong>{resultModeLabel}</strong>
             <span class="node-ops">{draftRuleLabel}</span>
           </span>
@@ -191,10 +183,7 @@
         >
           <span class="node-dot" aria-hidden="true"></span>
           <span class="node-copy">
-            <!-- "Rebuilds", not "Fuse rebuilds": the panel is the fuse editor,
-                 and the two words cost the rule node the width its sentence
-                 needs. -->
-            <span class="node-role">Rebuilds</span>
+            <span class="node-role">{t("fuse_rule_follows")}</span>
             <strong>{draftFollowerLabel}</strong>
           </span>
         </span>
@@ -202,10 +191,12 @@
     </div>
 
     <div class="editor-actions">
-      <PanelButton variant="secondary" onclick={cancel}>Cancel</PanelButton>
+      <PanelButton variant="secondary" onclick={cancel}
+        >{t("fuse_action_cancel")}</PanelButton
+      >
       <PanelButton variant="primary" disabled={busy} onclick={apply}>
         <i class="fas fa-link" aria-hidden="true"></i>
-        Use this relationship
+        {t("fuse_rule_use_relationship")}
       </PanelButton>
     </div>
   </div>
@@ -501,8 +492,9 @@
 
   /* On a phone the editor is a full-height screen and fits without a scroll
      (the picker's phone form), so nothing needs pinning: the commands sit on
-     the floor through `margin-top: auto`. They take the phone's 36px size,
-     stacked (36 + 6 + 36), and the gaps above them tighten. */
+     the floor through `margin-top: auto`. They take the phone's 36px size, on
+     one row where both names fit it and stacked (36 + 6 + 36) where they do
+     not, and the gaps above them tighten. */
   @media (max-width: 480px) {
     .pairing-editor {
       gap: 8px;
@@ -517,12 +509,25 @@
     }
 
     .editor-actions {
+      display: flex;
+      flex-wrap: wrap;
       gap: 6px;
     }
 
     .editor-actions :global(.panel-btn) {
+      flex: 1 1 auto;
+      width: auto;
       min-height: var(--alt-touch-target, 36px);
       padding-block: 0;
+      padding-inline: 10px;
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 480px) and (max-height: 620px) {
+    .pairing-editor,
+    .relationship-commit {
+      gap: 6px;
     }
   }
 </style>

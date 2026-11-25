@@ -5,7 +5,7 @@ import {
   displayTrajectory,
   STILL_HAND_DISPLAY_RADIUS,
 } from "../../src/lib/features/levels/poi-lab/domain/poi-swing-timing";
-import { trajectoryPosesAt } from "../../src/lib/shared/notation/qft/qft-trajectory";
+import { trajectoryPosesAt } from "@tka/shape-domain";
 
 const pendulum = POI_REVERSAL_CANDIDATES.find(
   (candidate) => candidate.id === "poi-r0-dcw-s1-p2"

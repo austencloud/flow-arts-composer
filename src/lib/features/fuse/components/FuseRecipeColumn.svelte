@@ -1,14 +1,15 @@
 <script lang="ts">
   import type { FuseSettingsDestination } from "../domain/fuse-recipe-destination";
+  import { fuseRecipePanel } from "../state/fuse-recipe-panel.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import FuseCustomize from "./FuseCustomize.svelte";
   import FuseRecipeSettings from "./FuseRecipeSettings.svelte";
 
   let {
     destination = $bindable(null),
-    singleDestination = false,
     onClose,
   }: {
     destination?: FuseSettingsDestination;
-    singleDestination?: boolean;
     onClose: () => void;
   } = $props();
 </script>
@@ -16,9 +17,20 @@
 <!-- On desktop the recipe is a column, not a drawer: every control in it changes
      the result, and a sheet over the result covered the one panel showing what
      the controls were doing. As a track it pushes instead of covers, and it
-     opens on the same edge as the buttons that summon it. -->
-<aside class="fuse-recipe-column" aria-label="Fuse recipe">
-  <FuseRecipeSettings bind:destination {singleDestination} {onClose} />
+     opens on the same edge as the buttons that summon it. Customize shares the
+     column: it changes the result too, and the result stays in view beside it
+     while it is changed. -->
+<aside
+  class="fuse-recipe-column"
+  aria-label={fuseRecipePanel.content === "customize"
+    ? t("shape_engine_customize")
+    : t("fuse_settings_hand_aria")}
+>
+  {#if fuseRecipePanel.content === "customize"}
+    <FuseCustomize {onClose} />
+  {:else}
+    <FuseRecipeSettings bind:destination {onClose} />
+  {/if}
 </aside>
 
 <style>
@@ -28,6 +40,9 @@
      panel would sit still while a gap opened beside it. */
   .fuse-recipe-column {
     position: relative;
+    /* Keeps the panel's own z-index inside this track. Without it the open
+       panel painted over the Edit path screen. */
+    isolation: isolate;
     grid-area: recipe;
     display: flex;
     justify-content: flex-end;

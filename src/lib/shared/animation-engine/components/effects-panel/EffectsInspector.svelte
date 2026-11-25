@@ -17,6 +17,8 @@
   import LedCustomize from "./customize/LedCustomize.svelte";
   import type { EffectRegistration } from "./effect-registry";
   import { effectInk } from "./effect-ink";
+  import ActiveEffectChip from "./ActiveEffectChip.svelte";
+  import { effectCatalogLooks } from "./effect-catalog-looks";
   import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
 
   type SettingValue = string | number | boolean | null;
@@ -79,6 +81,7 @@
   }: Props = $props();
 
   const accent = $derived(effectInk(registration.meta.color, getThemeMode()));
+  const look = $derived(effectCatalogLooks(config).get(effect));
 
   let fineTuningOpen = $state(false);
   let selectedFineControl = $state(0);
@@ -136,8 +139,18 @@
       </button>{/if}
 
     <span class="effect-identity">
-      <span class="effect-icon" aria-hidden="true">
-        <i class="fas {registration.meta.icon}"></i>
+      <span class="effect-picture" aria-hidden="true">
+        {#if look}
+          <ActiveEffectChip
+            effectId={effect}
+            {look}
+            width={dock ? 29 : 72}
+            height={dock ? 20 : 48}
+            radius={dock ? 4 : 10}
+          />
+        {:else}
+          <i class="fas {registration.meta.icon}"></i>
+        {/if}
       </span>
       <span class="effect-name">{effectUiLabel(registration.meta.label)}</span>
     </span>
@@ -434,17 +447,10 @@
      is sized to be read at a glance rather than to sit politely beside the
      label - a full accent ring plus a tinted field, never a bar down one edge
      (no-left-edge-accent-bar.md). */
-  .effect-icon {
-    width: 3.25rem;
-    height: 3.25rem;
-    flex: 0 0 3.25rem;
+  .effect-picture {
+    flex: none;
     display: grid;
     place-items: center;
-    border: 1px solid color-mix(in srgb, var(--effect-accent) 55%, transparent);
-    border-radius: 0.875rem;
-    background: color-mix(in srgb, var(--effect-accent) 16%, transparent);
-    box-shadow: 0 0 0 1px
-      color-mix(in srgb, var(--effect-accent) 16%, transparent) inset;
     color: var(--effect-accent);
     font-size: 1.5rem;
   }
@@ -757,13 +763,7 @@
     justify-content: center;
   }
 
-  .inspector.dock .effect-icon {
-    width: auto;
-    height: auto;
-    flex: none;
-    border: 0;
-    background: none;
-    box-shadow: none;
+  .inspector.dock .effect-picture {
     font-size: var(--font-size-base, 1rem);
   }
 

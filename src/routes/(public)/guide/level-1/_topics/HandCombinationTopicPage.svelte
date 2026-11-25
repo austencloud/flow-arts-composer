@@ -1,21 +1,17 @@
 <!--
   A page of the hand combinations' run (2026-10-31): Shift (hm-type2),
   Cross-Shift (hm-type34) and Dash, Dual-Dash and Static (hm-type56, a
-  screen each). The switcher of all six stands under the kicker on every
-  page of the run; each screen gives Austen's definition, his guide line and
+  screen each). Each screen gives Austen's definition, his guide line and
   the example card, nothing more: the strips and sequences wait for a
   sequencing page. Cross-Shift's second screen breaks one down with the
   book's boxes, in the same card.
 
-  The body is one group of two columns (2026-11-01, Austen's review: the
-  switcher, title and screen pills stacked read as "a text sandwich with
-  chips as the bun", and a tall window left a giant empty column). The text
+  The body is one group of two columns (2026-11-01). The text
   column, centred against the card, holds the combination's name in its
   colours, the definition and the guide line, centred in the column; the
   card stands beside it, grows with the window (--fit) and the group stands
-  centred in the body. There is no list of screens (Austen, same day): on
-  Dash, Dual-Dash and Static the switcher's chips 4, 5 and 6 are the
-  screens, and Cross-Shift's breakdown is reached by Next or by the one
+  centred in the body. There is no list of screens (Austen, same day):
+  Next goes through Dash, Dual-Dash and Static, and Cross-Shift's breakdown is reached by Next or by the one
   "Break it down" link under its words.
 
   Switching a screen changes only the words and the card: the page mounts
@@ -32,7 +28,6 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { hmType34Content } from "../_data/content/hm-type34.content";
   import TopicScreens from "./TopicScreens.svelte";
-  import HandTypeSwitcher from "./HandTypeSwitcher.svelte";
   import CombinationName from "./CombinationName.svelte";
   import CombinationDemoCard from "./CombinationDemoCard.svelte";
   import { combinationScreens } from "./combination-pages";
@@ -76,32 +71,12 @@
   const breakdownAt = $derived(
     screens.findIndex((view) => view.kind === "breakdown")
   );
-  /** The switcher's chip for a combination on this page switches to its
-   *  screen in place; any other chip opens its page. */
-  const screenOf = (id: string) =>
-    screens.findIndex(
-      (view) => view.kind === "combination" && view.combination.id === id
-    );
-
   /** The book's breakdown strip: start, halfway, end, combined. */
   const BREAKDOWN: PictographData[] = (() => {
     const group = hmType34Content.find((b) => b.kind === "pictographGroup");
     return group?.kind === "pictographGroup" ? [...group.items] : [];
   })();
 </script>
-
-{#snippet switcher(n: number, go: (index: number) => void)}
-  <HandTypeSwitcher
-    current={combinationAt(n)?.id ?? null}
-    {darkMode}
-    choose={(id) => {
-      const k = screenOf(id);
-      if (k < 0) return false;
-      go(k);
-      return true;
-    }}
-  />
-{/snippet}
 
 {#snippet navName(target: RunNavTarget)}
   {@const combination = navCombination(target, namedAt)}
@@ -119,7 +94,10 @@
   {labels}
   steadyHead
   bodyHead
-  beforeTitle={switcher}
+  threadName={(n) => {
+    const combination = combinationAt(n);
+    return combination ? t(combination.name) : (labels[0] ?? "");
+  }}
   navLabel={navName}
 >
   {#snippet screen(n, go)}
@@ -256,8 +234,7 @@
     width: 100%;
     min-width: 0;
   }
-  /* The combination's name in its colours, at the size the frame's title
-     had beside the switcher's 44 px chips. */
+  /* The combination's name in its colours. */
   .column-title {
     margin: 0;
     font-family: var(--guide-script, "Cormorant Garamond", Georgia, serif);
@@ -448,16 +425,16 @@
   .combination-topic :is(.lede, .closing) :global(.sentence) {
     color: inherit;
   }
+  /* A phone: the frame's box right above names the combination, so the
+     title gives its line to the card. */
   @media (max-width: 520px) {
-    .column-title {
-      font-size: 2.6rem;
+    .title-stack {
+      display: none;
     }
   }
   /* A short phone (an iPhone SE) holds the words and the whole card above
-     the footer only if the title gives up its line: the switcher's chip
-     right above it shows the same name in the same colours (the page's h1
-     stays for screen readers; the title here is aria-hidden already). The
-     link takes the phone's 36 px height and the gaps close up, so the
+     the footer (the page's h1 stays for screen readers; the title here is
+     aria-hidden already). The link takes the phone's 36 px height and the gaps close up, so the
      example keeps a size that reads (as on the Type 1 page). */
   @media (max-width: 520px) and (max-height: 760px), (max-height: 520px) {
     .title-stack {

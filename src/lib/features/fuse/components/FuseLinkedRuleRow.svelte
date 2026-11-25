@@ -8,13 +8,24 @@
   the existing rule editor, FuseRelationshipComposer behind the recipe panel's
   `pairing` destination, as its own screen.
 
-  Composes PanelButton; the wording is the recipe summary's pairing text plus
-  the Invert and Rewind operation names when they are on.
+  Composes PanelButton; the wording is the recipe summary's pairing text.
+  Invert and Rewind show as the icons they wear in the editor, and keep their
+  names in the button's label.
+
+  One line where every pairing the language can show fits the row, two where
+  any does not. All of them are measured, never only the current one, so a
+  change of rule cannot change the row's height and move the stage below it.
 -->
 <script lang="ts">
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getFuseContext } from "../context/fuse-context";
-  import { buildFuseRecipeSummaries } from "../domain/fuse-recipe-summaries";
+  import {
+    buildFusePairingSummary,
+    listFusePairingLines,
+  } from "../domain/fuse-recipe-summaries";
 
   let {
     onOpen,
@@ -30,49 +41,78 @@
       fuseState.isFusing
   );
   const pairing = $derived(
-    buildFuseRecipeSummaries({
-      requestedLength: fuseState.requestedLength,
-      generationLevel: fuseState.generationLevel,
-      maxTurnIntensity: fuseState.maxTurnIntensity,
-      gridMode: fuseState.gridMode,
-      constraintPreset: fuseState.constraintPreset,
-      handPathMode: fuseState.handPathMode,
-      motionTypeFilter: fuseState.motionTypeFilter,
-      startLocation: fuseState.startLocation,
-      startOrientation: fuseState.startOrientation,
-      traversalDirection: fuseState.traversalDirection,
+    buildFusePairingSummary({
       mode: fuseState.mode,
       driverSide: fuseState.driverSide,
       rule: fuseState.rule,
-    }).pairing
+    })
   );
-  const summary = $derived(
+  const operations = $derived(
+    new Set([
+      ...(fuseState.rule.invert ? [LOOPComponent.INVERTED] : []),
+      ...(fuseState.rule.rewind ? [LOOPComponent.REWOUND] : []),
+    ])
+  );
+  const spokenSummary = $derived(
     [
       pairing,
-      fuseState.rule.invert ? "Invert" : null,
-      fuseState.rule.rewind ? "Rewind" : null,
+      fuseState.rule.invert ? t("fuse_rule_invert") : null,
+      fuseState.rule.rewind ? t("fuse_rule_rewind") : null,
     ]
       .filter(Boolean)
       .join(" · ")
   );
+
+  const lines = $derived(listFusePairingLines());
+  const bothOperations = new Set([
+    LOOPComponent.INVERTED,
+    LOOPComponent.REWOUND,
+  ]);
+  let roomWidth = $state(0);
+  let widestLine = $state(0);
+  /** Both widths are read as whole pixels; the margin covers the rounding. */
+  const twoLines = $derived(widestLine + 4 > roomWidth);
 </script>
 
-<div class="linked-rule-row">
+{#snippet operationIcons(shown: Set<LOOPComponent>)}
+  <span class="rule-operations" aria-hidden="true">
+    <LOOPIconStrip
+      activeComponents={shown}
+      size={14}
+      showFreeformWhenEmpty={false}
+    />
+  </span>
+{/snippet}
+
+<div class="linked-rule-row" class:two-lines={twoLines}>
   <PanelButton
     variant="secondary"
     fullWidth={true}
     {disabled}
-    ariaLabel="Change rule: {summary}"
+    ariaLabel={t("fuse_rule_change_aria", { summary: spokenSummary })}
     onclick={onOpen}
   >
-    <span class="rule-summary">{summary}</span>
+    <span class="rule-summary" bind:clientWidth={roomWidth}>
+      <span class="rule-line"
+        >{pairing}{#if operations.size > 0}{@render operationIcons(
+            operations
+          )}{/if}</span
+      >
+      <span class="line-sizer" aria-hidden="true">
+        <span class="line-sizer-stack" bind:clientWidth={widestLine}>
+          {#each lines as line (line)}
+            <span>{line}{@render operationIcons(bothOperations)}</span>
+          {/each}
+        </span>
+      </span>
+    </span>
     <i class="fas fa-chevron-right rule-chevron" aria-hidden="true"></i>
   </PanelButton>
 </div>
 
 <style>
-  /* One 36px line (layout law, Tap size). The summary is clipped to the line,
-     so no rule can change the row's height or move the stage below it. */
+  /* One 36px line (layout law, Tap size), or one fixed 48px row of two 18px
+     lines. */
   .linked-rule-row :global(.panel-btn) {
     justify-content: space-between;
     gap: 8px;
@@ -81,14 +121,52 @@
     padding: 0 12px;
   }
 
+  .linked-rule-row.two-lines :global(.panel-btn) {
+    height: 48px;
+  }
+
   .rule-summary {
-    flex: 1 1 auto;
+    position: relative;
+    display: block;
+    flex: 1 1 0;
     min-width: 0;
-    overflow: hidden;
     color: var(--theme-text);
     font-size: var(--font-size-min, 14px);
-    text-align: left;
-    text-overflow: ellipsis;
+    line-height: 18px;
+    text-align: start;
+  }
+
+  .rule-line {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .two-lines .rule-line {
+    text-wrap: balance;
+    white-space: normal;
+  }
+
+  .rule-operations {
+    display: inline-flex;
+    align-items: center;
+    margin-inline-start: 6px;
+    vertical-align: -2px;
+  }
+
+  /* Every pairing with both icons, laid out but never drawn: the stack is as
+     wide as the longest. The clip keeps it out of any scroll width. */
+  .line-sizer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .line-sizer-stack {
+    position: absolute;
+    inset-inline-start: 0;
+    display: grid;
+    width: max-content;
     white-space: nowrap;
   }
 

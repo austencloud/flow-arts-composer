@@ -101,6 +101,7 @@ export class PlaybackSync {
   private _prevPropsVisible: boolean = true;
   private _prevMandalaVisible: boolean = false;
   private _prevMandalaStrokeWidth: number | undefined = undefined;
+  private _prevTrailResetKey: number | undefined = undefined;
   private prevPathShape: "arc" | "linear" | "concave" = "arc";
   private prevMotionAwarePaths: boolean = false;
 
@@ -177,6 +178,7 @@ export class PlaybackSync {
     this.prevSequenceData = null;
     this._prevMandalaVisible = false;
     this._prevMandalaStrokeWidth = undefined;
+    this._prevTrailResetKey = undefined;
   }
 
   /**
@@ -212,6 +214,14 @@ export class PlaybackSync {
       if (this.state.isInitialized) {
         lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
       }
+    }
+
+    // A caller that drives its own clock asks for a clean trail when it seeks
+    // backwards; otherwise the trail would draw a chord from the old place.
+    if (props.trailResetKey !== this._prevTrailResetKey) {
+      const hadKey = this._prevTrailResetKey !== undefined;
+      this._prevTrailResetKey = props.trailResetKey;
+      if (hadKey) this.clearGridJoinStreaks();
     }
 
     // Track only what we actually compare (avoid object spread GC pressure)

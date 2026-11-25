@@ -22,7 +22,7 @@ Features:
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import LetterTypeGuide from "../../components/LetterTypeGuide.svelte";
   import OptionPickerIconButton from "../../components/OptionPickerIconButton.svelte";
@@ -58,6 +58,7 @@ Features:
     settingsEnabled = false,
     settingsContent,
     settingsHasTurnRows = true,
+    tuckedSettings,
     openIntoWorkspace = false,
     phoneTier = false,
     typeRail = false,
@@ -85,6 +86,11 @@ Features:
     settingsEnabled?: boolean;
     settingsContent?: Snippet;
     settingsHasTurnRows?: boolean;
+    /** For a host that keeps the settings out of sight: what they are set to,
+     *  and whether they are changing the list. The type names above the options
+     *  step back too, and the tab strip holds its width, so its settings button
+     *  is in one place for opening and for closing. */
+    tuckedSettings?: { label: string; inUse: boolean };
     openIntoWorkspace?: boolean;
     /** A stacked phone-width picker. Its letter-type tabs name the selected
      *  group and, with the swipe, move between groups, so the arrows' gutters
@@ -470,8 +476,9 @@ Features:
           id={settingsTriggerId}
           icon="fa-sliders"
           density="compact"
+          inUse={tuckedSettings?.inUse}
           active={activeUtilityPanel === "settings"}
-          aria-label={t("create_ui_option_settings")}
+          aria-label={tuckedSettings?.label ?? t("create_ui_option_settings")}
           title={t("create_ui_option_settings")}
           aria-expanded={activeUtilityPanel === "settings"}
           aria-controls={utilityPanelId}
@@ -546,6 +553,7 @@ Features:
   <div
     class="utility-shell"
     class:expanded={utilityOpen && !typeRail}
+    class:steady={!!tuckedSettings && !typeRail}
     class:workspace-placement={openIntoWorkspace && !typeRail}
   >
     {#if usePopoverTray}
@@ -612,17 +620,22 @@ Features:
         <div class="utility-surface">
           {@render typeNavigation()}
 
-          <Collapsible.Content id={utilityPanelId}>
-            {#snippet child({ props })}
-              <div
-                {...props}
-                class="utility-disclosure"
-                role="region"
-                aria-label={utilityPanelLabel}
-                onkeydown={handleUtilityKeydown}
-              >
-                {@render utilityPanelContents()}
-              </div>
+          <!-- Mounted on opening, so the tray grows from its tabs already
+               showing what was asked for, with nothing to fade out first. -->
+          <Collapsible.Content id={utilityPanelId} forceMount>
+            {#snippet child({ open: contentOpen, props })}
+              {#if contentOpen}
+                <div
+                  {...props}
+                  class="utility-disclosure"
+                  role="region"
+                  aria-label={utilityPanelLabel}
+                  onkeydown={handleUtilityKeydown}
+                  transition:growFade={{ duration: DURATION.emphasis }}
+                >
+                  {@render utilityPanelContents()}
+                </div>
+              {/if}
             {/snippet}
           </Collapsible.Content>
         </div>
@@ -701,6 +714,7 @@ Features:
                   {layoutConfig}
                   {currentSequence}
                   {contentAreaBounds}
+                  showHeader={!tuckedSettings}
                   headerOnlyWithRoom={phoneTier}
                   inlineGutter={gridGutter}
                   columnOptions={(railColumns ?? (typeRail && phoneTier))
@@ -739,7 +753,8 @@ Features:
       var(--ease-out, var(--ease-standard-out));
   }
 
-  .utility-shell.expanded {
+  .utility-shell.expanded,
+  .utility-shell.steady {
     width: min(calc(100% - 8px), 36rem);
   }
 
@@ -901,7 +916,6 @@ Features:
     left: 0;
     z-index: 3;
     box-sizing: border-box;
-    height: var(--bits-collapsible-content-height);
     overflow: hidden;
     background-color: #12141c;
     background-image: linear-gradient(
@@ -910,21 +924,11 @@ Features:
     );
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
-    opacity: 1;
-    transition:
-      height var(--duration-emphasis) var(--ease-out, var(--ease-standard-out)),
-      opacity var(--duration-normal) var(--ease-out, var(--ease-standard-out));
   }
 
   /* Its own rule: in one rule with the var() shorthand above, replays lose that shorthand. */
   .utility-disclosure {
     border-top: 0;
-  }
-
-  .utility-disclosure[data-starting-style],
-  .utility-disclosure[data-ending-style] {
-    height: 0;
-    opacity: 0;
   }
 
   .utility-stage {
@@ -1188,7 +1192,6 @@ Features:
     .utility-shell,
     .type-navigation,
     .utility-stage,
-    .utility-disclosure,
     .workspace-utility-panel {
       transition: none;
     }

@@ -2,7 +2,10 @@
 /**
  * Copy the built web app into the folder Capgo uploads as the phone app's
  * over-the-air bundle, leaving out what lib/capgo-ota-bundle-policy.mjs rules
- * out. Run after `pnpm run build` and scripts/generate-native-env.mjs.
+ * out. Capgo also drops 0-byte files, so empty code files are staged with a
+ * short comment (the build folder is never touched), other empty files are
+ * reported, and the run fails if a code file the app names would be missing.
+ * Run after `pnpm run build` and scripts/generate-native-env.mjs.
  *
  *   node scripts/stage-capgo-ota-bundle.mjs [buildDir] [outDir]
  */
@@ -14,11 +17,15 @@ import {
   readFileSync,
   rmSync,
   statSync,
+  writeFileSync,
 } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import {
   OTA_BUNDLE_BUDGET_BYTES,
+  OTA_EMPTY_FILE_PLACEHOLDER,
   OTA_REQUIRED_FILES,
+  findMissingNamedCodeFiles,
+  planEmptyFileHandling,
   selectOtaBundleFiles,
 } from "./lib/capgo-ota-bundle-policy.mjs";
 
@@ -49,8 +56,9 @@ if (!existsSync(buildDir)) {
   process.exit(1);
 }
 
-const { keep, unreferenced, whitespace } = selectOtaBundleFiles(
-  listFiles(buildDir),
+const buildFiles = listFiles(buildDir);
+const { keep, unreferenced, whitespace, references } = selectOtaBundleFiles(
+  buildFiles,
   (path) => readFileSync(join(buildDir, path), "utf8")
 );
 
@@ -91,6 +99,42 @@ for (const path of keep) {
   const destination = join(outDir, path);
   mkdirSync(dirname(destination), { recursive: true });
   copyFileSync(join(buildDir, path), destination);
+}
+
+// Sizes come from the staged copy on disk, after any filling below.
+const stagedSizes = () =>
+  new Map(keep.map((path) => [path, statSync(join(outDir, path)).size]));
+
+const { fill, dropped } = planEmptyFileHandling(stagedSizes());
+for (const path of fill) {
+  writeFileSync(join(outDir, path), OTA_EMPTY_FILE_PLACEHOLDER);
+}
+if (fill.length > 0) {
+  console.log(
+    `[capgo-ota] Filled ${fill.length} empty code files so Capgo keeps them:`
+  );
+  for (const path of fill) console.log(`  ${path}`);
+}
+if (dropped.length > 0) {
+  console.warn(
+    `[capgo-ota] Warning: ${dropped.length} empty files are not code, so ` +
+      "Capgo will leave them out of the bundle:"
+  );
+  for (const path of dropped) console.warn(`  ${path}`);
+}
+
+const missingCode = findMissingNamedCodeFiles(
+  buildFiles,
+  stagedSizes(),
+  references
+);
+if (missingCode.length > 0) {
+  console.error(
+    `[capgo-ota] ${missingCode.length} code files the built app names would ` +
+      "be missing or empty in the phone bundle, so it could not finish loading:"
+  );
+  for (const path of missingCode) console.error(`  ${path}`);
+  process.exit(1);
 }
 
 console.log(

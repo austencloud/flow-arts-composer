@@ -521,9 +521,21 @@ export function extractStances(
 
       const inner0 = Math.min(start + 1, last);
       const inner1 = Math.max(last - 1, start);
+      // Slip follows the contact point, not the ankle. A foot on the floor
+      // turns about its heel as it lands and about its ball as it leaves, and
+      // either way the ankle travels while nothing slides. So each frame is
+      // charged the smaller of the two moves along the floor: the joint that
+      // is holding still is the one bearing weight, and a foot that is truly
+      // sliding moves both. A rig without a ball has only its ankle.
       let slip = 0;
       for (let i = inner0 + 1; i <= inner1; i++) {
-        slip += dist2(frames[i]![foot].ankle, frames[i - 1]![foot].ankle);
+        const now = frames[i]![foot];
+        const before = frames[i - 1]![foot];
+        const ankleMove = dist2(now.ankle, before.ankle);
+        slip +=
+          now.toe && before.toe
+            ? Math.min(ankleMove, dist2(now.toe, before.toe))
+            : ankleMove;
       }
 
       // Foot-flat is the closest the ankle and the ball of the foot ever get
@@ -705,16 +717,23 @@ export function findJolts(
       const pb = localOffset(frames[i - 1]!, b, track.from(frames[i - 1]!));
       const pc = localOffset(frames[i]!, c, track.from(frames[i]!));
 
-      const dt = Math.max(frames[i]!.dt, EPS);
+      // The two steps can differ in length: the lab samples once per rendered
+      // frame, and a skipped frame makes one step twice as long. Reading both
+      // with one dt charged a skipped frame's honest motion as a jump, so the
+      // acceleration is the change in velocity across the two steps, each
+      // velocity over its own step.
+      const dt1 = Math.max(frames[i - 1]!.dt, EPS);
+      const dt2 = Math.max(frames[i]!.dt, EPS);
       let sq = 0;
       let stepSq = 0;
       for (let axis = 0; axis < 3; axis++) {
-        const second = pc[axis]! - 2 * pb[axis]! + pa[axis]!;
-        sq += second * second;
+        const change =
+          (pc[axis]! - pb[axis]!) / dt2 - (pb[axis]! - pa[axis]!) / dt1;
+        sq += change * change;
         const delta = pc[axis]! - pb[axis]!;
         stepSq += delta * delta;
       }
-      const accel = Math.sqrt(sq) / (dt * dt);
+      const accel = (2 * Math.sqrt(sq)) / (dt1 + dt2);
       const step = Math.sqrt(stepSq);
 
       if (accel > peak) {

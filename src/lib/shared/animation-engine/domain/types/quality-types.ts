@@ -28,6 +28,11 @@ export interface QualityHints {
   glowEnabled: boolean;
   /** Maximum device pixel ratio to use (native / 2.0 / 1.0) */
   maxDpr: number;
+  /**
+   * Every trail drawn at its full width, head to tail, instead of thinning
+   * towards the tail: for light that is kept rather than trailing off.
+   */
+  uniformWidth?: boolean;
 }
 
 /**

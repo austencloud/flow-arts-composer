@@ -48,6 +48,22 @@
     justify-content: center;
   }
 
+  /* Beside the transport on a narrow window the words alone just fit. */
+  @container (max-width: 18rem) {
+    .layers {
+      gap: 0.2rem;
+    }
+
+    .layers :global(.filter-chip svg) {
+      display: none;
+    }
+
+    .layers :global(.filter-chip) {
+      padding-inline: 0.1rem;
+      font-size: var(--font-size-compact, 0.75rem);
+    }
+  }
+
   @container (min-width: 44rem) {
     .layers {
       grid-template-columns: repeat(7, minmax(0, 1fr));

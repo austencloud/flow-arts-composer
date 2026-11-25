@@ -1,3 +1,4 @@
+import { isConstructWorkbench } from "../../services/construct-workbench";
 /**
  * Current Word Display Manager
  *
@@ -110,7 +111,7 @@ export function createCurrentWordDisplayEffect(
         displayText = letterSources.map(s => s.letter).join("");
       }
       // PRIORITY 2: Construct tab - start placement instructions
-      else if (navigationState.activeTab === "construct") {
+      else if (isConstructWorkbench(navigationState.activeTab)) {
         if (constructTabState.shouldShowStartPlacementPicker()) {
           displayText = "Choose your start placement!";
         } else {

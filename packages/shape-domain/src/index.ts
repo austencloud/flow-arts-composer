@@ -14,6 +14,12 @@ export * from "./letters/csv-edges.js";
 export * from "./turns/level-turn-values.js";
 export * from "./turns/turn-pattern-parser.js";
 export * from "./qft/qft-model.js";
+export * from "./poi/poi-trajectory.js";
+export * from "./poi/poi-swing-clock.js";
+export * from "./poi/poi-string-swing.js";
+export * from "./poi/poi-real-pace.js";
+export * from "./poi/poi-hand-relation.js";
+export * from "./poi/poi-flower-bridge.js";
 import type { Flower } from "./flowers/flower-signature.js";
 
 /** The two flowers of a matrix cell: the left hand's and the right hand's. */

@@ -19,7 +19,11 @@ icons when enabled. Click opens the expanded overlay.
   import {
     buildLoopCardDisplay,
     describeLoopRhythm,
+    fitLoopLabel,
+    loopCardInnerWidth,
   } from "./loop-card-display";
+  import { reflectionAxisName } from "../loop-component-presentation";
+  import { REFLECTION_AXIS_DETAILS } from "./loop-expanded-overlay-model";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import type { ReflectionAxis } from "@tka/sequence-engine/loop";
   import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
@@ -81,14 +85,8 @@ icons when enabled. Click opens the expanded overlay.
   const displayValue = $derived.by(() => {
     if (!loopEnabled) return t("create_ui_off");
     if (display.effectiveAxis) {
-      const effectiveAxis: ReflectionAxis = display.effectiveAxis;
-      const reflectionLabels: Record<ReflectionAxis, string> = {
-        "north-south": t("generator_loop_mirrored"),
-        "east-west": t("generator_loop_flipped"),
-        "northeast-southwest": t("create_deep_ne_sw_reflection"),
-        "northwest-southeast": t("create_deep_nw_se_reflection"),
-      };
-      const parts = [reflectionLabels[effectiveAxis]];
+      // One type on every axis: the icon below turns to the chosen line.
+      const parts = [t("generator_loop_reflected")];
       if (selectedComponents.has(LOOPComponent.ROTATED)) {
         parts.push(t("generator_loop_rotated"));
       }
@@ -100,34 +98,18 @@ icons when enabled. Click opens the expanded overlay.
       }
       return parts.join(" + ");
     }
-    const typeMap: Record<LOOPType, string> = {
+    // Reflected types never reach here; they always have an axis.
+    const typeMap: Partial<Record<LOOPType, string>> = {
       [LOOPType.ROTATED]: t("generator_loop_rotated"),
-      [LOOPType.MIRRORED]: t("generator_loop_mirrored"),
-      [LOOPType.FLIPPED]: t("generator_loop_flipped"),
       [LOOPType.SWAPPED]: t("generator_loop_swapped"),
       [LOOPType.INVERTED]: t("generator_loop_inverted"),
       [LOOPType.SWAPPED_INVERTED]: t("generator_loop_swapped_inverted"),
-      [LOOPType.MIRRORED_SWAPPED]: t("generator_loop_mirrored_swapped"),
       [LOOPType.ROTATED_INVERTED]: t("generator_loop_rotated_inverted"),
-      [LOOPType.MIRRORED_INVERTED]: t("generator_loop_mirrored_inverted"),
       [LOOPType.ROTATED_SWAPPED]: t("generator_loop_rotated_swapped"),
-      [LOOPType.MIRRORED_ROTATED]: t("generator_loop_mirrored_rotated"),
-      [LOOPType.MIRRORED_INVERTED_ROTATED]: t("generator_loop_mir_comp_rot"),
-      [LOOPType.MIRRORED_SWAPPED_INVERTED]:
-        t("generator_loop_mirrored_swapped") +
-        " + " +
-        t("generator_loop_inverted"),
       [LOOPType.ROTATED_SWAPPED_INVERTED]:
         t("generator_loop_rotated_swapped") +
         " + " +
         t("generator_loop_inverted"),
-      [LOOPType.MIRRORED_ROTATED_SWAPPED]:
-        t("generator_loop_mirrored_rotated") +
-        " + " +
-        t("generator_loop_swapped"),
-      [LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED]: t(
-        "generator_loop_all_four"
-      ),
       [LOOPType.STRICT_REWOUND]: t("generator_loop_rewound"),
     };
     // Fallback: strip "strict_" prefix and title-case for unmapped legacy values
@@ -141,17 +123,20 @@ icons when enabled. Click opens the expanded overlay.
     );
   });
 
-  // Combined labels run to ~45 characters ("NE-SW Reflection + Rotated +
-  // Swapped + Inverted"). At the shared card text size those wrap to two full
+  // Combined labels run to ~40 characters ("Reflected + Rotated + Swapped +
+  // Inverted"). At the shared card text size those wrap to two full
   // lines and push the icon row past the card's edge, so the label steps down
   // by length onto the same ramp the Customize summary uses.
-  const labelTier = $derived(
+  const lengthTier = $derived(
     displayValue.length > 32
       ? "long"
       : displayValue.length > 18
         ? "medium"
         : "short"
   );
+  // The longest translations (Russian runs to 52 characters) need a third line
+  // on a narrow phone, so they also tighten their letters on a short card.
+  const tightLabel = $derived(displayValue.length > 44);
 
   // Icon size tracks the card. A literal 16px reads as punctuation on a native
   // 4K card, and overwhelms the label on a phone.
@@ -161,8 +146,35 @@ icons when enabled. Click opens the expanded overlay.
   // paint, and the button has no border, so its border box is its client box.
   let cardBox = $state<readonly ResizeObserverSize[]>();
   const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
+  const cardWidth = $derived(cardBox?.[0]?.inlineSize ?? 0);
+
+  // With a sequence built, a phone's card is 42 to 71px tall. The hidden line
+  // below reports how wide the name is at the smallest type, and the card
+  // shows the name whole or its icons in the name's place.
+  let lineBox = $state<readonly ResizeObserverSize[]>();
+  const lineWidth = $derived(lineBox?.[0]?.inlineSize ?? 0);
+  const fit = $derived.by(() => {
+    const fitted = fitLoopLabel({ cardWidth, cardHeight, lineWidth });
+    return fitted === "icons" && display.iconComponents.size === 0
+      ? "line"
+      : fitted;
+  });
+
+  // On a short card the length tiers also have to fit their one line: 16px
+  // for the short names and 13px for the medium ones, against 12px measured.
+  const labelTier = $derived.by(() => {
+    if (!fit) return lengthTier;
+    if (fit !== "line") return "long";
+    const inner = loopCardInnerWidth(cardWidth) - 1;
+    if (lengthTier === "short" && lineWidth * 1.4 > inner) return "long";
+    if (lengthTier === "medium" && lineWidth * 1.1 > inner) return "long";
+    return lengthTier;
+  });
+
   const iconSize = $derived(
-    Math.min(24, Math.max(12, Math.round(cardHeight * 0.15)))
+    fit === "icons"
+      ? Math.min(20, Math.max(12, cardHeight - 24))
+      : Math.min(24, Math.max(12, Math.round(cardHeight * 0.15)))
   );
 
   // The strip is hidden from the accessibility tree (this button already owns
@@ -176,10 +188,20 @@ icons when enabled. Click opens the expanded overlay.
       "quartered inversion": t("create_deep_quartered_inversion"),
       "overlay inversion": t("create_deep_overlay_inversion"),
     };
-    return rhythm
+    const spoken = rhythm
       .split(", ")
-      .map((part) => labels[part] ?? part)
-      .join(", ");
+      .filter(Boolean)
+      .map((part) => labels[part] ?? part);
+    const axis = display.effectiveAxis;
+    if (axis) {
+      spoken.unshift(
+        t("create_deep_axis_option_label", {
+          axis: REFLECTION_AXIS_DETAILS[axis].axisLabel,
+          name: reflectionAxisName(axis),
+        })
+      );
+    }
+    return spoken.join(", ");
   });
 
   function handleClick() {
@@ -228,7 +250,16 @@ icons when enabled. Click opens the expanded overlay.
     <CardHeader title="LOOP" {headerFontSize} />
     <!-- Label and icons center as one group, so this card's text lines up with
          the plain single-line text on the Customize card beside it. -->
-    <div class="loop-body">
+    <div
+      class="loop-body"
+      class:tight={tightLabel}
+      data-fit={cardHeight ? (fit ?? "full") : undefined}
+    >
+      <span class="line-probe" aria-hidden="true">
+        <span class="line-probe-text" bind:borderBoxSize={lineBox}
+          >{displayValue}</span
+        >
+      </span>
       <div class="card-value" data-label={labelTier}>{displayValue}</div>
       <!-- The row is always here, empty when the loop is off, so toggling
            can't move the label above it. The strip carries its own role="img"
@@ -423,7 +454,7 @@ icons when enabled. Click opens the expanded overlay.
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Multi-component labels ("Mirrored / Inverted / Rotated") are wider than one
+    /* Multi-component labels ("Reflected + Rotated + Inverted") are wider than one
        line. nowrap + the wrapper's overflow:visible let them spill past the card
        edges (see screenshot). Wrap and clip to the card so every selected
        component stays inside the button. */
@@ -480,31 +511,104 @@ icons when enabled. Click opens the expanded overlay.
     letter-spacing: 0;
   }
 
-  /* At 375x667 this card is 64px tall and the label band is ~17px — the full
-     46-character combined label cannot fit at any readable size. Step the type
-     down and clamp to a single line so it ends in an ellipsis instead of a
-     sliced-off glyph. The label leads with the reflection axis, which is the
-     one thing the icons cannot encode; the icons carry the components, and the
-     exact text stays in the accessible name and the drawer. */
-  @container loop-card (max-height: 88px) {
+  /* Short cards: the combined name steps down to the smallest type and tighter
+     lines, so all of it shows over two lines (three for the longest
+     translations) with the icons under it. */
+  @container loop-card (max-height: 104px) {
     .loop-body {
       gap: 1px;
     }
 
+    .card-value[data-label="long"] {
+      font-size: var(--font-size-compact, 12px);
+      line-height: 1.2;
+    }
+
+    .tight .card-value {
+      letter-spacing: -0.04em;
+    }
+  }
+
+  /* Keeps descenders off the icons wherever three lines aren't needed. The
+     settings panel zeroes the body's gap on short rows, so this is a margin. */
+  @container loop-card (min-height: 73px) and (max-height: 104px) {
+    .loop-body:not(.tight) .loop-icon-row {
+      margin-top: 2px;
+    }
+  }
+
+  @container loop-card (max-height: 88px) {
     .card-value[data-label="medium"] {
       font-size: 13px;
     }
+  }
 
-    .card-value[data-label="long"] {
-      font-size: var(--font-size-compact, 12px);
-    }
-
+  /* Under 72px there is room for one line only. These cards are wide
+     (sideways phones, short laptop windows), so the name fits on it. */
+  @container loop-card (max-height: 72px) {
     .card-value {
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 1;
       line-clamp: 1;
     }
+  }
+
+  .loop-body[data-fit="lines"] .card-value {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  /* The name and its icons trade places as the card grows and shrinks with
+     the sequence above it; whichever arrives fades in. */
+  .loop-body[data-fit="icons"] .card-value,
+  .loop-body[data-fit="lines"] .loop-icon-row {
+    display: none;
+  }
+
+  /* Alone, the icons carry the name, and the reflection's purple is lost on
+     this purple card; they sit on the dark they have everywhere else. */
+  .loop-body[data-fit="icons"] .loop-icon-row {
+    width: auto;
+    padding: 1px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-card-bg) 85%, transparent);
+  }
+
+  .card-value,
+  .loop-icon-row {
+    transition: opacity var(--duration-normal) var(--ease-standard);
+  }
+
+  /* The attribute lands after the first layout, so the page's first paint
+     does not fade. */
+  @starting-style {
+    .loop-body[data-fit] .card-value,
+    .loop-body[data-fit] .loop-icon-row {
+      opacity: 0;
+    }
+  }
+
+  /* One line of the name at the smallest type, for measuring only. */
+  .line-probe {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .line-probe-text {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: var(--font-size-compact, 12px);
+    font-weight: var(--card-text-weight);
+    line-height: 1.2;
+  }
+
+  .tight .line-probe-text {
+    letter-spacing: -0.04em;
   }
 
   /* Reserved icon row. flex-shrink:0 keeps its height even when a long
@@ -526,6 +630,11 @@ icons when enabled. Click opens the expanded overlay.
 
   @media (prefers-reduced-motion: reduce) {
     .loop-card-wrapper {
+      transition: none;
+    }
+
+    .card-value,
+    .loop-icon-row {
       transition: none;
     }
 

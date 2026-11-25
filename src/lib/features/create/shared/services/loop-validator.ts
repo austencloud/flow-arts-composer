@@ -55,11 +55,11 @@ const LOOP_OPTION_CONFIG: Record<
   },
   [LOOPType.MIRRORED]: {
     icon: "fa-reflect-horizontal",
-    description: "Mirrors placements vertically",
+    description: "Vertical line: east and west trade places",
   },
   [LOOPType.FLIPPED]: {
     icon: "fa-arrows-up-down",
-    description: "Mirrors placements horizontally",
+    description: "Horizontal line: north and south trade places",
   },
   [LOOPType.SWAPPED]: {
     icon: "fa-shuffle",

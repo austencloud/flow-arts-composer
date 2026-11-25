@@ -180,5 +180,5 @@ export const sixteenCountContent: GuideBlock[] = [
       "Here, the staves return to home after two word repetitions. To make it " +
       "symmetrical, it repeats twice more, filling the rest of the quadrants.",
   },
-  { kind: "prose", html: "<em>(Rotated + Mirrored + Swapped LOOP)</em>" },
+  { kind: "prose", html: "<em>(Rotated + Reflected + Swapped LOOP)</em>" },
 ];

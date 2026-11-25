@@ -12,6 +12,9 @@ higher-level `AGENTS.md` files remain higher priority.
 - Static scene geometry and set dressing use the established Blender-to-GLB
   pipeline. Runtime geometry is reserved for behavior that is genuinely
   dynamic or parametric.
+- Body motion (walking, jumping, crouching, sitting, gestures, idles, crowds)
+  comes from Mixamo clips and is not hand-made. Read
+  `.claude/rules/body-motion-from-clips.md` before touching it.
 - Before locomotion, gait timing, foot contact, stops, turns, crossed stepping,
   retargeting, terrain traversal, or motion matching, read
   `.claude/rules/locomotion.md` and

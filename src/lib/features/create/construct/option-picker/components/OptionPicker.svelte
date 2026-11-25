@@ -52,6 +52,7 @@ Delegates all rendering to child components.
   import OptionPickerContent from "./OptionPickerContent.svelte";
   import { tryGetCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import { setOptionAuditionContext } from "../context/option-audition-context";
+  import { tryGetOptionMarkContext } from "../context/option-mark-context";
   import { buildAppendedOptionSequence } from "../services/build-appended-option-sequence";
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 
@@ -358,6 +359,16 @@ Delegates all rendering to child components.
     } else {
       pickerState.reset();
     }
+  });
+
+  // A tab that marks steps hears which ones are on offer, so it can say when
+  // none of them carries its mark.
+  const optionMarks = tryGetOptionMarkContext();
+  $effect(() => {
+    if (!optionMarks || !pickerState) return;
+    const options = pickerState.filteredOptions;
+    if (pickerState.state === "loading" || pickerState.state === "idle") return;
+    optionMarks.onListed(options);
   });
 
   // Prepare options when filtered options change, Dark Mode changes, or prop type changes

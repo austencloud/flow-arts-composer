@@ -36,7 +36,10 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { buildProceduralJamMesh, type JamMeshKind } from "../flow-fest-jam/flow-fest-jam-meshes";
 import { peakedTent } from "../flow-fest-jam/flow-fest-jam-structures";
-import { AROUND_TILE, grassTexture, mulchTexture, slabTexture } from "./site-walk-around-textures";
+import { AROUND_TILE, grassTexture, mulchTexture, slabTexture, wallTexture } from "./site-walk-around-textures";
+import { WALL_TILE } from "./site-walk-buildings";
+import { floorAlong, siteFloor, type SiteFloor } from "./site-walk-floor";
+import { drape, groundPatch, liftOnto, raisedGeometry, risenBounds } from "./site-walk-raised";
 import { drawnStreets, fenceHeightOf, ironFence, type SiteSurroundings } from "./site-walk-around";
 import { ironFenceParts } from "./site-walk-furniture";
 import { LAYER, bar3, closedRing, flat, poleParts, post, recolour, run, sheet, strip, tube, wireSpan } from "./site-walk-mesh-parts";
@@ -55,6 +58,8 @@ const BANNER_BLANK = "#14161b";
 const GROUND_RADIUS = 1500;
 /** Metres one repeat of the chain-link picture covers (four diamonds across). */
 const CHAIN_LINK_TILE = 0.26;
+/** How finely flat things are split to follow the lawn's heights: two grid steps of a foot. */
+const DRAPE_STEP = 0.6;
 
 /**
  * A hanging fabric wall from a to b, y0 to y1. It bellies out a few centimetres
@@ -110,7 +115,11 @@ export interface SiteWalkMeshes {
   dispose(): void;
 }
 
-export function buildSiteWalkMeshes(world: SiteWalkWorld, around: SiteSurroundings | null = null): SiteWalkMeshes {
+export function buildSiteWalkMeshes(
+  world: SiteWalkWorld,
+  around: SiteSurroundings | null = null,
+  floor: SiteFloor = siteFloor(world, around),
+): SiteWalkMeshes {
   const buckets: Bucket[] = [];
   const materials: Material[] = [];
   const bucket = (
@@ -160,6 +169,12 @@ export function buildSiteWalkMeshes(world: SiteWalkWorld, around: SiteSurroundin
   const add = (b: Bucket, g: BufferGeometry | null) => {
     if (g) b.geometries.push(g);
   };
+  /** Geometries already standing on the floor, which the lawn's heights must not lift again. */
+  const onFloor = new Set<BufferGeometry>();
+  const addOnFloor = (b: Bucket, g: BufferGeometry | null) => {
+    if (g) onFloor.add(g);
+    add(b, g);
+  };
 
   // Every flat zone has its own value and a faint light of its own colour, so
   // none of them falls to black at night: the outside ground is the darkest,
@@ -196,7 +211,10 @@ export function buildSiteWalkMeshes(world: SiteWalkWorld, around: SiteSurroundin
     const uv = groundPlane.getAttribute("uv");
     for (let i = 0; i < position.count; i++) uv.setXY(i, position.getX(i) / groundTile, position.getZ(i) / groundTile);
   }
+  onFloor.add(groundPlane);
   add(ground, groundPlane);
+  // Where the lawn rises, its own heights over the flat plane.
+  addOnFloor(ground, groundPatch(floor, LAYER.ground + 0.004, groundTile));
 
   // Outside the lot the photographed ground replaces the drawn dirt once it arrives; the drawn dirt holds until then.
   let disposedMeshes = false;
@@ -328,15 +346,27 @@ export function buildSiteWalkMeshes(world: SiteWalkWorld, around: SiteSurroundin
         emissiveIntensity: 0.15,
         maps: paverMaps(),
       });
-  for (const area of world.patios) {
+  for (const [index, area] of world.patios.entries()) {
+    // A raised patio is a block of its own below.
+    if (floor.hidden.patios.has(index)) continue;
     add(patio, flat(area, LAYER.area, concretePatio ? AROUND_TILE.slab : TILE.pavers));
     outlineArea(area);
   }
+  // Raised areas: solid stone blocks, the top and the faces down to the ground in the stone photograph.
+  addOnFloor(
+    bucket("#ffffff", {
+      cast: true,
+      emissive: "#ffffff",
+      emissiveIntensity: 0.1,
+      maps: { albedo: wallTexture("stone") },
+    }),
+    raisedGeometry(floor, WALL_TILE.stone),
+  );
   if (world.guestArea) {
     // A faint warm tint over the lot's own surface; the outline marks the edge.
     add(
       bucket("#d9953a", {
-        opacity: 0.16,
+        opacity: 0.08,
         flat: true,
         emissive: "#d9953a",
         emissiveIntensity: 0.1,
@@ -400,10 +430,12 @@ export function buildSiteWalkMeshes(world: SiteWalkWorld, around: SiteSurroundin
         emissiveIntensity: 0.3,
       })
     : null;
-  for (const line of world.fences) {
+  for (const [index, line] of world.fences.entries()) {
+    if (floor.hidden.fences.has(index)) continue;
     const h = fenceHeight;
     if (ironMetal) {
-      for (const g of ironFenceParts(line, h, null)) add(ironMetal, g);
+      const base = floorAlong(floor, line, SITE_SIZES.fencePostSpacing);
+      for (const g of ironFenceParts(line, h, null)) addOnFloor(ironMetal, liftOnto(g, base.at));
       continue;
     }
     for (let i = 0; i + 1 < line.length; i++) {
@@ -532,13 +564,15 @@ export function buildSiteWalkMeshes(world: SiteWalkWorld, around: SiteSurroundin
 
   // Plain blocks.
   const block = bucket("#8b857a", { cast: true });
-  for (const ring of world.buildings) {
+  for (const [index, ring] of world.buildings.entries()) {
+    if (floor.hidden.buildings.has(index)) continue;
     const closed = closedRing(ring);
     for (let i = 0; i + 1 < closed.length; i++) add(block, run(closed[i]!, closed[i + 1]!, 0, SITE_SIZES.buildingHeight, 0.12));
     add(block, flat(ring, SITE_SIZES.buildingHeight));
   }
   const crate = bucket("#a8a49a", { cast: true });
-  for (const rect of world.boxes) {
+  for (const [index, rect] of world.boxes.entries()) {
+    if (floor.hidden.boxes.has(index)) continue;
     const g = new BoxGeometry(rect.w, SITE_SIZES.boxHeight, rect.d);
     g.rotateY(-rect.turn);
     g.translate(rect.centre.x, SITE_SIZES.boxHeight / 2, rect.centre.z);
@@ -726,6 +760,24 @@ export function buildSiteWalkMeshes(world: SiteWalkWorld, around: SiteSurroundin
   const root = new Group();
   root.name = "SiteWalk_Site";
   const owned: BufferGeometry[] = [];
+  // The lawn's own heights: everything on the ground is laid over them, split
+  // fine where the lawn rises so flat things follow it, not cut through it.
+  const risen = risenBounds(floor);
+  const groundAt = floor.groundAt;
+  if (risen) {
+    for (const b of buckets) {
+      b.geometries = b.geometries.map((g) => {
+        if (!onFloor.has(g)) return drape(g, groundAt, DRAPE_STEP, risen);
+        if (!g.index) return g;
+        const plain = g.toNonIndexed();
+        g.dispose();
+        return plain;
+      });
+    }
+    for (const list of [tentFabric, tentHard]) for (const g of list) liftOnto(g, groundAt);
+    for (const child of props.children) child.position.y += groundAt({ x: child.position.x, z: child.position.z });
+    if (bannerMesh) bannerMesh.position.y += groundAt({ x: bannerMesh.position.x, z: bannerMesh.position.z });
+  }
   for (const b of buckets) {
     if (!b.geometries.length) continue;
     const merged = mergeGeometries(b.geometries, false);

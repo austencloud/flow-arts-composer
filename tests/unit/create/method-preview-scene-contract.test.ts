@@ -17,6 +17,7 @@ const SCENE_FILES: Record<string, string> = {
   fuse: "FuseScene.svelte",
   tunnel: "TunnelScene.svelte",
   assemble: "AssembleScene.svelte",
+  loop: "LoopScene.svelte",
 };
 
 const INTERACTIVE = [

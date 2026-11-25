@@ -666,6 +666,14 @@
   // realization exists (the shared-element morph snapshots that moment).
   let wordHeaderVisible = $state(true);
   let headerDarkMode = $state(true);
+  /* On a short phone the hands switch shares the word's band instead of taking
+     a row of its own, and the animation gets that row's height. The band stays
+     for one hand, where it holds the switch alone. */
+  const handsInHead = $derived(
+    (appState?.shortPhone ?? false) &&
+      onhandschange !== undefined &&
+      pair !== null
+  );
   $effect(() => {
     const visibility = animationState.scope.visibility;
     const sync = () => {
@@ -1359,10 +1367,13 @@
     />
   {/if}
 
-  <div class="media-stage">
-    {#if onhandschange && pair}
+  <div class="media-stage" class:hands-in-head={handsInHead}>
+    {#if onhandschange && pair && !handsInHead}
       <div class="hands-row" data-focus-mode-chrome>
-        <ShapeMatrixHandSwitch value={solo ?? "both"} onchange={onhandschange} />
+        <ShapeMatrixHandSwitch
+          value={solo ?? "both"}
+          onchange={onhandschange}
+        />
       </div>
     {/if}
     <!-- The stage rectangle is the selected matrix tile's box, arrived. It
@@ -1383,8 +1394,9 @@
            PAIR: a Kinetic Alphabet letter names how two hands relate, and a
            pictograph draws both of them. One prop alone is neither, so the
            header band and the strip leave with the mode picker and the
-           canvas takes the height back. -->
-      {#if !solo}
+           canvas takes the height back. On a short phone the band stays,
+           holding the hands switch. -->
+      {#if !solo || handsInHead}
         <div
           class="hero-header"
           data-focus-mode-chrome
@@ -1396,7 +1408,7 @@
           <div class="hero-header-ghost" aria-hidden="true">
             <WordHeader word="A" visible={true} darkMode={headerDarkMode} />
           </div>
-          {#if headerSequence}
+          {#if headerSequence && (!solo || handsInHead)}
             <div class="hero-header-live">
               <WordHeader
                 word={headerSequence.word}
@@ -1412,6 +1424,14 @@
                 inversionPeriod={headerLoopDisplay?.inversionPeriod}
                 reflectionAxis={headerLoopDisplay?.reflectionAxis}
                 overlayComponents={headerLoopDisplay?.overlayComponents}
+              />
+            </div>
+          {/if}
+          {#if handsInHead && onhandschange}
+            <div class="hero-header-hands">
+              <ShapeMatrixHandSwitch
+                value={solo ?? "both"}
+                onchange={onhandschange}
               />
             </div>
           {/if}
@@ -1762,8 +1782,9 @@
       ),
       var(--theme-card-bg, #0a0f14);
   }
-  /* A solo has no header band; the transport still has its own row. */
-  .hero-stage.solo {
+  /* A solo has no header band, unless the hands switch is in it; the transport
+     still has its own row. */
+  :where(.media-stage:not(.hands-in-head)) .hero-stage.solo {
     grid-template-rows: minmax(0, 1fr) auto;
   }
 
@@ -1892,6 +1913,61 @@
   .hero-header-ghost {
     visibility: hidden;
     pointer-events: none;
+  }
+
+  /* The hands switch at the band's end, on a short phone. The badge, the word
+     and the LOOP mark keep what is left of the band; the header sizes them to
+     its own width, so they are put back to the size they have across the whole
+     band, and the word shrinks only when it has to. For one hand they fade and
+     the band holds the switch alone. */
+  .hands-in-head {
+    --hands-band: 2.625rem;
+  }
+  .hands-in-head .hero-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: var(--hands-band);
+    column-gap: 0.25rem;
+    padding-inline-end: 0.375rem;
+    border-bottom: 1px solid transparent;
+    /* The first two are the focus mode's own fade, kept. */
+    transition:
+      opacity var(--transition-normal),
+      visibility var(--transition-normal),
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
+  }
+  .hands-in-head .hero-stage:not(.solo) .hero-header {
+    border-bottom-color: var(--theme-stroke, rgb(255 255 255 / 0.08));
+    background-color: var(--theme-panel-bg, rgb(15 15 20));
+  }
+  .hands-in-head .hero-header-live {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility var(--duration-fast) var(--ease-standard);
+  }
+  .hands-in-head .hero-stage.solo .hero-header-live {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .hero-header-hands {
+    grid-area: 1 / 2;
+  }
+  .hands-in-head .hero-header-live :global(.word-header) {
+    --badge-size: 1.25rem;
+    --badge-font: 0.75rem;
+    border-bottom: 0;
+    background: transparent;
+  }
+  .hands-in-head .hero-header-live :global(.word-header .word-text) {
+    font-size: min(1.25rem, calc(var(--word-room) / max(var(--word-em, 1), 1)));
+  }
+  /* 13px, the header's floor, up to the 20px it draws across the whole band.
+     Zoom, not scale: the header measures the mark to keep the word off it. */
+  .hands-in-head .hero-header-live :global(.loop-icon-strip) {
+    zoom: 1.5;
+  }
+  .hands-in-head .stage-rotate {
+    inset-block-start: calc(var(--hands-band) + 0.375rem);
   }
 
   .player-layer {
@@ -2127,14 +2203,14 @@
   }
 
   /* A compact host at least as wide as it is tall is height-bound, not
-     width-bound: the unfolded Z Fold either way up, or a short landscape
-     phone. Stacked, the modes, carousel, dock and actions left the animation
+     width-bound: the unfolded Z Fold either way up, or a phone on its side,
+     however narrow the app's rail leaves it. Stacked, the modes, carousel, dock and actions left the animation
      a letterbox (146 px tall on the Fold's inner screen, 23 px in landscape).
      Here everything but the animation moves into a side column: the modes at
      the top beside the word, the dock and the actions at the foot. The hero
      and its carousel keep the other column's whole height. Desktop panes
      never get here: only compact hosts answer to this container name. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
+  @container shape-matrix-drill-compact ((min-width: 42rem) and (min-aspect-ratio: 5 / 6)) or ((min-width: 28rem) and (max-height: 26rem)) {
     .drill {
       grid-template-columns: clamp(15rem, 33%, 18rem) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr) auto auto;
@@ -2206,30 +2282,73 @@
     }
   }
 
-  /* A short landscape phone has no height for a stacked side column. The
-     modes keep it; the actions go under them and the dock under the hero. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 26rem) {
+  /* A phone on its side. The animation gets the whole height: the dock and
+     the actions are one slim row each at the column's foot, and the modes
+     stretch over what is left above them. The phone tier waives the 44px
+     floor for this dense editor. */
+  @container shape-matrix-drill-compact (min-width: 28rem) and (max-height: 26rem) {
     .drill {
-      grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr) auto;
-      grid-template-areas:
-        "modes media"
-        "action controls";
+      grid-template-columns: clamp(13rem, 42.5%, 18rem) minmax(0, 1fr);
+      column-gap: 0.5rem;
+      row-gap: 0.35rem;
     }
 
     .mode-picker {
-      align-self: center;
-      grid-template-rows: auto auto;
+      gap: 0.35rem;
+    }
+
+    .strip-zone {
+      display: none;
     }
 
     .select-action {
       display: flex;
+      gap: 0.35rem;
+      min-height: 2.125rem;
+      /* No second row here: it would take the modes' height. */
+      --action-row-two-rows: 0;
     }
     .select-action :global(.panel-btn) {
+      min-height: 2.125rem;
+      padding-block: 0.3rem;
       padding-inline: 0.5rem;
     }
     .select-action :global(.panel-btn i) {
       display: none;
+    }
+    /* The last rung here: the longest words (Russian) get smaller type. */
+    .select-action:global([data-fit-rung="4"]) {
+      gap: 0.25rem;
+    }
+    .select-action:global([data-fit-rung="4"]) :global(.panel-btn) {
+      padding-inline: 0.2rem;
+      font-size: var(--font-size-compact, 0.75rem);
+    }
+
+    /* One row of tabs, whichever form the dock picked for its width: names
+       that only fit on two rows give way to their pictures. */
+    .drill .animation-controls :global(.mobile-export) {
+      border-top: none;
+    }
+    .drill .animation-controls :global(.dock .cat-bar) {
+      flex-wrap: nowrap;
+      padding: 0;
+      background: none;
+      backdrop-filter: none;
+      border-top: none;
+    }
+    .drill .animation-controls :global(.dock .cat-scroll) {
+      display: flex;
+      gap: 0.35rem;
+    }
+    .drill .animation-controls :global(.dock .row-break),
+    .drill .animation-controls :global(.dock .two-rows .cat-label) {
+      display: none;
+    }
+    .drill .animation-controls :global(.dock .dock-btn.cat) {
+      flex: 1 1 0;
+      min-height: 2.5rem;
+      padding: 0.125rem;
     }
   }
 </style>

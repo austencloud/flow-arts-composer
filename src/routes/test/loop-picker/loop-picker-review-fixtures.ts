@@ -32,8 +32,13 @@ export const LOOP_REVIEW_OPTIONS = {
   ),
   mirrored: option(
     LOOPType.MIRRORED,
-    "Mirrored",
-    "Mirrors placements vertically"
+    "Reflected",
+    "Vertical line: east and west trade places"
+  ),
+  flipped: option(
+    LOOPType.FLIPPED,
+    "Reflected",
+    "Horizontal line: north and south trade places"
   ),
 } satisfies Record<string, LOOPOption>;
 

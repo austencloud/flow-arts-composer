@@ -32,10 +32,18 @@ const IRON = {
  * A black iron fence or railing along a polyline: square posts every 8 ft, a top
  * rail, a second rail a hand below it, a bottom rail, and flat-topped pickets
  * about 4.5 in apart. With `stars`, a star of thin bars hangs in the middle of
- * every bay of that spacing. Returns one geometry, or none for a degenerate line.
+ * every bay of that spacing. With `endPost`, a heavier post of that width
+ * stands at each end and wherever two stretches meet, as a gate's do. Returns
+ * one geometry, or none for a degenerate line. It stands on flat ground; the
+ * caller lifts it onto the floor.
  */
-export function ironFenceParts(line: readonly Pt[], height: number, stars: StarSpec | null): BufferGeometry[] {
+export function ironFenceParts(line: readonly Pt[], height: number, stars: StarSpec | null, endPost: number | null = null): BufferGeometry[] {
   const b = new MeshBuilder();
+  if (endPost)
+    for (const p of line) {
+      b.obox(p.x, p.z, 1, 0, endPost / 2, endPost / 2, 0, height + 0.05);
+      b.obox(p.x, p.z, 1, 0, endPost / 2 + 0.02, endPost / 2 + 0.02, height + 0.05, height + 0.1);
+    }
   const topRail = height - 0.07;
   const rails = [topRail, topRail - IRON.handBelow, 0.14];
   let travelled = 0;

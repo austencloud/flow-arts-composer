@@ -64,7 +64,9 @@ export interface Stance {
   /** Where it left, world XZ. */
   release: Vec3;
   /**
-   * Ground the ankle covered while it was supposed to be pinned, in metres.
+   * Ground the contact point covered while it was supposed to be pinned, in
+   * metres: per frame, the smaller move of heel (ankle) and ball, so a foot
+   * rolling heel to toe is not charged for the roll.
    *
    * This is the single number that separates walking from gliding. A foot
    * bearing weight is a fixed point of the world; every centimetre here is a

@@ -67,6 +67,7 @@ import {
   avatar,
   avatarAssetsPresent,
   driveRig,
+  editedScene3d,
   loadPackClips,
   loadRig,
   REFERENCE_RIG,
@@ -109,9 +110,11 @@ async function authoredBobCm(key: string): Promise<number> {
 
 /**
  * Flow Fest walks at 1.7 and sprints at 3.91. These sit either side of the
- * band the animator derives from the clips' own measured speeds: the walk clip
- * stops being honest at 1.5174 x 1.15 = 1.745 and the run clip starts being
- * honest at 3.0987 x 0.80 = 2.479.
+ * band the animator derives from the clips' own speeds: the walk clip stops
+ * being honest at 1.671 x 1.15 = 1.922 and the run clip starts being honest at
+ * 4.409 x 0.80 = 3.527. Those speeds are one loop of each clip's own pelvis
+ * travel carried onto the rig's legs; they used to be read off the feet, which
+ * a run's flight phase reads short (3.0987 for the run).
  */
 const WALK_SPEED = 1.4;
 const RUN_SPEED = 3.9;
@@ -246,12 +249,17 @@ describe.skipIf(!present)("locomotion motion quality", () => {
 
       const enter = tiers.findIndex((value) => value > 0.01);
       const exit = tiers.findIndex((value) => value > 0.99);
-      // Derived band is 1.745 to 2.479; the commanded speed leads the blended
-      // speed the animator actually sees, so the measured crossing trails it.
-      expect(speeds[enter]!).toBeGreaterThan(1.4);
-      expect(speeds[enter]!).toBeLessThan(2.0);
-      expect(speeds[exit]!).toBeGreaterThan(2.2);
-      expect(speeds[exit]!).toBeLessThan(2.9);
+      // Derived band is 1.922 to 3.527 (it was 1.745 to 2.479 while the run's
+      // pace was read off its feet). The tier eases in and out of the band, so
+      // the crossing starts at its floor and is all but done short of its top.
+      // The installed package from before the change still reads the old band.
+      const [enterLow, enterHigh, exitLow, exitHigh] = editedScene3d
+        ? [1.7, 2.3, 2.9, 3.6]
+        : [1.4, 2.0, 2.2, 2.9];
+      expect(speeds[enter]!).toBeGreaterThan(enterLow);
+      expect(speeds[enter]!).toBeLessThan(enterHigh);
+      expect(speeds[exit]!).toBeGreaterThan(exitLow);
+      expect(speeds[exit]!).toBeLessThan(exitHigh);
     }, 120_000);
 
     it("exchanges the two tiers without jolting a joint", async () => {

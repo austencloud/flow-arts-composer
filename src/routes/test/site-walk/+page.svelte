@@ -13,11 +13,7 @@
    */
   import { onDestroy, onMount } from "svelte";
   import { Canvas } from "@threlte/core";
-  import { EffectComposer } from "threlte-postprocessing";
-  import { ToneMappingEffect } from "threlte-postprocessing/effects";
-  import { ToneMappingMode } from "postprocessing";
-  import { AgXToneMapping, PCFSoftShadowMap, SRGBColorSpace, TextureLoader, WebGLRenderer, type Texture } from "three";
-  import BloomEffect from "#lib/shared/3d/effects/post-processing/BloomEffect.svelte";
+  import { NoToneMapping, PCFSoftShadowMap, SRGBColorSpace, TextureLoader, WebGLRenderer, type Texture } from "three";
   import ScenePreparationSurface from "#lib/shared/3d/scene-features/components/ScenePreparationSurface.svelte";
   import { createLoadingSession, type LoadingSession } from "#lib/shared/loading/loading-session.svelte.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -26,20 +22,21 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { JamAudio } from "../flow-fest-jam/flow-fest-jam-audio";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import { jamLightAt } from "../flow-fest-jam/flow-fest-jam-light";
   import VirtualJoystick from "#lib/shared/components/touch/VirtualJoystick.svelte";
   import SiteWalkScene, { type SiteView } from "./SiteWalkScene.svelte";
+  import { LOOKS } from "./look/site-walk-look";
   import SiteWalkKeys from "./SiteWalkKeys.svelte";
   import { placeGuests, readSitePlanText, type SiteWalkWorld, type Stand } from "./site-walk-plan";
   import { forgetAround, forgetPlan, recallAround, recallBanner, recallPlan, rememberAround, rememberBanner, rememberPlan } from "./site-walk-storage";
   import { readSurroundingsText, type SiteSurroundings } from "./site-walk-around";
+  import { guestMayStand, siteFloor } from "./site-walk-floor";
 
   const GUEST_SEED = 20260;
 
   let world = $state.raw<SiteWalkWorld | null>(null);
   let error = $state<string | null>(null);
   let light = $state<"dusk" | "night">("dusk");
-  let guestCount = $state<"0" | "40" | "80" | "150">("80");
+  let guestCount = $state<"0" | "40" | "80" | "150" | "200">("80");
   let stand = $state<{ spot: Stand; token: number } | null>(null);
   let bannerTexture = $state.raw<Texture | null>(null);
   let view = $state<SiteView>("behind");
@@ -70,12 +67,11 @@
 
   // ---------------------------------------------------------------- loading
 
-  const dusk = jamLightAt(2);
-  const duskSky = {
-    top: dusk.skyTop,
-    mid: dusk.skyMid,
-    horizon: dusk.skyBottom,
-  };
+  /** The curtain wears the sky it opens on. */
+  const curtainSky = $derived.by(() => {
+    const { sky } = LOOKS[light];
+    return { top: sky.zenith[0], mid: sky.midAnti[0], horizon: sky.horizonSun[0] };
+  });
   let session = $state<LoadingSession | null>(null);
   type Reveal = "idle" | "loading" | "leaving" | "gone";
   let reveal = $state<Reveal>("idle");
@@ -186,11 +182,18 @@
     await rememberBanner(file);
   }
 
+  /** How high the floor is everywhere: raised areas and the lawn's heights from the surroundings file. */
+  const floor = $derived(world ? siteFloor(world, around) : null);
+  /** What the surroundings name that the plan does not have, and anything else they could not stand up. */
+  const aroundNotDrawn = $derived([...(around?.notDrawn ?? []), ...(floor?.notDrawn ?? [])]);
+
   const guests = $derived(
-    world && world.guestArea && guestCount !== "0"
+    world && floor && world.guestArea && guestCount !== "0"
       ? placeGuests(world.guestArea, Number(guestCount), {
           seed: GUEST_SEED,
           facing: world.stands.stage,
+          keep: (p) => guestMayStand(floor, p),
+          floor: (p) => floor.heightAt(p),
         })
       : { figures: [], capped: false },
   );
@@ -254,7 +257,7 @@
         autoRender={false}
         dpr={1}
         shadows={PCFSoftShadowMap}
-        toneMapping={AgXToneMapping}
+        toneMapping={NoToneMapping}
         createRenderer={(canvas) =>
           new WebGLRenderer({
             canvas,
@@ -263,28 +266,25 @@
             powerPreference: "high-performance",
           })}
       >
-        <EffectComposer multisampling={4}>
-          <SiteWalkScene
-            {world}
-            {light}
-            figures={guests.figures.filter((f) => !world?.stands.guests || Math.hypot(f.x - world.stands.guests.x, f.z - world.stands.guests.z) > 1.1)}
-            {stand}
-            {bannerTexture}
-            {around}
-            fire={fire === "on" && !!world.stage}
-            {audio}
-            {view}
-            onViewChange={(next) => (view = next)}
-            {moveAxis}
-            onWalking={(on) => (walking = on)}
-            {onReady}
-            onError={(message) => {
-              error = message;
-            }}
-          />
-          <BloomEffect intensity={0.75} luminanceThreshold={0.82} luminanceSmoothing={0.25} radius={0.6} levels={6} />
-          <ToneMappingEffect mode={ToneMappingMode.AGX} />
-        </EffectComposer>
+        <SiteWalkScene
+          {world}
+          {light}
+          figures={guests.figures.filter((f) => !world?.stands.guests || Math.hypot(f.x - world.stands.guests.x, f.z - world.stands.guests.z) > 1.1)}
+          {stand}
+          {bannerTexture}
+          {around}
+          {floor}
+          fire={fire === "on" && !!world.stage}
+          {audio}
+          {view}
+          onViewChange={(next) => (view = next)}
+          {moveAxis}
+          onWalking={(on) => (walking = on)}
+          {onReady}
+          onError={(message) => {
+            error = message;
+          }}
+        />
       </Canvas>
     {/key}
 
@@ -376,6 +376,7 @@
               { value: "40", label: "40" },
               { value: "80", label: "80" },
               { value: "150", label: "150" },
+              { value: "200", label: "200" },
             ]}
           />
         </div>
@@ -504,8 +505,8 @@
       {/if}
       {#if aroundError}
         <p>{aroundError}</p>
-      {:else if around && around.notDrawn.length > 0}
-        <p>Surroundings not drawn: {around.notDrawn.join(", ")}.</p>
+      {:else if aroundNotDrawn.length > 0}
+        <p>Surroundings not drawn: {aroundNotDrawn.join(", ")}.</p>
       {/if}
       {#if guests.capped}
         <p>The guest area holds fewer people than asked for, so the crowd is smaller.</p>
@@ -518,7 +519,7 @@
           statusText="Setting up the site"
           {session}
           labels={["Setting up the site"]}
-          sky={duskSky}
+          sky={curtainSky}
           title={world.title}
           leaving={reveal === "leaving"}
           onLeft={() => (reveal = "gone")}
@@ -713,7 +714,8 @@
   .curtain {
     position: absolute;
     inset: 0;
-    z-index: 30;
+    /* Above the thumbstick, which otherwise shows through the loading picture. */
+    z-index: 110;
     overflow: hidden;
   }
 

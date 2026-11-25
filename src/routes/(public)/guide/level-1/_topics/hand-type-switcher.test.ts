@@ -9,30 +9,13 @@ import {
   pageCombinations,
   runFrame,
   slugOfHref,
-  switcherEntries,
 } from "./hand-type-switcher";
 
-describe("switcherEntries", () => {
-  it("lists the six combinations in record order, each on its own screen", () => {
-    expect(
-      switcherEntries().map((e) => [e.number, e.combination.id, e.href])
-    ).toEqual([
-      [1, "dual-shift", "/guide/level-1/hm-type1"],
-      [2, "shift", "/guide/level-1/hm-type2"],
-      [3, "cross-shift", "/guide/level-1/hm-type34"],
-      [4, "dash", "/guide/level-1/hm-type56"],
-      [5, "dual-dash", "/guide/level-1/hm-type56?screen=2"],
-      [6, "static", "/guide/level-1/hm-type56?screen=3"],
-    ]);
-  });
-
-  it("links to Guide pages that exist, through the locale prefix", () => {
+describe("the run", () => {
+  it("is made of Guide pages that exist", () => {
     for (const slug of HAND_TYPE_SLUGS) {
       expect(GUIDE_BODY_PAGES.some((p) => p.id === slug)).toBe(true);
     }
-    expect(switcherEntries((h) => `/de${h}`)[4]!.href).toBe(
-      "/de/guide/level-1/hm-type56?screen=2"
-    );
   });
 });
 
@@ -76,7 +59,6 @@ describe("colours", () => {
     expect(inkOn("#EB7D00", false)).toBe("#d26b00");
     expect(inkOn("#6F2DA8", false)).toBe("#6F2DA8");
   });
-
 });
 
 describe("Back and Next across the run", () => {
@@ -85,8 +67,14 @@ describe("Back and Next across the run", () => {
   it("names neighbouring pages of the run by the combination they open on", () => {
     const frame = runFrame(
       {
-        prevPage: { href: "/fr/guide/level-1/hm-type2", title: "Type 2: Shifts" },
-        nextPage: { href: "/fr/guide/level-1/hm-type56", title: "Type 4, 5, 6" },
+        prevPage: {
+          href: "/fr/guide/level-1/hm-type2",
+          title: "Type 2: Shifts",
+        },
+        nextPage: {
+          href: "/fr/guide/level-1/hm-type56",
+          title: "Type 4, 5, 6",
+        },
         hubHref: "/fr/guide",
       },
       name

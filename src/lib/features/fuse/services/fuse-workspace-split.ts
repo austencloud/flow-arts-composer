@@ -279,6 +279,142 @@ export function resolveFuseSideCardGrid(
       };
 }
 
+export interface FuseEditGrid {
+  stepColumns: number;
+  contextPlacement: FuseContextPlacement;
+  cellSize: number;
+}
+
+/** A wider row only wins when its cells are clearly bigger than rows of four. */
+const EDIT_WIDER_ROW_GAIN = 1.06;
+/** Start leaves its own row only on a stage too short to hold one. */
+const EDIT_CONTEXT_COLUMN_GAIN = 1.4;
+
+function editStepColumnCandidates(stepCount: number): number[] {
+  if (stepCount <= 4) return [Math.max(1, stepCount)];
+  if (stepCount % 4 === 0) return stepCount >= 16 ? [4, 8] : [4];
+  const whole = [4, 3, 5, 6, 7, 8].filter(
+    (columns) => stepCount % columns === 0 && columns <= stepCount
+  );
+  return whole.length > 0 ? whole : [4];
+}
+
+/**
+ * Fits the Edit path screen's grid: Start on a row of its own above rows of
+ * four steps, the way a Choreo Card reads. Long paths go to eight across when
+ * that makes the steps bigger, and a path that four does not divide uses a row
+ * length that does.
+ */
+export function resolveFuseEditGrid(
+  stageWidth: number,
+  stageHeight: number,
+  stepCount: number,
+  gap = FUSE_LIVE_GRID_GAP
+): FuseEditGrid {
+  const candidates = editStepColumnCandidates(stepCount);
+  const fit = (stepColumns: number, contextPlacement: FuseContextPlacement) => {
+    const rows = Math.max(1, Math.ceil(stepCount / stepColumns));
+    return {
+      stepColumns,
+      contextPlacement,
+      cellSize:
+        contextPlacement === "row"
+          ? getFittedFuseCellSize(
+              stageWidth,
+              stageHeight,
+              stepColumns,
+              rows + 1,
+              gap
+            )
+          : getFittedFuseCellSize(
+              stageWidth,
+              stageHeight,
+              stepColumns + 1,
+              Math.max(2, rows),
+              gap
+            ),
+    };
+  };
+  const pick = (contextPlacement: FuseContextPlacement) =>
+    candidates
+      .map((columns) => fit(columns, contextPlacement))
+      .reduce((best, next) =>
+        next.cellSize > best.cellSize * EDIT_WIDER_ROW_GAIN ? next : best
+      );
+
+  const column = pick("column");
+  // One step across leaves no second cell for the mandala beside Start.
+  if ((candidates[0] ?? 1) < 2) return column;
+  const row = pick("row");
+  return column.cellSize > row.cellSize * EDIT_CONTEXT_COLUMN_GAIN
+    ? column
+    : row;
+}
+
+/**
+ * How the edit screen lays out its path, its change tiles and its replace
+ * buttons.
+ *
+ * `phone` stacks them, with the tiles in two rows of four. `stacked` is the
+ * same stack where all eight tiles fit across (a tablet held upright, an open
+ * Fold). `beside` puts the tiles in a column next to the path, which only pays
+ * where the screen is clearly wider than tall.
+ */
+export type FuseEditArrangement = "phone" | "stacked" | "beside";
+
+const EDIT_BESIDE_MIN_WIDTH = 600;
+const EDIT_BESIDE_MIN_ASPECT = 1.25;
+const EDIT_STACKED_MIN_WIDTH = 660;
+
+export function resolveFuseEditArrangement(
+  width: number,
+  height: number
+): FuseEditArrangement {
+  if (
+    width >= EDIT_BESIDE_MIN_WIDTH &&
+    width >= height * EDIT_BESIDE_MIN_ASPECT
+  ) {
+    return "beside";
+  }
+  return width >= EDIT_STACKED_MIN_WIDTH ? "stacked" : "phone";
+}
+
+/**
+ * How the Build path screen lays out its grid and its controls.
+ *
+ * `stacked` puts the controls under the grid: a phone or tablet held upright,
+ * or a narrow side panel. `beside` puts them next to it. `roomy` is `beside`
+ * with the height to keep the prompt, the orientation and the message on
+ * screen together.
+ */
+export type FuseBuilderArrangement = "stacked" | "beside" | "roomy";
+
+const BUILDER_BESIDE_MIN_ASPECT = 1.25;
+const BUILDER_ROOMY_MIN_WIDTH = 900;
+const BUILDER_ROOMY_MIN_HEIGHT = 520;
+
+export function resolveFuseBuilderArrangement(
+  width: number,
+  height: number
+): FuseBuilderArrangement {
+  if (width < height * BUILDER_BESIDE_MIN_ASPECT) return "stacked";
+  return width >= BUILDER_ROOMY_MIN_WIDTH && height >= BUILDER_ROOMY_MIN_HEIGHT
+    ? "roomy"
+    : "beside";
+}
+
+/**
+ * Whether the tile column shows Transform and Order as two headed sections:
+ * three tile rows across three columns, or four across two. A shorter column
+ * takes all eight tiles as one grid.
+ */
+export function fuseEditColumnHoldsSections(
+  width: number,
+  height: number
+): boolean {
+  return height >= (width >= 300 ? 298 : 384);
+}
+
 export interface FuseRecipeColumnFitInput {
   /** Recipe column's narrowest usable width. */
   recipeMinWidth: number;

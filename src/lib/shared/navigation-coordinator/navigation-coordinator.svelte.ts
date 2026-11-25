@@ -465,6 +465,7 @@ const TAB_ORDERS: Record<string, string[]> = {
     "generate",
     "shape-engine",
     "fuse",
+    "loop",
     "spell",
     "editor",
     "export",

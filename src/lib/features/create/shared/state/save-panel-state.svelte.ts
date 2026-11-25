@@ -17,6 +17,7 @@ import type { HallOfShameSubmitter } from "#lib/features/hall-of-shame/services/
 import type { LibrarySaveService } from "#lib/features/library/services/library-save-service.js";
 import type { SaveProgress } from "#lib/shared/library/domain/library-contract-types.js";
 import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { CreateModuleContext } from "../context/create-module-context";
 import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
@@ -53,6 +54,11 @@ export interface SavePanelDeps {
   contentModerator: ContentModerator | null;
   hallOfShameSubmitter: HallOfShameSubmitter | null;
   getDefaultCardPresentation: () => CardPresentation;
+  /**
+   * A tab that keeps its own sequence (the LOOP tab) saves that one, and the
+   * workspace's sequence and its drafts are left alone.
+   */
+  getSequence?: () => SequenceData | null;
 }
 
 export interface SavePanelProps {
@@ -71,6 +77,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
     contentModerator,
     hallOfShameSubmitter,
     getDefaultCardPresentation,
+    getSequence,
   } = deps;
   const { CreateModuleState } = ctx;
   const logger = createComponentLogger("SaveToLibraryPanel");
@@ -145,7 +152,9 @@ export function createSavePanelState(deps: SavePanelDeps) {
   const activeSequenceState = $derived.by(() =>
     CreateModuleState.getActiveTabSequenceState()
   );
-  const sequence = $derived.by(() => activeSequenceState.currentSequence);
+  const sequence = $derived.by(() =>
+    getSequence ? getSequence() : activeSequenceState.currentSequence
+  );
   const motionProfile = $derived.by(() =>
     sequence ? getSequenceMotionProfile(sequence) : { kind: "empty" as const }
   );
@@ -327,6 +336,28 @@ export function createSavePanelState(deps: SavePanelDeps) {
   // Action handlers
   // ---------------------------------------------------------------------------
 
+  /** The workspace's draft is finished once what it held has been saved. */
+  async function closeWorkspaceDraft(savedId: string): Promise<void> {
+    if (getSequence) return;
+    const sessionId =
+      ctx.sessionManager?.getSessionId() ?? ctx.autosaver?.getSessionId();
+    try {
+      await ctx.autosaver?.deleteLocalDraft(sessionId);
+    } catch (draftError) {
+      logger.warn("Could not remove the completed local draft:", draftError);
+    }
+    if (ctx.sessionManager) {
+      void ctx.sessionManager
+        .markAsSaved(savedId)
+        .catch((sessionError) =>
+          logger.warn(
+            "Could not complete the cloud session lifecycle:",
+            sessionError
+          )
+        );
+    }
+  }
+
   async function handleSave() {
     const props = _propsGetter();
     if (!saveName || !sequence || isMixed) return;
@@ -365,26 +396,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
         });
         saveStep = 4;
 
-        const sessionId =
-          ctx.sessionManager?.getSessionId() ?? ctx.autosaver?.getSessionId();
-        try {
-          await ctx.autosaver?.deleteLocalDraft(sessionId);
-        } catch (draftError) {
-          logger.warn(
-            "Could not remove the completed local draft:",
-            draftError
-          );
-        }
-        if (ctx.sessionManager) {
-          void ctx.sessionManager
-            .markAsSaved(result.soloPropId)
-            .catch((sessionError) =>
-              logger.warn(
-                "Could not complete the cloud session lifecycle:",
-                sessionError
-              )
-            );
-        }
+        await closeWorkspaceDraft(result.soloPropId);
 
         props.onSaveComplete?.(result.soloPropId);
         showToast({
@@ -468,24 +480,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
         }
       }
 
-      const sessionId =
-        ctx.sessionManager?.getSessionId() ?? ctx.autosaver?.getSessionId();
-      try {
-        await ctx.autosaver?.deleteLocalDraft(sessionId);
-      } catch (draftError) {
-        logger.warn("Could not remove the completed local draft:", draftError);
-      }
-
-      if (ctx.sessionManager) {
-        void ctx.sessionManager
-          .markAsSaved(result.sequenceId)
-          .catch((sessionError) => {
-            logger.warn(
-              "Could not complete the cloud session lifecycle:",
-              sessionError
-            );
-          });
-      }
+      await closeWorkspaceDraft(result.sequenceId);
 
       props.onSaveComplete?.(result.sequenceId);
 

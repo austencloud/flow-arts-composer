@@ -19,7 +19,8 @@
   } from "three";
 
   interface Props {
-    points: readonly { x: number; z: number }[];
+    /** Where each one stands; `y` is the floor's height there, 0 when left out. */
+    points: readonly { x: number; y?: number; z: number }[];
     /** Radius of the blob in metres. */
     radius?: number;
     /** 0 to 1: how dark the centre is. */
@@ -73,7 +74,7 @@
     const m = mesh;
     const r = (props.radius ?? 0.5) * 2;
     for (let i = 0; i < points.length; i++) {
-      dummy.position.set(points[i]!.x, 0.035, points[i]!.z);
+      dummy.position.set(points[i]!.x, (points[i]!.y ?? 0) + 0.035, points[i]!.z);
       dummy.scale.set(r, 1, r);
       dummy.updateMatrix();
       m.setMatrixAt(i, dummy.matrix);

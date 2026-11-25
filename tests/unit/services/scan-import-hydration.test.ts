@@ -202,8 +202,11 @@ describe("scan-import save/read round-trip (decoded blob → library copy → vi
     // This test pays the one-time cost of transforming the mapper's transitive
     // firebase dep graph (~1.3s alone). Under a loaded parallel full-suite run
     // that overruns the 5s default and fails a green build, so give the import
-    // headroom. Later tests reuse the cached module and stay fast.
-  }, 20_000);
+    // headroom. Later tests reuse the cached module and stay fast. 20 s was
+    // still short in a ~600-file test:changed run (2026-11-24: four runs in a
+    // row timed out here and nowhere else, on a branch touching
+    // @tka/shape-domain).
+  }, 60_000);
 
   it("collection member mapping converts birthday Timestamps to Dates", async () => {
     // The card renderer calls birthday.getFullYear() for the footer date; a

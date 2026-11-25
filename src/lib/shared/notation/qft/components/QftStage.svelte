@@ -3,7 +3,12 @@
     QftIncrement,
     QftKnobs,
   } from "#lib/shared/notation/qft/qft-model.js";
-  import type { QftTrajectory as QftHandTrajectory } from "#lib/shared/notation/qft/qft-trajectory.js";
+  import {
+    type QftTrajectory as QftHandTrajectory,
+    traceTrajectory,
+    trajectoryPosesAt,
+    type QftTrajectory,
+  } from "@tka/shape-domain";
 
   /** Which prop a figure is, and therefore what colour it wears. */
   export type QftTone = "accent" | "blue" | "red";
@@ -32,7 +37,12 @@
    *
    * The stage owns the picture as a whole — the viewBox, how far the drawing
    * reaches, and the body compass every hand is read against. Each hand's own
-   * marks (path, trail, tether, dart, prop compass) are a QftFigure.
+   * notation marks (path, sector, dart, prop compass) are a QftFigure.
+   *
+   * The poi itself, its trail and the frame-by-frame drawing are the app's
+   * shared animation canvas: the same poi sprite and the same trail every
+   * other screen uses. QfT only feeds it poses (qft-canvas-poses) and lays its
+   * notation over it in the same coordinates.
    */
   import {
     pendulumPosesAt,
@@ -43,15 +53,24 @@
     PROP_LENGTH,
   } from "#lib/shared/notation/qft/qft-model.js";
   import {
-    traceTrajectory,
-    trajectoryPosesAt,
-    type QftTrajectory,
-  } from "#lib/shared/notation/qft/qft-trajectory.js";
-  import {
     ALL_LAYERS,
     type QftLayers,
   } from "#lib/shared/notation/qft/qft-layers.js";
   import QftFigure from "./QftFigure.svelte";
+  import { onMount } from "svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import {
+    setCellWide,
+    type TipEffectMap,
+  } from "#lib/shared/animation-engine/services/tip-effect-resolver.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import {
+    CANVAS_VIEWBOX,
+    QFT_UNIT_IN_VIEWBOX,
+    qftPropState,
+  } from "#lib/shared/notation/qft/qft-canvas-poses.js";
 
   interface Props {
     /** Single-hand form: the guide and the instrument both use this. */
@@ -67,6 +86,12 @@
     hands?: QftHand[];
     /** Continuous position in the eight-step cycle. */
     cursor: number;
+    /**
+     * Each hand's own place in the cycle, when its swing sets its speed. Kept
+     * apart from `hands` so a list that changes every frame does not read as a
+     * new move.
+     */
+    cursors?: number[];
     /**
      * A pendulum swings back along its own arc, which the three knobs cannot
      * express. Drawing it from the knobs sends the head around a full circle
@@ -120,6 +145,7 @@
     increments,
     hands,
     cursor,
+    cursors,
     pendulum = false,
     layers = ALL_LAYERS,
     extent = 270,
@@ -158,9 +184,11 @@
   const HOME_BASE = [1, 2, 3, 4, 5, 6, 7, 8];
   const RING = PROP_LENGTH * UNIT;
 
-  const step = $derived(Math.floor(cursor) % 8);
+  const cursorAt = (index: number) => cursors?.[index] ?? cursor;
+  const rowAt = (index: number) =>
+    figures[index]?.increments[Math.floor(cursorAt(index)) % 8];
   /** The body compass reads against the first hand; blue, in a duet. */
-  const row = $derived(figures[0]?.increments[step]);
+  const row = $derived(rowAt(0));
 
   const labelPoint = (position: number) => {
     const p = pointAt(position, PROP_LENGTH * 1.28);
@@ -251,8 +279,8 @@
    */
   const departures = $derived.by(() => {
     const map = new Map<number, QftTone[]>();
-    for (const figure of figures) {
-      const at = figure.increments[step]?.handDepart;
+    for (const [index, figure] of figures.entries()) {
+      const at = rowAt(index)?.handDepart;
       if (at === undefined) continue;
       const tone = figure.tone ?? "accent";
       map.set(at, [...(map.get(at) ?? []), tone]);
@@ -262,8 +290,8 @@
 
   const arrivals = $derived.by(() => {
     const out = new Set<number>();
-    for (const figure of figures) {
-      const at = figure.increments[step]?.handArrive;
+    for (const index of figures.keys()) {
+      const at = rowAt(index)?.handArrive;
       if (at !== undefined) out.add(at);
     }
     return out;
@@ -276,63 +304,195 @@
   const duetLabel = $derived(
     `QfT home base. ${figures
       .map(
-        (f) =>
-          `The ${f.tone ?? "accent"} hand is at position ${f.increments[step]?.handDepart ?? 8}, its prop at ${f.increments[step]?.propDepart ?? 8}`
+        (f, index) =>
+          `The ${f.tone ?? "accent"} hand is at position ${rowAt(index)?.handDepart ?? 8}, its prop at ${rowAt(index)?.propDepart ?? 8}`
       )
       .join(". ")}.`
   );
+
+  /*
+   * The canvas side. A solo hand is the blue poi, like the app's own single
+   * poi; in a duet the tones name the slot.
+   */
+  const slotOf = (figure: QftHand, index: number): "left" | "right" =>
+    figure.tone === "red" || (figure.tone === undefined && index === 1)
+      ? "right"
+      : "left";
+
+  function figurePosesAt(figure: QftHand, at: number) {
+    if (figure.trajectory) return trajectoryPosesAt(figure.trajectory, at);
+    if (figure.pendulum) return pendulumPosesAt(at);
+    return posesAt(figure.knobs ?? DEFAULT_KNOBS, at);
+  }
+
+  const canvasProps = $derived.by(() => {
+    let left: PropState | null = null;
+    let right: PropState | null = null;
+    figures.forEach((figure, index) => {
+      const state = qftPropState(figurePosesAt(figure, cursorAt(index)));
+      if (slotOf(figure, index) === "right") right = state;
+      else left = state;
+    });
+    return { left, right };
+  });
+
+  /** The notation colour follows the poi it describes. */
+  const figureTone = (figure: QftHand, index: number): QftTone =>
+    figure.tone && figure.tone !== "accent"
+      ? figure.tone
+      : slotOf(figure, index) === "right"
+        ? "red"
+        : "blue";
+
+  /* The app's own trail, from the reader's trail settings. A poi has one tip. */
+  const TRAIL_TIPS: TipEffectMap = setCellWide({}, "trails");
+  const trailSettings = $derived({
+    ...animationSettings.trail,
+    trackingMode: TrackingMode.RIGHT_END,
+  });
+
+  /*
+   * The canvas draws its trail from whatever poses arrive, so a jump would
+   * streak a chord across the flower. The trail starts over when the cursor
+   * runs backwards, leaps forward, or the move itself changes.
+   */
+  let trailResetKey = $state(0);
+
+  /* The canvas needs a browser; the notation still renders on the server. */
+  let mounted = $state(false);
+  onMount(() => {
+    mounted = true;
+  });
+  let lastCursor: number | null = null;
+  let lastShape: unknown = null;
+  $effect.pre(() => {
+    const at = cursor;
+    const shape = figures;
+    if (lastCursor !== null) {
+      /* Shortest way round the eight-step loop, so 7.98 to 0.02 runs forward. */
+      const delta = ((((at - lastCursor) % 8) + 12) % 8) - 4;
+      if (shape !== lastShape || delta < -1e-6 || delta > 0.75) {
+        trailResetKey += 1;
+      }
+    }
+    lastCursor = at;
+    lastShape = shape;
+  });
+
+  /*
+   * The canvas shows its whole 950 viewBox; the stage shows EXTENT around the
+   * centre. Growing the canvas past the stage's edge by this much and cropping
+   * it puts one QfT prop length at the same size in both layers.
+   */
+  const canvasZoom = $derived(
+    CANVAS_VIEWBOX / 2 / ((EXTENT / UNIT) * QFT_UNIT_IN_VIEWBOX)
+  );
 </script>
 
-<svg
+<div
   class="stage"
-  viewBox={`${-EXTENT} ${-EXTENT} ${EXTENT * 2} ${EXTENT * 2}`}
   role="img"
   aria-label={figures.length > 1 ? duetLabel : soloLabel}
 >
-  {#if layers.handCompass}
-    <circle class="ring" cx="0" cy="0" r={RING} />
-  {/if}
+  <div class="square">
+    <svg
+      class="notation under"
+      viewBox={`${-EXTENT} ${-EXTENT} ${EXTENT * 2} ${EXTENT * 2}`}
+      aria-hidden="true"
+    >
+      {#if layers.handCompass}
+        <circle class="ring" cx="0" cy="0" r={RING} />
+      {/if}
 
-  {#each figures as figure, i (i)}
-    <QftFigure
-      knobs={figure.knobs}
-      trajectory={figure.trajectory}
-      increments={figure.increments}
-      {cursor}
-      unit={UNIT}
-      {layers}
-      pendulum={figure.pendulum ?? false}
-      color={TONE_COLOR[figure.tone ?? "accent"]}
-      dartColor={figure.tone && figure.tone !== "accent"
-        ? TONE_COLOR[figure.tone]
-        : "var(--semantic-warning, #fbbf24)"}
-      uid={`${i}`}
-    />
-  {/each}
+      {#each figures as figure, i (i)}
+        <QftFigure
+          knobs={figure.knobs}
+          trajectory={figure.trajectory}
+          increments={figure.increments}
+          cursor={cursorAt(i)}
+          unit={UNIT}
+          {layers}
+          pendulum={figure.pendulum ?? false}
+          color={TONE_COLOR[figureTone(figure, i)]}
+          dartColor={figure.tone && figure.tone !== "accent"
+            ? TONE_COLOR[figure.tone]
+            : "var(--semantic-warning, #fbbf24)"}
+          uid={`${i}`}
+          part="under"
+        />
+      {/each}
+    </svg>
+    <div class="canvas-box" style={`--zoom: ${canvasZoom};`} aria-hidden="true">
+      {#if mounted}
+        <AnimatorCanvas
+          leftProp={canvasProps.left}
+          rightProp={canvasProps.right}
+          leftPropType="poi"
+          rightPropType="poi"
+          {trailSettings}
+          tipEffectMap={layers.trail ? TRAIL_TIPS : undefined}
+          {trailResetKey}
+          gridVisible={false}
+          backgroundAlpha={0}
+          fillContainer={true}
+          hideProgressBar={true}
+          hideHeader={true}
+          hideTkaGlyph={true}
+          hideStepNumbers={true}
+          hideElementalGlyph={true}
+          hidePathLines={true}
+          disableContextMenu={true}
+        />
+      {/if}
+    </div>
+    <svg
+      class="notation over"
+      viewBox={`${-EXTENT} ${-EXTENT} ${EXTENT * 2} ${EXTENT * 2}`}
+      aria-hidden="true"
+    >
+      {#each figures as figure, i (i)}
+        <QftFigure
+          knobs={figure.knobs}
+          trajectory={figure.trajectory}
+          increments={figure.increments}
+          cursor={cursorAt(i)}
+          unit={UNIT}
+          {layers}
+          pendulum={figure.pendulum ?? false}
+          color={TONE_COLOR[figureTone(figure, i)]}
+          dartColor={figure.tone && figure.tone !== "accent"
+            ? TONE_COLOR[figure.tone]
+            : "var(--semantic-warning, #fbbf24)"}
+          uid={`${i}`}
+          part="over"
+        />
+      {/each}
 
-  <!--
+      <!--
     The body compass, drawn over the figures so the lit number stays readable
     through a trail. It says where the HAND is, which is why it is stage-level:
     in a duet both hands are read against this one ring.
   -->
-  {#if layers.handCompass}
-    {#each HOME_BASE as position (position)}
-      {@const p = labelPoint(position)}
-      {@const departing = departures.get(position)}
-      <g
-        class="point"
-        class:origin={departing !== undefined}
-        class:arrival={arrivals.has(position)}
-        style={departing && departing[0] !== "accent"
-          ? `--origin-color: ${TONE_COLOR[departing[0]!]};`
-          : undefined}
-      >
-        <circle cx={p.x} cy={p.y} r="26" />
-        <text x={p.x} y={p.y} dy="9">{position}</text>
-      </g>
-    {/each}
-  {/if}
-</svg>
+      {#if layers.handCompass}
+        {#each HOME_BASE as position (position)}
+          {@const p = labelPoint(position)}
+          {@const departing = departures.get(position)}
+          <g
+            class="point"
+            class:origin={departing !== undefined}
+            class:arrival={arrivals.has(position)}
+            style={departing && departing[0] !== "accent"
+              ? `--origin-color: ${TONE_COLOR[departing[0]!]};`
+              : undefined}
+          >
+            <circle cx={p.x} cy={p.y} r="26" />
+            <text x={p.x} y={p.y} dy="9">{position}</text>
+          </g>
+        {/each}
+      {/if}
+    </svg>
+  </div>
+</div>
 
 <style>
   /*
@@ -342,9 +502,50 @@
    * through any height budget the page tries to give it.
    */
   .stage {
-    display: block;
+    position: relative;
     width: 100%;
     height: 100%;
+    container-type: size;
+  }
+
+  /* The square the notation's viewBox letterboxes into, centred in the box. */
+  .square {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: min(100cqw, 100cqh);
+    height: min(100cqw, 100cqh);
+    overflow: hidden;
+  }
+
+  .canvas-box {
+    position: absolute;
+    z-index: 1;
+    width: calc(100% * var(--zoom));
+    height: calc(100% * var(--zoom));
+    left: calc(50% - 50% * var(--zoom));
+    top: calc(50% - 50% * var(--zoom));
+    pointer-events: none;
+  }
+
+  /* The stage owns the frame; the canvas fills it edge to edge so the overlay
+     coordinates line up with the drawn poi. */
+  .canvas-box :global(.content-wrapper) {
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .notation {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .notation.over {
+    z-index: 2;
   }
 
   .ring {

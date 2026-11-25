@@ -43,6 +43,7 @@ import {
   rememberCustomizeOverlayOpen,
 } from "#lib/shared/create/state/customize-overlay-hmr.js";
 import type { ConstructOptionAudition } from "#lib/shared/create/domain/construct-option-audition.js";
+import type { LoopGoalDisplay } from "#lib/shared/create/domain/loop-goal-display.js";
 import { logSequenceActionsOpened } from "#lib/shared/create/analytics/sequence-action-events.js";
 import type { SequenceActionsOpenSource } from "#lib/shared/create/domain/sequence-action-types.js";
 
@@ -380,6 +381,10 @@ export interface PanelCoordinationState {
   ): void;
   exitOptionAudition(): void;
 
+  /** The LOOP tab's waiting repeat, drawn by the workspace's step grid. */
+  get loopGoal(): LoopGoalDisplay | null;
+  setLoopGoal(goal: LoopGoalDisplay | null): void;
+
   get workspacePlayback(): {
     sequence: SequenceData;
     sourceTab: string;
@@ -564,6 +569,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   let originalSequence = $state<SequenceData | null>(null);
   let optionAudition = $state<ConstructOptionAudition | null>(null);
   let optionAuditionRequestId = 0;
+  let loopGoal = $state.raw<LoopGoalDisplay | null>(null);
   let workspacePlayback = $state.raw<{
     sequence: SequenceData;
     sourceTab: string;
@@ -1308,6 +1314,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     get optionAudition() {
       return optionAudition;
     },
+    get loopGoal() {
+      return loopGoal;
+    },
 
     get workspacePlayback() {
       return workspacePlayback;
@@ -1470,6 +1479,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       };
     },
 
+    setLoopGoal(goal) {
+      loopGoal = goal;
+    },
     exitOptionAudition() {
       optionAudition = null;
     },

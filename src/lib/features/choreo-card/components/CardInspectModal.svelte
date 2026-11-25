@@ -228,6 +228,7 @@
   function handleKeydown(e: KeyboardEvent) {
     if (e.key !== "Escape") return;
     if (selectedStep) return; // editor handles its own Esc
+    if (dialogEl?.querySelector("dialog[open]")) return; // so does an enlarged step
     if (mode === "fix") {
       void exitFixMode();
       return;
@@ -286,6 +287,7 @@
               leftPropType={effLeftProp}
               rightPropType={effRightProp}
               forceContain={true}
+              zoomSteps
               startPlacementLayoutOverride={getCatalogLayoutPolicy(
                 sequence.steps?.length ?? 0
               )}

@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
   import { browser } from "$app/env";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ShapeMatrixMandalaArt from "@tka/shape-engine/components/ShapeMatrixMandalaArt.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -41,14 +42,16 @@
   } = $props();
 
   const TILE_PX = 88;
-  const label = $derived(side === "left" ? "Left" : "Right");
   const settings = getSettings();
   const propType = $derived(
     side === "left" ? settings.leftPropType : settings.rightPropType
   );
   const tipCount = $derived(propTipEnds(propType));
-  const propLabel = $derived(
-    tipCount === 2 ? "both prop ends" : "one prop tip"
+  const subtitle = $derived(
+    t(tipCount === 2 ? "fuse_vtg_sub_both_ends" : "fuse_vtg_sub_one_tip", {
+      count: flowers.length,
+      prop: propType,
+    })
   );
 
   // The flower list is deterministic and synchronous, so the complete grid is
@@ -74,8 +77,7 @@
       })
       .catch((error: unknown) => {
         if (cancelled) return;
-        previewError =
-          "Shape previews couldn't load. You can still choose a path by name.";
+        previewError = t("fuse_vtg_preview_failed");
         console.error("[FuseVtgPathPicker] preview load failed", error);
       });
     return () => {
@@ -95,8 +97,7 @@
     } catch (error) {
       // Without this the matrix/edge load or build throwing would be an unhandled
       // rejection with no user-facing signal — the modal would just sit there.
-      pickError =
-        "Couldn't build that path. Try another, or reopen the picker.";
+      pickError = t("fuse_vtg_pick_failed");
       console.error("[FuseVtgPathPicker] pick failed", error);
     } finally {
       busy = false;
@@ -119,10 +120,10 @@
   {#snippet header()}
     <div class="picker-header">
       <h2 id="fuse-vtg-picker-title" class="picker-title">
-        Pick a {label} VTG path
+        {t(side === "left" ? "fuse_vtg_title_left" : "fuse_vtg_title_right")}
       </h2>
       <p class="picker-sub">
-        {flowers.length} paths, previewed with {propLabel} for your {propType}.
+        {subtitle}
       </p>
       {#if pickError}
         <p class="picker-error" role="alert">{pickError}</p>

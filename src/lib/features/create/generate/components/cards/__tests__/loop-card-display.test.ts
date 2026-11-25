@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildLoopCardDisplay,
   describeLoopRhythm,
+  fitLoopLabel,
   resolveEffectiveAxis,
 } from "../loop-card-display";
 import {
@@ -13,6 +14,31 @@ import { buildCardDescriptors } from "../../../shared/services/card-configurator
 import { DifficultyLevel } from "../../../shared/domain/models/generate-models";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { UIGenerationConfig } from "../../../state/generate-config.svelte";
+
+describe("fitLoopLabel", () => {
+  const phone = { cardWidth: 172, cardHeight: 42 };
+
+  it("leaves a tall card to its stylesheet, and an unmeasured one alone", () => {
+    expect(
+      fitLoopLabel({ cardWidth: 172, cardHeight: 86, lineWidth: 250 })
+    ).toBeNull();
+    expect(fitLoopLabel({ ...phone, lineWidth: 0 })).toBeNull();
+  });
+
+  it("never shows part of a name on a one-line card", () => {
+    expect(fitLoopLabel({ ...phone, lineWidth: 163 })).toBe("line");
+    expect(fitLoopLabel({ ...phone, lineWidth: 164 })).toBe("icons");
+  });
+
+  it("uses two lines only where the card is tall enough for them", () => {
+    const room = { cardWidth: 198, lineWidth: 250 };
+    expect(fitLoopLabel({ ...room, cardHeight: 56 })).toBe("lines");
+    expect(fitLoopLabel({ ...room, cardHeight: 55 })).toBe("icons");
+    expect(fitLoopLabel({ ...room, cardHeight: 70, lineWidth: 400 })).toBe(
+      "icons"
+    );
+  });
+});
 
 describe("buildLoopCardDisplay — off", () => {
   it("renders no icon at all when the loop is off", () => {

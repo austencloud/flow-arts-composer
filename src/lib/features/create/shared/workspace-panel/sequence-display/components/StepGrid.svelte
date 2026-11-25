@@ -1,5 +1,6 @@
 <!-- StepGrid.svelte - Responsive step grid with display animations -->
 <script lang="ts">
+  import { isConstructWorkbench } from "#lib/features/create/shared/services/construct-workbench.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -14,6 +15,7 @@
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { ConstructOptionAudition } from "#lib/shared/create/domain/construct-option-audition.js";
+  import type { PendingRepeat } from "#lib/shared/create/domain/loop-goal-display.js";
   import type {
     MandalaPathShape,
     MandalaRenderOptions,
@@ -116,6 +118,8 @@
     observeScroll = true,
     shrinkToFit = false,
     gridJoin = null,
+    pendingRepeat = null,
+    partLength = null,
   } = $props<{
     steps: ReadonlyArray<StepData> | StepData[];
     startPlacement?: StartPlacementData | StepData | null;
@@ -199,6 +203,10 @@
      * grids, as the sequence's card and animation do. Null: one grid.
      */
     gridJoin?: GridJoin | null;
+    /** A LOOP's repeat waiting under the steps (the LOOP tab). */
+    pendingRepeat?: PendingRepeat | null;
+    /** Steps in one repetition of a made LOOP; each starts its own row. */
+    partLength?: number | null;
   }>();
 
   // State management
@@ -218,10 +226,10 @@
     | undefined = $state();
 
   const activeArrivalRequest = $derived<PictographArrivalRequest | null>(
-    activeMode === "construct" ? displayState.arrivalRequest : null
+    isConstructWorkbench(activeMode) ? displayState.arrivalRequest : null
   );
   const activeOptionAudition = $derived(
-    activeMode === "construct" ? optionAudition : null
+    isConstructWorkbench(activeMode) ? optionAudition : null
   );
   const activeAuditionRequest = $derived.by(
     (): PictographAuditionRequest | null => {
@@ -265,6 +273,62 @@
     gridJoin && startPlacement ? withGridJoin(startPlacement) : startPlacement
   );
 
+  // A step still on its way in is already counted in the waiting repeat, but
+  // the grid shows the old steps until it lands. Until then the repeat that
+  // matches what is on screen stays, so the two rows always agree.
+  let matchedRepeat: PendingRepeat | null = null;
+  const shownRepeat = $derived.by((): PendingRepeat | null => {
+    if (!isTimelineMode || !pendingRepeat) {
+      matchedRepeat = null;
+      return null;
+    }
+    if (pendingRepeat.count === presentedSteps.length) {
+      matchedRepeat = pendingRepeat;
+    }
+    return matchedRepeat?.count === presentedSteps.length
+      ? matchedRepeat
+      : null;
+  });
+  const waitingSteps = $derived.by((): StepData[] => {
+    if (!shownRepeat) return [];
+    if (shownRepeat.steps) {
+      return gridJoin
+        ? shownRepeat.steps.map(withGridJoin)
+        : [...shownRepeat.steps];
+    }
+    return presentedSteps.map((step: StepData, index: number) =>
+      createStepData({
+        id: `loop-slot-${index}`,
+        stepNumber: presentedSteps.length + index + 1,
+        duration: step.duration,
+        isBlank: true,
+      })
+    );
+  });
+  const layoutSteps = $derived(
+    waitingSteps.length > 0
+      ? [...presentedSteps, ...waitingSteps]
+      : presentedSteps
+  );
+
+  /** Past this, a repetition may wrap so its cells stay readable. */
+  const LONGEST_REPETITION_ROW = 8;
+  const repetitionLength = $derived(shownRepeat?.count ?? partLength);
+  // A repetition of one step stays on one line with the rest, so the grid is
+  // never a column of single cells.
+  const rowPartLength = $derived(
+    repetitionLength !== null && repetitionLength > 1 ? repetitionLength : null
+  );
+  const alignedColumnCount = $derived.by(() => {
+    if (repetitionLength === null) return manualColumnCount;
+    if (repetitionLength === 1) {
+      return Math.min(layoutSteps.length, LONGEST_REPETITION_ROW);
+    }
+    return repetitionLength <= LONGEST_REPETITION_ROW
+      ? repetitionLength
+      : Math.ceil(repetitionLength / 2);
+  });
+
   // An editable workbench needs room for its selected-cell glow and scale pop.
   // A passive preview has no such interaction, so it spends that edge reserve
   // on the notation instead. WorkspaceGrid consumes this same value as padding
@@ -290,7 +354,7 @@
   // scrolls. The timeline rows take their beats per row from the same column
   // count.
   const fitsConstructPhoneBand = $derived(
-    activeMode === "construct" &&
+    isConstructWorkbench(activeMode) &&
       isConstructPhoneTier({
         width: containerWidth,
         stacked: !isSideBySideLayout,
@@ -330,9 +394,9 @@
             : rampedMaxCellSize,
         isSideBySideLayout,
         heightSizingRowThreshold,
-        manualColumnCount,
+        manualColumnCount: alignedColumnCount,
         stableColumnCount:
-          activeMode === "construct" && !isTimelineMode ? 4 : stableColumnCount,
+          isConstructWorkbench(activeMode) && !isTimelineMode ? 4 : stableColumnCount,
         narrowMaxColumns: responsiveNarrowMaxColumns,
         preferWidthSizingOnNarrow:
           isNarrowAssemble || preferWidthSizingOnNarrow,
@@ -348,7 +412,7 @@
 
   // Computed grid layout - must use $derived.by for reactive recalculation
   const gridLayout = $derived.by(() =>
-    calculateResponsiveGridLayout(presentedSteps.length)
+    calculateResponsiveGridLayout(layoutSteps.length)
   );
 
   const standardGridCenterOffset = $derived(
@@ -393,9 +457,9 @@
   const TIMELINE_MIN_UNIT = 48;
   const requestedBeatsPerRow = $derived.by(() => {
     const fallback = gridLayout.columns;
-    if (manualColumnCount === null || manualColumnCount === undefined)
+    if (alignedColumnCount === null || alignedColumnCount === undefined)
       return fallback;
-    if (containerWidth <= 0) return manualColumnCount;
+    if (containerWidth <= 0) return alignedColumnCount;
 
     const sizingWidth = Math.max(0, containerWidth - 2 * edgeReserve);
     const usable = sizingWidth - calculateTimelinePadding(containerWidth);
@@ -403,7 +467,7 @@
     const maxUnits = Math.floor(usable / TIMELINE_MIN_UNIT);
     const maxBeats = maxUnits - (hasStart ? 1 : 0);
 
-    if (maxBeats >= manualColumnCount) return manualColumnCount;
+    if (maxBeats >= alignedColumnCount) return alignedColumnCount;
     return Math.max(1, Math.min(fallback, maxBeats));
   });
   // The Create workspace shows the whole sequence when its cells can stay at
@@ -412,7 +476,7 @@
   const timelineFit = $derived.by(() => {
     if (!isTimelineMode || legibleCellSize === null) return null;
     return fitTimelineRows({
-      steps: presentedSteps,
+      steps: layoutSteps,
       beatsPerRow: requestedBeatsPerRow,
       sizingWidth: Math.max(0, containerWidth - 2 * edgeReserve),
       containerHeight,
@@ -420,6 +484,7 @@
       hasStart: Boolean(startPlacement && !startPlacement.isBlank),
       isNarrow: containerWidth > 0 && containerWidth < 650,
       shrinkToFit,
+      partLength: rowPartLength,
     });
   });
   const timelineBeatsPerRow = $derived(
@@ -429,11 +494,12 @@
     if (!isTimelineMode) return [];
     if (timelineFit) return timelineFit.rows;
     return calculateWorkbenchTimelineRows({
-      steps: presentedSteps,
+      steps: layoutSteps,
       beatsPerRow: timelineBeatsPerRow,
       hasStart: Boolean(startPlacement && !startPlacement.isBlank),
       sizingWidth: Math.max(0, containerWidth - 2 * edgeReserve),
       isNarrow: containerWidth > 0 && containerWidth < 650,
+      partLength: rowPartLength,
     });
   });
 
@@ -484,7 +550,7 @@
   function handleSingleStepAddition(stepIndex: number) {
     const existingRequest = displayState.arrivalRequest;
     if (
-      activeMode === "construct" &&
+      isConstructWorkbench(activeMode) &&
       existingRequest?.stepIndex === stepIndex &&
       existingRequest.owner === "stage"
     ) {
@@ -493,7 +559,7 @@
 
     displayState.handleSingleBeatAddition(
       stepIndex,
-      activeMode === "construct"
+      isConstructWorkbench(activeMode)
     );
   }
 
@@ -512,7 +578,7 @@
 
     if (
       isFirstRender ||
-      activeMode !== "construct" ||
+      !isConstructWorkbench(activeMode) ||
       currentStepCount !== previousStepCount + 1
     ) {
       return;
@@ -665,12 +731,12 @@
       if (
         stepsAdded === 1 &&
         !(
-          activeMode === "construct" &&
+          isConstructWorkbench(activeMode) &&
           displayState.arrivalRequest?.owner === "stage"
         )
       ) {
         // Single step added (constructor/assemble) - scroll to see the new step
-        scrollState.scrollToBottom();
+        if (!shownRepeat) scrollState.scrollToBottom();
       } else if (
         displayState.isWaitingForSequentialAnimation &&
         !displayState.isPreparingFullAnimation
@@ -825,38 +891,50 @@
     onStartClick?.();
   }
 
-  const stepIdentities = $derived(
-    stepIdentityMode === "slot"
+  const stepIdentities = $derived.by(() => {
+    if (waitingSteps.length > 0) return createStableStepIdentities(layoutSteps);
+    return stepIdentityMode === "slot"
       ? steps.map(
           (_step: StepData, index: number) =>
             `${stepIdentityPrefix}:slot:${index}`
         )
-      : createStableStepIdentities(steps)
-  );
+      : createStableStepIdentities(steps);
+  });
   const getStepKey = (_step: StepData, index: number) =>
     stepIdentities[index] ?? `missing-step:${index}`;
 
   // Helper to get duration display for a step
   function getDurationDisplay(stepIndex: number): string {
-    const beat = steps[stepIndex];
+    const beat = layoutSteps[stepIndex] ?? steps[stepIndex];
     const duration = beat?.duration ?? 1.0;
     return formatDurationCompact(duration);
   }
 
   function getArrivalDestinationRect(stepIndex: number): ArrivalRect | null {
-    // The destination does not exist during preview. Landing inserts it in the
-    // final grid, then this synchronous scroll becomes part of the same FLIP
-    // measurement so long sequences glide into view instead of landing below
-    // the viewport.
-    if (scrollContainerRef && scrollState.autoScrollEnabled) {
-      scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
-    }
-    workspaceGridRef?.playArrivalLayout();
-
     const destination =
       containerRef?.querySelector<HTMLElement>(
         `[data-step-index="${stepIndex}"]`
       ) ?? null;
+
+    // The destination does not exist during preview. Landing inserts it in the
+    // final grid, then this synchronous scroll becomes part of the same FLIP
+    // measurement so long sequences glide into view instead of landing below
+    // the viewport. A waiting repeat sits below the new step, so there the
+    // scroll goes only as far as the step.
+    if (scrollContainerRef && scrollState.autoScrollEnabled) {
+      if (shownRepeat && destination) {
+        const host = scrollContainerRef.getBoundingClientRect();
+        const cell = destination.getBoundingClientRect();
+        const hiddenBelow = cell.bottom + edgeReserve - host.bottom;
+        const hiddenAbove = host.top + edgeReserve - cell.top;
+        if (hiddenBelow > 0) scrollContainerRef.scrollTop += hiddenBelow;
+        else if (hiddenAbove > 0) scrollContainerRef.scrollTop -= hiddenAbove;
+      } else {
+        scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
+      }
+    }
+    workspaceGridRef?.playArrivalLayout();
+
     if (!destination) return null;
 
     return destination.getBoundingClientRect();
@@ -888,7 +966,18 @@
   {:else}
     <WorkspaceGrid
       bind:this={workspaceGridRef}
-      steps={presentedSteps}
+      steps={layoutSteps}
+      waiting={shownRepeat
+        ? {
+            from: presentedSteps.length,
+            ready: shownRepeat.ready,
+            color: shownRepeat.color,
+            ink: shownRepeat.ink,
+            icon: shownRepeat.icon,
+            label: shownRepeat.label,
+            times: shownRepeat.times,
+          }
+        : null}
       startPlacement={presentedStartPlacement}
       {isTimelineMode}
       {gridLayout}

@@ -9,6 +9,8 @@
  * A host that does not listen gets the same row inside the body instead.
  */
 export interface EffectTuneHeading {
+  /** The effect being tuned, for a host that draws its picture. */
+  effectId: string;
   /** The effect's display name, already localised. */
   label: string;
   /** Font Awesome class for the effect, e.g. "fa-route". */

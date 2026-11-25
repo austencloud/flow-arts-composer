@@ -312,6 +312,44 @@ describe("OptionViewerSwipeLayout type navigation", () => {
       carouselTopBefore + 100
     );
   });
+
+  it("grows the tray from shut holding only what was asked for", async () => {
+    render(OptionViewerSwipeLayoutTestHarness, {
+      organizedPictographs: EMPTY_PANELS,
+      width: 640,
+      height: 700,
+      settingsEnabled: true,
+    });
+
+    const carousel = document.querySelector<HTMLElement>(".carousel-area")!;
+    const openAndWatch = async (name: string) => {
+      const tops: number[] = [];
+      let layers = 0;
+      page
+        .getByRole("button", { name })
+        .element()
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const until = performance.now() + 450;
+      while (performance.now() < until) {
+        await new Promise(requestAnimationFrame);
+        tops.push(carousel.getBoundingClientRect().top);
+        layers = Math.max(
+          layers,
+          document.querySelectorAll(".utility-stage .layer").length
+        );
+      }
+      return { layers, steps: new Set(tops.map(Math.round)).size };
+    };
+
+    for (const name of ["Option settings", "Explain letter types"]) {
+      const opening = await openAndWatch(name);
+      expect(opening.layers).toBe(1);
+      expect(opening.steps).toBeGreaterThan(3);
+
+      const shutting = await openAndWatch(name);
+      expect(shutting.steps).toBeGreaterThan(3);
+    }
+  });
 });
 
 describe("OptionViewerSwipeLayout type rail", () => {

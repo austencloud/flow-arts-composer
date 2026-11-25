@@ -14,12 +14,42 @@ import { buildNotationCells, type NotationCell } from "#lib/shared/timeline/nota
 import { calculatePictographMotionPositions } from "#lib/shared/pictograph/prop/services/pictograph-motion-positioner.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { LOOP_ICON_PATHS } from "@tka/render-composition";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+import { Canvas2DImageLoader } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-image-loader.js";
+import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
+import {
+  GRID_INK,
+  drawPropSprite,
+  propTransformOf,
+  tintGridInk,
+  type CanvasPropState,
+} from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-scene-drawing.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { calculateInitialAngles, interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { calculateTrailSourceEndpoint } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
+import {
+  resolveTrailPointConfig,
+  type TrailPointSource,
+} from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import {
+  DEFAULT_TRAIL_SETTINGS,
+  TrackingMode,
+  TrailEffect,
+  TrailMode,
+  type TrailSettings,
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { QualityTier, type QualityHints } from "#lib/shared/animation-engine/domain/types/quality-types.js";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
+import { loopLightPoints, type LoopLightTip } from "#lib/shared/media-composition/domain/loop-run-light.js";
 import {
   loopRunBadgeAt,
   loopRunFrame,
   loopRunTurnDegrees,
+  type LoopCanvasDraw,
   type LoopCopyDraw,
   type LoopFlareDraw,
+  type LoopLightStroke,
   type LoopLineDraw,
   type LoopPropsDraw,
   type LoopRunPlan,
@@ -69,6 +99,53 @@ const SHADOW_ALPHA = 0.17;
 const WAY_BACK_ALPHA = 0.9;
 /** The flare's corners, as a share of its outline's shorter side. */
 const FLARE_CORNER = 0.4;
+/** The canvas stage's mirror line: 5 px of the ring's gold on a 1080 frame, at the way back's strength. */
+const MIRROR_PX = 5;
+const MIRROR_ALPHA = 0.9;
+/**
+ * The canvas stage's light in the animation canvas's own trail look: glow and
+ * the props' own colours, widths and glow in its 500 px units (a 1240 px
+ * stage draws the kept light about 7 px wide with a 15 px glow). The kept
+ * light is one even strength head to tail; the comet over it thins and fades
+ * towards its tail, as a live animation trail does.
+ */
+const KEPT_LIGHT: TrailSettings = {
+  ...DEFAULT_TRAIL_SETTINGS,
+  mode: TrailMode.PERSISTENT,
+  effect: TrailEffect.GLOW,
+  lineWidth: 3,
+  glowBlur: 1.2,
+  minOpacity: 0.9,
+  maxOpacity: 0.9,
+};
+const COMET_LIGHT: TrailSettings = {
+  ...DEFAULT_TRAIL_SETTINGS,
+  mode: TrailMode.PERSISTENT,
+  effect: TrailEffect.GLOW,
+  lineWidth: 5,
+  glowBlur: 1.8,
+  minOpacity: 0,
+  maxOpacity: 1,
+};
+/** The trail painter's smoothing at full quality; `uniformWidth` keeps a stroke one width end to end. */
+const LIGHT_QUALITY: QualityHints = {
+  tier: QualityTier.HIGH,
+  targetSubdivisions: 150,
+  maxSubdivisionsPerSegment: 10,
+  glowEnabled: true,
+  maxDpr: 1,
+};
+/** Light samples kept per drawing; the fixed sample grid repeats from frame to frame. */
+const MAX_TIP_SAMPLES = 20000;
+
+/** One prop as the animation canvas draws it on a canvas stage. */
+interface CanvasProp {
+  image: HTMLImageElement;
+  dimensions: { width: number; height: number };
+  type: string;
+  /** The ends whose light it leaves, and the curve number each is drawn on. */
+  ends: { source: TrailPointSource; tip: number }[];
+}
 
 interface PreparedCell {
   prepared: PreparedPictographData;
@@ -93,6 +170,13 @@ class LoopRunDrawing {
   private preparedTask: Promise<PreparedCell[]> | null = null;
   private readonly sizes = new Map<number, SizeCache>();
   private readonly pending = new Map<number, Promise<void>>();
+  /** The canvas stage's props, its grid rasters by side in pixels, and its light samples. */
+  private canvasProps: CanvasProp[] | null = null;
+  private canvasTask: Promise<void> | null = null;
+  private readonly canvasLoader = new Canvas2DImageLoader();
+  private readonly canvasGrids = new Map<number, RenderCanvas>();
+  private readonly visibility = new AnimationVisibilityStateManager({ ephemeral: true });
+  private readonly tipSamples = new Map<string, LoopLightTip[]>();
 
   constructor(readonly sequence: SequenceData, seed: number) {
     this.cells = buildNotationCells(sequence);
@@ -184,6 +268,98 @@ class LoopRunDrawing {
   }
 
   /**
+   * Loads the canvas stage's prop sprites and its grid at each of `sides`
+   * pixels, one after another. Every side a clip needs is loaded before its
+   * first frame, so which raster a frame draws never depends on load timing.
+   */
+  async prepareCanvas(sides: readonly number[]): Promise<void> {
+    this.canvasTask ??= this.loadCanvasProps();
+    await this.canvasTask;
+    for (const side of sides) {
+      if (side <= 0 || this.canvasGrids.has(side)) continue;
+      const image = await this.canvasLoader.loadGridImage(String(this.sequence.gridMode ?? "diamond"), side, true);
+      const canvas = createRenderCanvas(side, side);
+      if (tintGridInk(canvas, image, side, GRID_INK.dark)) this.canvasGrids.set(side, canvas);
+    }
+  }
+
+  private async loadCanvasProps(): Promise<void> {
+    const cells = await this.loadCells();
+    const assets = cells[1]?.prepared._prepared?.propAssets ?? cells[0]?.prepared._prepared?.propAssets;
+    const types = [HandSide.LEFT, HandSide.RIGHT].map((hand) => String(assets?.[hand]?.propType ?? "staff"));
+    const images = await this.canvasLoader.loadPerColorPropImages(types[0]!, types[1]!, true);
+    const dimensions = [this.canvasLoader.getLeftPropDimensions(), this.canvasLoader.getRightPropDimensions()];
+    this.canvasProps = [images.left, images.right].map((image, i) => ({
+      image,
+      dimensions: { ...dimensions[i]! },
+      type: types[i]!,
+      ends: trailEnds(types[i]!),
+    }));
+  }
+
+  /** The canvas stage's grid at `side` pixels, or the nearest side loaded. */
+  canvasGrid(side: number): RenderCanvas | null {
+    const exact = this.canvasGrids.get(side);
+    if (exact) return exact;
+    const near = nearestCachedSize(this.canvasGrids.keys(), side);
+    return near === null ? null : (this.canvasGrids.get(near) ?? null);
+  }
+
+  canvasReady(): CanvasProp[] | null {
+    return this.canvasProps;
+  }
+
+  /**
+   * The props as the animation canvas places them `progress` of the way
+   * through step `step`'s move (its default effort, arcs); step -1 is the
+   * start position, read from the first step that moves, as the animation does.
+   */
+  canvasStates(step: number, progress: number): (CanvasPropState | null)[] {
+    const steps = this.sequence.steps;
+    let result: ReturnType<typeof calculateInitialAngles> | null = null;
+    if (step < 0) {
+      const first = steps.find((s) => isVisibleMotion(s?.motions?.left) || isVisibleMotion(s?.motions?.right));
+      result = first ? calculateInitialAngles(first) : null;
+    } else if (steps[step]) {
+      result = interpolatePropAngles(
+        steps[step]!,
+        applyEffort(this.visibility.getEffortPreset(), progress),
+        this.visibility
+      );
+    }
+    if (!result?.isValid) return [null, null];
+    return [result.leftAngles, result.rightAngles];
+  }
+
+  /** The props' ends at that moment, in the canvas's 950 view box: where the light is laid. */
+  canvasTips(step: number, progress: number): LoopLightTip[] {
+    const key = `${step}:${progress}`;
+    const known = this.tipSamples.get(key);
+    if (known) return known;
+    const tips: LoopLightTip[] = [];
+    const props = this.canvasProps;
+    if (props) {
+      const states = this.canvasStates(step, progress);
+      props.forEach((prop, i) => {
+        const state = states[i];
+        if (!state) return;
+        for (const end of prop.ends) {
+          const at = calculateTrailSourceEndpoint(
+            state,
+            { canvasSize: VIEWBOX_SIZE, propDimensions: prop.dimensions },
+            end.source,
+            prop.type
+          );
+          if (at) tips.push({ prop: i === 0 ? 0 : 1, tip: at.tipIndex ?? end.tip, x: at.x, y: at.y });
+        }
+      });
+    }
+    if (this.tipSamples.size >= MAX_TIP_SAMPLES) this.tipSamples.clear();
+    this.tipSamples.set(key, tips);
+    return tips;
+  }
+
+  /**
    * Where tile `step`'s props stand `progress` of the way through its move.
    * `continued` starts step 0 from the last step's end, as a second round
    * does, rather than from the start position: the two can part props that
@@ -256,6 +432,7 @@ class LoopRunPainter implements PostStudioLayerPainter {
   /** A frame-sized canvas a bare copy is painted on whole, then faded on to the frame in one go. */
   private group: RenderCanvas | null = null;
   private readonly inks = new WeakMap<object, InkBox | null>();
+  private readonly trails = new Canvas2DTrailRenderer();
 
   constructor(private readonly getPlan: () => LoopRunPlan | null) {}
 
@@ -274,7 +451,10 @@ class LoopRunPainter implements PostStudioLayerPainter {
   async prepare(target: { width: number; height: number }): Promise<void> {
     const plan = this.getPlan();
     if (!plan) return;
-    await this.drawingFor(plan).prepare(rasterSize(target));
+    const drawing = this.drawingFor(plan);
+    await drawing.prepare(rasterSize(target));
+    const sides = canvasSides(plan, target.width);
+    if (sides.length) await drawing.prepareCanvas(sides);
   }
 
   paint(context: Context, rect: PaintRect, frame: PaintFrame): void {
@@ -287,6 +467,11 @@ class LoopRunPainter implements PostStudioLayerPainter {
     const cache = drawing.cache(size);
     if (!cache || !drawing.ready()) {
       void drawing.prepare(size);
+      return;
+    }
+    const sides = canvasSides(plan, rect.width);
+    if (sides.length && !drawing.canvasReady()) {
+      void drawing.prepareCanvas(sides);
       return;
     }
     const scene = loopRunFrame(plan.settings, drawing.steps, rect, seconds - plan.start, drawing.turn);
@@ -381,6 +566,10 @@ class LoopRunPainter implements PostStudioLayerPainter {
     for (const ring of stage.rings) paintSelectionRing(context, ring, ring.strength, ring.look);
     if (stage.wayBack) drawWayBack(context, stage.wayBack);
     if (stage.opacity <= 0) return;
+    if (stage.canvas) {
+      this.drawCanvasStage(context, drawing, stage, stage.canvas, pixel);
+      return;
+    }
     const grid = cache.grid[0];
     context.save();
     context.globalAlpha *= stage.opacity;
@@ -399,6 +588,120 @@ class LoopRunPainter implements PostStudioLayerPainter {
       context.globalAlpha *= stage.opacity;
     }
     this.drawProps(context, drawing, stage, { ...stage.props, opacity: 1 });
+    context.restore();
+  }
+
+  /**
+   * The stage as the 2D animation canvas draws it (`canvas`): its grid in its
+   * off-white ink, its props overlapping where they meet with no parting,
+   * and the light their ends have drawn in its glowing trail, worked out
+   * afresh for this moment. Over it, the mirror line and the flares.
+   */
+  private drawCanvasStage(
+    context: Context,
+    drawing: LoopRunDrawing,
+    stage: LoopStageDraw,
+    canvas: LoopCanvasDraw,
+    pixel: number
+  ) {
+    const props = drawing.canvasReady();
+    if (!props) return;
+    const left = stage.x - stage.size / 2;
+    const top = stage.y - stage.size / 2;
+    context.save();
+    context.globalAlpha *= stage.opacity;
+    const grid = drawing.canvasGrid(Math.round(stage.size));
+    if (grid && stage.grid > 0) {
+      context.save();
+      context.globalAlpha *= stage.grid;
+      context.drawImage(grid, left, top, stage.size, stage.size);
+      context.restore();
+    }
+    if (canvas.mirror) drawLine(context, canvas.mirror, selectionGold(MIRROR_ALPHA), MIRROR_PX * pixel);
+    context.restore();
+
+    // The trail painter sets its own strength per stretch, so the stage's fade goes into the light's settings.
+    const even = (settings: TrailSettings, strength: number): TrailSettings => ({
+      ...settings,
+      minOpacity: strength * stage.opacity,
+      maxOpacity: strength * stage.opacity,
+    });
+    this.drawLight(context, drawing, stage, canvas.light, even(KEPT_LIGHT, KEPT_LIGHT.maxOpacity), true);
+    const ghost = canvas.ghost;
+    if (ghost && ghost.strokes.length && ghost.opacity > 0) {
+      const c = VIEWBOX_SIZE / 2;
+      const a = (ghost.turn * Math.PI) / 180;
+      const turnAbout = (x: number, y: number) => {
+        const dx = (x - c) * ghost.flip;
+        const dy = y - c;
+        return { x: c + dx * Math.cos(a) - dy * Math.sin(a), y: c + dx * Math.sin(a) + dy * Math.cos(a) };
+      };
+      this.drawLight(context, drawing, stage, ghost.strokes, even(KEPT_LIGHT, ghost.opacity), true, turnAbout);
+    }
+    if (canvas.comet) {
+      const comet = { ...COMET_LIGHT, maxOpacity: COMET_LIGHT.maxOpacity * stage.opacity };
+      this.drawLight(context, drawing, stage, [canvas.comet], comet, false);
+    }
+
+    // The flares carry the stage's strength in their own.
+    for (const flare of stage.flares ?? []) this.drawFlare(context, drawing, stage, flare, pixel, true);
+
+    context.save();
+    context.globalAlpha *= stage.opacity;
+    const states = drawing.canvasStates(stage.props.step, stage.props.progress);
+    props.forEach((prop, i) => {
+      const state = states[i];
+      if (!state) return;
+      const transform = propTransformOf(state, prop.dimensions, stage.size, prop.type);
+      drawPropSprite(
+        context,
+        prop.image,
+        prop.dimensions,
+        { ...transform, centerX: left + transform.centerX, centerY: top + transform.centerY },
+        false,
+        prop.type
+      );
+    });
+    context.restore();
+  }
+
+  /**
+   * Light along `strokes` through the animation canvas's trail painter, on
+   * the stage's square; `map` moves each point in the 950 view box first.
+   */
+  private drawLight(
+    context: Context,
+    drawing: LoopRunDrawing,
+    stage: LoopTilePlace,
+    strokes: readonly LoopLightStroke[],
+    settings: TrailSettings,
+    uniformWidth: boolean,
+    map?: (x: number, y: number) => { x: number; y: number }
+  ) {
+    if (strokes.length === 0 || settings.maxOpacity <= 0) return;
+    const scale = stage.size / VIEWBOX_SIZE;
+    const points = loopLightPoints(
+      strokes,
+      (step, progress) => drawing.canvasTips(step, progress),
+      (x, y) => {
+        const at = map ? map(x, y) : { x, y };
+        return { x: at.x * scale, y: at.y * scale };
+      }
+    );
+    if (points.left.length === 0 && points.right.length === 0) return;
+    context.save();
+    context.translate(stage.x - stage.size / 2, stage.y - stage.size / 2);
+    this.trails.renderTrails(
+      context as CanvasRenderingContext2D,
+      points.left,
+      points.right,
+      settings,
+      0,
+      points.left.length > 0,
+      points.right.length > 0,
+      stage.size,
+      { ...LIGHT_QUALITY, uniformWidth }
+    );
     context.restore();
   }
 
@@ -447,10 +750,12 @@ class LoopRunPainter implements PostStudioLayerPainter {
     drawing: LoopRunDrawing,
     stage: LoopTilePlace,
     flare: LoopFlareDraw,
-    pixel: number
+    pixel: number,
+    canvas = false
   ) {
     if (flare.strength <= 0) return;
-    const shape = this.propBoxes(drawing, stage, flare.pose);
+    const placed = canvas ? canvasSprites(drawing, stage, flare.pose) : pictographSprites(drawing, stage, flare.pose);
+    const shape = placed ? this.propBoxes(stage, placed) : null;
     if (!shape) return;
     const boxes = joinBoxes(shape.boxes, 2 * flare.join);
     context.save();
@@ -479,35 +784,24 @@ class LoopRunPainter implements PostStudioLayerPainter {
    * centre: the props' own angle when every prop sits square to it, else the
    * frame's own axes.
    */
-  private propBoxes(
-    drawing: LoopRunDrawing,
-    stage: LoopTilePlace,
-    pose: LoopStagePose
-  ): { angle: number; boxes: InkBox[] } | null {
-    const positions = drawing.positions(pose.step, pose.progress, pose.continued);
-    const sprites = drawing.ready()?.[pose.step + 1]?.sprites;
-    if (!positions || !sprites) return null;
-    const props: { position: PropPosition; sprite: PreparedPropSprite; ink: InkBox }[] = [];
-    for (const hand of [HandSide.LEFT, HandSide.RIGHT]) {
-      const position = positions[hand];
-      const sprite = sprites[hand];
-      const ink = sprite ? this.inkOf(sprite) : null;
-      if (position && sprite && ink) props.push({ position, sprite, ink });
+  private propBoxes(stage: LoopTilePlace, placed: readonly PlacedSprite[]): { angle: number; boxes: InkBox[] } | null {
+    const props: { sprite: PlacedSprite; ink: InkBox }[] = [];
+    for (const sprite of placed) {
+      const ink = this.inkOf(sprite);
+      if (ink) props.push({ sprite, ink });
     }
     if (props.length === 0) return null;
-    const first = props[0]!.position.rotation;
-    const square = props.every(({ position }) => {
-      const off = (((position.rotation - first) % 90) + 90) % 90;
+    const first = props[0]!.sprite.rotation;
+    const square = props.every(({ sprite }) => {
+      const off = (((sprite.rotation - first) % 90) + 90) % 90;
       return off < 0.5 || off > 89.5;
     });
     const angle = square ? first : 0;
-    const scale = stage.size / VIEWBOX_SIZE;
-    const left = stage.x - stage.size / 2;
-    const top = stage.y - stage.size / 2;
     const turn = (-angle * Math.PI) / 180;
-    const boxes = props.map(({ position, sprite, ink }) => {
-      // The ink's corners where drawElementWithTransform puts them, then in the turned frame.
-      const a = (position.rotation * Math.PI) / 180;
+    const boxes = props.map(({ sprite, ink }) => {
+      // The ink's corners where the sprite was drawn, then in the turned frame.
+      const a = (sprite.rotation * Math.PI) / 180;
+      const scale = sprite.scale;
       const mirror = sprite.mirror ? -1 : 1;
       const xs: number[] = [];
       const ys: number[] = [];
@@ -520,8 +814,8 @@ class LoopRunPainter implements PostStudioLayerPainter {
       for (const [u, v] of corners) {
         const lx = (u - sprite.centerX) * scale * mirror;
         const ly = (v - sprite.centerY) * scale;
-        const fx = left + position.x * scale + lx * Math.cos(a) - ly * Math.sin(a) - stage.x;
-        const fy = top + position.y * scale + lx * Math.sin(a) + ly * Math.cos(a) - stage.y;
+        const fx = sprite.x + lx * Math.cos(a) - ly * Math.sin(a) - stage.x;
+        const fy = sprite.y + lx * Math.sin(a) + ly * Math.cos(a) - stage.y;
         xs.push(fx * Math.cos(turn) - fy * Math.sin(turn));
         ys.push(fx * Math.sin(turn) + fy * Math.cos(turn));
       }
@@ -531,16 +825,16 @@ class LoopRunPainter implements PostStudioLayerPainter {
   }
 
   /** Where a sprite has ink, in its view box's units, read once from its own pixels. */
-  private inkOf(sprite: PreparedPropSprite): InkBox | null {
-    const known = this.inks.get(sprite);
+  private inkOf(sprite: PlacedSprite): InkBox | null {
+    const known = this.inks.get(sprite.key);
     if (known !== undefined) return known;
-    const w = Math.max(1, Math.ceil(sprite.viewBoxWidth));
-    const h = Math.max(1, Math.ceil(sprite.viewBoxHeight));
+    const w = Math.max(1, Math.ceil(sprite.width));
+    const h = Math.max(1, Math.ceil(sprite.height));
     const canvas = createRenderCanvas(w, h);
     const context = canvas.getContext("2d") as Context | null;
     let box: InkBox | null = null;
     if (context) {
-      context.drawImage(sprite.img, 0, 0, sprite.viewBoxWidth, sprite.viewBoxHeight);
+      context.drawImage(sprite.img, 0, 0, sprite.width, sprite.height);
       const { data } = context.getImageData(0, 0, w, h);
       let x0 = w;
       let y0 = h;
@@ -556,7 +850,7 @@ class LoopRunPainter implements PostStudioLayerPainter {
         }
       box = x1 < 0 ? null : { x0, y0, x1: x1 + 1, y1: y1 + 1 };
     }
-    this.inks.set(sprite, box);
+    this.inks.set(sprite.key, box);
     return box;
   }
 
@@ -574,6 +868,12 @@ class LoopRunPainter implements PostStudioLayerPainter {
     const place = { x: tile.x, y: tile.y, size: tile.size * tile.scale };
     context.save();
     context.globalAlpha *= tile.opacity;
+    if (tile.fold !== undefined && tile.fold < 1) {
+      // Folding in: the tile opens out from a line through its middle.
+      context.translate(place.x, place.y);
+      context.scale(1, tile.fold);
+      context.translate(-place.x, -place.y);
+    }
     if (boxOnly) {
       context.save();
       roundedSquare(context, place, tile.corner);
@@ -784,6 +1084,111 @@ class LoopRunPainter implements PostStudioLayerPainter {
     }
     context.restore();
   }
+}
+
+/** A prop sprite where it was drawn: `x`, `y` in the frame, `rotation` in degrees, `scale` from its own units. */
+interface PlacedSprite {
+  /** What its ink is cached under. */
+  key: object;
+  img: CanvasImageSource;
+  width: number;
+  height: number;
+  centerX: number;
+  centerY: number;
+  mirror: boolean;
+  x: number;
+  y: number;
+  rotation: number;
+  scale: number;
+}
+
+/** The pictograph props in `pose`, where `drawProps` puts them. */
+function pictographSprites(drawing: LoopRunDrawing, stage: LoopTilePlace, pose: LoopStagePose): PlacedSprite[] | null {
+  const positions = drawing.positions(pose.step, pose.progress, pose.continued);
+  const sprites = drawing.ready()?.[pose.step + 1]?.sprites;
+  if (!positions || !sprites) return null;
+  const scale = stage.size / VIEWBOX_SIZE;
+  const left = stage.x - stage.size / 2;
+  const top = stage.y - stage.size / 2;
+  const placed: PlacedSprite[] = [];
+  for (const hand of [HandSide.LEFT, HandSide.RIGHT]) {
+    const position = positions[hand];
+    const sprite = sprites[hand];
+    if (!position || !sprite) continue;
+    placed.push({
+      key: sprite,
+      img: sprite.img,
+      width: sprite.viewBoxWidth,
+      height: sprite.viewBoxHeight,
+      centerX: sprite.centerX,
+      centerY: sprite.centerY,
+      mirror: sprite.mirror,
+      x: left + position.x * scale,
+      y: top + position.y * scale,
+      rotation: position.rotation,
+      scale,
+    });
+  }
+  return placed;
+}
+
+/** The canvas stage's props in `pose`, where the animation canvas puts them. */
+function canvasSprites(drawing: LoopRunDrawing, stage: LoopTilePlace, pose: LoopStagePose): PlacedSprite[] | null {
+  const props = drawing.canvasReady();
+  if (!props) return null;
+  const states = drawing.canvasStates(pose.step, pose.progress);
+  const left = stage.x - stage.size / 2;
+  const top = stage.y - stage.size / 2;
+  const placed: PlacedSprite[] = [];
+  props.forEach((prop, i) => {
+    const state = states[i];
+    if (!state) return;
+    const transform = propTransformOf(state, prop.dimensions, stage.size, prop.type);
+    placed.push({
+      key: prop.image,
+      img: prop.image,
+      width: prop.dimensions.width,
+      height: prop.dimensions.height,
+      centerX: prop.dimensions.width / 2,
+      centerY: prop.dimensions.height / 2,
+      mirror: false,
+      x: left + transform.centerX,
+      y: top + transform.centerY,
+      rotation: (transform.angle * 180) / Math.PI,
+      scale: transform.scaleFactor,
+    });
+  });
+  return placed;
+}
+
+/** The ends a prop leaves light from, as the animation canvas's trail picks them with both ends tracked. */
+function trailEnds(type: string): CanvasProp["ends"] {
+  const config = resolveTrailPointConfig(type, TrackingMode.BOTH_ENDS);
+  const candidates: { source: TrailPointSource; end: number }[] =
+    propTipEnds(type) === 1
+      ? [{ source: config.right, end: 1 }]
+      : [
+          { source: config.left, end: 0 },
+          { source: config.right, end: 1 },
+        ];
+  const ends = new Map<string, CanvasProp["ends"][number]>();
+  for (const { source, end } of candidates) {
+    if (source.type === "none") continue;
+    const key = source.type === "tip" ? `tip-${source.index}` : `custom-${source.dx}-${source.dy}`;
+    if (!ends.has(key)) ends.set(key, { source, tip: source.type === "tip" ? source.index : end });
+  }
+  return [...ends.values()];
+}
+
+/** The pixel sides the canvas stage is drawn at on a frame `width` wide: each canvas play's stage and where it glides to. */
+function canvasSides(plan: LoopRunPlan, width: number): number[] {
+  const sides = new Set<number>();
+  for (const event of plan.settings.events) {
+    if (event.kind !== "play" || !event.canvas) continue;
+    sides.add(Math.round(event.stage.size * width));
+    if (event.move) sides.add(Math.round(event.move.size * width));
+  }
+  return [...sides].filter((side) => side > 0);
 }
 
 /** The raster side for a target: half its shorter side, on the shared size ladder. */

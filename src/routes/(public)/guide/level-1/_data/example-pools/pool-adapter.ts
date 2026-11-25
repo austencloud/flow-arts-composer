@@ -333,7 +333,7 @@ export function loopLabel(entry: RawEntry): string {
           : "";
     return deg ? `Rotated ${deg}` : "Rotated";
   }
-  if (entry.loopType === "mirrored") return "Mirrored";
+  if (entry.loopType === "mirrored") return "Reflected";
   if (entry.loopType === "swapped") return "Swapped";
   return entry.loopType;
 }

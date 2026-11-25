@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isConstructWorkbench } from "#lib/features/create/shared/services/construct-workbench.js";
   /**
    * Creation Workspace Area
    *
@@ -279,7 +280,7 @@
 
   $effect(() => {
     if (
-      navigationState.activeTab !== "construct" &&
+      !isConstructWorkbench(navigationState.activeTab) &&
       panelState.optionAudition
     ) {
       panelState.exitOptionAudition();

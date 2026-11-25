@@ -65,7 +65,7 @@ const LOOPS: LoopDef[] = [
   {
     // Mirrored: AABB + its horizontal-plane reflection (R R on step 5).
     key: "loop-mirror",
-    word: "AABB Mirrored",
+    word: "AABB Reflected",
     startLetter: Letter.ALPHA,
     startLeft: W,
     startRight: E,
@@ -192,12 +192,12 @@ export const permutationsContent: GuideBlock[] = [
   },
   {
     kind: "prose",
-    html: "Three common types of LOOPs are <em>Mirrored</em>, <em>Rotated</em>, and <em>Swapped</em>.",
+    html: "Three common types of LOOPs are <em>Reflected</em>, <em>Rotated</em>, and <em>Swapped</em>.",
   },
-  { kind: "heading", level: 2, text: "Mirrored" },
+  { kind: "heading", level: 2, text: "Reflected" },
   {
     kind: "prose",
-    html: "In a mirrored LOOP, the second repetition’s pictographs reflect the first, which changes their rotation direction.",
+    html: "In a reflected LOOP, the second repetition’s pictographs reflect the first, which changes their rotation direction.",
   },
   {
     kind: "pictographGroup",
@@ -210,7 +210,7 @@ export const permutationsContent: GuideBlock[] = [
       entries: [
         {
           word: "AABB",
-          loopLabel: "Mirrored",
+          loopLabel: "Reflected",
           proseHtml: "In this example, each column is reflected across a horizontal plane.",
           items: mirrorStrip,
         },

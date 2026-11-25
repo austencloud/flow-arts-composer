@@ -64,6 +64,7 @@ export class NavigationSyncer {
       "assemble",
       "fuse",
       "tunnel",
+      "loop",
     ];
     if (!validCreateTabs.includes(currentMode)) {
       return;

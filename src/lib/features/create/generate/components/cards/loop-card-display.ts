@@ -82,7 +82,7 @@ export function resolveEffectiveAxis(
  * icon strip rotates its Reflection glyph from effectiveAxis.
  *
  * Without this, a legacy mirrored LOOP retargeted to east-west shows the
- * left-right icon under the word "Flipped".
+ * left-right icon for an up-down reflection.
  */
 function normalizeReflectionForIcons(
   components: ReadonlySet<LOOPComponent>,
@@ -193,4 +193,41 @@ export function describeLoopRhythm(display: LoopCardDisplay): string {
     parts.push("overlay inversion");
   }
   return parts.join(", ");
+}
+
+/** How a short card shows the LOOP's name; null means the card has room. */
+export type LoopLabelFit = "line" | "lines" | "icons";
+
+/** Cards up to this tall have no room for two lines and the icons together. */
+const SHORT_CARD_HEIGHT = 72;
+/**
+ * Below this, the space under the heading holds one line. Measured with a
+ * sequence built: a 57px card (390x844) fits two lines with 3px under the
+ * heading; a 51px card (387x775) puts them against it.
+ */
+const TWO_LINE_HEIGHT = 56;
+/** Two wrapped lines never fill completely; the break falls between words. */
+const TWO_LINE_FILL = 1.7;
+
+export function loopCardInnerWidth(cardWidth: number): number {
+  return cardWidth - 2 * Math.min(8, Math.max(4, cardWidth * 0.015));
+}
+
+/**
+ * The name shows whole or not at all: on one line, on two without the icons,
+ * or as its icons alone. `lineWidth` is the name on one line at the smallest
+ * type, measured on the page so every language decides by its own letters.
+ */
+export function fitLoopLabel(room: {
+  cardWidth: number;
+  cardHeight: number;
+  lineWidth: number;
+}): LoopLabelFit | null {
+  const { cardWidth, cardHeight, lineWidth } = room;
+  if (!cardHeight || !lineWidth || cardHeight > SHORT_CARD_HEIGHT) return null;
+  const inner = loopCardInnerWidth(cardWidth) - 1;
+  if (lineWidth <= inner) return "line";
+  if (cardHeight >= TWO_LINE_HEIGHT && lineWidth <= inner * TWO_LINE_FILL)
+    return "lines";
+  return "icons";
 }

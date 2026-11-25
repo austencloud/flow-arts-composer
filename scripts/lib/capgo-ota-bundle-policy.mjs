@@ -12,6 +12,12 @@
 //    carries one in a validation message ("must be a /models/…/*.glb path"),
 //    and from 2026-11-11 that alone kept every model and pushed the bundle to
 //    1,030 MB, over the cap.
+// 4. The Capgo CLI silently leaves out every 0-byte file ("Ignoring empty
+//    file"). On 2026-11-24 the phone app stopped at "The app could not finish
+//    loading" because an empty chunk that every screen preloads was dropped
+//    and its 404 failed the whole import. Empty code files are therefore
+//    staged with a harmless comment, other empty files are reported, and
+//    staging stops if a code file the built app names would still be missing.
 
 /** Only files under this prefix can be left out for being unreferenced. */
 export const OTA_PRUNABLE_PREFIX = "models/";
@@ -60,6 +66,19 @@ export const OTA_REFERENCE_IGNORED_FILES = Object.freeze([
  * zips under the cap. Staging stops here instead of failing at the upload.
  */
 export const OTA_BUNDLE_BUDGET_BYTES = 960 * 1024 * 1024;
+
+/** Code files the phone loads by name; a missing or dropped one is fatal. */
+export const OTA_CODE_EXTENSIONS = Object.freeze([".js", ".mjs", ".css"]);
+
+/** Only code under this prefix is checked for being named but missing. */
+export const OTA_APP_CODE_PREFIX = "_app/";
+
+/**
+ * Written into an empty code file so Capgo keeps it. A block comment is valid
+ * in both JavaScript and CSS, and an import of it still resolves.
+ */
+export const OTA_EMPTY_FILE_PLACEHOLDER =
+  "/* empty on purpose: Capgo drops 0-byte files */\n";
 
 /** Must be present: the phone shell cannot start without them. */
 export const OTA_REQUIRED_FILES = Object.freeze(["index.html", "_app/env.js"]);
@@ -173,8 +192,52 @@ export function selectOtaBundleFiles(relativePaths, readText) {
     OTA_ALWAYS_KEPT_MODEL_EXTENSIONS.includes(extensionOf(path));
 
   return {
+    references,
     keep: candidates.filter(isKept),
     unreferenced: candidates.filter((path) => !isKept(path)),
     whitespace,
   };
+}
+
+/** @param {string} relativePath */
+export const isCodeFile = (relativePath) =>
+  OTA_CODE_EXTENSIONS.includes(extensionOf(relativePath));
+
+/**
+ * Sort the staged files that are 0 bytes into those that can be padded with
+ * a comment (code) and those Capgo will leave out (anything else).
+ *
+ * @param {Map<string, number>} stagedSizes staged path to size on disk
+ */
+export function planEmptyFileHandling(stagedSizes) {
+  const fill = [];
+  const dropped = [];
+  for (const [path, size] of stagedSizes) {
+    if (size !== 0) continue;
+    (isCodeFile(path) ? fill : dropped).push(path);
+  }
+  return { fill, dropped };
+}
+
+/**
+ * Code files under _app/ that the built app names but that would not reach
+ * the phone: not staged at all (for example a space in the path) or still
+ * empty. The phone cannot finish loading without them.
+ *
+ * @param {string[]} buildPaths every file in the build output
+ * @param {Map<string, number>} stagedSizes staged path to size on disk
+ * @param {AssetReferences} references
+ */
+export function findMissingNamedCodeFiles(
+  buildPaths,
+  stagedSizes,
+  { fileNames }
+) {
+  return buildPaths.filter((path) => {
+    if (!path.startsWith(OTA_APP_CODE_PREFIX) || !isCodeFile(path)) {
+      return false;
+    }
+    if (!fileNames.has(path.slice(path.lastIndexOf("/") + 1))) return false;
+    return !((stagedSizes.get(path) ?? 0) > 0);
+  });
 }

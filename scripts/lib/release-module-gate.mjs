@@ -73,6 +73,11 @@ export const PATH_TO_SURFACE = [
     tab: "shape-engine",
   },
   {
+    prefix: "src/lib/features/create/loop/",
+    module: "create",
+    tab: "loop",
+  },
+  {
     prefix: "src/lib/features/fuse/",
     module: "create",
     tab: "fuse",

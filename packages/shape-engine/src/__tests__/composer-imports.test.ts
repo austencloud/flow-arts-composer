@@ -24,6 +24,7 @@ const ALLOWED = new Set<string>([
   "#lib/shared/animation-panel/components", // 4
   "#lib/shared/animation-panel/pill-nav", // 4
   "#lib/shared/animation-panel/state", // 1
+  "#lib/shared/application/services", // 2
   "#lib/shared/application/state", // 4
   "#lib/shared/components/DifficultyBadge.svelte", // 2
   "#lib/shared/components/DualSourceCrossfade.svelte", // 2

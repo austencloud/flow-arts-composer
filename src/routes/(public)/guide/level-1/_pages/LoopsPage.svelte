@@ -100,7 +100,7 @@
     {
       // Mirrored: AABB + its horizontal-plane reflection (R R on step 5).
       key: "loop-mirror",
-      word: "AABB Mirrored",
+      word: "AABB Reflected",
       startLetter: Letter.ALPHA,
       startLeft: W,
       startRight: E,
@@ -228,7 +228,7 @@
   const CELL = 75;
   const RULES = [151.1, 372.8, 584.7];
   const HEADS = [
-    { t: "Mirrored", x: 51.8, y: 154.4 },
+    { t: "Reflected", x: 51.8, y: 154.4 },
     { t: "Rotated", x: 453.7, y: 377.3 },
     { t: "Swapped", x: 66.8, y: 587 },
   ];
@@ -251,11 +251,11 @@
       y: 118,
       fs: 15,
       lh: 18,
-      html: "Three common types of LOOPs are <em>Mirrored</em>, <em>Rotated</em>, and <em>Swapped</em>.",
+      html: "Three common types of LOOPs are <em>Reflected</em>, <em>Rotated</em>, and <em>Swapped</em>.",
     },
     {
       x: 0, y: 190.6, fs: 15, lh: 18, left: 12, width: 195,
-      html: "In a mirrored LOOP, the second repetition’s pictographs reflect the first, which changes their rotation direction.",
+      html: "In a reflected LOOP, the second repetition’s pictographs reflect the first, which changes their rotation direction.",
     },
     {
       x: 0, y: 298.6, fs: 15, lh: 18, left: 12, width: 195,

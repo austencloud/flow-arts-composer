@@ -607,6 +607,29 @@ export class JamCrowd {
     return kind.measure;
   }
 
+  /**
+   * A figure as it stands now: every vertex posed by the driver's skeleton, in
+   * the space `place` puts people in. For anything that wants the shape without
+   * the skeleton, such as a cheap shadow.
+   */
+  async posed(key: string, driverIndex = 0): Promise<{ position: Float32Array; index: Uint32Array }[]> {
+    const kind = await this.kinds.get(key);
+    if (!kind) throw new Error(`[jam crowd] unknown kind ${key}`);
+    const driver = kind.drivers[driverIndex % kind.drivers.length]!;
+    driver.root.updateMatrixWorld(true);
+    const v = new Vector3();
+    return driver.meshes.map((mesh) => {
+      const count = mesh.geometry.getAttribute("position").count;
+      const position = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) mesh.getVertexPosition(i, v).applyMatrix4(mesh.matrixWorld).toArray(position, i * 3);
+      const index = mesh.geometry.index;
+      return {
+        position,
+        index: index ? Uint32Array.from(index.array) : Uint32Array.from({ length: count }, (_, i) => i),
+      };
+    });
+  }
+
   /** Add a person. Resolves once their meshes are in the group. */
   async place(id: string, key: string, at: CrowdFigurePlacement, driverIndex = 0): Promise<void> {
     const kind = await this.kinds.get(key);

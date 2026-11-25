@@ -432,8 +432,8 @@ export function loopBlocksHandMode(
 }
 
 const COMPONENT_BLOCK_LABELS: Partial<Record<LOOPComponent, string>> = {
-  [LOOPComponent.MIRRORED]: "Reflection",
-  [LOOPComponent.FLIPPED]: "Reflection",
+  [LOOPComponent.MIRRORED]: "Reflected",
+  [LOOPComponent.FLIPPED]: "Reflected",
   [LOOPComponent.SWAPPED]: "Swapped",
 };
 

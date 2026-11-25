@@ -124,6 +124,7 @@ Last audit: 2025-12-27
     word = null,
     previewDarkMode = null,
     mandalaStrokeWidthOverride = undefined,
+    trailResetKey = undefined,
     hideTkaGlyph = false,
     hideStepNumbers = false,
     hideElementalGlyph = false,
@@ -228,6 +229,10 @@ Last audit: 2025-12-27
     word?: string | null;
     previewDarkMode?: boolean | null;
     mandalaStrokeWidthOverride?: number;
+    /** Change this to wipe the trail. A caller that scrubs its own clock
+     *  (QfT) bumps it on a backward seek, so the trail never joins the old
+     *  place to the new one. */
+    trailResetKey?: number;
     hideTkaGlyph?: boolean;
     hideStepNumbers?: boolean;
     /** Hide the element icons, for a host that paints its own. */
@@ -1028,6 +1033,7 @@ Last audit: 2025-12-27
       {rightBuugengFlipped}
       {previewDarkMode}
       {mandalaStrokeWidthOverride}
+      {trailResetKey}
       {isSeamlesslyLoopable}
       {showNonRadialPoints}
       {fireConfig}

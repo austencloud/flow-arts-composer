@@ -3,6 +3,7 @@ import { getEnabledFeaturesDefineMap } from "./src/config/feature-flags";
 import { postStudioDraftStoragePlugin } from "./scripts/post-studio-draft-storage.mjs";
 import { composerUnrealHostPlugin } from "./scripts/composer-unreal-host.mjs";
 import { workspaceResolvePlugins } from "./scripts/lib/workspace-resolution.mjs";
+import { scene3dSourceAliases } from "./scripts/lib/scene3d-source.mjs";
 import {
   ARROW_SPRITE_WATCH_PATH,
   createViteDevWatchIgnoredMatcher,
@@ -1522,6 +1523,9 @@ export default defineConfig(({ command, mode }) => ({
         replacement: path.resolve(dirname, "packages/shape-engine/src") + "/",
       },
       { find: /^#lib\//, replacement: path.resolve(dirname, "src/lib") + "/" },
+      // TKA_SCENE3D_SRC points the package at an edited copy (see the helper);
+      // listed first so it wins over the installed entry below.
+      ...scene3dSourceAliases(),
       {
         find: /^@austencloud\/scene-3d$/,
         replacement: path.resolve(

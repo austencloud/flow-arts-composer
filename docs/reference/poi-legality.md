@@ -181,9 +181,13 @@ the circle and pendulum-inverted through the other, the tip dragging across the
 centre. In his example the prop bearing runs `2 → 4 → 6 → 4 → 2`: horizontal
 east, straight down, horizontal west, straight down, back.
 
-Its prop-rate array is **identical to the pendulum's**. The only difference is
-hand radius: 0 for a pendulum, 1 for an extendulum. They are one pattern at two
-settings of one slider.
+Its prop-rate array is **identical to the pendulum's**. The difference is the
+hand path, and it is not a matter of size. Austen, 2026-11-23: a pendulum's hand
+goes across the bottom and _"does not pass across the top"_; _"Extendulum is a
+real move and should be included"_ under its own name. So a pendulum's hand
+follows its poi back and forth along the bottom arc at any radius, and an
+extendulum's hand goes all the way round. (An earlier version of this section
+called them one pattern at two settings of one radius slider. That was wrong.)
 
 **Rotation is not a symmetry here.** Austen, 2026-07-29: TKA is rotation- and
 reflection-invariant because gravity is irrelevant to it; QfT is poi notation
@@ -239,6 +243,13 @@ and pointing out, he said:
 
 He then chose pendulum turns only for the checker until it can see a hand path
 build up. Rule 5 is written to that: out, with the hand at east or west.
+
+2026-11-23, of a pendulum drawn over the top half of the circle: _"physically
+impossible"_. Rule 5 also refuses a spin reversal that leaves its turn upward,
+so it leaves clockwise at east and counter-clockwise at west. He chose this for
+the checker the same day. A hand that turns back under a poi that keeps its
+spin is not checked for it.
+
 `capPoiProblem` still applies the looser out-point rule to Gage's CAPs.
 
 Still open: dashes, floats, statics and planes other than the wall plane have

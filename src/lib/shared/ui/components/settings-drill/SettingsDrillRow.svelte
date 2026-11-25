@@ -22,6 +22,10 @@ through to the button.
 the label on the left and the control (a two-choice toggle) at the right end,
 no chevron, and no button around it. The prop picker's Size and Grip rows use
 it so they read as one set with the boxes beside them.
+
+`facts` lists several settings the row opens, each as a name over its value, in
+place of the one value line. For a landing screen of a few tall boxes, where a
+single line would leave each box mostly empty (Fuse's hand settings).
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -36,6 +40,7 @@ it so they read as one set with the boxes beside them.
     media,
     control,
     valueLines = 1,
+    facts,
     ...rest
   }: {
     label: string;
@@ -49,6 +54,8 @@ it so they read as one set with the boxes beside them.
     control?: Snippet;
     /** Lines the value may wrap onto. One (the default) clips it to a line. */
     valueLines?: number;
+    /** The settings this row opens, in place of the value line. */
+    facts?: readonly { name: string; value: string }[];
   } & Omit<
     HTMLButtonAttributes,
     "onclick" | "disabled" | "type" | "class" | "children"
@@ -71,6 +78,7 @@ it so they read as one set with the boxes beside them.
     class="drill-row"
     class:is-disabled={disabled}
     class:multi-line={valueLines > 1}
+    class:has-facts={facts}
     style:--row-value-lines={valueLines}
     type="button"
     onclick={() => onclick?.()}
@@ -79,6 +87,15 @@ it so they read as one set with the boxes beside them.
       <span class="row-label">{label}</span>
       {#if disabled}
         <span class="row-reason">{disabledReason}</span>
+      {:else if facts}
+        <span class="row-facts">
+          {#each facts as fact (fact.name)}
+            <span class="row-fact">
+              <span class="fact-name">{fact.name}</span>
+              <span class="fact-value">{fact.value}</span>
+            </span>
+          {/each}
+        </span>
       {:else}
         <span class="row-value">{value}</span>
       {/if}
@@ -199,6 +216,47 @@ it so they read as one set with the boxes beside them.
 
   .multi-line .row-label {
     line-height: 1.2;
+  }
+
+  /* The label heads the facts, so it is the larger of the two. */
+  .has-facts .row-text {
+    gap: 0.5rem;
+  }
+
+  .has-facts .row-label {
+    color: var(--theme-text, rgba(255, 255, 255, 0.92));
+    font-size: var(--font-size-base, 16px);
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.25;
+    text-transform: none;
+  }
+
+  .row-facts {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0.5rem;
+  }
+
+  .row-fact {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .fact-name {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.35;
+  }
+
+  .fact-value {
+    color: var(--theme-text, rgba(255, 255, 255, 0.92));
+    font-size: var(--font-size-sm, 14px);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    line-height: 1.35;
   }
 
   .row-reason {

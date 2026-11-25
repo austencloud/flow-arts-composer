@@ -1,8 +1,6 @@
 <script lang="ts">
   import { s as t } from "../../strings.svelte.js";
   import ShapeMatrixDrill from "../../components/ShapeMatrixDrill.svelte";
-  import ShapeMatrixLoader from "./ShapeMatrixLoader.svelte";
-  import { createLoaderHandoff } from "../state/shape-matrix-loader-handoff.svelte.js";
   import type { ModeRealization } from "../../services/build-mode-realizations.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import {
@@ -22,9 +20,6 @@
   const { onrealizationAction, onshareRealization }: Props = $props();
   const state = getShapeMatrixAppContext();
   const host = getShapeEngineHostContext();
-  /* Built already: straight to the stage. Still building: the loading
-     drawing closes its stroke before the stage takes over. */
-  const loader = createLoaderHandoff(state.data !== null);
   // A mirror host traces the pick itself; the Composer's viewer, library and
   // share links are not there to open.
   const mirror = $derived(host.variant === "mirror");
@@ -41,7 +36,9 @@
 
 <aside class="detail-pane" aria-label={t("shape_engine_detail_aria")}>
   <div class="drill-stage">
-    {#if state.data && loader.done}
+    <!-- The stage opens on the default pair, so the real prop starts
+         tracing as soon as the paths exist; until then the frame is empty. -->
+    {#if state.data}
       <ShapeMatrixDrill
         pair={state.selectedPair}
         data={state.data}
@@ -77,12 +74,6 @@
             state.activeView === "detail",
           handoff: state.mandalaHandoff,
         }}
-      />
-    {:else}
-      <ShapeMatrixLoader
-        variant="stage"
-        ready={state.data !== null}
-        onfinished={loader.finish}
       />
     {/if}
   </div>
@@ -124,9 +115,9 @@
     }
   }
 
-  /* Phones: the animation is the page, so the frame around the stage gives
-     its padding back to it. */
-  @container shape-matrix-app (max-width: 25rem) {
+  /* Phones, either way up: the animation is the page, so the frame around the
+     stage gives its padding back to it. */
+  @container shape-matrix-app (max-width: 25rem) or (max-height: 30rem) {
     .drill-stage {
       padding: 0.4rem;
     }

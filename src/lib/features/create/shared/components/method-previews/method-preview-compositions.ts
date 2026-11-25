@@ -413,6 +413,38 @@ export function tunnelLayout(
   };
 }
 
+/** LOOP: your two steps, and the two that repeat them. */
+export const LOOP_PART_STEPS = 2;
+
+/**
+ * A square puts the repetition on its own row. A strip has one row, so the
+ * two pairs stand a wider gap apart.
+ */
+export function loopLayout(
+  shape: MethodPreviewShape,
+  width: number,
+  height: number
+): CellRect[] {
+  if (!(width > 0) || !(height > 0)) return [];
+  const gap = previewGap(width, height);
+  const part = LOOP_PART_STEPS;
+  if (shape === "square") {
+    const size = gridCellSize(width, height, part, 2, gap);
+    return size > 0 ? centeredGrid(part, 2, size, gap, width, height) : [];
+  }
+  const between = 2 * gap;
+  const size = gridCellSize(width - (between - gap), height, 2 * part, 1, gap);
+  if (size <= 0) return [];
+  const span = 2 * part * size + (2 * part - 2) * gap + between;
+  const x0 = Math.floor((width - span) / 2);
+  const y = Math.floor((height - size) / 2);
+  return Array.from({ length: 2 * part }, (_, index) => ({
+    x: x0 + index * (size + gap) + (index >= part ? between - gap : 0),
+    y,
+    size,
+  }));
+}
+
 /** Assemble: the grid, and the two beats its taps write. */
 export interface AssembleLayout {
   grid: CellRect;

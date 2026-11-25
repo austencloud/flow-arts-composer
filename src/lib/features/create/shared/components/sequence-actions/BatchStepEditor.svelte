@@ -202,6 +202,8 @@
      pictographs fill the panel. `safe center` centers them when they fit and
      falls back to scroll-from-top when the selection overflows. */
   .pictograph-grid {
+    /* Steps read left to right in every language, Arabic included. */
+    direction: ltr;
     display: grid;
     gap: 12px;
     padding: 6px;

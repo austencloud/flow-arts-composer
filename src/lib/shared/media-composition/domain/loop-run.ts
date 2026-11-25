@@ -66,13 +66,18 @@ export type LoopRunRoom = z.infer<typeof LoopRunRoomSchema>;
 
 /** The moments of a run, each on the clip's own seconds. */
 export const LoopRunEventSchema = z.discriminatedUnion("kind", [
-  /** The listed steps (default: the seed) appear one after another across `duration`. */
+  /**
+   * The listed steps (default: the seed) appear one after another across
+   * `duration`. `style: "fold"` folds each one open from a line across its
+   * middle, easing, and fades it in over its whole share of the time.
+   */
   z
     .object({
       kind: z.literal("reveal"),
       at: seconds,
       duration: seconds,
       steps: z.array(step).optional(),
+      style: z.enum(["fold"]).optional(),
     })
     .strict(),
   /**
@@ -159,6 +164,22 @@ export const LoopRunEventSchema = z.discriminatedUnion("kind", [
    * time a round ends, growing and fading over half a second. `wayBack` draws
    * a gold line under the row from the last step's tile back to the first as
    * the first round ends, and brings it up again at every later round's end.
+   *
+   * `canvas` draws the stage the way the 2D animation canvas draws a
+   * sequence: its grid, and the props where the animation puts them, two
+   * props on one point overlapping rather than parted. `steps` plays only
+   * steps `steps[0]` to `steps[1]`, `rounds` times; a play that has `steps`,
+   * or follows one that has, carries straight on from the play before: no
+   * fade, the props holding where it left them until it starts. `light`
+   * leaves light where the props' ends pass, kept to the end of the clip;
+   * `comet` makes the newest stretch of it brighter while this play runs.
+   * `ghost` turns a faint copy of the light drawn by its `at` over to where
+   * the next repetition will draw it, across `duration`, and keeps it until
+   * this play ends, the light this play draws replacing it as it goes.
+   * `line` draws the gold mirror line down through the stage's centre over
+   * its `duration`, and fades it once this play ends. `move` glides the
+   * stage to another centre and size over its `duration`, easing.
+   * `ringFrom` holds the ring back until then and fades it in.
    */
   z
     .object({
@@ -175,6 +196,17 @@ export const LoopRunEventSchema = z.discriminatedUnion("kind", [
       shadow: z.boolean().optional(),
       flare: z.boolean().optional(),
       wayBack: z.boolean().optional(),
+      canvas: z.boolean().optional(),
+      steps: z.tuple([step, step]).optional(),
+      light: z.boolean().optional(),
+      comet: z.boolean().optional(),
+      ghost: z.object({ at: seconds, duration: seconds, opacity: share.optional() }).strict().optional(),
+      line: z.object({ at: seconds, duration: seconds }).strict().optional(),
+      move: z
+        .object({ at: seconds, duration: seconds, x: share, y: share, size: z.number().finite().min(0).max(1.5) })
+        .strict()
+        .optional(),
+      ringFrom: seconds.optional(),
     })
     .strict(),
 ]);
@@ -264,6 +296,11 @@ export function ramp(t: number, a: number, b: number): number {
   return x * x * (3 - 2 * x);
 }
 const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
+/** Quadratic ease in and out, 0 to 1 over 0 to 1. */
+export function easeInOut(x: number): number {
+  const u = clamp01(x);
+  return u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+}
 /** An angle folded into (-180, 180]. */
 export function halfTurn(deg: number): number {
   const d = ((((deg % 360) + 540) % 360) - 180) as number;
@@ -542,6 +579,8 @@ export interface LoopTileDraw extends LoopTilePlace {
   letter: number;
   arrows: number;
   props: LoopPropsDraw | null;
+  /** How far a folding tile (`style: "fold"`) has opened, top to bottom, about its centre; absent is whole. */
+  fold?: number;
 }
 
 /**
@@ -636,6 +675,34 @@ export interface LoopStageDraw extends LoopTilePlace {
   flares?: LoopFlareDraw[];
   /** The way back under the row (`wayBack`), once it has begun. */
   wayBack?: LoopWayBackDraw | null;
+  /** Drawn as the animation canvas draws it (`canvas`), with its light, ghost and mirror line. */
+  canvas?: LoopCanvasDraw;
+}
+
+/** A stretch of one step's move, from `from` to `to` of the way through it. */
+export interface LoopLightSpan {
+  step: number;
+  from: number;
+  to: number;
+}
+
+/** One unbroken line of light: each span picks up where the one before it stops. */
+export type LoopLightStroke = LoopLightSpan[];
+
+/** The canvas stage's light, in steps and shares of their moves; the painter samples the props' ends along them. */
+export interface LoopCanvasDraw {
+  /** Every stretch the props' ends have passed over so far, in light plays. */
+  light: LoopLightStroke[];
+  /** The newest stretch, oldest first, while a `comet` play runs. */
+  comet: LoopLightStroke | null;
+  /**
+   * The faint copy of the light turning over (`ghost`): its spans are the
+   * light's own, `flip` scales it across the stage's centre line (1 as it
+   * is, -1 turned over) and `turn` turns it about the centre, in degrees.
+   */
+  ghost: { strokes: LoopLightStroke[]; flip: number; turn: number; opacity: number } | null;
+  /** The gold mirror line (`line`), in clip pixels, as far as it has drawn on. */
+  mirror: LoopLineDraw | null;
 }
 
 export interface LoopRunFrame {
@@ -696,6 +763,18 @@ const START_FADE = 0.5;
 const PROPS_LEAD = 0.2;
 /** How long a revealed tile takes to appear. */
 const REVEAL_FADE = 0.25;
+/** A folding tile starts as a line this thin, as a share of its height. */
+const FOLD_MIN = 0.02;
+/** How long the ring takes to come in at a play's `ringFrom`. */
+const RING_FROM_FADE = 0.2;
+/** The comet: the newest stretch of light, as a share of a round. */
+const COMET_SHARE = 0.225;
+/** How faint the ghost is when the play does not say. */
+const GHOST_OPACITY = 0.35;
+/** The mirror line's half length past the stage's centre: 1.55 of the grid's outer radius (300 of 950). */
+const MIRROR_REACH = (1.55 * 300) / 950;
+/** How long the mirror line takes to fade once its play ends. */
+const MIRROR_FADE = 0.5;
 
 /** How far round the ring a rotated repeat is turned from the pass before. */
 export function loopRunTurnDegrees(
@@ -777,7 +856,8 @@ export function loopRunFrame(
       if (k < 0) continue;
       const every = listed.length > 0 ? event.duration / listed.length : 0;
       const start = event.at + k * every;
-      return { start, fade: every > 0 ? Math.min(REVEAL_FADE, every) : REVEAL_FADE };
+      if (event.style === "fold") return { start, fade: every, fold: true };
+      return { start, fade: every > 0 ? Math.min(REVEAL_FADE, every) : REVEAL_FADE, fold: false };
     }
     return null;
   };
@@ -794,7 +874,12 @@ export function loopRunFrame(
     const arrive = pass > 0 ? entry(pass) : null;
     let opacity = 1;
     let scale = 1;
-    if (reveal) {
+    let fold: number | undefined;
+    if (reveal?.fold) {
+      // Folds open from a line across its middle, fading in with the fold.
+      opacity = reveal.fade > 0 ? easeInOut((t - reveal.start) / reveal.fade) : t >= reveal.start ? 1 : 0;
+      fold = Math.max(FOLD_MIN, opacity);
+    } else if (reveal) {
       opacity = ramp(t, reveal.start, reveal.start + reveal.fade);
       // A plain tile's empty frame already stands, so it fades in without growing.
       if (!plain) scale = lerp(0.8, 1, opacity);
@@ -807,7 +892,7 @@ export function loopRunFrame(
     const { props, arrows, letter } = propsAt(settings, s, t);
     const corner = plain ? 0 : 1 - cardShare(state, pass);
     const outline = !plain && pass > 0 ? 1 : 0;
-    tiles.push({ ...place, step: s, opacity, scale, outline, corner, letter, arrows, props });
+    tiles.push({ ...place, step: s, opacity, scale, outline, corner, letter, arrows, props, ...(fold !== undefined ? { fold } : {}) });
 
     if (arrive && t >= arrive.start && t < arrive.end + 0.2) {
       const from = sourceOf(settings.change, shape, s);
@@ -923,7 +1008,43 @@ export function loopRunFrame(
     if (opacity > 0) start = { ...cardPlace(rect, shape, -1), opacity };
   }
 
-  return { slots, tiles, copies, ghosts, line, home, start, stage: stageAt(settings, shape, clipRect, tiles, t) };
+  return { slots, tiles, copies, ghosts, line, home, start, stage: stageAt(settings, shape, clipRect, tiles, t, turnDegrees) };
+}
+
+type PlayEvent = EventOf<"play">;
+
+/** The steps a play covers: `a` to `b`, `count` of them; `whole` when that is every step. */
+interface PlayRange {
+  a: number;
+  b: number;
+  count: number;
+  whole: boolean;
+}
+
+function rangeOf(play: PlayEvent, shape: LoopRunShape): PlayRange {
+  const last = Math.max(0, shape.steps - 1);
+  const a = Math.min(last, play.steps?.[0] ?? 0);
+  const b = Math.min(last, Math.max(a, play.steps?.[1] ?? last));
+  return { a, b, count: b - a + 1, whole: a === 0 && b === last };
+}
+
+/** A play carries straight on from the one before when either covers a run of steps. */
+function continuesFrom(plays: readonly PlayEvent[], i: number): boolean {
+  const before = plays[i - 1];
+  return before !== undefined && (plays[i]!.steps !== undefined || before.steps !== undefined);
+}
+
+/** A play's even pace: `total` step moves, `per` seconds each. */
+function clockOf(play: PlayEvent, range: PlayRange): { rounds: number; total: number; per: number } {
+  const rounds = play.rounds ?? 2;
+  const total = rounds * range.count;
+  return { rounds, total, per: play.duration / total };
+}
+
+/** Where a play leaves the props once its last round ends. */
+function landingOf(play: PlayEvent, range: PlayRange): LoopStagePose {
+  const { total } = clockOf(play, range);
+  return { step: range.b, progress: 1, continued: range.whole && total > range.count };
 }
 
 /**
@@ -936,38 +1057,59 @@ function stageAt(
   shape: LoopRunShape,
   clip: LoopRunRect,
   tiles: readonly LoopTileDraw[],
-  t: number
+  t: number,
+  turnDegrees: number
 ): LoopStageDraw | null {
-  const fadeFrom = (event: EventOf<"play">) => Math.min(event.at, event.from ?? event.at - STAGE_FADE);
-  const play = eventsOf(settings.events, "play")
-    .filter((event) => t >= fadeFrom(event))
-    .at(-1);
+  const plays = eventsOf(settings.events, "play");
+  const fadeFrom = (i: number) => {
+    const event = plays[i]!;
+    return continuesFrom(plays, i) ? event.at : Math.min(event.at, event.from ?? event.at - STAGE_FADE);
+  };
+  let index = -1;
+  plays.forEach((_, i) => {
+    if (t >= fadeFrom(i)) index = i;
+  });
+  const play = plays[index];
   if (!play || shape.steps < 1) return null;
-  const opacity = ramp(t, fadeFrom(play), Math.min(play.at, fadeFrom(play) + STAGE_FADE));
-  const rounds = play.rounds ?? 2;
-  const total = rounds * shape.steps;
-  const per = play.duration / total;
+  const carried = continuesFrom(plays, index);
+  const opacity = carried ? 1 : ramp(t, fadeFrom(index), Math.min(play.at, fadeFrom(index) + STAGE_FADE));
+  const range = rangeOf(play, shape);
+  const { rounds, total, per } = clockOf(play, range);
   const elapsed = t - play.at;
+  /** The step in the range that slot `slot` of the play plays. */
+  const stepOf = (slot: number) => range.a + (((slot % range.count) + range.count) % range.count);
   let props: LoopStageDraw["props"];
   /** The step being played, the one before it, and how far into the step `t` is in seconds. */
   let k = 0;
   let into = 0;
-  if (elapsed < 0 || per <= 0) props = { step: -1, progress: 1, continued: false };
-  else if (elapsed >= play.duration) {
-    props = { step: shape.steps - 1, progress: 1, continued: total > shape.steps };
+  if (elapsed < 0 || per <= 0) {
+    const before = plays[index - 1];
+    props = carried && before ? landingOf(before, rangeOf(before, shape)) : { step: -1, progress: 1, continued: false };
+  } else if (elapsed >= play.duration) {
+    props = landingOf(play, range);
     k = total - 1;
     into = per;
   } else {
     k = Math.min(total - 1, Math.floor(elapsed / per));
     into = elapsed - k * per;
-    props = { step: k % shape.steps, progress: clamp01(into / per), continued: k >= shape.steps };
+    props = { step: stepOf(k), progress: clamp01(into / per), continued: range.whole && k >= range.count };
   }
+
+  // Where the stage stands: where the play puts it, or gliding on to where `move` takes it.
+  const move = play.move;
+  const glide = !move ? 0 : move.duration > 0 ? easeInOut((t - move.at) / move.duration) : t >= move.at ? 1 : 0;
+  const place = {
+    x: clip.x + lerp(play.stage.x, move?.x ?? play.stage.x, glide) * clip.width,
+    y: clip.y + lerp(play.stage.y, move?.y ?? play.stage.y, glide) * clip.height,
+    size: lerp(play.stage.size, move?.size ?? play.stage.size, glide) * clip.width,
+  };
 
   // The app's selection does not slide: the ring cross-fades from tile to tile.
   const rings: LoopRingDraw[] = [];
   if (play.marker !== false) {
     const gone = elapsed >= play.duration ? ramp(t, play.at + play.duration, play.at + play.duration + RING_FADE) : 0;
-    const strength = opacity * (1 - gone);
+    const held = play.ringFrom === undefined ? 1 : ramp(t, play.ringFrom, play.ringFrom + RING_FROM_FADE);
+    const strength = opacity * (1 - gone) * held;
     const u = k === 0 || elapsed < 0 ? 1 : clamp01(into / RING_SWAP);
     const ring = (tile: LoopTileDraw | undefined, share: number) => {
       if (!tile || share * strength <= 0) return;
@@ -981,29 +1123,142 @@ function stageAt(
         ...(play.ring ? { look: play.ring } : {}),
       });
     };
-    if (u < 1) ring(tiles[(k + shape.steps - 1) % shape.steps], 1 - u);
-    ring(tiles[k % shape.steps], u);
+    if (u < 1) ring(tiles[stepOf(k - 1)], 1 - u);
+    ring(tiles[stepOf(k)], u);
   }
 
   // Where a round leaves the props. It is not the start position's pose: two
   // props sharing a point are parted the other way round once the LOOP has
   // gone round, so the shadow and the flare take the landed pose.
-  const landed: LoopStagePose = { step: shape.steps - 1, progress: 1, continued: total > shape.steps };
+  const landed = landingOf(play, range);
   const roundEnds = Array.from({ length: rounds }, (_, r) => play.at + ((r + 1) * play.duration) / rounds);
-  const extras: Pick<LoopStageDraw, "shadow" | "flares" | "wayBack"> = {};
+  const extras: Pick<LoopStageDraw, "shadow" | "flares" | "wayBack" | "canvas"> = {};
   if (play.shadow) extras.shadow = per > 0 && t >= play.at - ROUND_EPSILON ? landed : null;
   if (play.flare) extras.flares = per > 0 ? flaresAt(roundEnds, landed, clip.width / 1080, opacity, t) : [];
   if (play.wayBack) extras.wayBack = per > 0 ? wayBackAt(roundEnds, tiles, shape, opacity, t) : null;
+  if (play.canvas) extras.canvas = canvasAt(settings, plays, shape, place, t, turnDegrees);
   return {
-    x: clip.x + play.stage.x * clip.width,
-    y: clip.y + play.stage.y * clip.height,
-    size: play.stage.size * clip.width,
+    ...place,
     opacity,
     grid: play.stage.grid ?? 1,
     props,
     rings,
     ...extras,
   };
+}
+
+/** How far each step's move has been drawn in light by `t`, 0 to 1, over every light play. */
+export function loopLightCoverage(settings: LoopRunSettings, steps: number, t: number): number[] {
+  return coverageAt(eventsOf(settings.events, "play"), loopRunShape(settings, steps), t);
+}
+
+function coverageAt(plays: readonly PlayEvent[], shape: LoopRunShape, t: number): number[] {
+  const cover = Array.from({ length: shape.steps }, () => 0);
+  for (const play of plays) {
+    if (!play.light || t < play.at) continue;
+    const range = rangeOf(play, shape);
+    const { total, per } = clockOf(play, range);
+    // Later rounds go over the same steps again, so only the first round adds light.
+    const done = per > 0 ? Math.min(total, (t - play.at) / per) : total;
+    for (let slot = 0; slot < range.count; slot++) {
+      const s = range.a + slot;
+      cover[s] = Math.max(cover[s]!, clamp01(done - slot));
+    }
+  }
+  return cover;
+}
+
+/** The light as unbroken strokes, step after step, breaking after a step not yet drawn to its end. */
+function strokesOf(cover: readonly number[]): LoopLightStroke[] {
+  const strokes: LoopLightStroke[] = [];
+  let run: LoopLightStroke = [];
+  cover.forEach((to, s) => {
+    if (to > 0) run.push({ step: s, from: 0, to });
+    if (to < 1 && run.length) {
+      strokes.push(run);
+      run = [];
+    }
+  });
+  if (run.length) strokes.push(run);
+  return strokes;
+}
+
+/** The canvas stage's light, ghost and mirror line at `t`, on the stage at `place`. */
+function canvasAt(
+  settings: LoopRunSettings,
+  plays: readonly PlayEvent[],
+  shape: LoopRunShape,
+  place: LoopTilePlace,
+  t: number,
+  turnDegrees: number
+): LoopCanvasDraw {
+  const cover = coverageAt(plays, shape, t);
+  const light = strokesOf(cover);
+
+  // The newest stretch: the last COMET_SHARE of a round behind the props, while its play runs.
+  let comet: LoopLightStroke | null = null;
+  for (const play of plays) {
+    if (!play.comet || t < play.at || t >= play.at + play.duration) continue;
+    const range = rangeOf(play, shape);
+    const { per } = clockOf(play, range);
+    if (per <= 0) continue;
+    const head = (t - play.at) / per;
+    const tail = Math.max(0, head - COMET_SHARE * range.count);
+    const spans: LoopLightStroke = [];
+    for (let slot = Math.floor(tail); slot <= Math.floor(head); slot++) {
+      const from = Math.max(0, tail - slot);
+      const to = Math.min(1, head - slot);
+      if (to > from) spans.push({ step: range.a + (slot % range.count), from, to });
+    }
+    comet = spans.length ? spans : null;
+  }
+
+  // The ghost: the light drawn by its `at`, turning over; each stretch goes once the props draw over its twin.
+  let ghost: LoopCanvasDraw["ghost"] = null;
+  for (const play of plays) {
+    const g = play.ghost;
+    if (!g || t < g.at || t >= play.at + play.duration) continue;
+    const then = coverageAt(plays, shape, g.at);
+    const strokes: LoopLightStroke[] = [];
+    let run: LoopLightStroke = [];
+    then.forEach((to, s) => {
+      const twin = s + shape.seed;
+      const from = twin < shape.steps ? Math.min(cover[twin]!, to) : 0;
+      const last = run.at(-1);
+      const joins = last !== undefined && last.step === s - 1 && last.to >= 1 && from <= 0;
+      if (!joins && run.length) {
+        strokes.push(run);
+        run = [];
+      }
+      if (to > from) run.push({ step: s, from, to });
+    });
+    if (run.length) strokes.push(run);
+    const turned = g.duration > 0 ? easeInOut((t - g.at) / g.duration) : 1;
+    ghost = {
+      strokes,
+      flip: settings.change === "reflected" ? Math.cos(Math.PI * turned) : 1,
+      turn: settings.change === "rotated" ? turnDegrees * turned : 0,
+      opacity: g.opacity ?? GHOST_OPACITY,
+    };
+  }
+
+  // The mirror line: drawn on down through the stage's centre, then gone once its play ends.
+  let mirror: LoopLineDraw | null = null;
+  for (const play of plays) {
+    const line = play.line;
+    if (!line || t < line.at) continue;
+    const end = play.at + play.duration;
+    const opacity = 1 - ramp(t, end, end + MIRROR_FADE);
+    if (opacity <= 0) {
+      mirror = null;
+      continue;
+    }
+    const drawn = line.duration > 0 ? clamp01((t - line.at) / line.duration) : 1;
+    const reach = MIRROR_REACH * place.size;
+    mirror = { x0: place.x, y0: place.y - reach, x1: place.x, y1: place.y - reach + 2 * reach * drawn, opacity };
+  }
+
+  return { light, comet, ghost, mirror };
 }
 
 /** The flare outlines showing at `t`: each round's end starts one set. `pixel` is a 1080-wide frame's pixel in clip pixels. */

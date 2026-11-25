@@ -101,6 +101,8 @@ function grow(seed: number, density: number): Branch[] {
     pos = next;
   }
   const fork = pos;
+  // Close the trunk in among its limbs, or its open end shows as a ledge.
+  branches.push({ a: fork, b: add(fork, scale(dir, TRUNK * 0.9)), ra: TRUNK * 0.79, rb: TRUNK * 0.3, level: 0 });
   const queue: Job[] = [];
   const limbs = 3 + Math.floor(random() * 3);
   const base = random() * Math.PI * 2;
@@ -177,9 +179,16 @@ export function growBareTree(seed: number, height: number, spread: number, maxBr
     // Over budget: keep every limb and thin the finest twigs evenly, so the same seed always grows the same tree.
     const limbs = nominal.filter((b) => b.level < MAX_LEVEL);
     const twigs = nominal.filter((b) => b.level >= MAX_LEVEL);
-    const keep = Math.max(0, maxBranches - limbs.length);
-    const picked = Array.from({ length: Math.min(keep, twigs.length) }, (_, i) => twigs[Math.floor((i * twigs.length) / keep)]!);
-    nominal = [...limbs, ...picked];
+    // A twig is kept or dropped whole: half of one would leave its tip hanging in the air.
+    const whole: Branch[][] = [];
+    for (const piece of twigs) {
+      const last = whole.at(-1);
+      if (last && samePlace(last.at(-1)!.b, piece.a)) last.push(piece);
+      else whole.push([piece]);
+    }
+    const keep = Math.max(0, Math.floor((maxBranches - limbs.length) / (twigs.length / whole.length)));
+    const picked = Array.from({ length: Math.min(keep, whole.length) }, (_, i) => whole[Math.floor((i * whole.length) / keep)]!);
+    nominal = [...limbs, ...picked.flat()];
   }
   let top = 0;
   let reach = 0;
@@ -201,21 +210,58 @@ export function growBareTree(seed: number, height: number, spread: number, maxBr
   return { branches, top: height, reach: spread / 2 };
 }
 
+/** How much of a limb's girth one picture of bark covers, metres. */
+const BARK_WIDTH = 0.8;
+
+const samePlace = (a: V3, b: V3) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+
 /** One tree as a single vertex-coloured geometry, smooth round limbs. */
 export function bareTreeGeometry(tree: TreeShape): BufferGeometry | null {
   const grown = growBareTree(tree.seed, tree.height, tree.spread);
   const position: number[] = [];
   const normal: number[] = [];
   const colour: number[] = [];
+  const uv: number[] = [];
   const random = seededRandom((tree.seed ^ 0x6a09e667) >>> 0);
+  // One limb is one piece of wood: its bark, shade and rings run on from piece to piece.
+  let last: V3 | null = null;
+  let along = 0;
+  let shade = 1;
+  let wraps = 1;
+  let sidesBefore = 0;
+  let across: Vec = [1, 0, 0];
+  let acrossBefore: Vec = [1, 0, 0];
+  let axisBefore: Vec = [0, 1, 0];
   for (const b of grown.branches) {
     const axis = unit([b.b[0] - b.a[0], b.b[1] - b.a[1], b.b[2] - b.a[2]]);
-    const u = perpendicular(axis);
-    const v = crossOf(axis, u);
+    const runsOn = last !== null && samePlace(last, b.a);
+    if (!runsOn) along = 0;
+    // Turn the last piece's frame onto this one's axis, so the sides line up.
+    const held = across[0] * axis[0] + across[1] * axis[1] + across[2] * axis[2];
+    acrossBefore = across;
+    across = runsOn
+      ? unit([across[0] - axis[0] * held, across[1] - axis[1] * held, across[2] - axis[2] * held])
+      : perpendicular(axis);
     const sides = b.ra > 0.12 ? 10 : b.ra > 0.05 ? 6 : b.ra > 0.025 ? 4 : 3;
     const tone = b.level <= 1 ? BARE_COLOURS.trunk : BARE_COLOURS.twig;
-    const shade = 0.88 + random() * 0.24;
-    const ring = (centre: V3, r: number, i: number): { p: Vec; n: Vec } => {
+    const own = 0.88 + random() * 0.24;
+    const girth = Math.PI * 2 * b.ra;
+    if (!runsOn) {
+      shade = own;
+      // A whole number of repeats round the limb, so it closes on itself.
+      wraps = Math.max(1, Math.round(girth / BARK_WIDTH));
+    }
+    const repeat = Math.max(BARK_WIDTH * 0.3, girth / wraps);
+    const from = along;
+    along += Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1], b.b[2] - b.a[2]) / repeat;
+    last = b.b;
+    const shared = runsOn && sides === sidesBefore;
+    const footU = shared ? acrossBefore : across;
+    const footV = crossOf(shared ? axisBefore : axis, footU);
+    const topV = crossOf(axis, across);
+    axisBefore = axis;
+    sidesBefore = sides;
+    const ring = (centre: V3, r: number, i: number, u: Vec, v: Vec): { p: Vec; n: Vec } => {
       const angle = (i / sides) * Math.PI * 2;
       const n: Vec = [
         u[0] * Math.cos(angle) + v[0] * Math.sin(angle),
@@ -228,14 +274,24 @@ export function bareTreeGeometry(tree: TreeShape): BufferGeometry | null {
       };
     };
     for (let i = 0; i < sides; i++) {
-      const a0 = ring(b.a, b.ra, i);
-      const a1 = ring(b.a, b.ra, i + 1);
-      const b0 = ring(b.b, b.rb, i);
-      const b1 = ring(b.b, b.rb, i + 1);
-      for (const t of [a0, a1, b0, a1, b1, b0]) {
+      const a0 = ring(b.a, b.ra, i, footU, footV);
+      const a1 = ring(b.a, b.ra, i + 1, footU, footV);
+      const b0 = ring(b.b, b.rb, i, across, topV);
+      const b1 = ring(b.b, b.rb, i + 1, across, topV);
+      const u0 = (i / sides) * wraps;
+      const u1 = ((i + 1) / sides) * wraps;
+      for (const [t, tu, tv] of [
+        [a0, u0, from],
+        [a1, u1, from],
+        [b0, u0, along],
+        [a1, u1, from],
+        [b1, u1, along],
+        [b0, u0, along],
+      ] as const) {
         position.push(t.p[0], t.p[1], t.p[2]);
         normal.push(t.n[0], t.n[1], t.n[2]);
         colour.push(tone[0] * shade, tone[1] * shade, tone[2] * shade);
+        uv.push(tu, tv);
       }
     }
   }
@@ -244,7 +300,7 @@ export function bareTreeGeometry(tree: TreeShape): BufferGeometry | null {
   g.setAttribute("position", new Float32BufferAttribute(position, 3));
   g.setAttribute("normal", new Float32BufferAttribute(normal, 3));
   g.setAttribute("color", new Float32BufferAttribute(colour, 3));
-  g.setAttribute("uv", new Float32BufferAttribute(new Float32Array((position.length / 3) * 2), 2));
+  g.setAttribute("uv", new Float32BufferAttribute(uv, 2));
   g.translate(tree.at.x, 0, tree.at.z);
   return g;
 }

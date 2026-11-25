@@ -20,12 +20,14 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 import {
+  AABB_CW,
   ALL_FIXTURE_LOOPS,
   PHI_PSI_LOOP,
 } from "#lib/shared/combination/domain/demo-fixtures.js";
 
 export {
   AAAA_CCW,
+  AABB_CW,
   ALL_FIXTURE_LOOPS,
   FALG,
   GGGG_CW,
@@ -63,10 +65,17 @@ export function seamsOf(seq: SequenceData): SeamState[] {
   });
 }
 
-/** Every fixture step, named, for whole-corpus assertions. */
+/** The sweep list plus AABB, which is verified here but kept out of the labs'
+ *  sweeps (see its comment in demo-fixtures.ts). */
+export const VERIFIED_LOOPS: readonly (readonly [string, SequenceData])[] = [
+  ...ALL_FIXTURE_LOOPS,
+  ["AABB_CW", AABB_CW],
+];
+
+/** Every verified fixture step, named, for whole-corpus assertions. */
 export const ALL_FIXTURE_STEPS: readonly {
   readonly name: string;
   readonly step: StepData;
-}[] = ALL_FIXTURE_LOOPS.flatMap(([name, seq]) =>
+}[] = VERIFIED_LOOPS.flatMap(([name, seq]) =>
   seq.steps.map((step, i) => ({ name: `${name}[${i}]`, step }))
 );

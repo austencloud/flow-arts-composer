@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getFuseContext } from "../context/fuse-context";
   import { checkFuseTnD } from "../domain/fuse-tnd-check";
   import {
@@ -18,25 +19,32 @@
     const mismatch = checkFuseTnD(sequence, selection.mode).firstMismatchBeat;
     if (mismatch === null) {
       return {
-        text: "Timing and direction still hold on every beat.",
+        text: t("fuse_rule_rewind_holds"),
         breaks: false,
       };
     }
 
-    const follower = fuseState.driverSide === "left" ? "Right" : "Left";
-    const leader = fuseState.driverSide === "left" ? "Left" : "Right";
     const pairedBeat = sequence.steps.length + 1 - mismatch;
     return {
-      text: `Rewind pairs ${follower}'s beat ${mismatch} with ${leader}'s beat ${pairedBeat}. They don't line up, so ${fuseTnDModeLabel(selection.mode)} breaks at beat ${mismatch}.`,
+      text: t(
+        fuseState.driverSide === "left"
+          ? "fuse_rule_rewind_breaks_left_leads"
+          : "fuse_rule_rewind_breaks_right_leads",
+        {
+          beat: mismatch,
+          paired: pairedBeat,
+          mode: fuseTnDModeLabel(selection.mode),
+        }
+      ),
       breaks: true,
     };
   });
 </script>
 
-<section class="linked-rule-panel" aria-label="Linked rule">
+<section class="linked-rule-panel" aria-label={t("fuse_rule_linked_aria")}>
   <FuseTransformPicker inline {rewindNote} />
   {#if fuseState.ruleAdjusted}
-    <p class="rule-note" role="status">Rule adjusted to the nearest timing.</p>
+    <p class="rule-note" role="status">{t("fuse_rule_adjusted_note")}</p>
   {/if}
 </section>
 

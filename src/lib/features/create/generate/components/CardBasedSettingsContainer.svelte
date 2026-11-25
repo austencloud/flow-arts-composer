@@ -1286,7 +1286,9 @@ Delegates ALL logic to services (SRP compliant)
       transform: none;
     }
 
-    .card-wrapper[data-card-id="loop"] :global(.loop-icon-row) {
+    /* Where the LOOP's name doesn't fit, its icons stand in for it. */
+    .card-wrapper[data-card-id="loop"]
+      :global(.loop-body:not([data-fit="icons"]) .loop-icon-row) {
       display: none;
     }
 
@@ -1306,7 +1308,6 @@ Delegates ALL logic to services (SRP compliant)
         calc(50cqh + 3px - 14px)
       );
     }
-
   }
 
   /* Grid's two options stand side by side with the icon over the name: 4px

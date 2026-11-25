@@ -85,6 +85,17 @@ export const CREATE_TABS: Section[] = [
     gradient: "linear-gradient(135deg, #67e8f9 0%, #a78bfa 100%)",
     metadata: { isCreationMethod: true },
   },
+  {
+    id: "loop",
+    labelKey: "tab_create_loop",
+    descKey: "tab_desc_create_loop",
+    label: "LOOP",
+    icon: '<i class="fas fa-repeat" aria-hidden="true"></i>',
+    description: "Build a LOOP step by step.",
+    color: "#ec4899",
+    gradient: "linear-gradient(135deg, #f472b6 0%, #ec4899 100%)",
+    metadata: { isCreationMethod: true },
+  },
   // REMOVED: Spell tab unified into Generate tab as "Spell" mode (Feb 2026)
   // Spell functionality accessible via Generate tab's Freeform/Spell mode toggle
 ];

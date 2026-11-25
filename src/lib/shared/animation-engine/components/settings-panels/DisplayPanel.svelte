@@ -1054,7 +1054,8 @@
      (4+4+3 starts at track 2, a single tile at track 4). The rows share the
      body: (height - gaps) / rows, capped at 76px, the grid centred when
      capped. That is about 67px rows at a 215px body and 76px at 245 and
-     310. The picture takes what the label leaves, kept square. */
+     310. A host with fewer rows to fill raises the cap (--vis-row-max). The
+     picture takes what the label leaves, kept square. */
   .vis-grid-shell.dock {
     container-type: size;
     flex: 1 1 0;
@@ -1064,7 +1065,7 @@
     height: 100%;
     grid-template-columns: repeat(8, minmax(0, 1fr));
     grid-auto-rows: min(
-      76px,
+      var(--vis-row-max, 76px),
       calc((100cqh - (var(--vis-rows, 3) - 1) * 4px) / var(--vis-rows, 3))
     );
     align-content: center;
@@ -1086,6 +1087,18 @@
   }
   .vis-grid.dock > .rt-chip:nth-child(4n + 1):nth-last-child(1) {
     grid-column: 4 / span 2;
+  }
+  /* A dock beside the player is as tall as it is (a tablet), not the strip
+     under it: two wide tiles a row share that height. */
+  @container (min-height: 22rem) {
+    .vis-grid-shell.dock > .vis-grid.dock:not(.fitted) {
+      grid-auto-rows: calc(
+        (100cqh - (var(--vis-rows, 3) * 2 - 1) * 4px) / (var(--vis-rows, 3) * 2)
+      );
+    }
+    .vis-grid.dock > .rt-chip:nth-child(n):nth-last-child(n) {
+      grid-column: span 4;
+    }
   }
   .vis-grid.dock .rt-chip :global(.art) {
     flex: 1 1 0;

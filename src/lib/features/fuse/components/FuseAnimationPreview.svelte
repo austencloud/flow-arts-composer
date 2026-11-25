@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import SplitCanvasView from "#lib/shared/animation-engine/components/SplitCanvasView.svelte";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
@@ -11,16 +12,14 @@
   import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
   import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
-  import {
-    AnimationVisibilityStateManager,
-    getAnimationVisibilityManager,
-  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import {
-    FUSE_PREVIEW_TIP_EFFECT_MAP,
-    resolveFusePreviewTrackingMode,
-  } from "#lib/features/fuse/services/fuse-preview-trail-config.js";
+  import { resolveFusePreviewTrackingMode } from "#lib/features/fuse/services/fuse-preview-trail-config.js";
+  import { getFuseDisplay } from "#lib/features/fuse/state/fuse-display.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import { ensureMotionData } from "#lib/shared/sequence-viewer/services/sequence-motion-loader.js";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     sequence,
@@ -52,34 +51,20 @@
   // first paint, crossfading staff->saved a beat in. Passing the saved prop types
   // as explicit overrides makes the first frame render the correct prop, no fade.
   const settings = getSettings();
-  const fuseVisibility = new AnimationVisibilityStateManager({
-    ephemeral: true,
-  });
-  const sharedVisibility = getAnimationVisibilityManager();
+  // What the canvas shows, as Customize sets it. The canonical elemental glyph
+  // derives its element from each live step, so a four-step VTG relationship
+  // stays steady and a genuinely changing relationship changes with the
+  // animation.
+  const fuseDisplay = getFuseDisplay();
+  // The effects FuseLayout provides: the person's own, which Customize
+  // changes. The split solos inherit the same state from context.
+  const effectsConfigState = getEffectsConfigContext() ?? undefined;
 
-  // Fuse owns a few display choices (such as its elemental glyph), but it must
-  // not invent a second motion-path setting. Reads and writes of path shape,
-  // By Motion, and effort route to the shared manager, so the canvas menu's
-  // Path Shape entries change the one setting every surface uses instead of a
-  // private copy the props never consult.
-  fuseVisibility.setMotionPolicySource(sharedVisibility);
-
-  // The shared manager notifies its own observers on a policy change; this
-  // bridge repaints the Fuse canvases for changes made anywhere else.
-  function repaintOnSharedChange(): void {
-    fuseVisibility.notifyObservers();
-  }
-  // A classified pair should identify itself while it moves. The canonical
-  // canvas glyph derives the element from each live step, so a four-step VTG
-  // relationship stays steady and a genuinely changing relationship changes
-  // with the animation.
-  fuseVisibility.setVisibility("elementalGlyph", true);
-  fuseVisibility.setVisibility("tkaGlyph", true);
   const previewTrailSettings = $derived({
     ...animationSettings.trail,
-    // Fuse has no trail controls, so its preview follows the same prop contract
-    // as the Choreo Card: unilateral props trace one central tip; bilateral
-    // props trace both. The guide and live trail receive this same setting.
+    // The capture point follows the same prop contract as the Choreo Card:
+    // unilateral props trace one central tip; bilateral props trace both. The
+    // guide and live trail receive this same setting.
     trackingMode: resolveFusePreviewTrackingMode(
       settings.leftPropType,
       settings.rightPropType
@@ -115,6 +100,62 @@
   const gridMode = $derived(sequenceData?.gridMode ?? sequence.gridMode);
   const activeLetter = $derived(stepData?.letter ?? null);
 
+  // A side panel, the divider or the window can carry the frame across a point
+  // where the stylesheet places the solos differently. The hero and its solos
+  // glide between the two places from the last size the unit had.
+  let unitEl = $state<HTMLElement | null>(null);
+  const placementMotion = createLayoutMotion({
+    getRoot: () => unitEl,
+    groups: [
+      { selector: ".canvas-wrap", datasetKey: "hero" },
+      { selector: ".split-canvas:first-child", datasetKey: "solo" },
+      { selector: ".split-canvas:last-child", datasetKey: "solo" },
+    ],
+    getDuration: () => motionDuration(DURATION.emphasis),
+  });
+
+  $effect(() => {
+    const unit = unitEl;
+    if (!unit || !decomposed || resizing) return;
+
+    const placementNow = () =>
+      getComputedStyle(unit).getPropertyValue("--solo-placement").trim();
+    let placement = placementNow();
+    let gliding = 0;
+
+    const observer = new ResizeObserver(() => {
+      const next = placementNow();
+      // The phone's Customize moves these boxes with its own view transition.
+      const ownMotion = document.documentElement.classList.contains(
+        "fuse-customize-motion"
+      );
+      if (next !== placement) {
+        placement = next;
+        if (ownMotion || !placementMotion.hasCapture) {
+          placementMotion.cancel();
+        } else {
+          const glide = ++gliding;
+          void Promise.allSettled(
+            placementMotion.play().map((animation) => animation.finished)
+          ).then(() => {
+            if (glide !== gliding) return;
+            gliding = 0;
+            placementMotion.capture();
+          });
+          return;
+        }
+      }
+      if (gliding === 0 && !ownMotion) placementMotion.capture();
+    });
+    observer.observe(unit);
+
+    return () => {
+      observer.disconnect();
+      placementMotion.cancel();
+      placementMotion.discard();
+    };
+  });
+
   function failInitialization(message: string, cause: unknown): void {
     const failure = cause instanceof Error ? cause : new Error(String(cause));
     error = message;
@@ -125,15 +166,10 @@
 
   onMount(() => {
     try {
-      controller = createPlaybackControllerFactory(fuseVisibility);
+      controller = createPlaybackControllerFactory(fuseDisplay);
     } catch (cause) {
-      failInitialization("Preview unavailable", cause);
+      failInitialization(t("fuse_preview_unavailable"), cause);
     }
-  });
-
-  onMount(() => {
-    sharedVisibility.registerObserver(repaintOnSharedChange);
-    return () => sharedVisibility.unregisterObserver(repaintOnSharedChange);
   });
 
   onDestroy(() => {
@@ -168,7 +204,7 @@
         }
         if (!fullSequence) {
           failInitialization(
-            "Preview unavailable",
+            t("fuse_preview_unavailable"),
             new Error("Sequence motion data could not be loaded")
           );
           return;
@@ -184,7 +220,7 @@
           animState.setShouldLoop(true);
           if (!activeController.initialize(fullSequence, animState)) {
             failInitialization(
-              "Preview unavailable",
+              t("fuse_preview_unavailable"),
               new Error("The animation controller rejected the fused sequence")
             );
             return;
@@ -203,7 +239,7 @@
         if (cancelled || destroyed || generation !== initializationGeneration) {
           return;
         }
-        failInitialization("Preview unavailable", cause);
+        failInitialization(t("fuse_preview_unavailable"), cause);
       }
     })();
 
@@ -236,12 +272,12 @@
   {#if loading}
     <div class="state-message">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <span>Preparing preview...</span>
+      <span>{t("fuse_preview_preparing")}</span>
     </div>
   {:else if error}
     <div class="state-message error-message">{error}</div>
   {:else}
-    <div class="preview-unit">
+    <div class="preview-unit" bind:this={unitEl}>
       {#if decomposed}
         <SplitCanvasView
           leftProp={leftPropState}
@@ -249,8 +285,7 @@
           leftPropType={settings.leftPropType}
           rightPropType={settings.rightPropType}
           trailSettings={previewTrailSettings}
-          tipEffectMap={FUSE_PREVIEW_TIP_EFFECT_MAP}
-          visibilityManagerOverride={fuseVisibility}
+          visibilityManagerOverride={fuseDisplay}
           gridVisible={true}
           {gridMode}
           letter={activeLetter}
@@ -270,7 +305,7 @@
           leftPropType={settings.leftPropType}
           rightPropType={settings.rightPropType}
           trailSettings={previewTrailSettings}
-          tipEffectMap={FUSE_PREVIEW_TIP_EFFECT_MAP}
+          {effectsConfigState}
           gridVisible={true}
           {gridMode}
           letter={activeLetter}
@@ -278,11 +313,11 @@
           {sequenceData}
           currentStep={animCurrentStep}
           {isPlaying}
-          visibilityManagerOverride={fuseVisibility}
+          visibilityManagerOverride={fuseDisplay}
           word={null}
           hideProgressBar={true}
           hideTkaGlyph={false}
-          hideStepNumbers={true}
+          hideStepNumbers={false}
           progressBarVariant="minimal"
           fillContainer={true}
           tapToToggle={true}
@@ -324,6 +359,7 @@
   }
 
   .preview-unit {
+    --solo-placement: flank;
     --hero: min(var(--frame-w), var(--frame-h));
     flex: 0 0 auto;
     width: var(--hero);
@@ -383,12 +419,50 @@
     height: var(--solo);
   }
 
-  /* A frame less than 1.2 times as wide as it is tall (a phone held upright)
-     cannot afford a solo on each side without shrinking the hero, so the pair
-     sits beneath the hero instead: Blue under its left half, Red under its
-     right. 6 / 5 is about where the two arrangements give the same hero; below
-     it, stacking gives the bigger one (at 324 x 296, 216 against 193). */
-  @container fuse-frame (max-aspect-ratio: 6 / 5) {
+  /* A frame less than 1.6 times as wide as it is tall cannot afford a solo on
+     each side without shrinking the hero, so the pair stacks in one column
+     beside it, Left over Right. One column takes a third of the hero's size
+     where two flanks take 0.6 of it: at 954 x 762 the hero is 709 against 586.
+     The hero's side of the unit stays its own while the unit widens or narrows
+     around it, so it glides to the middle and back. */
+  @container fuse-frame (min-aspect-ratio: 1 / 1) and (max-aspect-ratio: 8 / 5) {
+    .preview-unit {
+      --solo-placement: column;
+      justify-content: flex-start;
+    }
+
+    .decomposed .preview-unit {
+      --hero: min(
+        var(--frame-h),
+        calc((var(--frame-w) - var(--solo-gap)) * 0.75)
+      );
+      --solo: max(
+        0px,
+        min(
+          calc((var(--hero) - var(--solo-gap)) / 2),
+          calc(var(--frame-w) - var(--hero) - var(--solo-gap))
+        )
+      );
+      width: calc(var(--hero) + var(--solo-gap) + var(--solo));
+    }
+
+    .decomposed .preview-unit :global(.split-canvases) {
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: var(--solo-gap);
+    }
+  }
+
+  /* A frame taller than it is wide (a phone held upright) puts the pair
+     beneath the hero: Left under its left half, Right under its right. At 1 / 1
+     the two arrangements give the same hero. */
+  @container fuse-frame (max-aspect-ratio: 1 / 1) {
+    .preview-unit {
+      --solo-placement: beneath;
+      align-items: flex-start;
+    }
+
     .decomposed .preview-unit {
       --hero: min(
         var(--frame-w),
@@ -404,10 +478,6 @@
       );
       width: var(--hero);
       height: calc(var(--hero) + var(--solo-gap) + var(--solo));
-    }
-
-    .decomposed .canvas-wrap {
-      align-self: flex-start;
     }
 
     .decomposed .preview-unit :global(.split-canvases) {

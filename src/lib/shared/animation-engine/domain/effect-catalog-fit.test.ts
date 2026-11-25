@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   DENSE_GAP,
+  DOCK_PICTURE_TILE,
+  fitEffectDock,
   fitEffectPicker,
   fitEffectPictures,
+  MIN_DOCK_PICTURE_HEIGHT,
   PICTURE_CAPTION_HEIGHT,
   PICTURE_GAP,
   PICTURE_INNER_GAP,
@@ -123,5 +126,68 @@ describe("fitEffectPictures", () => {
     expect(
       fitEffectPictures({ width: 565, height: 150, count: 16 })
     ).toBeNull();
+  });
+});
+
+// The phone dock under a player: its grid is the dock body less 12px of padding,
+// the 36px action row and the 6px over it, and 24px narrower than the dock.
+describe("fitEffectDock", () => {
+  const dock = (bodyWidth: number, bodyHeight: number) =>
+    fitEffectDock({
+      width: bodyWidth - 24,
+      height: bodyHeight - 54,
+      count: 16,
+    });
+
+  it("draws pictures on an ordinary phone", () => {
+    // Fuse's dock body on 412 x 915, 375 x 812, 375 x 667, 360 x 640 and the
+    // short landscape 915 x 412.
+    for (const [width, height] of [
+      [376, 311],
+      [339, 300],
+      [339, 261],
+      [324, 261],
+      [369, 251],
+    ] as const) {
+      const fit = dock(width, height);
+      expect(fit).toMatchObject({
+        cols: 4,
+        rows: 4,
+        gap: DOCK_PICTURE_TILE.gap,
+      });
+      expect(fit!.pictureHeight).toBeGreaterThanOrEqual(
+        MIN_DOCK_PICTURE_HEIGHT
+      );
+    }
+  });
+
+  it("fills the height it was given and no more", () => {
+    const fit = dock(390, 314)!;
+    expect(fit.rows * fit.tileHeight + (fit.rows - 1) * fit.gap).toBeCloseTo(
+      260,
+      6
+    );
+    expect(fit.tileHeight).toBeCloseTo(
+      fit.pictureHeight +
+        2 * DOCK_PICTURE_TILE.inset +
+        DOCK_PICTURE_TILE.innerGap +
+        DOCK_PICTURE_TILE.caption,
+      6
+    );
+  });
+
+  it("leaves the shortest phones their one-line tiles", () => {
+    // 360 x 591 in Fuse, and the Shape Engine's shortest docks.
+    for (const height of [242, 231, 221]) expect(dock(324, height)).toBeNull();
+  });
+
+  it("goes eight across where that draws each picture bigger", () => {
+    // A tablet's dock, and an unfolded Fold's (707 x 772).
+    for (const [width, height] of [
+      [760, 260],
+      [671, 283],
+    ] as const) {
+      expect(dock(width, height)).toMatchObject({ cols: 8, rows: 2 });
+    }
   });
 });

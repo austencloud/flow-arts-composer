@@ -3,8 +3,8 @@
  * "one tiny little bite-sized chunk of a concept at a time with clear way to
  * move forward and an understanding where you are in context of the whole
  * picture"). Dual-Shift, Shift and Cross-Shift each have a page; Dash,
- * Dual-Dash and Static share one, a screen each. Every page of the run shows
- * the same switcher of all six, so the run reads as one spine.
+ * Dual-Dash and Static share one, a screen each. The run is one piece of the
+ * chapter's line (lesson-thread.ts, 2026-11-23).
  */
 import {
   HAND_COMBINATIONS,
@@ -66,24 +66,6 @@ export function nameSegments(
   return combinationNameSegments(name, combination.letterType).map((s) => ({
     text: s.text,
     color: inkOn(s.color, dark),
-  }));
-}
-
-export type SwitcherEntry = {
-  combination: HandCombination;
-  /** 1 to 6. */
-  number: number;
-  href: string;
-};
-
-/** The six chips, in record order, each linking to its combination's screen. */
-export function switcherEntries(
-  localize: (href: string) => string = (href) => href
-): SwitcherEntry[] {
-  return HAND_COMBINATIONS.map((combination, i) => ({
-    combination,
-    number: i + 1,
-    href: localize(combination.webHref),
   }));
 }
 

@@ -9,6 +9,7 @@
 // attribution link into a profile.
 
 import type { AccessTier } from "./access-tier";
+import { isTabInDevelopment } from "./models/feature-flag";
 
 // How many sequences a guest (unauthenticated / anonymous) may keep on-device
 // before they must create an account to save more. Re-saving an existing
@@ -72,6 +73,8 @@ export function isTabAccessible(
   tier: AccessTier
 ): boolean {
   if (tier !== "guest") return true;
+  // Open on a development server, so it can be tried without signing in.
+  if (import.meta.env?.DEV && isTabInDevelopment(moduleId, tabId)) return true;
   const allowedTabs = GUEST_MODULE_ACCESS[moduleId];
   if (!allowedTabs) return false;
   return allowedTabs.includes(tabId);

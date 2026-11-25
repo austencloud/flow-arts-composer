@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { loadSoloLibrarySequences } from "#lib/features/browse/shared/services/solo-library-sequence-loader.js";
@@ -69,10 +70,10 @@
   {#snippet header()}
     <div class="picker-header">
       <div>
-        <h2 id="solo-loop-title">Choose a saved one-hand LOOP</h2>
-        <p>Only {length}-step paths that close cleanly are shown.</p>
+        <h2 id="solo-loop-title">{t("fuse_picker_title")}</h2>
+        <p>{t("fuse_picker_only_closing", { length })}</p>
       </div>
-      <button class="close-button" onclick={onClose} aria-label="Close">
+      <button class="close-button" onclick={onClose} aria-label={t("fuse_action_close")}>
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
@@ -80,14 +81,14 @@
 
   <div class="picker-body">
     {#if loading}
-      <p class="status" role="status">Loading saved LOOPs…</p>
+      <p class="status" role="status">{t("fuse_picker_loading")}</p>
     {:else if loadError}
-      <p class="status error" role="alert">Saved LOOPs could not be loaded.</p>
+      <p class="status error" role="alert">{t("fuse_picker_load_failed")}</p>
     {:else if sequences.length === 0}
       <div class="empty-state">
         <i class="fas fa-repeat" aria-hidden="true"></i>
-        <p>No saved {length}-step one-hand LOOPs yet.</p>
-        <span>Generate a path in Fuse, then use Save LOOP.</span>
+        <p>{t("fuse_picker_empty", { length })}</p>
+        <span>{t("fuse_picker_empty_hint")}</span>
       </div>
     {:else}
       <div class="loop-grid">
@@ -95,7 +96,10 @@
           <button
             class="loop-option"
             onclick={() => select(sequence)}
-            aria-label={`Select saved LOOP ${index + 1}: ${sequence.name || "Untitled LOOP"}`}
+            aria-label={t("fuse_picker_select_aria", {
+              number: index + 1,
+              name: sequence.name || t("fuse_picker_untitled"),
+            })}
           >
             <ChoreoCard
               {sequence}
@@ -115,7 +119,7 @@
               hideSoloHeader={true}
               fitWidth={true}
             />
-            <span>{sequence.name || "Saved LOOP"}</span>
+            <span>{sequence.name || t("fuse_picker_saved_loop")}</span>
           </button>
         {/each}
       </div>

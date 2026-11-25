@@ -93,8 +93,6 @@ export const DUAL_SHIFTS_WEB_COPY = {
   switchingLead: "guide_topic_dual_shifts_switching_lead",
   continuous: "guide_topic_dual_shifts_continuous",
   gammaPractice: "guide_topic_dual_shifts_gamma_practice",
-  allModesLink: "guide_topic_dual_shifts_all_modes_link",
-  openModeGuide: "guide_topic_dual_shifts_open_mode_guide",
 } as const satisfies Record<string, TranslationKey>;
 
 export type DualShiftTiming = "split" | "tog" | "quarter";

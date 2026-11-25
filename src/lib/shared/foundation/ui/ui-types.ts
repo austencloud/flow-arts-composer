@@ -20,6 +20,7 @@ export type BuildModeId =
   | "shape-engine" // Pick a shape pairing, get the sequence that draws it
   | "fuse" // Combine two sequences into one
   | "tunnel" // Compose complete sequences into a multi-performer tunnel
+  | "loop" // Build a LOOP step by step
   | "one-handed"
   | "guided" // Guided mode
   | "spell"; // Word-to-sequence generator

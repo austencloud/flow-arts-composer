@@ -155,7 +155,7 @@ export const generatorHelpContent: GeneratorHelpItem[] = [
       "When using LOOP mode, this determines HOW your sequence returns to start. Each type creates a different visual effect.",
     bullets: [
       "Rotated: Placements rotate around the grid center",
-      "Mirrored: Second half mirrors the first (left↔right)",
+      "Reflected: Second half reflects the first across one of four lines",
       "Swapped: Hands switch roles in the return (blue↔red)",
       "Inverted: Motion types transform (pro↔anti, static↔dash)",
       "Combinations: Mix multiple types for complex patterns",

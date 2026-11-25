@@ -314,7 +314,7 @@
     }
   }
 
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
+  @container shape-matrix-drill-compact ((min-width: 42rem) and (min-aspect-ratio: 5 / 6)) or ((min-width: 28rem) and (max-height: 26rem)) {
     .relationship-choice {
       flex-direction: row;
       justify-content: start;
@@ -335,6 +335,52 @@
 
     .choice-copy strong {
       font-size: var(--choice-copy-size, var(--font-size-compact, 0.75rem));
+    }
+  }
+
+  /* A phone on its side: the row gives each chip its height. */
+  @container shape-matrix-drill-compact (min-width: 28rem) and (max-height: 26rem) {
+    .relationship-choice {
+      min-height: 0;
+      gap: 0.3rem;
+      padding: 0.1rem 0.3rem;
+    }
+
+    /* A name too long for its line takes a second one; none is cut. */
+    .choice-copy {
+      line-height: 1.1;
+    }
+
+    .choice-copy strong {
+      white-space: normal;
+    }
+
+    /* Beside the direction, the shorter of the two words. */
+    .choice-check {
+      top: auto;
+      bottom: 0.15rem;
+      inset-inline-end: 0.15rem;
+      width: 0.85rem;
+      height: 0.85rem;
+      box-shadow: 0 0 0 1.5px var(--theme-panel-bg, #101721);
+      font-size: 0.5rem;
+    }
+  }
+
+  /* The smallest of them, icon only, as on a phone held upright: the bridge
+     under the chips names the choice. */
+  @container shape-matrix-drill-compact (28rem <= width < 34rem) and (max-height: 26rem) {
+    .relationship-choice {
+      justify-content: center;
+    }
+
+    .choice-copy {
+      display: none;
+    }
+
+    .choice-check {
+      top: 0.15rem;
+      bottom: auto;
     }
   }
 

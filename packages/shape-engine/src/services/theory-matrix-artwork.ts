@@ -208,7 +208,12 @@ function remember(key: string, paint: () => string): string {
   return url;
 }
 
-function pathsFor(
+/**
+ * The paths a Theory tile's still is painted from, cached per hand, flower
+ * and reach. The grid's draw-in reveals the same paths, so its last frame is
+ * the still.
+ */
+export function theoryTilePaths(
   flower: TheoryFlower,
   hand: "left" | "right",
   reach: number
@@ -250,7 +255,7 @@ export function theoryHeaderArtworkSrc(
   const ink = painter.cacheKey ?? "hero";
   const key = `h:${ink}:${hand}:${theoryFlowerKey(flower)}:${reach}:${scale}:${size}:${dpr}`;
   return remember(key, () =>
-    painter.header(pathsFor(flower, hand, reach), hand, size, scale)
+    painter.header(theoryTilePaths(flower, hand, reach), hand, size, scale)
   );
 }
 
@@ -270,8 +275,8 @@ export function theoryCellArtworkSrc(
     `:${reach.left}:${reach.right}:${scale}:${size}:${dpr}`;
   return remember(key, () =>
     painter.cell(
-      pathsFor(left, "left", reach.left),
-      pathsFor(right, "right", reach.right),
+      theoryTilePaths(left, "left", reach.left),
+      theoryTilePaths(right, "right", reach.right),
       size,
       scale
     )

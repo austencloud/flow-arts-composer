@@ -9,7 +9,8 @@
 -->
 <script lang="ts" generics="TAxis = Flower">
   import { s as t } from "../strings.svelte.js";
-  import type { Snippet } from "svelte";
+  import { onMount, type Snippet } from "svelte";
+  import { runOnceBootScreenLifts } from "#lib/shared/application/services/boot-screen.js";
   import type { ShapeMatrixData } from "../services/shape-matrix-flowers";
   import { flowerKey, type Flower } from "@tka/shape-domain";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
@@ -24,6 +25,17 @@
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import ShapeMatrixMandalaArt from "./ShapeMatrixMandalaArt.svelte";
   import { runShapeMatrixGridReveal } from "../app/services/shape-matrix-reveal";
+  import {
+    createCellRevealFrame,
+    createHeaderRevealFrame,
+  } from "../services/shape-matrix-render";
+  import {
+    SHAPE_MATRIX_DRAW_IN,
+    createShapeMatrixDrawInTimeline,
+    shapeMatrixDrawInDelay,
+    type MandalaArtDrawIn,
+    type ShapeMatrixDrawGeometry,
+  } from "../services/shape-matrix-draw-in";
 
   type CellVerdict = "legal" | "illegal" | "unsure";
 
@@ -106,6 +118,24 @@
      * already-final headers, tiles, and selection; ordinary edits leave it be.
      */
     revealToken?: number;
+    /**
+     * The first fill draws itself on, corner outward, with the guide
+     * painter's reveal. Only the default flower painters have a reveal twin;
+     * a grid given its own painter fades its stills in as before.
+     */
+    drawIn?: boolean;
+    /**
+     * Whether this grid is the one showing. Its first fill waits until it
+     * is: a host that keeps a second grid mounted out of sight draws nothing
+     * there, and that grid draws on when it is first opened.
+     */
+    onScreen?: boolean;
+    /**
+     * The paths behind `paintHeader` and `paintCell`, for a host that paints
+     * its own geometry with the grid's painter (the Theory surface). With
+     * them its first fill draws on like the Matrix's.
+     */
+    drawGeometry?: ShapeMatrixDrawGeometry<TAxis>;
   }
   let {
     data,
@@ -139,6 +169,9 @@
     emphasizedAxis = null,
     corner,
     revealToken = 0,
+    drawIn = false,
+    onScreen = true,
+    drawGeometry,
   }: Props = $props();
 
   // Ordinary Matrix grids are part of the user's workspace, so their stills
@@ -164,6 +197,97 @@
     if (previous === null || previous === token) return;
     runShapeMatrixGridReveal(host);
   });
+
+  /* The reveal twins of the default painters' stills: same paths, fit, tip
+     and ink, so a finished drawing is the still that replaces it. */
+  // svelte-ignore state_referenced_locally
+  const drawsIn =
+    drawIn &&
+    !painter &&
+    (drawGeometry !== undefined || (!paintHeader && !paintCell));
+  const drawInTimeline = createShapeMatrixDrawInTimeline();
+  /* The Composer's opening screen can still cover the page when the paths
+     arrive, and goes on covering it while it fades; the first fill waits
+     until it can be seen through. */
+  let pageShown = $state(!drawsIn);
+  onMount(() =>
+    pageShown ? undefined : runOnceBootScreenLifts(() => (pageShown = true))
+  );
+  function revealOptions() {
+    const colors = getSettings().primaryPropColors;
+    return colors ? { colors: { left: colors.left, right: colors.right } } : {};
+  }
+  // The host's geometry when it paints its own tiles; the flower data's
+  // otherwise, the same paths headerArtworkSrc and cellArtworkSrc paint.
+  function headerGeometry(f: TAxis, hand: "left" | "right") {
+    if (drawGeometry) return drawGeometry.header(f, hand);
+    const paths = data
+      ? (hand === "left" ? data.left : data.right).get(flowerKey(f as Flower))
+      : undefined;
+    return paths && data ? { paths, tipDx: data.clubTipDx } : null;
+  }
+  function cellGeometry(b: TAxis, r: TAxis) {
+    if (drawGeometry) return drawGeometry.cell(b, r);
+    const left = data?.left.get(flowerKey(b as Flower));
+    const right = data?.right.get(flowerKey(r as Flower));
+    return left && right && data
+      ? { left, right, tipDx: data.clubTipDx }
+      : null;
+  }
+  function headerDrawIn(
+    f: TAxis,
+    hand: "left" | "right",
+    row: number,
+    column: number
+  ): MandalaArtDrawIn | undefined {
+    if (!drawsIn) return undefined;
+    return {
+      shown: () => pageShown && onScreen,
+      timeline: drawInTimeline,
+      delayMs: shapeMatrixDrawInDelay(row, column),
+      durationMs: SHAPE_MATRIX_DRAW_IN.tileMs,
+      frame: (canvas, sizePx) => {
+        const art = headerGeometry(f, hand);
+        return art
+          ? createHeaderRevealFrame(
+              canvas,
+              art.paths,
+              hand,
+              sizePx,
+              art.tipDx,
+              revealOptions()
+            )
+          : null;
+      },
+    };
+  }
+  function cellDrawIn(
+    b: TAxis,
+    r: TAxis,
+    row: number,
+    column: number
+  ): MandalaArtDrawIn | undefined {
+    if (!drawsIn) return undefined;
+    return {
+      shown: () => pageShown && onScreen,
+      timeline: drawInTimeline,
+      delayMs: shapeMatrixDrawInDelay(row, column),
+      durationMs: SHAPE_MATRIX_DRAW_IN.tileMs,
+      frame: (canvas, sizePx) => {
+        const art = cellGeometry(b, r);
+        return art
+          ? createCellRevealFrame(
+              canvas,
+              art.left,
+              art.right,
+              sizePx,
+              art.tipDx,
+              revealOptions()
+            )
+          : null;
+      },
+    };
+  }
 
   // Track counts for the CSS tile formula: the row-header column and the
   // column-header row join the axes.
@@ -367,6 +491,7 @@
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(rf, "right")}
+                    drawIn={headerDrawIn(rf, "right", 0, colIndex + 1)}
                     artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
                     alt={t("shape_engine_right_flower", {
                       flower: labelOf(rf),
@@ -377,6 +502,7 @@
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(rf, "right")}
+                  drawIn={headerDrawIn(rf, "right", 0, colIndex + 1)}
                   artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
                   alt={t("shape_engine_right_flower", { flower: labelOf(rf) })}
                 />
@@ -412,6 +538,7 @@
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(bf, "left")}
+                    drawIn={headerDrawIn(bf, "left", rowIndex + 1, 0)}
                     artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
                     alt={t("shape_engine_left_flower", { flower: labelOf(bf) })}
                     claim={headerClaims("left", bf)}
@@ -420,6 +547,7 @@
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(bf, "left")}
+                  drawIn={headerDrawIn(bf, "left", rowIndex + 1, 0)}
                   artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
                   alt={t("shape_engine_left_flower", { flower: labelOf(bf) })}
                 />
@@ -467,6 +595,7 @@
                     <span class="artwork">
                       <ShapeMatrixMandalaArt
                         paint={cellPaint(bf, rf)}
+                        drawIn={cellDrawIn(bf, rf, rowIndex + 1, colIndex + 1)}
                         artKey={`${key}:${geometryArtKey}:${painterArtKey}`}
                         claim={claimSelected && selectedKey === key}
                       />

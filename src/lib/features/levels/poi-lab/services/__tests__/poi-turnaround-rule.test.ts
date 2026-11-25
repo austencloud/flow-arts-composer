@@ -6,12 +6,13 @@ import {
   RotationDirection,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { calculateMotionEndpoints } from "#lib/shared/animation-engine/services/endpoint-calculator.js";
 import { validateTransition } from "../poi-constraint-validator";
 
 // Austen's turnaround rule (2026-10-18), narrowed by his sitting 1 verdicts on
 // 2026-11-22: a poi changes direction only as a pendulum does, on a beat that
 // ends pointing out with the hand at a side (east or west), level with the
-// floor. Stalls at the top or sides need build-up the checker cannot see, and
+// floor, and falling away from the turn (2026-11-23). Stalls at the top or sides need build-up the checker cannot see, and
 // he chose pendulum turns only for now.
 
 const clockwiseHand = {
@@ -38,29 +39,82 @@ function beat(
 }
 
 describe("poi turnaround rule", () => {
-  it("lets the prop reverse its spin on a beat that ends pointing out", () => {
-    const from = beat(
-      clockwiseHand,
-      RotationDirection.CLOCKWISE,
-      Orientation.OUT
-    );
-    const to = beat(
-      clockwiseHand,
-      RotationDirection.COUNTER_CLOCKWISE,
-      Orientation.OUT
-    );
-    expect(validateTransition(from, to).isValid).toBe(true);
+  const eastFromBelow = {
+    startLocation: GridLocation.SOUTH,
+    endLocation: GridLocation.EAST,
+  };
+  const westFromBelow = {
+    startLocation: GridLocation.SOUTH,
+    endLocation: GridLocation.WEST,
+  };
+  const downFromEast = {
+    startLocation: GridLocation.EAST,
+    endLocation: GridLocation.SOUTH,
+  };
+  const downFromWest = {
+    startLocation: GridLocation.WEST,
+    endLocation: GridLocation.SOUTH,
+  };
+  const cw = RotationDirection.CLOCKWISE;
+  const ccw = RotationDirection.COUNTER_CLOCKWISE;
+
+  it("lets a poi swing up to a side and fall back", () => {
+    expect(
+      validateTransition(
+        beat(eastFromBelow, ccw, Orientation.OUT),
+        beat(downFromEast, cw, Orientation.OUT)
+      ).isValid
+    ).toBe(true);
+    expect(
+      validateTransition(
+        beat(westFromBelow, cw, Orientation.OUT),
+        beat(downFromWest, ccw, Orientation.OUT)
+      ).isValid
+    ).toBe(true);
+  });
+
+  // Austen, 2026-11-23: a pendulum on the top half is physically impossible.
+  it("refuses a turn that swings back up over the top", () => {
+    expect(
+      validateTransition(
+        beat(eastFromBelow, cw, Orientation.OUT),
+        beat(downFromEast, ccw, Orientation.OUT)
+      ).isValid
+    ).toBe(false);
+    expect(
+      validateTransition(
+        beat(westFromBelow, ccw, Orientation.OUT),
+        beat(downFromWest, cw, Orientation.OUT)
+      ).isValid
+    ).toBe(false);
+  });
+
+  it("agrees with the animation about which way falls", () => {
+    for (const [hand, spin] of [
+      [downFromEast, cw],
+      [downFromWest, ccw],
+    ] as const) {
+      const ends = calculateMotionEndpoints({
+        ...beat(hand, spin, Orientation.OUT),
+        startOrientation: Orientation.OUT,
+      });
+      /* The canvas's y grows downward, so a falling head gains y. */
+      const height = (part: number) =>
+        Math.sin(ends.startStaffAngle + ends.staffRotationDelta * part);
+      expect(height(0)).toBeCloseTo(0, 6);
+      expect(height(0.05)).toBeGreaterThan(0);
+    }
   });
 
   it("refuses a spin reversal on a beat that ends pointing in", () => {
     const from = beat(
       clockwiseHand,
-      RotationDirection.CLOCKWISE,
+      RotationDirection.COUNTER_CLOCKWISE,
       Orientation.IN
     );
     const to = beat(
       clockwiseHand,
-      RotationDirection.COUNTER_CLOCKWISE,
+      RotationDirection.CLOCKWISE,
       Orientation.OUT
     );
     expect(validateTransition(from, to).isValid).toBe(false);
@@ -68,10 +122,14 @@ describe("poi turnaround rule", () => {
 
   it("refuses a spin reversal pointing clock or counter", () => {
     for (const end of [Orientation.CLOCK, Orientation.COUNTER]) {
-      const from = beat(clockwiseHand, RotationDirection.CLOCKWISE, end);
-      const to = beat(
+      const from = beat(
         clockwiseHand,
         RotationDirection.COUNTER_CLOCKWISE,
+        end
+      );
+      const to = beat(
+        clockwiseHand,
+        RotationDirection.CLOCKWISE,
         Orientation.OUT
       );
       expect(validateTransition(from, to).isValid).toBe(false);
@@ -134,15 +192,5 @@ describe("poi turnaround rule", () => {
       );
       expect(validateTransition(from, to).isValid, end).toBe(false);
     }
-  });
-
-  it("lets a pendulum turn on the west side too", () => {
-    const hand = {
-      startLocation: GridLocation.SOUTH,
-      endLocation: GridLocation.WEST,
-    };
-    const from = beat(hand, RotationDirection.CLOCKWISE, Orientation.OUT);
-    const to = beat(hand, RotationDirection.COUNTER_CLOCKWISE, Orientation.OUT);
-    expect(validateTransition(from, to).isValid).toBe(true);
   });
 });

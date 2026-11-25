@@ -8,10 +8,10 @@ Most changes need no manifest file. Each command below is one of the timeline's 
 
 ```powershell
 node scripts/post-project.mjs show                       # items, tracks, times
-node scripts/post-project.mjs add-hook --speed ease-out  # opening tunnel on the animation
+node scripts/post-project.mjs add-hook --speed ease-out  # opening tunnel on the animation, its footage behind it, its name kept at the start
 node scripts/post-project.mjs hook-speed linear          # name, or x1,y1,x2,y2, or default
 node scripts/post-project.mjs remove-hook
-node scripts/post-project.mjs line-up-hook                 # tunnel ends on the footage's opening pose, footage dimmed behind it
+node scripts/post-project.mjs line-up-hook                 # tunnel ends on the footage's opening pose when the take is timed, footage dimmed behind it either way
 node scripts/post-project.mjs appearance --item animations --set stepNumbers=false --set tkaGlyph=null
 node scripts/post-project.mjs item --item ITEM_ID --patch '{"opacity":0.5}'
 node scripts/post-project.mjs trim --item ITEM_ID --edge end --seconds 12

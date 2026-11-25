@@ -135,6 +135,10 @@
 
   const VANTAGES: Vantage[] = [
     { id: "side", label: "Side", eye: [3.4, 1.5, 0], height: 0.95 },
+    // Level with the hips and further out. The close, raised side camera
+    // looks down on the body, which foreshortens the legs and makes any walk
+    // read crouched; posture is judged from here.
+    { id: "profile", label: "Profile", eye: [4.6, 0.95, 0], height: 0.9 },
     { id: "front", label: "Front", eye: [0, 1.5, 3.4], height: 0.95 },
     {
       id: "quarter",

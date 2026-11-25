@@ -25,7 +25,7 @@
   } from "./loop-option-color";
   import LOOPChoiceButton from "./LOOPChoiceButton.svelte";
   import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
-  import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
+  import { loopOptionName } from "./loop-option-name";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
@@ -105,7 +105,7 @@
             <LOOPChoiceButton
               components={parseLoopComponents(option.loopType)}
               tint={loopTypeTint(option.loopType)}
-              name={loopTypeLabel(option.loopType)}
+              name={loopOptionName(option.loopType)}
               description={tDynamic(
                 `loop_picker_description_${option.loopType}`
               )}
@@ -166,7 +166,7 @@
                   <LOOPChoiceButton
                     components={parseLoopComponents(loop.loopType)}
                     tint={loopTypeTint(loop.loopType)}
-                    name={loopTypeLabel(loop.loopType)}
+                    name={loopOptionName(loop.loopType)}
                     glyphSize={18}
                     disabled={isApplying}
                     title={tDynamic(`loop_picker_description_${loop.loopType}`)}

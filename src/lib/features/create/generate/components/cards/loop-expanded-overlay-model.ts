@@ -35,24 +35,21 @@ export interface ReflectionAxisDetail {
   axisLabel: string;
   name: string;
   description: string;
-  applyLabel: string;
   line: { x1: number; y1: number; x2: number; y2: number };
 }
 
 export const REFLECTION_AXIS_DETAILS = {
   "north-south": {
     axisLabel: "N–S",
-    name: "Mirrored",
+    name: "Vertical",
     description: "The vertical line stays fixed. East and west trade places.",
-    applyLabel: "Apply Mirrored",
     line: { x1: 24, y1: 5, x2: 24, y2: 43 },
   },
   "east-west": {
     axisLabel: "E–W",
-    name: "Flipped",
+    name: "Horizontal",
     description:
       "The horizontal line stays fixed. North and south trade places.",
-    applyLabel: "Apply Flipped",
     line: { x1: 5, y1: 24, x2: 43, y2: 24 },
   },
   "northeast-southwest": {
@@ -60,7 +57,6 @@ export const REFLECTION_AXIS_DETAILS = {
     name: "Diagonal",
     description:
       "NE and SW stay fixed. North trades with east; south trades with west.",
-    applyLabel: "Apply NE–SW Reflection",
     line: { x1: 42, y1: 6, x2: 6, y2: 42 },
   },
   "northwest-southeast": {
@@ -68,7 +64,6 @@ export const REFLECTION_AXIS_DETAILS = {
     name: "Diagonal",
     description:
       "NW and SE stay fixed. North trades with west; south trades with east.",
-    applyLabel: "Apply NW–SE Reflection",
     line: { x1: 6, y1: 6, x2: 42, y2: 42 },
   },
 } satisfies Record<ReflectionAxis, ReflectionAxisDetail>;
@@ -223,14 +218,13 @@ function describeInversion(rhythm: LoopRhythmValue): string {
 
 function describeApplyAction(
   selectedComponents: Set<LOOPComponent>,
-  isImplemented: boolean,
-  reflectionAxis: ReflectionAxis
+  isImplemented: boolean
 ): string {
   const selectionCount = selectedComponents.size;
   if (selectionCount === 0) return "Select Components";
   if (!isImplemented) return "Combo Not Supported";
   if (selectionCount === 1 && selectedComponents.has(LOOPComponent.MIRRORED)) {
-    return REFLECTION_AXIS_DETAILS[reflectionAxis].applyLabel;
+    return "Apply Reflected";
   }
   if (selectionCount === 1) {
     const component = Array.from(selectedComponents)[0] as LOOPComponent;
@@ -297,10 +291,6 @@ export function buildLoopOverlayModel(
       sequenceLength
     ),
     inversionCaption: describeInversion(rhythm),
-    buttonText: describeApplyAction(
-      selectedComponents,
-      isImplemented,
-      rhythm.reflectionAxis
-    ),
+    buttonText: describeApplyAction(selectedComponents, isImplemented),
   };
 }

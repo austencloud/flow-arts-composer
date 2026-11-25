@@ -183,6 +183,21 @@ describe("PlaybackSync runs", () => {
   });
 });
 
+describe("PlaybackSync trail reset key", () => {
+  // QfT drives its own clock and feeds poses with no sequence. When it seeks
+  // backwards the trail must start over, or it draws a chord from the old
+  // place to the new one.
+  it("wipes the trail when the key changes, and only then", () => {
+    const { sync, clearBuffers } = createSync();
+    sync.update({ ...showing(null), trailResetKey: 0 });
+    sync.update({ ...showing(null), trailResetKey: 0 });
+    expect(clearBuffers).not.toHaveBeenCalled();
+
+    sync.update({ ...showing(null), trailResetKey: 1 });
+    expect(clearBuffers).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("PlaybackSync transform glide", () => {
   // A transform hands the player an edited sequence under the same key. The
   // player drops its sequence before loading the new one, as it does for any

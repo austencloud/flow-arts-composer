@@ -15,7 +15,7 @@
         {
           "word": "GΘSZ",
           "loopType": "mirrored",
-          "prose": "In GΘSZ, every rotation in the first half is clockwise. The mirrored half repeats the same letters counter-clockwise. The left hand rests on Θ and Z, so you can watch the right hand's direction flip at the seam.",
+          "prose": "In GΘSZ, every rotation in the first half is clockwise. The reflected half repeats the same letters counter-clockwise. The left hand rests on Θ and Z, so you can watch the right hand's direction flip at the seam.",
           "proseNote": "Colors swapped vs the first draft: this instance rests BLUE on Θ/Z (steps 2,4,6,8 blue static) while red moves every step.",
           "verified": [
             "steps 1-4: every moving rotation cw",
@@ -483,7 +483,7 @@
           "word": "JΘZΦ",
           "loopType": "mirrored",
           "generatedVia": "length: 8 (engine-chosen letters), round 2",
-          "prose": "JΘZΦ opens with the hands circling in opposite directions at once. The mirrored half flips both: whatever ran clockwise comes back counter-clockwise, down to the closing Φ dash.",
+          "prose": "JΘZΦ opens with the hands circling in opposite directions at once. The reflected half flips both: whatever ran clockwise comes back counter-clockwise, down to the closing Φ dash.",
           "verified": [
             "step 1 (J): blue ccw and red cw simultaneously: split directions",
             "steps 5-8 invert every rotation direction from steps 1-4",

@@ -325,7 +325,8 @@ export class Canvas2DTrailRenderer {
         settings,
         currentTime,
         effect,
-        sizeScale
+        sizeScale,
+        qualityHints?.uniformWidth === true
       );
     } else {
       // Single path rendering (faster, no tapering)
@@ -418,7 +419,8 @@ export class Canvas2DTrailRenderer {
     settings: TrailSettings,
     currentTime: number,
     effect: TrailEffect,
-    sizeScale: number
+    sizeScale: number,
+    uniformWidth = false
   ): void {
     if (smoothPoints.length < 3) return;
 
@@ -436,7 +438,8 @@ export class Canvas2DTrailRenderer {
       const curr = smoothPoints[i]!;
       const progress = i / (smoothPoints.length - 1);
       const halfWidth =
-        this.calculateLineWidth(progress, settings, sizeScale) / 2;
+        this.calculateLineWidth(uniformWidth ? 1 : progress, settings, sizeScale) /
+        2;
 
       // Calculate perpendicular direction from path tangent
       let dx: number, dy: number;

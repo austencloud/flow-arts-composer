@@ -232,6 +232,8 @@
         return generateLoadStatus === "loaded";
       case "construct":
         return !isPickerStateLoading;
+      case "loop":
+        return !isPickerStateLoading && keyedPanelStatus.loop === "loaded";
       default:
         return keyedPanelStatus[activeToolPanel] === "loaded";
     }
@@ -350,6 +352,43 @@
   });
 </script>
 
+<!-- Construct's start and step pickers. The LOOP tab shows the same ones under
+     its LOOP bar and can narrow the steps to the ones that close a LOOP. -->
+{#snippet constructTools(
+  filterPredicate?: (option: PictographData) => boolean,
+  suppressStartHeading = false
+)}
+  {#if isPickerStateLoading}
+    <div class="picker-loading">
+      <ProgressRing percent={-1} size={32} strokeWidth={3} />
+      <p>{t("create_ui_loading_options")}</p>
+    </div>
+  {:else}
+    <ConstructTabContent
+      shouldShowStartPlacementPicker={shouldShowStartPlacementPicker ===
+        true}
+      startPlacementState={constructTabState.startPlacementStateService}
+      currentSequence={currentSequenceData}
+      currentGridMode={sequenceGridMode}
+      gridJoin={sequenceJoin}
+      initialStartPlacement={currentStartPlacement}
+      lockStartGridMode={isEditingExistingStart}
+      startPlacementValidationMessage={constructTabState.error}
+      {onOptionSelected}
+      {isSideBySideLayout}
+      {onOpenFilters}
+      {onCloseFilters}
+      {isFilterPanelOpen}
+      isContinuousOnly={constructTabState.isContinuousOnly}
+      onToggleContinuous={(value) =>
+        constructTabState.setContinuousOnly(value)}
+      onStartPlacementSubmitted={handleStartPlacementSubmitted}
+      {filterPredicate}
+      {suppressStartHeading}
+    />
+  {/if}
+{/snippet}
+
 {#snippet generateLoading()}
   <div
     class="generate-load-state"
@@ -427,34 +466,7 @@
         {#key activeToolPanel}
           <div class="sub-tab-content" data-tab={activeToolPanel}>
             {#if activeToolPanel === "construct"}
-              <!-- Constructor Mode - Manual builder (step by step) -->
-              {#if isPickerStateLoading}
-                <div class="picker-loading">
-                  <ProgressRing percent={-1} size={32} strokeWidth={3} />
-                  <p>{t("create_ui_loading_options")}</p>
-                </div>
-              {:else}
-                <ConstructTabContent
-                  shouldShowStartPlacementPicker={shouldShowStartPlacementPicker ===
-                    true}
-                  startPlacementState={constructTabState.startPlacementStateService}
-                  currentSequence={currentSequenceData}
-                  currentGridMode={sequenceGridMode}
-                  gridJoin={sequenceJoin}
-                  initialStartPlacement={currentStartPlacement}
-                  lockStartGridMode={isEditingExistingStart}
-                  startPlacementValidationMessage={constructTabState.error}
-                  {onOptionSelected}
-                  {isSideBySideLayout}
-                  {onOpenFilters}
-                  {onCloseFilters}
-                  {isFilterPanelOpen}
-                  isContinuousOnly={constructTabState.isContinuousOnly}
-                  onToggleContinuous={(value) =>
-                    constructTabState.setContinuousOnly(value)}
-                  onStartPlacementSubmitted={handleStartPlacementSubmitted}
-                />
-              {/if}
+              {@render constructTools()}
             {:else if activeToolPanel === "assemble"}
               <!-- Assemble Mode - Click grid points to build sequences (deferred chunk) -->
               {@const assembleTabState = createModuleState.assembleTabState}
@@ -481,6 +493,13 @@
               <LazyMount
                 loader={CREATE_METHOD_PANEL_LOADERS.tunnel!}
                 active
+                onStatusChange={trackPanel(activeToolPanel)}
+              />
+            {:else if activeToolPanel === "loop"}
+              <LazyMount
+                loader={CREATE_METHOD_PANEL_LOADERS.loop!}
+                active
+                props={{ tools: constructTools }}
                 onStatusChange={trackPanel(activeToolPanel)}
               />
             {:else if activeToolPanel === "shape-engine"}

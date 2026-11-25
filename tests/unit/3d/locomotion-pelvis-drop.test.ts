@@ -61,7 +61,13 @@ import {
 
 const WALK_DROP = { min: 0.04, max: 0.08 };
 const STRAFE_DROP = { min: 0.05, max: 0.085 };
-const RUN_DROP = { min: 0.1, max: 0.16 };
+/**
+ * The run's ceiling was 0.16 while the pelvis was held upright. Since
+ * 2026-11-22 it carries the clip's 20-degree forward lean, which puts the hip
+ * joints the bake stands on the floor further below the Hips bone, and the
+ * measured run dip rose by 0.008-0.011 on every rig: 0.136-0.161.
+ */
+const RUN_DROP = { min: 0.1, max: 0.17 };
 const RUN_STRAFE_DROP = { min: 0.085, max: 0.15 };
 /** Forward and strafe walks, whose stances the bake stands on the floor. */
 const BAKED_RESIDUAL_MAX = 0.02;

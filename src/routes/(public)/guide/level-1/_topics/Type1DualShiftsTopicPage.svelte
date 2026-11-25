@@ -3,39 +3,40 @@
   (2026-10-10). One screen per mode, in the record's order, the same on
   every window (2026-10-26). Each mode's card plays the mode as a moving
   animation over its start box and four-count loop, the count that is
-  playing ringed (2026-10-27), in its element's colour, with a link to that
-  mode's Timing and Direction guide. The Gamma page's switching sequence
+  playing ringed (2026-10-27), in its element's colour. The Gamma page's switching sequence
   left the web page on 2026-10-31 for a later sequencing page (the print
   sheet keeps it).
 
-  The page opens the hand combinations' run: the switcher of all six under
-  the kicker, then one group of two columns (2026-11-01, Austen's review: a
-  title and a pill row stacked under the switcher read as "a text sandwich
-  with chips as the bun", and a tall window left the words column mostly
-  empty). The text column is the same on every screen: the title
+  The page opens the hand combinations' run: one group of two
+  columns (2026-11-01). The text column is the same on every screen: the title
   "Dual-Shift" in its two colours, Austen's definition, the line on the six
-  modes with the link to the Timing and Direction page (which keys the six
-  modes; the guide does not draw the key again, 2026-10-28), then the six
-  modes as tiles in two columns of three (ScreenList; Austen, 2026-11-02):
+  modes, then the six modes as tiles in two columns of three (ScreenList; Austen, 2026-11-02):
   each tile the mode's element, its name and its start and end positions,
   the tiles filling the column down to the card's foot, the current one
   tinted with its element's colour.
 
+  The modes may be opened in any order (Austen, 2026-11-24): each wears an
+  empty ring until it has been opened, then a tick; the chapter's line moves
+  on one step per mode viewed, and Next leads to one not viewed yet until
+  all six have been.
+
   Switching a mode changes only the card (Austen, same day): its inner
   content crossfades and the list's tint moves; the title, words, link and
-  list hold still. The mode's line on where it travels sits in the card,
-  under its name; Split-Opp's line names both Opp modes, so Tog-Opp's card
-  carries the practice line that closes the Split and Together modes. The
-  card grows with the window (--fit) to its picture's bound and the group
-  stands centred in the body; the title, words and link are centred in
-  their column and the tiles fill it, each tile's content centred.
-  The card's start box says "Start" and joins the four counts as one strip
-  with hairline seams, like the other combination pages' cards.
-  Quarter-Same's sun yellow is a gold on this page only (Austen read the
-  full yellow as hard to look at). On a narrow
-  window the column stands over the card, the list folds into one row of
-  pills right above it, and the card's loop stays one row so the card ends
-  above the footer.
+  list hold still. In the card the name is centred over the animation and
+  the mode's line is centred under it (Austen, 2026-11-23). All six lines
+  say the same two things: which way the hands circle, and whether they are
+  together, apart or adjacent. Nothing here links out of the lesson: the
+  links to the Timing and Direction pages left on 2026-11-23, when Austen
+  called being taken out of a first lesson disruptive. The card grows with
+  the window (--fit) to its picture's bound and the group stands centred in
+  the body; the title, words and link are centred in their column and the
+  tiles fill it, each tile's content centred. The card's start box says
+  "Start" and joins the four counts as one strip with hairline seams, like
+  the other combination pages' cards. Quarter-Same's sun yellow is a gold on
+  this page only (Austen read the full yellow as hard to look at). On a
+  narrow window the column stands over the card, the list folds into one row
+  of pills right above it, and the card's loop stays one row so the card
+  ends above the footer.
 -->
 <script lang="ts">
   import { browser } from "$app/env";
@@ -54,12 +55,9 @@
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
-    DUAL_SHIFT_MODE_GUIDES,
     DUAL_SHIFT_MODES,
-    DUAL_SHIFTS_WEB_COPY,
     dualShiftElement,
     dualShiftSteps,
-    dualShiftsTopicHtml,
     dualShiftsTopicLines,
     plainLine,
     type DualShiftMode,
@@ -67,10 +65,8 @@
   } from "#lib/shared/guide-topics/dual-shifts-topic.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { HAND_COMBINATIONS } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import TopicScreens from "./TopicScreens.svelte";
-  import HandTypeSwitcher from "./HandTypeSwitcher.svelte";
   import CombinationName from "./CombinationName.svelte";
   import ScreenList, { type ScreenListItem } from "./ScreenList.svelte";
   import { dualShiftScreens } from "./dual-shift-screens";
@@ -89,18 +85,16 @@
 
   /** Austen's definition opens the page as its lede. */
   const lede = plainLine(dualShiftsTopicLines("intro")[0] ?? "");
-  /** A mode's line in its card: where it travels, or how it moves.
-   *  Split-Opp's line names both Opp modes, so Tog-Opp has none. */
-  const MODE_LEADS: Partial<Record<DualShiftModeId, TranslationKey>> = {
-    "split-same": DUAL_SHIFTS_WEB_COPY.sameLeadSplit,
-    "tog-same": DUAL_SHIFTS_WEB_COPY.sameLeadTog,
-    "split-opp": DUAL_SHIFTS_WEB_COPY.oppLead,
-    "quarter-opp": DUAL_SHIFTS_WEB_COPY.quarterOppLead,
-    "quarter-same": DUAL_SHIFTS_WEB_COPY.quarterSameLead,
+  /** A mode's line in its card: which way the hands circle and how they
+   *  stand to each other, in the same words on every mode. */
+  const MODE_LINES: Record<DualShiftModeId, TranslationKey> = {
+    "split-same": "guide_topic_dual_shifts_split_same_says",
+    "tog-same": "guide_topic_dual_shifts_tog_same_says",
+    "split-opp": "guide_topic_dual_shifts_split_opp_says",
+    "tog-opp": "guide_topic_dual_shifts_tog_opp_says",
+    "quarter-opp": "guide_topic_dual_shifts_quarter_opp_says",
+    "quarter-same": "guide_topic_dual_shifts_quarter_same_says",
   };
-  /** The practice line closes the Split and Together modes, in the card of
-   *  the last of them. */
-  const PRACTICE_AFTER: DualShiftModeId = "tog-opp";
 
   /** A mode's colour on this page: its element's, with the sun's yellow
    *  turned gold (Quarter-Same). The shared element colours stay as they
@@ -159,10 +153,6 @@
       };
     })
   );
-
-  /** A line's breaks are the print layout's; in the card they read as
-   *  spaces. */
-  const unbroken = (html: string) => html.replace(/\s*<br\s*\/?>\s*/gi, " ");
 </script>
 
 {#snippet pictograph(step: StepData, isStart: boolean)}
@@ -185,16 +175,11 @@
 
 <!-- A mode's line, as its card shows it. -->
 {#snippet modeLine(id: DualShiftModeId)}
-  {@const lead = MODE_LEADS[id]}
-  {#if lead}<Sentences
-      text={t(lead)}
-    />{:else if id === PRACTICE_AFTER}<Sentences
-      html={unbroken(dualShiftsTopicHtml("practice"))}
-    />{/if}
+  <Sentences text={t(MODE_LINES[id])} />
 {/snippet}
 
-<!-- A card: the mode's name and the link to its guide, its line, then its
-     animation over its start box and counts, in its element's colours. The
+<!-- A card: the mode's name over its animation, its line beneath, then its
+     start box and counts, in its element's colours. The
      card stays put across modes; its inside crossfades. -->
 {#snippet card(loop: Loop, labelledBy: string)}
   <div
@@ -212,36 +197,14 @@
 {#snippet cardInside(loop: Loop, labelledBy: string)}
   {@const { mode, start, counts } = loop}
   <div class="mode-inside">
-    <div class="mode-head">
-      <h2 class="mode-name" id={labelledBy}>
-        <img
-          class="element"
-          src={getElementImagePath(dualShiftElement(mode).element)}
-          alt=""
-        />
-        {t(mode.name)}
-      </h2>
-      <span class="mode-link">
-        <LinkChip size="md" href={DUAL_SHIFT_MODE_GUIDES[mode.id]}
-          >{t(DUAL_SHIFTS_WEB_COPY.openModeGuide, {
-            mode: t(mode.name),
-          })}</LinkChip
-        >
-      </span>
-    </div>
-    <!-- Every mode's line in one cell, this mode's shown, so the card is
-         the same height on every mode. -->
-    <div class="mode-lines">
-      {#each DUAL_SHIFT_MODES as other (other.id)}
-        <p
-          class="mode-line"
-          class:shown={other.id === mode.id}
-          aria-hidden={other.id === mode.id ? undefined : "true"}
-        >
-          {@render modeLine(other.id)}
-        </p>
-      {/each}
-    </div>
+    <h2 class="mode-name" id={labelledBy}>
+      <img
+        class="element"
+        src={getElementImagePath(dualShiftElement(mode).element)}
+        alt=""
+      />
+      {t(mode.name)}
+    </h2>
     <div class="player">
       {#if browser}
         <HandMotionPlayer
@@ -257,6 +220,19 @@
         />
       {/if}
     </div>
+    <!-- Every mode's line in one cell, this mode's shown, so the card is
+         the same height on every mode. -->
+    <div class="mode-lines">
+      {#each DUAL_SHIFT_MODES as other (other.id)}
+        <p
+          class="mode-line"
+          class:shown={other.id === mode.id}
+          aria-hidden={other.id === mode.id ? undefined : "true"}
+        >
+          {@render modeLine(other.id)}
+        </p>
+      {/each}
+    </div>
     <div class="loop">
       <div class="cell" class:guide-step-active={isPlaying(mode, 0)}>
         {@render pictograph(start, true)}
@@ -268,10 +244,6 @@
       {/each}
     </div>
   </div>
-{/snippet}
-
-{#snippet switcher()}
-  <HandTypeSwitcher current="dual-shift" {darkMode} />
 {/snippet}
 
 <!-- The mode screens keep their plain names; a page of the run is named by
@@ -292,10 +264,10 @@
   labels={screens.labels}
   steadyHead
   bodyHead
-  beforeTitle={switcher}
+  anyOrder="hm-type1"
   navLabel={navName}
 >
-  {#snippet screen(n, go)}
+  {#snippet screen(n, go, viewed)}
     {@const view = screens.views[n]}
     <div class="dual-shifts-topic" class:dark={darkMode}>
       {#if view}
@@ -306,17 +278,10 @@
               <CombinationName combination={DUAL_SHIFT} {darkMode} />
             </p>
             <p class="lede">{lede}</p>
-            <div class="modes-row">
-              <p class="lead modes-line">
-                {t("guide_topic_dual_shifts_modes_line")}
-              </p>
-              <span class="all-modes-link">
-                <LinkChip size="md" href="/timing-and-direction"
-                  >{t(DUAL_SHIFTS_WEB_COPY.allModesLink)}</LinkChip
-                >
-              </span>
-            </div>
-            <ScreenList items={listItems} current={n} {go} />
+            <p class="lead modes-line">
+              {t("guide_topic_dual_shifts_modes_line")}
+            </p>
+            <ScreenList items={listItems} current={n} {go} {viewed} />
           </div>
           <div class="figure">
             {@render card(loop, `dual-shift-${view.mode}`)}
@@ -381,8 +346,7 @@
     width: 100%;
     min-width: 0;
   }
-  /* "Dual-Shift" in its two colours, at the size the frame's title had
-     beside the switcher's 44 px chips. */
+  /* "Dual-Shift" in its two colours. */
   .column-title {
     margin: 0;
     font-family: var(--guide-script, "Cormorant Garamond", Georgia, serif);
@@ -402,12 +366,9 @@
     .column {
       gap: 0.6rem;
     }
+    /* The frame's box right above names it. */
     .column-title {
-      font-size: 2.3rem;
-      line-height: 1.05;
-    }
-    .column .modes-row {
-      gap: 0.4rem 1rem;
+      display: none;
     }
     .figure .mode {
       --pad: 0.6rem;
@@ -415,27 +376,17 @@
     .figure .mode-inside {
       gap: 0.5rem;
     }
+    .dual-shifts-topic .figure .mode-line {
+      line-height: 1.3;
+    }
     .mode .player {
       width: min(100%, calc(14rem * var(--fit, 1)));
     }
   }
-  /* The line on the six modes with the link to their key on the Timing and
-     Direction page beside it. */
-  .modes-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem 1rem;
-  }
-  .modes-row > .modes-line {
-    margin: 0;
-  }
   .figure {
     min-width: 0;
   }
-  /* Wide: the text column beside the card, one group centred under the
-     switcher and standing at its top, as on the other pages of the run.
+  /* Wide: the text column beside the card, one group, as on the other pages of the run.
      The column keeps a reading measure (380 to 480 px); the card's column
      takes the rest up to the card's cap. */
   @container (min-width: 56rem) {
@@ -516,17 +467,15 @@
     }
   }
   /* A short phone (an iPhone SE) holds the words, the pills and the whole
-     card above the footer only if the column gives up two lines: the
-     title, which the switcher's chip right above it already shows in the
-     same colours (the page's h1 stays for screen readers), and the line on
-     the six modes, which the link beside it names and the pills under it
-     list (it stays for screen readers too). The links and pills take the
-     phone's 36 px height, and the gaps close up, so the player keeps a size
+     card above the footer only if the column gives up the title (the
+     page's h1 stays for screen readers) and the line on the six modes,
+     which the pills under it list (it stays for screen readers too). The
+     pills take the phone's 36 px height, and the gaps close up, so the player keeps a size
      that reads. A short landscape window (960x412) gives up the same two
      lines: its column needed 418 px of a 358 px screen (2026-11-03). */
   @media (max-width: 520px) and (max-height: 760px), (max-height: 520px) {
     .column-title,
-    .modes-row > .modes-line {
+    .modes-line {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -543,10 +492,6 @@
     .dual-shifts-topic {
       --min-touch-target: 36px;
     }
-    .all-modes-link :global(.link-chip.md),
-    .mode-link :global(.link-chip.md) {
-      padding-block: 0.3rem;
-    }
   }
   /* A short landscape window: the loop's row spans the card at any --fit,
      so the fit box could shrink only the player (126 px at 960x412). Tied
@@ -557,25 +502,6 @@
       justify-self: center;
     }
   }
-  /* LinkChip reads the app's theme variables: the page's ink, and on a
-     card the card's element. */
-  .all-modes-link,
-  .mode-link {
-    --theme-text: var(--ink, #1a1a1a);
-    --theme-accent: #647ff1;
-  }
-  .mode-link {
-    --theme-accent: var(--tint);
-  }
-  /* A tall window: the column's pill a step larger, with the words. */
-  @media (min-height: 1200px) {
-    .all-modes-link :global(.link-chip.md) {
-      min-height: 52px;
-      padding: 0.6rem 1.35rem;
-      font-size: 1.15rem;
-    }
-  }
-
   /* On a light page the pale elements (air, sun) need their deep colour
      mixed in to be seen; on a dark page the element colour stands on its
      own. */
@@ -633,7 +559,7 @@
     gap: 0.75rem;
     min-width: 0;
   }
-  /* The mode's line under its name; the lines share one cell so the card
+  /* The mode's line, centred under the animation; the lines share one cell so the card
      keeps its height. */
   .mode-lines {
     display: grid;
@@ -645,7 +571,8 @@
     color: var(--ink, #1a1a1a);
     font-size: clamp(0.95rem, 2.4cqw, 1.1rem);
     line-height: 1.5;
-    text-wrap: pretty;
+    text-align: center;
+    text-wrap: balance;
     --sentence-display: inline;
   }
   .dual-shifts-topic .mode-line.shown {
@@ -654,24 +581,11 @@
   .dark .mode {
     background: color-mix(in srgb, var(--tint) 16%, transparent);
   }
-  /* The card's head: the name left and the guide link right. On a narrow
-     card the tinted pill right above it already names the mode, so the
-     name stays for screen readers and the link stands alone; the mode's
-     line stays for screen readers too, so a phone keeps the whole card
-     above the footer. */
-  .mode-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-  @container (max-width: 33.99rem) {
-    .mode-head {
-      justify-content: center;
-    }
-    .dual-shifts-topic .mode-name,
-    .dual-shifts-topic .mode-lines {
+  /* The name stands centred over the animation. On a phone the tinted
+     pill right above it already names the mode, so the name stays for
+     screen readers and the animation keeps its height. */
+  @media (max-width: 480px), (max-height: 520px) {
+    .dual-shifts-topic .mode-name {
       position: absolute;
       width: 1px;
       height: 1px;

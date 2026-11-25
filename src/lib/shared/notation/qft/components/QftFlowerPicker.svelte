@@ -14,8 +14,8 @@
   import {
     ratioLabel,
     type RotatingFlower,
+    flowerToKnobs,
   } from "@tka/shape-domain";
-  import { flowerToKnobs } from "#lib/shared/notation/qft/qft-flower-bridge.js";
   import { tracePath } from "#lib/shared/notation/qft/qft-model.js";
 
   interface Props {

@@ -1,4 +1,4 @@
-import { applyFilter } from "@tka/shape-domain";
+import { applyFilter, buildShapeMatrixAxis } from "@tka/shape-domain";
 import {
   matrixFiltersForTurns,
   clampMatrixTurnToLevel,
@@ -256,6 +256,9 @@ const THEORY_RANDOM_RATIOS = (() => {
   return [...unique.values()];
 })();
 
+/** The axis the grid lays out with before the paths load. */
+const PRELOAD_AXIS = buildShapeMatrixAxis();
+
 export function createShapeMatrixAppState(
   dependencies: ShapeMatrixAppDependencies,
   initial: ShapeMatrixAppSnapshot,
@@ -340,6 +343,8 @@ export function createShapeMatrixAppState(
   let loading = $state(false);
   let loadError = $state<string | null>(null);
   let compact = $state(initialCompact);
+  let shortPhone = $state(false);
+  let sideways = $state(false);
   let activeView = $state<ShapeMatrixAppView>(
     initialCompact && initial.pair ? "detail" : "matrix"
   );
@@ -361,11 +366,14 @@ export function createShapeMatrixAppState(
   const theoryRowAxis = $derived(buildTheoryAxis(theoryLeftRatio));
   const theoryColAxis = $derived(buildTheoryAxis(theoryRightRatio));
   const filters = $derived(matrixFiltersForTurns(leftTurn, rightTurn));
+  /* The axis is pure, so the grid's real headers and tiles are laid out from
+     the first frame (the server's included) and the flowers draw into them
+     when the paths arrive. */
   const rowAxis = $derived(
-    data ? applyFilter(data.axis, filters.left, false) : []
+    applyFilter(data?.axis ?? PRELOAD_AXIS, filters.left, false)
   );
   const colAxis = $derived(
-    data ? applyFilter(data.axis, filters.right, false) : []
+    applyFilter(data?.axis ?? PRELOAD_AXIS, filters.right, false)
   );
 
   /**
@@ -1057,6 +1065,12 @@ export function createShapeMatrixAppState(
       activeView = surfaceHasPair() ? "detail" : "matrix";
     }
   }
+  function setShortPhone(next: boolean): void {
+    shortPhone = next;
+  }
+  function setSideways(next: boolean): void {
+    sideways = next;
+  }
   function openAbout(focus: ShapeMatrixAboutFocus = null): void {
     aboutFocus = focus;
     aboutOpen = true;
@@ -1220,6 +1234,14 @@ export function createShapeMatrixAppState(
     get compact() {
       return compact;
     },
+    /** A phone, either way up, whose height limits the animation. */
+    get shortPhone() {
+      return shortPhone;
+    },
+    /** A short, wide host: a phone on its side. */
+    get sideways() {
+      return sideways;
+    },
     get activeView() {
       return activeView;
     },
@@ -1277,6 +1299,8 @@ export function createShapeMatrixAppState(
     showMatrix,
     showDetail,
     setCompact,
+    setShortPhone,
+    setSideways,
     openAbout,
     closeAbout,
     togglePropPicker,

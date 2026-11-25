@@ -251,7 +251,7 @@ describe("the guests", () => {
     expect(c).not.toEqual(a);
   });
 
-  it("faces everyone toward the stage and thins toward the back", () => {
+  it("faces everyone toward the stage and spreads them at one density front to back", () => {
     const stage = world().stands.stage!;
     const crowd = placeGuests(area, 80, { seed: 3, facing: stage });
     for (const f of crowd.figures) {
@@ -262,7 +262,8 @@ describe("the guests", () => {
     // The stage is toward smaller z, so the front half has smaller z.
     const midZ = (ft(40) + ft(68)) / 2;
     const front = crowd.figures.filter((f) => f.z < midZ).length;
-    expect(front).toBeGreaterThan(crowd.figures.length - front);
+    const back = crowd.figures.length - front;
+    expect(Math.abs(front - back)).toBeLessThan(crowd.figures.length * 0.25);
   });
 
   it("caps the count when the area is too small", () => {

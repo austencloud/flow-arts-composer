@@ -182,6 +182,8 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
      Default hidden; .visible drives the opacity transition. Start/End text
      always carry .visible so they stay fully opaque. */
   .beat-number {
+    /* text-anchor "start" must stay the left edge on a right-to-left page. */
+    direction: ltr;
     opacity: 0;
     transition:
       opacity var(--duration-fast) var(--ease-standard-out),

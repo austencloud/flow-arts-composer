@@ -14,15 +14,15 @@ import {
   buildFlowerAxis,
   flowerPetals,
   type Flower,
-} from "@tka/shape-domain";
-import { MODE_ORDER } from "@tka/shape-domain";
-import {
+  MODE_ORDER,
   FLOWER_RADIUS,
   flowerToKnobs,
   flowerToTrajectory,
   realizationToHands,
   realizationToTrajectories,
-} from "../../src/lib/shared/notation/qft/qft-flower-bridge";
+  buildTrajectoryIncrements,
+  trajectoryHandIndexAt,
+} from "@tka/shape-domain";
 import { petalCount } from "../../src/lib/shared/notation/qft/qft-naming";
 import {
   buildIncrements,
@@ -30,10 +30,6 @@ import {
   norm,
 } from "../../src/lib/shared/notation/qft/qft-model";
 import { GUIDE_MOVES } from "../../src/lib/shared/notation/qft/qft-guide";
-import {
-  buildTrajectoryIncrements,
-  trajectoryHandIndexAt,
-} from "../../src/lib/shared/notation/qft/qft-trajectory";
 
 const AXIS = buildFlowerAxis();
 

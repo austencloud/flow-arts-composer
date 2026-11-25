@@ -9,6 +9,7 @@
     ariaLabel,
     surface = "accent",
     fullHeightOnPhone = false,
+    fillShortScreen = false,
     onClose,
     children,
   }: {
@@ -31,6 +32,12 @@
      * an empty band under a fixed full-height sheet on a taller one.
      */
     fullHeightOnPhone?: boolean;
+    /**
+     * On a phone held sideways the panel fills the screen. For a screen of its
+     * own (Fuse's path builder) whose picture and controls only fit next to
+     * each other.
+     */
+    fillShortScreen?: boolean;
     onClose: () => void;
     children: Snippet;
   } = $props();
@@ -47,7 +54,7 @@
     focusContainerOnOpen={true}
     class="generation-settings-drawer{fullHeightOnPhone
       ? ' full-height-on-phone'
-      : ''}"
+      : ''}{fillShortScreen ? ' fill-short-screen' : ''}"
     backdropClass="generation-settings-backdrop"
     onclose={onClose}
   >
@@ -94,6 +101,28 @@
   ) {
     width: min(var(--create-panel-width, 480px), clamp(480px, 30vw, 620px));
     max-width: 100%;
+  }
+
+  @media (max-height: 480px) {
+    :global(
+      .drawer-content.generation-settings-drawer.fill-short-screen.side-by-side-layout[data-placement="right"]
+    ) {
+      width: 100vw;
+    }
+
+    :global(
+      .drawer-content.generation-settings-drawer.fill-short-screen[data-placement="bottom"]
+    ) {
+      height: calc(100dvh - var(--safe-top, 0px));
+      max-height: none;
+    }
+
+    :global(.generation-settings-drawer.fill-short-screen)
+      .generation-settings-content {
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      border-left: none;
+    }
   }
 
   .generation-settings-content {

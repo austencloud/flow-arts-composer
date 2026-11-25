@@ -642,6 +642,8 @@
     display: block;
     -webkit-line-clamp: none;
     overflow: visible;
+    hyphens: auto;
+    overflow-wrap: anywhere;
   }
 
   @media (prefers-reduced-motion: reduce) {

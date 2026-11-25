@@ -238,21 +238,6 @@ Animates forward in z-axis and expands to fill the container space
   const buttonText = $derived.by(() => {
     if (selectionCount === 0) return t("create_deep_select_components");
     if (!isImplemented) return t("create_deep_combo_unsupported");
-    if (
-      selectionCount === 1 &&
-      localSelectedComponents.has(LOOPComponent.MIRRORED)
-    ) {
-      return t("create_deep_apply_reflection", {
-        axis:
-          localRhythm.reflectionAxis === "north-south"
-            ? t("generator_loop_mirrored")
-            : localRhythm.reflectionAxis === "east-west"
-              ? t("generator_loop_flipped")
-              : localRhythm.reflectionAxis === "northeast-southwest"
-                ? t("create_deep_ne_sw_reflection")
-                : t("create_deep_nw_se_reflection"),
-      });
-    }
     if (selectionCount === 1) {
       const component = Array.from(localSelectedComponents)[0]!;
       return t("create_deep_apply_component", {

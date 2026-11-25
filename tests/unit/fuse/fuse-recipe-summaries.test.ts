@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createFuseRule } from "#lib/features/fuse/domain/fuse-rule.js";
 import {
-  buildFuseRecipeSummaries,
-  type FuseRecipeSummaryInput,
+  buildFusePairingSummary,
+  buildFuseRecipeFacts,
+  type FuseRecipeFactsInput,
 } from "#lib/features/fuse/domain/fuse-recipe-summaries.js";
 import {
   GridLocation,
@@ -11,12 +12,12 @@ import {
 import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 function recipe(
-  overrides: Partial<FuseRecipeSummaryInput> = {}
-): FuseRecipeSummaryInput {
+  overrides: Partial<FuseRecipeFactsInput> = {}
+): FuseRecipeFactsInput {
   return {
     requestedLength: 8,
     generationLevel: 1,
-    maxTurnIntensity: 0,
+    maxTurnIntensity: 1,
     gridMode: GridMode.DIAMOND,
     constraintPreset: "smooth",
     handPathMode: "mixed",
@@ -24,53 +25,87 @@ function recipe(
     startLocation: null,
     startOrientation: null,
     traversalDirection: null,
-    mode: "shuffle",
-    driverSide: "blue",
-    rule: createFuseRule({ reflect: "mirror" }),
     ...overrides,
   };
 }
 
-describe("Fuse recipe summaries", () => {
-  it("keeps the six header and drawer values concise at their defaults", () => {
-    expect(buildFuseRecipeSummaries(recipe())).toEqual({
-      length: "8 steps",
-      level: "Level 1 · no turns",
-      grid: "Diamond",
-      style: "Default",
-      starting: "Random",
-      pairing: "Separate",
-    });
+function values(input: FuseRecipeFactsInput) {
+  const facts = buildFuseRecipeFacts(input);
+  return {
+    path: facts.path.map((fact) => fact.value),
+    style: facts.style.map((fact) => fact.value),
+    start: facts.start.map((fact) => fact.value),
+  };
+}
+
+describe("Fuse recipe facts", () => {
+  it("names every setting under the name its row carries", () => {
+    const facts = buildFuseRecipeFacts(recipe());
+    expect(facts.path.map((fact) => fact.name)).toEqual([
+      "Length",
+      "Level",
+      "Max turns",
+      "Grid",
+    ]);
+    expect(facts.start.map((fact) => fact.name)).toEqual([
+      "Start point",
+      "Orientation",
+      "Travel",
+    ]);
   });
 
-  it("folds max turns into Level and describes a linked relationship", () => {
-    const summaries = buildFuseRecipeSummaries(
-      recipe({
-        generationLevel: 3,
-        maxTurnIntensity: 1.5,
-        mode: "symmetry",
-        driverSide: "red",
-        rule: createFuseRule({ reflect: "mirror", invert: true }),
-      })
-    );
-
-    expect(summaries.level).toBe("Level 3 · ≤1.5 turns");
-    expect(summaries.pairing).toBe("Right → Together, opposite → Left");
+  // The saved maximum stays in the recipe at Level 1, where no turn is used.
+  it("says no turns at Level 1 whatever maximum is saved", () => {
+    expect(values(recipe({ maxTurnIntensity: 3 })).path).toEqual([
+      "8",
+      "1",
+      "None",
+      "Diamond",
+    ]);
+    expect(
+      values(recipe({ generationLevel: 3, maxTurnIntensity: 1.5 })).path
+    ).toEqual(["8", "3", "1.5", "Diamond"]);
   });
 
-  it("names non-default style and starting-condition choices", () => {
-    const summaries = buildFuseRecipeSummaries(
+  it("reads an open start as Any and a set one by its short name", () => {
+    expect(values(recipe()).start).toEqual(["Any", "Any", "Any"]);
+    const set = values(
       recipe({
-        constraintPreset: "mixed",
-        handPathMode: "choppy",
-        motionTypeFilter: "prefer-dash",
+        gridMode: GridMode.BOX,
         startLocation: GridLocation.NORTHEAST,
         startOrientation: Orientation.OUT,
         traversalDirection: "counterclockwise",
       })
     );
+    expect(set.start[0]).toBe("NE");
+    expect(set.start[2]).toBe("CCW");
+  });
 
-    expect(summaries.style).toBe("Props: Mixed · Hands: Choppy · Dashes: High");
-    expect(summaries.starting).toBe("Northeast · Out · CCW");
+  it("reads an unset dash choice as the mixed one", () => {
+    expect(values(recipe()).style[2]).toBe(
+      values(recipe({ handPathMode: "mixed" })).style[1]
+    );
+    expect(values(recipe({ motionTypeFilter: "no-dash" })).style[2]).not.toBe(
+      values(recipe()).style[2]
+    );
+  });
+});
+
+describe("Fuse pairing summary", () => {
+  it("names a linked relationship by its driver, rule and follower", () => {
+    expect(
+      buildFusePairingSummary({
+        mode: "symmetry",
+        driverSide: "right",
+        rule: createFuseRule({ reflect: "mirror", invert: true }),
+      })
+    ).toBe("Right → Together, opposite → Left");
+    expect(
+      buildFusePairingSummary({
+        mode: "shuffle",
+        driverSide: "left",
+        rule: createFuseRule({ reflect: "mirror" }),
+      })
+    ).toBe("Separate");
   });
 });

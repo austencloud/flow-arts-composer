@@ -42,6 +42,13 @@ import { Canvas2DApplicationManager } from "#lib/shared/animation-engine/service
 import { Canvas2DImageLoader } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-image-loader.js";
 import { propTextureMatchesRequest } from "#lib/shared/animation-engine/services/canvas2d/prop-texture-match.js";
 import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
+import {
+  GRID_INK,
+  drawPropSprite,
+  propPlacement,
+  tintGridInk,
+  type CanvasPropState,
+} from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-scene-drawing.js";
 import { Canvas2DFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-fade-manager.js";
 import { Canvas2DGridFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-grid-fade-manager.js";
 import { Canvas2DVisibilityFadeManager } from "./canvas2d/canvas-2d-visibility-fade-manager";
@@ -73,8 +80,6 @@ import type { MotionCueSide } from "#lib/shared/animation-engine/domain/types/mo
 import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 const VIEWBOX_SIZE = 950;
-const GRID_HALFWAY_POINT_OFFSET = 150; // Strict hand points (animation mode)
-const INWARD_FACTOR = 1.0; // No inward adjustment - use exact grid coordinates
 
 /**
  * Move the outgoing and incoming sprites on one transform while their artwork
@@ -178,8 +183,6 @@ function getSphereLayout(propType: string): SphereLayout | null {
   return { ...base, material };
 }
 
-/** Grid ink: black on light, the off-white the dark-mode tint paints. */
-const GRID_INK = { light: "#000000", dark: "#d9d9d9" } as const;
 
 /**
  * After a layout slide, the new still picture takes over from the moving
@@ -330,19 +333,7 @@ export class Canvas2DAnimationRenderer {
     }
 
     const offscreen = this.tintedGridCanvas ?? document.createElement("canvas");
-    offscreen.width = canvasSize;
-    offscreen.height = canvasSize;
-    const offCtx = offscreen.getContext("2d");
-    if (!offCtx) return null;
-
-    offCtx.clearRect(0, 0, canvasSize, canvasSize);
-    // 1. Draw the grid (black ink) as an alpha mask.
-    offCtx.drawImage(gridImage, 0, 0, canvasSize, canvasSize);
-    // 2. Recolor only the drawn pixels to off-white.
-    offCtx.globalCompositeOperation = "source-in";
-    offCtx.fillStyle = GRID_INK.dark;
-    offCtx.fillRect(0, 0, canvasSize, canvasSize);
-    offCtx.globalCompositeOperation = "source-over";
+    if (!tintGridInk(offscreen, gridImage, canvasSize, GRID_INK.dark)) return null;
 
     this.tintedGridCanvas = offscreen;
     this.tintedGridImageRef = gridImage;
@@ -1249,12 +1240,15 @@ export class Canvas2DAnimationRenderer {
   ): void {
     if (!image) return;
 
-    // Every prop sprite is already colored by the SVG pipeline, so it draws
-    // directly at its own intrinsic bounds.
-    const width = dimensions.width * transform.scaleFactor;
-    const height = dimensions.height * transform.scaleFactor;
-    const rotation = propType?.toLowerCase() === "hand" ? 0 : transform.angle;
-
+    const opacity = ctx.globalAlpha;
+    const { width, height, rotation } = drawPropSprite(
+      ctx,
+      image,
+      dimensions,
+      transform,
+      flipped,
+      propType
+    );
     this.lastRenderedPropSprites.push({
       image,
       centerX: transform.centerX,
@@ -1263,21 +1257,8 @@ export class Canvas2DAnimationRenderer {
       width,
       height,
       flipped,
-      opacity: ctx.globalAlpha,
+      opacity,
     });
-
-    ctx.save();
-    ctx.translate(transform.centerX, transform.centerY);
-    ctx.rotate(rotation);
-
-    // Apply horizontal flip for asymmetric props (Buugeng family)
-    if (flipped) {
-      ctx.scale(-1, 1);
-    }
-
-    ctx.drawImage(image, -width / 2, -height / 2, width, height);
-
-    ctx.restore();
   }
 
   /**
@@ -1433,17 +1414,9 @@ export class Canvas2DAnimationRenderer {
     ];
   }
 
-  /**
-   * Calculate prop position and dimensions
-   * Matches PixiPropRenderer logic for consistency
-   */
+  /** Where a prop is drawn: the shared placement, so other canvases match it exactly. */
   private calculatePropTransform(
-    propState: {
-      centerPathAngle: number;
-      staffRotationAngle: number;
-      x?: number;
-      y?: number;
-    },
+    propState: CanvasPropState,
     propDimensions: { width: number; height: number },
     canvasSize: number
   ): {
@@ -1453,42 +1426,7 @@ export class Canvas2DAnimationRenderer {
     height: number;
     rotation: number;
   } {
-    const centerX = canvasSize / 2;
-    const centerY = canvasSize / 2;
-    const gridScaleFactor = canvasSize / VIEWBOX_SIZE;
-    const scaledHalfwayRadius = GRID_HALFWAY_POINT_OFFSET * gridScaleFactor;
-
-    let x: number, y: number;
-
-    if (propState.x !== undefined && propState.y !== undefined) {
-      // Dash motion: use Cartesian coordinates
-      x = centerX + propState.x * scaledHalfwayRadius * INWARD_FACTOR;
-      y = centerY + propState.y * scaledHalfwayRadius * INWARD_FACTOR;
-    } else {
-      // Regular motion: calculate from angle
-      x =
-        centerX +
-        Math.cos(propState.centerPathAngle) *
-          scaledHalfwayRadius *
-          INWARD_FACTOR;
-      y =
-        centerY +
-        Math.sin(propState.centerPathAngle) *
-          scaledHalfwayRadius *
-          INWARD_FACTOR;
-    }
-
-    // Scale prop dimensions
-    const propWidth = propDimensions.width * gridScaleFactor;
-    const propHeight = propDimensions.height * gridScaleFactor;
-
-    return {
-      x,
-      y,
-      width: propWidth,
-      height: propHeight,
-      rotation: propState.staffRotationAngle,
-    };
+    return propPlacement(propState, propDimensions, canvasSize);
   }
 
   /**

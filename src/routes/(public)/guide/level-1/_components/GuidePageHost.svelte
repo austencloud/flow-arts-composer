@@ -20,6 +20,7 @@
   import { onMount } from "svelte";
   import { GUIDE_BODY_PAGES, GROUP_TITLES } from "../_data/guide-manifest";
   import { webPageNeighbours } from "../_data/guide-reader-nav";
+  import { level1Thread } from "../_data/lesson-line";
   import { BUILT } from "../_data/built-pages";
   import { GUIDE_CONTENT, hasReflowContent } from "../_data/guide-content";
   import { seoForSlug } from "../_data/guide-page-seo";
@@ -129,6 +130,8 @@
   const neighbours = $derived(webPageNeighbours(slug));
   const prev = $derived(neighbours.prev);
   const next = $derived(neighbours.next);
+
+  const thread = $derived(level1Thread(slug));
 
   const prevLink = $derived(
     prev
@@ -298,6 +301,7 @@
           prevPage: prevLink,
           nextPage: nextLink,
           hubHref: localHref("/guide"),
+          thread,
         }}
         lessonHref={interactiveLesson
           ? buildConceptStartPath(interactiveLesson.conceptId)
@@ -310,6 +314,7 @@
         kicker={topicKicker}
         subtitle={heroTagline}
         labels={screenLabels}
+        {thread}
         cutKey={tighter}
         onoverflow={() => {
           if (tighter < MAX_TIGHTER) tighter += 1;

@@ -78,8 +78,9 @@ describe("Create front-door source contract", () => {
       "utf8"
     );
 
-    expect(constructSource).toContain(
-      "suppressHeading={constructTutorialState.isActive}"
+    // The LOOP tab hides it too, since its own bar already says it.
+    expect(constructSource).toMatch(
+      /suppressHeading=\{(?:suppressStartHeading \|\|\s+)?constructTutorialState\.isActive\}/
     );
     expect(pickerSource).toMatch(
       /<Crossfade\s+key=\{suppressHeading\}[^>]*>[\s\S]*?\{#if !suppressHeading\}/

@@ -280,6 +280,21 @@ export const TALL_PICTURE_ASPECT = 6 / 5;
  *  dark ground, so a subject is never cut in half. */
 export const PICTURE_COVER_LIMIT = 1.25;
 
+/** The fixed parts of a picture tile; the picture takes the rest. */
+export interface PictureTileMetrics {
+  gap: number;
+  inset: number;
+  innerGap: number;
+  caption: number;
+}
+
+const PAGE_PICTURE_TILE: PictureTileMetrics = {
+  gap: PICTURE_GAP,
+  inset: PICTURE_INSET,
+  innerGap: PICTURE_INNER_GAP,
+  caption: PICTURE_CAPTION_HEIGHT,
+};
+
 export interface EffectPictureFit {
   cols: number;
   rows: number;
@@ -299,15 +314,19 @@ export function fitEffectPictures({
   height,
   count,
   columns = PICTURE_COLUMNS,
-}: EffectCatalogBox & { columns?: number }): EffectPictureFit | null {
+  tile = PAGE_PICTURE_TILE,
+}: EffectCatalogBox & {
+  columns?: number;
+  tile?: PictureTileMetrics;
+}): EffectPictureFit | null {
   if (width <= 0 || height <= 0 || count <= 0) return null;
   const cols = Math.min(columns, count);
   const rows = Math.ceil(count / cols);
-  const tileWidth = (width - (cols - 1) * PICTURE_GAP) / cols;
-  const tileHeight = (height - (rows - 1) * PICTURE_GAP) / rows;
-  const pictureWidth = tileWidth - 2 * PICTURE_INSET;
+  const tileWidth = (width - (cols - 1) * tile.gap) / cols;
+  const tileHeight = (height - (rows - 1) * tile.gap) / rows;
+  const pictureWidth = tileWidth - 2 * tile.inset;
   const pictureHeight =
-    tileHeight - 2 * PICTURE_INSET - PICTURE_INNER_GAP - PICTURE_CAPTION_HEIGHT;
+    tileHeight - 2 * tile.inset - tile.innerGap - tile.caption;
   if (pictureWidth <= 0 || pictureHeight <= 0) return null;
   const aspect = pictureWidth / pictureHeight;
   const offTall = Math.max(
@@ -322,7 +341,7 @@ export function fitEffectPictures({
   return {
     cols,
     rows,
-    gap: PICTURE_GAP,
+    gap: tile.gap,
     tileWidth,
     tileHeight,
     pictureWidth,
@@ -330,4 +349,46 @@ export function fitEffectPictures({
     shape,
     cover: Math.min(offTall, offWide) <= PICTURE_COVER_LIMIT,
   };
+}
+
+// ── The phone dock ────────────────────────────────────────────────────────────
+// A dock under a player is about 215-310px of body, so its tiles wear the same
+// pictures under a 12px name with less air round them. Four across on a phone;
+// a dock as wide as a tablet takes eight, when that draws each picture bigger.
+// Where even the tight tile leaves no picture worth looking at (the shortest
+// phones), the answer is null and the dock keeps its one-line tiles.
+
+/** EffectSelector's dock picture tile: 2px of padding inside its 1.5px border. */
+export const DOCK_PICTURE_TILE: PictureTileMetrics = {
+  gap: 6,
+  inset: 3.5,
+  innerGap: 2,
+  caption: 16,
+};
+export const MIN_DOCK_PICTURE_HEIGHT = 19;
+const DOCK_WIDE_COLUMNS = 8;
+/** The picture a 360px phone's four columns draw, which holds every name. */
+const DOCK_PICTURE_WIDTH = 63;
+
+/** How much of the picture's box its painting covers, in square pixels. */
+function paintedArea(fit: EffectPictureFit): number {
+  if (fit.cover) return fit.pictureWidth * fit.pictureHeight;
+  const aspect =
+    fit.shape === "tall" ? TALL_PICTURE_ASPECT : CATALOG_PORTRAIT_ASPECT;
+  const width = Math.min(fit.pictureWidth, fit.pictureHeight * aspect);
+  return (width * width) / aspect;
+}
+
+export function fitEffectDock(box: EffectCatalogBox): EffectPictureFit | null {
+  let best: EffectPictureFit | null = null;
+  for (const columns of [PICTURE_COLUMNS, DOCK_WIDE_COLUMNS]) {
+    const fit = fitEffectPictures({ ...box, columns, tile: DOCK_PICTURE_TILE });
+    if (!fit || fit.pictureHeight < MIN_DOCK_PICTURE_HEIGHT) continue;
+    // Eight columns only where a name still has the room it needs.
+    if (columns !== PICTURE_COLUMNS && fit.pictureWidth < DOCK_PICTURE_WIDTH) {
+      continue;
+    }
+    if (!best || paintedArea(fit) > paintedArea(best)) best = fit;
+  }
+  return best;
 }

@@ -7,7 +7,7 @@ import {
   trajectoryReversals,
   type QftPropRateProfile,
   type QftTrajectory,
-} from "#lib/shared/notation/qft/qft-trajectory.js";
+} from "@tka/shape-domain";
 
 export type PoiReversalVerdict = "legal" | "illegal" | "unsure";
 export type PoiReversalCalibration = "pendulum" | "extendulum";

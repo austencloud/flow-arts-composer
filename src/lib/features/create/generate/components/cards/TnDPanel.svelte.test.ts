@@ -156,7 +156,7 @@ describe("TnDPanel", () => {
     const { container } = render(
       TnDPanel,
       props({
-        blockedHandModes: { QS: "Not compatible with a Reflection LOOP" },
+        blockedHandModes: { QS: "Not compatible with a Reflected LOOP" },
       })
     );
 
@@ -165,7 +165,7 @@ describe("TnDPanel", () => {
       "Hand timing and direction"
     ).querySelector<HTMLButtonElement>('button[aria-label^="Quarter Same"]');
     expect(qs?.disabled).toBe(true);
-    expect(qs?.title).toBe("Not compatible with a Reflection LOOP");
+    expect(qs?.title).toBe("Not compatible with a Reflected LOOP");
     const propQs = group(
       container,
       "Prop timing and direction"

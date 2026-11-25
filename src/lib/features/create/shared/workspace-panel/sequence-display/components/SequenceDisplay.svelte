@@ -96,6 +96,22 @@
   const isTimelineMode = $derived(getIsTimelineMode());
   const optionAudition = $derived(panelState.optionAudition);
 
+  // The LOOP tab's waiting repeat. It belongs to building, so it steps aside
+  // while the grid is showing something else: choosing a new start, trying
+  // durations, or the card about to be saved.
+  const loopGoal = $derived(
+    activeMode === "loop" &&
+      !panelState.isShiftStartMode &&
+      !panelState.isDurationPreviewMode
+      ? panelState.loopGoal
+      : null
+  );
+  const pendingRepeat = $derived(
+    panelState.isSaveToLibraryPanelOpen || isClearing
+      ? null
+      : (loopGoal?.pending ?? null)
+  );
+
   // Duration pattern preview renders on this same editable timeline: while a
   // preview session is active, the grid shows the previewed durations without
   // touching the active sequence. Apply/cancel semantics stay with the panel.
@@ -271,6 +287,8 @@
           onAuditionCompleted={handleAuditionCompleted}
           onAuditionDismiss={handleAuditionDismiss}
           manualColumnCount={loopAlignedColumnCount}
+          {pendingRepeat}
+          partLength={loopGoal?.partLength ?? null}
           sequenceWord={currentDisplayWord}
           observeScroll={!panelState.workspacePlayback}
           shrinkToFit={panelState.isSaveToLibraryPanelOpen}

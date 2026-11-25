@@ -1170,6 +1170,9 @@ Usage:
 
   svg {
     display: block;
+    /* A picture is drawn the same in every language. A right-to-left page
+       would flip each text-anchor and push the step number off its edge. */
+    direction: ltr;
   }
 
   /* Animate SVG background fill changes */

@@ -2,6 +2,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
+  import { reflectionAxisName } from "../loop-component-presentation";
   import {
     REFLECTION_AXIS_DETAILS,
     REFLECTION_AXIS_OPTIONS,
@@ -41,12 +42,7 @@
   );
   const localizedAxisOptions = $derived(
     (props.reflectionAxisOptions ?? REFLECTION_AXIS_OPTIONS).map((option) => {
-      const name =
-        option.value === "north-south"
-          ? t("generator_loop_mirrored")
-          : option.value === "east-west"
-            ? t("generator_loop_flipped")
-            : t("create_deep_diagonal");
+      const name = reflectionAxisName(option.value);
       const description = t(
         (
           {
@@ -113,11 +109,7 @@
         </svg>
         <span class="axis-option-label">{detail.axisLabel}</span>
         <span class="axis-option-name"
-          >{reflectionAxis === "north-south"
-            ? t("generator_loop_mirrored")
-            : reflectionAxis === "east-west"
-              ? t("generator_loop_flipped")
-              : t("create_deep_diagonal")}</span
+          >{reflectionAxisName(reflectionAxis)}</span
         >
       </span>
     {/snippet}
@@ -303,6 +295,7 @@
   }
 
   .reflection-axis-picker {
+    container: reflection-axis / inline-size;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -359,6 +352,21 @@
   .axis-option-name {
     font-weight: 600;
     opacity: 0.72;
+  }
+
+  /* Four names share one row: the longest (Russian "Горизонталь") is wider
+     than its cell on phones up to 375px, so the names step down together. */
+  @container reflection-axis (max-width: 345px) {
+    .axis-option-name {
+      font-size: var(--font-size-compact, 12px);
+    }
+  }
+
+  /* Arabic letters join, so they keep their own spacing. */
+  @container reflection-axis (max-width: 300px) {
+    .axis-option-name:not(:lang(ar)) {
+      letter-spacing: -0.04em;
+    }
   }
 
   .axis-caption {

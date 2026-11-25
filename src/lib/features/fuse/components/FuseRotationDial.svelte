@@ -11,6 +11,7 @@
   has, which is not a coincidence — a 45° step is one grid point clockwise.
 -->
 <script lang="ts">
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { FUSE_ROTATIONS } from "../domain/fuse-rule";
 
   let {
@@ -30,7 +31,7 @@
   } = $props();
 
   const STEP_DEG = 45;
-  const points = FUSE_ROTATIONS.map((option, index) => ({
+  const points = $derived(FUSE_ROTATIONS.map((option, index) => ({
     steps: option.steps,
     label: option.label,
     // Every point states its own amount. Bare dots gave no reason to believe
@@ -40,8 +41,10 @@
     // steps run, so the step index is the angle.
     deg: index * STEP_DEG,
     ariaLabel:
-      option.steps === 0 ? "No rotation" : `Rotate ${option.label} clockwise`,
-  }));
+      option.steps === 0
+        ? t("fuse_dial_no_rotation")
+        : t("fuse_dial_rotate_clockwise", { amount: option.label }),
+  })));
 
   const selected = $derived(
     points.find((p) => p.steps === value) ?? points[0]!
@@ -101,10 +104,10 @@
        the amount runs clockwise, or that nothing is being rotated at all. -->
   <span class="dial-readout" aria-hidden="true">
     {#if value === 0}
-      <strong>None</strong>
+      <strong>{t("fuse_none")}</strong>
     {:else}
       <strong>{selected.label}</strong>
-      <span>clockwise</span>
+      <span>{t("fuse_dial_clockwise")}</span>
     {/if}
   </span>
 </div>

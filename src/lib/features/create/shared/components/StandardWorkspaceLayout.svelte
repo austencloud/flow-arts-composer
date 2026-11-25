@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isConstructWorkbench } from "#lib/features/create/shared/services/construct-workbench.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * StandardWorkspaceLayout - Workspace and Tool Panel Layout Container
@@ -404,7 +405,7 @@
     });
   });
   const constructPhoneSizes = $derived(
-    navigationState.activeTab === "construct" && !stepEditorStack
+    isConstructWorkbench(navigationState.activeTab) && !stepEditorStack
       ? constructPhoneSplit({
           width: layoutWidth,
           height: layoutHeight,
@@ -467,7 +468,8 @@
     panelSizes = [...defaultPanelSizes];
   });
 
-  // Fuse, Tunnel and Shape own complete workspaces inside their tool-panel surface.
+  // Fuse, Tunnel and Shape own complete workspaces inside their tool-panel
+  // surface.
   const ownsFullWorkspace = $derived(
     navigationState.activeTab === "fuse" ||
       navigationState.activeTab === "tunnel" ||
@@ -648,7 +650,7 @@
   }
 
   function handleWorkspaceUndo() {
-    if (navigationState.activeTab === "construct") {
+    if (isConstructWorkbench(navigationState.activeTab)) {
       logConstructImmediateUndo();
     }
   }
@@ -660,6 +662,7 @@
     // Map each creation mode to its color (20% opacity for subtle border)
     switch (activeTab) {
       case "construct":
+      case "loop":
         return "rgba(59, 130, 246, 0.2)"; // Blue
       case "assemble":
         return "rgba(6, 182, 212, 0.2)"; // Cyan
@@ -1079,6 +1082,14 @@
 
   /* While a preview plays the history pair is inert, and UndoButton shows
      its pressed-flat off look; no extra fade here. */
+
+  /* Back is the left button and forward the right one in every language, as
+     the steps they walk through run. */
+  .workspace-history-actions,
+  .compact-history-actions,
+  .clear-recovery-action {
+    direction: ltr;
+  }
 
   /* The rail's zones let taps through to the grid; this wrapper is authored
      here, so ButtonPanel's own wrapper rule doesn't reach it. */

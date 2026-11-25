@@ -94,7 +94,30 @@ describe("openFeatureEditor", () => {
     ).rejects.toThrow("The editor for promo did not open within 3 s.");
     expect(chrome.calls).toContain("chrome.close");
   });
+
+  it("keeps waiting past a request the dev server never answers", async () => {
+    const chrome = fakeChrome();
+    const lists = [
+      async () => [],
+      async () => Promise.reject(unanswered()),
+      async () => [{ id: "editor-1", featureSlug: "promo" }],
+    ];
+    const editor = await openFeatureEditor({
+      origin: "http://localhost:5193",
+      feature: "promo",
+      listSessions: () => lists.shift()!(),
+      launch: chrome.launch,
+      open: chrome.open,
+      go: chrome.go,
+      sleep: instant,
+    });
+    expect(editor.sessionId).toBe("editor-1");
+  });
 });
+
+/** What `bridgeRequest` rejects with when the dev server never answers. */
+const unanswered = () =>
+  Object.assign(new Error("went unanswered"), { code: "BRIDGE_TIMEOUT" });
 
 /** A bridge that queues one render and answers its statuses in turn. */
 function fakeBridge(statuses: Record<string, unknown>[]) {
@@ -172,6 +195,65 @@ describe("renderInEditor", () => {
       })
     ).rejects.toThrow("The editor was not ready to render after 60 s.");
     expect(bridge.posts).toEqual([{ kind: "render", sessionId: "editor-1" }]);
+  });
+
+  it("waits out one status the dev server never answers", async () => {
+    const answers = [
+      async () => ({ state: "rendering", phase: "rendering", percent: 10 }),
+      async () => Promise.reject(unanswered()),
+      async () => ({ state: "completed", file: "a.mp4", path: "p", bytes: 1 }),
+    ];
+    const lines: string[] = [];
+    await expect(
+      renderInEditor({
+        request: async (method: string) =>
+          method === "POST" ? { renderId: "render-1" } : answers.shift()!(),
+        sessionId: "editor-1",
+        log: (line: string) => lines.push(line),
+        sleep: instant,
+      })
+    ).resolves.toMatchObject({ file: "a.mp4" });
+    expect(lines.at(-1)).toMatch(/^no answer from the dev server/);
+  });
+
+  it("gives up on a dev server that stays silent", async () => {
+    let clock = 0;
+    await expect(
+      renderInEditor({
+        request: async (method: string) => {
+          if (method === "POST") return { renderId: "render-1" };
+          clock += 60000;
+          throw unanswered();
+        },
+        sessionId: "editor-1",
+        sleep: instant,
+        stallMs: 180000,
+        now: () => clock,
+      })
+    ).rejects.toThrow("The dev server has not answered for 240 s");
+  });
+
+  it("gives up on a render that goes on past its limit", async () => {
+    let clock = 0;
+    await expect(
+      renderInEditor({
+        request: async (method: string) => {
+          if (method === "POST") return { renderId: "render-1" };
+          clock += 60000;
+          return {
+            state: "rendering",
+            phase: "rendering",
+            percent: clock / 600000,
+          };
+        },
+        sessionId: "editor-1",
+        sleep: instant,
+        limitMs: 5 * 60000,
+        now: () => clock,
+      })
+    ).rejects.toThrow(
+      "The render was still going after 5 min (rendering 0%). Give it longer with --limit MINUTES."
+    );
   });
 
   it("gives up on a render that stops moving", async () => {
